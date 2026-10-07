@@ -1,0 +1,466 @@
+[
+	{
+		"id": "transactions-logging-recovery-01",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "C. J. Date, recovery (log, checkpoints, system and media recovery)",
+		"pt": {
+			"statement": "Qual é a regra central do write-ahead logging (WAL)?",
+			"alternatives": [
+				"A página de dados vai para o disco antes do registro de log que a descreve",
+				"O log só é gravado no disco quando a memória do servidor fica cheia",
+				"O log e a página de dados são gravados no disco na mesma operação atômica",
+				"O registro de log de uma alteração vai para o disco antes da página alterada",
+				"A página de dados é gravada em dois discos antes de o log ser atualizado"
+			],
+			"explanations": [
+				"É a ordem inversa: se a página chegasse antes, uma queda deixaria uma alteração no disco sem nada que permita desfazê-la.",
+				"O log precisa estar no disco no commit, independentemente de quanta memória está em uso.",
+				"Não existe gravação atômica de dois lugares do disco; o WAL existe justamente para dispensar isso.",
+				"Correta: com o log gravado primeiro, o banco sempre sabe refazer ou desfazer qualquer alteração que encontre nas páginas.",
+				"Isso descreve espelhamento de disco, que protege contra falha de mídia e não substitui o log."
+			],
+			"concept": "Write-ahead logging significa escrever primeiro a intenção e depois o efeito. Toda alteração gera um registro no log, e esse registro precisa estar em armazenamento estável antes que a página modificada seja gravada. Assim, depois de uma queda, o log tem a informação necessária para refazer o que foi confirmado e desfazer o que não foi.",
+			"example": {
+				"kind": "diagram",
+				"content": "1. UPDATE altera a página na memória\n2. registro de log -> disco (fsync)   <- primeiro\n3. página alterada -> disco           <- depois, sem pressa"
+			}
+		},
+		"en": {
+			"statement": "What is the central rule of write-ahead logging (WAL)?",
+			"alternatives": [
+				"The data page goes to disk before the log record that describes it",
+				"The log is only written to disk when the server memory becomes full",
+				"The log and the data page are written to disk in one atomic operation",
+				"The log record of a change goes to disk before the changed page",
+				"The data page is written to two disks before the log is updated"
+			],
+			"explanations": [
+				"That is the reverse order: if the page arrived first, a crash would leave a change on disk with nothing to undo it.",
+				"The log must be on disk at commit, no matter how much memory is in use.",
+				"There is no atomic write of two places on disk; WAL exists precisely to make that unnecessary.",
+				"Correct: with the log written first, the database always knows how to redo or undo any change it finds in the pages.",
+				"That describes disk mirroring, which protects against media failure and does not replace the log."
+			],
+			"concept": "Write-ahead logging means writing the intention first and the effect later. Every change produces a log record, and that record must be on stable storage before the modified page is written. So, after a crash, the log holds what is needed to redo what was committed and undo what was not.",
+			"example": {
+				"kind": "diagram",
+				"content": "1. UPDATE changes the page in memory\n2. log record -> disk (fsync)   <- first\n3. changed page -> disk         <- later, no hurry"
+			}
+		}
+	},
+	{
+		"id": "transactions-logging-recovery-02",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "C. J. Date, recovery (log, commit point)",
+		"pt": {
+			"statement": "Em um banco com write-ahead log, o que precisa estar em armazenamento estável antes de o servidor responder \"COMMIT concluído\" ao cliente?",
+			"alternatives": [
+				"Todas as páginas de dados alteradas pela transação",
+				"Um checkpoint completo que inclua a transação",
+				"Os índices atualizados das tabelas que foram alteradas",
+				"Uma cópia de backup das tabelas que foram alteradas",
+				"Os registros de log da transação, até o de commit"
+			],
+			"explanations": [
+				"As páginas podem ficar só na memória: se o servidor cair, elas são refeitas a partir do log.",
+				"Checkpoints são periódicos e servem para encurtar a recuperação; não acontecem a cada commit.",
+				"Páginas de índice são tratadas como as de dados: são refeitas pelo log se não chegaram ao disco.",
+				"Backup protege contra perda do disco e é feito à parte, não no caminho de cada commit.",
+				"Correta: com o registro de commit no disco, a transação pode ser refeita depois de qualquer queda, e isso basta para a durabilidade."
+			],
+			"concept": "O ponto de commit de uma transação é o momento em que o seu registro de commit chega ao disco. A partir daí o resultado está garantido, mesmo que nenhuma página de dados tenha sido gravada ainda. Gravar só o log no commit é barato, porque é uma escrita sequencial e pequena."
+		},
+		"en": {
+			"statement": "In a database with a write-ahead log, what must be on stable storage before the server answers \"COMMIT done\" to the client?",
+			"alternatives": [
+				"All the data pages changed by the transaction",
+				"A complete checkpoint that includes the transaction",
+				"The updated indexes of the tables that were changed",
+				"A backup copy of the tables that were changed",
+				"The log records of the transaction, up to the commit one"
+			],
+			"explanations": [
+				"The pages may stay in memory only: if the server crashes, they are redone from the log.",
+				"Checkpoints are periodic and exist to shorten recovery; they do not happen at every commit.",
+				"Index pages are treated like data pages: they are redone from the log if they did not reach the disk.",
+				"A backup protects against losing the disk and is taken separately, not on the path of each commit.",
+				"Correct: with the commit record on disk, the transaction can be redone after any crash, and that is enough for durability."
+			],
+			"concept": "The commit point of a transaction is the moment its commit record reaches the disk. From then on the result is guaranteed, even if no data page has been written yet. Writing only the log at commit is cheap, because it is a small sequential write."
+		}
+	},
+	{
+		"id": "transactions-logging-recovery-03",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "C. J. Date, recovery (checkpoints)",
+		"pt": {
+			"statement": "Qual é o principal objetivo de um checkpoint em um banco de dados com log?",
+			"alternatives": [
+				"Confirmar todas as transações que estão abertas naquele momento",
+				"Criar uma cópia de backup completa do banco em outro disco",
+				"Liberar os bloqueios das transações que estão esperando há muito tempo",
+				"Limitar quanto do log precisa ser reprocessado depois de uma queda",
+				"Verificar se as restrições de integridade das tabelas continuam válidas"
+			],
+			"explanations": [
+				"Um checkpoint não decide o destino de transações: as abertas continuam abertas depois dele.",
+				"Checkpoint grava páginas sujas no próprio banco; backup é outra operação, contra falha de mídia.",
+				"Bloqueios são assunto do controle de concorrência, não do mecanismo de recuperação.",
+				"Correta: como as páginas alteradas até ali já estão no disco, a recuperação começa do checkpoint e não do início do log.",
+				"Restrições são verificadas nos comandos e no commit, não durante o checkpoint."
+			],
+			"concept": "Sem checkpoints, a recuperação teria de reler o log inteiro. No checkpoint o banco grava no disco as páginas alteradas em memória e registra esse ponto no log. Depois de uma queda, só o log posterior ao último checkpoint precisa ser reprocessado, e o log anterior pode ser reciclado."
+		},
+		"en": {
+			"statement": "What is the main purpose of a checkpoint in a database with a log?",
+			"alternatives": [
+				"To commit all the transactions that are open at that moment",
+				"To create a complete backup copy of the database on another disk",
+				"To release the locks of transactions that have been waiting for long",
+				"To limit how much of the log must be replayed after a crash",
+				"To verify that the integrity constraints of the tables still hold"
+			],
+			"explanations": [
+				"A checkpoint does not decide the fate of transactions: the open ones stay open after it.",
+				"A checkpoint writes dirty pages into the database itself; a backup is another operation, against media failure.",
+				"Locks belong to concurrency control, not to the recovery mechanism.",
+				"Correct: since the pages changed up to that point are on disk, recovery starts from the checkpoint and not from the beginning of the log.",
+				"Constraints are checked in statements and at commit, not during the checkpoint."
+			],
+			"concept": "Without checkpoints, recovery would have to reread the whole log. At a checkpoint the database writes the pages changed in memory to disk and records that point in the log. After a crash, only the log after the last checkpoint must be replayed, and the earlier log can be recycled."
+		}
+	},
+	{
+		"id": "transactions-logging-recovery-04",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "C. J. Date, recovery (system recovery, undo)",
+		"pt": {
+			"statement": "O servidor cai no meio de uma transação que já tinha alterado três linhas mas ainda não tinha feito COMMIT. Ao reiniciar, o que a recuperação faz com essa transação?",
+			"alternatives": [
+				"Confirma a transação, porque as alterações já estavam no log",
+				"Desfaz as alterações, como se a transação nunca tivesse existido",
+				"Preserva as três linhas alteradas e descarta só o que faltava",
+				"Pede ao administrador que decida entre confirmar e desfazer",
+				"Mantém a transação aberta até o mesmo cliente se reconectar"
+			],
+			"explanations": [
+				"Estar no log não basta: sem o registro de commit, a transação é tratada como não concluída.",
+				"Correta: sem registro de commit, os efeitos da transação são desfeitos (ou ignorados), o que garante a atomicidade.",
+				"Manter parte do trabalho violaria a atomicidade: é tudo ou nada.",
+				"A recuperação de queda é automática; a decisão já está determinada pela ausência do commit no log.",
+				"Uma transação pertence a uma sessão, e a sessão morreu com o servidor; não há como retomá-la."
+			],
+			"concept": "A recuperação divide as transações em vencedoras, que têm registro de commit no log, e perdedoras, que não têm. As vencedoras são refeitas se necessário, e as perdedoras são desfeitas. É assim que a atomicidade sobrevive a uma queda: nenhuma transação fica pela metade."
+		},
+		"en": {
+			"statement": "The server crashes in the middle of a transaction that had already changed three rows but had not yet issued COMMIT. On restart, what does recovery do with this transaction?",
+			"alternatives": [
+				"Commits the transaction, because the changes were already in the log",
+				"Undoes the changes, as if the transaction had never existed",
+				"Preserves the three changed rows and discards only what was missing",
+				"Asks the administrator to decide between committing and undoing",
+				"Keeps the transaction open until the same client reconnects"
+			],
+			"explanations": [
+				"Being in the log is not enough: without the commit record, the transaction is treated as unfinished.",
+				"Correct: with no commit record, the effects of the transaction are undone (or ignored), which guarantees atomicity.",
+				"Keeping part of the work would violate atomicity: it is all or nothing.",
+				"Crash recovery is automatic; the decision is already determined by the missing commit in the log.",
+				"A transaction belongs to a session, and the session died with the server; it cannot be resumed."
+			],
+			"concept": "Recovery divides transactions into winners, which have a commit record in the log, and losers, which do not. Winners are redone if needed, and losers are undone. That is how atomicity survives a crash: no transaction is left half done."
+		}
+	},
+	{
+		"id": "transactions-logging-recovery-05",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "C. J. Date, recovery (log)",
+		"pt": {
+			"statement": "Por que gravar o log no commit costuma ser mais rápido do que gravar diretamente as páginas de dados alteradas?",
+			"alternatives": [
+				"O log é uma escrita sequencial e pequena; as páginas ficam espalhadas pelo disco",
+				"O log fica só na memória; as páginas de dados precisam ir para o disco",
+				"O log não precisa de fsync; as páginas de dados sempre precisam de fsync",
+				"O log é comprimido pelo banco; as páginas de dados nunca são comprimidas",
+				"O log é gravado sem bloqueios; as páginas de dados exigem bloqueio exclusivo"
+			],
+			"explanations": [
+				"Correta: acrescentar alguns registros ao fim de um arquivo custa muito menos do que gravar várias páginas inteiras em lugares diferentes.",
+				"Um log só em memória se perderia na queda e não daria durabilidade nenhuma.",
+				"O fsync do log no commit é exatamente o que garante a durabilidade; ele não é dispensado.",
+				"Compressão é opcional e não é a razão da diferença; o ganho vem do padrão de escrita.",
+				"Bloqueios de transação não têm relação com o custo de E/S do log e das páginas."
+			],
+			"concept": "Uma transação pode alterar poucos bytes em muitas páginas diferentes. Gravar todas no commit significaria várias escritas aleatórias de páginas inteiras. O log transforma isso em uma única escrita sequencial com apenas as alterações, e as páginas vão para o disco depois, em segundo plano."
+		},
+		"en": {
+			"statement": "Why is writing the log at commit usually faster than writing the changed data pages directly?",
+			"alternatives": [
+				"The log is a small sequential write; the pages are scattered across the disk",
+				"The log stays in memory only; the data pages have to go to the disk",
+				"The log needs no fsync; the data pages always need an fsync",
+				"The log is compressed by the database; data pages are never compressed",
+				"The log is written without locks; data pages require an exclusive lock"
+			],
+			"explanations": [
+				"Correct: appending a few records to the end of one file costs far less than writing several whole pages in different places.",
+				"A memory-only log would be lost in the crash and would give no durability at all.",
+				"The fsync of the log at commit is exactly what guarantees durability; it is not skipped.",
+				"Compression is optional and is not the reason for the difference; the gain comes from the write pattern.",
+				"Transaction locks have nothing to do with the I/O cost of the log and of the pages."
+			],
+			"concept": "A transaction may change a few bytes in many different pages. Writing all of them at commit would mean several random writes of whole pages. The log turns that into a single sequential write holding only the changes, and the pages go to disk later, in the background."
+		}
+	},
+	{
+		"id": "transactions-logging-recovery-06",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "C. J. Date, recovery (system recovery, redo and undo)",
+		"pt": {
+			"statement": "Depois do último checkpoint, a transação T1 fez COMMIT e a transação T2 ainda estava ativa quando o servidor caiu. Nenhuma página alterada por T1 tinha ido para o disco, e uma página alterada por T2 tinha. O que a recuperação precisa fazer?",
+			"alternatives": [
+				"Refazer T1 e desfazer T2",
+				"Desfazer T1 e refazer T2",
+				"Refazer T1 e refazer T2",
+				"Desfazer T1 e desfazer T2",
+				"Refazer T1 e ignorar T2"
+			],
+			"explanations": [
+				"Correta: T1 foi confirmada mas não está no disco (redo); T2 não foi confirmada mas deixou efeito no disco (undo).",
+				"Inverte os papéis: T1 tem commit e deve sobreviver, T2 não tem e deve sumir.",
+				"Refazer T2 e parar aí manteria no banco uma transação que nunca fez COMMIT.",
+				"Desfazer T1 violaria a durabilidade, porque o cliente já recebeu a confirmação do commit.",
+				"Ignorar T2 deixaria no disco a página que ela alterou, violando a atomicidade."
+			],
+			"concept": "Depois de uma queda existem dois problemas opostos. Transações confirmadas podem não ter chegado às páginas do disco, e o redo as reaplica a partir do log. Transações não confirmadas podem ter chegado, e o undo remove seus efeitos. O log precisa guardar informação suficiente para as duas operações.",
+			"example": {
+				"kind": "diagram",
+				"content": "tempo ->   checkpoint                      queda\n               |                             |\nT1             |---- BEGIN ... COMMIT        |    => redo\nT2             |--------- BEGIN ... UPDATE ..|    => undo"
+			}
+		},
+		"en": {
+			"statement": "After the last checkpoint, transaction T1 committed and transaction T2 was still active when the server crashed. No page changed by T1 had reached the disk, and one page changed by T2 had. What must recovery do?",
+			"alternatives": [
+				"Redo T1 and undo T2",
+				"Undo T1 and redo T2",
+				"Redo T1 and redo T2",
+				"Undo T1 and undo T2",
+				"Redo T1 and ignore T2"
+			],
+			"explanations": [
+				"Correct: T1 was committed but is not on disk (redo); T2 was not committed but left an effect on disk (undo).",
+				"It swaps the roles: T1 has a commit and must survive, T2 has none and must vanish.",
+				"Redoing T2 and stopping there would keep in the database a transaction that never committed.",
+				"Undoing T1 would violate durability, because the client already received the commit confirmation.",
+				"Ignoring T2 would leave the page it changed on disk, violating atomicity."
+			],
+			"concept": "After a crash there are two opposite problems. Committed transactions may not have reached the pages on disk, and redo reapplies them from the log. Uncommitted transactions may have reached them, and undo removes their effects. The log must keep enough information for both operations.",
+			"example": {
+				"kind": "diagram",
+				"content": "time ->    checkpoint                      crash\n               |                             |\nT1             |---- BEGIN ... COMMIT        |    => redo\nT2             |--------- BEGIN ... UPDATE ..|    => undo"
+			}
+		}
+	},
+	{
+		"id": "transactions-logging-recovery-07",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "C. J. Date, recovery (log, commit point)",
+		"pt": {
+			"statement": "O disco que guarda os arquivos de dados de um banco é destruído (falha de mídia). O último backup completo tem três dias. O que é necessário para recuperar as transações confirmadas até pouco antes da falha?",
+			"alternatives": [
+				"Apenas reiniciar o servidor, porque a recuperação de crash reconstrói os arquivos a partir do último checkpoint",
+				"Apenas o backup de três dias, porque as transações confirmadas ficam guardadas dentro de todo backup",
+				"Apenas o log desde o último checkpoint, aplicado em um diretório de dados vazio criado para isso",
+				"O backup restaurado, mais um undo das transações que estavam ativas quando o backup foi feito",
+				"O backup restaurado, mais o log arquivado desde esse backup, reaplicado em ordem sobre ele"
+			],
+			"explanations": [
+				"A recuperação de crash precisa dos arquivos de dados no disco para refazer e desfazer sobre eles; aqui os próprios arquivos se foram.",
+				"Um backup guarda o estado do momento em que foi feito, então faltariam três dias de commits.",
+				"O log desde o checkpoint descreve mudanças em páginas que um diretório vazio não tem.",
+				"Desfazer transações antigas não traz de volta os três dias de trabalho feitos depois do backup.",
+				"Correto: o backup dá uma base antiga e consistente, e o log arquivado repete, em ordem, cada mudança confirmada depois dele."
+			],
+			"concept": "Uma queda do sistema perde a memória e mantém o disco, então o log desde o último checkpoint basta. Uma falha de mídia perde o disco, então a recuperação parte de um backup e reaplica o log arquivado desde então (roll forward). É por isso que o log deve ficar em um dispositivo diferente dos dados, e essa é a base da recuperação point-in-time.",
+			"example": {
+				"kind": "diagram",
+				"content": "backup base (domingo)     segmentos de WAL arquivados      disco perdido (quarta 14:00)\n       |-------------------------------------------------------------x\n       restaurar o backup  ->  reaplicar o WAL em ordem  ->  parar no último commit"
+			}
+		},
+		"en": {
+			"statement": "The disk that holds the data files of a database is destroyed (a media failure). The last full backup is three days old. What is needed to bring back the transactions committed up to just before the failure?",
+			"alternatives": [
+				"Only the restart of the server, because crash recovery rebuilds the files from the last checkpoint",
+				"Only the three-day-old backup, because committed transactions are stored inside every backup",
+				"Only the log since the last checkpoint, applied to an empty data directory created for it",
+				"The backup restored, plus an undo of the transactions that were active when the backup was taken",
+				"The backup restored, plus the log archived since that backup, replayed in order on top of it"
+			],
+			"explanations": [
+				"Crash recovery needs the data files on disk to redo and undo on them; here the files themselves are gone.",
+				"A backup holds the state at the time it was taken, so three days of commits would be missing.",
+				"The log since the checkpoint describes changes to pages that an empty directory does not have.",
+				"Undoing old transactions does not bring back the three days of work done after the backup.",
+				"Correct: the backup gives an old consistent base and the archived log repeats, in order, every change committed after it."
+			],
+			"concept": "A system crash loses memory and keeps the disk, so the log since the last checkpoint is enough. A media failure loses the disk, so recovery starts from a backup and replays the log archived since then (roll forward). This is why the log must be kept on a different device from the data, and it is the basis of point-in-time recovery.",
+			"example": {
+				"kind": "diagram",
+				"content": "base backup (Sunday)      archived WAL segments            disk lost (Wednesday 14:00)\n       |-------------------------------------------------------------x\n       restore the backup  ->  replay the WAL in order  ->  stop at the last commit"
+			}
+		}
+	},
+	{
+		"id": "transactions-logging-recovery-08",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "C. J. Date, recovery (redo and undo are idempotent)",
+		"pt": {
+			"statement": "Em uma recuperação no estilo ARIES, como a fase de redo sabe se um registro de log já está aplicado em uma página de dados?",
+			"alternatives": [
+				"Compara o conteúdo atual da página com o valor novo do registro",
+				"Compara o LSN do registro com o LSN gravado na própria página",
+				"Verifica se a transação do registro tem commit no log",
+				"Consulta uma tabela de páginas já refeitas, mantida em memória",
+				"Reaplica sempre, porque a página antiga é descartada antes"
+			],
+			"explanations": [
+				"Comparar conteúdo é caro e ambíguo: o mesmo valor pode ter sido escrito por registros diferentes.",
+				"Correta: cada página guarda o LSN da última alteração aplicada; se ele é maior ou igual ao do registro, o redo pula o registro.",
+				"Ter commit diz se a transação é vencedora, não se aquela alteração chegou à página.",
+				"Uma estrutura só em memória se perde se a própria recuperação cair no meio do caminho.",
+				"As páginas do disco são o ponto de partida do redo; descartá-las exigiria reconstruir o banco do zero."
+			],
+			"concept": "Cada registro de log tem um número de sequência (LSN), e cada página guarda o LSN da última alteração que recebeu. No redo, um registro só é aplicado se o seu LSN for maior que o da página. Isso torna o redo idempotente: se a recuperação cair e recomeçar, repetir o processo não aplica nada duas vezes."
+		},
+		"en": {
+			"statement": "In an ARIES-style recovery, how does the redo phase know whether a log record is already applied to a data page?",
+			"alternatives": [
+				"It compares the current content of the page with the new value in the record",
+				"It compares the LSN of the record with the LSN stored in the page itself",
+				"It checks whether the transaction of the record has a commit in the log",
+				"It consults a table of already redone pages, kept in memory",
+				"It always reapplies, because the old page is discarded beforehand"
+			],
+			"explanations": [
+				"Comparing content is expensive and ambiguous: the same value may have been written by different records.",
+				"Correct: each page stores the LSN of the last change applied; if it is greater than or equal to the record's, redo skips the record.",
+				"Having a commit says whether the transaction is a winner, not whether that change reached the page.",
+				"A memory-only structure is lost if recovery itself crashes halfway.",
+				"The pages on disk are the starting point of redo; discarding them would require rebuilding the database from scratch."
+			],
+			"concept": "Each log record has a sequence number (LSN), and each page stores the LSN of the last change it received. During redo, a record is applied only if its LSN is greater than the page's. This makes redo idempotent: if recovery crashes and starts again, repeating the process applies nothing twice."
+		}
+	},
+	{
+		"id": "transactions-logging-recovery-09",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "C. J. Date, recovery (system recovery)",
+		"pt": {
+			"statement": "No PostgreSQL, com `full_page_writes = on`, a primeira alteração de uma página depois de um checkpoint grava a imagem inteira da página no WAL. Que problema isso resolve?",
+			"alternatives": [
+				"Transações longas que ocupam espaço demais no WAL",
+				"Páginas gravadas pela metade quando o servidor cai",
+				"Réplicas que ficam atrasadas em relação ao primário",
+				"Perda do arquivo de WAL por falha do disco de log",
+				"Leituras lentas de páginas que não estão no cache"
+			],
+			"explanations": [
+				"Imagens de página aumentam o volume de WAL em vez de reduzi-lo.",
+				"Correta: uma página de 8 kB pode ser gravada só em parte numa queda (torn page), e a imagem completa no WAL permite restaurá-la antes do redo.",
+				"O atraso de réplica depende de rede e de aplicação do WAL; imagens completas até aumentam o volume enviado.",
+				"Perder o próprio WAL é falha de mídia, tratada com redundância e backup, não com imagens de página.",
+				"O WAL é usado na recuperação e na replicação, não para acelerar leituras normais."
+			],
+			"concept": "Um registro de WAL comum descreve uma mudança em relação ao conteúdo anterior da página, então supõe que a página no disco está íntegra. Se a queda acontece no meio da gravação de uma página, ela fica com parte nova e parte antiga, e o redo incremental não funciona. A imagem completa gravada após o checkpoint dá um ponto de partida íntegro para a recuperação."
+		},
+		"en": {
+			"statement": "In PostgreSQL, with `full_page_writes = on`, the first change to a page after a checkpoint writes the whole page image to the WAL. Which problem does this solve?",
+			"alternatives": [
+				"Long transactions that take up too much space in the WAL",
+				"Pages that are only half written when the server crashes",
+				"Replicas that fall behind in relation to the primary",
+				"Loss of the WAL file caused by a failure of the log disk",
+				"Slow reads of pages that are not present in the cache"
+			],
+			"explanations": [
+				"Page images increase the WAL volume instead of reducing it.",
+				"Correct: an 8 kB page may be only partly written in a crash (torn page), and the full image in the WAL lets recovery restore it before redo.",
+				"Replica lag depends on the network and on WAL replay; full images even increase the volume shipped.",
+				"Losing the WAL itself is a media failure, handled with redundancy and backups, not with page images.",
+				"The WAL is used for recovery and replication, not to speed up normal reads."
+			],
+			"concept": "An ordinary WAL record describes a change relative to the previous content of the page, so it assumes the page on disk is intact. If the crash happens in the middle of writing a page, it ends up part new and part old, and incremental redo does not work. The full image written after the checkpoint gives recovery an intact starting point."
+		}
+	},
+	{
+		"id": "transactions-logging-recovery-10",
+		"area": "transactions",
+		"topic": "logging-recovery",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "C. J. Date, recovery (system recovery, redo and undo)",
+		"pt": {
+			"statement": "O algoritmo ARIES tem três fases: análise, redo e undo. Na fase de redo ele reaplica também as alterações de transações que serão desfeitas logo em seguida. Por quê?",
+			"alternatives": [
+				"Para confirmar essas transações, já que as alterações delas estavam no log",
+				"Para levar as páginas ao estado exato da queda, sobre o qual o undo consegue operar",
+				"Porque na fase de redo ainda não se sabe quais transações são perdedoras",
+				"Para liberar os bloqueios que essas transações mantinham antes da queda",
+				"Porque o undo só funciona em páginas que já foram gravadas no disco"
+			],
+			"explanations": [
+				"Refazer não é confirmar: as perdedoras continuam sem commit e são desfeitas na fase seguinte.",
+				"Correta: \"repetir a história\" reconstrói o estado do momento da queda, e só então o undo remove as perdedoras a partir de um estado conhecido.",
+				"A fase de análise, que vem antes, já identifica as transações ativas no momento da queda.",
+				"Os bloqueios estavam em memória e sumiram com a queda; não há o que liberar.",
+				"O undo age sobre as páginas no buffer, estejam elas gravadas no disco ou não."
+			],
+			"concept": "ARIES segue o princípio de repetir a história: o redo reaplica todo o log, de vencedoras e perdedoras, até o banco ficar idêntico ao instante da queda. Só depois o undo percorre o log de trás para a frente desfazendo as perdedoras e registrando cada passo em registros de compensação (CLR). Assim o undo é simples e continua correto mesmo que a recuperação seja interrompida e recomece."
+		},
+		"en": {
+			"statement": "The ARIES algorithm has three phases: analysis, redo and undo. In the redo phase it also reapplies the changes of transactions that will be undone right after. Why?",
+			"alternatives": [
+				"To commit those transactions, since their changes were already in the log",
+				"To bring the pages to the exact state of the crash, on which undo is able to operate",
+				"Because during the redo phase it is not yet known which transactions are losers",
+				"To release the locks that those transactions were holding before the crash",
+				"Because undo only works on pages that have already been written to disk"
+			],
+			"explanations": [
+				"Redoing is not committing: the losers still have no commit and are undone in the next phase.",
+				"Correct: \"repeating history\" rebuilds the state at the moment of the crash, and only then undo removes the losers from a known state.",
+				"The analysis phase, which comes first, already identifies the transactions active at the crash.",
+				"The locks were in memory and vanished with the crash; there is nothing to release.",
+				"Undo acts on the pages in the buffer, whether they have been written to disk or not."
+			],
+			"concept": "ARIES follows the principle of repeating history: redo reapplies the whole log, of winners and losers, until the database is identical to the instant of the crash. Only then does undo walk the log backwards undoing the losers and recording each step in compensation log records (CLRs). This keeps undo simple and still correct even if recovery is interrupted and restarts."
+		}
+	}
+]
