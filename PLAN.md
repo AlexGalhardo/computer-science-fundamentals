@@ -275,7 +275,8 @@ Requested by the owner on 2026-10-07: a web dashboard, separate from the quiz, f
 	- [ ] BD-2.1.b Charts drawn as inline SVG: bars per language, speed-up against workers, latency percentiles.
 	- [ ] BD-2.1.c Language filter, Portuguese and English, light and dark theme, usable from 320 px wide.
 	- [ ] BD-2.1.d Methodology section: machine, runtime versions, exact commands, and how to read each chart.
-	- **Accept:** opening `benchmarks/dashboard/index.html` from disk shows every chart with no network request, checked by a Playwright test that blocks the network.
+	- [ ] BD-2.1.e Didactic for a beginner (owner's requirement: as if a 10-year-old were learning from it): every section opens with an explanation card in plain words with an everyday analogy and a "how to read this chart" note, every technical term and metric has a tooltip that works with mouse, keyboard and touch, every chart has a caption generated from the data and a "why did this happen?" card, each language has its own card, and a glossary collects the terms.
+	- **Accept:** opening `benchmarks/dashboard/index.html` from disk shows every chart with no network request, checked by a Playwright test that blocks the network. The same test finds the explanation card of every section and opens a tooltip by keyboard and by tap.
 - [ ] **BD-2.2** One command to reproduce: `setup-unix-benchmarks.sh` and `setup-windows-benchmarks.ps1` build the images, run every workload and regenerate the results
 	- **Accept:** on a machine with only Docker and Bun, the script ends with the results regenerated and the dashboard updated.
 - [ ] **BD-2.3** Documentation in `benchmarks/README.md`, `benchmarks/README.pt-BR.md`, `docs/en/benchmarks.md` and `docs/pt/benchmarks.md`: what each workload measures, what it does not, and why cross-language numbers must be read with care
