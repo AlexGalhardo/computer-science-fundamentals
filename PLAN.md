@@ -107,8 +107,8 @@ Shared tooling that every other part depends on. Done before any wave starts.
 	- [x] F-1.1.a Root `package.json` with Bun workspaces for `quiz` and `tools/*`.
 	- [x] F-1.1.b Biome v2 config at the root (tabs, width 4), pinned exactly.
 	- **Accept:** `bun install` and `bunx biome check .` exit 0 on a fresh clone.
-- [ ] **F-1.2** Formatter configuration for the other ecosystems
-	- [ ] F-1.2.a `ruff.toml`, `rustfmt.toml`, `.clang-format`, `.golangci.yml`, `.formatter.exs`, spotless config.
+- [x] **F-1.2** Formatter configuration for the other ecosystems
+	- [x] F-1.2.a `ruff.toml`, `rustfmt.toml`, `.clang-format`, `.golangci.yml`, `.formatter.exs`, spotless config.
 	- **Accept:** each file exists and its tool runs against an empty sample project without error.
 - [x] **F-1.3** Pinned Docker base images
 	- [x] F-1.3.a `docker/` with one Dockerfile per language, each on a fixed version tag.
