@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1200 de 3220 questões escritas, 40 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+1300 de 3220 questões escritas, 44 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -25,7 +25,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Sistemas operacionais | Teoria e prática | 100/100 | feita | [cpu-scheduling](operating-systems/cpu-scheduling.md), [paging-tlb](operating-systems/paging-tlb.md), [memory-allocator](operating-systems/memory-allocator.md), [deadlock-mini-shell](operating-systems/deadlock-mini-shell.md) |
 | Redes | Teoria e prática | 100/100 | feita | [sliding-window-mini-tcp](networks/sliding-window-mini-tcp.md), [aloha-csma](networks/aloha-csma.md), [dns-subnet](networks/dns-subnet.md) |
 | Bancos de dados (teoria) | Teoria e prática | 100/100 | feita | [mini-dbms](databases/mini-dbms.md), [normalisation-tool](databases/normalisation-tool.md) |
-| Algoritmos | Teoria e prática | 0/100 |  | sorting-race (planejado), dynamic-programming (planejado), travelling-salesman (planejado), hybrid-quicksort (planejado) |
+| Algoritmos | Teoria e prática | 100/100 | feita | [sorting-race](algorithms/sorting-race.md), [dynamic-programming](algorithms/dynamic-programming.md), [travelling-salesman](algorithms/travelling-salesman.md), [hybrid-quicksort](algorithms/hybrid-quicksort.md) |
 | Concorrência | Teoria e prática | 100/100 | feita | [counter-race](concurrency/counter-race.md), [dining-philosophers](concurrency/dining-philosophers.md), [ten-thousand-connections](concurrency/ten-thousand-connections.md) |
 | Paralelismo | Teoria e prática | 100/100 | feita | [scaling-by-cores](parallelism/scaling-by-cores.md) |
 | Transações | Teoria e prática | 100/100 | feita | [isolation-levels](transactions/isolation-levels.md), [overselling-checkout](transactions/overselling-checkout.md), [orm-vs-sql](transactions/orm-vs-sql.md), [outbox-saga](transactions/outbox-saga.md) |

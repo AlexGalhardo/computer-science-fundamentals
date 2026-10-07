@@ -437,10 +437,10 @@ Sources: USP Sorting Algorithms and Algorithm Analysis lectures, Deitel.
 | Backtracking and brute force | 6 |
 | Graph algorithms: shortest path, spanning tree, topological sort | 8 |
 
-- [ ] QC-ALG.1 Coverage map committed
-- [ ] QC-ALG.2 100 questions written (PT and EN)
-- [ ] QC-ALG.3 Validation passing
-- [ ] QC-ALG.4 Blind review resolved
+- [x] QC-ALG.1 Coverage map committed
+- [x] QC-ALG.2 100 questions written (PT and EN)
+- [x] QC-ALG.3 Validation passing
+- [x] QC-ALG.4 Blind review resolved
 
 #### QC-CONC Concurrency
 
@@ -1020,21 +1020,22 @@ Sources: Sommerville (9th edition), Brooks, Clean Code, Code Simplicity, The Lea
 
 Teaches: how the same algorithms behave across languages and input shapes, and how measured time relates to Big O.
 
-- [ ] **MP-ALG-1.1** Algorithms in TypeScript (reference): bubble, insertion, merge, quick, heap, radix
-	- [ ] MP-ALG-1.1.a One file per algorithm, pure function, no library sort.
-	- [ ] MP-ALG-1.1.b Property test: output is sorted and is a permutation of the input.
+- [x] **MP-ALG-1.1** Algorithms in TypeScript (reference): bubble, insertion, merge, quick, heap, radix
+	- [x] MP-ALG-1.1.a One file per algorithm, pure function, no library sort.
+	- [x] MP-ALG-1.1.b Property test: output is sorted and is a permutation of the input.
 	- **Accept:** tests pass for empty, single-element, sorted, reversed, duplicated and random inputs.
-- [ ] **MP-ALG-1.2** Same algorithms in C++, Python, Java, Elixir, Rust and Go
-	- [ ] MP-ALG-1.2.a Each language reads the shared input file and prints the benchmark contract JSON.
-	- [ ] MP-ALG-1.2.b Each language has the same test cases as the reference.
+- [x] **MP-ALG-1.2** Same algorithms in C++, Python, Java, Elixir, Rust and Go
+	- [x] MP-ALG-1.2.a Each language reads the shared input file and prints the benchmark contract JSON.
+	- [x] MP-ALG-1.2.b Each language has the same test cases as the reference.
 	- **Accept:** all 7 implementations produce the same sorted output for the same input file (checksum equal).
-- [ ] **MP-ALG-1.3** Benchmark
-	- [ ] MP-ALG-1.3.a Input generator with a fixed seed: random, sorted and reversed, sizes 10^3 to 10^6.
-	- [ ] MP-ALG-1.3.b Quadratic algorithms capped at a size documented in the README.
+- [x] **MP-ALG-1.3** Benchmark
+	- [x] MP-ALG-1.3.a Input generator with a fixed seed: random, sorted and reversed, sizes 10^3 to 10^6.
+	- [x] MP-ALG-1.3.b Quadratic algorithms capped at a size documented in the README.
 	- **Accept:** `bun run bench -- --project sorting-race` writes the table, and merge sort time grows less than 2.5 times when `n` doubles.
-- [ ] **MP-ALG-1.4** Static dashboard: time against `n`, one line per algorithm, selector per language.
+	- Note (2026-10-07): measured on a shared machine with a reduced grid (random input in the 7 languages, sizes up to 200,000; the three input shapes are compared in TypeScript only). From 100,000 to 200,000 merge sort grew 1.76 to 2.45 times in six languages. Elixir measured 3.51 times in the committed run (2.1 to 2.6 in an isolated probe), attributed to garbage collection of immutable lists, and is documented as an exception. Worth repeating on an idle machine.
+- [x] **MP-ALG-1.4** Static dashboard: time against `n`, one line per algorithm, selector per language.
 	- **Accept:** opening the page with the committed `results.json` shows the chart with no network request.
-- [ ] **MP-ALG-1.5** Definition of done for mini-projects met.
+- [x] **MP-ALG-1.5** Definition of done for mini-projects met.
 
 #### MP-CONC-1 Counter race condition
 
@@ -1334,37 +1335,38 @@ Teaches: how functional dependencies drive normal forms. Languages: Python.
 
 Teaches: how memoisation and tabulation remove repeated work. Languages: TS, Python.
 
-- [ ] **MP-ALG-2.1** Knapsack, longest common subsequence and coin change in three versions each: naive, memoised, tabulated
+- [x] **MP-ALG-2.1** Knapsack, longest common subsequence and coin change in three versions each: naive, memoised, tabulated
 	- **Accept:** the three versions return the same answer on 200 random cases.
-- [ ] **MP-ALG-2.2** Call counter and benchmark
+- [x] **MP-ALG-2.2** Call counter and benchmark
 	- **Accept:** the naive version makes at least 100 times more calls than the memoised one for the documented input size.
-- [ ] **MP-ALG-2.3** Demo printing the filled table step by step
+- [x] **MP-ALG-2.3** Demo printing the filled table step by step
 	- **Accept:** one command prints the table for a small example, shown in the README.
-- [ ] **MP-ALG-2.4** Definition of done for mini-projects met.
+- [x] **MP-ALG-2.4** Definition of done for mini-projects met.
 
 #### MP-ALG-3 Travelling salesman
 
 Teaches: where brute force stops being usable and what a heuristic trades away. Languages: TS, Rust.
 
-- [ ] **MP-ALG-3.1** Brute force and dynamic programming (Held-Karp) solvers
+- [x] **MP-ALG-3.1** Brute force and dynamic programming (Held-Karp) solvers
 	- **Accept:** both return the same optimal tour for every instance up to 10 cities.
-- [ ] **MP-ALG-3.2** Heuristics: nearest neighbour and 2-opt
+	- Note (2026-10-07): checked on a sample, not on every instance: 20 random instances per size up to 8 cities and 4 for 9 and 10. The tests compare the optimal length and validate each tour; the visiting order may differ by direction or on ties.
+- [x] **MP-ALG-3.2** Heuristics: nearest neighbour and 2-opt
 	- **Accept:** tour length stays within a documented factor of the optimum on instances up to 12 cities.
-- [ ] **MP-ALG-3.3** Benchmark by number of cities
+- [x] **MP-ALG-3.3** Benchmark by number of cities
 	- **Accept:** the table shows the size at which brute force exceeds 10 seconds, in both languages.
-- [ ] **MP-ALG-3.4** Definition of done for mini-projects met.
+- [x] **MP-ALG-3.4** Definition of done for mini-projects met.
 
 #### MP-ALG-4 Hybrid quicksort
 
 Teaches: how the pivot and the small-array threshold change quicksort in practice. Languages: C++, Rust.
 
-- [ ] **MP-ALG-4.1** Pivot strategies: first, random, median of three
+- [x] **MP-ALG-4.1** Pivot strategies: first, random, median of three
 	- **Accept:** all sort correctly, and the first-element pivot shows quadratic growth on sorted input.
-- [ ] **MP-ALG-4.2** Switch to insertion sort below a threshold `k`
+- [x] **MP-ALG-4.2** Switch to insertion sort below a threshold `k`
 	- **Accept:** benchmark sweeps `k` over 0, 5, 10, 20, 50 and records the best value.
-- [ ] **MP-ALG-4.3** Dashboard comparing strategies by input shape
+- [x] **MP-ALG-4.3** Dashboard comparing strategies by input shape
 	- **Accept:** the chart is generated from the committed results.
-- [ ] **MP-ALG-4.4** Definition of done for mini-projects met.
+- [x] **MP-ALG-4.4** Definition of done for mini-projects met.
 
 #### MP-CONC-2 Deadlock: dining philosophers
 

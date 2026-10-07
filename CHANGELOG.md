@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.65.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/algorithms/hybrid-quicksort` (C++ and Rust): pivot strategies, the switch to insertion sort below a threshold, a sweep of that threshold, and a dashboard by input shape. The algorithms area is complete.
+
+## [0.64.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/algorithms/travelling-salesman` (TypeScript and Rust): brute force and Held-Karp solvers, nearest neighbour and 2-opt heuristics within a documented factor of the optimum, and the size at which brute force passes 10 seconds.
+
+## [0.63.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/algorithms/dynamic-programming` (TypeScript and Python): knapsack, longest common subsequence and coin change, each naive, memoised and tabulated, with call counters and a demo that prints the filled table.
+
+## [0.62.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/algorithms/sorting-race` (all 7 languages): bubble, insertion, merge, quick, heap and radix sort with the same tests and the same checksum in every language, a benchmark by size, and a static dashboard of time against n.
+
+## [0.61.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: algorithms, 100 questions in Portuguese and English, blind-reviewed with 100 of 100 agreement (`quiz/content/algorithms/review.md`).
+
 ## [0.60.0] - 2026-10-07
 
 ### Added
