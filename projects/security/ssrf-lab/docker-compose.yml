@@ -1,0 +1,98 @@
+# EN: SSRF lab: one image with the vulnerable and the fixed ElysiaJS apps, plus two fake services.
+#     `internal-admin` is the internal service nobody outside should reach; `public-site` plays
+#     the role of the internet. There are TWO networks and BOTH are `internal: true`, so no
+#     container reaches the real internet, and NO port is published on the host: the apps are
+#     called in-process by the tests and by the demo. Every value below is fake.
+# PT: Laboratório de SSRF: uma imagem com os apps ElysiaJS vulnerável e corrigido, mais dois
+#     serviços falsos. `internal-admin` é o serviço interno que ninguém de fora deveria alcançar;
+#     `public-site` faz o papel da internet. Há DUAS redes e AMBAS são `internal: true`, então
+#     nenhum contêiner alcança a internet real, e NENHUMA porta é publicada no host: os apps são
+#     chamados em processo pelos testes e pela demo. Todo valor abaixo é falso.
+name: sec-ssrf-lab
+
+x-image: &image
+  build: ./ts
+  image: sef-ssrf-lab-ts:local
+
+# EN: The container that runs the apps sits on both networks, like a real server that has one
+#     foot on the internet and one on the company network. That position is what SSRF abuses.
+# PT: O contêiner que roda os apps fica nas duas redes, como um servidor real que tem um pé na
+#     internet e outro na rede da empresa. É dessa posição que o SSRF abusa.
+x-app: &app
+  <<: *image
+  environment:
+    PUBLIC_SITE_ORIGIN: http://public-site:8080
+    INTERNAL_ADMIN_ORIGIN: http://internal-admin:8080
+  depends_on:
+    internal-admin:
+      condition: service_healthy
+    public-site:
+      condition: service_healthy
+  networks:
+    - lab
+    - lab-public
+
+x-healthcheck: &healthcheck
+  test:
+    - CMD
+    - bun
+    - -e
+    - "fetch('http://127.0.0.1:8080/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+  interval: 1s
+  timeout: 3s
+  retries: 30
+
+services:
+  # EN: Fake internal service, with a fake token and no login. Only on the private network.
+  # PT: Serviço interno falso, com um token falso e sem login. Só na rede privada.
+  internal-admin:
+    <<: *image
+    command: ["bun", "run", "src/lab-services/internal-admin.ts"]
+    healthcheck: *healthcheck
+    networks:
+      - lab
+
+  # EN: Fake public site. Only on the "public" network, so its name resolves to one address, in
+  #     the documentation range. It cannot reach the internal service itself.
+  # PT: Site público falso. Só na rede "pública", então o nome dele resolve para um endereço só,
+  #     na faixa de documentação. Ele mesmo não alcança o serviço interno.
+  public-site:
+    <<: *image
+    command: ["bun", "run", "src/lab-services/public-site.ts"]
+    environment:
+      INTERNAL_ADMIN_ORIGIN: http://internal-admin:8080
+    healthcheck: *healthcheck
+    networks:
+      - lab-public
+
+  ts-test:
+    <<: *app
+
+  # EN: `docker compose run --rm demo` prints a narrated walk-through of the flaw and of the fix.
+  # PT: `docker compose run --rm demo` imprime um passo a passo narrado da falha e da correção.
+  demo:
+    <<: *app
+    command: ["bun", "run", "demo"]
+
+networks:
+  # EN: The company network of the lab. Docker gives it a private subnet (RFC 1918), exactly the
+  #     kind of address the fix refuses.
+  # PT: A rede da empresa no laboratório. O Docker dá a ela uma sub-rede privada (RFC 1918),
+  #     exatamente o tipo de endereço que a correção recusa.
+  lab:
+    internal: true
+  # EN: The stand-in for the internet. Every container address is private by default, which
+  #     would make "refuse private addresses" refuse the fake public site too. So this network
+  #     uses 203.0.113.0/24 (TEST-NET-3, RFC 5737): a range reserved for documentation, not
+  #     private and never routed on the real internet. The real rule then works unchanged. The
+  #     network is still `internal: true`: the range is only a label, nothing leaves the machine.
+  # PT: O substituto da internet. Todo endereço de contêiner é privado por padrão, o que faria
+  #     "recusar endereços privados" recusar também o site público falso. Então esta rede usa
+  #     203.0.113.0/24 (TEST-NET-3, RFC 5737): uma faixa reservada para documentação, que não é
+  #     privada e nunca é roteada na internet real. Assim a regra real funciona sem mudanças. A
+  #     rede continua `internal: true`: a faixa é só um rótulo, nada sai da máquina.
+  lab-public:
+    internal: true
+    ipam:
+      config:
+        - subnet: 203.0.113.0/24
