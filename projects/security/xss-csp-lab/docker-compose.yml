@@ -1,0 +1,81 @@
+# EN: A defensive XSS lab. `vulnerable` and `fixed` are the same image started with a different
+#     APP_VERSION. `ts-test` runs the type check and the unit tests, `e2e` drives a real Chromium
+#     (Playwright) against both apps, and `demo` prints a narrated comparison.
+#     Safety: the only network is `lab`, which is `internal: true`, so no container reaches the
+#     internet, and NO port is published on the host. The vulnerable app is reachable only by
+#     the other containers of this file. All data is fake.
+# PT: Um laboratório defensivo de XSS. `vulnerable` e `fixed` são a mesma imagem iniciada com um
+#     APP_VERSION diferente. `ts-test` roda a checagem de tipos e os testes unitários, `e2e`
+#     conduz um Chromium de verdade (Playwright) contra os dois apps, e `demo` imprime uma
+#     comparação narrada.
+#     Segurança: a única rede é `lab`, que é `internal: true`, então nenhum contêiner alcança a
+#     internet, e NENHUMA porta é publicada no host. O app vulnerável só é alcançável pelos
+#     outros contêineres deste arquivo. Todos os dados são falsos.
+name: sec-xss-csp-lab
+
+x-app: &app
+  build: ./ts
+  image: sef-xss-csp-lab-ts:local
+  networks:
+    - lab
+
+x-web: &web
+  <<: *app
+  command: ["bun", "run", "start"]
+  healthcheck:
+    test: ["CMD", "bun", "-e", "const r = await fetch('http://localhost:3000/health'); process.exit(r.ok ? 0 : 1)"]
+    interval: 1s
+    timeout: 3s
+    retries: 30
+
+x-needs-apps: &needs-apps
+  vulnerable:
+    condition: service_healthy
+  fixed:
+    condition: service_healthy
+
+services:
+  # EN: Vulnerable on purpose. Never publish a port for this service.
+  # PT: Vulnerável de propósito. Nunca publique uma porta para este serviço.
+  vulnerable:
+    <<: *web
+    environment:
+      APP_VERSION: vulnerable
+
+  fixed:
+    <<: *web
+    environment:
+      APP_VERSION: fixed
+
+  ts-test:
+    <<: *app
+
+  # EN: Chromium only, from the pinned Playwright image. It can only open pages of the two apps
+  #     above: there is no other host on the network.
+  # PT: Só o Chromium, da imagem fixada do Playwright. Ele só consegue abrir páginas dos dois
+  #     apps acima: não há outro host na rede.
+  e2e:
+    build:
+      context: ./ts
+      dockerfile: e2e.Dockerfile
+    image: sef-xss-csp-lab-e2e:local
+    depends_on: *needs-apps
+    environment:
+      VULNERABLE_URL: http://vulnerable:3000
+      FIXED_URL: http://fixed:3000
+    # Chromium needs more shared memory than the 64 MB Docker gives by default.
+    shm_size: 1gb
+    networks:
+      - lab
+
+  demo:
+    <<: *app
+    command: ["bun", "run", "demo"]
+    depends_on: *needs-apps
+    environment:
+      VULNERABLE_URL: http://vulnerable:3000
+      FIXED_URL: http://fixed:3000
+
+networks:
+  lab:
+    internal: true
