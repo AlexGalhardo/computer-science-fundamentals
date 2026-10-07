@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: operating systems, 100 questions in Portuguese and English. The blind reviewer agreed with the answer key on all 100 and flagged none (`quiz/content/operating-systems/review.md`).
+
+## [0.11.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: networks, 100 questions in Portuguese and English. The blind reviewer agreed with the answer key on all 100, and three statements that depended on an unstated convention were rewritten (`quiz/content/networks/review.md`).
+
 ## [0.10.0] - 2026-10-07
 
 ### Added

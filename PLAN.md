@@ -365,7 +365,7 @@ Sources: Tanenbaum, Modern Operating Systems (4th edition) and the MINIX book.
 - [x] QC-OS.1 Coverage map committed
 - [x] QC-OS.2 100 questions written (PT and EN)
 - [x] QC-OS.3 Validation passing
-- [ ] QC-OS.4 Blind review resolved
+- [x] QC-OS.4 Blind review resolved
 
 #### QC-NET Networks
 
@@ -385,7 +385,7 @@ Source: Tanenbaum, Computer Networks (5th edition).
 - [x] QC-NET.1 Coverage map committed
 - [x] QC-NET.2 100 questions written (PT and EN)
 - [x] QC-NET.3 Validation passing
-- [ ] QC-NET.4 Blind review resolved
+- [x] QC-NET.4 Blind review resolved
 
 #### QC-DB Databases (theory)
 
