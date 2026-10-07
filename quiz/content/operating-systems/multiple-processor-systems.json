@@ -1,0 +1,90 @@
+[
+	{
+		"id": "operating-systems-multiple-processor-systems-01",
+		"area": "operating-systems",
+		"topic": "multiple-processor-systems",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Tanenbaum, Modern Operating Systems (4th ed.), chapter 8",
+		"pt": {
+			"statement": "Em um sistema com uma única CPU, o núcleo pode proteger uma região crítica curta desabilitando as interrupções. Por que essa técnica, sozinha, não garante exclusão mútua em um multiprocessador?",
+			"alternatives": [
+				"Desabilitar interrupções afeta só a CPU que o fez, e as outras continuam executando",
+				"Em um multiprocessador as interrupções não podem ser desabilitadas por software",
+				"Desabilitar interrupções em uma CPU desabilita em todas, e o sistema inteiro para de responder",
+				"As interrupções de relógio de um multiprocessador são rápidas demais para serem bloqueadas a tempo",
+				"Em um multiprocessador as regiões críticas do núcleo são sempre longas demais para isso"
+			],
+			"explanations": [
+				"Em uma única CPU, sem interrupções não há troca de contexto. No multiprocessador, outra CPU executa em paralelo de verdade, e é preciso uma trava, como um spin lock com TSL.",
+				"Cada CPU pode desabilitar as próprias interrupções. O problema é que isso não detém as outras CPUs.",
+				"O efeito é local a cada CPU. É justamente por isso que a técnica não basta.",
+				"A frequência do relógio não importa. A concorrência aqui vem da execução paralela, e não de interrupções.",
+				"O tamanho da região crítica não muda com o número de CPUs. A técnica falha mesmo em regiões de poucas instruções."
+			],
+			"concept": "Em uma única CPU, toda concorrência dentro do núcleo vem de interrupções e das trocas de contexto que elas provocam, e por isso desligá-las cria exclusão mútua. Em um multiprocessador há paralelismo real: duas CPUs podem executar o mesmo código do núcleo no mesmo instante. A exclusão mútua passa a depender de travas baseadas em instruções atômicas, em geral combinadas com a desabilitação local de interrupções."
+		},
+		"en": {
+			"statement": "On a system with a single CPU, the kernel can protect a short critical region by disabling interrupts. Why does this technique alone not guarantee mutual exclusion on a multiprocessor?",
+			"alternatives": [
+				"Disabling interrupts affects only the CPU that did it, and the others keep running",
+				"On a multiprocessor interrupts cannot be disabled by software",
+				"Disabling interrupts on one CPU disables them on all, and the whole system stops responding",
+				"The clock interrupts of a multiprocessor are too fast to be blocked in time",
+				"On a multiprocessor the critical regions of the kernel are always too long for that"
+			],
+			"explanations": [
+				"On a single CPU, with no interrupts there is no context switch. On a multiprocessor another CPU runs truly in parallel, so a lock is needed, such as a spin lock built on TSL.",
+				"Each CPU can disable its own interrupts. The problem is that this does not stop the other CPUs.",
+				"The effect is local to each CPU. That is exactly why the technique is not enough.",
+				"The clock frequency is irrelevant. The concurrency here comes from parallel execution, not from interrupts.",
+				"The length of the critical region does not change with the number of CPUs. The technique fails even for regions of a few instructions."
+			],
+			"concept": "On a single CPU, all concurrency inside the kernel comes from interrupts and the context switches they cause, so turning them off creates mutual exclusion. On a multiprocessor there is real parallelism: two CPUs can execute the same kernel code at the same instant. Mutual exclusion then depends on locks built on atomic instructions, usually combined with disabling interrupts locally."
+		}
+	},
+	{
+		"id": "operating-systems-multiple-processor-systems-02",
+		"area": "operating-systems",
+		"topic": "multiple-processor-systems",
+		"difficulty": "advanced",
+		"answer": 4,
+		"source": "Tanenbaum, Modern Operating Systems (4th ed.), chapter 8",
+		"pt": {
+			"statement": "Em um multiprocessador, uma thread encontra ocupada a trava de que precisa. Ela pode girar em espera ocupada (spin) ou bloquear e ceder a CPU. Em que situação girar é a melhor escolha?",
+			"alternatives": [
+				"Quando a thread que segura a trava foi preemptada e não está executando em nenhuma CPU",
+				"Quando o sistema tem uma única CPU, pois assim a troca de contexto é evitada",
+				"Quando a região crítica protegida pela trava inclui operações de E/S em disco",
+				"Sempre, pois em um multiprocessador há CPUs suficientes para a espera ocupada não custar nada",
+				"Quando a trava deve ser liberada em menos tempo do que custam as duas trocas de contexto"
+			],
+			"explanations": [
+				"Esse é o pior caso para girar: a trava não será liberada enquanto o dono não voltar a executar, e a espera ocupada só desperdiça o quantum.",
+				"Com uma só CPU, girar não faz sentido: quem poderia liberar a trava não executa enquanto a thread em espera ocupa a CPU.",
+				"E/S demora milhões de ciclos de CPU. Para esperas longas, bloquear é claramente melhor.",
+				"Girar consome uma CPU inteira, que poderia executar outra thread. O custo só compensa em esperas curtas.",
+				"Bloquear custa uma troca para sair e outra para voltar. Se o dono da trava está executando em outra CPU e vai liberá-la logo, girar por alguns instantes sai mais barato."
+			],
+			"concept": "A espera ocupada desperdiça ciclos de CPU, mas evita o custo de bloquear: salvar o contexto, escolher outra thread, perder o conteúdo da cache e, mais tarde, fazer o caminho inverso. Por isso travas de regiões críticas muito curtas do núcleo são spin locks. Muitas implementações giram por um tempo limitado e bloqueiam se a trava não for liberada, para ficar perto do melhor dos dois casos."
+		},
+		"en": {
+			"statement": "On a multiprocessor, a thread finds the lock it needs already taken. It can spin in busy waiting or block and give up the CPU. In which situation is spinning the better choice?",
+			"alternatives": [
+				"When the thread holding the lock has been preempted and is not running on any CPU",
+				"When the system has a single CPU, since the context switch is then avoided",
+				"When the critical region protected by the lock includes disk I/O operations",
+				"Always, since a multiprocessor has enough CPUs for busy waiting to cost nothing",
+				"When the lock is expected to be released in less time than two context switches cost"
+			],
+			"explanations": [
+				"That is the worst case for spinning: the lock will not be released until the holder runs again, and busy waiting just burns the quantum.",
+				"With only one CPU spinning makes no sense: whoever could release the lock does not run while the waiting thread occupies the CPU.",
+				"I/O takes millions of CPU cycles. For long waits, blocking is clearly better.",
+				"Spinning uses up a whole CPU, which could run another thread. The cost pays off only for short waits.",
+				"Blocking costs one switch out and another one back in. If the lock holder is running on another CPU and will release it soon, spinning for a moment is cheaper."
+			],
+			"concept": "Busy waiting wastes CPU cycles but avoids the cost of blocking: saving the context, picking another thread, losing the cache contents and later doing the reverse. That is why the locks of very short kernel critical regions are spin locks. Many implementations spin for a bounded time and then block if the lock is not released, to stay close to the best of both cases."
+		}
+	}
+]
