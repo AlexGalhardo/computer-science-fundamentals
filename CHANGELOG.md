@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/networks/dns-subnet` (Go and TypeScript): an iterative DNS resolver against a fake root, TLD and authoritative hierarchy on an internal Docker network, a cache with time to live, and a subnet calculator. The networks area is complete.
+
+## [0.29.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/networks/aloha-csma` (Python): simulation of pure ALOHA, slotted ALOHA and CSMA/CD with binary exponential backoff, with throughput peaks within 5% of the theoretical 18.4% and 36.8%, and a chart generated from the committed results.
+
+## [0.28.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/networks/sliding-window-mini-tcp` (Go and Elixir): a deterministic lossy channel, stop-and-wait, go-back-N and selective repeat, and a mini TCP over UDP that transfers 10 MB intact with injected loss.
+
+## [0.27.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/operating-systems/deadlock-mini-shell` (Go and C++): deadlock detection on a resource allocation graph and the banker's algorithm in Go, and a mini shell with pipes, redirection and signals in C++. The operating systems area is complete.
+
+## [0.26.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/operating-systems/memory-allocator` (C++ and Rust): first fit, best fit, worst fit and buddy system over a fixed arena, coalescing of free blocks, and a fragmentation table per strategy.
+
+## [0.25.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/operating-systems/paging-tlb` (Rust and TypeScript): page table and TLB with hit and miss counters, FIFO, clock, LRU and optimal replacement, and Belady's anomaly shown by a test.
+
+## [0.24.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/operating-systems/cpu-scheduling` (TypeScript and Python): FCFS, shortest job first, round-robin, priority and multilevel feedback, with a Gantt chart in the CLI and on a static page, and a comparison on generated workloads.
+
+## [0.23.0] - 2026-10-07
+
+### Added
+
+- GitHub Actions workflow verified: a pull request with a formatting error failed, and the same pull request fixed passed every job (Biome, type check, unit tests, quiz validation, formatter checks for Python, Go, Rust, C++ and Elixir, and the quiz end-to-end tests).
+
 ## [0.22.0] - 2026-10-07
 
 ### Added

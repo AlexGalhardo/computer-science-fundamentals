@@ -136,10 +136,10 @@ Shared tooling that every other part depends on. Done before any wave starts.
 
 ### F-4 Continuous integration
 
-- [ ] **F-4.1** GitHub Actions workflow
-	- [ ] F-4.1.a Lint and format check for every ecosystem.
-	- [ ] F-4.1.b Quiz validation and quiz tests.
-	- [ ] F-4.1.c Tests of each mini-project, run only when its folder changes.
+- [x] **F-4.1** GitHub Actions workflow
+	- [x] F-4.1.a Lint and format check for every ecosystem.
+	- [x] F-4.1.b Quiz validation and quiz tests.
+	- [x] F-4.1.c Tests of each mini-project, run only when its folder changes.
 	- **Accept:** a pull request with a formatting error fails, and the same pull request fixed passes.
 
 ---
@@ -1227,83 +1227,83 @@ Teaches: how an unbalanced tree degenerates and how rotations prevent it. Langua
 
 Teaches: how scheduling policies trade waiting time, response time and fairness. Languages: TS, Python.
 
-- [ ] **MP-OS-1.1** FCFS, shortest job first, round-robin, priority and multilevel feedback
+- [x] **MP-OS-1.1** FCFS, shortest job first, round-robin, priority and multilevel feedback
 	- **Accept:** textbook examples give the documented waiting and turnaround times.
-- [ ] **MP-OS-1.2** Gantt chart output
+- [x] **MP-OS-1.2** Gantt chart output
 	- **Accept:** CLI prints the chart and the static page draws it.
-- [ ] **MP-OS-1.3** Comparison on generated workloads
+- [x] **MP-OS-1.3** Comparison on generated workloads
 	- **Accept:** table of average waiting, turnaround and response time per policy.
-- [ ] **MP-OS-1.4** Definition of done for mini-projects met.
+- [x] **MP-OS-1.4** Definition of done for mini-projects met.
 
 #### MP-OS-2 Paging and TLB simulator
 
 Teaches: how virtual addresses are translated and what page replacement costs. Languages: Rust, TS.
 
-- [ ] **MP-OS-2.1** Page table and TLB with hit and miss counters
+- [x] **MP-OS-2.1** Page table and TLB with hit and miss counters
 	- **Accept:** a reference trace gives the expected counts.
-- [ ] **MP-OS-2.2** Replacement: FIFO, clock, LRU, optimal
+- [x] **MP-OS-2.2** Replacement: FIFO, clock, LRU, optimal
 	- **Accept:** page-fault counts match textbook examples.
-- [ ] **MP-OS-2.3** Belady's anomaly
+- [x] **MP-OS-2.3** Belady's anomaly
 	- **Accept:** a test shows FIFO faulting more with more frames on the classic reference string.
-- [ ] **MP-OS-2.4** Definition of done for mini-projects met.
+- [x] **MP-OS-2.4** Definition of done for mini-projects met.
 
 #### MP-OS-3 Memory allocator
 
 Teaches: how allocation strategies fragment memory. Languages: C++, Rust.
 
-- [ ] **MP-OS-3.1** First fit, best fit, worst fit and buddy system over a fixed arena
+- [x] **MP-OS-3.1** First fit, best fit, worst fit and buddy system over a fixed arena
 	- **Accept:** no two live blocks overlap in a randomised test.
-- [ ] **MP-OS-3.2** Coalescing of free blocks
+- [x] **MP-OS-3.2** Coalescing of free blocks
 	- **Accept:** freeing everything returns one free block.
-- [ ] **MP-OS-3.3** Fragmentation benchmark
+- [x] **MP-OS-3.3** Fragmentation benchmark
 	- **Accept:** table of external fragmentation and failed allocations per strategy.
-- [ ] **MP-OS-3.4** Definition of done for mini-projects met.
+- [x] **MP-OS-3.4** Definition of done for mini-projects met.
 
 #### MP-OS-4 Deadlock detection and a mini shell
 
 Teaches: resource allocation graphs, the banker's algorithm, and processes with pipes. Languages: Go, C++.
 
-- [ ] **MP-OS-4.1** Deadlock detector on a resource allocation graph
+- [x] **MP-OS-4.1** Deadlock detector on a resource allocation graph
 	- **Accept:** known deadlocked and safe graphs are classified correctly.
-- [ ] **MP-OS-4.2** Banker's algorithm
+- [x] **MP-OS-4.2** Banker's algorithm
 	- **Accept:** textbook states are classified safe or unsafe as documented.
-- [ ] **MP-OS-4.3** Mini shell with pipes, redirection and signals
+- [x] **MP-OS-4.3** Mini shell with pipes, redirection and signals
 	- **Accept:** a test script runs pipelines of three commands and interrupts a running one.
-- [ ] **MP-OS-4.4** Definition of done for mini-projects met.
+- [x] **MP-OS-4.4** Definition of done for mini-projects met.
 
 #### MP-NET-1 Sliding window and a mini TCP
 
 Teaches: how reliability is built on an unreliable channel. Languages: Go, Elixir.
 
-- [ ] **MP-NET-1.1** Simulated channel with loss, duplication and reordering
+- [x] **MP-NET-1.1** Simulated channel with loss, duplication and reordering
 	- **Accept:** the channel is deterministic with a fixed seed.
-- [ ] **MP-NET-1.2** Stop-and-wait, go-back-N and selective repeat
+- [x] **MP-NET-1.2** Stop-and-wait, go-back-N and selective repeat
 	- **Accept:** every protocol delivers a file intact at 20% loss, checked by checksum.
-- [ ] **MP-NET-1.3** Mini TCP over UDP: handshake, sequence numbers, retransmission
+- [x] **MP-NET-1.3** Mini TCP over UDP: handshake, sequence numbers, retransmission
 	- **Accept:** a 10 MB transfer on localhost with injected loss arrives intact, and throughput per protocol is tabled.
-- [ ] **MP-NET-1.4** Definition of done for mini-projects met.
+- [x] **MP-NET-1.4** Definition of done for mini-projects met.
 
 #### MP-NET-2 ALOHA and CSMA/CD simulator
 
 Teaches: how shared media are contended. Languages: Python.
 
-- [ ] **MP-NET-2.1** Pure and slotted ALOHA
+- [x] **MP-NET-2.1** Pure and slotted ALOHA
 	- **Accept:** simulated throughput peaks within 5% of the theoretical 18.4% and 36.8%.
-- [ ] **MP-NET-2.2** CSMA/CD with binary exponential backoff
+- [x] **MP-NET-2.2** CSMA/CD with binary exponential backoff
 	- **Accept:** chart of throughput against offered load for the three, generated from committed results.
-- [ ] **MP-NET-2.3** Definition of done for mini-projects met.
+- [x] **MP-NET-2.3** Definition of done for mini-projects met.
 
 #### MP-NET-3 DNS resolver and subnet calculator
 
 Teaches: how names are resolved and how addresses are divided. Languages: Go, TS.
 
-- [ ] **MP-NET-3.1** Iterative resolver against a local fake hierarchy of root, TLD and authoritative servers in Docker
+- [x] **MP-NET-3.1** Iterative resolver against a local fake hierarchy of root, TLD and authoritative servers in Docker
 	- **Accept:** resolution works with no external network, and each step is printed.
-- [ ] **MP-NET-3.2** Cache with time to live
+- [x] **MP-NET-3.2** Cache with time to live
 	- **Accept:** a second query is answered from cache and expires on time.
-- [ ] **MP-NET-3.3** Subnet calculator
+- [x] **MP-NET-3.3** Subnet calculator
 	- **Accept:** network, broadcast, range and mask are correct for a table of CIDR cases.
-- [ ] **MP-NET-3.4** Definition of done for mini-projects met.
+- [x] **MP-NET-3.4** Definition of done for mini-projects met.
 
 #### MP-DB-1 Mini relational DBMS
 
