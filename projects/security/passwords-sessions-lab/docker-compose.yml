@@ -1,0 +1,56 @@
+# EN: Security lab, defensive and educational. Three services built from the same pinned image:
+#     `ts-test` runs the type check and the tests, `demo` prints the walk-through and `bench`
+#     measures how many hashes per second each storage scheme computes. The network is internal:
+#     no container reaches the internet, and no port is published on the host. Both login APIs
+#     (vulnerable and fixed) run in memory inside the container, with fake data only.
+# PT: Laboratório de segurança, defensivo e educacional. Três serviços feitos da mesma imagem
+#     fixada: `ts-test` roda a checagem de tipos e os testes, `demo` imprime o passo a passo e
+#     `bench` mede quantos hashes por segundo cada esquema de armazenamento calcula. A rede é
+#     interna: nenhum contêiner alcança a internet, e nenhuma porta é publicada no host. As duas
+#     APIs de login (vulnerável e corrigida) rodam em memória dentro do contêiner, só com dados falsos.
+name: sec-passwords-sessions-lab
+
+x-app: &app
+  build: ./ts
+  image: sef-passwords-sessions-lab-ts:local
+  networks:
+    - lab
+
+services:
+  ts-test:
+    <<: *app
+
+  # EN: `docker compose run --rm demo` prints the storage comparison and then each login flaw on
+  #     the vulnerable API followed by the same attempt blocked on the fixed one.
+  # PT: `docker compose run --rm demo` imprime a comparação de armazenamento e depois cada falha
+  #     de login na API vulnerável seguida da mesma tentativa bloqueada na corrigida.
+  demo:
+    <<: *app
+    command: ["bun", "run", "demo"]
+
+  # EN: `docker compose run --rm bench` prints the table and writes results/results.md and
+  #     results/results.json. The folder is the only thing shared with the host. The benchmark
+  #     hashes one fake password over and over: it measures the functions, it guesses nothing.
+  # PT: `docker compose run --rm bench` imprime a tabela e grava results/results.md e
+  #     results/results.json. A pasta é a única coisa compartilhada com o host. O benchmark
+  #     calcula o hash de uma senha falsa repetidas vezes: ele mede as funções, não adivinha nada.
+  bench:
+    <<: *app
+    command: ["bun", "run", "bench"]
+    # EN: This container writes into a folder of the project, so it runs as the host user. On
+    #     Linux, start it with HOST_UID=$(id -u) HOST_GID=$(id -g), or the files end up owned
+    #     by another user. HOME points to /tmp because that user has no home in the image.
+    # PT: Este contêiner grava em uma pasta do projeto, então roda como o usuário do host. No
+    #     Linux, inicie-o com HOST_UID=$(id -u) HOST_GID=$(id -g), senão os arquivos ficam com
+    #     outro dono. HOME aponta para /tmp porque esse usuário não tem home na imagem.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      HOME: /tmp
+      BENCH_OUT_DIR: /results
+      BENCH_COMMAND: docker compose run --rm bench
+    volumes:
+      - ./results:/results
+
+networks:
+  lab:
+    internal: true

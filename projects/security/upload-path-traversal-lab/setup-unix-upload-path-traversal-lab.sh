@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+# EN: Builds and tests the upload-path-traversal-lab security lab. The only requirement is Docker.
+#     Containers, networks and volumes are removed at the end, even when a test fails.
+#     For the narrated walk-through, run: docker compose run --rm demo
+# PT: Constrói e testa o laboratório de segurança upload-path-traversal-lab. O único requisito é o Docker.
+#     Contêineres, redes e volumes são removidos no fim, mesmo quando um teste falha.
+#     Para o passo a passo narrado, rode: docker compose run --rm demo
+set -eu
+
+cd "$(dirname "$0")"
+
+if ! command -v docker >/dev/null 2>&1; then
+	echo "Docker is required: https://docs.docker.com/get-docker/" >&2
+	exit 1
+fi
+
+trap 'docker compose down -v --remove-orphans' EXIT
+
+docker compose build
+docker compose run --rm ts-test
+
+echo "upload-path-traversal-lab: all tests passed"
