@@ -619,10 +619,10 @@ Sources: USP Digital Logic lectures.
 | Registers and counters | 8 |
 | Analogue to digital conversion | 4 |
 
-- [ ] QC-DL.1 Coverage map committed
-- [ ] QC-DL.2 100 questions written (PT and EN)
-- [ ] QC-DL.3 Validation passing
-- [ ] QC-DL.4 Blind review resolved
+- [x] QC-DL.1 Coverage map committed
+- [x] QC-DL.2 100 questions written (PT and EN)
+- [x] QC-DL.3 Validation passing
+- [x] QC-DL.4 Blind review resolved
 
 #### QC-ELEC Electronics
 
@@ -1604,25 +1604,25 @@ Teaches: how redundancy detects and repairs flipped bits. Languages: C++.
 
 Teaches: how Boolean functions become circuits. Languages: TS, Python.
 
-- [ ] **MP-DL-1.1** Gate simulator and truth-table generator from an expression
+- [x] **MP-DL-1.1** Gate simulator and truth-table generator from an expression
 	- **Accept:** tables match hand-written ones for 20 expressions.
-- [ ] **MP-DL-1.2** Minimisation by Quine-McCluskey
+- [x] **MP-DL-1.2** Minimisation by Quine-McCluskey
 	- **Accept:** the minimised expression is equivalent to the original for every input.
-- [ ] **MP-DL-1.3** Half adder, full adder and ripple-carry adder built from gates
+- [x] **MP-DL-1.3** Half adder, full adder and ripple-carry adder built from gates
 	- **Accept:** the 8-bit adder agrees with native addition for all 65,536 input pairs.
-- [ ] **MP-DL-1.4** Definition of done for mini-projects met.
+- [x] **MP-DL-1.4** Definition of done for mini-projects met.
 
 #### MP-DL-2 NAND-only ALU and a 4-bit CPU
 
 Teaches: how a computer is built from one gate. Languages: Go, TS.
 
-- [ ] **MP-DL-2.1** Every gate derived from NAND
+- [x] **MP-DL-2.1** Every gate derived from NAND
 	- **Accept:** derived gates match their truth tables.
-- [ ] **MP-DL-2.2** ALU with add, subtract, and, or, and flags
+- [x] **MP-DL-2.2** ALU with add, subtract, and, or, and flags
 	- **Accept:** exhaustive test over all 4-bit inputs and operations.
-- [ ] **MP-DL-2.3** 4-bit CPU with registers, program counter and a tiny instruction set
+- [x] **MP-DL-2.3** 4-bit CPU with registers, program counter and a tiny instruction set
 	- **Accept:** a committed program multiplies two numbers and the trace is in the README.
-- [ ] **MP-DL-2.4** Definition of done for mini-projects met.
+- [x] **MP-DL-2.4** Definition of done for mini-projects met.
 
 #### MP-OOP-1 Same domain in OOP and functional style
 

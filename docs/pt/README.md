@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1300 de 3220 questões escritas, 44 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+1400 de 3220 questões escritas, 46 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -33,7 +33,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Compiladores | Teoria e prática | 100/100 | feita | [mini-language-parser](compilers/mini-language-parser.md), [tree-walking-interpreter](compilers/tree-walking-interpreter.md), [bytecode-vm](compilers/bytecode-vm.md), [regex-engine](compilers/regex-engine.md) |
 | Máquinas de estado | Teoria e prática | 100/100 | feita | [order-state-machine](state-machines/order-state-machine.md) |
 | Teoria da informação | Teoria e prática | 100/100 | feita | [huffman-lz77](information-theory/huffman-lz77.md), [error-detection-correction](information-theory/error-detection-correction.md) |
-| Lógica digital | Teoria e prática | 0/100 |  | gates-karnaugh-adders (planejado), nand-alu-cpu (planejado) |
+| Lógica digital | Teoria e prática | 100/100 | feita | [gates-karnaugh-adders](digital-logic/gates-karnaugh-adders.md), [nand-alu-cpu](digital-logic/nand-alu-cpu.md) |
 | Eletrônica | Teoria | 0/170 |  | nenhum |
 | Programação orientada a objetos | Teoria e prática | 0/100 |  | oop-vs-functional (planejado), code-smells (planejado) |
 | Programação funcional | Teoria e prática | 0/100 |  | pure-functions-properties (planejado) |

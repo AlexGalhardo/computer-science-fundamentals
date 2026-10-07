@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.68.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/digital-logic/nand-alu-cpu` (Go and TypeScript): every gate derived from NAND, a 4-bit ALU with flags tested exhaustively, and a 4-bit CPU whose committed program multiplies two numbers, with the trace in the README. The digital logic area is complete.
+
+## [0.67.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/digital-logic/gates-karnaugh-adders` (TypeScript and Python): a gate simulator and truth-table generator, Quine-McCluskey minimisation checked on every function of 3 and 4 variables, and an 8-bit ripple-carry adder verified on all 65,536 input pairs.
+
+## [0.66.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: digital logic, 100 questions in Portuguese and English, blind-reviewed in English and in Portuguese with 100 of 100 agreement (`quiz/content/digital-logic/review.md`).
+
 ## [0.65.0] - 2026-10-07
 
 ### Added
