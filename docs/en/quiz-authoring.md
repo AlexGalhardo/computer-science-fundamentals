@@ -52,6 +52,7 @@ The topics and the targets come from the table of the area in `PLAN.md`. The tar
 		"statement": "...",
 		"alternatives": ["...", "...", "...", "...", "..."],
 		"explanations": ["...", "...", "...", "...", "..."],
+		"snippet": { "kind": "code", "language": "ts", "content": "..." },
 		"concept": "...",
 		"example": { "kind": "code", "language": "ts", "content": "..." }
 	},
@@ -69,6 +70,7 @@ The topics and the targets come from the table of the area in `PLAN.md`. The tar
 | `alternatives` | exactly 5, all different, one correct |
 | `explanations` | exactly 5, in the same order: explanation `i` says why alternative `i` is right or wrong |
 | `concept` | the idea behind the question, in two to four sentences, readable without the alternatives |
+| `snippet` | optional code or text diagram that the student must read to answer. It is shown with the statement, before the answer, and it goes to the blind reviewer. Present in both languages or in neither |
 | `example` | optional code (`kind: "code"`, with `language`) or text diagram (`kind: "diagram"`). Present in both languages or in neither |
 
 ## Writing a good question
@@ -77,6 +79,7 @@ The topics and the targets come from the table of the area in `PLAN.md`. The tar
 - **The statement stands alone.** A reader who knows the subject should be able to answer before reading the alternatives.
 - **Wrong alternatives are real misconceptions.** Each distractor is the answer of someone who made a specific reasoning mistake: confusing the worst case with the average, a mutex with a semaphore, authentication with authorisation. Its explanation names that mistake. Fillers nobody would pick teach nothing.
 - **Exactly one alternative is defensible.** Avoid "all of the above", "none of the above", and pairs that are both right depending on the reading. Say which convention is used when the answer depends on one (base of a logarithm, zero-based index, a specific isolation level implementation).
+- **The statement never depends on `example`.** The example belongs to the explanation and appears only after the answer. Anything needed to answer (a code fragment, a table, a schedule, a graph) goes in `snippet`, or in the statement itself. A snippet must not give the answer away.
 - **Similar length and form.** The correct alternative must not be the longest or the only precise one.
 - **No trick wording.** Avoid double negatives, and write "NOT" or "EXCEPT" in capitals when a question asks for the wrong item.
 - **Levels.** Basic: recall and recognise a definition. Intermediate: apply the concept to a case, compute, compare two ideas. Advanced: combine concepts, find the flaw, reason about an edge case.

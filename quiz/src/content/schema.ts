@@ -55,6 +55,13 @@ const questionTextSchema = z.object(
 		/** One explanation per alternative, in the same order. */
 		explanations: fiveTexts,
 		concept: text,
+		// EN: `snippet` is part of the question: code or a diagram the student must read to
+		//     answer, shown with the statement. `example` is part of the explanation and is
+		//     shown only after the answer, so a statement must never depend on it.
+		// PT: `snippet` faz parte da questão: código ou diagrama que o estudante precisa ler
+		//     para responder, mostrado junto do enunciado. `example` faz parte da explicação e
+		//     só aparece depois da resposta, então um enunciado nunca pode depender dele.
+		snippet: exampleSchema.optional(),
 		example: exampleSchema.optional(),
 	},
 	{ error: "language block is missing" },
@@ -89,6 +96,10 @@ export const questionSchema = z
 	//     idioma tornaria as duas versões da questão diferentes.
 	.refine((question) => (question.pt.example === undefined) === (question.en.example === undefined), {
 		path: ["example"],
+		message: "must be present in both languages or in neither",
+	})
+	.refine((question) => (question.pt.snippet === undefined) === (question.en.snippet === undefined), {
+		path: ["snippet"],
 		message: "must be present in both languages or in neither",
 	});
 

@@ -52,6 +52,7 @@ Os tópicos e as metas vêm da tabela da área no `PLAN.md`. As metas somam a me
 		"statement": "...",
 		"alternatives": ["...", "...", "...", "...", "..."],
 		"explanations": ["...", "...", "...", "...", "..."],
+		"snippet": { "kind": "code", "language": "ts", "content": "..." },
 		"concept": "...",
 		"example": { "kind": "code", "language": "ts", "content": "..." }
 	},
@@ -69,6 +70,7 @@ Os tópicos e as metas vêm da tabela da área no `PLAN.md`. As metas somam a me
 | `alternatives` | exatamente 5, todas diferentes, uma correta |
 | `explanations` | exatamente 5, na mesma ordem: a explicação `i` diz por que a alternativa `i` está certa ou errada |
 | `concept` | a ideia por trás da questão, em duas a quatro frases, legível sem as alternativas |
+| `snippet` | opcional: código ou diagrama em texto que o estudante precisa ler para responder. Aparece junto do enunciado, antes da resposta, e vai para o revisor cego. Presente nos dois idiomas ou em nenhum |
 | `example` | opcional: código (`kind: "code"`, com `language`) ou diagrama em texto (`kind: "diagram"`). Presente nos dois idiomas ou em nenhum |
 
 ## Como escrever uma boa questão
@@ -77,6 +79,7 @@ Os tópicos e as metas vêm da tabela da área no `PLAN.md`. As metas somam a me
 - **O enunciado se sustenta sozinho.** Quem conhece o assunto deve conseguir responder antes de ler as alternativas.
 - **Alternativas erradas são equívocos reais.** Cada distrator é a resposta de quem cometeu um erro de raciocínio específico: confundir pior caso com caso médio, mutex com semáforo, autenticação com autorização. A explicação dele nomeia esse erro. Alternativas de enchimento, que ninguém marcaria, não ensinam nada.
 - **Exatamente uma alternativa é defensável.** Evite "todas as anteriores", "nenhuma das anteriores" e pares que estão ambos certos dependendo da leitura. Diga qual convenção vale quando a resposta depende de uma (base do logaritmo, índice começando em zero, a implementação de um nível de isolamento).
+- **O enunciado nunca depende do `example`.** O exemplo pertence à explicação e só aparece depois da resposta. Tudo que é necessário para responder (um trecho de código, uma tabela, um escalonamento, um grafo) vai em `snippet`, ou no próprio enunciado. Um snippet não pode entregar a resposta.
 - **Tamanho e forma parecidos.** A alternativa correta não pode ser a mais longa nem a única precisa.
 - **Sem pegadinha de redação.** Evite dupla negação, e escreva "NÃO" ou "EXCETO" em maiúsculas quando a questão pede o item errado.
 - **Níveis.** Básico: lembrar e reconhecer uma definição. Intermediário: aplicar o conceito a um caso, calcular, comparar duas ideias. Avançado: combinar conceitos, achar a falha, raciocinar sobre um caso de borda.

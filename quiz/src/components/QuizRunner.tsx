@@ -9,7 +9,7 @@ import type { ClientQuestion } from "@/lib/content";
 import { recordAnswer } from "@/lib/progress";
 import { answer, createRun, isLast, next, type Run } from "@/lib/run";
 import { loadRun, newSeed, saveRun } from "@/lib/run-storage";
-import { Explanation, LETTERS } from "./Explanation";
+import { ExampleBlock, Explanation, LETTERS } from "./Explanation";
 
 const DEFAULT_SIZE = 10;
 
@@ -166,6 +166,11 @@ export function QuizRunner({
 				<h1 id="statement" className="whitespace-pre-line text-lg font-semibold" data-testid="statement">
 					{question.text.statement}
 				</h1>
+				{/* EN: A snippet is part of the question, so it is shown before the answer.
+				    PT: Um snippet faz parte da questão, então aparece antes da resposta. */}
+				{question.text.snippet !== undefined && (
+					<ExampleBlock example={question.text.snippet} testId="snippet" />
+				)}
 				<ol className="flex flex-col gap-2" aria-label={dictionary.question.alternatives}>
 					{item.order.map((original, position) => {
 						const isAnswer = original === question.answer;

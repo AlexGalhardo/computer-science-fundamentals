@@ -78,6 +78,13 @@ describe("question schema", () => {
 		expect(errorsOf(question).join("\n")).toContain("example: must be present in both languages");
 	});
 
+	test("rejects a snippet in only one language", () => {
+		const question = clone();
+		(question.en as { snippet?: unknown }).snippet = { kind: "code", language: "ts", content: "x" };
+		expect(errorsOf(question).join("
+")).toContain("snippet: must be present in both languages");
+	});
+
 	test("rejects an answer out of range and an unknown difficulty", () => {
 		const question = clone();
 		question.answer = 5;
@@ -156,6 +163,14 @@ describe("blind review", () => {
 		expect(blind).not.toContain("answer");
 		expect(blind).not.toContain("explanations");
 		expect(blind).not.toContain("concept");
+		expect(blind).not.toContain("example");
+	});
+
+	test("the blind export carries the snippet, which is part of the question", () => {
+		const withSnippet = structuredClone(sample);
+		const snippet = { kind: "code" as const, language: "ts", content: "for (;;) {}" };
+		(withSnippet[0] as Question).en.snippet = snippet;
+		expect(toBlind(withSnippet, "en")[0]?.snippet).toBe("for (;;) {}");
 	});
 
 	test("lists exactly the question whose answer key is deliberately wrong", () => {

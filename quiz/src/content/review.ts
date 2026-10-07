@@ -11,6 +11,8 @@ export interface BlindQuestion {
 	id: string;
 	topic: string;
 	statement: string;
+	/** Code or diagram shown with the statement. It is part of the question, not of the answer. */
+	snippet?: string;
 	alternatives: string[];
 }
 
@@ -37,6 +39,7 @@ export function toBlind(questions: Question[], language: Language): BlindQuestio
 		id: question.id,
 		topic: question.topic,
 		statement: question[language].statement,
+		snippet: question[language].snippet?.content,
 		alternatives: [...question[language].alternatives],
 	}));
 }

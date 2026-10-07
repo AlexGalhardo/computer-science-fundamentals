@@ -1,0 +1,113 @@
+# EN: Continuous integration. Every push and pull request must pass the same checks that run
+#     locally: format and lint, type check, unit tests, quiz content validation, the quiz
+#     end-to-end tests, and the tests of every mini-project whose folder changed.
+# PT: Integração contínua. Todo push e pull request precisa passar nas mesmas verificações que
+#     rodam localmente: formatação e lint, checagem de tipos, testes unitários, validação do
+#     conteúdo do quiz, testes de ponta a ponta do quiz, e os testes de todo mini-projeto cuja
+#     pasta mudou.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: the workflow only reads the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # JS/TS: Biome (format and lint), TypeScript, unit tests and quiz content.
+  typescript:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Format and lint (Biome)
+        run: bunx biome ci .
+      - name: Type check
+        run: bun run typecheck
+      - name: Unit tests
+        run: bun test quiz/tests/unit tools
+      - name: Quiz content validation
+        run: bun run quiz:validate
+
+  # Formatters of the other ecosystems, each inside its pinned image from docker/.
+  formatters:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lang: python
+            check: ruff check . && ruff format --check .
+          - lang: go
+            check: test -z "$(gofmt -l projects benchmarks 2>/dev/null)"
+          - lang: rust
+            check: find projects benchmarks -name '*.rs' -not -path '*/target/*' 2>/dev/null | xargs -r rustfmt --check --edition 2024
+          - lang: cpp
+            check: find projects benchmarks \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) 2>/dev/null | xargs -r clang-format --dry-run --Werror
+          - lang: elixir
+            check: find projects benchmarks -name mix.exs -not -path '*/deps/*' 2>/dev/null | xargs -r -n1 dirname | xargs -r -I{} sh -c 'cd {} && mix format --check-formatted'
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build the pinned ${{ matrix.lang }} image
+        run: docker build -q -f docker/${{ matrix.lang }}.Dockerfile -t sef-${{ matrix.lang }}:local docker
+      - name: Format check
+        run: docker run --rm -v "$PWD:/app" -w /app sef-${{ matrix.lang }}:local sh -c '${{ matrix.check }}'
+
+  # The quiz: static build from the test fixture, unit tests and Playwright, all in Docker.
+  quiz:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Unit and end-to-end tests
+        run: ./quiz/setup-unix-quiz.sh test
+
+  # Which mini-projects changed? Each one is tested by its own setup script, only when its
+  # folder changed, so a pull request pays only for what it touches.
+  changed-projects:
+    runs-on: ubuntu-24.04
+    outputs:
+      projects: ${{ steps.list.outputs.projects }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: list
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
+            BASE=$(git rev-list --max-parents=0 HEAD | tail -n 1)
+          fi
+          projects=$(git diff --name-only "$BASE" HEAD -- projects \
+            | awk -F/ 'NF >= 4 { print $1 "/" $2 "/" $3 }' | sort -u \
+            | while read -r dir; do [ -d "$dir" ] && echo "$dir"; done \
+            | jq -R . | jq -sc .)
+          echo "projects=${projects:-[]}" >> "$GITHUB_OUTPUT"
+
+  mini-projects:
+    needs: changed-projects
+    if: needs.changed-projects.outputs.projects != '[]'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJson(needs.changed-projects.outputs.projects) }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run the setup script of ${{ matrix.project }}
+        env:
+          PROJECT: ${{ matrix.project }}
+        run: |
+          script="$PROJECT/setup-unix-$(basename "$PROJECT").sh"
+          chmod +x "$script"
+          "$script"

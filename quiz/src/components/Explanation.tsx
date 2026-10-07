@@ -17,12 +17,12 @@ const tokenClass: Record<TokenKind, string> = {
 //     would push the whole page sideways on a phone.
 // PT: Uma linha longa de código precisa rolar dentro da própria caixa (`overflow-x-auto`). Sem
 //     isso ela empurraria a página inteira para o lado no celular.
-function ExampleBlock({ example }: { example: Example }) {
+export function ExampleBlock({ example, testId = "example" }: { example: Example; testId?: string }) {
 	return (
 		<pre
 			// biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be reachable by keyboard
 			tabIndex={0}
-			data-testid="example"
+			data-testid={testId}
 			className="max-w-full overflow-x-auto rounded-md border border-border bg-code-bg p-3 text-sm leading-relaxed"
 		>
 			<code>
