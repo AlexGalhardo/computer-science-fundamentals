@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-07
+
+### Added
+
+- `PLAN.md`, stage 1: outline of the 31 areas, foundation, quiz app, the first wave of quiz content with coverage maps and the first wave of mini-projects, with acceptance criteria.
+
+### Removed
+
+- `PROMPT-CREATE-PLAN.md`, the bootstrap prompt file.
+
 ## [0.3.0] - 2026-10-07
 
 ### Added
@@ -37,7 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent onboarding: `CLAUDE.md`, `AGENTS.md`, `.claude/agents.md` and `.claude/rules/`.
 - `.gitattributes` enforcing LF line endings, CRLF only for Windows scripts.
 
-[Unreleased]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/releases/tag/v0.1.0

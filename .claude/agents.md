@@ -23,4 +23,4 @@ The previous repository (`AlexGalhardo/Software-Engineering`) contains files tha
 
 ## Phase log
 
-- Phase 0, Phase 1 and Phase 2 done on 2026-10-07. Decisions are in `docs/en/decisions.md` and `docs/pt/decisions.md`, the quiz design in `quiz.md`, the backlog in `mini-project-catalog.md` and the full question-by-question record in `brainstorming.md`. The quiz became the main product in the second brainstorming round. Next: Phase 3 (`PLAN.md`), after the owner's confirmation.
+- Phase 0, Phase 1 and Phase 2 done on 2026-10-07. Decisions are in `docs/en/decisions.md` and `docs/pt/decisions.md`, the quiz design in `quiz.md`, the backlog in `mini-project-catalog.md` and the full question-by-question record in `brainstorming.md`. The quiz became the main product in the second brainstorming round. Phase 3 stage 1 (`PLAN.md` outline, foundation, quiz app, first waves) written on 2026-10-07. Next: owner's review of the format, then stage 2 (the remaining 26 areas detailed).
