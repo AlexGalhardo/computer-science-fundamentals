@@ -1,0 +1,128 @@
+# EN: Everything in this file is local. The three servers, the protocol tests and k6 talk to
+#     each other on one docker network marked `internal`, which has no route to the outside
+#     world, and no port is published to the host. Unit tests run with no network at all.
+# PT: Tudo neste arquivo é local. Os três servidores, os testes de protocolo e o k6 conversam em
+#     uma rede docker marcada como `internal`, que não tem rota para o mundo externo, e nenhuma
+#     porta é publicada no host. Os testes unitários rodam sem rede nenhuma.
+name: ten-thousand-connections
+
+networks:
+  lab:
+    internal: true
+
+# EN: Every open connection is a file descriptor, and the usual limit of 1024 would stop the
+#     test long before ten thousand.
+# PT: Toda conexão aberta é um descritor de arquivo, e o limite usual de 1024 pararia o teste
+#     muito antes de dez mil.
+x-many-files: &many-files
+  ulimits:
+    nofile: { soft: 65536, hard: 65536 }
+
+x-ts: &ts
+  build: { context: ., dockerfile: ts/Dockerfile }
+  image: sef-ten-thousand-connections-ts:local
+x-go: &go
+  build: { context: ., dockerfile: go/Dockerfile }
+  image: sef-ten-thousand-connections-go:local
+x-elixir: &elixir
+  build: { context: ., dockerfile: elixir/Dockerfile }
+  image: sef-ten-thousand-connections-elixir:local
+
+# EN: One k6 run against one server. NAME is the file name of its summary.
+# PT: Uma execução do k6 contra um servidor. NAME é o nome do arquivo de resumo dela.
+x-k6: &k6
+  image: grafana/k6:2.3.0
+  profiles: ["load"]
+  networks: [lab]
+  # Root only so that the summary can be written to the mounted folder on any host.
+  user: "0:0"
+  volumes:
+    - ./load:/load:ro
+    - ./k6-results:/results
+  command: ["run", "--quiet", "/load/hold.js"]
+  <<: *many-files
+
+services:
+  ts-server:
+    <<: [*ts, *many-files]
+    networks: [lab]
+  go-server:
+    <<: [*go, *many-files]
+    networks: [lab]
+  elixir-server:
+    <<: [*elixir, *many-files]
+    networks: [lab]
+
+  ts-test:
+    <<: *ts
+    network_mode: "none"
+    command: ["bun", "test", "ts/tests"]
+  go-test:
+    <<: *go
+    network_mode: "none"
+    command: ["sh", "-c", "test -z \"$(gofmt -l .)\" && go vet ./... && go test -v -count=1 ./..."]
+  elixir-test:
+    <<: *elixir
+    network_mode: "none"
+    environment: { MIX_ENV: test }
+    command: ["sh", "-c", "mix format --check-formatted && mix test"]
+
+  # The same protocol suite against the three servers.
+  protocol-test:
+    <<: *ts
+    networks: [lab]
+    depends_on: [ts-server, go-server, elixir-server]
+    environment:
+      TARGETS: http://ts-server:8080,http://go-server:8080,http://elixir-server:8080
+    command: ["bun", "test", "protocol"]
+
+  # EN: Proves the safety rule: with a target that is not local, k6 must exit with an error.
+  #     The network is internal anyway, so even a broken rule could not reach the internet.
+  # PT: Prova a regra de segurança: com um alvo que não é local, o k6 precisa terminar com erro.
+  #     A rede é interna de qualquer forma, então nem uma regra quebrada alcançaria a internet.
+  k6-refusal-test:
+    image: grafana/k6:2.3.0
+    networks: [lab]
+    volumes:
+      - ./load:/load:ro
+    environment: { TARGET: "https://example.com" }
+    entrypoint: ["sh", "/load/refusal-test.sh"]
+
+  k6-ts:
+    <<: *k6
+    depends_on: [ts-server, go-server, elixir-server]
+    environment:
+      TARGET: http://ts-server:8080
+      NAME: ts
+      CONNECTIONS: ${CONNECTIONS:-10000}
+  # EN: The runs form a chain, so the servers are loaded one at a time and never compete.
+  # PT: As execuções formam uma corrente, então os servidores recebem carga um de cada vez e
+  #     nunca competem entre si.
+  k6-go:
+    <<: *k6
+    depends_on:
+      k6-ts: { condition: service_completed_successfully }
+    environment:
+      TARGET: http://go-server:8080
+      NAME: go
+      CONNECTIONS: ${CONNECTIONS:-10000}
+  k6-elixir:
+    <<: *k6
+    depends_on:
+      k6-go: { condition: service_completed_successfully }
+    environment:
+      TARGET: http://elixir-server:8080
+      NAME: elixir
+      CONNECTIONS: ${CONNECTIONS:-10000}
+
+  # Reads the three summaries and writes results/results.md.
+  report:
+    <<: *ts
+    profiles: ["load"]
+    network_mode: "none"
+    depends_on:
+      k6-elixir: { condition: service_completed_successfully }
+    volumes:
+      - ./k6-results:/results:ro
+      - ./results:/out
+    command: ["bun", "run", "load/report.ts"]
