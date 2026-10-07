@@ -2,7 +2,11 @@
 
 > Versão em português: [docs/pt/decisions.md](../pt/decisions.md)
 
-Decisions taken in the Phase 2 brainstorming on 2026-10-07. They are the input for `PLAN.md`. The list of mini-projects per area is in the [mini-project catalog](mini-project-catalog.md).
+Decisions taken in the Phase 2 brainstorming on 2026-10-07. They are the input for `PLAN.md`. The list of mini-projects per area is in the [mini-project catalog](mini-project-catalog.md), the quiz design in [quiz.md](quiz.md), and the questions asked with the discarded options in the [brainstorming record](brainstorming.md).
+
+## Quiz
+
+The main product of the repository is a **quiz**: one app covering every area, with 5 alternatives per question and the explanation of the concept shown next to the question after the answer. The mini-projects stay in the plan and each explanation links to the mini-project that demonstrates the concept. At least 100 questions per area, in Portuguese and English. Full design in [quiz.md](quiz.md).
 
 ## Structure
 
@@ -39,11 +43,14 @@ Decisions taken in the Phase 2 brainstorming on 2026-10-07. They are the input f
 
 Eight areas suggested by the imported material were added to the plan: cache, rate limiter, file systems, digital logic, networks, operating systems, a didactic blockchain, and CI for this repository with GitHub Actions.
 
+Four more came from the books: electronics, software architecture, database theory and software engineering. The plan has 31 areas.
+
 ## Images
 
 The 120 images in `references/images/` are not tracked by git. Several are third-party infographics that cannot be redistributed under MIT. The folder is git-ignored and stays only on the owner's machine.
 
 ## Order of work
 
-- **First wave** (5 mini-projects, one worktree each): sorting race, race-condition lab, SQL injection lab, lexer and parser of the mini language, queue comparison.
+- **Quiz first**: the quiz app and 5 complete areas (100 questions each), then the remaining areas in waves of 5.
+- **First wave of mini-projects** (5 mini-projects, one worktree each): sorting race, race-condition lab, SQL injection lab, lexer and parser of the mini language, queue comparison.
 - **After that, breadth first**: one mini-project per area until every area has at least one, then go deeper.

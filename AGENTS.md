@@ -4,7 +4,7 @@ Onboarding for AI coding agents working in this repository. `CLAUDE.md` imports 
 
 ## What this repository is
 
-An educational, open source (MIT) long-term reference for studying computer science fundamentals through small runnable mini-projects, with demos, benchmarks and bilingual documentation (PT/EN).
+An educational, open source (MIT) long-term reference for studying computer science fundamentals through a quiz covering every area and small runnable mini-projects, with demos, benchmarks and bilingual documentation (PT/EN).
 
 Languages: C++, Python, Java, Elixir, Rust, Go, TypeScript.
 
@@ -24,6 +24,8 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | --- | --- |
 | `docs/en/`, `docs/pt/` | Documentation per area and sub-area. Both languages are mandatory and must stay equivalent |
 | `references/` | Study material and legacy projects imported from the owner's previous repositories, plus Markdown summaries of the books and lecture PDFs. Read-only source of ideas, not a mini-project |
+| `quiz/` | The quiz app and its questions (planned, see `docs/en/quiz.md`) |
+| `projects/` | Mini-projects, by area (planned) |
 | `PLAN.md` | Main roadmap with checklists and verifiable acceptance criteria |
 | `CHANGELOG.md` | Keep a Changelog + SemVer |
 | `.claude/rules/` | Recurring rules, one topic per file |
@@ -39,6 +41,7 @@ The detailed rules live in `.claude/rules/`. Read the ones that match the task b
 - `mini-project.md`: what every mini-project must contain.
 - `code-style.md`: indentation, bilingual didactic comments, linters and formatters.
 - `git-workflow.md`: Conventional Commits, SemVer, changelog and releases.
+- `quiz.md`: format, content rules and quality checks of the quiz, the main product of the repository.
 - `external-skills.md`: how the third-party skills in `.claude/skills/` may be used.
 
 ## Hard constraints

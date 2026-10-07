@@ -37,11 +37,17 @@ As áreas abaixo estão planejadas. Cada uma ganha sua própria pasta quando o p
 - Sistemas Operacionais
 - Blockchain
 - Integração Contínua
+- Eletrônica
+- Arquitetura de Software
+- Bancos de Dados (teoria)
+- Engenharia de Software
 
 ## Comece por aqui
 
 - [Decisões do projeto](decisions.md)
+- [Desenho do quiz](quiz.md)
 - [Catálogo de miniprojetos](mini-project-catalog.md)
+- [Registro do brainstorming](brainstorming.md)
 
 ## Relacionados
 

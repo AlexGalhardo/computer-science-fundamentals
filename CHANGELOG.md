@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-07
+
+### Added
+
+- Quiz design in `docs/en/quiz.md` and `docs/pt/quiz.md`: the quiz becomes the main product of the repository.
+- Brainstorming record in `docs/en/brainstorming.md` and `docs/pt/brainstorming.md`, with the chosen and the discarded options.
+- Four new areas (electronics, software architecture, database theory, software engineering) and the ideas taken from the book summaries, in the mini-project catalog.
+- Summaries of two more books in `references/summaries/books/`.
+- `.claude/rules/quiz.md`.
+
 ## [0.2.0] - 2026-10-07
 
 ### Added
@@ -27,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent onboarding: `CLAUDE.md`, `AGENTS.md`, `.claude/agents.md` and `.claude/rules/`.
 - `.gitattributes` enforcing LF line endings, CRLF only for Windows scripts.
 
-[Unreleased]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/releases/tag/v0.1.0

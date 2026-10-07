@@ -37,11 +37,17 @@ The areas below are planned. Each one gets its own folder when its first mini-pr
 - Operating Systems
 - Blockchain
 - Continuous Integration
+- Electronics
+- Software Architecture
+- Databases (theory)
+- Software Engineering
 
 ## Start here
 
 - [Project decisions](decisions.md)
+- [Quiz design](quiz.md)
 - [Mini-project catalog](mini-project-catalog.md)
+- [Brainstorming record](brainstorming.md)
 
 ## Related
 

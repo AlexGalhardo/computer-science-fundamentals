@@ -131,3 +131,34 @@ Stack: OpenTelemetry, Prometheus, Grafana, Loki and Tempo, all local.
 | Operating systems | process scheduler, virtual memory and paging, semaphores, simulated and visualised |
 | Blockchain | chain of blocks with hashing, proof of work and validation |
 | CI | GitHub Actions running lint, tests and benchmarks of each mini-project |
+
+## New areas from the books
+
+| Area | Mini-project idea |
+| --- | --- |
+| Electronics | Ohm's law, voltage and current divider and Thévenin calculators, RC filter and 555 timer simulators, as the physical base for digital logic |
+| Software architecture | the same small application in clean architecture layers, showing the dependency rule with entities, use cases and adapters |
+| Databases (theory) | mini relational DBMS with nested-loop, hash and merge joins, and a normalisation tool (closure, candidate keys, 3NF and BCNF) |
+| Software engineering | mostly quiz. Small tools: schedule simulator with communication cost (Brooks), estimate against actual time of the mini-projects |
+
+## Ideas from the books and lectures
+
+Added after reading the summaries in `references/summaries/`.
+
+| Area | Mini-project idea | Source |
+| --- | --- | --- |
+| Operating systems | CPU scheduling simulator with Gantt chart (FCFS, SJF, round-robin, priority) | Tanenbaum |
+| Operating systems | paging and TLB simulator with page replacement and Belady's anomaly | Tanenbaum |
+| Operating systems | memory allocator (first, best and worst fit, buddy) with fragmentation benchmark | Tanenbaum |
+| Operating systems | deadlock detector and banker's algorithm, mini shell with pipes and signals | Tanenbaum |
+| Networks | sliding-window protocols over a lossy channel, mini TCP over UDP | Tanenbaum |
+| Networks | ALOHA and CSMA/CD simulator, iterative DNS resolver, subnet calculator | Tanenbaum |
+| File systems | external sorting with multiway merge, on-disk indexes with inverted lists | USP Data Structures II |
+| Compilers | mark-and-sweep garbage collector, simple optimisations over three-address code | Dragon Book |
+| Performance | naive against blocked matrix multiplication, measuring cache misses | Dragon Book |
+| Big O | interactive master theorem, the Ω(n lg n) bound shown with a decision tree | USP Algorithm Analysis |
+| Algorithms | hybrid quicksort, varying the insertion-sort threshold and the pivot strategy | USP Algorithm Analysis |
+| Data structures | unbalanced BST against AVL and red-black trees, with rotation visualiser | USP Data Structures I |
+| Digital logic | Karnaugh and Quine-McCluskey minimisation, NAND-only ALU, 4-bit mini CPU | USP Digital Logic |
+| Testing | multi-currency money kata, mini xUnit from scratch | Kent Beck |
+| OOP and SOLID | executable code smell catalogue with before and after | Clean Code, OO and SOLID |

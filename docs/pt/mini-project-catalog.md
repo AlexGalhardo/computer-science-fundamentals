@@ -131,3 +131,34 @@ Stack: OpenTelemetry, Prometheus, Grafana, Loki e Tempo, tudo local.
 | Sistemas operacionais | escalonador de processos, memória virtual e paginação, semáforos, simulados e visualizados |
 | Blockchain | cadeia de blocos com hash, prova de trabalho e validação |
 | CI | GitHub Actions rodando lint, testes e benchmarks de cada miniprojeto |
+
+## Áreas novas vindas dos livros
+
+| Área | Ideia de miniprojeto |
+| --- | --- |
+| Eletrônica | calculadoras de lei de Ohm, divisor de tensão e de corrente e Thévenin, simuladores de filtro RC e do temporizador 555, como base física para a lógica digital |
+| Arquitetura de software | a mesma aplicação pequena em camadas de arquitetura limpa, mostrando a regra de dependência com entidades, casos de uso e adaptadores |
+| Bancos de dados (teoria) | mini SGBD relacional com junções nested-loop, hash e merge, e uma ferramenta de normalização (fechamento, chaves candidatas, 3FN e BCNF) |
+| Engenharia de software | principalmente quiz. Ferramentas pequenas: simulador de cronograma com custo de comunicação (Brooks), estimativa contra tempo real dos miniprojetos |
+
+## Ideias vindas dos livros e das aulas
+
+Acrescentadas depois da leitura dos resumos em `references/summaries/`.
+
+| Área | Ideia de miniprojeto | Fonte |
+| --- | --- | --- |
+| Sistemas operacionais | simulador de escalonamento de CPU com gráfico de Gantt (FCFS, SJF, round-robin, prioridade) | Tanenbaum |
+| Sistemas operacionais | simulador de paginação e TLB com substituição de páginas e anomalia de Belady | Tanenbaum |
+| Sistemas operacionais | alocador de memória (first, best e worst fit, buddy) com benchmark de fragmentação | Tanenbaum |
+| Sistemas operacionais | detector de deadlock e algoritmo do banqueiro, mini shell com pipes e sinais | Tanenbaum |
+| Redes | protocolos de janela deslizante sobre canal com perda, mini TCP sobre UDP | Tanenbaum |
+| Redes | simulador de ALOHA e CSMA/CD, resolvedor DNS iterativo, calculadora de sub-redes | Tanenbaum |
+| Sistemas de arquivos | ordenação externa com multiway merge, índices em disco com listas invertidas | USP Estruturas de Dados II |
+| Compiladores | coletor de lixo mark-and-sweep, otimizações simples sobre código de três endereços | Dragon Book |
+| Performance | multiplicação de matrizes ingênua contra em blocos, medindo cache misses | Dragon Book |
+| Big O | teorema mestre interativo, cota Ω(n lg n) mostrada com árvore de decisão | USP Análise de Algoritmos |
+| Algoritmos | quicksort híbrido, variando o limiar do insertion sort e a estratégia de pivô | USP Análise de Algoritmos |
+| Estruturas de dados | ABB não balanceada contra AVL e rubro-negra, com visualizador de rotações | USP Estruturas de Dados I |
+| Lógica digital | minimização por Karnaugh e Quine-McCluskey, ALU só com NAND, mini CPU de 4 bits | USP Lógica Digital |
+| Testes | kata do dinheiro multi-moeda, mini xUnit do zero | Kent Beck |
+| POO e SOLID | catálogo executável de code smells com antes e depois | Clean Code, OO e SOLID |

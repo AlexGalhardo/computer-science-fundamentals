@@ -2,7 +2,11 @@
 
 > English version: [docs/en/decisions.md](../en/decisions.md)
 
-Decisões tomadas no brainstorming da Fase 2, em 2026-10-07. Elas são a entrada para o `PLAN.md`. A lista de miniprojetos por área está no [catálogo de miniprojetos](mini-project-catalog.md).
+Decisões tomadas no brainstorming da Fase 2, em 2026-10-07. Elas são a entrada para o `PLAN.md`. A lista de miniprojetos por área está no [catálogo de miniprojetos](mini-project-catalog.md), o desenho do quiz em [quiz.md](quiz.md), e as perguntas feitas com as opções descartadas no [registro do brainstorming](brainstorming.md).
+
+## Quiz
+
+O produto principal do repositório é um **quiz**: um app único que cobre todas as áreas, com 5 alternativas por pergunta e a explicação do conceito exibida ao lado da pergunta depois da resposta. Os miniprojetos continuam no plano, e cada explicação aponta para o miniprojeto que demonstra o conceito. Pelo menos 100 perguntas por área, em português e inglês. Desenho completo em [quiz.md](quiz.md).
 
 ## Estrutura
 
@@ -39,11 +43,14 @@ Decisões tomadas no brainstorming da Fase 2, em 2026-10-07. Elas são a entrada
 
 Oito áreas sugeridas pelo material importado entraram no plano: cache, rate limiter, sistemas de arquivos, lógica digital, redes, sistemas operacionais, um blockchain didático e CI deste repositório com GitHub Actions.
 
+Outras quatro vieram dos livros: eletrônica, arquitetura de software, teoria de bancos de dados e engenharia de software. O plano tem 31 áreas.
+
 ## Imagens
 
 As 120 imagens de `references/images/` não são rastreadas pelo git. Várias são infográficos de terceiros, que não podem ser redistribuídos sob MIT. A pasta está no `.gitignore` e fica só na máquina do autor.
 
 ## Ordem de trabalho
 
-- **Primeira leva** (5 miniprojetos, uma worktree cada): corrida de ordenação, lab de race condition, lab de SQL injection, lexer e parser da mini linguagem, comparação de filas.
+- **Quiz primeiro**: o app do quiz e 5 áreas completas (100 perguntas cada), depois as demais áreas em levas de 5.
+- **Primeira leva de miniprojetos** (5 miniprojetos, uma worktree cada): corrida de ordenação, lab de race condition, lab de SQL injection, lexer e parser da mini linguagem, comparação de filas.
 - **Depois, largura primeiro**: um miniprojeto por área até todas terem pelo menos um, e só então aprofundar.

@@ -12,6 +12,8 @@
 
 ## Planned areas
 
-Security, Algorithms, Data Structures, Big O, Compilers, State Machines, Information Theory, Concurrency, Parallelism, Transactions, Load Balancing, Performance (k6), OOP, Functional Programming, Design Patterns and SOLID, Testing, Observability, Messaging, Protocols, Cache, Rate Limiting, File Systems, Digital Logic, Networks, Operating Systems, Blockchain, Continuous Integration.
+Security, Algorithms, Data Structures, Big O, Compilers, State Machines, Information Theory, Concurrency, Parallelism, Transactions, Load Balancing, Performance (k6), OOP, Functional Programming, Design Patterns and SOLID, Testing, Observability, Messaging, Protocols, Cache, Rate Limiting, File Systems, Digital Logic, Networks, Operating Systems, Blockchain, Continuous Integration, Electronics, Software Architecture, Databases (theory), Software Engineering.
 
-The decisions behind this plan are in `docs/en/decisions.md` and the backlog in `docs/en/mini-project-catalog.md`.
+The quiz (`docs/en/quiz.md`) is the main product: at least 100 questions per area.
+
+The decisions behind this plan are in `docs/en/decisions.md`, the brainstorming record in `docs/en/brainstorming.md` and the backlog in `docs/en/mini-project-catalog.md`.
