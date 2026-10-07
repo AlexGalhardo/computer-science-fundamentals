@@ -14,3 +14,12 @@ The quiz is the main product of the repository. Full design: `docs/en/quiz.md`.
 - Questions are written from the chapter map and subject knowledge. Never copy text from the books.
 - No question is accepted before both checks pass: the format validation script, and an independent reviewer agent that answers the batch without seeing the answer key. Disagreements are reviewed, not overruled.
 - Production order: the app and 5 complete areas first, then waves of 5 areas.
+
+## Lessons from the first waves (2026-10-07)
+
+- **A statement never depends on `example`.** The example belongs to the explanation and is shown only after the answer. Code, tables, graphs or schedules needed to answer go in `snippet` (shown with the statement and exported to the blind reviewer) or in the statement itself. The first blind review caught 23 questions that broke this.
+- **Correct index**: spread it evenly and pseudo-randomly over 0 to 4. A fixed rotation (+1 per question) is a pattern a student can learn. Do not put numeric answers always in the middle.
+- **Length**: the correct alternative must not be the longest more often than chance (about 20%).
+- **State the convention** whenever the answer depends on one: who counts the first round-trip, whether the root is black, SQL standard against a product.
+- **Blind review**: `bun run quiz:blind <area>`, a reviewer that reads only `quiz/.review/<area>.blind.json`, `bun run quiz:compare <area> <answers>`, and every disagreement and reviewer note resolved in `review.md`. A reviewer note with no disagreement still gets a resolution.
+- After content changes run `bun run docs:index`, which CI checks.

@@ -30,7 +30,7 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | `tools/scaffold/` | Mini-project generator: `bun run new:project <area> <name> --langs ts,go` |
 | `docker/` | Pinned base image per language (see `docs/en/environment.md`) |
 | `questions-to-dev.md` | Open questions for the owner, each with the provisional decision taken |
-| `projects/` | Mini-projects, by area (planned) |
+| `projects/` | Mini-projects, by area. Live status in `docs/en/README.md` |
 | `PLAN.md` | Main roadmap with checklists and verifiable acceptance criteria |
 | `CHANGELOG.md` | Keep a Changelog + SemVer |
 | `.claude/rules/` | Recurring rules, one topic per file |
@@ -50,6 +50,9 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | `./quiz/setup-unix-quiz.sh [test]` | serve the quiz on localhost, or run its unit and end-to-end tests in Docker |
 | `bun run bench -- --project <name>` | run the benchmark of a mini-project in Docker |
 | `bun run new:project <area> <name> --langs ts,go` | create a mini-project from the template |
+| `bun run dashboard:css <dashboard folder>` | rebuild the committed `tailwind.css` of a static dashboard |
+| `bun run docs:index [--check]` | regenerate the status pages `docs/en/README.md` and `docs/pt/README.md` |
+| `gh workflow run CI` | run CI by hand, testing every mini-project |
 
 ## Rules
 
