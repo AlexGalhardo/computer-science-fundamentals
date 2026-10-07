@@ -14,7 +14,7 @@ import { buildReport, compareText, ganttText, markdown } from "./report";
 const args = process.argv.slice(2);
 const outIndex = args.indexOf("--out");
 const outDir = outIndex >= 0 ? args[outIndex + 1] : undefined;
-const mode = args.find((arg, index) => !arg.startsWith("--") && index !== outIndex + 1) ?? "all";
+const mode = args.find((arg, index) => !arg.startsWith("--") && (outIndex < 0 || index !== outIndex + 1)) ?? "all";
 
 if (!["gantt", "compare", "all"].includes(mode) || (outIndex >= 0 && outDir === undefined)) {
 	console.error("usage: bun run src/cli.ts [gantt|compare|all] [--out <dir>]");
