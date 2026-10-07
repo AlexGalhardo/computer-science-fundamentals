@@ -1,0 +1,106 @@
+# EN: CSRF lab. The same fake "profile" app runs as four containers (vulnerable, fixed, and the
+#     fixed one with a single defence each), next to `other-origin`, the lab's forging page. For
+#     a browser each container name is a different host, so a different SITE: that is what
+#     makes the requests cross-site. The network is internal (no container reaches the
+#     internet) and no port is published on the host. All data and credentials are fake.
+# PT: Laboratório de CSRF. O mesmo app falso de "perfil" roda como quatro contêineres
+#     (vulnerável, corrigido, e o corrigido com uma única defesa cada), ao lado de
+#     `other-origin`, a página forjadora do laboratório. Para o navegador cada nome de contêiner
+#     é um host diferente, logo um SITE diferente: é isso que torna as requisições cross-site. A
+#     rede é interna (nenhum contêiner alcança a internet) e nenhuma porta é publicada no host.
+#     Todos os dados e credenciais são falsos.
+name: sec-csrf-lab
+
+x-ts: &ts
+  build: ./ts
+  image: sef-csrf-lab-ts:local
+  networks:
+    - lab
+
+x-server: &server
+  <<: *ts
+  command: ["bun", "run", "start"]
+  healthcheck:
+    test: ["CMD", "bun", "-e", "const r = await fetch('http://localhost:3000/health'); process.exit(r.ok ? 0 : 1)"]
+    interval: 1s
+    timeout: 3s
+    retries: 30
+
+x-servers-ready: &servers-ready
+  app-vulnerable:
+    condition: service_healthy
+  app-fixed:
+    condition: service_healthy
+  app-token-only:
+    condition: service_healthy
+  app-samesite-only:
+    condition: service_healthy
+  other-origin:
+    condition: service_healthy
+
+services:
+  # EN: VULNERABLE ON PURPOSE: cookie with no SameSite, no token, state change by GET.
+  # PT: VULNERÁVEL DE PROPÓSITO: cookie sem SameSite, sem token, alteração de estado por GET.
+  app-vulnerable:
+    <<: *server
+    environment:
+      ROLE: vulnerable
+
+  # EN: The fix: anti-CSRF token + SameSite=Strict + POST only.
+  # PT: A correção: token anti-CSRF + SameSite=Strict + apenas POST.
+  app-fixed:
+    <<: *server
+    environment:
+      ROLE: fixed
+
+  # EN: The fixed code with one defence switched off, to show what each one does by itself.
+  # PT: O código corrigido com uma defesa desligada, para mostrar o que cada uma faz sozinha.
+  app-token-only:
+    <<: *server
+    environment:
+      ROLE: fixed
+      LAB_DEFENCES: token
+
+  app-samesite-only:
+    <<: *server
+    environment:
+      ROLE: fixed
+      LAB_DEFENCES: samesite
+
+  # EN: The lab's forging page: a second origin that can only target the four apps above.
+  # PT: A página forjadora do laboratório: uma segunda origem que só consegue atingir os quatro apps acima.
+  other-origin:
+    <<: *server
+    environment:
+      ROLE: other-origin
+
+  # EN: Type check and unit tests, including the proof that the network has no way out.
+  # PT: Checagem de tipos e testes unitários, incluindo a prova de que a rede não tem saída.
+  ts-test:
+    <<: *ts
+    environment:
+      LAB_NETWORK: internal
+
+  # EN: Real browsers (Chromium, Firefox, WebKit) from the pinned Playwright image.
+  # PT: Navegadores de verdade (Chromium, Firefox, WebKit) da imagem fixada do Playwright.
+  e2e:
+    build:
+      context: ./ts
+      dockerfile: e2e.Dockerfile
+    image: sef-csrf-lab-e2e:local
+    depends_on: *servers-ready
+    # Chromium needs more shared memory than the 64 MB Docker gives by default.
+    shm_size: 1gb
+    networks:
+      - lab
+
+  # EN: `docker compose run --rm demo` prints the narrated walk-through.
+  # PT: `docker compose run --rm demo` imprime o passo a passo narrado.
+  demo:
+    <<: *ts
+    command: ["bun", "run", "demo"]
+    depends_on: *servers-ready
+
+networks:
+  lab:
+    internal: true
