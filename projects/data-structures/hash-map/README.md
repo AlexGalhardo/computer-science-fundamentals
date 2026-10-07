@@ -20,7 +20,7 @@ The only requirement is Docker.
 ./setup-windows-hash-map.ps1    # Windows
 ```
 
-The script builds one pinned image per language and runs format check, linter and tests in each.
+The script builds one pinned image per language and runs the tests in each. The C++ and Rust images also run the format check and the linter (clang-format, rustfmt, clippy). TypeScript is formatted and linted with Biome and type-checked from the repository root: `bunx biome check projects/data-structures/hash-map` and `bunx tsc --noEmit -p projects/data-structures/hash-map/ts`.
 
 ## Structure
 

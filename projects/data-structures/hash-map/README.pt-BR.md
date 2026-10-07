@@ -20,7 +20,7 @@ O único requisito é o Docker.
 ./setup-windows-hash-map.ps1    # Windows
 ```
 
-O script constrói uma imagem fixada por linguagem e roda checagem de formato, linter e testes em cada uma.
+O script constrói uma imagem fixada por linguagem e roda os testes em cada uma. As imagens de C++ e de Rust também rodam a checagem de formato e o linter (clang-format, rustfmt, clippy). O TypeScript é formatado e analisado com o Biome e tem os tipos conferidos a partir da raiz do repositório: `bunx biome check projects/data-structures/hash-map` e `bunx tsc --noEmit -p projects/data-structures/hash-map/ts`.
 
 ## Estrutura
 
