@@ -10,7 +10,7 @@ The decisions behind this plan are in [docs/en/decisions.md](docs/en/decisions.m
 - [x] Phase 1: import content from the previous repositories and external skills
 - [x] Phase 2: brainstorming and documented decisions
 - [x] Phase 3: full PLAN.md
-- [ ] Phase 4: parallel development (main session plus up to 5 git worktrees, one complete area each)
+- [ ] Phase 4: parallel development (main session plus up to 10 git worktrees, one complete area each)
 
 ## Theory and practice
 
@@ -21,7 +21,7 @@ Every area gets a quiz. What else it gets depends on the kind of content:
 
 ## How to read this plan
 
-- Every item has an ID. `F` is foundation, `QZ` the quiz app, `QC-<AREA>` the quiz content of an area, `MP-<AREA>-<n>` a mini-project.
+- Every item has an ID. `F` is foundation, `QZ` the quiz app, `BD` the language benchmark dashboard, `QC-<AREA>` the quiz content of an area, `MP-<AREA>-<n>` a mini-project.
 - Levels: **task** (`F-1`), **sub-task** (`F-1.1`), **micro-task** (`F-1.1.a`).
 - **Accept:** is the acceptance criterion. It is a command or an observable fact, never an opinion. A box is ticked only after the criterion was actually checked.
 - Work items of the same wave are independent, so each can run in its own worktree.
@@ -103,35 +103,35 @@ Shared tooling that every other part depends on. Done before any wave starts.
 
 ### F-1 Repository tooling
 
-- [ ] **F-1.1** Root JS/TS workspace
-	- [ ] F-1.1.a Root `package.json` with Bun workspaces for `quiz` and `tools/*`.
-	- [ ] F-1.1.b Biome v2 config at the root (tabs, width 4), pinned exactly.
+- [x] **F-1.1** Root JS/TS workspace
+	- [x] F-1.1.a Root `package.json` with Bun workspaces for `quiz` and `tools/*`.
+	- [x] F-1.1.b Biome v2 config at the root (tabs, width 4), pinned exactly.
 	- **Accept:** `bun install` and `bunx biome check .` exit 0 on a fresh clone.
 - [ ] **F-1.2** Formatter configuration for the other ecosystems
 	- [ ] F-1.2.a `ruff.toml`, `rustfmt.toml`, `.clang-format`, `.golangci.yml`, `.formatter.exs`, spotless config.
 	- **Accept:** each file exists and its tool runs against an empty sample project without error.
-- [ ] **F-1.3** Pinned Docker base images
-	- [ ] F-1.3.a `docker/` with one Dockerfile per language, each on a fixed version tag.
-	- [ ] F-1.3.b `docs/en/environment.md` and `docs/pt/environment.md` listing image and version per language.
+- [x] **F-1.3** Pinned Docker base images
+	- [x] F-1.3.a `docker/` with one Dockerfile per language, each on a fixed version tag.
+	- [x] F-1.3.b `docs/en/environment.md` and `docs/pt/environment.md` listing image and version per language.
 	- **Accept:** `docker build` succeeds for the 7 images and none uses `latest`.
 
 ### F-2 Benchmark harness
 
-- [ ] **F-2.1** Benchmark contract
-	- [ ] F-2.1.a JSON schema in `tools/bench/schema.json`: `n`, `elapsedMs`, `memoryKb`, `language`, `implementation`.
-	- [ ] F-2.1.b Documented in `docs/en/benchmarks.md` and `docs/pt/benchmarks.md`.
+- [x] **F-2.1** Benchmark contract
+	- [x] F-2.1.a JSON schema in `tools/bench/schema.json`: `n`, `elapsedMs`, `memoryKb`, `language`, `implementation`.
+	- [x] F-2.1.b Documented in `docs/en/benchmarks.md` and `docs/pt/benchmarks.md`.
 	- **Accept:** a valid and an invalid sample file are accepted and rejected by the validator test.
-- [ ] **F-2.2** Runner
-	- [ ] F-2.2.a `tools/bench` (TypeScript) runs hyperfine inside Docker for each implementation and collects the JSON files.
-	- [ ] F-2.2.b Writes a Markdown table and a `results.json` for the static dashboard.
-	- [ ] F-2.2.c Records machine, runtime versions and the exact command.
+- [x] **F-2.2** Runner
+	- [x] F-2.2.a `tools/bench` (TypeScript) runs hyperfine inside Docker for each implementation and collects the JSON files.
+	- [x] F-2.2.b Writes a Markdown table and a `results.json` for the static dashboard.
+	- [x] F-2.2.c Records machine, runtime versions and the exact command.
 	- **Accept:** `bun run bench -- --project <sample>` produces both files, and running it twice gives the same row set.
 
 ### F-3 Mini-project template
 
-- [ ] **F-3.1** Scaffold command
-	- [ ] F-3.1.a `bun run new:project <area> <name> --langs ts,go` creates the folder, both READMEs, both setup scripts and a docker-compose file.
-	- [ ] F-3.1.b Static dashboard template (HTML + Tailwind CSS v4) reading `results.json`.
+- [x] **F-3.1** Scaffold command
+	- [x] F-3.1.a `bun run new:project <area> <name> --langs ts,go` creates the folder, both READMEs, both setup scripts and a docker-compose file.
+	- [x] F-3.1.b Static dashboard template (HTML + Tailwind CSS v4) reading `results.json`.
 	- **Accept:** a generated sample project passes its own setup script and its placeholder test on a machine with only Docker.
 
 ### F-4 Continuous integration
@@ -159,15 +159,15 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 
 ### QZ-2 Content model
 
-- [ ] **QZ-2.1** Question schema
-	- [ ] QZ-2.1.a Typed schema: `id`, `area`, `topic`, `difficulty`, `answer`, `source`, `miniProject`, `pt`, `en`.
-	- [ ] QZ-2.1.b Each language block: statement, 5 alternatives, 5 explanations, concept, optional example.
+- [x] **QZ-2.1** Question schema
+	- [x] QZ-2.1.a Typed schema: `id`, `area`, `topic`, `difficulty`, `answer`, `source`, `miniProject`, `pt`, `en`.
+	- [x] QZ-2.1.b Each language block: statement, 5 alternatives, 5 explanations, concept, optional example.
 	- **Accept:** unit tests reject a question with 4 alternatives, with two correct answers, with a missing explanation and with a missing language.
-- [ ] **QZ-2.2** Coverage map schema (`coverage.json`): topic, source chapter, target count.
+- [x] **QZ-2.2** Coverage map schema (`coverage.json`): topic, source chapter, target count.
 	- **Accept:** validator reports, per topic, target against actual count.
-- [ ] **QZ-2.3** `bun run quiz:validate`
-	- [ ] QZ-2.3.a Validates every file under `quiz/content/`.
-	- [ ] QZ-2.3.b Fails on duplicate `id`, unknown `area`, and a `miniProject` path that does not exist.
+- [x] **QZ-2.3** `bun run quiz:validate`
+	- [x] QZ-2.3.a Validates every file under `quiz/content/`.
+	- [x] QZ-2.3.b Fails on duplicate `id`, unknown `area`, and a `miniProject` path that does not exist.
 	- **Accept:** exits 0 on the sample content and non-zero on each broken fixture.
 
 ### QZ-3 Question screen
@@ -234,10 +234,10 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 
 ### QZ-9 Content pipeline
 
-- [ ] **QZ-9.1** Authoring guide in `docs/en/quiz-authoring.md` and `docs/pt/quiz-authoring.md`: how to write a question, how wrong alternatives encode real misconceptions, the no-copy rule.
-- [ ] **QZ-9.2** Reviewer procedure: a second agent receives the questions without `answer` and without explanations, answers them, and a script lists the disagreements.
-	- [ ] QZ-9.2.a `bun run quiz:blind <area>` exports the blind file.
-	- [ ] QZ-9.2.b `bun run quiz:compare <area> <answers>` writes `review.md` with every disagreement.
+- [x] **QZ-9.1** Authoring guide in `docs/en/quiz-authoring.md` and `docs/pt/quiz-authoring.md`: how to write a question, how wrong alternatives encode real misconceptions, the no-copy rule.
+- [x] **QZ-9.2** Reviewer procedure: a second agent receives the questions without `answer` and without explanations, answers them, and a script lists the disagreements.
+	- [x] QZ-9.2.a `bun run quiz:blind <area>` exports the blind file.
+	- [x] QZ-9.2.b `bun run quiz:compare <area> <answers>` writes `review.md` with every disagreement.
 	- **Accept:** on a fixture with one deliberately wrong answer key, the comparison lists exactly that question.
 
 ### QZ-10 Tests and documentation
@@ -246,6 +246,40 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 - [ ] **QZ-10.2** Playwright end-to-end tests for the flows of QZ-3 to QZ-8.
 - [ ] **QZ-10.3** `quiz/README.md` and `quiz/README.pt-BR.md`.
 	- **Accept:** `bun test` and `bunx playwright test` pass inside Docker.
+
+---
+
+## Part BD: Language benchmark dashboard
+
+Requested by the owner on 2026-10-07: a web dashboard, separate from the quiz, focused only on benchmarking the seven languages: parallelism, concurrency, requests per second, memory use, how each one handles threads, CPU use. It lives in `benchmarks/`: one folder per workload with one implementation per language, and a static dashboard in `benchmarks/dashboard/`. Every workload follows the benchmark contract of F-2 and the rules in `.claude/rules/load-tests.md` (local targets only, machine and versions recorded, spread reported).
+
+### BD-1 Workloads
+
+- [ ] **BD-1.1** CPU, single thread: one numeric kernel (n-body simulation) and one integer kernel (prime sieve) in the 7 languages
+	- **Accept:** all implementations print the same checksum for the same `n`, and `bun run bench -- --project cpu-single` writes the table.
+- [ ] **BD-1.2** Parallelism: the same kernel split over 1, 2, 4, 8 and 16 workers, using the idiomatic mechanism of each language (threads, goroutines, rayon, worker threads, multiprocessing, BEAM schedulers, parallel streams)
+	- **Accept:** the parallel result equals the sequential one, and the table has speed-up, efficiency and CPU time per worker count and language.
+- [ ] **BD-1.3** Concurrency: 100,000 concurrent tasks that each wait and pass a message (goroutines, BEAM processes, virtual threads, async tasks, OS threads where the language has nothing lighter)
+	- **Accept:** table of total time, peak memory and memory per task, and the README explains which scheduling model each language used.
+- [ ] **BD-1.4** HTTP server: the same two endpoints (JSON echo and a CPU-bound one) in the 7 languages, each with its standard library or its most common framework, under local k6
+	- [ ] BD-1.4.a The k6 script refuses any target that is not local.
+	- [ ] BD-1.4.b CPU and memory of the server container sampled during the run.
+	- **Accept:** one protocol test suite passes against the 7 servers, and the table has requests per second, p50, p95, p99, peak memory and mean CPU per language.
+- [ ] **BD-1.5** Memory: an allocation-heavy workload (binary trees) and an idle process
+	- **Accept:** table of peak memory, time and start-up time per language, with garbage-collected and manually managed languages side by side.
+
+### BD-2 Dashboard
+
+- [ ] **BD-2.1** Static site (HTML + Tailwind CSS v4, built CSS committed, no CDN) reading the committed results
+	- [ ] BD-2.1.a One section per dimension: CPU, parallelism, concurrency, HTTP, memory.
+	- [ ] BD-2.1.b Charts drawn as inline SVG: bars per language, speed-up against workers, latency percentiles.
+	- [ ] BD-2.1.c Language filter, Portuguese and English, light and dark theme, usable from 320 px wide.
+	- [ ] BD-2.1.d Methodology section: machine, runtime versions, exact commands, and how to read each chart.
+	- **Accept:** opening `benchmarks/dashboard/index.html` from disk shows every chart with no network request, checked by a Playwright test that blocks the network.
+- [ ] **BD-2.2** One command to reproduce: `setup-unix-benchmarks.sh` and `setup-windows-benchmarks.ps1` build the images, run every workload and regenerate the results
+	- **Accept:** on a machine with only Docker and Bun, the script ends with the results regenerated and the dashboard updated.
+- [ ] **BD-2.3** Documentation in `benchmarks/README.md`, `benchmarks/README.pt-BR.md`, `docs/en/benchmarks.md` and `docs/pt/benchmarks.md`: what each workload measures, what it does not, and why cross-language numbers must be read with care
+	- **Accept:** both READMEs have the results tables and the limits of the comparison.
 
 ---
 
@@ -1936,7 +1970,7 @@ Teaches: what the pipeline of this repository does and why. Languages: YAML.
 
 ## Order of execution
 
-1. Part F (foundation), then Part QZ (quiz app). These unblock everything else.
+1. Part F (foundation), then Part QZ (quiz app). These unblock everything else. Part BD (language benchmark dashboard) depends only on Part F and runs in its own worktree.
 2. Quiz content wave 1, then mini-project wave 1.
 3. From there, quiz content waves and mini-project waves alternate.
 

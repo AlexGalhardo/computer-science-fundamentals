@@ -17,6 +17,8 @@ Notes that carry over between sessions. Rules live in `.claude/rules/`. This fil
   { "disableAllHooks": true }
   ```
 
+- **Parallelism**: the main session plus up to 10 worktrees when needed (owner, 2026-10-07).
+- **Shell gotcha on the owner's Windows machine**: a Bash heredoc that contains an apostrophe fails to parse in the agent shell. Write such files with the file-writing tool instead.
 - **Phase 4 work unit** (owner, 2026-10-07): each worktree does one task completely, meaning one area with its quiz, its practical mini-projects and the tests that prove it works. Each complete project (a quiz area, a mini-project) gets its own commit and its own GitHub release. The main session merges, updates `CHANGELOG.md` and `PLAN.md`, tags and releases, so worktrees never touch those files.
 - **Schema validation**: Zod is the default (owner, 2026-10-07). See `.claude/rules/code-style.md`.
 - **Open questions for the owner** go to `questions-to-dev.md` at the repository root, each with the provisional decision taken, so work never stops waiting for an answer.

@@ -16,7 +16,7 @@ The project is built in phases and the agent **stops at the end of each phase** 
 - Phase 1: import of previous content into `references/` and external skills into `.claude/skills/`
 - Phase 2: brainstorming, decisions documented in `docs/pt/` and `docs/en/`
 - Phase 3: full `PLAN.md`
-- Phase 4: parallel development, the main session plus up to 5 git worktrees. Each worktree takes one area and completes it: quiz, practical mini-projects and tests. Each complete project gets its own commit and GitHub release (see `.claude/rules/git-workflow.md`)
+- Phase 4: parallel development, the main session plus up to 10 git worktrees. Each worktree takes one area and completes it: quiz, practical mini-projects and tests. Each complete project gets its own commit and GitHub release (see `.claude/rules/git-workflow.md`)
 
 ## Layout
 
@@ -24,7 +24,12 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | --- | --- |
 | `docs/en/`, `docs/pt/` | Documentation per area and sub-area. Both languages are mandatory and must stay equivalent |
 | `references/` | Study material and legacy projects imported from the owner's previous repositories, plus Markdown summaries of the books and lecture PDFs. Read-only source of ideas, not a mini-project |
-| `quiz/` | The quiz app and its questions (planned, see `docs/en/quiz.md`) |
+| `quiz/` | The quiz app and its questions (see `docs/en/quiz.md` and `docs/en/quiz-authoring.md`) |
+| `benchmarks/` | Cross-language benchmark workloads and their static dashboard (planned, Part BD of `PLAN.md`) |
+| `tools/bench/` | Benchmark runner: `bun run bench -- --project <name>` (see `docs/en/benchmarks.md`) |
+| `tools/scaffold/` | Mini-project generator: `bun run new:project <area> <name> --langs ts,go` |
+| `docker/` | Pinned base image per language (see `docs/en/environment.md`) |
+| `questions-to-dev.md` | Open questions for the owner, each with the provisional decision taken |
 | `projects/` | Mini-projects, by area (planned) |
 | `PLAN.md` | Main roadmap with checklists and verifiable acceptance criteria |
 | `CHANGELOG.md` | Keep a Changelog + SemVer |

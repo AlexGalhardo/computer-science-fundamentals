@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-07
+
+### Added
+
+- Root Bun workspace with Biome 2.5.15, and formatter configuration for Python, Rust, C++, Go, Elixir and Java.
+- `docker/`: one pinned base image per language (TypeScript, Python, Go, Rust, C++, Java, Elixir) and the hyperfine image, documented in `docs/en/environment.md` and `docs/pt/environment.md`.
+- `tools/bench`: benchmark contract (Zod schema and `schema.json`) and the runner behind `bun run bench -- --project <name>`, which runs hyperfine inside Docker with no network and writes `results.md`, `results.json` and `results.js`. Documented in `docs/en/benchmarks.md` and `docs/pt/benchmarks.md`.
+- `tools/scaffold`: `bun run new:project <area> <name> --langs ...` creates a mini-project with both READMEs, both setup scripts, docker-compose, one tested folder per language and the static dashboard template.
+- Quiz content model in `quiz/`: Zod schemas for questions and coverage maps, `bun run quiz:validate`, and the blind review scripts `quiz:blind` and `quiz:compare`.
+- Quiz authoring guide in `docs/en/quiz-authoring.md` and `docs/pt/quiz-authoring.md`.
+- `PLAN.md` Part BD: a language benchmark dashboard, separate from the quiz.
+- `questions-to-dev.md`: open questions for the owner, each with the provisional decision taken.
+
+### Changed
+
+- Phase 4 runs on the main session plus up to 10 worktrees. Each worktree completes one area (quiz, mini-projects and tests), and each complete project gets its own commit and release.
+- Zod is the default schema validation library.
+
 ## [0.5.0] - 2026-10-07
 
 ### Added
