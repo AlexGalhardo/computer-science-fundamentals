@@ -1,0 +1,59 @@
+# EN: SQL injection lab: a PostgreSQL with fake data, and one image that holds the vulnerable
+#     and the fixed ElysiaJS apps. The network is internal, so no container reaches the internet,
+#     and NO port is published on the host: the apps are called in-process by the tests and by
+#     the demo. Every credential below is fake and exists only inside this lab.
+# PT: Laboratório de SQL injection: um PostgreSQL com dados falsos, e uma imagem que contém os
+#     apps ElysiaJS vulnerável e corrigido. A rede é interna, então nenhum contêiner alcança a
+#     internet, e NENHUMA porta é publicada no host: os apps são chamados em processo pelos
+#     testes e pela demo. Toda credencial abaixo é falsa e existe só dentro deste laboratório.
+name: sec-sql-injection-lab
+
+x-app: &app
+  build: ./ts
+  image: sef-sql-injection-lab-ts:local
+  environment:
+    # EN: The vulnerable app connects as the owner of the database (too much power).
+    #     The fixed app connects with a role that can only read two tables.
+    # PT: O app vulnerável conecta como dono do banco (poder demais).
+    #     O app corrigido conecta com um papel que só lê duas tabelas.
+    OWNER_DATABASE_URL: postgres://lab_owner:lab-fake-owner-password@db:5432/lab
+    READONLY_DATABASE_URL: postgres://lab_readonly:lab-fake-readonly-password@db:5432/lab
+  depends_on:
+    db:
+      condition: service_healthy
+  networks:
+    - lab
+
+services:
+  db:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_USER: lab_owner
+      POSTGRES_PASSWORD: lab-fake-owner-password
+      POSTGRES_DB: lab
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # EN: `-h 127.0.0.1` on purpose: while the seed runs, PostgreSQL listens only on a Unix
+    #     socket, so the check turns healthy only after the seed has finished.
+    # PT: `-h 127.0.0.1` de propósito: enquanto a carga inicial roda, o PostgreSQL escuta só em
+    #     um socket Unix, então a checagem só fica saudável depois que a carga terminou.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U lab_owner -d lab"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      - lab
+
+  ts-test:
+    <<: *app
+
+  # EN: `docker compose run --rm demo` prints a narrated walk-through of the two flaws and fixes.
+  # PT: `docker compose run --rm demo` imprime um passo a passo narrado das duas falhas e correções.
+  demo:
+    <<: *app
+    command: ["bun", "run", "demo"]
+
+networks:
+  lab:
+    internal: true
