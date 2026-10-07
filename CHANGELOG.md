@@ -13,10 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `PLAN.md`, stage 1: outline of the 31 areas, foundation, quiz app, the first wave of quiz content with coverage maps and the first wave of mini-projects, with acceptance criteria.
 
-### Removed
-
-- `PROMPT-CREATE-PLAN.md`, the bootstrap prompt file.
-
 ## [0.3.0] - 2026-10-07
 
 ### Added
