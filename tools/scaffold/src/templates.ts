@@ -102,7 +102,8 @@ function setupWindows(info: ProjectInfo): string {
 	const runs = info.langs
 		.map((lang) => `docker compose run --rm ${lang}-test\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }`)
 		.join("\n");
-	const script = `# EN: Builds and tests the ${info.name} mini-project. The only requirement is Docker.\n# PT: Constrói e testa o mini-projeto ${info.name}. O único requisito é o Docker.\n$ErrorActionPreference = "Stop"\n\nSet-Location $PSScriptRoot\n\nif (-not (Get-Command docker -ErrorAction SilentlyContinue)) {\n\tWrite-Error "Docker is required: https://docs.docker.com/get-docker/"\n\texit 1\n}\n\ndocker compose build\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n${runs}\n\nWrite-Output "${info.name}: all tests passed"\n`;
+	const script = `# EN: Builds and tests the ${info.name} mini-project. The only requirement is Docker.\n# PT: Constrói e testa o mini-projeto ${info.name}. O único requisito é o Docker.\n# "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
+$ErrorActionPreference = "Continue"\n\nSet-Location $PSScriptRoot\n\nif (-not (Get-Command docker -ErrorAction SilentlyContinue)) {\n\tWrite-Error "Docker is required: https://docs.docker.com/get-docker/"\n\texit 1\n}\n\ndocker compose build\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n${runs}\n\nWrite-Output "${info.name}: all tests passed"\n`;
 	// EN: PowerShell scripts use CRLF line endings in this repository (see .gitattributes).
 	// PT: Scripts PowerShell usam fim de linha CRLF neste repositório (veja .gitattributes).
 	return script.replaceAll("\n", "\r\n");
