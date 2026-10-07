@@ -1,0 +1,77 @@
+# EN: The DNS lab is three fake name servers (root, TLD, authoritative) and one resolver on a
+#     network marked `internal`: Docker gives it no route to the outside, so no query can leave
+#     the machine. No port is published. Tests and the subnet calculator get no network at all.
+# PT: O laboratório de DNS são três servidores de nomes falsos (raiz, TLD, autoridade) e um
+#     resolvedor em uma rede marcada como `internal`: o Docker não dá a ela nenhuma rota para
+#     fora, então nenhuma consulta sai da máquina. Nenhuma porta é publicada. Os testes e a
+#     calculadora de sub-redes não recebem rede nenhuma.
+name: dns-subnet
+
+services:
+  go-test:
+    build: ./go
+    image: sef-dns-subnet-go:local
+    network_mode: "none"
+  ts-test:
+    build: ./ts
+    image: sef-dns-subnet-ts:local
+    network_mode: "none"
+  ts-subnet:
+    build: ./ts
+    image: sef-dns-subnet-ts:local
+    network_mode: "none"
+    command: ["bun", "run", "src/cli.ts"]
+
+  root:
+    build: ./go
+    image: sef-dns-subnet-go:local
+    command: ["nameserver", "-name", "root", "zones/root.zone"]
+    networks:
+      dnslab:
+        ipv4_address: 10.253.53.2
+  tld:
+    build: ./go
+    image: sef-dns-subnet-go:local
+    command: ["nameserver", "-name", "tld test.", "zones/test.zone"]
+    networks:
+      dnslab:
+        ipv4_address: 10.253.53.3
+  auth:
+    build: ./go
+    image: sef-dns-subnet-go:local
+    command:
+      - nameserver
+      - -name
+      - authoritative
+      - zones/example.test.zone
+      - zones/elsewhere.test.zone
+      - zones/other.test.zone
+    networks:
+      dnslab:
+        ipv4_address: 10.253.53.4
+  # EN: The only address the resolver is given is the root server. Everything else it learns.
+  # PT: O único endereço que o resolvedor recebe é o do servidor raiz. Todo o resto ele aprende.
+  resolver:
+    build: ./go
+    image: sef-dns-subnet-go:local
+    depends_on: [root, tld, auth]
+    command:
+      - resolve
+      - -roots
+      - 10.253.53.2
+      - www.example.test
+      - www.example.test
+      - wait=4s
+      - www.example.test
+      - api.example.test
+      - www.other.test
+      - shop.other.test
+      - missing.example.test
+    networks: [dnslab]
+
+networks:
+  dnslab:
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.253.53.0/28
