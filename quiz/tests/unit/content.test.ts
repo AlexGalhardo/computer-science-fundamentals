@@ -114,6 +114,22 @@ describe("content check", () => {
 		expect(result.areas[0]?.difficulty).toEqual({ basic: 1, intermediate: 1, advanced: 1 });
 	});
 
+	test("warns when the correct position is predictable", () => {
+		const dir = brokenContent((questions) => {
+			// EN: 21 copies with new ids and the same answer: enough questions for the warning.
+			// PT: 21 cópias com ids novos e a mesma resposta: questões suficientes para o aviso.
+			const copies = Array.from({ length: 21 }, (_, index) => ({
+				...structuredClone(questions[1]),
+				id: `big-o-searching-${index + 10}`,
+				answer: 2,
+			}));
+			questions.splice(0, questions.length, ...copies);
+		});
+		const result = checkContent({ contentDir: dir, repoRoot });
+		expect(result.errors).toEqual([]);
+		expect(result.warnings.join(" ")).toContain("alternative 2 is the correct one in 21 of 21 questions");
+	});
+
 	test("fails on a duplicate id", () => {
 		const dir = brokenContent((questions) => {
 			(questions[1] as { id: string }).id = "big-o-searching-01";

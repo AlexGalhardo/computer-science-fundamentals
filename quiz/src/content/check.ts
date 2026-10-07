@@ -8,6 +8,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
+	ALTERNATIVE_COUNT,
 	type Area,
 	type Coverage,
 	DIFFICULTIES,
@@ -20,6 +21,10 @@ import {
 	validateMiniProjects,
 	validateQuestion,
 } from "./schema";
+
+const GIVEAWAY_LIMIT = 0.3;
+/** Below this many questions a share says nothing, so no warning is given. */
+const GIVEAWAY_SAMPLE = 20;
 
 export interface TopicReport {
 	slug: string;
@@ -209,6 +214,31 @@ export function checkContent(options: CheckOptions): CheckResult {
 		if (questions.length < area.target) {
 			const message = `${folder}: ${questions.length} of ${area.target} questions`;
 			(requireTargets ? errors : warnings).push(message);
+		}
+		// EN: Two give-aways a student can learn without knowing the subject: the correct
+		//     alternative being the longest one, and the correct position being predictable.
+		//     By chance each happens about 20% of the time, so a much higher share is a warning.
+		// PT: Duas pistas que um estudante aprende sem saber a matéria: a alternativa correta ser
+		//     a mais longa, e a posição correta ser previsível. Por acaso cada uma acontece em
+		//     cerca de 20% das vezes, então uma fatia muito maior vira aviso.
+		const share = (count: number): number => (questions.length < GIVEAWAY_SAMPLE ? 0 : count / questions.length);
+		const longest = questions.filter((question) => {
+			const lengths = question.en.alternatives.map((alternative) => alternative.length);
+			const own = lengths[question.answer] ?? 0;
+			return lengths.every((length, index) => index === question.answer || length < own);
+		}).length;
+		if (share(longest) > GIVEAWAY_LIMIT) {
+			warnings.push(
+				`${folder}: the correct alternative is the longest in ${longest} of ${questions.length} questions`,
+			);
+		}
+		for (let index = 0; index < ALTERNATIVE_COUNT; index++) {
+			const count = questions.filter((question) => question.answer === index).length;
+			if (share(count) > GIVEAWAY_LIMIT) {
+				warnings.push(
+					`${folder}: alternative ${index} is the correct one in ${count} of ${questions.length} questions`,
+				);
+			}
 		}
 		reports.push({ area: folder, target: area.target, actual: questions.length, topics, difficulty, questions });
 	}
