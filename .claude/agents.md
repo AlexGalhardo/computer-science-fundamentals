@@ -37,9 +37,10 @@ The previous repository (`AlexGalhardo/Software-Engineering`) contains files tha
 - **Integration routine of the main session**: merge the worktree branch, run `bun run quiz:validate --strict` and `bunx biome check .`, rerun the setup script of each merged mini-project, then `python .claude/scripts/release.py items.json`. That helper ticks the `PLAN.md` sections, adds one `CHANGELOG.md` entry and one tag and GitHub release per project, regenerates the docs index, commits and pushes. `items.json` is a list of `{ "tick": ["MP-OS-1"], "name": "...", "text": "..." }` (or `"tickLines"` for single checklist lines).
 - **CI works** since the repository became public on 2026-10-07. It tests each mini-project whose folder changed; `gh workflow run CI` tests all of them.
 
+- **Dashboards from disk**: `tools/scaffold/tests/open-from-disk.mjs` opens pages over `file://` inside the Playwright image with `--network none` and fails on any error, network request or missing chart. CI runs it for every committed dashboard (job `quiz`).
+
 ## Known quality debts
 
 - Transactions quiz: the correct alternative is the longest in about half of the questions. Rebalance the alternatives without changing the keys, then rerun the blind review.
-- Static dashboards were checked over `http://127.0.0.1`, not opened from disk with `file://`, because the browser tool blocks that scheme.
 - For merged mini-projects the main session reran only the setup script (build and tests). Benchmark tables and demos are recorded as reported by the worktree.
 
