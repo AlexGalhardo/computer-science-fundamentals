@@ -460,10 +460,10 @@ Sources: Tanenbaum (processes, threads, IPC), USP OOP lectures on threads, Deite
 | Async, promises and the event loop | 10 |
 | Thread pools and backpressure | 6 |
 
-- [ ] QC-CONC.1 Coverage map committed
-- [ ] QC-CONC.2 100 questions written (PT and EN)
-- [ ] QC-CONC.3 Validation passing
-- [ ] QC-CONC.4 Blind review resolved
+- [x] QC-CONC.1 Coverage map committed
+- [x] QC-CONC.2 100 questions written (PT and EN)
+- [x] QC-CONC.3 Validation passing
+- [x] QC-CONC.4 Blind review resolved
 
 #### QC-PAR Parallelism
 
@@ -529,10 +529,10 @@ Sources: OWASP Top 10, Tanenbaum (security chapters), notes in references/notes/
 | Cryptography basics and TLS | 6 |
 | Secrets, dependencies and supply chain | 4 |
 
-- [ ] QC-SEC.1 Coverage map committed
-- [ ] QC-SEC.2 100 questions written (PT and EN)
-- [ ] QC-SEC.3 Validation passing
-- [ ] QC-SEC.4 Blind review resolved
+- [x] QC-SEC.1 Coverage map committed
+- [x] QC-SEC.2 100 questions written (PT and EN)
+- [x] QC-SEC.3 Validation passing
+- [x] QC-SEC.4 Blind review resolved
 
 ### Wave 3
 
@@ -575,10 +575,10 @@ Sources: Dragon Book (automata), Sommerville (state models), USP Digital Logic (
 | Pushdown automata and context-free grammars | 8 |
 | Turing machines and computability | 10 |
 
-- [ ] QC-FSM.1 Coverage map committed
-- [ ] QC-FSM.2 100 questions written (PT and EN)
-- [ ] QC-FSM.3 Validation passing
-- [ ] QC-FSM.4 Blind review resolved
+- [x] QC-FSM.1 Coverage map committed
+- [x] QC-FSM.2 100 questions written (PT and EN)
+- [x] QC-FSM.3 Validation passing
+- [x] QC-FSM.4 Blind review resolved
 
 #### QC-INFO Information theory
 
@@ -1040,37 +1040,37 @@ Teaches: how the same algorithms behave across languages and input shapes, and h
 
 Teaches: why unsynchronised shared state loses updates, and four ways to fix it.
 
-- [ ] **MP-CONC-1.1** Buggy version in Go, Rust (with `unsafe` clearly labelled), Java and TypeScript (worker threads with shared memory)
+- [x] **MP-CONC-1.1** Buggy version in Go, Rust (with `unsafe` clearly labelled), Java and TypeScript (worker threads with shared memory)
 	- **Accept:** a test that increments 1,000,000 times from 8 workers observes a final value below 1,000,000 in at least 9 of 10 runs.
-- [ ] **MP-CONC-1.2** Fixes
-	- [ ] MP-CONC-1.2.a Mutex.
-	- [ ] MP-CONC-1.2.b Atomic operation.
-	- [ ] MP-CONC-1.2.c Channel or message passing.
-	- [ ] MP-CONC-1.2.d Actor (Elixir process as the owner of the state).
+- [x] **MP-CONC-1.2** Fixes
+	- [x] MP-CONC-1.2.a Mutex.
+	- [x] MP-CONC-1.2.b Atomic operation.
+	- [x] MP-CONC-1.2.c Channel or message passing.
+	- [x] MP-CONC-1.2.d Actor (Elixir process as the owner of the state).
 	- **Accept:** every fixed version reaches exactly 1,000,000 in 100 consecutive runs.
-- [ ] **MP-CONC-1.3** Race detector: Go `-race` and Java tooling flag the buggy version and are silent on the fixes.
+- [x] **MP-CONC-1.3** Race detector: Go `-race` and Java tooling flag the buggy version and are silent on the fixes.
 	- **Accept:** the detector output is captured in the test log for both cases.
-- [ ] **MP-CONC-1.4** Benchmark of the four fixes: throughput by number of workers.
+- [x] **MP-CONC-1.4** Benchmark of the four fixes: throughput by number of workers.
 	- **Accept:** table committed with 1, 2, 4 and 8 workers per fix and per language.
-- [ ] **MP-CONC-1.5** Definition of done for mini-projects met.
+- [x] **MP-CONC-1.5** Definition of done for mini-projects met.
 
 #### MP-SEC-1 SQL injection lab
 
 Teaches: why string concatenation in queries is exploitable and how parameterised queries prevent it. Local only, per `.claude/rules/security-labs.md`.
 
-- [ ] **MP-SEC-1.1** Environment
-	- [ ] MP-SEC-1.1.a docker-compose with an `internal: true` network, app port bound to `127.0.0.1`.
-	- [ ] MP-SEC-1.1.b PostgreSQL seeded with obviously fake data.
+- [x] **MP-SEC-1.1** Environment
+	- [x] MP-SEC-1.1.a docker-compose with an `internal: true` network, app port bound to `127.0.0.1`.
+	- [x] MP-SEC-1.1.b PostgreSQL seeded with obviously fake data.
 	- **Accept:** from inside the app container, a request to an external host fails.
-- [ ] **MP-SEC-1.2** Vulnerable version (ElysiaJS, raw concatenated SQL), in a folder and files named `vulnerable`.
-	- [ ] MP-SEC-1.2.a Login bypass.
-	- [ ] MP-SEC-1.2.b Data exposure through a search field.
+- [x] **MP-SEC-1.2** Vulnerable version (ElysiaJS, raw concatenated SQL), in a folder and files named `vulnerable`.
+	- [x] MP-SEC-1.2.a Login bypass.
+	- [x] MP-SEC-1.2.b Data exposure through a search field.
 	- **Accept:** an automated test demonstrates both flaws against the vulnerable version.
-- [ ] **MP-SEC-1.3** Fixed version: parameterised queries, input validation, least-privilege database user.
+- [x] **MP-SEC-1.3** Fixed version: parameterised queries, input validation, least-privilege database user.
 	- **Accept:** the same tests that succeed against the vulnerable version fail to exploit the fixed one, and normal use still works.
-- [ ] **MP-SEC-1.4** Documentation: why it happens, how to prevent it, what does not work as a fix (blocklists, escaping by hand).
+- [x] **MP-SEC-1.4** Documentation: why it happens, how to prevent it, what does not work as a fix (blocklists, escaping by hand).
 	- **Accept:** both READMEs have the three sections, and no payload targets anything outside the lab.
-- [ ] **MP-SEC-1.5** Definition of done for mini-projects met.
+- [x] **MP-SEC-1.5** Definition of done for mini-projects met.
 
 #### MP-COMP-1 Mini language: lexer and parser
 
@@ -1160,68 +1160,68 @@ Teaches: why no comparison sort beats Ω(n lg n) and how counting sorts escape i
 
 Teaches: how collisions are resolved and why the load factor matters. Languages: C++, Rust, TS.
 
-- [ ] **MP-DS-1.1** Separate chaining and open addressing (linear probing)
-	- [ ] MP-DS-1.1.a Insert, get, delete.
-	- [ ] MP-DS-1.1.b Resize when the load factor passes a limit.
+- [x] **MP-DS-1.1** Separate chaining and open addressing (linear probing)
+	- [x] MP-DS-1.1.a Insert, get, delete.
+	- [x] MP-DS-1.1.b Resize when the load factor passes a limit.
 	- **Accept:** property tests compare every operation against the language's own map.
-- [ ] **MP-DS-1.2** Deletion in open addressing with tombstones
+- [x] **MP-DS-1.2** Deletion in open addressing with tombstones
 	- **Accept:** a get after delete-then-insert of colliding keys returns the right value.
-- [ ] **MP-DS-1.3** Benchmark by load factor
+- [x] **MP-DS-1.3** Benchmark by load factor
 	- **Accept:** table of lookup time at load 0.25, 0.5, 0.75 and 0.9 for both strategies.
-- [ ] **MP-DS-1.4** Definition of done for mini-projects met.
+- [x] **MP-DS-1.4** Definition of done for mini-projects met.
 
 #### MP-DS-2 Graph algorithms
 
 Teaches: shortest paths, ordering and spanning trees on the same graph library. Languages: C++, Go.
 
-- [ ] **MP-DS-2.1** Graph with adjacency list and adjacency matrix
+- [x] **MP-DS-2.1** Graph with adjacency list and adjacency matrix
 	- **Accept:** both representations pass the same test suite.
-- [ ] **MP-DS-2.2** Dijkstra, Bellman-Ford, topological sort, Prim and Kruskal
-	- [ ] MP-DS-2.2.a Bellman-Ford reports negative cycles.
-	- [ ] MP-DS-2.2.b Topological sort reports cycles.
+- [x] **MP-DS-2.2** Dijkstra, Bellman-Ford, topological sort, Prim and Kruskal
+	- [x] MP-DS-2.2.a Bellman-Ford reports negative cycles.
+	- [x] MP-DS-2.2.b Topological sort reports cycles.
 	- **Accept:** the 10 `.in`/`.out` cases in `references/usp/data-structures-2` pass in both languages.
-- [ ] **MP-DS-2.3** Benchmark and CLI that prints the path
+- [x] **MP-DS-2.3** Benchmark and CLI that prints the path
 	- **Accept:** one command runs a case file and prints the result in the expected format.
-- [ ] **MP-DS-2.4** Definition of done for mini-projects met.
+- [x] **MP-DS-2.4** Definition of done for mini-projects met.
 
 #### MP-DS-3 B-tree on disk
 
 Teaches: why databases use wide trees: fewer page reads. Languages: C++, Rust.
 
-- [ ] **MP-DS-3.1** B-tree stored in a file, one node per page
-	- [ ] MP-DS-3.1.a Insert with node split.
-	- [ ] MP-DS-3.1.b Search.
-	- [ ] MP-DS-3.1.c Delete with merge and redistribution.
+- [x] **MP-DS-3.1** B-tree stored in a file, one node per page
+	- [x] MP-DS-3.1.a Insert with node split.
+	- [x] MP-DS-3.1.b Search.
+	- [x] MP-DS-3.1.c Delete with merge and redistribution.
 	- **Accept:** invariants (order, sorted keys, equal leaf depth) hold after 100,000 random operations.
-- [ ] **MP-DS-3.2** Page-read counter
+- [x] **MP-DS-3.2** Page-read counter
 	- **Accept:** search in 1,000,000 keys reads at most the tree height in pages.
-- [ ] **MP-DS-3.3** Comparison with a binary search tree on disk
+- [x] **MP-DS-3.3** Comparison with a binary search tree on disk
 	- **Accept:** table of page reads per search for both structures.
-- [ ] **MP-DS-3.4** Definition of done for mini-projects met.
+- [x] **MP-DS-3.4** Definition of done for mini-projects met.
 
 #### MP-DS-4 LRU cache, bloom filter and trie
 
 Teaches: three structures behind caches, membership tests and prefix search. Languages: TS, Go.
 
-- [ ] **MP-DS-4.1** LRU cache with O(1) get and put
+- [x] **MP-DS-4.1** LRU cache with O(1) get and put
 	- **Accept:** eviction order matches a reference model in property tests.
-- [ ] **MP-DS-4.2** Bloom filter with configurable size and hash count
+- [x] **MP-DS-4.2** Bloom filter with configurable size and hash count
 	- **Accept:** measured false-positive rate is within 20% of the theoretical rate, and there is no false negative.
-- [ ] **MP-DS-4.3** Trie with insert, search and prefix listing
+- [x] **MP-DS-4.3** Trie with insert, search and prefix listing
 	- **Accept:** prefix search over a 100,000-word list returns the same set as a linear filter.
-- [ ] **MP-DS-4.4** Definition of done for mini-projects met.
+- [x] **MP-DS-4.4** Definition of done for mini-projects met.
 
 #### MP-DS-5 Balanced search trees
 
 Teaches: how an unbalanced tree degenerates and how rotations prevent it. Languages: C++, Java.
 
-- [ ] **MP-DS-5.1** Unbalanced BST, AVL and red-black tree with the same interface
+- [x] **MP-DS-5.1** Unbalanced BST, AVL and red-black tree with the same interface
 	- **Accept:** each keeps its invariant after every operation in property tests.
-- [ ] **MP-DS-5.2** Height and rotation counters
+- [x] **MP-DS-5.2** Height and rotation counters
 	- **Accept:** sorted insertion of 100,000 keys gives height 100,000 for the BST and under 40 for the balanced trees.
-- [ ] **MP-DS-5.3** Step-by-step rotation visualiser (static page)
+- [x] **MP-DS-5.3** Step-by-step rotation visualiser (static page)
 	- **Accept:** the page replays the insertion of a fixed sequence and shows each rotation.
-- [ ] **MP-DS-5.4** Definition of done for mini-projects met.
+- [x] **MP-DS-5.4** Definition of done for mini-projects met.
 
 #### MP-OS-1 CPU scheduling simulator
 
@@ -1370,25 +1370,25 @@ Teaches: how the pivot and the small-array threshold change quicksort in practic
 
 Teaches: the four conditions of deadlock and how breaking one removes it. Languages: Go, Java.
 
-- [ ] **MP-CONC-2.1** Version that deadlocks
+- [x] **MP-CONC-2.1** Version that deadlocks
 	- **Accept:** a test with a timeout detects the deadlock in at least 9 of 10 runs.
-- [ ] **MP-CONC-2.2** Fixes: lock ordering and a waiter (semaphore)
+- [x] **MP-CONC-2.2** Fixes: lock ordering and a waiter (semaphore)
 	- **Accept:** both fixes run 60 seconds with every philosopher eating, checked by counters.
-- [ ] **MP-CONC-2.3** Thread dump of the deadlocked version explained in the README
+- [x] **MP-CONC-2.3** Thread dump of the deadlocked version explained in the README
 	- **Accept:** the captured dump is committed and each line is annotated.
-- [ ] **MP-CONC-2.4** Definition of done for mini-projects met.
+- [x] **MP-CONC-2.4** Definition of done for mini-projects met.
 
 #### MP-CONC-3 Ten thousand connections
 
 Teaches: how event loops, goroutines and BEAM processes handle many idle connections. Languages: TS, Go, Elixir.
 
-- [ ] **MP-CONC-3.1** Same echo and delayed-response server in the three languages
+- [x] **MP-CONC-3.1** Same echo and delayed-response server in the three languages
 	- **Accept:** one protocol test suite passes against all three.
-- [ ] **MP-CONC-3.2** Local k6 scenario holding 10,000 connections
+- [x] **MP-CONC-3.2** Local k6 scenario holding 10,000 connections
 	- **Accept:** the script refuses to run against a non-local host.
-- [ ] **MP-CONC-3.3** Measurement of memory and latency percentiles
+- [x] **MP-CONC-3.3** Measurement of memory and latency percentiles
 	- **Accept:** table committed with memory per connection and p50, p95, p99 per server.
-- [ ] **MP-CONC-3.4** Definition of done for mini-projects met.
+- [x] **MP-CONC-3.4** Definition of done for mini-projects met.
 
 #### MP-PAR-1 Scaling by cores
 
@@ -1455,73 +1455,73 @@ Teaches: how to keep two services consistent without a distributed transaction. 
 
 Teaches: how script injection works and how escaping and a content policy stop it. Languages: TS.
 
-- [ ] **MP-SEC-2.1** Vulnerable pages: stored, reflected and DOM-based, on an internal Docker network
+- [x] **MP-SEC-2.1** Vulnerable pages: stored, reflected and DOM-based, on an internal Docker network
 	- **Accept:** a Playwright test demonstrates each one inside the lab.
-- [ ] **MP-SEC-2.2** Fixes: output encoding, safe DOM APIs, Content Security Policy
+- [x] **MP-SEC-2.2** Fixes: output encoding, safe DOM APIs, Content Security Policy
 	- **Accept:** the same tests fail to execute script on the fixed version.
-- [ ] **MP-SEC-2.3** Documentation of cause and prevention
+- [x] **MP-SEC-2.3** Documentation of cause and prevention
 	- **Accept:** both READMEs explain why each fix works, and no payload targets anything outside the lab.
-- [ ] **MP-SEC-2.4** Definition of done for mini-projects met.
+- [x] **MP-SEC-2.4** Definition of done for mini-projects met.
 
 #### MP-SEC-3 CSRF lab
 
 Teaches: why a browser sends cookies on forged requests and how to refuse them. Languages: TS.
 
-- [ ] **MP-SEC-3.1** Vulnerable state-changing endpoint and a second local origin that forges the request
+- [x] **MP-SEC-3.1** Vulnerable state-changing endpoint and a second local origin that forges the request
 	- **Accept:** a Playwright test shows the forged change succeeding.
-- [ ] **MP-SEC-3.2** Fixes: anti-CSRF token and `SameSite` cookies
+- [x] **MP-SEC-3.2** Fixes: anti-CSRF token and `SameSite` cookies
 	- **Accept:** the forged request is rejected and the legitimate form still works.
-- [ ] **MP-SEC-3.3** Definition of done for mini-projects met.
+- [x] **MP-SEC-3.3** Definition of done for mini-projects met.
 
 #### MP-SEC-4 Broken access control lab
 
 Teaches: why the server must check ownership on every request. Languages: TS.
 
-- [ ] **MP-SEC-4.1** Vulnerable API that trusts the id in the URL
+- [x] **MP-SEC-4.1** Vulnerable API that trusts the id in the URL
 	- **Accept:** a test reads another fake user's record.
-- [ ] **MP-SEC-4.2** Fix: ownership and role checks in one place
+- [x] **MP-SEC-4.2** Fix: ownership and role checks in one place
 	- **Accept:** the same test gets 403 and an authorisation test matrix passes.
-- [ ] **MP-SEC-4.3** Definition of done for mini-projects met.
+- [x] **MP-SEC-4.3** Definition of done for mini-projects met.
 
 #### MP-SEC-5 SSRF lab
 
 Teaches: how a server can be tricked into calling internal services. Languages: TS.
 
-- [ ] **MP-SEC-5.1** Vulnerable URL-fetch feature and a fake internal service, both on the internal Docker network
+- [x] **MP-SEC-5.1** Vulnerable URL-fetch feature and a fake internal service, both on the internal Docker network
 	- **Accept:** a test reaches the internal service through the feature.
-- [ ] **MP-SEC-5.2** Fix: allow-list, scheme and resolved-address validation
+- [x] **MP-SEC-5.2** Fix: allow-list, scheme and resolved-address validation
 	- **Accept:** the same test is blocked, including through a redirect.
-- [ ] **MP-SEC-5.3** Definition of done for mini-projects met.
+- [x] **MP-SEC-5.3** Definition of done for mini-projects met.
 
 #### MP-SEC-6 Passwords and sessions lab
 
 Teaches: how passwords should be stored and logins protected. Languages: TS.
 
-- [ ] **MP-SEC-6.1** Storage comparison: plain, MD5, salted SHA-256, Argon2
+- [x] **MP-SEC-6.1** Storage comparison: plain, MD5, salted SHA-256, Argon2
 	- **Accept:** a benchmark shows hashes per second for each, on fake data only.
-- [ ] **MP-SEC-6.2** Login with attempt limiting and secure session cookies
+- [x] **MP-SEC-6.2** Login with attempt limiting and secure session cookies
 	- **Accept:** tests cover lockout, cookie flags and session rotation on login.
-- [ ] **MP-SEC-6.3** Definition of done for mini-projects met.
+- [x] **MP-SEC-6.3** Definition of done for mini-projects met.
 
 #### MP-SEC-7 JWT mistakes lab
 
 Teaches: the common ways token validation goes wrong. Languages: TS.
 
-- [ ] **MP-SEC-7.1** Vulnerable verifier: accepts unsigned tokens, weak secret, no expiry check
+- [x] **MP-SEC-7.1** Vulnerable verifier: accepts unsigned tokens, weak secret, no expiry check
 	- **Accept:** a test demonstrates each mistake inside the lab.
-- [ ] **MP-SEC-7.2** Fixed verifier: pinned algorithm, strong key, expiry and audience checks
+- [x] **MP-SEC-7.2** Fixed verifier: pinned algorithm, strong key, expiry and audience checks
 	- **Accept:** every forged token is rejected and a valid one is accepted.
-- [ ] **MP-SEC-7.3** Definition of done for mini-projects met.
+- [x] **MP-SEC-7.3** Definition of done for mini-projects met.
 
 #### MP-SEC-8 Upload and path traversal lab
 
 Teaches: why file names and types from the client cannot be trusted. Languages: TS.
 
-- [ ] **MP-SEC-8.1** Vulnerable upload and download endpoints
+- [x] **MP-SEC-8.1** Vulnerable upload and download endpoints
 	- **Accept:** a test reads a file outside the upload folder inside the container.
-- [ ] **MP-SEC-8.2** Fix: generated names, canonical path check, type and size validation
+- [x] **MP-SEC-8.2** Fix: generated names, canonical path check, type and size validation
 	- **Accept:** the same test is blocked and valid uploads still work.
-- [ ] **MP-SEC-8.3** Definition of done for mini-projects met.
+- [x] **MP-SEC-8.3** Definition of done for mini-projects met.
 
 #### MP-COMP-2 Tree-walking interpreter
 
@@ -1566,13 +1566,13 @@ Teaches: how a regular expression becomes an automaton. Languages: Go.
 
 Teaches: how explicit states and transitions remove invalid situations. Languages: TS, Elixir.
 
-- [ ] **MP-FSM-1.1** States created, paid, shipped, delivered, cancelled, refunded, with a transition table
+- [x] **MP-FSM-1.1** States created, paid, shipped, delivered, cancelled, refunded, with a transition table
 	- **Accept:** every valid transition succeeds and every invalid one is rejected, in a test generated from the table.
-- [ ] **MP-FSM-1.2** Diagram generated from the same table
+- [x] **MP-FSM-1.2** Diagram generated from the same table
 	- **Accept:** the committed diagram is regenerated by a command and the test fails if it is out of date.
-- [ ] **MP-FSM-1.3** CLI that walks an order through events
+- [x] **MP-FSM-1.3** CLI that walks an order through events
 	- **Accept:** the demo script in the README runs a full order and a rejected transition.
-- [ ] **MP-FSM-1.4** Definition of done for mini-projects met.
+- [x] **MP-FSM-1.4** Definition of done for mini-projects met.
 
 #### MP-INFO-1 Huffman and LZ77
 

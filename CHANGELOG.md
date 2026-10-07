@@ -7,6 +7,126 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.50.0] - 2026-10-07
+
+### Added
+
+- Security lab `projects/security/upload-path-traversal-lab`: upload and download endpoints that leak a file outside the upload folder, fixed with generated names, a canonical path check and type and size validation. The security area is complete.
+
+## [0.49.0] - 2026-10-07
+
+### Added
+
+- Security lab `projects/security/jwt-lab`: a verifier that accepts unsigned tokens, a weak secret and expired tokens, and the fixed verifier with a pinned algorithm, a strong key and expiry and audience checks.
+
+## [0.48.0] - 2026-10-07
+
+### Added
+
+- Security lab `projects/security/passwords-sessions-lab`: password storage compared (plain, MD5, salted SHA-256, Argon2) on fake data, and a login with attempt limiting, secure cookie flags and session rotation.
+
+## [0.47.0] - 2026-10-07
+
+### Added
+
+- Security lab `projects/security/ssrf-lab`: a URL-fetch feature that reaches a fake internal service, fixed with an allow-list and scheme and resolved-address validation, including through a redirect.
+
+## [0.46.0] - 2026-10-07
+
+### Added
+
+- Security lab `projects/security/access-control-lab`: an API that trusts the id in the URL, fixed with ownership and role checks in one place and an authorisation test matrix.
+
+## [0.45.0] - 2026-10-07
+
+### Added
+
+- Security lab `projects/security/csrf-lab`: a forged request from a second local origin succeeds against the vulnerable endpoint and is rejected by an anti-CSRF token and by SameSite cookies, each tested on its own.
+
+## [0.44.0] - 2026-10-07
+
+### Added
+
+- Security lab `projects/security/xss-csp-lab`: stored, reflected and DOM-based cross-site scripting shown by Playwright inside the lab, and the fixes (output encoding, safe DOM APIs, Content Security Policy) proven by the same tests.
+
+## [0.43.0] - 2026-10-07
+
+### Added
+
+- Security lab `projects/security/sql-injection-lab`: local only, on an internal Docker network. A vulnerable login and search built with concatenated SQL, the fixed version with parameterised queries, validation and a least-privilege database user, and tests proving the fix.
+
+## [0.42.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: security, 100 defensive questions in Portuguese and English, blind-reviewed with 100 of 100 agreement and 8 reviewer notes resolved (`quiz/content/security/review.md`).
+
+## [0.41.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/state-machines/order-state-machine` (TypeScript and Elixir): an order life cycle driven by one transition table, tests and the diagram generated from that table, and a CLI that walks an order through events. The state machines area is complete.
+
+## [0.40.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: state machines, 100 questions in Portuguese and English, blind-reviewed with 100 of 100 agreement (`quiz/content/state-machines/review.md`).
+
+## [0.39.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/concurrency/ten-thousand-connections` (TypeScript, Go and Elixir): the same server on an event loop, goroutines and BEAM processes holding 10,000 local connections under k6, with memory per connection and latency percentiles. The concurrency area is complete.
+
+## [0.38.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/concurrency/dining-philosophers` (Go and Java): a version that deadlocks, fixed by lock ordering and by a waiter, with the captured thread dumps annotated line by line.
+
+## [0.37.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/concurrency/counter-race` (Go, Rust, Java, TypeScript and Elixir): an unsynchronised counter that loses updates, four fixes (mutex, atomic, channel, actor), the race detectors flagging only the buggy version, and a throughput benchmark by number of workers.
+
+## [0.36.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: concurrency, 100 questions in Portuguese and English, blind-reviewed with no disagreement (`quiz/content/concurrency/review.md`).
+
+## [0.35.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/data-structures/balanced-trees` (C++ and Java): unbalanced BST, AVL and red-black trees with one interface, height and rotation counters (height 100,000 against 17 and 31 on sorted input), and a step-by-step rotation visualiser. The data structures area is complete.
+
+## [0.34.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/data-structures/lru-bloom-trie` (TypeScript and Go): an O(1) LRU cache checked against a reference model, a Bloom filter whose measured false-positive rate matches the theory, and a trie with prefix listing.
+
+## [0.33.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/data-structures/b-tree-on-disk` (C++ and Rust): a B-tree stored in a file with split, merge and redistribution, a page-read counter, and a comparison with a binary search tree on disk (about 3 page reads against 16 per search in 1,000,000 keys).
+
+## [0.32.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/data-structures/graph-algorithms` (C++ and Go): adjacency list and matrix behind one test suite, Dijkstra, Bellman-Ford, topological sort, Prim and Kruskal, and the 10 reference cases passing in both languages.
+
+## [0.31.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/data-structures/hash-map` (C++, Rust and TypeScript): separate chaining and linear probing with tombstones, property tests against the language's own map, and a lookup benchmark by load factor.
+
 ## [0.30.0] - 2026-10-07
 
 ### Added

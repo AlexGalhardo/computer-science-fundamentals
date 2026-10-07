@@ -32,3 +32,13 @@ Round 2 exists because round 1 exposed two problems of form, not of content:
 | `transactions-locking-09` | "Nobody waits in line" is too absolute: concurrent UPDATEs of the same row still wait briefly for the row lock | question rewritten: the alternative now says "Nobody holds a lock while deciding". Key kept |
 | `transactions-acid-properties-08`, `transactions-idempotency-08`, `transactions-isolation-levels-anomalies-15`, `transactions-locking-06`, `transactions-locking-10`, `transactions-locking-11`, `transactions-mvcc-09`, `transactions-saga-outbox-05` | Round 1: answered by guessing the missing example | key kept: in round 2 the reviewer saw the example and agreed with the key, with no note |
 | `transactions-cap-consistency-models-06`, `transactions-cap-consistency-models-08`, `transactions-isolation-levels-anomalies-16`, `transactions-saga-outbox-10` | Round 1: the correct alternative is the longest or the most detailed, a light effect | key kept: the distractors have similar length. Left as a known weakness of form |
+
+## Third round (2026-10-07, after integration)
+
+Two changes were made after the area was merged, so the whole area was blind-reviewed again by a new reviewer.
+
+- **Alternative lengths.** The correct alternative was strictly the longest in 38 of 100 questions. 21 questions had distractors made more specific or the correct alternative tightened, with no change to any key or explanation. It is now the longest in 18.
+- **Statements that depended on `example`.** The reviewer flagged 15 statements that referred to code or a diagram stored in `example`, which the quiz shows only after the answer. Resolution: **question rewritten** for `acid-properties-07`, `-08`, `-09`, `idempotency-08`, `isolation-levels-anomalies-09`, `-12`, `-13`, `-15`, `locking-06`, `-10`, `-11`, `mvcc-04`, `-08`, `-09` and `saga-outbox-05`: the material moved to `snippet`, shown with the statement.
+
+Result: the reviewer agreed with the answer key on all 100 questions, before and after the snippets were added, and confirmed that no snippet gives the answer away. **Key kept** everywhere.
+
