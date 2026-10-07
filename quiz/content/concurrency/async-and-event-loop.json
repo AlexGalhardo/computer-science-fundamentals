@@ -1,0 +1,462 @@
+[
+	{
+		"id": "concurrency-async-and-event-loop-01",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Tanenbaum, chapter 2 (thread usage and event-driven servers)",
+		"miniProject": "projects/concurrency/ten-thousand-connections",
+		"pt": {
+			"statement": "Em Node.js ou Bun, como uma única thread que executa JavaScript consegue atender milhares de conexões abertas ao mesmo tempo?",
+			"alternatives": [
+				"Ela cria uma thread oculta do SO por conexão, que fica esperando os dados",
+				"Ela dá a cada conexão uma fatia fixa de tempo e interrompe o handler ao final",
+				"Ela testa cada socket em um laço contínuo, sem dormir, até os dados chegarem",
+				"Ela inicia E/S não bloqueante e executa um callback quando cada operação fica pronta",
+				"Ela distribui os handlers de JavaScript entre todos os núcleos da máquina"
+			],
+			"explanations": [
+				"Errada. Confunde o event loop com o modelo de uma thread por conexão: as conexões ociosas não ocupam threads, apenas uma entrada registrada no sistema operacional.",
+				"Errada. Confunde o event loop com escalonamento preemptivo: um callback de JavaScript roda até o fim e não é interrompido por fatia de tempo.",
+				"Errada. Confunde notificação de eventos com espera ocupada: quando não há eventos, o loop dorme no kernel até que algum socket fique pronto.",
+				"Correta. A thread nunca fica parada esperando um socket: ela pede a operação, segue para outros eventos e trata cada resultado quando o sistema avisa que ele está pronto.",
+				"Errada. Confunde concorrência com paralelismo: o código JavaScript de um event loop roda em uma única thread, um callback de cada vez."
+			],
+			"concept": "Um servidor orientado a eventos usa uma thread e chamadas de E/S que não bloqueiam. O event loop pergunta ao sistema operacional quais operações ficaram prontas e executa o callback de cada uma, um por vez. Como uma conexão ociosa não prende nenhuma thread, manter milhares delas abertas custa pouca memória."
+		},
+		"en": {
+			"statement": "In Node.js or Bun, how can a single thread running JavaScript serve thousands of open connections at the same time?",
+			"alternatives": [
+				"It creates a hidden OS thread per connection, which sits waiting for the data",
+				"It gives each connection a fixed time slice and interrupts the handler at its end",
+				"It tests every socket in a continuous loop, never sleeping, until the data arrives",
+				"It starts non-blocking I/O and runs a callback when each operation becomes ready",
+				"It spreads the JavaScript handlers over all the cores of the machine"
+			],
+			"explanations": [
+				"Wrong. It confuses the event loop with the thread-per-connection model: idle connections take no thread, only an entry registered with the operating system.",
+				"Wrong. It confuses the event loop with preemptive scheduling: a JavaScript callback runs to completion and is not interrupted by a time slice.",
+				"Wrong. It confuses event notification with busy waiting: when there are no events, the loop sleeps in the kernel until some socket becomes ready.",
+				"Correct. The thread never sits waiting on one socket: it requests the operation, moves on to other events and handles each result when the system reports it is ready.",
+				"Wrong. It confuses concurrency with parallelism: the JavaScript code of an event loop runs on a single thread, one callback at a time."
+			],
+			"concept": "An event-driven server uses one thread and I/O calls that do not block. The event loop asks the operating system which operations have become ready and runs the callback of each, one at a time. Since an idle connection holds no thread, keeping thousands of them open costs little memory."
+		}
+	},
+	{
+		"id": "concurrency-async-and-event-loop-02",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Tanenbaum, chapter 2 (thread usage and event-driven servers)",
+		"pt": {
+			"statement": "Em JavaScript, o que a chamada de uma função declarada com async devolve a quem a chamou?",
+			"alternatives": [
+				"O próprio valor retornado, assim que a função termina de executar",
+				"Uma promise, que será resolvida com o resultado da função",
+				"Um callback, que precisa ser invocado para a função começar",
+				"Um identificador de thread, que executa a função em paralelo",
+				"undefined, até que await seja usado dentro da função"
+			],
+			"explanations": [
+				"Errada. Confunde função async com função comum: mesmo que o corpo só tenha return 42, quem chama recebe uma promise e precisa de await ou then para obter o 42.",
+				"Correta. Toda função async devolve uma promise: ela é cumprida com o valor do return ou rejeitada com o erro lançado.",
+				"Errada. Confunde promises com o estilo antigo de callbacks: a função async começa a executar imediatamente ao ser chamada.",
+				"Errada. Confunde assíncrono com paralelo: nenhuma thread é criada, e o corpo roda na mesma thread, intercalado com outros callbacks.",
+				"Errada. Confunde a função com o seu conteúdo: o valor devolvido é uma promise, exista ou não um await no corpo."
+			],
+			"concept": "async e await são uma sintaxe sobre promises. Uma função async sempre devolve uma promise, e await suspende apenas aquela função até a promise aguardada ser resolvida, deixando a thread livre para outros eventos. O código parece sequencial, mas continua sendo o mesmo encadeamento que se escreveria com then.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "async function getAnswer(): Promise<number> {\n\treturn 42;\n}\n\nconst result = getAnswer();\nconsole.log(result instanceof Promise); // true\n\nresult.then((value) => console.log(value)); // 42"
+			}
+		},
+		"en": {
+			"statement": "In JavaScript, what does calling a function declared with async return to its caller?",
+			"alternatives": [
+				"The returned value itself, as soon as the function finishes running",
+				"A promise, which will be settled with the result of the function",
+				"A callback, which must be invoked for the function to start",
+				"A thread handle, which runs the function in parallel",
+				"undefined, until await is used inside the function"
+			],
+			"explanations": [
+				"Wrong. It confuses an async function with an ordinary one: even if the body is just return 42, the caller gets a promise and needs await or then to obtain the 42.",
+				"Correct. Every async function returns a promise: it is fulfilled with the value of return or rejected with the error thrown.",
+				"Wrong. It confuses promises with the older callback style: an async function starts running immediately when it is called.",
+				"Wrong. It confuses asynchronous with parallel: no thread is created, and the body runs on the same thread, interleaved with other callbacks.",
+				"Wrong. It confuses the function with its contents: the value returned is a promise, whether or not there is an await in the body."
+			],
+			"concept": "async and await are syntax over promises. An async function always returns a promise, and await suspends only that function until the awaited promise settles, leaving the thread free for other events. The code looks sequential, but it is still the same chain one would write with then.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "async function getAnswer(): Promise<number> {\n\treturn 42;\n}\n\nconst result = getAnswer();\nconsole.log(result instanceof Promise); // true\n\nresult.then((value) => console.log(value)); // 42"
+			}
+		}
+	},
+	{
+		"id": "concurrency-async-and-event-loop-03",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "Tanenbaum, chapter 2 (thread usage and event-driven servers)",
+		"pt": {
+			"statement": "Quais são os três estados possíveis de uma promise em JavaScript?",
+			"alternatives": [
+				"new, running e done",
+				"pending, resolved e cancelled",
+				"ready, running e blocked",
+				"waiting, fulfilled e timed out",
+				"pending, fulfilled e rejected"
+			],
+			"explanations": [
+				"Errada. Confunde a promise com uma tarefa em execução: a promise não roda nada, ela só representa um resultado que ainda vai chegar.",
+				"Errada. Supõe que promises podem ser canceladas: o padrão não define cancelamento, e o estado de falha se chama rejected.",
+				"Errada. São os estados clássicos de um processo no sistema operacional, não os de uma promise.",
+				"Errada. Supõe um tempo limite embutido: uma promise pode ficar pendente para sempre, e um timeout precisa ser programado à parte.",
+				"Correta. Uma promise começa pending e muda uma única vez: para fulfilled, com um valor, ou para rejected, com um motivo."
+			],
+			"concept": "Uma promise representa o resultado futuro de uma operação assíncrona. Ela nasce pendente (pending) e é resolvida uma única vez: cumprida (fulfilled) com um valor ou rejeitada (rejected) com um erro. Depois disso o estado não muda mais, e os callbacks registrados com then ou catch são agendados."
+		},
+		"en": {
+			"statement": "Which are the three possible states of a promise in JavaScript?",
+			"alternatives": [
+				"new, running and done",
+				"pending, resolved and cancelled",
+				"ready, running and blocked",
+				"waiting, fulfilled and timed out",
+				"pending, fulfilled and rejected"
+			],
+			"explanations": [
+				"Wrong. It confuses a promise with a running task: a promise runs nothing, it only stands for a result that is yet to arrive.",
+				"Wrong. It assumes promises can be cancelled: the standard defines no cancellation, and the failure state is called rejected.",
+				"Wrong. Those are the classic states of an operating system process, not those of a promise.",
+				"Wrong. It assumes a built-in time limit: a promise may stay pending forever, and a timeout has to be programmed separately.",
+				"Correct. A promise starts as pending and changes only once: to fulfilled, with a value, or to rejected, with a reason."
+			],
+			"concept": "A promise stands for the future result of an asynchronous operation. It is born pending and settles only once: fulfilled with a value or rejected with an error. After that its state never changes, and the callbacks registered with then or catch are scheduled."
+		}
+	},
+	{
+		"id": "concurrency-async-and-event-loop-04",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "basic",
+		"answer": 2,
+		"source": "USP OOP, GUI lectures (SwingWorker and the event dispatch thread)",
+		"pt": {
+			"statement": "Em uma aplicação Java Swing, qual é o papel da event dispatch thread (EDT)?",
+			"alternatives": [
+				"Executar as tarefas demoradas em segundo plano, deixando a thread main livre",
+				"Criar uma thread para cada componente, de modo que todos sejam pintados em paralelo",
+				"Tratar os eventos da interface e atualizar os componentes, um evento de cada vez",
+				"Executar o método main e encerrar a aplicação assim que ele retorna",
+				"Recolher os componentes que não são mais usados, liberando a memória deles"
+			],
+			"explanations": [
+				"Errada. É o papel inverso: tarefas demoradas devem sair da EDT e ir para uma thread de segundo plano, por exemplo com SwingWorker.",
+				"Errada. Supõe uma thread por componente: há uma única EDT, justamente porque os componentes Swing não são seguros para acesso por várias threads.",
+				"Correta. A EDT retira eventos de uma fila (cliques, teclas, pedidos de repintura) e executa os listeners em sequência, sendo a única thread que deve mexer nos componentes.",
+				"Errada. Confunde a EDT com a thread main: são threads diferentes, e a aplicação continua viva depois que main retorna, enquanto houver janelas abertas.",
+				"Errada. Confunde a EDT com o coletor de lixo, que é quem libera a memória de objetos sem referência."
+			],
+			"concept": "O Swing usa o mesmo modelo de um event loop: uma única thread, a event dispatch thread, retira eventos de uma fila e executa os tratadores um após o outro. Toda leitura ou alteração de componentes deve acontecer nela. Como só essa thread toca a interface, os componentes não precisam de travas."
+		},
+		"en": {
+			"statement": "In a Java Swing application, what is the role of the event dispatch thread (EDT)?",
+			"alternatives": [
+				"To run the long tasks in the background, leaving the main thread free",
+				"To create a thread for each component, so that all of them are painted in parallel",
+				"To handle the interface events and update the components, one event at a time",
+				"To run the main method and end the application as soon as it returns",
+				"To collect the components that are no longer used, freeing their memory"
+			],
+			"explanations": [
+				"Wrong. That is the opposite role: long tasks must leave the EDT and go to a background thread, for example with SwingWorker.",
+				"Wrong. It assumes one thread per component: there is a single EDT, precisely because Swing components are not safe for access by several threads.",
+				"Correct. The EDT takes events from a queue (clicks, keys, repaint requests) and runs the listeners in sequence, and it is the only thread that should touch the components.",
+				"Wrong. It confuses the EDT with the main thread: they are different threads, and the application stays alive after main returns, as long as windows are open.",
+				"Wrong. It confuses the EDT with the garbage collector, which is what frees the memory of unreferenced objects."
+			],
+			"concept": "Swing uses the same model as an event loop: a single thread, the event dispatch thread, takes events from a queue and runs the handlers one after another. Every read or change of a component must happen on it. Since only that thread touches the interface, the components need no locks."
+		}
+	},
+	{
+		"id": "concurrency-async-and-event-loop-05",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Tanenbaum, chapter 2 (thread usage and event-driven servers)",
+		"miniProject": "projects/concurrency/ten-thousand-connections",
+		"pt": {
+			"statement": "Um servidor HTTP em Node.js ou Bun, com um único event loop, tem um handler que executa um laço síncrono de cálculo de 2 segundos antes de responder. Três requisições chegam no mesmo instante. Depois de quanto tempo, aproximadamente, a terceira resposta é enviada?",
+			"alternatives": [
+				"6 s, pois os três handlers executam um depois do outro",
+				"2 s, pois cada requisição é executada em uma thread própria",
+				"2 s, pois o event loop alterna entre os handlers durante o cálculo",
+				"4 s, pois dois handlers rodam em paralelo e o terceiro espera",
+				"2 s, pois o runtime move laços síncronos para as threads de E/S"
+			],
+			"explanations": [
+				"Correta. Um handler síncrono ocupa a única thread até terminar: as respostas saem em 2 s, 4 s e 6 s, e a terceira espera 2 + 2 + 2 = 6 s.",
+				"Errada. Confunde o event loop com o modelo de uma thread por requisição: aqui todos os handlers de JavaScript dividem a mesma thread.",
+				"Errada. Supõe preempção: o loop só troca de tarefa quando o código devolve o controle, e um laço síncrono não devolve até acabar.",
+				"Errada. Supõe paralelismo parcial: não há uma segunda thread executando JavaScript, então nenhum par de handlers roda ao mesmo tempo.",
+				"Errada. Confunde E/S com cálculo: as threads auxiliares do runtime cuidam de operações de E/S, e o código JavaScript síncrono permanece na thread principal."
+			],
+			"concept": "Em um event loop, cada callback executa até o fim antes de o próximo evento ser tratado. A espera por E/S não prende a thread, mas um cálculo síncrono prende: enquanto ele roda, nenhuma outra requisição avança, nem mesmo as mais simples. Por isso o tempo se soma: n handlers de t segundos de CPU levam n × t segundos no total."
+		},
+		"en": {
+			"statement": "An HTTP server in Node.js or Bun, with a single event loop, has a handler that runs a synchronous 2-second computation loop before replying. Three requests arrive at the same instant. After roughly how long is the third response sent?",
+			"alternatives": [
+				"6 s, since the three handlers run one after the other",
+				"2 s, since each request is executed on a thread of its own",
+				"2 s, since the event loop alternates between the handlers during the computation",
+				"4 s, since two handlers run in parallel and the third one waits",
+				"2 s, since the runtime moves synchronous loops to its I/O threads"
+			],
+			"explanations": [
+				"Correct. A synchronous handler holds the only thread until it ends: the responses leave at 2 s, 4 s and 6 s, and the third waits 2 + 2 + 2 = 6 s.",
+				"Wrong. It confuses the event loop with the thread-per-request model: here every JavaScript handler shares the same thread.",
+				"Wrong. It assumes preemption: the loop switches tasks only when the code hands control back, and a synchronous loop does not until it is done.",
+				"Wrong. It assumes partial parallelism: there is no second thread running JavaScript, so no pair of handlers runs at the same time.",
+				"Wrong. It confuses I/O with computation: the runtime's helper threads take care of I/O operations, and synchronous JavaScript code stays on the main thread."
+			],
+			"concept": "In an event loop, each callback runs to completion before the next event is handled. Waiting for I/O does not hold the thread, but a synchronous computation does: while it runs, no other request makes progress, not even the simplest ones. So the times add up: n handlers of t seconds of CPU take n × t seconds in total."
+		}
+	},
+	{
+		"id": "concurrency-async-and-event-loop-06",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "Tanenbaum, chapter 2 (thread usage and event-driven servers)",
+		"pt": {
+			"statement": "Em JavaScript, sleep(ms) devolve uma promise cumprida depois de ms milissegundos. A função sequential executa await sleep(300), depois await sleep(200) e depois await sleep(100). A função together executa await Promise.all([sleep(300), sleep(200), sleep(100)]). Quanto tempo, aproximadamente, cada função leva?",
+			"alternatives": [
+				"sequential leva 600 ms e together leva 600 ms",
+				"sequential leva 300 ms e together leva 300 ms",
+				"sequential leva 600 ms e together leva 100 ms",
+				"sequential leva 600 ms e together leva 300 ms",
+				"sequential leva 600 ms e together leva 200 ms"
+			],
+			"explanations": [
+				"Errada. Supõe que uma única thread não consegue sobrepor esperas: os três temporizadores de together começam juntos e correm ao mesmo tempo.",
+				"Errada. Supõe que as esperas de sequential se sobrepõem: cada await só inicia o próximo sleep depois que o anterior termina.",
+				"Errada. Confunde Promise.all com Promise.race: all espera todas as promises, e não apenas a primeira a terminar.",
+				"Correta. Em sequential as esperas se somam: 300 + 200 + 100 = 600 ms. Em together elas se sobrepõem e vale a mais longa: max(300, 200, 100) = 300 ms.",
+				"Errada. Usa a média das três esperas, (300 + 200 + 100) / 3 = 200 ms, quando Promise.all só termina junto com a mais demorada."
+			],
+			"concept": "Uma operação assíncrona começa quando a função é chamada, não quando se aplica await a ela. Com um await por linha, cada operação só é iniciada depois de a anterior terminar, e os tempos se somam. Ao criar todas as promises primeiro e esperá-las com Promise.all, as esperas se sobrepõem, e o total é o tempo da mais lenta.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const sleep = (ms: number): Promise<void> =>\n\tnew Promise<void>((resolve) => setTimeout(resolve, ms));\n\nasync function sequential(): Promise<void> {\n\tawait sleep(300);\n\tawait sleep(200);\n\tawait sleep(100);\n} // 300 + 200 + 100 = 600 ms\n\nasync function together(): Promise<void> {\n\tawait Promise.all([sleep(300), sleep(200), sleep(100)]);\n} // max(300, 200, 100) = 300 ms"
+			}
+		},
+		"en": {
+			"statement": "In JavaScript, sleep(ms) returns a promise fulfilled after ms milliseconds. The function sequential runs await sleep(300), then await sleep(200) and then await sleep(100). The function together runs await Promise.all([sleep(300), sleep(200), sleep(100)]). Roughly how long does each function take?",
+			"alternatives": [
+				"sequential takes 600 ms and together takes 600 ms",
+				"sequential takes 300 ms and together takes 300 ms",
+				"sequential takes 600 ms and together takes 100 ms",
+				"sequential takes 600 ms and together takes 300 ms",
+				"sequential takes 600 ms and together takes 200 ms"
+			],
+			"explanations": [
+				"Wrong. It assumes a single thread cannot overlap waits: the three timers of together start together and run at the same time.",
+				"Wrong. It assumes the waits of sequential overlap: each await starts the next sleep only after the previous one has finished.",
+				"Wrong. It confuses Promise.all with Promise.race: all waits for every promise, not just for the first one to finish.",
+				"Correct. In sequential the waits add up: 300 + 200 + 100 = 600 ms. In together they overlap and the longest one counts: max(300, 200, 100) = 300 ms.",
+				"Wrong. It uses the average of the three waits, (300 + 200 + 100) / 3 = 200 ms, whereas Promise.all finishes only together with the slowest one."
+			],
+			"concept": "An asynchronous operation starts when the function is called, not when await is applied to it. With one await per line, each operation is started only after the previous one has finished, and the times add up. By creating all the promises first and waiting for them with Promise.all, the waits overlap, and the total is the time of the slowest.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const sleep = (ms: number): Promise<void> =>\n\tnew Promise<void>((resolve) => setTimeout(resolve, ms));\n\nasync function sequential(): Promise<void> {\n\tawait sleep(300);\n\tawait sleep(200);\n\tawait sleep(100);\n} // 300 + 200 + 100 = 600 ms\n\nasync function together(): Promise<void> {\n\tawait Promise.all([sleep(300), sleep(200), sleep(100)]);\n} // max(300, 200, 100) = 300 ms"
+			}
+		}
+	},
+	{
+		"id": "concurrency-async-and-event-loop-07",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "Tanenbaum, chapter 2 (thread usage and event-driven servers)",
+		"pt": {
+			"statement": "Um serviço em Node.js ou Bun precisa executar, a cada requisição, um cálculo em JavaScript puro que ocupa a CPU por 3 segundos, sem congelar as demais requisições. Qual abordagem resolve o problema?",
+			"alternatives": [
+				"Declarar a função de cálculo como async, para que ela execute em segundo plano",
+				"Envolver o cálculo em uma promise, para que o event loop possa intercalá-lo",
+				"Chamar o cálculo dentro de setTimeout com atraso 0, para tirá-lo da thread principal",
+				"Executar o cálculo em uma worker thread e receber o resultado por mensagem",
+				"Iniciar o cálculo com Promise.all, para que rode junto com as outras requisições"
+			],
+			"explanations": [
+				"Errada. Confunde assíncrono com paralelo: async só muda o tipo de retorno para uma promise, e o corpo síncrono continua rodando na mesma thread.",
+				"Errada. Supõe que promises criam concorrência para a CPU: a função passada ao construtor da promise executa de imediato e de forma síncrona na thread principal.",
+				"Errada. Confunde adiar com mover: setTimeout só atrasa o início, e o callback roda depois na mesma thread, bloqueando-a pelos mesmos 3 segundos.",
+				"Correta. Uma worker thread tem o seu próprio motor de JavaScript e roda em paralelo em outra thread do SO, então o event loop principal continua livre para atender.",
+				"Errada. Confunde sobrepor esperas com sobrepor cálculos: Promise.all apenas aguarda promises e não executa código JavaScript em paralelo."
+			],
+			"concept": "O event loop oferece concorrência para E/S, não paralelismo para cálculo: código JavaScript síncrono sempre ocupa a thread em que roda. Para trabalho limitado pela CPU, a saída é outra thread, como uma worker thread, que executa isolada e se comunica com a principal por mensagens. Assim a thread principal só recebe um evento com o resultado."
+		},
+		"en": {
+			"statement": "A service in Node.js or Bun must run, on every request, a pure JavaScript computation that keeps the CPU busy for 3 seconds, without freezing the other requests. Which approach solves the problem?",
+			"alternatives": [
+				"Declaring the computation function as async, so that it runs in the background",
+				"Wrapping the computation in a promise, so that the event loop can interleave it",
+				"Calling the computation inside setTimeout with delay 0, to take it off the main thread",
+				"Running the computation in a worker thread and receiving the result by message",
+				"Starting the computation with Promise.all, so that it runs alongside other requests"
+			],
+			"explanations": [
+				"Wrong. It confuses asynchronous with parallel: async only changes the return type to a promise, and the synchronous body still runs on the same thread.",
+				"Wrong. It assumes promises create concurrency for the CPU: the function passed to the promise constructor runs immediately and synchronously on the main thread.",
+				"Wrong. It confuses postponing with moving: setTimeout only delays the start, and the callback later runs on the same thread, blocking it for the same 3 seconds.",
+				"Correct. A worker thread has its own JavaScript engine instance and runs in parallel on another OS thread, so the main event loop stays free to serve.",
+				"Wrong. It confuses overlapping waits with overlapping computations: Promise.all merely waits for promises and runs no JavaScript code in parallel."
+			],
+			"concept": "The event loop gives concurrency for I/O, not parallelism for computation: synchronous JavaScript code always occupies the thread it runs on. For CPU-bound work, the way out is another thread, such as a worker thread, which runs isolated and talks to the main one through messages. The main thread then only receives an event carrying the result."
+		}
+	},
+	{
+		"id": "concurrency-async-and-event-loop-08",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "USP OOP, GUI lectures (SwingWorker and the event dispatch thread)",
+		"pt": {
+			"statement": "Em uma aplicação Java Swing, o actionPerformed de um botão baixa um arquivo de forma síncrona, durante 10 segundos, dentro do próprio método. O que o usuário observa nesses 10 segundos?",
+			"alternatives": [
+				"Só aquele botão fica travado, pois cada componente tem a sua própria thread",
+				"A janela inteira congela, pois a event dispatch thread não trata outros eventos",
+				"Nada de diferente, pois o Swing executa cada listener em uma nova thread",
+				"O download é cancelado, pois o Swing limita o tempo de execução de um listener",
+				"Uma exceção é lançada, pois E/S de rede é proibida na event dispatch thread"
+			],
+			"explanations": [
+				"Errada. Supõe uma thread por componente: todos os componentes dependem da mesma event dispatch thread, então todos param juntos.",
+				"Correta. O listener roda na event dispatch thread; enquanto ele não retorna, cliques e pedidos de repintura ficam na fila e a janela não reage.",
+				"Errada. Supõe que o Swing cria threads para os listeners: eles são executados em sequência, todos na event dispatch thread.",
+				"Errada. Supõe um tempo limite que não existe: o Swing não interrompe um listener demorado, apenas espera ele terminar.",
+				"Errada. Confunde o Swing com plataformas que proíbem rede na thread da interface, como o Android: no Swing o código executa, só que bloqueia a interface."
+			],
+			"concept": "A event dispatch thread trata um evento de cada vez, então um listener demorado bloqueia todos os eventos seguintes, inclusive a repintura da janela. Trabalho longo deve ir para uma thread de segundo plano. O SwingWorker faz isso: doInBackground roda fora da EDT, e done roda de volta nela, onde é seguro atualizar os componentes."
+		},
+		"en": {
+			"statement": "In a Java Swing application, the actionPerformed of a button downloads a file synchronously, for 10 seconds, inside the method itself. What does the user observe during those 10 seconds?",
+			"alternatives": [
+				"Only that button is stuck, since each component has a thread of its own",
+				"The whole window freezes, since the event dispatch thread handles no other events",
+				"Nothing unusual, since Swing runs each listener on a new thread",
+				"The download is cancelled, since Swing limits the running time of a listener",
+				"An exception is thrown, since network I/O is forbidden on the event dispatch thread"
+			],
+			"explanations": [
+				"Wrong. It assumes one thread per component: every component depends on the same event dispatch thread, so they all stop together.",
+				"Correct. The listener runs on the event dispatch thread; until it returns, clicks and repaint requests stay in the queue and the window does not react.",
+				"Wrong. It assumes Swing creates threads for listeners: they are run in sequence, all on the event dispatch thread.",
+				"Wrong. It assumes a time limit that does not exist: Swing does not interrupt a slow listener, it just waits for it to finish.",
+				"Wrong. It confuses Swing with platforms that forbid networking on the interface thread, such as Android: in Swing the code runs, it just blocks the interface."
+			],
+			"concept": "The event dispatch thread handles one event at a time, so a slow listener blocks every following event, including the repainting of the window. Long work must go to a background thread. SwingWorker does that: doInBackground runs off the EDT, and done runs back on it, where updating the components is safe."
+		}
+	},
+	{
+		"id": "concurrency-async-and-event-loop-09",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "advanced",
+		"answer": 0,
+		"source": "Tanenbaum, chapter 2 (thread usage and event-driven servers)",
+		"pt": {
+			"statement": "Em JavaScript, em uma única thread, a variável balance vale 100. A função assíncrona withdraw(amount) executa três passos: const current = balance; depois await audit(), uma chamada de rede de 50 ms; depois balance = current - amount. O programa chama withdraw(80) duas vezes seguidas, sem await entre as chamadas, e espera as duas terminarem. Qual é o valor final de balance?",
+			"alternatives": [
+				"20, pois as duas chamadas leem 100 antes de qualquer uma delas gravar",
+				"-60, pois com uma única thread as chamadas executam uma depois da outra",
+				"-60, pois await mantém balance travada até a função retornar",
+				"20 ou -60 ao acaso, pois duas threads gravam balance ao mesmo tempo",
+				"100, pois cada chamada assíncrona trabalha em uma cópia própria de balance"
+			],
+			"explanations": [
+				"Correta. A primeira chamada lê 100 e suspende no await; a segunda começa, também lê 100 e suspende. Depois cada uma grava 100 − 80 = 20, e um dos saques se perde.",
+				"Errada. Confunde thread única com execução em série: as chamadas não rodam em paralelo, mas se intercalam nos pontos de await, e a segunda começa antes de a primeira terminar.",
+				"Errada. Trata await como uma trava: await só suspende a função em que está e não impede outro código de ler ou alterar a mesma variável.",
+				"Errada. Atribui o problema a threads paralelas: há uma única thread, e o resultado é determinístico, 20, porque as duas leituras sempre ocorrem antes das duas escritas.",
+				"Errada. Supõe isolamento que não existe: as duas chamadas compartilham a mesma variável balance, e só a constante local current é própria de cada chamada."
+			],
+			"concept": "Em um event loop, o código entre dois await executa sem interrupção, mas em cada await outras tarefas podem rodar. Ler um valor, esperar e depois gravar com base na leitura antiga é uma condição de corrida do tipo \"verifica e depois age\", mesmo sem threads paralelas. A correção é não deixar um await entre a leitura e a escrita, ou enfileirar as operações para que executem uma de cada vez."
+		},
+		"en": {
+			"statement": "In JavaScript, on a single thread, the variable balance holds 100. The async function withdraw(amount) runs three steps: const current = balance; then await audit(), a 50 ms network call; then balance = current - amount. The program calls withdraw(80) twice in a row, with no await between the calls, and waits for both to finish. What is the final value of balance?",
+			"alternatives": [
+				"20, since both calls read 100 before either of them writes",
+				"-60, since with a single thread the calls run one after the other",
+				"-60, since await keeps balance locked until the function returns",
+				"20 or -60 at random, since two threads write balance at the same time",
+				"100, since each async call works on a copy of balance of its own"
+			],
+			"explanations": [
+				"Correct. The first call reads 100 and suspends at the await; the second starts, also reads 100 and suspends. Then each writes 100 − 80 = 20, and one withdrawal is lost.",
+				"Wrong. It confuses a single thread with serial execution: the calls do not run in parallel, but they interleave at the await points, and the second starts before the first finishes.",
+				"Wrong. It treats await as a lock: await only suspends the function it is in and does not stop other code from reading or changing the same variable.",
+				"Wrong. It blames parallel threads: there is a single thread, and the result is deterministic, 20, because both reads always happen before both writes.",
+				"Wrong. It assumes an isolation that does not exist: both calls share the same balance variable, and only the local constant current belongs to each call."
+			],
+			"concept": "In an event loop, the code between two awaits runs without interruption, but at each await other tasks may run. Reading a value, waiting and then writing based on the old read is a check-then-act race condition, even with no parallel threads. The fix is to leave no await between the read and the write, or to queue the operations so that they run one at a time."
+		}
+	},
+	{
+		"id": "concurrency-async-and-event-loop-10",
+		"area": "concurrency",
+		"topic": "async-and-event-loop",
+		"difficulty": "advanced",
+		"answer": 4,
+		"source": "Tanenbaum, chapter 2 (thread usage and event-driven servers)",
+		"pt": {
+			"statement": "Em Node.js ou Bun, um script executa estas instruções, nesta ordem:\nconsole.log(\"A\");\nsetTimeout(() => console.log(\"B\"), 0);\nPromise.resolve().then(() => console.log(\"C\"));\n(async () => { console.log(\"D\"); await null; console.log(\"E\"); })();\nconsole.log(\"F\");\nEm que ordem as letras são impressas?",
+			"alternatives": ["A B C D E F", "A D E F C B", "A F C D E B", "A D F B C E", "A D F C E B"],
+			"explanations": [
+				"Errada. Segue a ordem do texto, como se setTimeout e then executassem seus callbacks na hora: eles apenas os agendam para depois do código síncrono.",
+				"Errada. Supõe que await null não suspende a função: todo await devolve o controle a quem chamou, e o trecho que imprime E vira uma microtask, executada depois de F e de C.",
+				"Errada. Supõe que o corpo de uma função async é adiado: ele começa de forma síncrona na chamada, então D é impresso antes de F.",
+				"Errada. Supõe que um temporizador de 0 ms passa na frente das promises: a fila de microtasks é esvaziada antes de o loop pegar a próxima macrotask, então C e E saem antes de B.",
+				"Correta. O código síncrono imprime A, D e F; depois as microtasks rodam na ordem em que foram enfileiradas, C e E; por último a macrotask do temporizador imprime B."
+			],
+			"concept": "O event loop de JavaScript tem dois tipos de fila. Callbacks de temporizadores e de E/S são macrotasks; as continuações de promises (then e o trecho depois de um await) são microtasks. Depois de cada trecho de código síncrono, toda a fila de microtasks é esvaziada, e só então o loop pega a próxima macrotask. Por isso uma promise já resolvida sempre passa na frente de um setTimeout de 0 ms.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "console.log(\"A\"); // 1: sync\nsetTimeout(() => console.log(\"B\"), 0); // macrotask queue: [B]\nPromise.resolve().then(() => console.log(\"C\")); // microtask queue: [C]\n(async () => {\n\tconsole.log(\"D\"); // 2: sync, the body starts at once\n\tawait null; // microtask queue: [C, E]\n\tconsole.log(\"E\");\n})();\nconsole.log(\"F\"); // 3: sync\n\n// 4, 5: microtasks, in order: C, E\n// 6: macrotask: B\n// Output: A D F C E B"
+			}
+		},
+		"en": {
+			"statement": "In Node.js or Bun, a script runs these statements, in this order:\nconsole.log(\"A\");\nsetTimeout(() => console.log(\"B\"), 0);\nPromise.resolve().then(() => console.log(\"C\"));\n(async () => { console.log(\"D\"); await null; console.log(\"E\"); })();\nconsole.log(\"F\");\nIn which order are the letters printed?",
+			"alternatives": ["A B C D E F", "A D E F C B", "A F C D E B", "A D F B C E", "A D F C E B"],
+			"explanations": [
+				"Wrong. It follows the order of the text, as if setTimeout and then ran their callbacks on the spot: they only schedule them for after the synchronous code.",
+				"Wrong. It assumes await null does not suspend the function: every await hands control back to the caller, and the part that prints E becomes a microtask, run after F and after C.",
+				"Wrong. It assumes the body of an async function is deferred: it starts synchronously at the call, so D is printed before F.",
+				"Wrong. It assumes a 0 ms timer goes ahead of promises: the microtask queue is drained before the loop takes the next macrotask, so C and E come out before B.",
+				"Correct. The synchronous code prints A, D and F; then the microtasks run in the order they were queued, C and E; finally the timer macrotask prints B."
+			],
+			"concept": "The JavaScript event loop has two kinds of queue. Timer and I/O callbacks are macrotasks; promise continuations (then and the part after an await) are microtasks. After each piece of synchronous code, the whole microtask queue is drained, and only then does the loop take the next macrotask. That is why an already resolved promise always goes ahead of a 0 ms setTimeout.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "console.log(\"A\"); // 1: sync\nsetTimeout(() => console.log(\"B\"), 0); // macrotask queue: [B]\nPromise.resolve().then(() => console.log(\"C\")); // microtask queue: [C]\n(async () => {\n\tconsole.log(\"D\"); // 2: sync, the body starts at once\n\tawait null; // microtask queue: [C, E]\n\tconsole.log(\"E\");\n})();\nconsole.log(\"F\"); // 3: sync\n\n// 4, 5: microtasks, in order: C, E\n// 6: macrotask: B\n// Output: A D F C E B"
+			}
+		}
+	}
+]

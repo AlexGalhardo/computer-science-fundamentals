@@ -1,0 +1,378 @@
+[
+	{
+		"id": "concurrency-atomics-and-memory-models-01",
+		"area": "concurrency",
+		"topic": "atomics-and-memory-models",
+		"difficulty": "basic",
+		"answer": 2,
+		"source": "Tanenbaum, chapter 2 (mutual exclusion with busy waiting: TSL and XCHG)",
+		"pt": {
+			"statement": "Que propriedade da instrução TSL (test and set lock) permite usá-la para construir uma trava?",
+			"alternatives": [
+				"Ela desabilita as interrupções em todas as CPUs enquanto a região crítica executa",
+				"Ela põe a thread que a executou para dormir até a palavra da trava voltar a zero",
+				"Ela lê a palavra da trava e grava nela um valor não nulo em uma única ação indivisível",
+				"Ela lê e depois grava a palavra da trava em dois passos que o escalonador nunca separa",
+				"Ela dá a cada CPU uma cópia privada da palavra da trava, de modo que nada é compartilhado"
+			],
+			"explanations": [
+				"O erro é confundir TSL com a técnica de desabilitar interrupções, que nem funciona entre CPUs diferentes. TSL não mexe em interrupções.",
+				"O erro é achar que TSL bloqueia. Ela só devolve o valor antigo; quem encontra a trava ocupada repete a instrução em um laço de espera ocupada.",
+				"Correta: ler o valor antigo e marcar a trava como ocupada acontecem como uma operação só, e nenhuma outra CPU acessa a palavra no meio.",
+				"O erro é pensar que basta impedir a troca de contexto. Em um multiprocessador, outra CPU poderia agir entre os dois passos sem escalonador nenhum envolvido.",
+				"O erro é inverter a ideia: a palavra da trava precisa ser compartilhada, senão uma CPU não saberia que a outra já entrou."
+			],
+			"concept": "Uma operação atômica é vista pelas outras threads como não iniciada ou já concluída, nunca pela metade. TSL e XCHG são instruções de máquina atômicas: leem uma palavra de memória e gravam nela sem que outra CPU possa agir no intervalo. Com elas se constrói uma trava de espera ocupada, que é a base de mutexes e semáforos."
+		},
+		"en": {
+			"statement": "Which property of the TSL (test and set lock) instruction makes it usable for building a lock?",
+			"alternatives": [
+				"It disables interrupts on every CPU while the critical region is being executed",
+				"It puts the thread that executed it to sleep until the lock word is zero again",
+				"It reads the lock word and writes a nonzero value to it as one indivisible action",
+				"It reads and then writes the lock word in two steps that the scheduler never splits",
+				"It gives each CPU a private copy of the lock word, so that nothing is shared"
+			],
+			"explanations": [
+				"The mistake is confusing TSL with the technique of disabling interrupts, which does not even work across CPUs. TSL does not touch interrupts.",
+				"The mistake is thinking that TSL blocks. It only returns the old value; a thread that finds the lock taken repeats the instruction in a busy-waiting loop.",
+				"Correct: reading the old value and marking the lock as taken happen as one operation, and no other CPU accesses the word in between.",
+				"The mistake is thinking that preventing a context switch is enough. On a multiprocessor another CPU could act between the two steps with no scheduler involved.",
+				"The mistake is inverting the idea: the lock word must be shared, otherwise one CPU would not know that another one is already inside."
+			],
+			"concept": "An atomic operation is seen by other threads as either not started or already finished, never halfway. TSL and XCHG are atomic machine instructions: they read a memory word and write to it with no other CPU able to act in between. They are enough to build a busy-waiting lock, which is the basis of mutexes and semaphores."
+		}
+	},
+	{
+		"id": "concurrency-atomics-and-memory-models-02",
+		"area": "concurrency",
+		"topic": "atomics-and-memory-models",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "Deitel, chapter 23 (thread synchronization; atomic classes); USP OOP, threads lectures (shared counter)",
+		"miniProject": "projects/concurrency/counter-race",
+		"pt": {
+			"statement": "Em Java, 8 threads compartilham um único `AtomicLong counter` que começa em 0, e cada thread chama `counter.incrementAndGet()` 1.000.000 de vezes. A thread principal faz `join` nas 8 threads e depois imprime `counter.get()`. O que é impresso?",
+			"alternatives": [
+				"Sempre 8000000, porque cada `incrementAndGet()` é um passo atômico",
+				"Quase sempre menos de 8000000, porque incrementos de duas threads colidem",
+				"Sempre 1000000, porque cada thread trabalha em uma cópia própria de `counter`",
+				"Sempre 8000000, mas só se `counter` também for declarado como `volatile`",
+				"Quase sempre mais de 8000000, porque um incremento que falha é aplicado duas vezes"
+			],
+			"explanations": [
+				"Correta: `incrementAndGet()` lê, soma e grava como uma operação indivisível, então nenhum incremento se perde. São 8 × 1.000.000 = 8.000.000 incrementos.",
+				"O erro é aplicar a um `AtomicLong` o comportamento de `count++` em um `long` comum, que é onde as atualizações se perdem.",
+				"O erro é achar que a lambda copia o objeto. As 8 threads capturam a mesma referência e alteram o mesmo `AtomicLong`.",
+				"O erro é achar que a classe atômica ainda precisa de ajuda para a visibilidade. O valor interno de um `AtomicLong` já é `volatile`.",
+				"O erro é imaginar que uma tentativa interna malsucedida deixa efeito. Ela não altera nada, e só a tentativa que dá certo é contada."
+			],
+			"concept": "Incrementar um contador compartilhado são três passos: ler, somar e gravar. As classes atômicas de Java, como `AtomicLong`, fazem esses passos como uma única operação indivisível, sem usar `synchronized`. O resultado é exato para qualquer intercalação das threads.",
+			"example": {
+				"kind": "code",
+				"language": "java",
+				"content": "AtomicLong counter = new AtomicLong();\n\nRunnable work = () -> {\n\tfor (int i = 0; i < 1_000_000; i++) {\n\t\tcounter.incrementAndGet();\n\t}\n};\n\n// 8 threads run `work`; the main thread joins all of them\nSystem.out.println(counter.get());"
+			}
+		},
+		"en": {
+			"statement": "In Java, 8 threads share a single `AtomicLong counter` that starts at 0, and each thread calls `counter.incrementAndGet()` 1,000,000 times. The main thread joins the 8 threads and then prints `counter.get()`. What is printed?",
+			"alternatives": [
+				"Always 8000000, because each `incrementAndGet()` is one atomic step",
+				"Almost always less than 8000000, because increments from two threads collide",
+				"Always 1000000, because each thread works on its own copy of `counter`",
+				"Always 8000000, but only if `counter` is also declared as `volatile`",
+				"Almost always more than 8000000, because an increment that fails is applied twice"
+			],
+			"explanations": [
+				"Correct: `incrementAndGet()` reads, adds and writes as one indivisible operation, so no increment is lost. There are 8 × 1,000,000 = 8,000,000 increments.",
+				"The mistake is applying to an `AtomicLong` the behaviour of `count++` on a plain `long`, which is where updates get lost.",
+				"The mistake is thinking that the lambda copies the object. The 8 threads capture the same reference and change the same `AtomicLong`.",
+				"The mistake is thinking that the atomic class still needs help with visibility. The value inside an `AtomicLong` is already `volatile`.",
+				"The mistake is imagining that a failed internal attempt leaves an effect. It changes nothing, and only the attempt that succeeds is counted."
+			],
+			"concept": "Incrementing a shared counter takes three steps: read, add and write. The Java atomic classes, such as `AtomicLong`, perform those steps as a single indivisible operation, without `synchronized`. The result is exact for every interleaving of the threads.",
+			"example": {
+				"kind": "code",
+				"language": "java",
+				"content": "AtomicLong counter = new AtomicLong();\n\nRunnable work = () -> {\n\tfor (int i = 0; i < 1_000_000; i++) {\n\t\tcounter.incrementAndGet();\n\t}\n};\n\n// 8 threads run `work`; the main thread joins all of them\nSystem.out.println(counter.get());"
+			}
+		}
+	},
+	{
+		"id": "concurrency-atomics-and-memory-models-03",
+		"area": "concurrency",
+		"topic": "atomics-and-memory-models",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Deitel, chapter 23 (atomic classes); Tanenbaum, chapter 2 (TSL and XCHG)",
+		"miniProject": "projects/concurrency/counter-race",
+		"pt": {
+			"statement": "Uma thread que implementa um incremento sem travas em Java lê 41 de um `AtomicInteger`, calcula 42 e chama `compareAndSet(41, 42)`, que devolve `false`. O que ela deve fazer em seguida?",
+			"alternatives": [
+				"Chamar `set(42)`, já que o novo valor já foi calculado",
+				"Chamar `compareAndSet(41, 42)` de novo até devolver `true`",
+				"Parar, já que outra thread já fez o incremento por ela",
+				"Chamar `wait()` até que a thread que mudou o valor a notifique",
+				"Ler o valor de novo, somar 1 e repetir o `compareAndSet`"
+			],
+			"explanations": [
+				"O erro é ignorar o motivo da falha. Gravar 42 às cegas apaga o incremento da outra thread, que é a atualização perdida que o CAS existe para evitar.",
+				"O erro é repetir com o valor esperado antigo. O valor atual não é mais 41, então a mesma chamada continua falhando, ou tem sucesso mais tarde por acaso, com um resultado errado.",
+				"O erro é confundir o incremento da outra thread com o próprio. Cada thread deve somar 1; desistir deixa o total uma unidade abaixo.",
+				"O erro é misturar CAS com monitores. Um algoritmo sem travas não bloqueia nem é notificado: ele simplesmente tenta de novo.",
+				"Correta: `false` significa que o valor mudou desde a leitura. A thread relê o valor atual, por exemplo 42, calcula 43 e tenta `compareAndSet(42, 43)`, repetindo até dar certo."
+			],
+			"concept": "Compare-and-swap (CAS) grava o novo valor apenas se o valor atual ainda for o esperado, e informa se conseguiu, tudo em uma ação atômica. Um incremento sem travas é um laço: ler, calcular, tentar o CAS e, se ele falhar, recomeçar a partir de uma nova leitura. Nenhuma atualização se perde, porque uma gravação baseada em valor antigo é sempre recusada."
+		},
+		"en": {
+			"statement": "A thread implementing a lock-free increment in Java reads 41 from an `AtomicInteger`, computes 42 and calls `compareAndSet(41, 42)`, which returns `false`. What should it do next?",
+			"alternatives": [
+				"Call `set(42)`, since the new value has already been computed",
+				"Call `compareAndSet(41, 42)` again until it returns `true`",
+				"Stop, since another thread has already done the increment for it",
+				"Call `wait()` until the thread that changed the value notifies it",
+				"Read the value again, add 1 and call `compareAndSet` once more"
+			],
+			"explanations": [
+				"The mistake is ignoring why it failed. Writing 42 blindly erases the other thread's increment, which is the lost update that CAS exists to prevent.",
+				"The mistake is retrying with the old expected value. The current value is no longer 41, so the same call keeps failing, or succeeds later by accident with a wrong result.",
+				"The mistake is confusing the other thread's increment with its own. Each thread must add 1; giving up leaves the total one short.",
+				"The mistake is mixing CAS with monitors. A lock-free algorithm neither blocks nor gets notified: it simply tries again.",
+				"Correct: `false` means the value changed since it was read. The thread rereads the current value, for example 42, computes 43 and tries `compareAndSet(42, 43)`, repeating until it succeeds."
+			],
+			"concept": "Compare-and-swap (CAS) writes the new value only if the current value is still the expected one, and reports whether it did, all in one atomic action. A lock-free increment is a loop: read, compute, try the CAS and, if it fails, start again from a fresh read. No update is lost, because a write based on an old value is always refused."
+		}
+	},
+	{
+		"id": "concurrency-atomics-and-memory-models-04",
+		"area": "concurrency",
+		"topic": "atomics-and-memory-models",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "Deitel, chapter 23 (thread synchronization; volatile)",
+		"pt": {
+			"statement": "Em Java, duas threads executam `count++` 1000 vezes cada uma sobre um campo compartilhado declarado como `volatile int count = 0`. O que se pode afirmar sobre o valor final?",
+			"alternatives": [
+				"É sempre 2000, porque `volatile` transforma `count++` em um único passo atômico",
+				"Pode ficar abaixo de 2000, porque `count++` continua sendo ler, somar e gravar",
+				"É sempre 2000, porque `volatile` adquire a trava do monitor a cada acesso",
+				"Pode ficar acima de 2000, porque uma leitura antiga em cache é contada duas vezes",
+				"Pode ficar abaixo de 2000, porque `volatile` deixa cada thread manter `count` em cache"
+			],
+			"explanations": [
+				"O erro é confundir visibilidade com atomicidade. `volatile` torna atômica cada leitura e cada escrita isolada, não a sequência das duas.",
+				"Correta: as duas threads podem ler o mesmo valor, somar 1 e gravar o mesmo resultado, e um incremento some. `volatile` só garante que cada leitura veja a última escrita.",
+				"O erro é confundir `volatile` com `synchronized`. `volatile` não adquire trava nenhuma, e por isso não cria exclusão mútua.",
+				"O erro é inverter o efeito da corrida. Uma atualização perdida só pode diminuir o total: são feitas exatamente 2000 gravações de valor lido mais 1.",
+				"O resultado está certo, mas o motivo é o oposto do real: `volatile` proíbe justamente o uso de um valor antigo em cache. A perda vem da falta de atomicidade."
+			],
+			"concept": "Em Java, `volatile` garante visibilidade: toda leitura do campo enxerga a escrita mais recente feita por qualquer thread. Ele não torna atômica uma ação composta como `count++`, que lê, soma e grava. Para um contador compartilhado é preciso uma trava ou uma classe atômica como `AtomicInteger`."
+		},
+		"en": {
+			"statement": "In Java, two threads each execute `count++` 1000 times on a shared field declared as `volatile int count = 0`. What can be said about the final value?",
+			"alternatives": [
+				"It is always 2000, because `volatile` turns `count++` into a single atomic step",
+				"It can end below 2000, because `count++` is still a read, an add and a write",
+				"It is always 2000, because `volatile` acquires the monitor lock on each access",
+				"It can end above 2000, because a stale cached read gets counted a second time",
+				"It can end below 2000, because `volatile` lets each thread keep `count` cached"
+			],
+			"explanations": [
+				"The mistake is confusing visibility with atomicity. `volatile` makes each single read and each single write atomic, not the sequence of the two.",
+				"Correct: both threads can read the same value, add 1 and write the same result, and one increment vanishes. `volatile` only guarantees that each read sees the latest write.",
+				"The mistake is confusing `volatile` with `synchronized`. `volatile` acquires no lock at all, so it creates no mutual exclusion.",
+				"The mistake is inverting the effect of the race. A lost update can only lower the total: exactly 2000 writes of a read value plus 1 are made.",
+				"The outcome is right, but the reason is the opposite of the real one: `volatile` forbids precisely the use of a stale cached value. The loss comes from the lack of atomicity."
+			],
+			"concept": "In Java, `volatile` guarantees visibility: every read of the field sees the most recent write made by any thread. It does not make a compound action such as `count++` atomic, since that reads, adds and writes. A shared counter needs a lock or an atomic class such as `AtomicInteger`."
+		}
+	},
+	{
+		"id": "concurrency-atomics-and-memory-models-05",
+		"area": "concurrency",
+		"topic": "atomics-and-memory-models",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "Deitel, chapter 23 (thread synchronization; volatile)",
+		"pt": {
+			"statement": "Em Java, uma thread trabalhadora executa `while (!stopped) { work(); }`, em que `stopped` é um campo `boolean` comum (sem `volatile`) e `work()` não usa nenhuma sincronização. Outra thread executa `stopped = true` sem ter nenhuma trava. O que o modelo de memória de Java permite?",
+			"alternatives": [
+				"A trabalhadora para no teste seguinte, porque a escrita em um `boolean` é atômica",
+				"A trabalhadora para após um atraso, porque os caches são descarregados na troca de contexto",
+				"A trabalhadora falha com uma exceção, porque o campo mudou enquanto era lido",
+				"A trabalhadora pode nunca parar, porque nada garante que ela enxergue a escrita",
+				"A trabalhadora lê um valor gravado pela metade, porque a escrita não é atômica"
+			],
+			"explanations": [
+				"O erro é confundir atomicidade com visibilidade. A escrita é mesmo atômica, mas isso não obriga a outra thread a enxergá-la.",
+				"O erro é reduzir o problema ao cache do processador. O compilador JIT pode ler `stopped` uma única vez antes do laço, e nenhuma troca de contexto desfaz isso.",
+				"O erro é esperar que a JVM detecte a corrida. Java não lança exceção alguma por acesso concorrente a um campo comum.",
+				"Correta: sem `volatile` nem trava não há relação happens-before entre a escrita e as leituras, então a trabalhadora pode continuar vendo `false` indefinidamente.",
+				"O erro é imaginar uma escrita rasgada. Um `boolean` é lido e gravado inteiro; o risco aqui é ver o valor antigo, não um valor inválido."
+			],
+			"concept": "O modelo de memória de Java define quando a escrita de uma thread é visível para outra por meio da relação happens-before. Liberar e adquirir a mesma trava, escrever e ler um campo `volatile`, e iniciar uma thread ou esperar por ela com `join()` criam essa relação. Sem ela, o compilador e o processador podem manter um valor antigo, e a leitura pode nunca enxergar a escrita."
+		},
+		"en": {
+			"statement": "In Java, a worker thread runs `while (!stopped) { work(); }`, where `stopped` is a plain `boolean` field (not `volatile`) and `work()` uses no synchronization. Another thread executes `stopped = true` without holding any lock. What does the Java memory model allow?",
+			"alternatives": [
+				"The worker stops at its next test, because a write to a `boolean` is atomic",
+				"The worker stops after a delay, because caches are flushed on a context switch",
+				"The worker fails with an exception, because the field changed while being read",
+				"The worker may never stop, because nothing guarantees that it sees the write",
+				"The worker reads a half-written value, because the write is not atomic"
+			],
+			"explanations": [
+				"The mistake is confusing atomicity with visibility. The write is indeed atomic, but that does not force the other thread to see it.",
+				"The mistake is reducing the problem to the processor cache. The JIT compiler may read `stopped` only once before the loop, and no context switch undoes that.",
+				"The mistake is expecting the JVM to detect the race. Java throws no exception for concurrent access to a plain field.",
+				"Correct: with neither `volatile` nor a lock there is no happens-before relation between the write and the reads, so the worker may keep seeing `false` indefinitely.",
+				"The mistake is imagining a torn write. A `boolean` is read and written whole; the risk here is seeing the old value, not an invalid one."
+			],
+			"concept": "The Java memory model defines when a write by one thread is visible to another through the happens-before relation. Releasing and acquiring the same lock, writing and reading a `volatile` field, and starting a thread or waiting for it with `join()` create that relation. Without it, the compiler and the processor may keep an old value, and a read may never see the write."
+		}
+	},
+	{
+		"id": "concurrency-atomics-and-memory-models-06",
+		"area": "concurrency",
+		"topic": "atomics-and-memory-models",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "Tanenbaum, chapter 2 (race conditions; TSL and XCHG)",
+		"miniProject": "projects/concurrency/counter-race",
+		"pt": {
+			"statement": "Em Go, 8 goroutines compartilham a variável `var n int64`, que começa em 0, e cada uma executa `n++` 1000 vezes sem nenhuma sincronização; a goroutine principal espera todas com um `sync.WaitGroup` e depois imprime `n`. O programa tem uma corrida de dados e pode imprimir menos de 8000. Qual mudança, sozinha, faz com que ele sempre imprima 8000?",
+			"alternatives": [
+				"Trocar `n++` por `n = atomic.LoadInt64(&n) + 1`",
+				"Trocar `n++` por `atomic.AddInt64(&n, 1)`",
+				"Trocar `n++` por `atomic.StoreInt64(&n, n+1)`",
+				"Chamar `runtime.GOMAXPROCS(1)` antes de iniciar as goroutines",
+				"Chamar `runtime.Gosched()` logo depois de cada `n++`"
+			],
+			"explanations": [
+				"O erro é achar que uma leitura atômica torna atômica a sequência inteira. Entre o `LoadInt64` e a atribuição, outra goroutine pode gravar, e esse incremento se perde.",
+				"Correta: `atomic.AddInt64` lê, soma e grava como uma operação indivisível. São 8 × 1000 = 8000 incrementos e nenhum se perde.",
+				"O erro é o mesmo, do outro lado: a escrita é atômica, mas `n+1` foi calculado antes com uma leitura comum, que pode já estar desatualizada.",
+				"O erro é confundir ausência de paralelismo com ausência de intercalação. Com um só processador lógico, uma goroutine ainda pode ser interrompida entre ler e gravar `n`, e o programa continua com uma corrida de dados.",
+				"O erro é tratar a corrida como questão de dar a vez. Ceder o processador depois do incremento não protege os passos internos de `n++`."
+			],
+			"concept": "Em Go, o pacote `sync/atomic` oferece operações indivisíveis sobre inteiros, como `AddInt64`, `LoadInt64`, `StoreInt64` e `CompareAndSwapInt64`. Cada chamada é atômica por si só, mas duas chamadas atômicas em sequência não formam uma ação atômica. Para um incremento, a operação certa é a que faz leitura, soma e escrita de uma vez.",
+			"example": {
+				"kind": "code",
+				"language": "go",
+				"content": "var n int64\nvar wg sync.WaitGroup\n\nfor i := 0; i < 8; i++ {\n\twg.Add(1)\n\tgo func() {\n\t\tdefer wg.Done()\n\t\tfor j := 0; j < 1000; j++ {\n\t\t\tn++\n\t\t}\n\t}()\n}\n\nwg.Wait()\nfmt.Println(n)"
+			}
+		},
+		"en": {
+			"statement": "In Go, 8 goroutines share the variable `var n int64`, which starts at 0, and each one executes `n++` 1000 times with no synchronization; the main goroutine waits for all of them with a `sync.WaitGroup` and then prints `n`. The program has a data race and may print less than 8000. Which change, on its own, makes it always print 8000?",
+			"alternatives": [
+				"Replace `n++` with `n = atomic.LoadInt64(&n) + 1`",
+				"Replace `n++` with `atomic.AddInt64(&n, 1)`",
+				"Replace `n++` with `atomic.StoreInt64(&n, n+1)`",
+				"Call `runtime.GOMAXPROCS(1)` before starting the goroutines",
+				"Call `runtime.Gosched()` right after each `n++`"
+			],
+			"explanations": [
+				"The mistake is thinking that an atomic read makes the whole sequence atomic. Between the `LoadInt64` and the assignment another goroutine can write, and that increment is lost.",
+				"Correct: `atomic.AddInt64` reads, adds and writes as one indivisible operation. There are 8 × 1000 = 8000 increments and none is lost.",
+				"The same mistake from the other side: the write is atomic, but `n+1` was computed earlier with a plain read, which may already be stale.",
+				"The mistake is confusing no parallelism with no interleaving. With a single logical processor a goroutine can still be interrupted between reading and writing `n`, and the program still has a data race.",
+				"The mistake is treating the race as a matter of taking turns. Yielding the processor after the increment does not protect the inner steps of `n++`."
+			],
+			"concept": "In Go, the `sync/atomic` package offers indivisible operations on integers, such as `AddInt64`, `LoadInt64`, `StoreInt64` and `CompareAndSwapInt64`. Each call is atomic on its own, but two atomic calls in a row do not form one atomic action. For an increment, the right operation is the one that reads, adds and writes at once.",
+			"example": {
+				"kind": "code",
+				"language": "go",
+				"content": "var n int64\nvar wg sync.WaitGroup\n\nfor i := 0; i < 8; i++ {\n\twg.Add(1)\n\tgo func() {\n\t\tdefer wg.Done()\n\t\tfor j := 0; j < 1000; j++ {\n\t\t\tn++\n\t\t}\n\t}()\n}\n\nwg.Wait()\nfmt.Println(n)"
+			}
+		}
+	},
+	{
+		"id": "concurrency-atomics-and-memory-models-07",
+		"area": "concurrency",
+		"topic": "atomics-and-memory-models",
+		"difficulty": "advanced",
+		"answer": 4,
+		"source": "Tanenbaum, chapter 2 (TSL and XCHG; avoiding locks: read-copy-update)",
+		"pt": {
+			"statement": "Uma pilha sem travas desempilha com `compareAndSet(top, oldTop, oldTop.next)`. A thread T1 lê `top = A` e `A.next = B` e é interrompida. A thread T2 desempilha A, desempilha B e empilha A de volta. T1 retoma e executa `compareAndSet(top, A, B)`. O que acontece?",
+			"alternatives": [
+				"Falha, porque o CAS detecta que `top` foi gravado enquanto T1 estava parada",
+				"Tem sucesso e a pilha fica correta, porque `top` igual a A indica que nada mudou",
+				"Bloqueia T1 até que T2 termine todas as suas operações sobre a pilha",
+				"Falha, e T1 repete para sempre, porque A nunca mais volta a ser o topo",
+				"Tem sucesso, porque `top` voltou a ser A, e `top` vira B, um nó já removido"
+			],
+			"explanations": [
+				"O erro é achar que o CAS guarda um histórico de escritas. Ele compara apenas o valor atual com o esperado, e os dois são A.",
+				"O erro é concluir que valor igual significa estado igual. O topo é A outra vez, mas `A.next` não é mais B, e a pilha fica corrompida.",
+				"O erro é atribuir ao CAS o comportamento de uma trava. O CAS nunca bloqueia: ele retorna na hora dizendo se gravou ou não.",
+				"O erro é não acompanhar a sequência de T2: depois do último `push`, A é de novo o topo, e por isso a comparação dá certo.",
+				"Correta: esse é o problema ABA. O valor foi de A para outro nó e voltou a A, o CAS não percebe e instala B, que T2 já tinha retirado da pilha."
+			],
+			"concept": "O problema ABA aparece quando um CAS compara só o valor: se ele mudou de A para B e voltou a A, a comparação tem sucesso mesmo com o estado ao redor alterado. Em estruturas sem travas com ponteiros, isso pode religar nós que já foram removidos. As defesas usuais juntam um contador de versão ao valor comparado ou impedem a reutilização do nó enquanto alguma thread ainda o referencia."
+		},
+		"en": {
+			"statement": "A lock-free stack pops with `compareAndSet(top, oldTop, oldTop.next)`. Thread T1 reads `top = A` and `A.next = B` and is preempted. Thread T2 pops A, pops B and pushes A back. T1 resumes and executes `compareAndSet(top, A, B)`. What happens?",
+			"alternatives": [
+				"It fails, because the CAS detects that `top` was written while T1 was paused",
+				"It succeeds and the stack is correct, because `top` being A shows nothing changed",
+				"It blocks T1 until T2 has finished all of its operations on the stack",
+				"It fails, and T1 retries forever, because A never becomes the top again",
+				"It succeeds, because `top` is A again, and `top` becomes B, a removed node"
+			],
+			"explanations": [
+				"The mistake is thinking that CAS keeps a history of writes. It only compares the current value with the expected one, and both are A.",
+				"The mistake is concluding that an equal value means an equal state. The top is A again, but `A.next` is no longer B, and the stack is corrupted.",
+				"The mistake is giving CAS the behaviour of a lock. CAS never blocks: it returns at once saying whether it wrote or not.",
+				"The mistake is not following T2's sequence: after the last `push`, A is the top again, which is why the comparison succeeds.",
+				"Correct: this is the ABA problem. The value went from A to another node and back to A, CAS does not notice, and it installs B, which T2 had already taken off the stack."
+			],
+			"concept": "The ABA problem appears when a CAS compares only the value: if it changed from A to B and back to A, the comparison succeeds even though the surrounding state changed. In lock-free structures with pointers this can relink nodes that were already removed. The usual defences attach a version counter to the compared value or prevent a node from being reused while some thread still refers to it."
+		}
+	},
+	{
+		"id": "concurrency-atomics-and-memory-models-08",
+		"area": "concurrency",
+		"topic": "atomics-and-memory-models",
+		"difficulty": "advanced",
+		"answer": 2,
+		"source": "Tanenbaum, chapter 2 (race conditions; TSL and XCHG)",
+		"miniProject": "projects/concurrency/counter-race",
+		"pt": {
+			"statement": "Em Rust, 8 threads chamam `counter.fetch_add(1, Ordering::Relaxed)` 1.000.000 de vezes cada uma sobre um `AtomicU64` compartilhado que começa em 0. A thread principal faz `join` nas 8 threads e depois lê `counter.load(Ordering::Relaxed)`. O que ela lê?",
+			"alternatives": [
+				"Possivelmente menos de 8000000, pois `Relaxed` deixa dois `fetch_add` perderem uma atualização",
+				"Possivelmente menos de 8000000, pois um `load` com `Relaxed` pode não ver escritas das threads já unidas",
+				"Exatamente 8000000, pois `Relaxed` afrouxa a ordenação, não a atomicidade de `fetch_add`",
+				"Exatamente 8000000, mas só em x86, onde toda instrução atômica já é sequencialmente consistente",
+				"Um valor indefinido, pois compartilhar um `AtomicU64` sem um `Mutex` é uma corrida de dados em Rust"
+			],
+			"explanations": [
+				"O erro é achar que `Relaxed` enfraquece a própria operação. Com qualquer ordenação, `fetch_add` lê, soma e grava de forma indivisível.",
+				"O erro é esquecer o `join`: ele cria uma relação happens-before entre tudo o que a thread fez e o código seguinte, então o `load` enxerga todos os incrementos.",
+				"Correta: a ordenação define o que se garante em relação a outros acessos à memória, e cada `fetch_add` continua atômico. São 8 × 1.000.000 = 8.000.000 incrementos, todos visíveis depois dos `join`.",
+				"O erro é fazer a garantia depender do processador. O resultado exato vem da semântica da linguagem e vale em qualquer arquitetura.",
+				"O erro é confundir acesso atômico concorrente com corrida de dados. Os tipos atômicos existem para ser compartilhados sem `Mutex`, e isso é bem definido."
+			],
+			"concept": "Em Rust, toda operação de um tipo atômico recebe um `Ordering`. Ele não altera a atomicidade da operação: define apenas quais garantias de ordem ela dá em relação a outras leituras e escritas, de `Relaxed` (nenhuma além da própria operação) até `SeqCst` (uma ordem global única). Um contador que só é lido depois de unir todas as threads pode usar `Relaxed`, porque o `join` já garante a visibilidade."
+		},
+		"en": {
+			"statement": "In Rust, 8 threads each call `counter.fetch_add(1, Ordering::Relaxed)` 1,000,000 times on a shared `AtomicU64` that starts at 0. The main thread joins the 8 threads and then reads `counter.load(Ordering::Relaxed)`. What does it read?",
+			"alternatives": [
+				"Possibly less than 8000000, as `Relaxed` lets two `fetch_add` calls lose an update",
+				"Possibly less than 8000000, as a `Relaxed` load may miss writes of the joined threads",
+				"Exactly 8000000, as `Relaxed` loosens the ordering, not the atomicity of `fetch_add`",
+				"Exactly 8000000, but only on x86, where every atomic instruction is sequentially consistent",
+				"An undefined value, as sharing an `AtomicU64` without a `Mutex` is a data race in Rust"
+			],
+			"explanations": [
+				"The mistake is thinking that `Relaxed` weakens the operation itself. With any ordering, `fetch_add` reads, adds and writes indivisibly.",
+				"The mistake is forgetting the `join`: it creates a happens-before relation between everything the thread did and the code that follows, so the `load` sees every increment.",
+				"Correct: the ordering defines what is guaranteed relative to other memory accesses, and each `fetch_add` stays atomic. There are 8 × 1,000,000 = 8,000,000 increments, all visible after the joins.",
+				"The mistake is making the guarantee depend on the processor. The exact result comes from the semantics of the language and holds on any architecture.",
+				"The mistake is confusing concurrent atomic access with a data race. Atomic types exist to be shared without a `Mutex`, and that is well defined."
+			],
+			"concept": "In Rust every operation on an atomic type takes an `Ordering`. It does not change the atomicity of the operation: it only defines which ordering guarantees it gives relative to other reads and writes, from `Relaxed` (none beyond the operation itself) to `SeqCst` (one single global order). A counter that is read only after joining every thread can use `Relaxed`, because the `join` already guarantees visibility."
+		}
+	}
+]

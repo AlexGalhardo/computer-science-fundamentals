@@ -1,0 +1,377 @@
+[
+	{
+		"id": "concurrency-actor-model-and-beam-01",
+		"area": "concurrency",
+		"topic": "actor-model-and-beam",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Tanenbaum, chapter 2 (message passing)",
+		"miniProject": "projects/concurrency/counter-race",
+		"pt": {
+			"statement": "No modelo de atores, do que é formado um ator?",
+			"alternatives": [
+				"De um estado compartilhado, protegido por uma trava que cada chamador adquire",
+				"De um grupo de threads que executam callbacks tirados de uma fila comum",
+				"De um canal sem estado próprio, usado apenas para transportar valores",
+				"De um estado privado e uma caixa de mensagens, tratadas uma de cada vez",
+				"De um estado imutável, que nunca mais é alterado depois de criado"
+			],
+			"explanations": [
+				"Errada. Confunde ator com monitor: no monitor vários chamadores entram no mesmo objeto sob uma trava, enquanto o estado de um ator não é acessível de fora.",
+				"Errada. Confunde ator com pool de threads: o pool executa tarefas independentes em paralelo e não guarda um estado próprio por trás de uma caixa de mensagens.",
+				"Errada. Confunde ator com canal: o canal é só o meio de comunicação, e o ator é quem possui o estado e reage às mensagens.",
+				"Correta. Só o próprio ator lê e altera o seu estado, e ele retira da caixa uma mensagem por vez, então não há acesso simultâneo.",
+				"Errada. Confunde dados imutáveis com estado do ator: os valores trocados não mudam, mas o ator passa de um estado a outro a cada mensagem tratada."
+			],
+			"concept": "Um ator é uma unidade de concorrência que guarda um estado só seu e se comunica apenas por mensagens assíncronas. As mensagens chegam à sua caixa (mailbox) e são tratadas uma de cada vez. Como nenhum outro ator enxerga esse estado, não há memória compartilhada para proteger com travas."
+		},
+		"en": {
+			"statement": "In the actor model, what is an actor made of?",
+			"alternatives": [
+				"A shared state, protected by a lock that each caller acquires",
+				"A group of threads that run callbacks taken from one common queue",
+				"A channel with no state of its own, used only to carry values",
+				"A private state and a mailbox of messages, handled one at a time",
+				"An immutable state, which is never changed again once created"
+			],
+			"explanations": [
+				"Wrong. It confuses an actor with a monitor: in a monitor several callers enter the same object under a lock, whereas an actor's state cannot be reached from outside.",
+				"Wrong. It confuses an actor with a thread pool: the pool runs independent tasks in parallel and keeps no state of its own behind a mailbox.",
+				"Wrong. It confuses an actor with a channel: the channel is only the means of communication, and the actor is the one that owns the state and reacts to messages.",
+				"Correct. Only the actor itself reads and changes its state, and it takes one message at a time from the mailbox, so there is no simultaneous access.",
+				"Wrong. It confuses immutable data with the actor's state: the values exchanged do not change, but the actor moves from one state to another with each message handled."
+			],
+			"concept": "An actor is a unit of concurrency that keeps a state of its own and communicates only through asynchronous messages. The messages arrive in its mailbox and are handled one at a time. Since no other actor can see that state, there is no shared memory to protect with locks."
+		}
+	},
+	{
+		"id": "concurrency-actor-model-and-beam-02",
+		"area": "concurrency",
+		"topic": "actor-model-and-beam",
+		"difficulty": "basic",
+		"answer": 2,
+		"source": "Tanenbaum, chapter 2 (message passing)",
+		"pt": {
+			"statement": "Em Elixir, o que a chamada send(pid, msg) faz?",
+			"alternatives": [
+				"Chama uma função no processo pid e espera o valor de retorno",
+				"Grava msg em uma variável compartilhada com o processo pid",
+				"Coloca msg na caixa de mensagens de pid e retorna sem esperar",
+				"Fica bloqueada até que pid case msg em um bloco receive",
+				"Cria um novo processo que executa msg como se fosse código"
+			],
+			"explanations": [
+				"Errada. Confunde send com uma chamada síncrona, como GenServer.call: send não espera resposta, e uma resposta só existe se o outro processo enviar outra mensagem.",
+				"Errada. Confunde troca de mensagens com memória compartilhada: processos da BEAM não têm variáveis em comum, e a mensagem é copiada para o destinatário.",
+				"Correta. send é assíncrono: a mensagem entra na mailbox do destinatário e quem enviou segue em frente imediatamente.",
+				"Errada. Confunde a mailbox com um rendezvous, como o de um canal sem buffer em Go: o remetente não espera a mensagem ser lida.",
+				"Errada. Confunde send com spawn: quem cria processos é spawn, e a mensagem é um dado, não um código a executar."
+			],
+			"concept": "Na BEAM, cada processo tem uma caixa de mensagens. send deposita a mensagem na caixa do destinatário e retorna na hora, sem saber quando ela será tratada. O destinatário usa receive para retirar da caixa a primeira mensagem que casa com um dos seus padrões.",
+			"example": {
+				"kind": "code",
+				"language": "elixir",
+				"content": "parent = self()\n\n# O novo processo envia e termina, sem esperar a leitura.\nspawn(fn -> send(parent, {:hello, 42}) end)\n\nreceive do\n  {:hello, n} -> IO.puts(n) # 42\nend"
+			}
+		},
+		"en": {
+			"statement": "In Elixir, what does the call send(pid, msg) do?",
+			"alternatives": [
+				"It calls a function in the process pid and waits for the return value",
+				"It writes msg into a variable shared with the process pid",
+				"It puts msg in the mailbox of pid and returns without waiting",
+				"It stays blocked until pid matches msg in a receive block",
+				"It creates a new process that runs msg as if it were code"
+			],
+			"explanations": [
+				"Wrong. It confuses send with a synchronous call, such as GenServer.call: send waits for no reply, and a reply exists only if the other process sends another message.",
+				"Wrong. It confuses message passing with shared memory: BEAM processes have no variables in common, and the message is copied to the receiver.",
+				"Correct. send is asynchronous: the message enters the receiver's mailbox and the sender moves on immediately.",
+				"Wrong. It confuses the mailbox with a rendezvous, like that of an unbuffered channel in Go: the sender does not wait for the message to be read.",
+				"Wrong. It confuses send with spawn: spawn is what creates processes, and the message is data, not code to run."
+			],
+			"concept": "On the BEAM, every process has a mailbox. send deposits the message in the receiver's mailbox and returns at once, without knowing when it will be handled. The receiver uses receive to take from the mailbox the first message that matches one of its patterns.",
+			"example": {
+				"kind": "code",
+				"language": "elixir",
+				"content": "parent = self()\n\n# The new process sends and exits, without waiting for the read.\nspawn(fn -> send(parent, {:hello, 42}) end)\n\nreceive do\n  {:hello, n} -> IO.puts(n) # 42\nend"
+			}
+		}
+	},
+	{
+		"id": "concurrency-actor-model-and-beam-03",
+		"area": "concurrency",
+		"topic": "actor-model-and-beam",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "Tanenbaum, chapter 2 (thread models)",
+		"miniProject": "projects/concurrency/ten-thousand-connections",
+		"pt": {
+			"statement": "O que é um processo na BEAM, a máquina virtual de Erlang e Elixir?",
+			"alternatives": [
+				"Um processo do sistema operacional, com espaço de endereçamento próprio",
+				"Uma thread do sistema operacional, que divide o heap com as demais",
+				"Uma corrotina, que só cede a CPU quando chama yield por conta própria",
+				"Um callback, enfileirado em um event loop de uma única thread",
+				"Uma unidade leve, escalonada pela VM e com um heap só seu"
+			],
+			"explanations": [
+				"Errada. É a confusão causada pelo nome: um processo da BEAM não é um processo do sistema operacional, e milhares deles vivem dentro de um único processo do SO.",
+				"Errada. Confunde processo da BEAM com thread do SO: ele não é criado pelo kernel e não divide heap com os outros, pois cada um tem o seu.",
+				"Errada. Confunde escalonamento cooperativo com preemptivo: a BEAM interrompe um processo depois de uma cota de trabalho, sem depender de ele ceder a vez.",
+				"Errada. Confunde a BEAM com o modelo de Node.js: ela usa vários escalonadores, em geral um por núcleo, e cada processo tem pilha e estado próprios.",
+				"Correta. A máquina virtual cria e escalona esses processos; cada um começa pequeno e tem heap e coleta de lixo próprios, o que torna barato manter muitos deles."
+			],
+			"concept": "Os processos da BEAM são criados e escalonados pela própria máquina virtual, não pelo kernel. Cada um tem pilha, heap e coletor de lixo próprios, começa ocupando pouca memória e não compartilha dados com os outros. Por isso um sistema pode manter centenas de milhares deles, por exemplo um por conexão aberta."
+		},
+		"en": {
+			"statement": "What is a process on the BEAM, the virtual machine of Erlang and Elixir?",
+			"alternatives": [
+				"An operating system process, with an address space of its own",
+				"An operating system thread, which shares the heap with the others",
+				"A coroutine, which gives up the CPU only when it calls yield itself",
+				"A callback, queued on an event loop that has a single thread",
+				"A lightweight unit, scheduled by the VM and with a heap of its own"
+			],
+			"explanations": [
+				"Wrong. It is the confusion caused by the name: a BEAM process is not an operating system process, and thousands of them live inside a single OS process.",
+				"Wrong. It confuses a BEAM process with an OS thread: it is not created by the kernel and shares no heap with the others, since each has its own.",
+				"Wrong. It confuses cooperative with preemptive scheduling: the BEAM interrupts a process after a quota of work, without relying on it to give way.",
+				"Wrong. It confuses the BEAM with the Node.js model: it uses several schedulers, usually one per core, and each process has its own stack and state.",
+				"Correct. The virtual machine creates and schedules these processes; each starts small and has its own heap and garbage collection, which makes it cheap to keep many of them."
+			],
+			"concept": "BEAM processes are created and scheduled by the virtual machine itself, not by the kernel. Each one has its own stack, heap and garbage collector, starts with little memory and shares no data with the others. That is why a system can keep hundreds of thousands of them, for example one per open connection."
+		}
+	},
+	{
+		"id": "concurrency-actor-model-and-beam-04",
+		"area": "concurrency",
+		"topic": "actor-model-and-beam",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Tanenbaum, chapter 2 (message passing)",
+		"pt": {
+			"statement": "Em um GenServer de Elixir, qual é a diferença entre GenServer.call e GenServer.cast?",
+			"alternatives": [
+				"call retorna na hora, sem resposta; cast espera a resposta do servidor",
+				"call espera a resposta do servidor; cast retorna na hora, sem resposta",
+				"call executa no processo de quem chama; cast executa no processo servidor",
+				"call serve para processos locais; cast serve para processos de outros nós",
+				"call trata mensagens em paralelo; cast trata uma mensagem de cada vez"
+			],
+			"explanations": [
+				"Errada. É a troca dos dois nomes: quem espera a resposta é call, e quem apenas dispara a mensagem é cast.",
+				"Correta. call é síncrono: bloqueia quem chamou até o servidor responder ou o tempo limite estourar. cast é assíncrono: só envia a mensagem.",
+				"Errada. Confunde onde o código roda: nos dois casos o tratamento (handle_call ou handle_cast) executa dentro do processo servidor.",
+				"Errada. Confunde modo de espera com localização: call e cast funcionam tanto para processos locais quanto para processos em outros nós.",
+				"Errada. Confunde sincronia com paralelismo: o servidor é um único processo e trata uma mensagem por vez, venha ela de call ou de cast."
+			],
+			"concept": "Um GenServer é um processo que guarda um estado e trata uma mensagem de cada vez. Com call, quem chama fica bloqueado até receber a resposta, o que naturalmente limita o ritmo de quem pede. Com cast, a mensagem é só colocada na caixa do servidor, e quem enviou não fica sabendo quando, nem se, ela foi tratada."
+		},
+		"en": {
+			"statement": "In an Elixir GenServer, what is the difference between GenServer.call and GenServer.cast?",
+			"alternatives": [
+				"call returns at once, with no reply; cast waits for the server's reply",
+				"call waits for the server's reply; cast returns at once, with no reply",
+				"call runs in the caller's process; cast runs in the server process",
+				"call is for local processes; cast is for processes on other nodes",
+				"call handles messages in parallel; cast handles one message at a time"
+			],
+			"explanations": [
+				"Wrong. It swaps the two names: call is the one that waits for the reply, and cast is the one that just fires the message.",
+				"Correct. call is synchronous: it blocks the caller until the server replies or the timeout expires. cast is asynchronous: it only sends the message.",
+				"Wrong. It confuses where the code runs: in both cases the handling (handle_call or handle_cast) executes inside the server process.",
+				"Wrong. It confuses the waiting mode with location: call and cast both work for local processes and for processes on other nodes.",
+				"Wrong. It confuses synchrony with parallelism: the server is a single process and handles one message at a time, whether it comes from call or from cast."
+			],
+			"concept": "A GenServer is a process that keeps a state and handles one message at a time. With call, the caller stays blocked until it gets the reply, which naturally limits the pace of whoever is asking. With cast, the message is only put in the server's mailbox, and the sender never learns when, or whether, it was handled."
+		}
+	},
+	{
+		"id": "concurrency-actor-model-and-beam-05",
+		"area": "concurrency",
+		"topic": "actor-model-and-beam",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Tanenbaum, chapter 2 (thread models)",
+		"pt": {
+			"statement": "Na BEAM, um processo entra em um laço longo de cálculo escrito em Elixir puro, sem nenhum receive. Há milhares de outros processos prontos para executar. O que acontece com eles enquanto o laço roda?",
+			"alternatives": [
+				"Esperam o laço terminar, pois um processo só cede a CPU ao chegar em um receive",
+				"Esperam, a menos que o laço chame de tempos em tempos uma função de yield",
+				"Continuam executando, pois o escalonador interrompe o laço ao fim de sua cota de reduções",
+				"Continuam executando, mas só se a máquina tiver um núcleo para cada processo",
+				"Continuam executando, pois a máquina virtual cria uma thread do SO só para o laço"
+			],
+			"explanations": [
+				"Errada. Confunde a BEAM com um event loop cooperativo: nela a troca de processo não depende de o código chegar a um ponto de espera.",
+				"Errada. Confunde processos da BEAM com corrotinas: não é preciso ceder a vez à mão, porque a preempção é feita pela máquina virtual.",
+				"Correta. Cada processo recebe uma cota de reduções (aproximadamente, chamadas de função); quando ela acaba, o escalonador o suspende e executa outro processo.",
+				"Errada. Confunde concorrência com paralelismo: os escalonadores, em geral um por núcleo, revezam muitos processos em poucos núcleos.",
+				"Errada. Confunde a BEAM com runtimes que criam threads do SO para tarefas bloqueantes: o laço continua nos mesmos escalonadores e é apenas interrompido periodicamente."
+			],
+			"concept": "A BEAM faz escalonamento preemptivo sem usar interrupções de relógio: ela conta o trabalho de cada processo em reduções. Ao esgotar sua cota, o processo volta para a fila e outro assume o escalonador. Assim um processo que só calcula não consegue monopolizar um núcleo, e a latência dos demais permanece baixa."
+		},
+		"en": {
+			"statement": "On the BEAM, a process enters a long computation loop written in pure Elixir, with no receive at all. Thousands of other processes are ready to run. What happens to them while the loop runs?",
+			"alternatives": [
+				"They wait for the loop to end, since a process gives up the CPU only on reaching a receive",
+				"They wait, unless the loop calls a yield function from time to time",
+				"They keep running, since the scheduler interrupts the loop when its reduction budget ends",
+				"They keep running, but only if the machine has one core for each process",
+				"They keep running, since the virtual machine creates an OS thread just for the loop"
+			],
+			"explanations": [
+				"Wrong. It confuses the BEAM with a cooperative event loop: there, switching processes does not depend on the code reaching a waiting point.",
+				"Wrong. It confuses BEAM processes with coroutines: there is no need to yield by hand, because preemption is done by the virtual machine.",
+				"Correct. Each process gets a budget of reductions (roughly, function calls); when it runs out, the scheduler suspends it and runs another process.",
+				"Wrong. It confuses concurrency with parallelism: the schedulers, usually one per core, take turns running many processes on few cores.",
+				"Wrong. It confuses the BEAM with runtimes that create OS threads for blocking tasks: the loop stays on the same schedulers and is simply interrupted periodically."
+			],
+			"concept": "The BEAM does preemptive scheduling without clock interrupts: it counts the work of each process in reductions. When a process uses up its budget, it goes back to the queue and another one takes the scheduler. A process that only computes therefore cannot monopolise a core, and the latency of the others stays low."
+		}
+	},
+	{
+		"id": "concurrency-actor-model-and-beam-06",
+		"area": "concurrency",
+		"topic": "actor-model-and-beam",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Tanenbaum, chapter 2 (message passing)",
+		"miniProject": "projects/concurrency/counter-race",
+		"pt": {
+			"statement": "Em Elixir, um Agent guarda o inteiro 0. Oito tarefas concorrentes chamam, cada uma, Agent.update(counter, &(&1 + 1)) 1.000 vezes, e o programa espera todas terminarem. O que Agent.get(counter, & &1) devolve em seguida?",
+			"alternatives": [
+				"8.000, pois o processo do Agent aplica uma atualização de cada vez",
+				"Menos de 8.000, pois oito tarefas leem e gravam o estado ao mesmo tempo",
+				"1.000, pois cada tarefa atualiza a sua própria cópia do estado",
+				"0, pois os dados em Elixir são imutáveis e o estado não pode mudar",
+				"8, pois as atualizações repetidas de uma mesma tarefa são fundidas em uma"
+			],
+			"explanations": [
+				"Correta. São 8 × 1.000 = 8.000 mensagens de atualização; o Agent trata uma por vez, cada função recebe o estado atual, e nenhum incremento se perde.",
+				"Errada. Aplica ao Agent o raciocínio de um contador em memória compartilhada: as tarefas não leem nem gravam o estado, só pedem ao Agent que aplique a função.",
+				"Errada. Confunde a cópia das mensagens com cópia do estado: existe um único estado, dentro do processo do Agent, e todas as tarefas falam com o mesmo pid.",
+				"Errada. Confunde valor imutável com estado de processo: cada inteiro não muda, mas o Agent troca o valor que guarda por um novo a cada atualização.",
+				"Errada. Supõe que a caixa de mensagens elimina mensagens repetidas: cada chamada vira uma mensagem distinta, e todas são tratadas."
+			],
+			"concept": "Um Agent é um processo que é dono de um estado. Agent.update envia a ele uma função; o Agent a executa sobre o estado atual e guarda o resultado, uma mensagem por vez. Como a leitura, o cálculo e a gravação acontecem dentro de um único processo, o incremento não pode ser intercalado com outro.",
+			"example": {
+				"kind": "code",
+				"language": "elixir",
+				"content": "{:ok, counter} = Agent.start_link(fn -> 0 end)\n\n1..8\n|> Enum.map(fn _ ->\n  Task.async(fn ->\n    for _ <- 1..1000, do: Agent.update(counter, &(&1 + 1))\n  end)\nend)\n|> Task.await_many()\n\nIO.puts(Agent.get(counter, & &1)) # 8000"
+			}
+		},
+		"en": {
+			"statement": "In Elixir, an Agent holds the integer 0. Eight concurrent tasks each call Agent.update(counter, &(&1 + 1)) 1,000 times, and the program waits for all of them to finish. What does Agent.get(counter, & &1) return next?",
+			"alternatives": [
+				"8,000, since the Agent process applies one update at a time",
+				"Less than 8,000, since eight tasks read and write the state at the same time",
+				"1,000, since each task updates its own copy of the state",
+				"0, since data in Elixir is immutable and the state cannot change",
+				"8, since the repeated updates of the same task are merged into one"
+			],
+			"explanations": [
+				"Correct. There are 8 × 1,000 = 8,000 update messages; the Agent handles one at a time, each function gets the current state, and no increment is lost.",
+				"Wrong. It applies the reasoning of a shared-memory counter to the Agent: the tasks neither read nor write the state, they only ask the Agent to apply the function.",
+				"Wrong. It confuses the copying of messages with a copy of the state: there is a single state, inside the Agent process, and every task talks to the same pid.",
+				"Wrong. It confuses an immutable value with process state: each integer never changes, but the Agent replaces the value it holds with a new one on every update.",
+				"Wrong. It assumes the mailbox removes repeated messages: each call becomes a distinct message, and all of them are handled."
+			],
+			"concept": "An Agent is a process that owns a state. Agent.update sends it a function; the Agent runs it on the current state and keeps the result, one message at a time. Since the read, the computation and the write happen inside a single process, an increment cannot be interleaved with another.",
+			"example": {
+				"kind": "code",
+				"language": "elixir",
+				"content": "{:ok, counter} = Agent.start_link(fn -> 0 end)\n\n1..8\n|> Enum.map(fn _ ->\n  Task.async(fn ->\n    for _ <- 1..1000, do: Agent.update(counter, &(&1 + 1))\n  end)\nend)\n|> Task.await_many()\n\nIO.puts(Agent.get(counter, & &1)) # 8000"
+			}
+		}
+	},
+	{
+		"id": "concurrency-actor-model-and-beam-07",
+		"area": "concurrency",
+		"topic": "actor-model-and-beam",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Tanenbaum, chapter 2 (message passing)",
+		"pt": {
+			"statement": "Em Elixir, um processo trabalhador sob um supervisor com estratégia one_for_one termina com erro ao receber uma mensagem inesperada. Seguindo a filosofia \"let it crash\", o que se espera que aconteça?",
+			"alternatives": [
+				"O trabalhador captura todo erro por conta própria e continua com o estado atual",
+				"A máquina virtual inteira para, e o sistema operacional reinicia a aplicação",
+				"O supervisor reinicia todos os seus filhos, para que voltem a ficar em acordo",
+				"O erro é ignorado, e a caixa de mensagens do trabalhador passa a um irmão",
+				"O supervisor é avisado da saída e inicia um novo trabalhador em estado conhecido"
+			],
+			"explanations": [
+				"Errada. É a programação defensiva que a filosofia evita: prever todo erro dentro do trabalhador costuma mantê-lo vivo com um estado possivelmente corrompido.",
+				"Errada. Confunde a falha de um processo com a falha do sistema: os processos são isolados, e a queda de um não derruba a máquina virtual.",
+				"Errada. Confunde as estratégias: reiniciar todos os filhos é one_for_all; em one_for_one só o filho que caiu é reiniciado.",
+				"Errada. Supõe que a caixa de mensagens sobrevive ao processo: quando ele termina, as mensagens pendentes se perdem junto com o seu estado.",
+				"Correta. O supervisor está ligado ao filho, recebe o sinal de saída e cria um novo processo a partir do estado inicial, sem afetar os irmãos."
+			],
+			"concept": "Na BEAM, um processo que falha morre sozinho, porque não compartilha memória com os outros. Links e monitores avisam os processos interessados, e um supervisor usa esse aviso para reiniciar o filho segundo sua estratégia. A ideia de \"let it crash\" é separar o código que faz o trabalho do código que trata falhas e voltar sempre a um estado inicial confiável."
+		},
+		"en": {
+			"statement": "In Elixir, a worker process under a supervisor with the one_for_one strategy exits with an error on receiving an unexpected message. Following the \"let it crash\" philosophy, what is expected to happen?",
+			"alternatives": [
+				"The worker catches every error by itself and carries on with its current state",
+				"The whole virtual machine stops, and the operating system restarts the application",
+				"The supervisor restarts all of its children, so that they agree with each other again",
+				"The error is ignored, and the worker's mailbox is handed over to a sibling",
+				"The supervisor is notified of the exit and starts a new worker in a known state"
+			],
+			"explanations": [
+				"Wrong. That is the defensive programming the philosophy avoids: foreseeing every error inside the worker tends to keep it alive with a possibly corrupted state.",
+				"Wrong. It confuses the failure of one process with the failure of the system: processes are isolated, and one crash does not bring down the virtual machine.",
+				"Wrong. It mixes up the strategies: restarting every child is one_for_all; under one_for_one only the child that crashed is restarted.",
+				"Wrong. It assumes the mailbox outlives the process: when it exits, the pending messages are lost together with its state.",
+				"Correct. The supervisor is linked to the child, receives the exit signal and creates a new process from the initial state, without affecting the siblings."
+			],
+			"concept": "On the BEAM, a failing process dies alone, because it shares no memory with the others. Links and monitors notify the interested processes, and a supervisor uses that notification to restart the child according to its strategy. The idea of \"let it crash\" is to separate the code that does the work from the code that handles failures, and always return to a trusted initial state."
+		}
+	},
+	{
+		"id": "concurrency-actor-model-and-beam-08",
+		"area": "concurrency",
+		"topic": "actor-model-and-beam",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "Tanenbaum, chapter 2 (message passing)",
+		"pt": {
+			"statement": "Em uma máquina de 8 núcleos, um único GenServer de Elixir leva 1 ms para tratar cada mensagem. Mil processos produtores enviam a ele, com GenServer.cast, um total constante de 5.000 mensagens por segundo. O que acontece ao longo do tempo?",
+			"alternatives": [
+				"Os produtores caem para 1.000 mensagens por segundo, pois cast espera o servidor",
+				"A caixa de mensagens cresce cerca de 4.000 mensagens por segundo, sem limite",
+				"O servidor trata as 5.000 por segundo, usando os outros sete núcleos",
+				"A caixa de mensagens descarta as mais antigas ao atingir o tamanho máximo",
+				"A máquina virtual cria cópias do servidor para dividir a caixa de mensagens"
+			],
+			"explanations": [
+				"Errada. Atribui a cast o comportamento de call: cast não espera nada, então os produtores não percebem que o servidor está atrasado.",
+				"Correta. A 1 ms por mensagem, o servidor trata 1.000 por segundo; chegam 5.000, então sobram 5.000 − 1.000 = 4.000 por segundo, que se acumulam (40.000 em 10 s).",
+				"Errada. Supõe que um ator se paraleliza sozinho: um processo trata uma mensagem por vez e ocupa no máximo um núcleo, por mais núcleos que existam.",
+				"Errada. Confunde a caixa de mensagens com um buffer limitado: a mailbox de um processo da BEAM não tem tamanho máximo por padrão e apenas consome memória.",
+				"Errada. Confunde um processo único com um pool: a máquina virtual não replica um GenServer, e dividir a carga entre vários processos é decisão do programador."
+			],
+			"concept": "Um ator trata uma mensagem por vez, então sua vazão máxima é 1 dividido pelo tempo de tratamento: com 1 ms, 1.000 mensagens por segundo. Envios assíncronos não exercem backpressure, e, se a chegada supera a vazão, a diferença se acumula na caixa de mensagens, consumindo memória e aumentando a latência. As saídas são usar call para frear os produtores, distribuir o trabalho entre vários processos ou rejeitar carga."
+		},
+		"en": {
+			"statement": "On an 8-core machine, a single Elixir GenServer takes 1 ms to handle each message. One thousand producer processes send it, with GenServer.cast, a constant total of 5,000 messages per second. What happens over time?",
+			"alternatives": [
+				"The producers drop to 1,000 messages per second, since cast waits for the server",
+				"The mailbox grows by about 4,000 messages per second, with no limit",
+				"The server handles the 5,000 per second, using the other seven cores",
+				"The mailbox discards the oldest messages once it reaches its maximum size",
+				"The virtual machine creates copies of the server to share the mailbox"
+			],
+			"explanations": [
+				"Wrong. It gives cast the behaviour of call: cast waits for nothing, so the producers do not notice that the server is falling behind.",
+				"Correct. At 1 ms per message, the server handles 1,000 per second; 5,000 arrive, so 5,000 − 1,000 = 4,000 per second are left over and pile up (40,000 in 10 s).",
+				"Wrong. It assumes an actor parallelises itself: a process handles one message at a time and uses at most one core, however many cores exist.",
+				"Wrong. It confuses the mailbox with a bounded buffer: the mailbox of a BEAM process has no maximum size by default and simply consumes memory.",
+				"Wrong. It confuses a single process with a pool: the virtual machine does not replicate a GenServer, and spreading the load over several processes is the programmer's decision."
+			],
+			"concept": "An actor handles one message at a time, so its maximum throughput is 1 divided by the handling time: with 1 ms, 1,000 messages per second. Asynchronous sends apply no backpressure, and, if arrivals exceed the throughput, the difference piles up in the mailbox, consuming memory and raising latency. The ways out are using call to slow the producers down, spreading the work over several processes, or shedding load."
+		}
+	}
+]
