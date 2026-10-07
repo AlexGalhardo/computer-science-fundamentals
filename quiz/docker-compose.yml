@@ -1,0 +1,49 @@
+# EN: `quiz` is the real site. The services under the `test` profile build the site from the
+#     test fixture and run the unit and end-to-end tests against it.
+# PT: `quiz` é o site de verdade. Os serviços do perfil `test` constroem o site a partir do
+#     fixture de teste e rodam os testes unitários e de ponta a ponta contra ele.
+name: quiz
+
+services:
+  quiz:
+    build:
+      context: ..
+      dockerfile: quiz/Dockerfile
+      target: serve
+    image: sef-quiz:local
+    ports:
+      # Bound to the loopback address: the quiz is reachable only from this machine.
+      - "127.0.0.1:${QUIZ_PORT:-3000}:8080"
+
+  quiz-fixture:
+    profiles: ["test"]
+    build:
+      context: ..
+      dockerfile: quiz/Dockerfile
+      target: serve
+      args:
+        QUIZ_CONTENT_DIR: tests/fixtures/content
+    image: sef-quiz-fixture:local
+
+  unit:
+    profiles: ["test"]
+    build:
+      context: ..
+      dockerfile: quiz/Dockerfile
+      target: unit
+      args:
+        QUIZ_CONTENT_DIR: tests/fixtures/content
+    image: sef-quiz-unit:local
+
+  e2e:
+    profiles: ["test"]
+    build:
+      context: ..
+      dockerfile: quiz/e2e.Dockerfile
+    image: sef-quiz-e2e:local
+    depends_on:
+      - quiz-fixture
+    environment:
+      BASE_URL: http://quiz-fixture:8080
+    # Chromium needs more shared memory than the 64 MB Docker gives by default.
+    shm_size: 1gb

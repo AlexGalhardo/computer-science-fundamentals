@@ -51,6 +51,8 @@ export interface CheckOptions {
 	only?: string;
 	/** Fail when an area or topic is below its target count. */
 	requireTargets?: boolean;
+	/** Check that mini-project folders exist on disk. The app build turns this off: it only needs the questions. */
+	checkDisk?: boolean;
 }
 
 function readJson(path: string, errors: string[]): unknown {
@@ -81,7 +83,7 @@ export function loadMiniProjects(contentDir: string): MiniProject[] {
 }
 
 export function checkContent(options: CheckOptions): CheckResult {
-	const { contentDir, repoRoot, only, requireTargets = false } = options;
+	const { contentDir, repoRoot, only, requireTargets = false, checkDisk = true } = options;
 	const errors: string[] = [];
 	const warnings: string[] = [];
 	const reports: AreaReport[] = [];
@@ -176,8 +178,8 @@ export function checkContent(options: CheckOptions): CheckResult {
 					//     catálogo ainda o marca como planejado. O quiz é escrito antes da maioria dos
 					//     mini-projetos, e o app só mostra o link quando o status é "done".
 					const planned = miniProjects.get(question.miniProject);
-					const onDisk = existsSync(join(repoRoot, question.miniProject));
-					if (planned === undefined && !onDisk) {
+					const onDisk = !checkDisk || existsSync(join(repoRoot, question.miniProject));
+					if (planned === undefined && (!checkDisk || !onDisk)) {
 						errors.push(`${label}: miniProject path "${question.miniProject}" does not exist`);
 					} else if (planned?.status === "done" && !onDisk) {
 						errors.push(

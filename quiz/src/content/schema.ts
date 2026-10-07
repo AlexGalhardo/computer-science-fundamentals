@@ -40,12 +40,16 @@ const exampleSchema = z.object({
 const questionTextSchema = z.object(
 	{
 		statement: text,
+		// EN: The comparison is case-sensitive on purpose: `O(n)` and `o(n)`, or `Ω` and `ω`, are
+		//     different notations and both may be alternatives of the same question.
+		// PT: A comparação diferencia maiúsculas de propósito: `O(n)` e `o(n)`, ou `Ω` e `ω`, são
+		//     notações diferentes e podem ser alternativas da mesma questão.
 		// EN: Two identical alternatives would mean two correct answers (or two identical wrong
 		//     ones), and the rule of the quiz is exactly one correct alternative.
 		// PT: Duas alternativas idênticas significariam duas respostas corretas (ou duas erradas
 		//     iguais), e a regra do quiz é exatamente uma alternativa correta.
 		alternatives: fiveTexts.refine(
-			(items) => new Set(items.map((item) => item.trim().toLowerCase())).size === items.length,
+			(items) => new Set(items.map((item) => item.trim())).size === items.length,
 			"alternatives must be different from each other",
 		),
 		/** One explanation per alternative, in the same order. */
