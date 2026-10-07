@@ -16,7 +16,7 @@ The project is built in phases and the agent **stops at the end of each phase** 
 - Phase 1: import of previous content into `references/` and external skills into `.claude/skills/`
 - Phase 2: brainstorming, decisions documented in `docs/pt/` and `docs/en/`
 - Phase 3: full `PLAN.md`
-- Phase 4: parallel development, up to 5 git worktrees, one mini-project each
+- Phase 4: parallel development, the main session plus up to 5 git worktrees. Each worktree takes one area and completes it: quiz, practical mini-projects and tests. Each complete project gets its own commit and GitHub release (see `.claude/rules/git-workflow.md`)
 
 ## Layout
 

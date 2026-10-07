@@ -69,3 +69,7 @@ Leia o [SECURITY.md](SECURITY.md) antes de mexer em qualquer coisa da área de s
 ### Testes de carga
 
 Scripts de k6 e ferramentas similares só podem ter como alvo `localhost` ou serviços declarados em um `docker-compose` deste repositório.
+
+## Unit of work
+
+One branch (or worktree) takes one area and completes it: the quiz of the area, its practical mini-projects and the tests proving that everything works. Each complete project (a quiz area, a mini-project) is its own commit and gets its own GitHub release with a matching `CHANGELOG.md` entry.

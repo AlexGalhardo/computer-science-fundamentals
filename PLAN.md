@@ -10,7 +10,7 @@ The decisions behind this plan are in [docs/en/decisions.md](docs/en/decisions.m
 - [x] Phase 1: import content from the previous repositories and external skills
 - [x] Phase 2: brainstorming and documented decisions
 - [x] Phase 3: full PLAN.md
-- [ ] Phase 4: parallel development (up to 5 git worktrees, one work item each)
+- [ ] Phase 4: parallel development (main session plus up to 5 git worktrees, one complete area each)
 
 ## Theory and practice
 
@@ -1939,6 +1939,8 @@ Teaches: what the pipeline of this repository does and why. Languages: YAML.
 1. Part F (foundation), then Part QZ (quiz app). These unblock everything else.
 2. Quiz content wave 1, then mini-project wave 1.
 3. From there, quiz content waves and mini-project waves alternate.
+
+**Unit of work (owner's rule, 2026-10-07):** a worktree takes one area and completes it before merging: the quiz of the area, its practical mini-projects and the tests proving that everything works. Each complete project (a quiz area, a mini-project) gets its own commit and its own GitHub release. The wave tables below still give the priority order of the mini-projects inside and across areas.
 
 Mini-project waves are breadth first: every theory-and-practice area gets its first mini-project before any area gets its second. Each wave has up to 5 mini-projects, one worktree each.
 
