@@ -2,6 +2,8 @@
 
 Mini-projects live in `projects/<area>/<mini-project>/`, with one subfolder per language (`ts/`, `go/`, `rust/`). TypeScript is the reference implementation, and other languages are added only where the lesson changes. The agreed backlog is `docs/en/mini-project-catalog.md`.
 
+Electronics and Software engineering are theory only and have no mini-project. Every other area pairs its mini-projects with the quiz: the README of a mini-project lists the quiz topics it demonstrates.
+
 Every mini-project contains:
 
 - Two READMEs explaining what it teaches: `README.md` in English and `README.pt-BR.md` in Portuguese.

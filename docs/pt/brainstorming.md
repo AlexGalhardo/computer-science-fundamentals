@@ -48,6 +48,17 @@ Depois da leitura dos PDFs, a ideia principal passou a ser um quiz: perguntas co
 | Produção | App + 5 áreas completas, depois levas de 5 | Todas com 20 e depois completar; tudo de uma vez |
 | Revisão | Revisor independente + validação automática | Só validação de formato; o autor revisa tudo |
 
+## Rodada 3: instruções para o plano final
+
+Dadas pelo autor ao pedir o `PLAN.md` final.
+
+| Tema | Instrução |
+| --- | --- |
+| Conteúdo só de teoria | Um quiz web bem completo, cobrindo cada aspecto do conteúdo, sem miniprojeto. Aplicado a Eletrônica e Engenharia de software |
+| Conteúdo técnico | Exemplos práticos executáveis (Docker, shell scripts, CLI ou web) mais o quiz, um complementando o outro. Aplicado às outras 29 áreas |
+| Recursos do quiz | i18n em português e inglês, alternância de tema claro e escuro, mobile friendly, construído com Next.js SSG e Tailwind CSS v4 |
+| 5 primeiras áreas do quiz | Big O e análise de algoritmos, estruturas de dados, sistemas operacionais, redes, bancos de dados (teoria) |
+
 ## Ideias que os resumos acrescentaram
 
 Entraram no catálogo de miniprojetos, na seção "Ideias vindas dos livros e das aulas".
@@ -62,5 +73,4 @@ Entraram no catálogo de miniprojetos, na seção "Ideias vindas dos livros e da
 
 ## Pontos em aberto
 
-- Quais são as 5 primeiras áreas do quiz. Fica para o `PLAN.md`.
-- O mapa de cobertura de cada área (capítulos e quantidade de perguntas). Fica para o `PLAN.md`.
+Nenhum. As 5 primeiras áreas do quiz e o mapa de cobertura de cada área estão no `PLAN.md`.

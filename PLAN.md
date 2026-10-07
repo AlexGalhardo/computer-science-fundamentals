@@ -1,9 +1,6 @@
 # PLAN
 
-Main roadmap of the repository. It is built in two stages:
-
-- **Stage 1 (this version):** the outline of every part, with the foundation, the quiz app, the first wave of quiz content and the first wave of mini-projects detailed down to micro-tasks.
-- **Stage 2:** the remaining 26 areas detailed to the same level, after the owner reviews the format of Stage 1.
+Main roadmap of the repository: 31 areas, a quiz covering all of them and 78 runnable mini-projects.
 
 The decisions behind this plan are in [docs/en/decisions.md](docs/en/decisions.md), the quiz design in [docs/en/quiz.md](docs/en/quiz.md), the backlog in [docs/en/mini-project-catalog.md](docs/en/mini-project-catalog.md) and the brainstorming record in [docs/en/brainstorming.md](docs/en/brainstorming.md).
 
@@ -12,10 +9,15 @@ The decisions behind this plan are in [docs/en/decisions.md](docs/en/decisions.m
 - [x] Phase 0: repository setup
 - [x] Phase 1: import content from the previous repositories and external skills
 - [x] Phase 2: brainstorming and documented decisions
-- [ ] Phase 3: full PLAN.md
-	- [x] Stage 1: outline, foundation, quiz app, first waves
-	- [ ] Stage 2: remaining 26 areas detailed
+- [x] Phase 3: full PLAN.md
 - [ ] Phase 4: parallel development (up to 5 git worktrees, one work item each)
+
+## Theory and practice
+
+Every area gets a quiz. What else it gets depends on the kind of content:
+
+- **Theory only** (Electronics, Software engineering): no mini-project. The quiz is the whole deliverable, so it is larger and follows the source book chapter by chapter, covering every aspect of the content.
+- **Theory and practice** (the other 29 areas): runnable practical examples (Docker, shell scripts, CLI or a simple web page) **and** the quiz. The two complement each other: the quiz explains the concept and links to the mini-project that shows it running, and the mini-project README links back to the quiz topics it demonstrates.
 
 ## How to read this plan
 
@@ -37,6 +39,7 @@ A mini-project is done when all of these hold:
 - [ ] Bilingual didactic comments, one block per concept.
 - [ ] Documented in `docs/en/<area>/` and `docs/pt/<area>/`.
 - [ ] Docker images and dependencies pinned to exact stable versions.
+- [ ] Both READMEs list the quiz topics the mini-project demonstrates.
 - [ ] `CHANGELOG.md` entry added.
 
 ### Definition of done: quiz area
@@ -44,50 +47,53 @@ A mini-project is done when all of these hold:
 A quiz area is done when all of these hold:
 
 - [ ] Coverage map committed in `quiz/content/<area>/coverage.json` (topics, source chapters, target count per topic).
-- [ ] At least 100 questions, and every topic of the coverage map reaches its target.
+- [ ] At least 100 questions (170 for Electronics, 150 for Software engineering), and every topic of the coverage map reaches its target.
 - [ ] Difficulty split close to 40 basic, 40 intermediate, 20 advanced.
 - [ ] Every question has 5 alternatives, one correct, an explanation for each alternative, a `source`, and texts in PT and EN.
 - [ ] `bun run quiz:validate` passes for the area.
 - [ ] Independent reviewer answered the whole area without the answer key, and every disagreement was resolved and logged in `quiz/content/<area>/review.md`.
 - [ ] No sentence copied from a book.
+- [ ] In a theory-and-practice area, every question about a concept shown by a mini-project carries its `miniProject` link.
 
 ## Area index
 
-31 areas. "Quiz wave" is the wave in which the area gets its 100 questions.
+31 areas. "Quiz wave" is the wave in which the area gets its questions.
 
-| Code | Area | Quiz wave | Mini-projects planned |
-| --- | --- | --- | --- |
-| BIGO | Big O and algorithm analysis | 1 | 3 |
-| DS | Data structures | 1 | 5 |
-| OS | Operating systems | 1 | 4 |
-| NET | Networks | 1 | 3 |
-| DB | Databases (theory) | 1 | 2 |
-| ALG | Algorithms | 2 | 4 |
-| CONC | Concurrency | 2 | 3 |
-| PAR | Parallelism | 2 | 1 |
-| TX | Transactions | 2 | 4 |
-| SEC | Security | 2 | 8 |
-| COMP | Compilers | 3 | 4 |
-| FSM | State machines | 3 | 1 |
-| INFO | Information theory | 3 | 2 |
-| DL | Digital logic | 3 | 2 |
-| ELEC | Electronics | 3 | 1 |
-| OOP | Object-oriented programming | 4 | 2 |
-| FP | Functional programming | 4 | 1 |
-| PAT | Design patterns and SOLID | 4 | 2 |
-| ARCH | Software architecture | 4 | 1 |
-| TEST | Testing | 4 | 5 |
-| PROTO | Protocols | 5 | 3 |
-| MSG | Messaging | 5 | 3 |
-| LB | Load balancing | 5 | 2 |
-| PERF | Performance | 5 | 3 |
-| CACHE | Cache | 5 | 1 |
-| RL | Rate limiting | 6 | 1 |
-| FS | File systems | 6 | 2 |
-| OBS | Observability | 6 | 4 |
-| CHAIN | Blockchain | 6 | 1 |
-| CI | Continuous integration | 6 | 1 |
-| SE | Software engineering | 6 | 1 |
+| Code | Area | Kind | Quiz wave | Questions | Mini-projects |
+| --- | --- | --- | --- | --- | --- |
+| BIGO | Big O and algorithm analysis | Theory and practice | 1 | 100 | 3 |
+| DS | Data structures | Theory and practice | 1 | 100 | 5 |
+| OS | Operating systems | Theory and practice | 1 | 100 | 4 |
+| NET | Networks | Theory and practice | 1 | 100 | 3 |
+| DB | Databases (theory) | Theory and practice | 1 | 100 | 2 |
+| ALG | Algorithms | Theory and practice | 2 | 100 | 4 |
+| CONC | Concurrency | Theory and practice | 2 | 100 | 3 |
+| PAR | Parallelism | Theory and practice | 2 | 100 | 1 |
+| TX | Transactions | Theory and practice | 2 | 100 | 4 |
+| SEC | Security | Theory and practice | 2 | 100 | 8 |
+| COMP | Compilers | Theory and practice | 3 | 100 | 4 |
+| FSM | State machines | Theory and practice | 3 | 100 | 1 |
+| INFO | Information theory | Theory and practice | 3 | 100 | 2 |
+| DL | Digital logic | Theory and practice | 3 | 100 | 2 |
+| ELEC | Electronics | Theory only | 3 | 170 | 0 |
+| OOP | Object-oriented programming | Theory and practice | 4 | 100 | 2 |
+| FP | Functional programming | Theory and practice | 4 | 100 | 1 |
+| PAT | Design patterns and SOLID | Theory and practice | 4 | 100 | 2 |
+| ARCH | Software architecture | Theory and practice | 4 | 100 | 1 |
+| TEST | Testing | Theory and practice | 4 | 100 | 5 |
+| PROTO | Protocols | Theory and practice | 5 | 100 | 3 |
+| MSG | Messaging | Theory and practice | 5 | 100 | 3 |
+| LB | Load balancing | Theory and practice | 5 | 100 | 2 |
+| PERF | Performance | Theory and practice | 5 | 100 | 3 |
+| CACHE | Cache | Theory and practice | 5 | 100 | 1 |
+| RL | Rate limiting | Theory and practice | 6 | 100 | 1 |
+| FS | File systems | Theory and practice | 6 | 100 | 2 |
+| OBS | Observability | Theory and practice | 6 | 100 | 4 |
+| CHAIN | Blockchain | Theory and practice | 6 | 100 | 1 |
+| CI | Continuous integration | Theory and practice | 6 | 100 | 1 |
+| SE | Software engineering | Theory only | 6 | 150 | 0 |
+
+Totals: **3220 questions** and **78 mini-projects**.
 
 ---
 
@@ -144,8 +150,10 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 
 ### QZ-1 Scaffold
 
-- [ ] **QZ-1.1** Next.js app in `quiz/` with static export and Tailwind CSS v4, versions pinned.
-	- **Accept:** `bun run build` in `quiz/` produces `out/` and serving that folder shows the home page.
+- [ ] **QZ-1.1** Next.js app in `quiz/` using static site generation (SSG, `output: "export"`) and Tailwind CSS v4, versions pinned.
+	- [ ] QZ-1.1.a Every route is pre-rendered at build time, including one page per area and per language.
+	- [ ] QZ-1.1.b No server code, no API route, no runtime data fetching from a back end.
+	- **Accept:** `bun run build` in `quiz/` produces `out/` with one HTML file per route, and serving that folder with a plain static file server shows every page.
 - [ ] **QZ-1.2** Docker image and setup scripts `setup-unix-quiz.sh` and `setup-windows-quiz.ps1`.
 	- **Accept:** on a machine with only Docker, the script ends with the quiz reachable on `localhost`.
 
@@ -196,38 +204,61 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 - [ ] **QZ-5.4** Shuffle of questions and of alternatives on every attempt, keeping the answer key correct.
 	- **Accept:** unit test with a fixed seed proves the correct alternative is still marked correct after shuffling.
 
-### QZ-6 Languages
+### QZ-6 Languages (i18n)
 
-- [ ] **QZ-6.1** PT and EN selector, for interface and content, remembered in the browser.
-	- **Accept:** switching language in the middle of a question keeps the question and the chosen answer.
+- [ ] **QZ-6.1** Portuguese and English for the whole app
+	- [ ] QZ-6.1.a Routes prefixed by language (`/pt/...`, `/en/...`), all generated statically.
+	- [ ] QZ-6.1.b Interface texts in one dictionary file per language, typed so a missing key fails the build.
+	- [ ] QZ-6.1.c Question content read from the `pt` and `en` blocks of each question.
+	- [ ] QZ-6.1.d Language selector visible on every page, choice remembered in the browser, first visit follows the browser language.
+	- [ ] QZ-6.1.e `lang` attribute of the page matches the selected language.
+	- **Accept:** a Playwright test switches language in the middle of a question and the same question, the chosen answer and the explanation stay on screen in the other language. A build with one missing dictionary key fails.
 
-### QZ-7 Content pipeline
+### QZ-7 Light and dark theme
 
-- [ ] **QZ-7.1** Authoring guide in `docs/en/quiz-authoring.md` and `docs/pt/quiz-authoring.md`: how to write a question, how wrong alternatives encode real misconceptions, the no-copy rule.
-- [ ] **QZ-7.2** Reviewer procedure: a second agent receives the questions without `answer` and without explanations, answers them, and a script lists the disagreements.
-	- [ ] QZ-7.2.a `bun run quiz:blind <area>` exports the blind file.
-	- [ ] QZ-7.2.b `bun run quiz:compare <area> <answers>` writes `review.md` with every disagreement.
+- [ ] **QZ-7.1** Theme toggle
+	- [ ] QZ-7.1.a Light and dark themes built on Tailwind CSS v4 theme variables, one set of colour tokens per theme.
+	- [ ] QZ-7.1.b Toggle visible on every page, choice remembered in the browser, first visit follows the system preference.
+	- [ ] QZ-7.1.c Theme applied before first paint, so a reload in dark mode never flashes the light theme.
+	- [ ] QZ-7.1.d Right and wrong states, code examples and diagrams readable in both themes.
+	- **Accept:** a Playwright test toggles the theme, reloads and finds the same theme. An automated contrast check passes WCAG AA on the question screen in both themes.
+
+### QZ-8 Mobile friendly
+
+- [ ] **QZ-8.1** Responsive layout
+	- [ ] QZ-8.1.a Mobile-first styles: one column below 768 px, with the explanation under the alternatives, two columns from 768 px up.
+	- [ ] QZ-8.1.b Touch targets of at least 44 by 44 px for alternatives, toggles and navigation.
+	- [ ] QZ-8.1.c No horizontal scroll at 320 px wide, and long code examples scroll inside their own block.
+	- [ ] QZ-8.1.d After answering on a phone, the page scrolls to the explanation.
+	- **Accept:** Playwright runs the full question flow at 320, 390, 768 and 1280 px wide with no horizontal overflow, and a Lighthouse mobile run scores at least 90 in performance and accessibility on the static build.
+
+### QZ-9 Content pipeline
+
+- [ ] **QZ-9.1** Authoring guide in `docs/en/quiz-authoring.md` and `docs/pt/quiz-authoring.md`: how to write a question, how wrong alternatives encode real misconceptions, the no-copy rule.
+- [ ] **QZ-9.2** Reviewer procedure: a second agent receives the questions without `answer` and without explanations, answers them, and a script lists the disagreements.
+	- [ ] QZ-9.2.a `bun run quiz:blind <area>` exports the blind file.
+	- [ ] QZ-9.2.b `bun run quiz:compare <area> <answers>` writes `review.md` with every disagreement.
 	- **Accept:** on a fixture with one deliberately wrong answer key, the comparison lists exactly that question.
 
-### QZ-8 Tests and documentation
+### QZ-10 Tests and documentation
 
-- [ ] **QZ-8.1** Unit tests for schema, shuffle, progress and scoring.
-- [ ] **QZ-8.2** Playwright end-to-end tests for the flows of QZ-3 to QZ-6.
-- [ ] **QZ-8.3** `quiz/README.md` and `quiz/README.pt-BR.md`.
+- [ ] **QZ-10.1** Unit tests for schema, shuffle, progress and scoring.
+- [ ] **QZ-10.2** Playwright end-to-end tests for the flows of QZ-3 to QZ-8.
+- [ ] **QZ-10.3** `quiz/README.md` and `quiz/README.pt-BR.md`.
 	- **Accept:** `bun test` and `bunx playwright test` pass inside Docker.
 
 ---
 
 ## Part QC: Quiz content
 
-100 questions per area. Each wave has 5 areas (the last one has 6). Every area follows the same four tasks:
+At least 100 questions per area, 170 for Electronics and 150 for Software engineering. Each wave has 5 areas (the last one has 6). Every area follows the same four tasks:
 
 1. `coverage.json` written and reviewed.
 2. Questions written, topic by topic, in PT and EN.
 3. `quiz:validate` passing.
 4. Blind review done and disagreements resolved.
 
-### Wave 1 (proposed)
+### Wave 1
 
 Chosen because these five have the strongest source material (university lectures and the reference textbooks).
 
@@ -343,19 +374,605 @@ Source: C. J. Date, An Introduction to Database Systems. The summary of this boo
 - [ ] QC-DB.3 Validation passing
 - [ ] QC-DB.4 Blind review resolved
 
-### Waves 2 to 6 (coverage maps written in Stage 2)
+### Wave 2
 
-- [ ] **Wave 2:** QC-ALG, QC-CONC, QC-PAR, QC-TX, QC-SEC
-- [ ] **Wave 3:** QC-COMP, QC-FSM, QC-INFO, QC-DL, QC-ELEC
-- [ ] **Wave 4:** QC-OOP, QC-FP, QC-PAT, QC-ARCH, QC-TEST
-- [ ] **Wave 5:** QC-PROTO, QC-MSG, QC-LB, QC-PERF, QC-CACHE
-- [ ] **Wave 6:** QC-RL, QC-FS, QC-OBS, QC-CHAIN, QC-CI, QC-SE
+#### QC-ALG Algorithms
+
+Sources: USP Sorting Algorithms and Algorithm Analysis lectures, Deitel.
+
+| Topic | Questions |
+| --- | --- |
+| Elementary sorts: bubble, selection, insertion | 10 |
+| Merge sort | 8 |
+| Quicksort and pivot strategies | 10 |
+| Heapsort | 6 |
+| Linear-time sorts: counting, radix, bucket | 8 |
+| Stability, in-place and adaptive sorting | 6 |
+| Searching: sequential, binary, interpolation | 10 |
+| Divide and conquer | 8 |
+| Greedy algorithms | 8 |
+| Dynamic programming | 12 |
+| Backtracking and brute force | 6 |
+| Graph algorithms: shortest path, spanning tree, topological sort | 8 |
+
+- [ ] QC-ALG.1 Coverage map committed
+- [ ] QC-ALG.2 100 questions written (PT and EN)
+- [ ] QC-ALG.3 Validation passing
+- [ ] QC-ALG.4 Blind review resolved
+
+#### QC-CONC Concurrency
+
+Sources: Tanenbaum (processes, threads, IPC), USP OOP lectures on threads, Deitel.
+
+| Topic | Questions |
+| --- | --- |
+| Concurrency against parallelism, processes and threads | 10 |
+| Race conditions and critical sections | 12 |
+| Mutexes and locks | 10 |
+| Semaphores and monitors | 8 |
+| Atomic operations, visibility and memory models | 8 |
+| Deadlock, livelock and starvation | 12 |
+| Classic problems: producer-consumer, readers-writers, dining philosophers | 8 |
+| Message passing and channels | 8 |
+| Actor model and the BEAM | 8 |
+| Async, promises and the event loop | 10 |
+| Thread pools and backpressure | 6 |
+
+- [ ] QC-CONC.1 Coverage map committed
+- [ ] QC-CONC.2 100 questions written (PT and EN)
+- [ ] QC-CONC.3 Validation passing
+- [ ] QC-CONC.4 Blind review resolved
+
+#### QC-PAR Parallelism
+
+Sources: Tanenbaum (multiple processor systems), Dragon Book (parallelism and locality).
+
+| Topic | Questions |
+| --- | --- |
+| Amdahl's and Gustafson's laws | 12 |
+| Data parallelism against task parallelism | 10 |
+| Speed-up, efficiency and scalability | 10 |
+| Fork-join and work stealing | 10 |
+| Map-reduce and other parallel patterns | 10 |
+| False sharing and cache effects | 10 |
+| SIMD and vectorisation | 8 |
+| GPU computing basics | 6 |
+| Shared against distributed memory | 8 |
+| Parallel sorting and reductions | 8 |
+| Determinism and reproducibility | 8 |
+
+- [ ] QC-PAR.1 Coverage map committed
+- [ ] QC-PAR.2 100 questions written (PT and EN)
+- [ ] QC-PAR.3 Validation passing
+- [ ] QC-PAR.4 Blind review resolved
+
+#### QC-TX Transactions
+
+Sources: C. J. Date (transactions, recovery, concurrency), notes in references/notes/databases.md.
+
+| Topic | Questions |
+| --- | --- |
+| ACID properties | 12 |
+| Isolation levels and anomalies | 16 |
+| Locking: two-phase, optimistic and pessimistic | 12 |
+| Multiversion concurrency control | 10 |
+| Deadlocks in databases | 6 |
+| Logging and recovery, write-ahead log | 10 |
+| Distributed transactions and two-phase commit | 8 |
+| Saga and outbox | 10 |
+| Idempotency and exactly-once effects | 8 |
+| CAP theorem and consistency models | 8 |
+
+- [ ] QC-TX.1 Coverage map committed
+- [ ] QC-TX.2 100 questions written (PT and EN)
+- [ ] QC-TX.3 Validation passing
+- [ ] QC-TX.4 Blind review resolved
+
+#### QC-SEC Security
+
+Sources: OWASP Top 10, Tanenbaum (security chapters), notes in references/notes/cyber-security.md.
+
+| Topic | Questions |
+| --- | --- |
+| OWASP Top 10 overview and threat modelling | 8 |
+| Injection: SQL and command | 12 |
+| Cross-site scripting | 10 |
+| Content Security Policy and security headers | 8 |
+| CSRF and SameSite cookies | 8 |
+| Authentication: passwords, hashing, multi-factor | 10 |
+| Sessions and cookies | 8 |
+| JWT, OAuth 2.0 and OpenID Connect | 10 |
+| Access control: IDOR and roles | 8 |
+| SSRF, path traversal and file upload | 8 |
+| Cryptography basics and TLS | 6 |
+| Secrets, dependencies and supply chain | 4 |
+
+- [ ] QC-SEC.1 Coverage map committed
+- [ ] QC-SEC.2 100 questions written (PT and EN)
+- [ ] QC-SEC.3 Validation passing
+- [ ] QC-SEC.4 Blind review resolved
+
+### Wave 3
+
+#### QC-COMP Compilers
+
+Sources: Aho et al., Compilers: Principles, Techniques and Tools (2nd edition).
+
+| Topic | Questions |
+| --- | --- |
+| Structure of a compiler and a simple translator (1, 2) | 8 |
+| Lexical analysis: regex, NFA, DFA (3) | 14 |
+| Syntax analysis: grammars, LL and LR parsing (4) | 18 |
+| Syntax-directed translation (5) | 8 |
+| Intermediate code generation (6) | 10 |
+| Run-time environments: stack, heap, garbage collection (7) | 12 |
+| Code generation (8) | 10 |
+| Machine-independent optimisations (9) | 10 |
+| Instruction-level parallelism and locality (10, 11) | 4 |
+| Interpreters, virtual machines and JIT | 6 |
+
+- [ ] QC-COMP.1 Coverage map committed
+- [ ] QC-COMP.2 100 questions written (PT and EN)
+- [ ] QC-COMP.3 Validation passing
+- [ ] QC-COMP.4 Blind review resolved
+
+#### QC-FSM State machines
+
+Sources: Dragon Book (automata), Sommerville (state models), USP Digital Logic (sequential circuits).
+
+| Topic | Questions |
+| --- | --- |
+| States, transitions, events and actions | 12 |
+| Deterministic finite automata | 12 |
+| Non-deterministic automata and subset construction | 10 |
+| Regular languages and regular expressions | 12 |
+| Minimisation of automata | 8 |
+| Mealy and Moore machines | 8 |
+| Statecharts: hierarchy, guards, parallel states | 8 |
+| State machines in software: State pattern, protocols, workflows | 12 |
+| Pushdown automata and context-free grammars | 8 |
+| Turing machines and computability | 10 |
+
+- [ ] QC-FSM.1 Coverage map committed
+- [ ] QC-FSM.2 100 questions written (PT and EN)
+- [ ] QC-FSM.3 Validation passing
+- [ ] QC-FSM.4 Blind review resolved
+
+#### QC-INFO Information theory
+
+Sources: USP Data Structures II (compression), Tanenbaum Networks (error control).
+
+| Topic | Questions |
+| --- | --- |
+| Information and Shannon entropy | 14 |
+| Source coding and prefix codes | 10 |
+| Huffman coding | 10 |
+| Arithmetic coding and the LZ family | 10 |
+| Channel capacity and noise | 10 |
+| Error detection: parity, checksum, CRC | 12 |
+| Error correction: repetition and Hamming codes | 12 |
+| Text and binary encodings: ASCII, UTF-8, base64 | 10 |
+| Encoding, hashing and encryption compared | 6 |
+| Limits of compression | 6 |
+
+- [ ] QC-INFO.1 Coverage map committed
+- [ ] QC-INFO.2 100 questions written (PT and EN)
+- [ ] QC-INFO.3 Validation passing
+- [ ] QC-INFO.4 Blind review resolved
+
+#### QC-DL Digital logic
+
+Sources: USP Digital Logic lectures.
+
+| Topic | Questions |
+| --- | --- |
+| Number systems and base conversion | 12 |
+| Codes: BCD, Gray, ASCII, two's complement | 10 |
+| Logic gates and truth tables | 12 |
+| Boolean algebra and De Morgan's laws | 12 |
+| Karnaugh maps | 12 |
+| Arithmetic circuits: adders and subtractors | 10 |
+| Multiplexers, demultiplexers, encoders, decoders | 10 |
+| Latches and flip-flops | 10 |
+| Registers and counters | 8 |
+| Analogue to digital conversion | 4 |
+
+- [ ] QC-DL.1 Coverage map committed
+- [ ] QC-DL.2 100 questions written (PT and EN)
+- [ ] QC-DL.3 Validation passing
+- [ ] QC-DL.4 Blind review resolved
+
+#### QC-ELEC Electronics
+
+Theory only: no mini-project. The quiz is the whole deliverable for this area.
+
+Sources: Gabriel Torres, Eletrônica (2nd edition), 34 chapters, 5 questions per chapter.
+
+| Topic | Questions |
+| --- | --- |
+| Units of measurement and symbols (1, 2) | 10 |
+| Electricity, direct and alternating voltage, current (3 to 6) | 20 |
+| Resistance, impedance and power (7 to 9) | 15 |
+| Electromagnetism (10) | 5 |
+| Voltage and current dividers, delta and star, Thévenin, Norton (11 to 15) | 25 |
+| Measuring instruments: galvanometer to oscilloscope (16 to 22) | 35 |
+| Resistors, capacitors, coils and transformers (23 to 26) | 20 |
+| Diodes, thyristors and transistors (27 to 29) | 15 |
+| Integrated circuits (30) | 5 |
+| Power supplies, voltage multipliers, filters, waveform generators (31 to 34) | 20 |
+
+- [ ] QC-ELEC.1 Coverage map committed
+- [ ] QC-ELEC.2 170 questions written (PT and EN)
+- [ ] QC-ELEC.3 Validation passing
+- [ ] QC-ELEC.4 Blind review resolved
+
+### Wave 4
+
+#### QC-OOP Object-oriented programming
+
+Sources: USP OOP lectures, Deitel, Aniche (OO and SOLID).
+
+| Topic | Questions |
+| --- | --- |
+| Classes, objects and encapsulation | 12 |
+| Inheritance | 10 |
+| Polymorphism and dynamic dispatch | 12 |
+| Abstraction: interfaces and abstract classes | 10 |
+| Composition against inheritance | 8 |
+| Exceptions | 8 |
+| Generics and collections | 10 |
+| Object lifecycle, memory and garbage collection | 8 |
+| Streams, input and output, serialisation | 6 |
+| Coupling, cohesion and code smells | 10 |
+| OOP across languages: traits, interfaces, protocols | 6 |
+
+- [ ] QC-OOP.1 Coverage map committed
+- [ ] QC-OOP.2 100 questions written (PT and EN)
+- [ ] QC-OOP.3 Validation passing
+- [ ] QC-OOP.4 Blind review resolved
+
+#### QC-FP Functional programming
+
+Sources: Deitel (lambdas and streams), language documentation of Elixir and TypeScript.
+
+| Topic | Questions |
+| --- | --- |
+| Pure functions and referential transparency | 12 |
+| Immutability | 10 |
+| Higher-order functions: map, filter, reduce | 12 |
+| Closures | 8 |
+| Recursion and tail calls | 10 |
+| Composition and currying | 10 |
+| Algebraic data types and pattern matching | 10 |
+| Lazy evaluation | 6 |
+| Option and Result types, functors and monads by intuition | 10 |
+| Managing side effects | 6 |
+| Functional style in Elixir and TypeScript | 6 |
+
+- [ ] QC-FP.1 Coverage map committed
+- [ ] QC-FP.2 100 questions written (PT and EN)
+- [ ] QC-FP.3 Validation passing
+- [ ] QC-FP.4 Blind review resolved
+
+#### QC-PAT Design patterns and SOLID
+
+Sources: Aniche (OO and SOLID), Clean Code, notes in references/notes/solid-principles.md.
+
+| Topic | Questions |
+| --- | --- |
+| Single responsibility principle | 8 |
+| Open-closed principle | 8 |
+| Liskov substitution principle | 8 |
+| Interface segregation principle | 8 |
+| Dependency inversion principle | 8 |
+| Creational: Factory, Builder, Singleton | 14 |
+| Structural: Adapter, Decorator, Facade | 12 |
+| Behavioural: Strategy, Observer, Command, State | 18 |
+| Repository and dependency injection | 8 |
+| Anti-patterns and when not to use a pattern | 8 |
+
+- [ ] QC-PAT.1 Coverage map committed
+- [ ] QC-PAT.2 100 questions written (PT and EN)
+- [ ] QC-PAT.3 Validation passing
+- [ ] QC-PAT.4 Blind review resolved
+
+#### QC-ARCH Software architecture
+
+Sources: Otávio Lemos, Arquitetura Limpa na Prática, Sommerville (architectural design).
+
+| Topic | Questions |
+| --- | --- |
+| What architecture is and quality attributes | 10 |
+| Layered and hexagonal architectures | 10 |
+| Clean architecture and the dependency rule | 14 |
+| Entities and use cases | 12 |
+| Interface adapters | 10 |
+| Frameworks, drivers and the composition root | 8 |
+| Monolith against microservices | 10 |
+| Event-driven architecture and CQRS | 8 |
+| Domain-driven design basics | 10 |
+| Trade-offs and architecture decision records | 8 |
+
+- [ ] QC-ARCH.1 Coverage map committed
+- [ ] QC-ARCH.2 100 questions written (PT and EN)
+- [ ] QC-ARCH.3 Validation passing
+- [ ] QC-ARCH.4 Blind review resolved
+
+#### QC-TEST Testing
+
+Sources: Kent Beck (TDD), Sommerville (testing), notes in references/notes/tests.md.
+
+| Topic | Questions |
+| --- | --- |
+| Test pyramid and test levels | 12 |
+| Unit tests and isolation | 10 |
+| Test doubles | 10 |
+| The TDD cycle | 12 |
+| Integration tests | 8 |
+| End-to-end tests with Playwright | 8 |
+| Smoke and regression tests | 8 |
+| Coverage and mutation testing | 8 |
+| Property-based testing | 6 |
+| Flaky tests | 6 |
+| Test design: equivalence classes and boundaries | 8 |
+| Tests in CI and test strategy | 4 |
+
+- [ ] QC-TEST.1 Coverage map committed
+- [ ] QC-TEST.2 100 questions written (PT and EN)
+- [ ] QC-TEST.3 Validation passing
+- [ ] QC-TEST.4 Blind review resolved
+
+### Wave 5
+
+#### QC-PROTO Protocols
+
+Sources: Tanenbaum Networks (application layer), RFCs of HTTP, the GraphQL and JSON-RPC specifications.
+
+| Topic | Questions |
+| --- | --- |
+| HTTP semantics: methods, status codes, headers | 16 |
+| HTTP caching, cookies and CORS | 12 |
+| HTTP/2 | 12 |
+| HTTP/3 and QUIC | 10 |
+| TLS handshake | 8 |
+| REST | 10 |
+| GraphQL | 12 |
+| JSON-RPC and gRPC | 10 |
+| WebSocket and server-sent events | 10 |
+
+- [ ] QC-PROTO.1 Coverage map committed
+- [ ] QC-PROTO.2 100 questions written (PT and EN)
+- [ ] QC-PROTO.3 Validation passing
+- [ ] QC-PROTO.4 Blind review resolved
+
+#### QC-MSG Messaging
+
+Sources: The Optimal RabbitMQ Guide, legacy project message-queues-pubsub, Kafka and BullMQ documentation.
+
+| Topic | Questions |
+| --- | --- |
+| Queue, pub/sub and stream compared | 12 |
+| Delivery guarantees | 12 |
+| Ordering and partitioning | 10 |
+| Acknowledgement, retry and dead-letter queue | 10 |
+| Idempotent consumers | 8 |
+| Backpressure | 6 |
+| RabbitMQ: exchanges, queues, routing | 12 |
+| Kafka: topics, partitions, consumer groups, offsets | 14 |
+| BullMQ on Redis | 6 |
+| SQS and SNS | 6 |
+| Outbox, saga and event sourcing | 4 |
+
+- [ ] QC-MSG.1 Coverage map committed
+- [ ] QC-MSG.2 100 questions written (PT and EN)
+- [ ] QC-MSG.3 Validation passing
+- [ ] QC-MSG.4 Blind review resolved
+
+#### QC-LB Load balancing
+
+Sources: Legacy project load-stress-tests, NGINX and Caddy documentation, system design notes.
+
+| Topic | Questions |
+| --- | --- |
+| Layer 4 against layer 7 | 10 |
+| Balancing algorithms | 16 |
+| Health checks and failover | 12 |
+| Sticky sessions | 8 |
+| Reverse proxy, load balancer and API gateway | 10 |
+| TLS termination | 6 |
+| Horizontal against vertical scaling | 10 |
+| NGINX configuration | 10 |
+| Caddy configuration | 6 |
+| Consistent hashing | 6 |
+| High availability and single points of failure | 6 |
+
+- [ ] QC-LB.1 Coverage map committed
+- [ ] QC-LB.2 100 questions written (PT and EN)
+- [ ] QC-LB.3 Validation passing
+- [ ] QC-LB.4 Blind review resolved
+
+#### QC-PERF Performance
+
+Sources: Legacy project load-stress-tests, k6 documentation, Dragon Book (locality).
+
+| Topic | Questions |
+| --- | --- |
+| Latency, throughput and percentiles | 14 |
+| Load, stress, spike and soak tests | 12 |
+| k6: virtual users, stages, thresholds, checks | 14 |
+| Benchmarking methodology | 12 |
+| Profiling and flame graphs | 10 |
+| CPU cache and memory locality | 8 |
+| Database performance: indexes, N+1, connection pooling | 12 |
+| Runtime performance: event loop, garbage collection, cluster | 10 |
+| Capacity planning and queueing | 8 |
+
+- [ ] QC-PERF.1 Coverage map committed
+- [ ] QC-PERF.2 100 questions written (PT and EN)
+- [ ] QC-PERF.3 Validation passing
+- [ ] QC-PERF.4 Blind review resolved
+
+#### QC-CACHE Cache
+
+Sources: Redis documentation, HTTP caching RFC, system design notes.
+
+| Topic | Questions |
+| --- | --- |
+| Why and where to cache: browser, CDN, application, database | 12 |
+| Strategies: cache-aside, read-through, write-through, write-behind | 16 |
+| Invalidation and time to live | 14 |
+| Eviction policies: LRU, LFU, FIFO | 12 |
+| Stampede, penetration and avalanche | 12 |
+| HTTP cache headers | 12 |
+| Redis data structures and persistence | 12 |
+| Consistency trade-offs | 10 |
+
+- [ ] QC-CACHE.1 Coverage map committed
+- [ ] QC-CACHE.2 100 questions written (PT and EN)
+- [ ] QC-CACHE.3 Validation passing
+- [ ] QC-CACHE.4 Blind review resolved
+
+### Wave 6
+
+#### QC-RL Rate limiting
+
+Sources: Tanenbaum Networks (leaky and token bucket), Redis documentation.
+
+| Topic | Questions |
+| --- | --- |
+| Why and where to limit | 10 |
+| Fixed window | 10 |
+| Sliding log and sliding counter | 14 |
+| Token bucket | 14 |
+| Leaky bucket | 12 |
+| Distributed limiting with Redis and atomicity | 14 |
+| HTTP 429, headers and client backoff | 12 |
+| Quotas, throttling and load shedding | 14 |
+
+- [ ] QC-RL.1 Coverage map committed
+- [ ] QC-RL.2 100 questions written (PT and EN)
+- [ ] QC-RL.3 Validation passing
+- [ ] QC-RL.4 Blind review resolved
+
+#### QC-FS File systems
+
+Sources: Tanenbaum (file systems), USP Data Structures II (files, indexes, B-trees).
+
+| Topic | Questions |
+| --- | --- |
+| Files, attributes and operations | 10 |
+| Allocation: contiguous, linked, FAT, i-nodes | 14 |
+| Directories and links | 8 |
+| Free space management and journaling | 10 |
+| Secondary storage: disk, flash and access cost | 10 |
+| Record organisation: fixed, variable, RRN | 10 |
+| Indexes: primary, secondary, inverted lists | 10 |
+| B-trees and B+ trees | 12 |
+| External sorting | 8 |
+| Compression and space reclamation | 8 |
+
+- [ ] QC-FS.1 Coverage map committed
+- [ ] QC-FS.2 100 questions written (PT and EN)
+- [ ] QC-FS.3 Validation passing
+- [ ] QC-FS.4 Blind review resolved
+
+#### QC-OBS Observability
+
+Sources: Majors et al., Observability Engineering, OpenTelemetry documentation.
+
+| Topic | Questions |
+| --- | --- |
+| Monitoring against observability | 10 |
+| The three signals: logs, metrics, traces | 10 |
+| Structured logs | 10 |
+| Metric types and cardinality | 12 |
+| Distributed tracing: spans and context propagation | 14 |
+| OpenTelemetry | 10 |
+| SLI, SLO and error budgets | 12 |
+| Alerting | 8 |
+| RED, USE and golden signals | 6 |
+| Profiling | 4 |
+| Prometheus, Grafana, Loki and Tempo basics | 4 |
+
+- [ ] QC-OBS.1 Coverage map committed
+- [ ] QC-OBS.2 100 questions written (PT and EN)
+- [ ] QC-OBS.3 Validation passing
+- [ ] QC-OBS.4 Blind review resolved
+
+#### QC-CHAIN Blockchain
+
+Sources: Nakamoto, Bitcoin: A Peer-to-Peer Electronic Cash System.
+
+| Topic | Questions |
+| --- | --- |
+| Hash functions | 12 |
+| Digital signatures and keys | 10 |
+| Transactions and unspent outputs | 12 |
+| Blocks, the chain and Merkle trees | 14 |
+| Proof of work and difficulty | 14 |
+| Double spending and confirmations | 10 |
+| Network and consensus: longest chain and forks | 12 |
+| Incentives and mining | 8 |
+| Limits and alternatives: proof of stake, scalability | 8 |
+
+- [ ] QC-CHAIN.1 Coverage map committed
+- [ ] QC-CHAIN.2 100 questions written (PT and EN)
+- [ ] QC-CHAIN.3 Validation passing
+- [ ] QC-CHAIN.4 Blind review resolved
+
+#### QC-CI Continuous integration
+
+Sources: GitHub Actions course material in references/courses/github-actions.
+
+| Topic | Questions |
+| --- | --- |
+| CI and CD concepts | 12 |
+| GitHub Actions: workflows, events, jobs, steps | 16 |
+| Runners and matrix builds | 10 |
+| Caching and artifacts | 10 |
+| Secrets, environments and permissions | 12 |
+| Custom actions and reusable workflows | 10 |
+| Quality gates | 8 |
+| Deployment strategies | 10 |
+| SemVer, Conventional Commits and changelog | 8 |
+| Supply-chain security in CI | 4 |
+
+- [ ] QC-CI.1 Coverage map committed
+- [ ] QC-CI.2 100 questions written (PT and EN)
+- [ ] QC-CI.3 Validation passing
+- [ ] QC-CI.4 Blind review resolved
+
+#### QC-SE Software engineering
+
+Theory only: no mini-project. The quiz is the whole deliverable for this area.
+
+Sources: Sommerville (9th edition), Brooks, Clean Code, Code Simplicity, The Lean Startup.
+
+| Topic | Questions |
+| --- | --- |
+| Process models: waterfall, incremental, agile | 16 |
+| Requirements engineering | 16 |
+| System modelling with UML | 10 |
+| Architectural design overview | 8 |
+| Design, implementation and clean code | 16 |
+| Testing, evolution and maintenance | 12 |
+| Project management and estimation | 14 |
+| Brooks: The Mythical Man-Month and No Silver Bullet | 14 |
+| Quality and configuration management | 12 |
+| Dependability and safety | 8 |
+| Agile methods and lean startup | 14 |
+| Simplicity and technical debt | 10 |
+
+- [ ] QC-SE.1 Coverage map committed
+- [ ] QC-SE.2 150 questions written (PT and EN)
+- [ ] QC-SE.3 Validation passing
+- [ ] QC-SE.4 Blind review resolved
 
 ---
 
 ## Part MP: Mini-projects
 
-### Wave 1 (detailed)
+### Wave 1
 
 #### MP-ALG-1 Sorting race
 
@@ -451,120 +1068,895 @@ Teaches: what changes when the same task runs on BullMQ, RabbitMQ, Kafka and SQS
 	- **Accept:** table with messages per second per broker, with the machine and versions recorded.
 - [ ] **MP-MSG-1.5** Definition of done for mini-projects met.
 
-### Remaining mini-projects (detailed in Stage 2)
+### Remaining mini-projects, by area
 
-One checkbox per mini-project. Source of the list: [mini-project catalog](docs/en/mini-project-catalog.md).
+Electronics and Software engineering are theory only and have no mini-project.
 
-**BIGO**
-- [ ] MP-BIGO-1 Big O lab: measure a function and fit the curve
-- [ ] MP-BIGO-2 Interactive master theorem
-- [ ] MP-BIGO-3 The Ω(n lg n) bound with a decision tree
+#### MP-BIGO-1 Big O lab
 
-**ALG**
-- [ ] MP-ALG-2 Dynamic programming: knapsack, LCS, coin change
-- [ ] MP-ALG-3 Travelling salesman: brute force against heuristic
-- [ ] MP-ALG-4 Hybrid quicksort: threshold and pivot strategies
+Teaches: how to measure a function and recognise its growth curve. Languages: TS.
 
-**DS**
-- [ ] MP-DS-1 Hash map from scratch
-- [ ] MP-DS-2 Graphs: Dijkstra, Bellman-Ford, topological sort, spanning tree
-- [ ] MP-DS-3 B-tree on disk
-- [ ] MP-DS-4 LRU cache, bloom filter and trie
-- [ ] MP-DS-5 BST against AVL and red-black trees
+- [ ] **MP-BIGO-1.1** Instrumented samples of O(1), O(log n), O(n), O(n log n), O(n^2) and O(2^n)
+	- [ ] MP-BIGO-1.1.a Each sample counts its basic operations.
+	- [ ] MP-BIGO-1.1.b Sizes double on every run.
+	- **Accept:** operation counts match the closed formula for each sample in unit tests.
+- [ ] **MP-BIGO-1.2** Curve fitting
+	- [ ] MP-BIGO-1.2.a Fit measured counts against the candidate curves.
+	- [ ] MP-BIGO-1.2.b Report the best fit and its error.
+	- **Accept:** the tool names the right class for all six samples.
+- [ ] **MP-BIGO-1.3** CLI and static dashboard with counts and time against `n`
+	- **Accept:** `bun run demo` prints the table and the dashboard plots the committed results.
+- [ ] **MP-BIGO-1.4** Definition of done for mini-projects met.
 
-**COMP**
-- [ ] MP-COMP-2 Tree-walking interpreter
-- [ ] MP-COMP-3 Bytecode VM in Rust
-- [ ] MP-COMP-4 Regex engine: NFA to DFA
+#### MP-BIGO-2 Interactive master theorem
 
-**FSM, INFO**
-- [ ] MP-FSM-1 Order state machine
-- [ ] MP-INFO-1 Huffman and LZ77
-- [ ] MP-INFO-2 Error detection and correction: CRC and Hamming
+Teaches: how the three cases of the master theorem decide the cost of a recurrence. Languages: TS.
 
-**CONC, PAR**
-- [ ] MP-CONC-2 Deadlock: dining philosophers
-- [ ] MP-CONC-3 10 thousand connections
-- [ ] MP-PAR-1 Scaling by cores and Amdahl's law
+- [ ] **MP-BIGO-2.1** Classifier for `T(n) = aT(n/b) + f(n)`
+	- [ ] MP-BIGO-2.1.a Returns the case and the solution.
+	- [ ] MP-BIGO-2.1.b Reports when the theorem does not apply.
+	- **Accept:** unit tests cover one recurrence per case and one that does not fit.
+- [ ] **MP-BIGO-2.2** Empirical check: count the calls of a generated recursive function
+	- **Accept:** the measured growth agrees with the predicted class for merge sort, binary search and a 7-way split.
+- [ ] **MP-BIGO-2.3** CLI and static page with the recursion tree
+	- **Accept:** one command prints the case and the page draws the tree for the chosen `a`, `b`.
+- [ ] **MP-BIGO-2.4** Definition of done for mini-projects met.
 
-**TX, DB**
-- [ ] MP-TX-1 Isolation levels in PostgreSQL
-- [ ] MP-TX-2 Overselling at checkout
-- [ ] MP-TX-3 Prisma, Drizzle and raw SQL
-- [ ] MP-TX-4 Outbox and saga
-- [ ] MP-DB-1 Mini relational DBMS with three join algorithms
-- [ ] MP-DB-2 Normalisation tool
+#### MP-BIGO-3 The lower bound of comparison sorting
 
-**LB, PERF, PROTO, CACHE, RL**
-- [ ] MP-LB-1 NGINX against Caddy
-- [ ] MP-LB-2 Hand-written L7 load balancer
-- [ ] MP-PERF-1 Bun against Node, with and without PM2 cluster
-- [ ] MP-PERF-2 k6 load, stress, spike and soak scenarios on a local API
-- [ ] MP-PERF-3 Naive against blocked matrix multiplication
-- [ ] MP-PROTO-1 REST, GraphQL and JSON-RPC on the same API
-- [ ] MP-PROTO-2 HTTP/1.1, HTTP/2 and HTTP/3
-- [ ] MP-PROTO-3 HTTP server on raw TCP
-- [ ] MP-CACHE-1 Cache strategies and stampede
-- [ ] MP-RL-1 Rate limiter algorithms
+Teaches: why no comparison sort beats Ω(n lg n) and how counting sorts escape it. Languages: TS, Python.
 
-**MSG**
-- [ ] MP-MSG-2 Idempotency and dead-letter queue
-- [ ] MP-MSG-3 Queue against pub/sub, with backpressure
+- [ ] **MP-BIGO-3.1** Decision tree generator for `n` = 3 and 4
+	- **Accept:** the tree has `n!` leaves and its height equals the ceiling of `lg(n!)`.
+- [ ] **MP-BIGO-3.2** Comparison counters in merge, heap and quicksort
+	- **Accept:** counted comparisons never fall below `lg(n!)` on 1,000 random inputs.
+- [ ] **MP-BIGO-3.3** Counting and radix sort on the same inputs
+	- **Accept:** they sort correctly with zero element comparisons, shown in the same table.
+- [ ] **MP-BIGO-3.4** Definition of done for mini-projects met.
 
-**OOP, FP, PAT, ARCH**
-- [ ] MP-OOP-1 Same domain in OOP and functional style
-- [ ] MP-OOP-2 Executable code smell catalogue
-- [ ] MP-FP-1 Pure functions with property-based tests
-- [ ] MP-PAT-1 About 10 back-end patterns
-- [ ] MP-PAT-2 SOLID before and after
-- [ ] MP-ARCH-1 The same application in clean architecture layers
+#### MP-DS-1 Hash map from scratch
 
-**SEC**
-- [ ] MP-SEC-2 XSS and CSP
-- [ ] MP-SEC-3 CSRF
-- [ ] MP-SEC-4 Broken access control (IDOR)
-- [ ] MP-SEC-5 SSRF
-- [ ] MP-SEC-6 Passwords and sessions
-- [ ] MP-SEC-7 Common JWT mistakes
-- [ ] MP-SEC-8 Upload and path traversal
+Teaches: how collisions are resolved and why the load factor matters. Languages: C++, Rust, TS.
 
-**TEST**
-- [ ] MP-TEST-1 Full test pyramid on one app
-- [ ] MP-TEST-2 TDD kata with commit history (multi-currency money)
-- [ ] MP-TEST-3 Mutation testing
-- [ ] MP-TEST-4 Flaky test lab
-- [ ] MP-TEST-5 Mini xUnit from scratch
+- [ ] **MP-DS-1.1** Separate chaining and open addressing (linear probing)
+	- [ ] MP-DS-1.1.a Insert, get, delete.
+	- [ ] MP-DS-1.1.b Resize when the load factor passes a limit.
+	- **Accept:** property tests compare every operation against the language's own map.
+- [ ] **MP-DS-1.2** Deletion in open addressing with tombstones
+	- **Accept:** a get after delete-then-insert of colliding keys returns the right value.
+- [ ] **MP-DS-1.3** Benchmark by load factor
+	- **Accept:** table of lookup time at load 0.25, 0.5, 0.75 and 0.9 for both strategies.
+- [ ] **MP-DS-1.4** Definition of done for mini-projects met.
 
-**OBS**
-- [ ] MP-OBS-1 Three services with traces, metrics and logs
-- [ ] MP-OBS-2 Structured logs and correlation id
-- [ ] MP-OBS-3 SLO and alert
-- [ ] MP-OBS-4 Profiling with a flame graph
+#### MP-DS-2 Graph algorithms
 
-**OS, NET, FS**
-- [ ] MP-OS-1 CPU scheduling simulator
-- [ ] MP-OS-2 Paging and TLB simulator
-- [ ] MP-OS-3 Memory allocator
-- [ ] MP-OS-4 Deadlock detector, banker's algorithm and mini shell
-- [ ] MP-NET-1 Sliding-window protocols and mini TCP over UDP
-- [ ] MP-NET-2 ALOHA and CSMA/CD simulator
-- [ ] MP-NET-3 DNS resolver and subnet calculator
-- [ ] MP-FS-1 File organisation, indexes and compression
-- [ ] MP-FS-2 External sorting
+Teaches: shortest paths, ordering and spanning trees on the same graph library. Languages: C++, Go.
 
-**DL, ELEC, CHAIN, CI, SE**
-- [ ] MP-DL-1 Logic gates, Karnaugh minimisation and adder
-- [ ] MP-DL-2 NAND-only ALU and 4-bit mini CPU
-- [ ] MP-ELEC-1 Circuit calculators and simulators
-- [ ] MP-CHAIN-1 Didactic blockchain
-- [ ] MP-CI-1 CI pipeline for this repository (same work as F-4, documented as a lesson)
-- [ ] MP-SE-1 Schedule simulator and estimate tracker
+- [ ] **MP-DS-2.1** Graph with adjacency list and adjacency matrix
+	- **Accept:** both representations pass the same test suite.
+- [ ] **MP-DS-2.2** Dijkstra, Bellman-Ford, topological sort, Prim and Kruskal
+	- [ ] MP-DS-2.2.a Bellman-Ford reports negative cycles.
+	- [ ] MP-DS-2.2.b Topological sort reports cycles.
+	- **Accept:** the 10 `.in`/`.out` cases in `references/usp/data-structures-2` pass in both languages.
+- [ ] **MP-DS-2.3** Benchmark and CLI that prints the path
+	- **Accept:** one command runs a case file and prints the result in the expected format.
+- [ ] **MP-DS-2.4** Definition of done for mini-projects met.
+
+#### MP-DS-3 B-tree on disk
+
+Teaches: why databases use wide trees: fewer page reads. Languages: C++, Rust.
+
+- [ ] **MP-DS-3.1** B-tree stored in a file, one node per page
+	- [ ] MP-DS-3.1.a Insert with node split.
+	- [ ] MP-DS-3.1.b Search.
+	- [ ] MP-DS-3.1.c Delete with merge and redistribution.
+	- **Accept:** invariants (order, sorted keys, equal leaf depth) hold after 100,000 random operations.
+- [ ] **MP-DS-3.2** Page-read counter
+	- **Accept:** search in 1,000,000 keys reads at most the tree height in pages.
+- [ ] **MP-DS-3.3** Comparison with a binary search tree on disk
+	- **Accept:** table of page reads per search for both structures.
+- [ ] **MP-DS-3.4** Definition of done for mini-projects met.
+
+#### MP-DS-4 LRU cache, bloom filter and trie
+
+Teaches: three structures behind caches, membership tests and prefix search. Languages: TS, Go.
+
+- [ ] **MP-DS-4.1** LRU cache with O(1) get and put
+	- **Accept:** eviction order matches a reference model in property tests.
+- [ ] **MP-DS-4.2** Bloom filter with configurable size and hash count
+	- **Accept:** measured false-positive rate is within 20% of the theoretical rate, and there is no false negative.
+- [ ] **MP-DS-4.3** Trie with insert, search and prefix listing
+	- **Accept:** prefix search over a 100,000-word list returns the same set as a linear filter.
+- [ ] **MP-DS-4.4** Definition of done for mini-projects met.
+
+#### MP-DS-5 Balanced search trees
+
+Teaches: how an unbalanced tree degenerates and how rotations prevent it. Languages: C++, Java.
+
+- [ ] **MP-DS-5.1** Unbalanced BST, AVL and red-black tree with the same interface
+	- **Accept:** each keeps its invariant after every operation in property tests.
+- [ ] **MP-DS-5.2** Height and rotation counters
+	- **Accept:** sorted insertion of 100,000 keys gives height 100,000 for the BST and under 40 for the balanced trees.
+- [ ] **MP-DS-5.3** Step-by-step rotation visualiser (static page)
+	- **Accept:** the page replays the insertion of a fixed sequence and shows each rotation.
+- [ ] **MP-DS-5.4** Definition of done for mini-projects met.
+
+#### MP-OS-1 CPU scheduling simulator
+
+Teaches: how scheduling policies trade waiting time, response time and fairness. Languages: TS, Python.
+
+- [ ] **MP-OS-1.1** FCFS, shortest job first, round-robin, priority and multilevel feedback
+	- **Accept:** textbook examples give the documented waiting and turnaround times.
+- [ ] **MP-OS-1.2** Gantt chart output
+	- **Accept:** CLI prints the chart and the static page draws it.
+- [ ] **MP-OS-1.3** Comparison on generated workloads
+	- **Accept:** table of average waiting, turnaround and response time per policy.
+- [ ] **MP-OS-1.4** Definition of done for mini-projects met.
+
+#### MP-OS-2 Paging and TLB simulator
+
+Teaches: how virtual addresses are translated and what page replacement costs. Languages: Rust, TS.
+
+- [ ] **MP-OS-2.1** Page table and TLB with hit and miss counters
+	- **Accept:** a reference trace gives the expected counts.
+- [ ] **MP-OS-2.2** Replacement: FIFO, clock, LRU, optimal
+	- **Accept:** page-fault counts match textbook examples.
+- [ ] **MP-OS-2.3** Belady's anomaly
+	- **Accept:** a test shows FIFO faulting more with more frames on the classic reference string.
+- [ ] **MP-OS-2.4** Definition of done for mini-projects met.
+
+#### MP-OS-3 Memory allocator
+
+Teaches: how allocation strategies fragment memory. Languages: C++, Rust.
+
+- [ ] **MP-OS-3.1** First fit, best fit, worst fit and buddy system over a fixed arena
+	- **Accept:** no two live blocks overlap in a randomised test.
+- [ ] **MP-OS-3.2** Coalescing of free blocks
+	- **Accept:** freeing everything returns one free block.
+- [ ] **MP-OS-3.3** Fragmentation benchmark
+	- **Accept:** table of external fragmentation and failed allocations per strategy.
+- [ ] **MP-OS-3.4** Definition of done for mini-projects met.
+
+#### MP-OS-4 Deadlock detection and a mini shell
+
+Teaches: resource allocation graphs, the banker's algorithm, and processes with pipes. Languages: Go, C++.
+
+- [ ] **MP-OS-4.1** Deadlock detector on a resource allocation graph
+	- **Accept:** known deadlocked and safe graphs are classified correctly.
+- [ ] **MP-OS-4.2** Banker's algorithm
+	- **Accept:** textbook states are classified safe or unsafe as documented.
+- [ ] **MP-OS-4.3** Mini shell with pipes, redirection and signals
+	- **Accept:** a test script runs pipelines of three commands and interrupts a running one.
+- [ ] **MP-OS-4.4** Definition of done for mini-projects met.
+
+#### MP-NET-1 Sliding window and a mini TCP
+
+Teaches: how reliability is built on an unreliable channel. Languages: Go, Elixir.
+
+- [ ] **MP-NET-1.1** Simulated channel with loss, duplication and reordering
+	- **Accept:** the channel is deterministic with a fixed seed.
+- [ ] **MP-NET-1.2** Stop-and-wait, go-back-N and selective repeat
+	- **Accept:** every protocol delivers a file intact at 20% loss, checked by checksum.
+- [ ] **MP-NET-1.3** Mini TCP over UDP: handshake, sequence numbers, retransmission
+	- **Accept:** a 10 MB transfer on localhost with injected loss arrives intact, and throughput per protocol is tabled.
+- [ ] **MP-NET-1.4** Definition of done for mini-projects met.
+
+#### MP-NET-2 ALOHA and CSMA/CD simulator
+
+Teaches: how shared media are contended. Languages: Python.
+
+- [ ] **MP-NET-2.1** Pure and slotted ALOHA
+	- **Accept:** simulated throughput peaks within 5% of the theoretical 18.4% and 36.8%.
+- [ ] **MP-NET-2.2** CSMA/CD with binary exponential backoff
+	- **Accept:** chart of throughput against offered load for the three, generated from committed results.
+- [ ] **MP-NET-2.3** Definition of done for mini-projects met.
+
+#### MP-NET-3 DNS resolver and subnet calculator
+
+Teaches: how names are resolved and how addresses are divided. Languages: Go, TS.
+
+- [ ] **MP-NET-3.1** Iterative resolver against a local fake hierarchy of root, TLD and authoritative servers in Docker
+	- **Accept:** resolution works with no external network, and each step is printed.
+- [ ] **MP-NET-3.2** Cache with time to live
+	- **Accept:** a second query is answered from cache and expires on time.
+- [ ] **MP-NET-3.3** Subnet calculator
+	- **Accept:** network, broadcast, range and mask are correct for a table of CIDR cases.
+- [ ] **MP-NET-3.4** Definition of done for mini-projects met.
+
+#### MP-DB-1 Mini relational DBMS
+
+Teaches: how selection, projection and three join algorithms work. Languages: Rust, Python.
+
+- [ ] **MP-DB-1.1** In-memory tables with selection and projection
+	- **Accept:** results equal SQLite on the same data in tests.
+- [ ] **MP-DB-1.2** Nested-loop, hash and sort-merge join
+	- **Accept:** the three joins return the same rows on random tables.
+- [ ] **MP-DB-1.3** Benchmark by table size
+	- **Accept:** table shows where nested-loop falls behind, for sizes 10^3 to 10^6.
+- [ ] **MP-DB-1.4** Definition of done for mini-projects met.
+
+#### MP-DB-2 Normalisation tool
+
+Teaches: how functional dependencies drive normal forms. Languages: Python.
+
+- [ ] **MP-DB-2.1** Attribute closure and candidate keys
+	- **Accept:** textbook examples return the documented keys.
+- [ ] **MP-DB-2.2** Normal form check and decomposition to 3NF and BCNF
+	- **Accept:** decompositions are lossless, verified by a chase test.
+- [ ] **MP-DB-2.3** CLI that explains each step
+	- **Accept:** one command prints the reasoning for an example schema.
+- [ ] **MP-DB-2.4** Definition of done for mini-projects met.
+
+#### MP-ALG-2 Dynamic programming
+
+Teaches: how memoisation and tabulation remove repeated work. Languages: TS, Python.
+
+- [ ] **MP-ALG-2.1** Knapsack, longest common subsequence and coin change in three versions each: naive, memoised, tabulated
+	- **Accept:** the three versions return the same answer on 200 random cases.
+- [ ] **MP-ALG-2.2** Call counter and benchmark
+	- **Accept:** the naive version makes at least 100 times more calls than the memoised one for the documented input size.
+- [ ] **MP-ALG-2.3** Demo printing the filled table step by step
+	- **Accept:** one command prints the table for a small example, shown in the README.
+- [ ] **MP-ALG-2.4** Definition of done for mini-projects met.
+
+#### MP-ALG-3 Travelling salesman
+
+Teaches: where brute force stops being usable and what a heuristic trades away. Languages: TS, Rust.
+
+- [ ] **MP-ALG-3.1** Brute force and dynamic programming (Held-Karp) solvers
+	- **Accept:** both return the same optimal tour for every instance up to 10 cities.
+- [ ] **MP-ALG-3.2** Heuristics: nearest neighbour and 2-opt
+	- **Accept:** tour length stays within a documented factor of the optimum on instances up to 12 cities.
+- [ ] **MP-ALG-3.3** Benchmark by number of cities
+	- **Accept:** the table shows the size at which brute force exceeds 10 seconds, in both languages.
+- [ ] **MP-ALG-3.4** Definition of done for mini-projects met.
+
+#### MP-ALG-4 Hybrid quicksort
+
+Teaches: how the pivot and the small-array threshold change quicksort in practice. Languages: C++, Rust.
+
+- [ ] **MP-ALG-4.1** Pivot strategies: first, random, median of three
+	- **Accept:** all sort correctly, and the first-element pivot shows quadratic growth on sorted input.
+- [ ] **MP-ALG-4.2** Switch to insertion sort below a threshold `k`
+	- **Accept:** benchmark sweeps `k` over 0, 5, 10, 20, 50 and records the best value.
+- [ ] **MP-ALG-4.3** Dashboard comparing strategies by input shape
+	- **Accept:** the chart is generated from the committed results.
+- [ ] **MP-ALG-4.4** Definition of done for mini-projects met.
+
+#### MP-CONC-2 Deadlock: dining philosophers
+
+Teaches: the four conditions of deadlock and how breaking one removes it. Languages: Go, Java.
+
+- [ ] **MP-CONC-2.1** Version that deadlocks
+	- **Accept:** a test with a timeout detects the deadlock in at least 9 of 10 runs.
+- [ ] **MP-CONC-2.2** Fixes: lock ordering and a waiter (semaphore)
+	- **Accept:** both fixes run 60 seconds with every philosopher eating, checked by counters.
+- [ ] **MP-CONC-2.3** Thread dump of the deadlocked version explained in the README
+	- **Accept:** the captured dump is committed and each line is annotated.
+- [ ] **MP-CONC-2.4** Definition of done for mini-projects met.
+
+#### MP-CONC-3 Ten thousand connections
+
+Teaches: how event loops, goroutines and BEAM processes handle many idle connections. Languages: TS, Go, Elixir.
+
+- [ ] **MP-CONC-3.1** Same echo and delayed-response server in the three languages
+	- **Accept:** one protocol test suite passes against all three.
+- [ ] **MP-CONC-3.2** Local k6 scenario holding 10,000 connections
+	- **Accept:** the script refuses to run against a non-local host.
+- [ ] **MP-CONC-3.3** Measurement of memory and latency percentiles
+	- **Accept:** table committed with memory per connection and p50, p95, p99 per server.
+- [ ] **MP-CONC-3.4** Definition of done for mini-projects met.
+
+#### MP-PAR-1 Scaling by cores
+
+Teaches: how much a program speeds up with more cores, and why not linearly. Languages: Rust, Go, C++.
+
+- [ ] **MP-PAR-1.1** Prime counting and Mandelbrot, sequential and parallel
+	- **Accept:** parallel results equal the sequential ones exactly.
+- [ ] **MP-PAR-1.2** Speed-up measurement with 1, 2, 4 and 8 workers
+	- **Accept:** table of speed-up and efficiency per language.
+- [ ] **MP-PAR-1.3** Amdahl fit
+	- **Accept:** the README states the serial fraction estimated from the measurements.
+- [ ] **MP-PAR-1.4** Definition of done for mini-projects met.
+
+#### MP-TX-1 Isolation levels in PostgreSQL
+
+Teaches: which anomaly each isolation level allows. Languages: TS + SQL.
+
+- [ ] **MP-TX-1.1** Two-session test harness with controlled interleaving
+	- **Accept:** steps run in a fixed order, proven by a log of timestamps.
+- [ ] **MP-TX-1.2** Dirty read, non-repeatable read, phantom, lost update, write skew
+	- **Accept:** each anomaly is reproduced at the weakest level that allows it and blocked at the next.
+- [ ] **MP-TX-1.3** Result matrix
+	- **Accept:** the README table of level against anomaly is generated by the tests.
+- [ ] **MP-TX-1.4** Definition of done for mini-projects met.
+
+#### MP-TX-2 Overselling at checkout
+
+Teaches: how concurrent purchases oversell stock and three ways to stop it. Languages: TS.
+
+- [ ] **MP-TX-2.1** Naive checkout (read, check, write) with ElysiaJS and PostgreSQL
+	- **Accept:** local k6 with 200 concurrent buyers of 10 items sells more than 10.
+- [ ] **MP-TX-2.2** Fixes: optimistic version column, `SELECT FOR UPDATE`, `SERIALIZABLE` with retry
+	- **Accept:** each fix sells exactly 10 under the same load.
+- [ ] **MP-TX-2.3** Throughput and error rate per fix
+	- **Accept:** table committed with requests per second and rejected requests.
+- [ ] **MP-TX-2.4** Definition of done for mini-projects met.
+
+#### MP-TX-3 Prisma, Drizzle and raw SQL
+
+Teaches: what an ORM costs and what SQL it generates. Languages: TS.
+
+- [ ] **MP-TX-3.1** Same schema and same five queries in the three approaches
+	- **Accept:** the three return identical rows in tests.
+- [ ] **MP-TX-3.2** Captured SQL for each query
+	- **Accept:** the generated SQL is committed next to each query.
+- [ ] **MP-TX-3.3** Latency benchmark and an N+1 example with its fix
+	- **Accept:** table with latency per approach, and the N+1 version issues more than 100 statements where the fix issues 2.
+- [ ] **MP-TX-3.4** Definition of done for mini-projects met.
+
+#### MP-TX-4 Outbox and saga
+
+Teaches: how to keep two services consistent without a distributed transaction. Languages: TS.
+
+- [ ] **MP-TX-4.1** Order and payment services with a message broker
+	- **Accept:** happy path leaves both databases consistent.
+- [ ] **MP-TX-4.2** Dual-write bug, then transactional outbox
+	- **Accept:** with a crash injected between the write and the publish, the bug loses the event and the outbox does not.
+- [ ] **MP-TX-4.3** Saga with compensation
+	- **Accept:** a failed payment cancels the order, checked end to end.
+- [ ] **MP-TX-4.4** Definition of done for mini-projects met.
+
+#### MP-SEC-2 XSS and CSP lab
+
+Teaches: how script injection works and how escaping and a content policy stop it. Languages: TS.
+
+- [ ] **MP-SEC-2.1** Vulnerable pages: stored, reflected and DOM-based, on an internal Docker network
+	- **Accept:** a Playwright test demonstrates each one inside the lab.
+- [ ] **MP-SEC-2.2** Fixes: output encoding, safe DOM APIs, Content Security Policy
+	- **Accept:** the same tests fail to execute script on the fixed version.
+- [ ] **MP-SEC-2.3** Documentation of cause and prevention
+	- **Accept:** both READMEs explain why each fix works, and no payload targets anything outside the lab.
+- [ ] **MP-SEC-2.4** Definition of done for mini-projects met.
+
+#### MP-SEC-3 CSRF lab
+
+Teaches: why a browser sends cookies on forged requests and how to refuse them. Languages: TS.
+
+- [ ] **MP-SEC-3.1** Vulnerable state-changing endpoint and a second local origin that forges the request
+	- **Accept:** a Playwright test shows the forged change succeeding.
+- [ ] **MP-SEC-3.2** Fixes: anti-CSRF token and `SameSite` cookies
+	- **Accept:** the forged request is rejected and the legitimate form still works.
+- [ ] **MP-SEC-3.3** Definition of done for mini-projects met.
+
+#### MP-SEC-4 Broken access control lab
+
+Teaches: why the server must check ownership on every request. Languages: TS.
+
+- [ ] **MP-SEC-4.1** Vulnerable API that trusts the id in the URL
+	- **Accept:** a test reads another fake user's record.
+- [ ] **MP-SEC-4.2** Fix: ownership and role checks in one place
+	- **Accept:** the same test gets 403 and an authorisation test matrix passes.
+- [ ] **MP-SEC-4.3** Definition of done for mini-projects met.
+
+#### MP-SEC-5 SSRF lab
+
+Teaches: how a server can be tricked into calling internal services. Languages: TS.
+
+- [ ] **MP-SEC-5.1** Vulnerable URL-fetch feature and a fake internal service, both on the internal Docker network
+	- **Accept:** a test reaches the internal service through the feature.
+- [ ] **MP-SEC-5.2** Fix: allow-list, scheme and resolved-address validation
+	- **Accept:** the same test is blocked, including through a redirect.
+- [ ] **MP-SEC-5.3** Definition of done for mini-projects met.
+
+#### MP-SEC-6 Passwords and sessions lab
+
+Teaches: how passwords should be stored and logins protected. Languages: TS.
+
+- [ ] **MP-SEC-6.1** Storage comparison: plain, MD5, salted SHA-256, Argon2
+	- **Accept:** a benchmark shows hashes per second for each, on fake data only.
+- [ ] **MP-SEC-6.2** Login with attempt limiting and secure session cookies
+	- **Accept:** tests cover lockout, cookie flags and session rotation on login.
+- [ ] **MP-SEC-6.3** Definition of done for mini-projects met.
+
+#### MP-SEC-7 JWT mistakes lab
+
+Teaches: the common ways token validation goes wrong. Languages: TS.
+
+- [ ] **MP-SEC-7.1** Vulnerable verifier: accepts unsigned tokens, weak secret, no expiry check
+	- **Accept:** a test demonstrates each mistake inside the lab.
+- [ ] **MP-SEC-7.2** Fixed verifier: pinned algorithm, strong key, expiry and audience checks
+	- **Accept:** every forged token is rejected and a valid one is accepted.
+- [ ] **MP-SEC-7.3** Definition of done for mini-projects met.
+
+#### MP-SEC-8 Upload and path traversal lab
+
+Teaches: why file names and types from the client cannot be trusted. Languages: TS.
+
+- [ ] **MP-SEC-8.1** Vulnerable upload and download endpoints
+	- **Accept:** a test reads a file outside the upload folder inside the container.
+- [ ] **MP-SEC-8.2** Fix: generated names, canonical path check, type and size validation
+	- **Accept:** the same test is blocked and valid uploads still work.
+- [ ] **MP-SEC-8.3** Definition of done for mini-projects met.
+
+#### MP-COMP-2 Tree-walking interpreter
+
+Teaches: how a tree is executed: environments, scopes and closures. Languages: TS.
+
+- [ ] **MP-COMP-2.1** Evaluator for the mini language of MP-COMP-1
+	- [ ] MP-COMP-2.1.a Variables and scopes.
+	- [ ] MP-COMP-2.1.b Functions and closures.
+	- [ ] MP-COMP-2.1.c `if` and `while`.
+	- **Accept:** a suite of example programs prints the expected output.
+- [ ] **MP-COMP-2.2** Run-time errors with line and column
+	- **Accept:** tests cover undefined variable, wrong argument count and division by zero.
+- [ ] **MP-COMP-2.3** REPL that keeps state between lines
+	- **Accept:** a recorded session in the README defines a function and calls it later.
+- [ ] **MP-COMP-2.4** Definition of done for mini-projects met.
+
+#### MP-COMP-3 Bytecode virtual machine
+
+Teaches: why bytecode runs faster than walking a tree. Languages: Rust.
+
+- [ ] **MP-COMP-3.1** Compiler from the tree to stack bytecode
+	- **Accept:** a disassembler prints readable bytecode, checked by snapshot tests.
+- [ ] **MP-COMP-3.2** Stack virtual machine
+	- **Accept:** the example programs of MP-COMP-2 give the same output.
+- [ ] **MP-COMP-3.3** Benchmark against the tree-walking interpreter
+	- **Accept:** table for a loop and a recursive function, with machine and versions recorded.
+- [ ] **MP-COMP-3.4** Definition of done for mini-projects met.
+
+#### MP-COMP-4 Regex engine
+
+Teaches: how a regular expression becomes an automaton. Languages: Go.
+
+- [ ] **MP-COMP-4.1** Parser for concatenation, alternation, star, plus, optional and classes
+	- **Accept:** tests cover precedence and invalid patterns.
+- [ ] **MP-COMP-4.2** Thompson construction to NFA and subset construction to DFA
+	- **Accept:** matches agree with Go's `regexp` on 1,000 generated cases.
+- [ ] **MP-COMP-4.3** Automaton export and timing on a pathological pattern
+	- **Accept:** the engine stays linear where a backtracking matcher is exponential, shown in a table.
+- [ ] **MP-COMP-4.4** Definition of done for mini-projects met.
+
+#### MP-FSM-1 Order state machine
+
+Teaches: how explicit states and transitions remove invalid situations. Languages: TS, Elixir.
+
+- [ ] **MP-FSM-1.1** States created, paid, shipped, delivered, cancelled, refunded, with a transition table
+	- **Accept:** every valid transition succeeds and every invalid one is rejected, in a test generated from the table.
+- [ ] **MP-FSM-1.2** Diagram generated from the same table
+	- **Accept:** the committed diagram is regenerated by a command and the test fails if it is out of date.
+- [ ] **MP-FSM-1.3** CLI that walks an order through events
+	- **Accept:** the demo script in the README runs a full order and a rejected transition.
+- [ ] **MP-FSM-1.4** Definition of done for mini-projects met.
+
+#### MP-INFO-1 Huffman and LZ77
+
+Teaches: how compression exploits redundancy and what entropy says about its limit. Languages: Rust, Python.
+
+- [ ] **MP-INFO-1.1** Shannon entropy calculator for a file
+	- **Accept:** known inputs (single symbol, uniform bytes) give 0 and 8 bits per byte.
+- [ ] **MP-INFO-1.2** Huffman encoder and decoder
+	- **Accept:** round trip is lossless on text, binary and empty files.
+- [ ] **MP-INFO-1.3** LZ77 encoder and decoder, and comparison table
+	- **Accept:** table of compression ratio against entropy for five sample files.
+- [ ] **MP-INFO-1.4** Definition of done for mini-projects met.
+
+#### MP-INFO-2 Error detection and correction
+
+Teaches: how redundancy detects and repairs flipped bits. Languages: C++.
+
+- [ ] **MP-INFO-2.1** Parity, checksum and CRC-32
+	- **Accept:** CRC-32 matches the standard check value for the string `123456789`.
+- [ ] **MP-INFO-2.2** Hamming(7,4) encoder and decoder
+	- **Accept:** every single-bit error in every codeword is corrected in an exhaustive test.
+- [ ] **MP-INFO-2.3** Noise simulator
+	- **Accept:** table of detected, corrected and missed errors by bit error rate.
+- [ ] **MP-INFO-2.4** Definition of done for mini-projects met.
+
+#### MP-DL-1 Logic gates, Karnaugh and adders
+
+Teaches: how Boolean functions become circuits. Languages: TS, Python.
+
+- [ ] **MP-DL-1.1** Gate simulator and truth-table generator from an expression
+	- **Accept:** tables match hand-written ones for 20 expressions.
+- [ ] **MP-DL-1.2** Minimisation by Quine-McCluskey
+	- **Accept:** the minimised expression is equivalent to the original for every input.
+- [ ] **MP-DL-1.3** Half adder, full adder and ripple-carry adder built from gates
+	- **Accept:** the 8-bit adder agrees with native addition for all 65,536 input pairs.
+- [ ] **MP-DL-1.4** Definition of done for mini-projects met.
+
+#### MP-DL-2 NAND-only ALU and a 4-bit CPU
+
+Teaches: how a computer is built from one gate. Languages: Go, TS.
+
+- [ ] **MP-DL-2.1** Every gate derived from NAND
+	- **Accept:** derived gates match their truth tables.
+- [ ] **MP-DL-2.2** ALU with add, subtract, and, or, and flags
+	- **Accept:** exhaustive test over all 4-bit inputs and operations.
+- [ ] **MP-DL-2.3** 4-bit CPU with registers, program counter and a tiny instruction set
+	- **Accept:** a committed program multiplies two numbers and the trace is in the README.
+- [ ] **MP-DL-2.4** Definition of done for mini-projects met.
+
+#### MP-OOP-1 Same domain in OOP and functional style
+
+Teaches: what changes when the same rules are written with objects or with functions. Languages: Java, Elixir, TS.
+
+- [ ] **MP-OOP-1.1** Shopping cart with discounts, taxes and coupons, object-oriented version
+	- **Accept:** shared acceptance scenarios pass.
+- [ ] **MP-OOP-1.2** Functional version with immutable data
+	- **Accept:** the same scenarios pass, and a test proves no input is mutated.
+- [ ] **MP-OOP-1.3** Comparison
+	- **Accept:** README table of lines, number of types and how a new rule is added in each.
+- [ ] **MP-OOP-1.4** Definition of done for mini-projects met.
+
+#### MP-OOP-2 Executable code smell catalogue
+
+Teaches: how to recognise and remove common smells. Languages: TS, Java.
+
+- [ ] **MP-OOP-2.1** Before and after for long method, god class, feature envy, shotgun surgery, primitive obsession
+	- **Accept:** the same tests pass on both versions of each smell.
+- [ ] **MP-OOP-2.2** Polymorphism instead of a conditional chain
+	- **Accept:** adding a new variant touches one file in the refactored version, shown by a diff in the README.
+- [ ] **MP-OOP-2.3** Definition of done for mini-projects met.
+
+#### MP-FP-1 Pure functions and property-based tests
+
+Teaches: why pure code is easy to test and what properties find. Languages: TS, Elixir.
+
+- [ ] **MP-FP-1.1** Impure and pure versions of the same module
+	- **Accept:** the pure version is tested with no mock.
+- [ ] **MP-FP-1.2** Properties: round trip, idempotence, invariants
+	- **Accept:** a property finds a seeded bug that the example tests miss, and the shrunk counterexample is in the README.
+- [ ] **MP-FP-1.3** Composition and pipeline examples
+	- **Accept:** the same pipeline is written in both languages with equivalent tests.
+- [ ] **MP-FP-1.4** Definition of done for mini-projects met.
+
+#### MP-PAT-1 Back-end design patterns
+
+Teaches: about ten patterns in situations where they pay off. Languages: TS.
+
+- [ ] **MP-PAT-1.1** Strategy, Observer, Factory, Adapter, Decorator
+	- **Accept:** each has a failing-design version, the pattern version and tests.
+- [ ] **MP-PAT-1.2** Repository, Command, State, Builder
+	- **Accept:** same structure as above.
+- [ ] **MP-PAT-1.3** Singleton and why to avoid it
+	- **Accept:** a test shows the hidden shared state, and the injected version removes it.
+- [ ] **MP-PAT-1.4** Definition of done for mini-projects met.
+
+#### MP-PAT-2 SOLID before and after
+
+Teaches: what each principle prevents. Languages: TS, Java.
+
+- [ ] **MP-PAT-2.1** One violating module per principle
+	- **Accept:** tests document the current behaviour.
+- [ ] **MP-PAT-2.2** Refactor per principle
+	- **Accept:** the same tests pass after each refactor.
+- [ ] **MP-PAT-2.3** Cost of change
+	- **Accept:** the README shows, per principle, the diff needed for one new requirement before and after.
+- [ ] **MP-PAT-2.4** Definition of done for mini-projects met.
+
+#### MP-ARCH-1 Clean architecture application
+
+Teaches: how the dependency rule keeps business rules free of frameworks. Languages: TS.
+
+- [ ] **MP-ARCH-1.1** Note-taking application: entities, use cases, adapters, drivers
+	- **Accept:** an automated check fails if an inner layer imports an outer one.
+- [ ] **MP-ARCH-1.2** Two delivery mechanisms (HTTP and CLI) and two repositories (memory and PostgreSQL)
+	- **Accept:** use-case tests run with no database and no HTTP server.
+- [ ] **MP-ARCH-1.3** Swap experiment
+	- **Accept:** replacing the repository changes only the composition root, shown by a diff.
+- [ ] **MP-ARCH-1.4** Definition of done for mini-projects met.
+
+#### MP-TEST-1 Full test pyramid
+
+Teaches: what each test level is for and what it costs. Languages: TS.
+
+- [ ] **MP-TEST-1.1** Small application with unit, integration, end-to-end (Playwright), smoke and regression suites
+	- **Accept:** each suite runs with its own command inside Docker.
+- [ ] **MP-TEST-1.2** A seeded bug per level
+	- **Accept:** a table shows which suite catches each bug.
+- [ ] **MP-TEST-1.3** Time and cost
+	- **Accept:** the README records count and duration of each suite.
+- [ ] **MP-TEST-1.4** Definition of done for mini-projects met.
+
+#### MP-TEST-2 TDD kata with commit history
+
+Teaches: the red, green, refactor rhythm. Languages: TS.
+
+- [ ] **MP-TEST-2.1** Multi-currency money kata
+	- **Accept:** the git history alternates failing-test, passing and refactor commits, checked by a script on the commit prefixes.
+- [ ] **MP-TEST-2.2** Walkthrough
+	- **Accept:** the README links each step to its commit.
+- [ ] **MP-TEST-2.3** Definition of done for mini-projects met.
+
+#### MP-TEST-3 Mutation testing
+
+Teaches: why coverage does not measure test quality. Languages: TS.
+
+- [ ] **MP-TEST-3.1** Module with 100% line coverage and weak assertions
+	- **Accept:** the coverage report shows 100%.
+- [ ] **MP-TEST-3.2** Mutation run
+	- **Accept:** the mutation score is under 60% before and over 90% after the tests are strengthened.
+- [ ] **MP-TEST-3.3** Definition of done for mini-projects met.
+
+#### MP-TEST-4 Flaky test lab
+
+Teaches: the usual causes of intermittent tests. Languages: TS.
+
+- [ ] **MP-TEST-4.1** Flaky tests caused by time, order dependence, shared state and real network
+	- **Accept:** each fails at least once in 50 runs.
+- [ ] **MP-TEST-4.2** Fixes: fake clock, isolation, deterministic order, stubbed network
+	- **Accept:** each fixed test passes 500 consecutive runs.
+- [ ] **MP-TEST-4.3** Definition of done for mini-projects met.
+
+#### MP-TEST-5 Mini xUnit from scratch
+
+Teaches: how a test framework works inside. Languages: Python, TS.
+
+- [ ] **MP-TEST-5.1** Test case, suite, result, set-up and tear-down
+	- **Accept:** the framework tests itself.
+- [ ] **MP-TEST-5.2** Discovery and reporting
+	- **Accept:** a failing test reports name, message and location, and the run exits non-zero.
+- [ ] **MP-TEST-5.3** Definition of done for mini-projects met.
+
+#### MP-PROTO-1 REST, GraphQL and JSON-RPC
+
+Teaches: what each API style costs and offers on the same domain. Languages: TS (Elysia).
+
+- [ ] **MP-PROTO-1.1** Same domain exposed through the three styles
+	- **Accept:** one behaviour test suite passes against the three.
+- [ ] **MP-PROTO-1.2** N+1 problem in GraphQL and its fix with batching
+	- **Accept:** query count drops from more than 100 to under 5 for the same request.
+- [ ] **MP-PROTO-1.3** Latency and payload size
+	- **Accept:** table per style for a list, a detail and a nested read.
+- [ ] **MP-PROTO-1.4** Definition of done for mini-projects met.
+
+#### MP-PROTO-2 HTTP/1.1, HTTP/2 and HTTP/3
+
+Teaches: what multiplexing and QUIC change for a page with many resources. Languages: Caddy + TS.
+
+- [ ] **MP-PROTO-2.1** Local page with 200 small images served over the three versions
+	- **Accept:** the negotiated protocol is asserted in a test for each port.
+- [ ] **MP-PROTO-2.2** Measurement with and without injected latency and loss
+	- **Accept:** table of total load time per protocol and condition.
+- [ ] **MP-PROTO-2.3** Waterfall visual
+	- **Accept:** a static page shows the three waterfalls from committed data.
+- [ ] **MP-PROTO-2.4** Definition of done for mini-projects met.
+
+#### MP-PROTO-3 HTTP server on raw TCP
+
+Teaches: what is inside an HTTP request and response. Languages: Go.
+
+- [ ] **MP-PROTO-3.1** Request parser: request line, headers, body by content length
+	- **Accept:** tests cover malformed requests and oversized headers.
+- [ ] **MP-PROTO-3.2** Router, keep-alive and chunked responses
+	- **Accept:** `curl` and a browser both get correct responses.
+- [ ] **MP-PROTO-3.3** Wire trace
+	- **Accept:** the README shows the raw bytes of one request and response, annotated.
+- [ ] **MP-PROTO-3.4** Definition of done for mini-projects met.
+
+#### MP-MSG-2 Idempotency and dead-letter queue
+
+Teaches: how to survive duplicated and poisoned messages. Languages: TS, Go.
+
+- [ ] **MP-MSG-2.1** Consumer that fails randomly, with redelivery
+	- **Accept:** without protection, the side effect is applied more than once in the test.
+- [ ] **MP-MSG-2.2** Idempotency key store
+	- **Accept:** with the store, 1,000 messages delivered at least twice produce exactly 1,000 effects.
+- [ ] **MP-MSG-2.3** Retry with backoff and dead-letter queue
+	- **Accept:** a poisoned message lands in the dead-letter queue after the configured attempts.
+- [ ] **MP-MSG-2.4** Definition of done for mini-projects met.
+
+#### MP-MSG-3 Queue, pub/sub and backpressure
+
+Teaches: the difference between competing consumers and broadcast, and what happens when producers are faster. Languages: TS, Elixir.
+
+- [ ] **MP-MSG-3.1** Work queue against fan-out on RabbitMQ
+	- **Accept:** a queue delivers each message once, and a fan-out delivers it to every subscriber, asserted in tests.
+- [ ] **MP-MSG-3.2** Producer faster than consumer, without and with backpressure
+	- **Accept:** memory grows without bound in the first case and stays flat in the second.
+- [ ] **MP-MSG-3.3** GenStage pipeline in Elixir
+	- **Accept:** demand-driven flow keeps the buffer under the configured size.
+- [ ] **MP-MSG-3.4** Definition of done for mini-projects met.
+
+#### MP-LB-1 NGINX against Caddy
+
+Teaches: how balancing algorithms distribute requests and survive a dead node. Languages: config + TS.
+
+- [ ] **MP-LB-1.1** Three identical API instances behind each proxy
+	- **Accept:** one command brings up both stacks on different local ports.
+- [ ] **MP-LB-1.2** Round-robin, least connections and ip-hash
+	- **Accept:** request counts per instance match the expected distribution within 5%.
+- [ ] **MP-LB-1.3** Failure experiment: one instance stopped during load
+	- **Accept:** error count and recovery time are recorded for both proxies.
+- [ ] **MP-LB-1.4** Definition of done for mini-projects met.
+
+#### MP-LB-2 Hand-written L7 load balancer
+
+Teaches: what a load balancer does on every request. Languages: Go.
+
+- [ ] **MP-LB-2.1** Reverse proxy with round-robin and least connections
+	- **Accept:** integration tests check the distribution.
+- [ ] **MP-LB-2.2** Active health checks and retry on failure
+	- **Accept:** a stopped back end is removed within the configured interval and no request fails.
+- [ ] **MP-LB-2.3** Benchmark against NGINX with local k6
+	- **Accept:** table of throughput and p99 latency for both.
+- [ ] **MP-LB-2.4** Definition of done for mini-projects met.
+
+#### MP-PERF-1 Bun against Node
+
+Teaches: how runtime and process model change throughput. Languages: TS.
+
+- [ ] **MP-PERF-1.1** Same HTTP API on Bun, Node, and Node with PM2 cluster
+	- **Accept:** one test suite passes against the three.
+- [ ] **MP-PERF-1.2** Local k6 scenario with a CPU-bound and an I/O-bound endpoint
+	- **Accept:** the script refuses non-local targets.
+- [ ] **MP-PERF-1.3** Results
+	- **Accept:** table of requests per second, p95 latency and memory for each setup.
+- [ ] **MP-PERF-1.4** Definition of done for mini-projects met.
+
+#### MP-PERF-2 Load test scenarios with k6
+
+Teaches: what load, stress, spike and soak tests each reveal. Languages: TS + k6.
+
+- [ ] **MP-PERF-2.1** Local API with a deliberate bottleneck (small connection pool)
+	- **Accept:** the bottleneck is visible as a latency knee in the load test.
+- [ ] **MP-PERF-2.2** Four scenarios with thresholds
+	- **Accept:** each scenario fails its threshold before the fix and passes after.
+- [ ] **MP-PERF-2.3** Report
+	- **Accept:** Markdown summary per scenario committed, raw output git-ignored.
+- [ ] **MP-PERF-2.4** Definition of done for mini-projects met.
+
+#### MP-PERF-3 Cache-friendly matrix multiplication
+
+Teaches: how memory locality changes speed with the same Big O. Languages: C++, Rust.
+
+- [ ] **MP-PERF-3.1** Naive, loop-interchanged and blocked multiplication
+	- **Accept:** the three give the same matrix within floating-point tolerance.
+- [ ] **MP-PERF-3.2** Benchmark by matrix size
+	- **Accept:** the blocked version is at least 2 times faster than naive at the largest size.
+- [ ] **MP-PERF-3.3** Explanation with the measured numbers
+	- **Accept:** the README relates the result to cache line and block size.
+- [ ] **MP-PERF-3.4** Definition of done for mini-projects met.
+
+#### MP-CACHE-1 Cache strategies and stampede
+
+Teaches: how caching patterns behave and how they fail. Languages: TS.
+
+- [ ] **MP-CACHE-1.1** Cache-aside, write-through and write-behind over Redis and PostgreSQL
+	- **Accept:** each strategy passes a consistency test that describes its guarantee.
+- [ ] **MP-CACHE-1.2** Cache stampede and its fixes: lock and early refresh
+	- **Accept:** under local k6, database queries per expiry drop from hundreds to 1.
+- [ ] **MP-CACHE-1.3** Hit rate and latency
+	- **Accept:** table per strategy and time to live.
+- [ ] **MP-CACHE-1.4** Definition of done for mini-projects met.
+
+#### MP-RL-1 Rate limiter algorithms
+
+Teaches: how each algorithm treats bursts. Languages: TS, Go.
+
+- [ ] **MP-RL-1.1** Fixed window, sliding window, token bucket and leaky bucket in memory
+	- **Accept:** each passes a table-driven test of allowed and rejected requests over time.
+- [ ] **MP-RL-1.2** Distributed version on Redis with an atomic script
+	- **Accept:** two instances together never allow more than the limit under concurrent load.
+- [ ] **MP-RL-1.3** Burst experiment
+	- **Accept:** chart of accepted requests over time for the four algorithms with the same traffic.
+- [ ] **MP-RL-1.4** Definition of done for mini-projects met.
+
+#### MP-FS-1 File organisation and indexes
+
+Teaches: how records, free lists and indexes live inside a file. Languages: C++, Rust.
+
+- [ ] **MP-FS-1.1** Fixed-length records with header, RRN access and a free list inside the file
+	- **Accept:** deleted slots are reused, checked by file size after delete and insert.
+- [ ] **MP-FS-1.2** Primary and secondary index with inverted lists
+	- **Accept:** index search returns the same records as a full scan.
+- [ ] **MP-FS-1.3** Run-length and Huffman compression of the data file
+	- **Accept:** round trip is lossless and the ratio is reported.
+- [ ] **MP-FS-1.4** Definition of done for mini-projects met.
+
+#### MP-FS-2 External sorting
+
+Teaches: how to sort a file larger than memory. Languages: Rust, Go.
+
+- [ ] **MP-FS-2.1** Run generation with a memory limit
+	- **Accept:** peak memory stays under the limit while sorting a file 10 times larger.
+- [ ] **MP-FS-2.2** K-way merge with a heap
+	- **Accept:** output is sorted and has the same multiset of lines as the input.
+- [ ] **MP-FS-2.3** Effect of run size and merge fan-in
+	- **Accept:** table of total time per configuration.
+- [ ] **MP-FS-2.4** Definition of done for mini-projects met.
+
+#### MP-OBS-1 Three services with traces, metrics and logs
+
+Teaches: how the three signals together explain one slow request. Languages: TS, Go.
+
+- [ ] **MP-OBS-1.1** Three services instrumented with OpenTelemetry, plus Prometheus, Grafana, Loki and Tempo in docker-compose
+	- **Accept:** one command brings everything up locally with pinned images.
+- [ ] **MP-OBS-1.2** Injected slow dependency
+	- **Accept:** a single trace shows the slow span, and the README has the screenshot and the query used.
+- [ ] **MP-OBS-1.3** Dashboards as code
+	- **Accept:** dashboards are committed as JSON and load on start-up.
+- [ ] **MP-OBS-1.4** Definition of done for mini-projects met.
+
+#### MP-OBS-2 Structured logs and correlation id
+
+Teaches: how to follow one request across services. Languages: TS.
+
+- [ ] **MP-OBS-2.1** JSON logs with a correlation id propagated through HTTP and a queue
+	- **Accept:** a test finds every log line of one request with a single query.
+- [ ] **MP-OBS-2.2** Unstructured version for contrast
+	- **Accept:** the README shows the same search on both.
+- [ ] **MP-OBS-2.3** Definition of done for mini-projects met.
+
+#### MP-OBS-3 SLO and alert
+
+Teaches: how an objective becomes an alert. Languages: TS.
+
+- [ ] **MP-OBS-3.1** Availability and latency indicators with an error budget
+	- **Accept:** recording rules are committed and tested with the Prometheus rule tester.
+- [ ] **MP-OBS-3.2** Violation caused by local k6
+	- **Accept:** the alert fires within the documented time and resolves after the load stops.
+- [ ] **MP-OBS-3.3** Definition of done for mini-projects met.
+
+#### MP-OBS-4 Profiling with a flame graph
+
+Teaches: how to find where time goes. Languages: Go, TS.
+
+- [ ] **MP-OBS-4.1** Service with a hidden hot path
+	- **Accept:** the flame graph points at the function, and the image is committed.
+- [ ] **MP-OBS-4.2** Fix and before/after benchmark
+	- **Accept:** throughput improves by a factor recorded in the README.
+- [ ] **MP-OBS-4.3** Definition of done for mini-projects met.
+
+#### MP-CHAIN-1 Didactic blockchain
+
+Teaches: how hashing, proof of work and validation make a tamper-evident chain. Languages: TS, Rust.
+
+- [ ] **MP-CHAIN-1.1** Blocks with hash links and a Merkle root
+	- **Accept:** changing any transaction invalidates the chain in a test.
+- [ ] **MP-CHAIN-1.2** Proof of work with adjustable difficulty
+	- **Accept:** average mining time grows about 16 times per extra hex zero, shown in a table.
+- [ ] **MP-CHAIN-1.3** Signed transactions and a longest-chain rule between local nodes
+	- **Accept:** a double spend is rejected and a fork resolves to the longest chain.
+- [ ] **MP-CHAIN-1.4** Definition of done for mini-projects met.
+
+#### MP-CI-1 CI pipeline as a lesson
+
+Teaches: what the pipeline of this repository does and why. Languages: YAML.
+
+- [ ] **MP-CI-1.1** Documented walkthrough of the workflow built in F-4
+	- **Accept:** both READMEs explain every job.
+- [ ] **MP-CI-1.2** Demonstration branches
+	- **Accept:** one branch fails each quality gate, with links to the failed runs.
+- [ ] **MP-CI-1.3** Definition of done for mini-projects met.
 
 ---
 
-## Suggested order of execution
+## Order of execution
 
 1. Part F (foundation), then Part QZ (quiz app). These unblock everything else.
-2. Quiz content wave 1 (5 areas, 5 worktrees).
-3. Mini-project wave 1 (5 mini-projects, 5 worktrees).
-4. Quiz content waves 2 to 6, alternating with mini-project waves, breadth first: every area gets one mini-project before any area gets its second.
+2. Quiz content wave 1, then mini-project wave 1.
+3. From there, quiz content waves and mini-project waves alternate.
+
+Mini-project waves are breadth first: every theory-and-practice area gets its first mini-project before any area gets its second. Each wave has up to 5 mini-projects, one worktree each.
+
+| Wave | Mini-projects |
+| --- | --- |
+| 1 | MP-ALG-1, MP-CONC-1, MP-SEC-1, MP-COMP-1, MP-MSG-1 |
+| 2 | MP-BIGO-1, MP-DS-1, MP-OS-1, MP-NET-1, MP-DB-1 |
+| 3 | MP-PAR-1, MP-TX-1, MP-FSM-1, MP-INFO-1, MP-DL-1 |
+| 4 | MP-OOP-1, MP-FP-1, MP-PAT-1, MP-ARCH-1, MP-TEST-1 |
+| 5 | MP-PROTO-1, MP-LB-1, MP-PERF-1, MP-CACHE-1, MP-RL-1 |
+| 6 | MP-FS-1, MP-OBS-1, MP-CHAIN-1, MP-CI-1, MP-BIGO-2 |
+| 7 | MP-DS-2, MP-OS-2, MP-NET-2, MP-DB-2, MP-ALG-2 |
+| 8 | MP-CONC-2, MP-TX-2, MP-SEC-2, MP-COMP-2, MP-INFO-2 |
+| 9 | MP-DL-2, MP-OOP-2, MP-PAT-2, MP-TEST-2, MP-PROTO-2 |
+| 10 | MP-MSG-2, MP-LB-2, MP-PERF-2, MP-FS-2, MP-OBS-2 |
+| 11 | MP-BIGO-3, MP-DS-3, MP-OS-3, MP-NET-3, MP-ALG-3 |
+| 12 | MP-CONC-3, MP-TX-3, MP-SEC-3, MP-COMP-3, MP-TEST-3 |
+| 13 | MP-PROTO-3, MP-MSG-3, MP-PERF-3, MP-OBS-3, MP-DS-4 |
+| 14 | MP-OS-4, MP-ALG-4, MP-TX-4, MP-SEC-4, MP-COMP-4 |
+| 15 | MP-TEST-4, MP-OBS-4, MP-DS-5, MP-SEC-5, MP-TEST-5 |
+| 16 | MP-SEC-6, MP-SEC-7, MP-SEC-8 |

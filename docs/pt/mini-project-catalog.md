@@ -136,10 +136,10 @@ Stack: OpenTelemetry, Prometheus, Grafana, Loki e Tempo, tudo local.
 
 | Área | Ideia de miniprojeto |
 | --- | --- |
-| Eletrônica | calculadoras de lei de Ohm, divisor de tensão e de corrente e Thévenin, simuladores de filtro RC e do temporizador 555, como base física para a lógica digital |
+| Eletrônica | só teoria: sem miniprojeto, um quiz de 170 perguntas seguindo os 34 capítulos do livro |
 | Arquitetura de software | a mesma aplicação pequena em camadas de arquitetura limpa, mostrando a regra de dependência com entidades, casos de uso e adaptadores |
 | Bancos de dados (teoria) | mini SGBD relacional com junções nested-loop, hash e merge, e uma ferramenta de normalização (fechamento, chaves candidatas, 3FN e BCNF) |
-| Engenharia de software | principalmente quiz. Ferramentas pequenas: simulador de cronograma com custo de comunicação (Brooks), estimativa contra tempo real dos miniprojetos |
+| Engenharia de software | só teoria: sem miniprojeto, um quiz de 150 perguntas |
 
 ## Ideias vindas dos livros e das aulas
 

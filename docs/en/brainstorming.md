@@ -48,6 +48,17 @@ After reading the PDFs, the main idea became a quiz: questions with 5 alternativ
 | Production | App + 5 complete areas, then waves of 5 | All areas with 20 and then complete; everything at once |
 | Review | Independent reviewer + automatic validation | Format validation only; the owner reviews everything |
 
+## Round 3: instructions for the final plan
+
+Given by the owner when asking for the final `PLAN.md`.
+
+| Topic | Instruction |
+| --- | --- |
+| Theory-only content | A very complete web quiz covering every aspect of the content, no mini-project. Applied to Electronics and Software engineering |
+| Technical content | Runnable practical examples (Docker, shell scripts, CLI or web) plus the quiz, one complementing the other. Applied to the other 29 areas |
+| Quiz features | i18n in Portuguese and English, light and dark theme toggle, mobile friendly, built with Next.js SSG and Tailwind CSS v4 |
+| First 5 quiz areas | Big O and algorithm analysis, data structures, operating systems, networks, databases (theory) |
+
 ## Ideas added by the summaries
 
 They went into the mini-project catalog, in the section "Ideas from the books and lectures".
@@ -62,5 +73,4 @@ They went into the mini-project catalog, in the section "Ideas from the books an
 
 ## Open points
 
-- Which are the first 5 areas of the quiz. Left for `PLAN.md`.
-- The coverage map of each area (chapters and number of questions). Left for `PLAN.md`.
+None. The first 5 quiz areas and the coverage map of every area are in `PLAN.md`.

@@ -8,6 +8,13 @@ Decisões tomadas no brainstorming da Fase 2, em 2026-10-07. Elas são a entrada
 
 O produto principal do repositório é um **quiz**: um app único que cobre todas as áreas, com 5 alternativas por pergunta e a explicação do conceito exibida ao lado da pergunta depois da resposta. Os miniprojetos continuam no plano, e cada explicação aponta para o miniprojeto que demonstra o conceito. Pelo menos 100 perguntas por área, em português e inglês. Desenho completo em [quiz.md](quiz.md).
 
+O app do quiz precisa ter i18n (português e inglês), alternância de tema claro e escuro e layout mobile friendly, construído com Next.js SSG e Tailwind CSS v4.
+
+## Teoria e prática
+
+- **Conteúdo só de teoria** ganha um quiz web bem completo, cobrindo cada aspecto do conteúdo, e nenhum miniprojeto. Vale para Eletrônica e Engenharia de software.
+- **Conteúdo técnico que pode ser mostrado com CLI ou página web** ganha exemplos práticos executáveis (Docker, shell scripts) **e** o quiz. Um complementa o outro. Vale para as outras 29 áreas.
+
 ## Estrutura
 
 | Tema | Decisão | Motivo |

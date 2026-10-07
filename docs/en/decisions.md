@@ -8,6 +8,13 @@ Decisions taken in the Phase 2 brainstorming on 2026-10-07. They are the input f
 
 The main product of the repository is a **quiz**: one app covering every area, with 5 alternatives per question and the explanation of the concept shown next to the question after the answer. The mini-projects stay in the plan and each explanation links to the mini-project that demonstrates the concept. At least 100 questions per area, in Portuguese and English. Full design in [quiz.md](quiz.md).
 
+The quiz app must have i18n (Portuguese and English), a light and dark theme toggle and a mobile-friendly layout, built with Next.js SSG and Tailwind CSS v4.
+
+## Theory and practice
+
+- **Theory-only content** gets a very complete web quiz covering every aspect of the content, and no mini-project. This applies to Electronics and Software engineering.
+- **Technical content that can be shown with a CLI or a web page** gets runnable practical examples (Docker, shell scripts) **and** the quiz. One complements the other. This applies to the other 29 areas.
+
 ## Structure
 
 | Topic | Decision | Reason |

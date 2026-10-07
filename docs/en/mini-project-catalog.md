@@ -136,10 +136,10 @@ Stack: OpenTelemetry, Prometheus, Grafana, Loki and Tempo, all local.
 
 | Area | Mini-project idea |
 | --- | --- |
-| Electronics | Ohm's law, voltage and current divider and Thévenin calculators, RC filter and 555 timer simulators, as the physical base for digital logic |
+| Electronics | theory only: no mini-project, a 170-question quiz following the 34 chapters of the book |
 | Software architecture | the same small application in clean architecture layers, showing the dependency rule with entities, use cases and adapters |
 | Databases (theory) | mini relational DBMS with nested-loop, hash and merge joins, and a normalisation tool (closure, candidate keys, 3NF and BCNF) |
-| Software engineering | mostly quiz. Small tools: schedule simulator with communication cost (Brooks), estimate against actual time of the mini-projects |
+| Software engineering | theory only: no mini-project, a 150-question quiz |
 
 ## Ideas from the books and lectures
 

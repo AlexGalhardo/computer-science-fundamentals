@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-07
+
+### Added
+
+- `PLAN.md` completed: coverage maps for the 31 quiz areas (3,220 questions), 78 mini-projects detailed with acceptance criteria, and the order of execution in 16 breadth-first waves.
+- Quiz requirements: i18n (PT and EN), light and dark theme toggle and mobile-friendly layout, with Next.js SSG and Tailwind CSS v4.
+- Theory and practice rule: theory-only areas get a larger quiz and no mini-project, technical areas get runnable examples plus the quiz.
+
+### Changed
+
+- Electronics and Software engineering are quiz only; their mini-projects left the catalog.
+
 ## [0.4.0] - 2026-10-07
 
 ### Added
@@ -43,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent onboarding: `CLAUDE.md`, `AGENTS.md`, `.claude/agents.md` and `.claude/rules/`.
 - `.gitattributes` enforcing LF line endings, CRLF only for Windows scripts.
 
-[Unreleased]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.1.0...v0.2.0
