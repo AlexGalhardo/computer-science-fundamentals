@@ -37,6 +37,20 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | `.claude/agents.md` | Session-to-session notes for agents |
 | `.claude/skills/` | Third-party skill repositories, pinned as git submodules |
 
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `bun install` | install the workspace (root, `quiz`, `tools/*`) |
+| `bun run lint` / `bun run format` | Biome check, and check with fixes |
+| `bun run typecheck` | TypeScript for `quiz` and `tools/*` |
+| `bun test quiz/tests/unit tools` | unit tests |
+| `bun run quiz:validate [area] [--strict]` | validate quiz content |
+| `bun run quiz:blind <area>` and `bun run quiz:compare <area> <answers>` | blind review of an area |
+| `./quiz/setup-unix-quiz.sh [test]` | serve the quiz on localhost, or run its unit and end-to-end tests in Docker |
+| `bun run bench -- --project <name>` | run the benchmark of a mini-project in Docker |
+| `bun run new:project <area> <name> --langs ts,go` | create a mini-project from the template |
+
 ## Rules
 
 The detailed rules live in `.claude/rules/`. Read the ones that match the task before editing:

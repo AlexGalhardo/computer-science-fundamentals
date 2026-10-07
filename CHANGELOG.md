@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-07
+
+### Added
+
+- Quiz app in `quiz/`: Next.js static site generation with Tailwind CSS v4, no back end. One page per area and per language, question screen in two columns with the explanation shown after the answer, keyboard shortcuts, progress in the browser, review of wrong answers, difficulty filter and seeded shuffle of questions and alternatives.
+- Portuguese and English for the interface and the questions, with typed dictionaries, and a light and dark theme applied before the first paint.
+- Docker image, `setup-unix-quiz.sh` and `setup-windows-quiz.ps1`: the quiz is served as static files by Caddy on `localhost`.
+- 36 unit tests and 22 Playwright end-to-end tests run inside Docker, including automated accessibility and contrast checks in both themes and layout checks at 320, 390, 768 and 1280 px.
+- Quiz content of wave 1, 500 questions in Portuguese and English: Big O, data structures, operating systems, networks and databases. Blind review in progress.
+- `snippet` field for code or diagrams that are part of the question and are shown before the answer.
+- GitHub Actions workflow: Biome, type check, unit tests, quiz validation, formatter checks per language, quiz end-to-end tests, and the tests of each mini-project whose folder changed.
+
+### Fixed
+
+- `quiz:validate` and `quiz:blind` ignored the area argument when no flag was given.
+- Alternatives are compared case-sensitively, so `O(n)` and `o(n)` can be alternatives of the same question.
+
 ## [0.6.0] - 2026-10-07
 
 ### Added

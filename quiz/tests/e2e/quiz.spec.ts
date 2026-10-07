@@ -22,7 +22,7 @@ interface FixtureQuestion {
 }
 
 const fixture = JSON.parse(
-	readFileSync(join(__dirname, "..", "fixtures", "content", "big-o", "searching.json"), "utf8"),
+	readFileSync(join(import.meta.dirname, "..", "fixtures", "content", "big-o", "searching.json"), "utf8"),
 ) as FixtureQuestion[];
 const answers = new Map(fixture.map((question) => [question.id, question.answer]));
 const FULL = "big-o-searching-01";
@@ -122,7 +122,9 @@ test.describe("question screen (QZ-3)", () => {
 			const wrong = page.locator(`[data-testid="alternative"][data-alt="${(key + 1) % 5}"]`);
 			await expect(right).toHaveAttribute("data-state", "right");
 			await expect(wrong).toHaveAttribute("data-state", "wrong");
-			await right.click();
+			// EN: `force` skips the wait for an enabled element: the button is locked on purpose.
+			// PT: `force` pula a espera por um elemento habilitado: o botão está travado de propósito.
+			await right.click({ force: true });
 			await expect(wrong).toHaveAttribute("data-state", "wrong");
 			await expect(page.getByTestId("verdict")).toContainText("Incorrect");
 		});
@@ -350,11 +352,21 @@ test.describe("mobile (QZ-8)", () => {
 
 			await answerCurrent(page, true);
 			await expectNoHorizontalOverflow(page);
-			const alternatives = await page.getByTestId("alternative").last().boundingBox();
-			const explanation = await page.locator("#explanation-title").boundingBox();
-			if (alternatives === null || explanation === null) {
-				throw new Error("layout boxes not found");
-			}
+			// EN: Both boxes are read in one step inside the page. Reading them one after the
+			//     other would mix positions from before and after the scroll to the explanation.
+			// PT: As duas caixas são lidas em um único passo dentro da página. Ler uma depois da
+			//     outra misturaria posições de antes e de depois da rolagem até a explicação.
+			const { alternatives, explanation } = await page.evaluate(() => {
+				const box = (selector: string): { x: number; y: number; width: number } => {
+					const all = document.querySelectorAll(selector);
+					const rect = all[all.length - 1]?.getBoundingClientRect();
+					if (rect === undefined) {
+						throw new Error(`${selector} not found`);
+					}
+					return { x: rect.x, y: rect.y, width: rect.width };
+				};
+				return { alternatives: box('[data-testid="alternative"]'), explanation: box("#explanation-title") };
+			});
 			if (width < 768) {
 				// EN: One column: the explanation is under the alternatives, and the page
 				//     scrolled to it after the answer.

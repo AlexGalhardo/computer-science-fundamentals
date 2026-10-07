@@ -150,11 +150,11 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 
 ### QZ-1 Scaffold
 
-- [ ] **QZ-1.1** Next.js app in `quiz/` using static site generation (SSG, `output: "export"`) and Tailwind CSS v4, versions pinned.
-	- [ ] QZ-1.1.a Every route is pre-rendered at build time, including one page per area and per language.
-	- [ ] QZ-1.1.b No server code, no API route, no runtime data fetching from a back end.
+- [x] **QZ-1.1** Next.js app in `quiz/` using static site generation (SSG, `output: "export"`) and Tailwind CSS v4, versions pinned.
+	- [x] QZ-1.1.a Every route is pre-rendered at build time, including one page per area and per language.
+	- [x] QZ-1.1.b No server code, no API route, no runtime data fetching from a back end.
 	- **Accept:** `bun run build` in `quiz/` produces `out/` with one HTML file per route, and serving that folder with a plain static file server shows every page.
-- [ ] **QZ-1.2** Docker image and setup scripts `setup-unix-quiz.sh` and `setup-windows-quiz.ps1`.
+- [x] **QZ-1.2** Docker image and setup scripts `setup-unix-quiz.sh` and `setup-windows-quiz.ps1`.
 	- **Accept:** on a machine with only Docker, the script ends with the quiz reachable on `localhost`.
 
 ### QZ-2 Content model
@@ -172,64 +172,64 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 
 ### QZ-3 Question screen
 
-- [ ] **QZ-3.1** Two-column grid: statement and 5 alternatives on the left, explanation on the right.
-	- [ ] QZ-3.1.a Right column empty until an alternative is chosen.
-	- [ ] QZ-3.1.b After answering: right and wrong marked, alternatives locked, "Next" enabled.
-	- [ ] QZ-3.1.c Columns stack below 768 px.
+- [x] **QZ-3.1** Two-column grid: statement and 5 alternatives on the left, explanation on the right.
+	- [x] QZ-3.1.a Right column empty until an alternative is chosen.
+	- [x] QZ-3.1.b After answering: right and wrong marked, alternatives locked, "Next" enabled.
+	- [x] QZ-3.1.c Columns stack below 768 px.
 	- **Accept:** Playwright test answers a question and sees the explanation appear only after the click, at desktop and phone widths.
-- [ ] **QZ-3.2** Explanation panel
-	- [ ] QZ-3.2.a Concept and why the correct alternative is correct.
-	- [ ] QZ-3.2.b One line per wrong alternative.
-	- [ ] QZ-3.2.c Optional code example with syntax highlighting, or diagram.
-	- [ ] QZ-3.2.d Links to the mini-project and to the source.
+- [x] **QZ-3.2** Explanation panel
+	- [x] QZ-3.2.a Concept and why the correct alternative is correct.
+	- [x] QZ-3.2.b One line per wrong alternative.
+	- [x] QZ-3.2.c Optional code example with syntax highlighting, or diagram.
+	- [x] QZ-3.2.d Links to the mini-project and to the source.
 	- **Accept:** a fixture question with all fields renders the four parts, and one without example and mini-project renders without empty blocks.
-- [ ] **QZ-3.3** Keyboard and accessibility: keys 1 to 5 or A to E choose, Enter goes to the next, focus is visible, colour is not the only signal.
+- [x] **QZ-3.3** Keyboard and accessibility: keys 1 to 5 or A to E choose, Enter goes to the next, focus is visible, colour is not the only signal.
 	- **Accept:** Playwright completes a 3-question run using only the keyboard, and an automated accessibility check reports no violation.
 
 ### QZ-4 Navigation
 
-- [ ] **QZ-4.1** Home page listing the areas with question count and progress.
-- [ ] **QZ-4.2** Area page: start, filter by difficulty, review wrong answers.
-- [ ] **QZ-4.3** Result page at the end of a run: score and list of wrong questions.
+- [x] **QZ-4.1** Home page listing the areas with question count and progress.
+- [x] **QZ-4.2** Area page: start, filter by difficulty, review wrong answers.
+- [x] **QZ-4.3** Result page at the end of a run: score and list of wrong questions.
 	- **Accept:** Playwright goes home, area, run of 3 questions, result, and the score matches the answers given.
 
 ### QZ-5 Features
 
-- [ ] **QZ-5.1** Progress saved in the browser (`localStorage`), per area, with a reset button.
+- [x] **QZ-5.1** Progress saved in the browser (`localStorage`), per area, with a reset button.
 	- **Accept:** answers survive a page reload, and reset clears them.
-- [ ] **QZ-5.2** "Review only the ones I got wrong" mode: a question leaves the list when answered correctly.
+- [x] **QZ-5.2** "Review only the ones I got wrong" mode: a question leaves the list when answered correctly.
 	- **Accept:** test with 2 wrong answers shows exactly those 2, and 0 after both are answered correctly.
-- [ ] **QZ-5.3** Difficulty filter (basic, intermediate, advanced).
+- [x] **QZ-5.3** Difficulty filter (basic, intermediate, advanced).
 	- **Accept:** each filter shows only questions of that level.
-- [ ] **QZ-5.4** Shuffle of questions and of alternatives on every attempt, keeping the answer key correct.
+- [x] **QZ-5.4** Shuffle of questions and of alternatives on every attempt, keeping the answer key correct.
 	- **Accept:** unit test with a fixed seed proves the correct alternative is still marked correct after shuffling.
 
 ### QZ-6 Languages (i18n)
 
-- [ ] **QZ-6.1** Portuguese and English for the whole app
-	- [ ] QZ-6.1.a Routes prefixed by language (`/pt/...`, `/en/...`), all generated statically.
-	- [ ] QZ-6.1.b Interface texts in one dictionary file per language, typed so a missing key fails the build.
-	- [ ] QZ-6.1.c Question content read from the `pt` and `en` blocks of each question.
-	- [ ] QZ-6.1.d Language selector visible on every page, choice remembered in the browser, first visit follows the browser language.
-	- [ ] QZ-6.1.e `lang` attribute of the page matches the selected language.
+- [x] **QZ-6.1** Portuguese and English for the whole app
+	- [x] QZ-6.1.a Routes prefixed by language (`/pt/...`, `/en/...`), all generated statically.
+	- [x] QZ-6.1.b Interface texts in one dictionary file per language, typed so a missing key fails the build.
+	- [x] QZ-6.1.c Question content read from the `pt` and `en` blocks of each question.
+	- [x] QZ-6.1.d Language selector visible on every page, choice remembered in the browser, first visit follows the browser language.
+	- [x] QZ-6.1.e `lang` attribute of the page matches the selected language.
 	- **Accept:** a Playwright test switches language in the middle of a question and the same question, the chosen answer and the explanation stay on screen in the other language. A build with one missing dictionary key fails.
 
 ### QZ-7 Light and dark theme
 
-- [ ] **QZ-7.1** Theme toggle
-	- [ ] QZ-7.1.a Light and dark themes built on Tailwind CSS v4 theme variables, one set of colour tokens per theme.
-	- [ ] QZ-7.1.b Toggle visible on every page, choice remembered in the browser, first visit follows the system preference.
-	- [ ] QZ-7.1.c Theme applied before first paint, so a reload in dark mode never flashes the light theme.
-	- [ ] QZ-7.1.d Right and wrong states, code examples and diagrams readable in both themes.
+- [x] **QZ-7.1** Theme toggle
+	- [x] QZ-7.1.a Light and dark themes built on Tailwind CSS v4 theme variables, one set of colour tokens per theme.
+	- [x] QZ-7.1.b Toggle visible on every page, choice remembered in the browser, first visit follows the system preference.
+	- [x] QZ-7.1.c Theme applied before first paint, so a reload in dark mode never flashes the light theme.
+	- [x] QZ-7.1.d Right and wrong states, code examples and diagrams readable in both themes.
 	- **Accept:** a Playwright test toggles the theme, reloads and finds the same theme. An automated contrast check passes WCAG AA on the question screen in both themes.
 
 ### QZ-8 Mobile friendly
 
-- [ ] **QZ-8.1** Responsive layout
-	- [ ] QZ-8.1.a Mobile-first styles: one column below 768 px, with the explanation under the alternatives, two columns from 768 px up.
-	- [ ] QZ-8.1.b Touch targets of at least 44 by 44 px for alternatives, toggles and navigation.
-	- [ ] QZ-8.1.c No horizontal scroll at 320 px wide, and long code examples scroll inside their own block.
-	- [ ] QZ-8.1.d After answering on a phone, the page scrolls to the explanation.
+- [x] **QZ-8.1** Responsive layout
+	- [x] QZ-8.1.a Mobile-first styles: one column below 768 px, with the explanation under the alternatives, two columns from 768 px up.
+	- [x] QZ-8.1.b Touch targets of at least 44 by 44 px for alternatives, toggles and navigation.
+	- [x] QZ-8.1.c No horizontal scroll at 320 px wide, and long code examples scroll inside their own block.
+	- [x] QZ-8.1.d After answering on a phone, the page scrolls to the explanation.
 	- **Accept:** Playwright runs the full question flow at 320, 390, 768 and 1280 px wide with no horizontal overflow, and a Lighthouse mobile run scores at least 90 in performance and accessibility on the static build.
 
 ### QZ-9 Content pipeline
@@ -242,9 +242,9 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 
 ### QZ-10 Tests and documentation
 
-- [ ] **QZ-10.1** Unit tests for schema, shuffle, progress and scoring.
-- [ ] **QZ-10.2** Playwright end-to-end tests for the flows of QZ-3 to QZ-8.
-- [ ] **QZ-10.3** `quiz/README.md` and `quiz/README.pt-BR.md`.
+- [x] **QZ-10.1** Unit tests for schema, shuffle, progress and scoring.
+- [x] **QZ-10.2** Playwright end-to-end tests for the flows of QZ-3 to QZ-8.
+- [x] **QZ-10.3** `quiz/README.md` and `quiz/README.pt-BR.md`.
 	- **Accept:** `bun test` and `bunx playwright test` pass inside Docker.
 
 ---
@@ -315,9 +315,9 @@ Sources: USP Algorithm Analysis lectures (`references/summaries/usp/algorithm-an
 | P, NP and intractability, at an introductory level | 6 |
 | Complexity of common data structure operations | 10 |
 
-- [ ] QC-BIGO.1 Coverage map committed
-- [ ] QC-BIGO.2 100 questions written (PT and EN)
-- [ ] QC-BIGO.3 Validation passing
+- [x] QC-BIGO.1 Coverage map committed
+- [x] QC-BIGO.2 100 questions written (PT and EN)
+- [x] QC-BIGO.3 Validation passing
 - [ ] QC-BIGO.4 Blind review resolved
 
 #### QC-DS Data structures
@@ -339,9 +339,9 @@ Sources: USP Data Structures I and II lectures, Caelum and Laureano e-books.
 | Hash tables: collisions, load factor, rehashing | 10 |
 | Graphs: representations, BFS and DFS | 10 |
 
-- [ ] QC-DS.1 Coverage map committed
-- [ ] QC-DS.2 100 questions written (PT and EN)
-- [ ] QC-DS.3 Validation passing
+- [x] QC-DS.1 Coverage map committed
+- [x] QC-DS.2 100 questions written (PT and EN)
+- [x] QC-DS.3 Validation passing
 - [ ] QC-DS.4 Blind review resolved
 
 #### QC-OS Operating systems
@@ -362,9 +362,9 @@ Sources: Tanenbaum, Modern Operating Systems (4th edition) and the MINIX book.
 | Multiple processor systems (8) | 2 |
 | Security (9) | 2 |
 
-- [ ] QC-OS.1 Coverage map committed
-- [ ] QC-OS.2 100 questions written (PT and EN)
-- [ ] QC-OS.3 Validation passing
+- [x] QC-OS.1 Coverage map committed
+- [x] QC-OS.2 100 questions written (PT and EN)
+- [x] QC-OS.3 Validation passing
 - [ ] QC-OS.4 Blind review resolved
 
 #### QC-NET Networks
@@ -382,9 +382,9 @@ Source: Tanenbaum, Computer Networks (5th edition).
 | Application layer: DNS, e-mail, the Web, streaming, content delivery (7) | 12 |
 | Network security (8) | 6 |
 
-- [ ] QC-NET.1 Coverage map committed
-- [ ] QC-NET.2 100 questions written (PT and EN)
-- [ ] QC-NET.3 Validation passing
+- [x] QC-NET.1 Coverage map committed
+- [x] QC-NET.2 100 questions written (PT and EN)
+- [x] QC-NET.3 Validation passing
 - [ ] QC-NET.4 Blind review resolved
 
 #### QC-DB Databases (theory)
@@ -404,9 +404,9 @@ Source: C. J. Date, An Introduction to Database Systems. The summary of this boo
 | Security and integrity | 4 |
 | Query optimisation and indexes | 6 |
 
-- [ ] QC-DB.1 Coverage map committed
-- [ ] QC-DB.2 100 questions written (PT and EN)
-- [ ] QC-DB.3 Validation passing
+- [x] QC-DB.1 Coverage map committed
+- [x] QC-DB.2 100 questions written (PT and EN)
+- [x] QC-DB.3 Validation passing
 - [ ] QC-DB.4 Blind review resolved
 
 ### Wave 2
