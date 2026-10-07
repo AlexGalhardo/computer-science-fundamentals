@@ -342,7 +342,7 @@ Sources: USP Data Structures I and II lectures, Caelum and Laureano e-books.
 - [x] QC-DS.1 Coverage map committed
 - [x] QC-DS.2 100 questions written (PT and EN)
 - [x] QC-DS.3 Validation passing
-- [ ] QC-DS.4 Blind review resolved
+- [x] QC-DS.4 Blind review resolved
 
 #### QC-OS Operating systems
 
