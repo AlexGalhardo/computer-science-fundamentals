@@ -318,7 +318,7 @@ Sources: USP Algorithm Analysis lectures (`references/summaries/usp/algorithm-an
 - [x] QC-BIGO.1 Coverage map committed
 - [x] QC-BIGO.2 100 questions written (PT and EN)
 - [x] QC-BIGO.3 Validation passing
-- [ ] QC-BIGO.4 Blind review resolved
+- [x] QC-BIGO.4 Blind review resolved
 
 #### QC-DS Data structures
 
@@ -407,7 +407,7 @@ Source: C. J. Date, An Introduction to Database Systems. The summary of this boo
 - [x] QC-DB.1 Coverage map committed
 - [x] QC-DB.2 100 questions written (PT and EN)
 - [x] QC-DB.3 Validation passing
-- [ ] QC-DB.4 Blind review resolved
+- [x] QC-DB.4 Blind review resolved
 
 ### Wave 2
 

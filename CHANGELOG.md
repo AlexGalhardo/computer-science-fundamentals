@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: databases (theory), 100 questions in Portuguese and English. The blind review moved 13 tables, graphs and schedules from the explanation to the statement, and after that the reviewer agreed with the answer key on all 100 (`quiz/content/databases/review.md`).
+
+## [0.9.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: Big O and algorithm analysis, 100 questions in Portuguese and English. The blind review moved 10 code fragments from the explanation to the statement, and after that the reviewer agreed with the answer key on all 100 (`quiz/content/big-o/review.md`).
+
 ## [0.8.0] - 2026-10-07
 
 ### Added
