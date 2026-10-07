@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-900 de 3220 questões escritas, 33 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+1200 de 3220 questões escritas, 40 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -27,12 +27,12 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Bancos de dados (teoria) | Teoria e prática | 100/100 | feita | [mini-dbms](databases/mini-dbms.md), [normalisation-tool](databases/normalisation-tool.md) |
 | Algoritmos | Teoria e prática | 0/100 |  | sorting-race (planejado), dynamic-programming (planejado), travelling-salesman (planejado), hybrid-quicksort (planejado) |
 | Concorrência | Teoria e prática | 100/100 | feita | [counter-race](concurrency/counter-race.md), [dining-philosophers](concurrency/dining-philosophers.md), [ten-thousand-connections](concurrency/ten-thousand-connections.md) |
-| Paralelismo | Teoria e prática | 0/100 |  | scaling-by-cores (planejado) |
+| Paralelismo | Teoria e prática | 100/100 | feita | [scaling-by-cores](parallelism/scaling-by-cores.md) |
 | Transações | Teoria e prática | 100/100 | feita | [isolation-levels](transactions/isolation-levels.md), [overselling-checkout](transactions/overselling-checkout.md), [orm-vs-sql](transactions/orm-vs-sql.md), [outbox-saga](transactions/outbox-saga.md) |
 | Segurança | Teoria e prática | 100/100 | feita | [sql-injection-lab](security/sql-injection-lab.md), [xss-csp-lab](security/xss-csp-lab.md), [csrf-lab](security/csrf-lab.md), [access-control-lab](security/access-control-lab.md), [ssrf-lab](security/ssrf-lab.md), [passwords-sessions-lab](security/passwords-sessions-lab.md), [jwt-lab](security/jwt-lab.md), [upload-path-traversal-lab](security/upload-path-traversal-lab.md) |
-| Compiladores | Teoria e prática | 0/100 |  | mini-language-parser (planejado), tree-walking-interpreter (planejado), bytecode-vm (planejado), regex-engine (planejado) |
+| Compiladores | Teoria e prática | 100/100 | feita | [mini-language-parser](compilers/mini-language-parser.md), [tree-walking-interpreter](compilers/tree-walking-interpreter.md), [bytecode-vm](compilers/bytecode-vm.md), [regex-engine](compilers/regex-engine.md) |
 | Máquinas de estado | Teoria e prática | 100/100 | feita | [order-state-machine](state-machines/order-state-machine.md) |
-| Teoria da informação | Teoria e prática | 0/100 |  | huffman-lz77 (planejado), error-detection-correction (planejado) |
+| Teoria da informação | Teoria e prática | 100/100 | feita | [huffman-lz77](information-theory/huffman-lz77.md), [error-detection-correction](information-theory/error-detection-correction.md) |
 | Lógica digital | Teoria e prática | 0/100 |  | gates-karnaugh-adders (planejado), nand-alu-cpu (planejado) |
 | Eletrônica | Teoria | 0/170 |  | nenhum |
 | Programação orientada a objetos | Teoria e prática | 0/100 |  | oop-vs-functional (planejado), code-smells (planejado) |

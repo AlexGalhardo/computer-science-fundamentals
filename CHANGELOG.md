@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.60.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/information-theory/error-detection-correction` (C++): parity, checksum and CRC-32 matching the standard check value, Hamming(7,4) correcting every single-bit error, and a noise simulator. The information theory area is complete.
+
+## [0.59.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/information-theory/huffman-lz77` (Rust and Python): a Shannon entropy calculator, lossless Huffman and LZ77 encoders and decoders, and a table of compression ratio against entropy for five sample files.
+
+## [0.58.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: information theory, 100 questions in Portuguese and English, blind-reviewed with 100 of 100 agreement (`quiz/content/information-theory/review.md`).
+
+## [0.57.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/compilers/regex-engine` (Go): a regex parser, Thompson construction to NFA and subset construction to DFA, agreement with Go's `regexp` on 1,000 generated cases, and linear time on a pattern where backtracking is exponential. The compilers area is complete.
+
+## [0.56.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/compilers/bytecode-vm` (Rust): a compiler from the tree to stack bytecode with a disassembler, a stack virtual machine that runs the same example programs, and a benchmark against the tree-walking interpreter.
+
+## [0.55.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/compilers/tree-walking-interpreter` (TypeScript): an evaluator for the mini language with scopes, functions and closures, run-time errors with line and column, and a REPL that keeps state.
+
+## [0.54.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/compilers/mini-language-parser` (TypeScript): the mini language defined in EBNF, a lexer with positions, a recursive-descent parser with Pratt parsing for expressions and error recovery, and a REPL that prints tokens and tree.
+
+## [0.53.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: compilers, 100 questions in Portuguese and English, blind-reviewed with 100 of 100 agreement and 7 reviewer notes resolved (`quiz/content/compilers/review.md`).
+
+## [0.52.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/parallelism/scaling-by-cores` (Rust, Go and C++): prime counting and Mandelbrot, sequential and parallel with static and dynamic scheduling, speed-up and efficiency for 1, 2, 4 and 8 workers, and the serial fraction estimated with Amdahl's law. The parallelism area is complete.
+
+## [0.51.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: parallelism, 100 questions in Portuguese and English, blind-reviewed in English and in Portuguese with no disagreement (`quiz/content/parallelism/review.md`).
+
 ## [0.50.0] - 2026-10-07
 
 ### Added

@@ -483,10 +483,10 @@ Sources: Tanenbaum (multiple processor systems), Dragon Book (parallelism and lo
 | Parallel sorting and reductions | 8 |
 | Determinism and reproducibility | 8 |
 
-- [ ] QC-PAR.1 Coverage map committed
-- [ ] QC-PAR.2 100 questions written (PT and EN)
-- [ ] QC-PAR.3 Validation passing
-- [ ] QC-PAR.4 Blind review resolved
+- [x] QC-PAR.1 Coverage map committed
+- [x] QC-PAR.2 100 questions written (PT and EN)
+- [x] QC-PAR.3 Validation passing
+- [x] QC-PAR.4 Blind review resolved
 
 #### QC-TX Transactions
 
@@ -553,10 +553,10 @@ Sources: Aho et al., Compilers: Principles, Techniques and Tools (2nd edition).
 | Instruction-level parallelism and locality (10, 11) | 4 |
 | Interpreters, virtual machines and JIT | 6 |
 
-- [ ] QC-COMP.1 Coverage map committed
-- [ ] QC-COMP.2 100 questions written (PT and EN)
-- [ ] QC-COMP.3 Validation passing
-- [ ] QC-COMP.4 Blind review resolved
+- [x] QC-COMP.1 Coverage map committed
+- [x] QC-COMP.2 100 questions written (PT and EN)
+- [x] QC-COMP.3 Validation passing
+- [x] QC-COMP.4 Blind review resolved
 
 #### QC-FSM State machines
 
@@ -597,10 +597,10 @@ Sources: USP Data Structures II (compression), Tanenbaum Networks (error control
 | Encoding, hashing and encryption compared | 6 |
 | Limits of compression | 6 |
 
-- [ ] QC-INFO.1 Coverage map committed
-- [ ] QC-INFO.2 100 questions written (PT and EN)
-- [ ] QC-INFO.3 Validation passing
-- [ ] QC-INFO.4 Blind review resolved
+- [x] QC-INFO.1 Coverage map committed
+- [x] QC-INFO.2 100 questions written (PT and EN)
+- [x] QC-INFO.3 Validation passing
+- [x] QC-INFO.4 Blind review resolved
 
 #### QC-DL Digital logic
 
@@ -1076,19 +1076,19 @@ Teaches: why string concatenation in queries is exploitable and how parameterise
 
 Teaches: how source text becomes tokens and then a tree. First step of the compiler track (interpreter and bytecode VM come later).
 
-- [ ] **MP-COMP-1.1** Language definition: numbers, strings, booleans, variables, arithmetic and comparison operators, `if`, `while`, functions.
+- [x] **MP-COMP-1.1** Language definition: numbers, strings, booleans, variables, arithmetic and comparison operators, `if`, `while`, functions.
 	- **Accept:** grammar written in the README in EBNF, with one example program per construct.
-- [ ] **MP-COMP-1.2** Lexer in TypeScript
-	- [ ] MP-COMP-1.2.a Tokens carry type, text, line and column.
-	- [ ] MP-COMP-1.2.b Errors report line and column.
+- [x] **MP-COMP-1.2** Lexer in TypeScript
+	- [x] MP-COMP-1.2.a Tokens carry type, text, line and column.
+	- [x] MP-COMP-1.2.b Errors report line and column.
 	- **Accept:** tests cover every token type, comments, and an unterminated string.
-- [ ] **MP-COMP-1.3** Parser in TypeScript (recursive descent, Pratt parsing for expressions)
-	- [ ] MP-COMP-1.3.a Operator precedence and associativity.
-	- [ ] MP-COMP-1.3.b Syntax errors with position, parser does not stop at the first one.
+- [x] **MP-COMP-1.3** Parser in TypeScript (recursive descent, Pratt parsing for expressions)
+	- [x] MP-COMP-1.3.a Operator precedence and associativity.
+	- [x] MP-COMP-1.3.b Syntax errors with position, parser does not stop at the first one.
 	- **Accept:** tests prove `1 + 2 * 3` and `(1 + 2) * 3` give different trees, and a file with two errors reports both.
-- [ ] **MP-COMP-1.4** Demo: REPL that prints the tokens and the tree of each line.
+- [x] **MP-COMP-1.4** Demo: REPL that prints the tokens and the tree of each line.
 	- **Accept:** one command starts the REPL in Docker, and a recorded session is in the README.
-- [ ] **MP-COMP-1.5** Definition of done for mini-projects met.
+- [x] **MP-COMP-1.5** Definition of done for mini-projects met.
 
 #### MP-MSG-1 Queue comparison
 
@@ -1394,13 +1394,13 @@ Teaches: how event loops, goroutines and BEAM processes handle many idle connect
 
 Teaches: how much a program speeds up with more cores, and why not linearly. Languages: Rust, Go, C++.
 
-- [ ] **MP-PAR-1.1** Prime counting and Mandelbrot, sequential and parallel
+- [x] **MP-PAR-1.1** Prime counting and Mandelbrot, sequential and parallel
 	- **Accept:** parallel results equal the sequential ones exactly.
-- [ ] **MP-PAR-1.2** Speed-up measurement with 1, 2, 4 and 8 workers
+- [x] **MP-PAR-1.2** Speed-up measurement with 1, 2, 4 and 8 workers
 	- **Accept:** table of speed-up and efficiency per language.
-- [ ] **MP-PAR-1.3** Amdahl fit
+- [x] **MP-PAR-1.3** Amdahl fit
 	- **Accept:** the README states the serial fraction estimated from the measurements.
-- [ ] **MP-PAR-1.4** Definition of done for mini-projects met.
+- [x] **MP-PAR-1.4** Definition of done for mini-projects met.
 
 #### MP-TX-1 Isolation levels in PostgreSQL
 
@@ -1527,40 +1527,40 @@ Teaches: why file names and types from the client cannot be trusted. Languages: 
 
 Teaches: how a tree is executed: environments, scopes and closures. Languages: TS.
 
-- [ ] **MP-COMP-2.1** Evaluator for the mini language of MP-COMP-1
-	- [ ] MP-COMP-2.1.a Variables and scopes.
-	- [ ] MP-COMP-2.1.b Functions and closures.
-	- [ ] MP-COMP-2.1.c `if` and `while`.
+- [x] **MP-COMP-2.1** Evaluator for the mini language of MP-COMP-1
+	- [x] MP-COMP-2.1.a Variables and scopes.
+	- [x] MP-COMP-2.1.b Functions and closures.
+	- [x] MP-COMP-2.1.c `if` and `while`.
 	- **Accept:** a suite of example programs prints the expected output.
-- [ ] **MP-COMP-2.2** Run-time errors with line and column
+- [x] **MP-COMP-2.2** Run-time errors with line and column
 	- **Accept:** tests cover undefined variable, wrong argument count and division by zero.
-- [ ] **MP-COMP-2.3** REPL that keeps state between lines
+- [x] **MP-COMP-2.3** REPL that keeps state between lines
 	- **Accept:** a recorded session in the README defines a function and calls it later.
-- [ ] **MP-COMP-2.4** Definition of done for mini-projects met.
+- [x] **MP-COMP-2.4** Definition of done for mini-projects met.
 
 #### MP-COMP-3 Bytecode virtual machine
 
 Teaches: why bytecode runs faster than walking a tree. Languages: Rust.
 
-- [ ] **MP-COMP-3.1** Compiler from the tree to stack bytecode
+- [x] **MP-COMP-3.1** Compiler from the tree to stack bytecode
 	- **Accept:** a disassembler prints readable bytecode, checked by snapshot tests.
-- [ ] **MP-COMP-3.2** Stack virtual machine
+- [x] **MP-COMP-3.2** Stack virtual machine
 	- **Accept:** the example programs of MP-COMP-2 give the same output.
-- [ ] **MP-COMP-3.3** Benchmark against the tree-walking interpreter
+- [x] **MP-COMP-3.3** Benchmark against the tree-walking interpreter
 	- **Accept:** table for a loop and a recursive function, with machine and versions recorded.
-- [ ] **MP-COMP-3.4** Definition of done for mini-projects met.
+- [x] **MP-COMP-3.4** Definition of done for mini-projects met.
 
 #### MP-COMP-4 Regex engine
 
 Teaches: how a regular expression becomes an automaton. Languages: Go.
 
-- [ ] **MP-COMP-4.1** Parser for concatenation, alternation, star, plus, optional and classes
+- [x] **MP-COMP-4.1** Parser for concatenation, alternation, star, plus, optional and classes
 	- **Accept:** tests cover precedence and invalid patterns.
-- [ ] **MP-COMP-4.2** Thompson construction to NFA and subset construction to DFA
+- [x] **MP-COMP-4.2** Thompson construction to NFA and subset construction to DFA
 	- **Accept:** matches agree with Go's `regexp` on 1,000 generated cases.
-- [ ] **MP-COMP-4.3** Automaton export and timing on a pathological pattern
+- [x] **MP-COMP-4.3** Automaton export and timing on a pathological pattern
 	- **Accept:** the engine stays linear where a backtracking matcher is exponential, shown in a table.
-- [ ] **MP-COMP-4.4** Definition of done for mini-projects met.
+- [x] **MP-COMP-4.4** Definition of done for mini-projects met.
 
 #### MP-FSM-1 Order state machine
 
@@ -1578,25 +1578,25 @@ Teaches: how explicit states and transitions remove invalid situations. Language
 
 Teaches: how compression exploits redundancy and what entropy says about its limit. Languages: Rust, Python.
 
-- [ ] **MP-INFO-1.1** Shannon entropy calculator for a file
+- [x] **MP-INFO-1.1** Shannon entropy calculator for a file
 	- **Accept:** known inputs (single symbol, uniform bytes) give 0 and 8 bits per byte.
-- [ ] **MP-INFO-1.2** Huffman encoder and decoder
+- [x] **MP-INFO-1.2** Huffman encoder and decoder
 	- **Accept:** round trip is lossless on text, binary and empty files.
-- [ ] **MP-INFO-1.3** LZ77 encoder and decoder, and comparison table
+- [x] **MP-INFO-1.3** LZ77 encoder and decoder, and comparison table
 	- **Accept:** table of compression ratio against entropy for five sample files.
-- [ ] **MP-INFO-1.4** Definition of done for mini-projects met.
+- [x] **MP-INFO-1.4** Definition of done for mini-projects met.
 
 #### MP-INFO-2 Error detection and correction
 
 Teaches: how redundancy detects and repairs flipped bits. Languages: C++.
 
-- [ ] **MP-INFO-2.1** Parity, checksum and CRC-32
+- [x] **MP-INFO-2.1** Parity, checksum and CRC-32
 	- **Accept:** CRC-32 matches the standard check value for the string `123456789`.
-- [ ] **MP-INFO-2.2** Hamming(7,4) encoder and decoder
+- [x] **MP-INFO-2.2** Hamming(7,4) encoder and decoder
 	- **Accept:** every single-bit error in every codeword is corrected in an exhaustive test.
-- [ ] **MP-INFO-2.3** Noise simulator
+- [x] **MP-INFO-2.3** Noise simulator
 	- **Accept:** table of detected, corrected and missed errors by bit error rate.
-- [ ] **MP-INFO-2.4** Definition of done for mini-projects met.
+- [x] **MP-INFO-2.4** Definition of done for mini-projects met.
 
 #### MP-DL-1 Logic gates, Karnaugh and adders
 
