@@ -141,6 +141,11 @@
 		"source": "C. J. Date, concurrency (multiversion techniques)",
 		"pt": {
 			"statement": "No PostgreSQL, o exemplo mostra as colunas de sistema de uma linha antes e depois de um UPDATE. O que o UPDATE faz fisicamente com a linha?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "SELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,1) |  740 |    10\n\nUPDATE products SET stock = 9 WHERE id = 1;\n\nSELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,2) |  752 |     9"
+			},
 			"alternatives": [
 				"Altera o valor no mesmo lugar e guarda o valor antigo em um log de undo",
 				"Altera o valor no mesmo lugar e descarta o valor antigo imediatamente",
@@ -155,15 +160,15 @@
 				"O COMMIT não remove nada: a versão antiga só é removida depois, pelo VACUUM.",
 				"A versão nova recebe outro ctid e o xmin da transação que escreveu, e a antiga permanece na tabela com o xmax preenchido."
 			],
-			"concept": "O PostgreSQL guarda as versões na própria tabela. Cada versão registra em `xmin` a transação que a criou e em `xmax` a que a expirou. Um UPDATE equivale a expirar a versão atual e inserir outra, por isso o `ctid`, a posição física, muda.",
-			"example": {
-				"kind": "code",
-				"language": "sql",
-				"content": "SELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,1) |  740 |    10\n\nUPDATE products SET stock = 9 WHERE id = 1;\n\nSELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,2) |  752 |     9"
-			}
+			"concept": "O PostgreSQL guarda as versões na própria tabela. Cada versão registra em `xmin` a transação que a criou e em `xmax` a que a expirou. Um UPDATE equivale a expirar a versão atual e inserir outra, por isso o `ctid`, a posição física, muda."
 		},
 		"en": {
 			"statement": "In PostgreSQL, the example shows the system columns of a row before and after an UPDATE. What does the UPDATE physically do to the row?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "SELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,1) |  740 |    10\n\nUPDATE products SET stock = 9 WHERE id = 1;\n\nSELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,2) |  752 |     9"
+			},
 			"alternatives": [
 				"It changes the value in place and keeps the old value in an undo log",
 				"It changes the value in place and discards the old value immediately",
@@ -178,12 +183,7 @@
 				"COMMIT removes nothing: the old version is only removed later, by VACUUM.",
 				"The new version gets another ctid and the xmin of the writing transaction, and the old one stays in the table with xmax filled in."
 			],
-			"concept": "PostgreSQL keeps the versions in the table itself. Each version records in `xmin` the transaction that created it and in `xmax` the one that expired it. An UPDATE amounts to expiring the current version and inserting another, which is why `ctid`, the physical position, changes.",
-			"example": {
-				"kind": "code",
-				"language": "sql",
-				"content": "SELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,1) |  740 |    10\n\nUPDATE products SET stock = 9 WHERE id = 1;\n\nSELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,2) |  752 |     9"
-			}
+			"concept": "PostgreSQL keeps the versions in the table itself. Each version records in `xmin` the transaction that created it and in `xmax` the one that expired it. An UPDATE amounts to expiring the current version and inserting another, which is why `ctid`, the physical position, changes."
 		}
 	},
 	{
@@ -327,6 +327,10 @@
 		"source": "C. J. Date, concurrency (multiversion techniques)",
 		"pt": {
 			"statement": "No PostgreSQL, uma versão de linha tem os campos do diagrama: foi criada pela transação 100, já confirmada, e marcada para remoção pela transação 105, que ainda está em andamento. Uma terceira transação, em READ COMMITTED, executa um SELECT agora. Ela enxerga essa versão?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "versão da linha:   xmin = 100   xmax = 105   stock = 10\n\ntransação 100: COMMITTED\ntransação 105: IN PROGRESS (UPDATE ainda não confirmado)\ntransação 110: READ COMMITTED, executa SELECT agora"
+			},
 			"alternatives": [
 				"Não, pois qualquer versão com xmax preenchido já está morta",
 				"Sim, pois um SELECT enxerga todas as versões físicas da linha",
@@ -341,14 +345,14 @@
 				"A remoção feita pela 105 ainda não vale para os outros: para este snapshot a versão continua sendo a atual.",
 				"Ser mais antiga e confirmada é justamente o que torna a criação pela transação 100 visível."
 			],
-			"concept": "Uma versão é visível para um snapshot quando a transação em `xmin` está confirmada para ele e a transação em `xmax` não está. Um `xmax` de transação em andamento ou abortada não tira a versão de vista. É assim que um DELETE ou UPDATE pendente fica invisível para as outras sessões.",
-			"example": {
-				"kind": "diagram",
-				"content": "versão da linha:   xmin = 100   xmax = 105   stock = 10\n\ntransação 100: COMMITTED\ntransação 105: IN PROGRESS (UPDATE ainda não confirmado)\ntransação 110: READ COMMITTED, executa SELECT agora"
-			}
+			"concept": "Uma versão é visível para um snapshot quando a transação em `xmin` está confirmada para ele e a transação em `xmax` não está. Um `xmax` de transação em andamento ou abortada não tira a versão de vista. É assim que um DELETE ou UPDATE pendente fica invisível para as outras sessões."
 		},
 		"en": {
 			"statement": "In PostgreSQL, a row version has the fields of the diagram: it was created by transaction 100, already committed, and marked for removal by transaction 105, which is still in progress. A third transaction, at READ COMMITTED, runs a SELECT now. Does it see this version?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "row version:   xmin = 100   xmax = 105   stock = 10\n\ntransaction 100: COMMITTED\ntransaction 105: IN PROGRESS (UPDATE not committed yet)\ntransaction 110: READ COMMITTED, runs SELECT now"
+			},
 			"alternatives": [
 				"No, because any version with xmax filled in is already dead",
 				"Yes, because a SELECT sees every physical version of the row",
@@ -363,11 +367,7 @@
 				"The removal made by 105 is not valid for others yet: for this snapshot the version is still the current one.",
 				"Being older and committed is exactly what makes the creation by transaction 100 visible."
 			],
-			"concept": "A version is visible to a snapshot when the transaction in `xmin` is committed for it and the transaction in `xmax` is not. An `xmax` of a transaction in progress or aborted does not take the version out of sight. That is how a pending DELETE or UPDATE stays invisible to other sessions.",
-			"example": {
-				"kind": "diagram",
-				"content": "row version:   xmin = 100   xmax = 105   stock = 10\n\ntransaction 100: COMMITTED\ntransaction 105: IN PROGRESS (UPDATE not committed yet)\ntransaction 110: READ COMMITTED, runs SELECT now"
-			}
+			"concept": "A version is visible to a snapshot when the transaction in `xmin` is committed for it and the transaction in `xmax` is not. An `xmax` of a transaction in progress or aborted does not take the version out of sight. That is how a pending DELETE or UPDATE stays invisible to other sessions."
 		}
 	},
 	{
@@ -380,6 +380,10 @@
 		"miniProject": "projects/transactions/isolation-levels",
 		"pt": {
 			"statement": "No PostgreSQL, a transação T1 roda em REPEATABLE READ e segue a linha do tempo do diagrama. T3 começou antes do snapshot de T1, mas só fez COMMIT depois dele. O que T1 enxerga no SELECT do instante 5?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "tempo  evento\n1      T3: BEGIN; UPDATE products SET stock = 5 WHERE id = 1\n2      T1: BEGIN (REPEATABLE READ); SELECT ...   <- snapshot de T1\n3      T3: COMMIT\n4      T2: BEGIN; INSERT INTO products ...; COMMIT\n5      T1: SELECT * FROM products                <- ?"
+			},
 			"alternatives": [
 				"Nenhuma das duas, pois ambas foram confirmadas depois do snapshot",
 				"As escritas de T2 e de T3, pois as duas já estão confirmadas no instante 5",
@@ -394,14 +398,14 @@
 				"Linhas inseridas seguem a mesma regra de visibilidade das alteradas: o xmin delas não está no snapshot.",
 				"Leituras nunca causam esse erro em REPEATABLE READ: ele só aparece quando T1 tenta escrever em uma linha alterada."
 			],
-			"concept": "Um snapshot registra quais transações estavam em andamento quando foi tirado. Elas são tratadas como não confirmadas para sempre, mesmo que façam COMMIT um instante depois, e o mesmo vale para as que começarem mais tarde. A ordem que importa é a dos commits em relação ao snapshot.",
-			"example": {
-				"kind": "diagram",
-				"content": "tempo  evento\n1      T3: BEGIN; UPDATE products SET stock = 5 WHERE id = 1\n2      T1: BEGIN (REPEATABLE READ); SELECT ...   <- snapshot de T1\n3      T3: COMMIT\n4      T2: BEGIN; INSERT INTO products ...; COMMIT\n5      T1: SELECT * FROM products                <- ?"
-			}
+			"concept": "Um snapshot registra quais transações estavam em andamento quando foi tirado. Elas são tratadas como não confirmadas para sempre, mesmo que façam COMMIT um instante depois, e o mesmo vale para as que começarem mais tarde. A ordem que importa é a dos commits em relação ao snapshot."
 		},
 		"en": {
 			"statement": "In PostgreSQL, transaction T1 runs at REPEATABLE READ and follows the timeline of the diagram. T3 started before the snapshot of T1, but committed only after it. What does T1 see in the SELECT at instant 5?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "time   event\n1      T3: BEGIN; UPDATE products SET stock = 5 WHERE id = 1\n2      T1: BEGIN (REPEATABLE READ); SELECT ...   <- snapshot of T1\n3      T3: COMMIT\n4      T2: BEGIN; INSERT INTO products ...; COMMIT\n5      T1: SELECT * FROM products                <- ?"
+			},
 			"alternatives": [
 				"Neither of the two, because both were committed after the snapshot",
 				"The writes of T2 and T3, because both are already committed at instant 5",
@@ -416,11 +420,7 @@
 				"Inserted rows follow the same visibility rule as changed ones: their xmin is not in the snapshot.",
 				"Reads never cause this error at REPEATABLE READ: it only appears when T1 tries to write to a changed row."
 			],
-			"concept": "A snapshot records which transactions were in progress when it was taken. They are treated as uncommitted forever, even if they commit an instant later, and the same goes for those that start afterwards. The order that matters is that of the commits relative to the snapshot.",
-			"example": {
-				"kind": "diagram",
-				"content": "time   event\n1      T3: BEGIN; UPDATE products SET stock = 5 WHERE id = 1\n2      T1: BEGIN (REPEATABLE READ); SELECT ...   <- snapshot of T1\n3      T3: COMMIT\n4      T2: BEGIN; INSERT INTO products ...; COMMIT\n5      T1: SELECT * FROM products                <- ?"
-			}
+			"concept": "A snapshot records which transactions were in progress when it was taken. They are treated as uncommitted forever, even if they commit an instant later, and the same goes for those that start afterwards. The order that matters is that of the commits relative to the snapshot."
 		}
 	},
 	{

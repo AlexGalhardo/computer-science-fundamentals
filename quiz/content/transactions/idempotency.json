@@ -331,6 +331,11 @@
 		"miniProject": "projects/transactions/outbox-saga",
 		"pt": {
 			"statement": "O consumidor do exemplo roda em duas instâncias, e a tabela `processed` NÃO tem restrição de unicidade em `message_id`. Qual é a falha dessa deduplicação?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "await db.transaction(async (tx) => {\n\tconst seen = await tx.execute(sql`SELECT 1 FROM processed WHERE message_id = ${id}`);\n\tif (seen.length > 0) return; // duplicata\n\tawait tx.execute(sql`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${accountId}`);\n\tawait tx.execute(sql`INSERT INTO processed (message_id) VALUES (${id})`);\n});"
+			},
 			"alternatives": [
 				"O SELECT é lento sem índice, e as mensagens se acumulam na fila",
 				"O id da mensagem pode se repetir entre mensagens que são diferentes",
@@ -345,15 +350,15 @@
 				"Sem restrição de unicidade o segundo INSERT é aceito, e é justamente esse o problema.",
 				"Correta: é uma corrida de verificar-e-agir; em READ COMMITTED nenhuma das duas transações vê o INSERT não confirmado da outra."
 			],
-			"concept": "Verificar com SELECT e depois inserir é o mesmo padrão ler-verificar-escrever que causa overselling. Duas transações concorrentes leem \"não processada\" e seguem em frente. A correção é deixar o banco arbitrar: uma chave única em `message_id` faz o segundo INSERT esperar o primeiro e falhar (ou não inserir nada, com `ON CONFLICT DO NOTHING`), e só quem inseriu aplica o efeito.",
-			"example": {
-				"kind": "code",
-				"language": "ts",
-				"content": "await db.transaction(async (tx) => {\n\tconst seen = await tx.execute(sql`SELECT 1 FROM processed WHERE message_id = ${id}`);\n\tif (seen.length > 0) return; // duplicata\n\tawait tx.execute(sql`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${accountId}`);\n\tawait tx.execute(sql`INSERT INTO processed (message_id) VALUES (${id})`);\n});"
-			}
+			"concept": "Verificar com SELECT e depois inserir é o mesmo padrão ler-verificar-escrever que causa overselling. Duas transações concorrentes leem \"não processada\" e seguem em frente. A correção é deixar o banco arbitrar: uma chave única em `message_id` faz o segundo INSERT esperar o primeiro e falhar (ou não inserir nada, com `ON CONFLICT DO NOTHING`), e só quem inseriu aplica o efeito."
 		},
 		"en": {
 			"statement": "The consumer in the example runs as two instances, and the `processed` table has NO unique constraint on `message_id`. What is the flaw of this deduplication?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "await db.transaction(async (tx) => {\n\tconst seen = await tx.execute(sql`SELECT 1 FROM processed WHERE message_id = ${id}`);\n\tif (seen.length > 0) return; // duplicate\n\tawait tx.execute(sql`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${accountId}`);\n\tawait tx.execute(sql`INSERT INTO processed (message_id) VALUES (${id})`);\n});"
+			},
 			"alternatives": [
 				"The SELECT is slow without an index, and messages pile up in the queue",
 				"The message id may be repeated between messages that are different",
@@ -368,12 +373,7 @@
 				"Without a unique constraint the second INSERT is accepted, and that is precisely the problem.",
 				"Correct: it is a check-then-act race; in READ COMMITTED neither transaction sees the other's uncommitted INSERT."
 			],
-			"concept": "Checking with a SELECT and then inserting is the same read-check-write pattern that causes overselling. Two concurrent transactions read \"not processed\" and go ahead. The fix is to let the database arbitrate: a unique key on `message_id` makes the second INSERT wait for the first and fail (or insert nothing, with `ON CONFLICT DO NOTHING`), and only the one that inserted applies the effect.",
-			"example": {
-				"kind": "code",
-				"language": "ts",
-				"content": "await db.transaction(async (tx) => {\n\tconst seen = await tx.execute(sql`SELECT 1 FROM processed WHERE message_id = ${id}`);\n\tif (seen.length > 0) return; // duplicate\n\tawait tx.execute(sql`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${accountId}`);\n\tawait tx.execute(sql`INSERT INTO processed (message_id) VALUES (${id})`);\n});"
-			}
+			"concept": "Checking with a SELECT and then inserting is the same read-check-write pattern that causes overselling. Two concurrent transactions read \"not processed\" and go ahead. The fix is to let the database arbitrate: a unique key on `message_id` makes the second INSERT wait for the first and fail (or insert nothing, with `ON CONFLICT DO NOTHING`), and only the one that inserted applies the effect."
 		}
 	}
 ]

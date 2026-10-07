@@ -369,6 +369,10 @@
 		"miniProject": "projects/transactions/isolation-levels",
 		"pt": {
 			"statement": "No PostgreSQL em READ COMMITTED, duas sessões executam a sequência do diagrama: cada uma lê o estoque, calcula o novo valor na aplicação e grava. Duas vendas ocorreram, mas o estoque final é 9. Qual anomalia aconteceu?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "tempo  Sessão A                       Sessão B\n1      SELECT stock -> 10\n2                                     SELECT stock -> 10\n3      UPDATE SET stock = 9; COMMIT\n4                                     UPDATE SET stock = 9; COMMIT\n\nestoque final = 9 (esperado: 8)"
+			},
 			"alternatives": [
 				"Leitura suja (dirty read)",
 				"Atualização perdida (lost update)",
@@ -383,14 +387,14 @@
 				"Nenhuma sessão releu a linha: o dano veio de gravar um valor calculado a partir de uma leitura antiga.",
 				"No write skew as transações escrevem em linhas diferentes, e aqui as duas escrevem na mesma linha."
 			],
-			"concept": "A atualização perdida nasce do ciclo ler, calcular na aplicação e gravar. Se duas transações leem o mesmo valor antes de qualquer uma gravar, a última escrita vence e a outra some. Ela não está na tabela de fenômenos do padrão SQL, mas é possível em READ COMMITTED.",
-			"example": {
-				"kind": "diagram",
-				"content": "tempo  Sessão A                       Sessão B\n1      SELECT stock -> 10\n2                                     SELECT stock -> 10\n3      UPDATE SET stock = 9; COMMIT\n4                                     UPDATE SET stock = 9; COMMIT\n\nestoque final = 9 (esperado: 8)"
-			}
+			"concept": "A atualização perdida nasce do ciclo ler, calcular na aplicação e gravar. Se duas transações leem o mesmo valor antes de qualquer uma gravar, a última escrita vence e a outra some. Ela não está na tabela de fenômenos do padrão SQL, mas é possível em READ COMMITTED."
 		},
 		"en": {
 			"statement": "In PostgreSQL at READ COMMITTED, two sessions run the sequence of the diagram: each one reads the stock, computes the new value in the application and writes it. Two sales happened, but the final stock is 9. Which anomaly occurred?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "time   Session A                      Session B\n1      SELECT stock -> 10\n2                                     SELECT stock -> 10\n3      UPDATE SET stock = 9; COMMIT\n4                                     UPDATE SET stock = 9; COMMIT\n\nfinal stock = 9 (expected: 8)"
+			},
 			"alternatives": [
 				"Dirty read",
 				"Lost update",
@@ -405,11 +409,7 @@
 				"No session reread the row: the damage came from writing a value computed from an old read.",
 				"In write skew the transactions write to different rows, and here both write to the same row."
 			],
-			"concept": "The lost update is born from the cycle read, compute in the application and write. If two transactions read the same value before either writes, the last write wins and the other vanishes. It is not in the phenomena table of the SQL standard, but it is possible at READ COMMITTED.",
-			"example": {
-				"kind": "diagram",
-				"content": "time   Session A                      Session B\n1      SELECT stock -> 10\n2                                     SELECT stock -> 10\n3      UPDATE SET stock = 9; COMMIT\n4                                     UPDATE SET stock = 9; COMMIT\n\nfinal stock = 9 (expected: 8)"
-			}
+			"concept": "The lost update is born from the cycle read, compute in the application and write. If two transactions read the same value before either writes, the last write wins and the other vanishes. It is not in the phenomena table of the SQL standard, but it is possible at READ COMMITTED."
 		}
 	},
 	{
@@ -512,6 +512,11 @@
 		"miniProject": "projects/transactions/isolation-levels",
 		"pt": {
 			"statement": "No PostgreSQL, a sessão A executa o exemplo em REPEATABLE READ. Entre os dois SELECT, a sessão B insere um pedido com status 'open' e faz COMMIT. Se o primeiro count devolveu 3, o que o segundo devolve?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "-- Sessão A\nBEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT count(*) FROM orders WHERE status = 'open'; -- 3\n-- Sessão B: INSERT INTO orders (status) VALUES ('open'); COMMIT;\nSELECT count(*) FROM orders WHERE status = 'open'; -- ?\nCOMMIT;"
+			},
 			"alternatives": [
 				"4, pois o padrão SQL admite fantasmas no nível REPEATABLE READ",
 				"4, pois um INSERT de outra sessão nunca é coberto por um snapshot",
@@ -526,15 +531,15 @@
 				"A linha de B foi confirmada depois do snapshot de A, então continua invisível até A terminar.",
 				"B não esperou nada: no PostgreSQL uma leitura não bloqueia um INSERT."
 			],
-			"concept": "No PostgreSQL, REPEATABLE READ é snapshot isolation: todos os comandos da transação enxergam o banco como estava no primeiro comando. Linhas inseridas depois não aparecem, e por isso não há fantasmas nesse nível, embora o padrão SQL os admita.",
-			"example": {
-				"kind": "code",
-				"language": "sql",
-				"content": "-- Sessão A\nBEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT count(*) FROM orders WHERE status = 'open'; -- 3\n-- Sessão B: INSERT INTO orders (status) VALUES ('open'); COMMIT;\nSELECT count(*) FROM orders WHERE status = 'open'; -- ?\nCOMMIT;"
-			}
+			"concept": "No PostgreSQL, REPEATABLE READ é snapshot isolation: todos os comandos da transação enxergam o banco como estava no primeiro comando. Linhas inseridas depois não aparecem, e por isso não há fantasmas nesse nível, embora o padrão SQL os admita."
 		},
 		"en": {
 			"statement": "In PostgreSQL, session A runs the example at REPEATABLE READ. Between the two SELECTs, session B inserts an order with status 'open' and commits. If the first count returned 3, what does the second one return?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "-- Session A\nBEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT count(*) FROM orders WHERE status = 'open'; -- 3\n-- Session B: INSERT INTO orders (status) VALUES ('open'); COMMIT;\nSELECT count(*) FROM orders WHERE status = 'open'; -- ?\nCOMMIT;"
+			},
 			"alternatives": [
 				"4, because the SQL standard admits phantoms at the REPEATABLE READ level",
 				"4, because an INSERT from another session is never covered by a snapshot",
@@ -549,12 +554,7 @@
 				"The row of B was committed after the snapshot of A, so it stays invisible until A ends.",
 				"B did not wait for anything: in PostgreSQL a read does not block an INSERT."
 			],
-			"concept": "In PostgreSQL, REPEATABLE READ is snapshot isolation: every command of the transaction sees the database as it was at the first command. Rows inserted later do not show up, which is why there are no phantoms at this level, although the SQL standard admits them.",
-			"example": {
-				"kind": "code",
-				"language": "sql",
-				"content": "-- Session A\nBEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT count(*) FROM orders WHERE status = 'open'; -- 3\n-- Session B: INSERT INTO orders (status) VALUES ('open'); COMMIT;\nSELECT count(*) FROM orders WHERE status = 'open'; -- ?\nCOMMIT;"
-			}
+			"concept": "In PostgreSQL, REPEATABLE READ is snapshot isolation: every command of the transaction sees the database as it was at the first command. Rows inserted later do not show up, which is why there are no phantoms at this level, although the SQL standard admits them."
 		}
 	},
 	{
@@ -567,6 +567,10 @@
 		"miniProject": "projects/transactions/isolation-levels",
 		"pt": {
 			"statement": "Um hospital exige ao menos um médico de plantão. Ana e Beto estão de plantão e, no PostgreSQL em REPEATABLE READ, executam ao mesmo tempo a sequência do diagrama. As duas transações fazem COMMIT e ninguém fica de plantão. Por que o nível não impediu isso?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "tempo  T1 (Ana)                          T2 (Beto)\n1      SELECT count(*) on_call -> 2\n2                                        SELECT count(*) on_call -> 2\n3      UPDATE doctors SET on_call = false\n       WHERE name = 'Ana'\n4                                        UPDATE doctors SET on_call = false\n                                         WHERE name = 'Beto'\n5      COMMIT                            COMMIT\n\nresultado: 0 médicos de plantão"
+			},
 			"alternatives": [
 				"Porque cada transação leu a escrita ainda não confirmada da outra",
 				"Porque a segunda escrita sobrescreveu a primeira na mesma linha",
@@ -581,14 +585,14 @@
 				"Isso é write skew: snapshot isolation só detecta duas escritas na mesma linha, e aqui cada transação alterou uma linha distinta.",
 				"Quem é tratado como READ COMMITTED no PostgreSQL é o READ UNCOMMITTED, não o REPEATABLE READ."
 			],
-			"concept": "No write skew, duas transações leem um mesmo conjunto, decidem com base nele e escrevem em linhas diferentes. Cada decisão era válida sozinha, mas juntas quebram a regra. Snapshot isolation não percebe o problema, porque não há duas escritas concorrentes sobre a mesma linha.",
-			"example": {
-				"kind": "diagram",
-				"content": "tempo  T1 (Ana)                          T2 (Beto)\n1      SELECT count(*) on_call -> 2\n2                                        SELECT count(*) on_call -> 2\n3      UPDATE doctors SET on_call = false\n       WHERE name = 'Ana'\n4                                        UPDATE doctors SET on_call = false\n                                         WHERE name = 'Beto'\n5      COMMIT                            COMMIT\n\nresultado: 0 médicos de plantão"
-			}
+			"concept": "No write skew, duas transações leem um mesmo conjunto, decidem com base nele e escrevem em linhas diferentes. Cada decisão era válida sozinha, mas juntas quebram a regra. Snapshot isolation não percebe o problema, porque não há duas escritas concorrentes sobre a mesma linha."
 		},
 		"en": {
 			"statement": "A hospital requires at least one doctor on call. Ana and Beto are on call and, in PostgreSQL at REPEATABLE READ, they run the sequence of the diagram at the same time. Both transactions commit and nobody is left on call. Why did the level not prevent this?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "time   T1 (Ana)                          T2 (Beto)\n1      SELECT count(*) on_call -> 2\n2                                        SELECT count(*) on_call -> 2\n3      UPDATE doctors SET on_call = false\n       WHERE name = 'Ana'\n4                                        UPDATE doctors SET on_call = false\n                                         WHERE name = 'Beto'\n5      COMMIT                            COMMIT\n\nresult: 0 doctors on call"
+			},
 			"alternatives": [
 				"Because each transaction read the uncommitted write of the other one",
 				"Because the second write overwrote the first one on the same row",
@@ -603,11 +607,7 @@
 				"This is write skew: snapshot isolation only detects two writes on the same row, and here each transaction changed a distinct row.",
 				"What PostgreSQL treats as READ COMMITTED is READ UNCOMMITTED, not REPEATABLE READ."
 			],
-			"concept": "In write skew, two transactions read the same set, decide based on it and write to different rows. Each decision was valid alone, but together they break the rule. Snapshot isolation does not notice the problem, because there are no two concurrent writes on the same row.",
-			"example": {
-				"kind": "diagram",
-				"content": "time   T1 (Ana)                          T2 (Beto)\n1      SELECT count(*) on_call -> 2\n2                                        SELECT count(*) on_call -> 2\n3      UPDATE doctors SET on_call = false\n       WHERE name = 'Ana'\n4                                        UPDATE doctors SET on_call = false\n                                         WHERE name = 'Beto'\n5      COMMIT                            COMMIT\n\nresult: 0 doctors on call"
-			}
+			"concept": "In write skew, two transactions read the same set, decide based on it and write to different rows. Each decision was valid alone, but together they break the rule. Snapshot isolation does not notice the problem, because there are no two concurrent writes on the same row."
 		}
 	},
 	{
@@ -665,6 +665,11 @@
 		"miniProject": "projects/transactions/isolation-levels",
 		"pt": {
 			"statement": "A conta 1 tem saldo 100. No PostgreSQL em READ COMMITTED, duas sessões executam ao mesmo tempo o UPDATE do exemplo, cada uma em sua transação. A primeira faz COMMIT. O que acontece com o UPDATE da segunda sessão?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "UPDATE accounts\nSET balance = balance - 100\nWHERE id = 1 AND balance >= 100;"
+			},
 			"alternatives": [
 				"Ele debita novamente e o saldo final da conta fica em -100",
 				"Ele executa de imediato, sem esperar, usando a versão antiga da linha como base",
@@ -679,15 +684,15 @@
 				"O WHERE é avaliado duas vezes: a segunda, depois da espera, sobre a versão confirmada mais recente.",
 				"Depois do COMMIT da primeira, o saldo é 0, a condição `balance >= 100` deixa de valer e a linha não é atualizada."
 			],
-			"concept": "Em READ COMMITTED no PostgreSQL, um UPDATE que encontra a linha bloqueada por outra transação espera. Se a outra faz COMMIT, o comando reavalia a condição do WHERE sobre a nova versão da linha antes de aplicar a alteração. Por isso um único UPDATE com a condição embutida é seguro, ao contrário do ciclo ler, verificar na aplicação e gravar.",
-			"example": {
-				"kind": "code",
-				"language": "sql",
-				"content": "UPDATE accounts\nSET balance = balance - 100\nWHERE id = 1 AND balance >= 100;"
-			}
+			"concept": "Em READ COMMITTED no PostgreSQL, um UPDATE que encontra a linha bloqueada por outra transação espera. Se a outra faz COMMIT, o comando reavalia a condição do WHERE sobre a nova versão da linha antes de aplicar a alteração. Por isso um único UPDATE com a condição embutida é seguro, ao contrário do ciclo ler, verificar na aplicação e gravar."
 		},
 		"en": {
 			"statement": "Account 1 has a balance of 100. In PostgreSQL at READ COMMITTED, two sessions run the UPDATE of the example at the same time, each in its own transaction. The first one commits. What happens to the UPDATE of the second session?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "UPDATE accounts\nSET balance = balance - 100\nWHERE id = 1 AND balance >= 100;"
+			},
 			"alternatives": [
 				"It debits again and the final balance of the account becomes -100",
 				"It runs at once, without waiting, using the old version of the row as its base",
@@ -702,12 +707,7 @@
 				"The WHERE is evaluated twice: the second time, after the wait, on the latest committed version.",
 				"After the first one commits, the balance is 0, the condition `balance >= 100` no longer holds and the row is not updated."
 			],
-			"concept": "At READ COMMITTED in PostgreSQL, an UPDATE that finds the row locked by another transaction waits. If the other one commits, the command re-evaluates the WHERE condition on the new version of the row before applying the change. That is why a single UPDATE with the condition built in is safe, unlike the cycle read, check in the application and write.",
-			"example": {
-				"kind": "code",
-				"language": "sql",
-				"content": "UPDATE accounts\nSET balance = balance - 100\nWHERE id = 1 AND balance >= 100;"
-			}
+			"concept": "At READ COMMITTED in PostgreSQL, an UPDATE that finds the row locked by another transaction waits. If the other one commits, the command re-evaluates the WHERE condition on the new version of the row before applying the change. That is why a single UPDATE with the condition built in is safe, unlike the cycle read, check in the application and write."
 		}
 	},
 	{
