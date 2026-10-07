@@ -81,8 +81,7 @@ describe("question schema", () => {
 	test("rejects a snippet in only one language", () => {
 		const question = clone();
 		(question.en as { snippet?: unknown }).snippet = { kind: "code", language: "ts", content: "x" };
-		expect(errorsOf(question).join("
-")).toContain("snippet: must be present in both languages");
+		expect(errorsOf(question).join("\n")).toContain("snippet: must be present in both languages");
 	});
 
 	test("rejects an answer out of range and an unknown difficulty", () => {
