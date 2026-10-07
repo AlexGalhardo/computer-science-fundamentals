@@ -1,6 +1,6 @@
 # Results: sorting-lower-bound
 
-Generated at 2026-10-07T22:43:13.609Z with `docker compose run --rm ts-demo` (Bun 1.4.2, image oven/bun:1.4.2).
+Generated at 2026-10-07T22:49:57.026Z with `docker compose run --rm ts-demo` (Bun 1.4.2, image oven/bun:1.4.2).
 Every number is a count of comparisons, not a time, so it is the same on every machine.
 
 ## Decision trees

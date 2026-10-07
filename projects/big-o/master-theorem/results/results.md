@@ -1,6 +1,6 @@
 # Results: master-theorem
 
-Generated at 2026-10-07T22:32:30.946Z with `docker compose run --rm ts-demo` (Bun 1.4.2, image oven/bun:1.4.2).
+Generated at 2026-10-07T22:49:29.690Z with `docker compose run --rm ts-demo` (Bun 1.4.2, image oven/bun:1.4.2).
 Everything here is a count, not a time, so the numbers are the same on every machine.
 
 ## Classified recurrences

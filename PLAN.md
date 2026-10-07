@@ -505,10 +505,10 @@ Sources: C. J. Date (transactions, recovery, concurrency), notes in references/n
 | Idempotency and exactly-once effects | 8 |
 | CAP theorem and consistency models | 8 |
 
-- [ ] QC-TX.1 Coverage map committed
-- [ ] QC-TX.2 100 questions written (PT and EN)
-- [ ] QC-TX.3 Validation passing
-- [ ] QC-TX.4 Blind review resolved
+- [x] QC-TX.1 Coverage map committed
+- [x] QC-TX.2 100 questions written (PT and EN)
+- [x] QC-TX.3 Validation passing
+- [x] QC-TX.4 Blind review resolved
 
 #### QC-SEC Security
 
@@ -1118,43 +1118,43 @@ Electronics and Software engineering are theory only and have no mini-project.
 
 Teaches: how to measure a function and recognise its growth curve. Languages: TS.
 
-- [ ] **MP-BIGO-1.1** Instrumented samples of O(1), O(log n), O(n), O(n log n), O(n^2) and O(2^n)
-	- [ ] MP-BIGO-1.1.a Each sample counts its basic operations.
-	- [ ] MP-BIGO-1.1.b Sizes double on every run.
+- [x] **MP-BIGO-1.1** Instrumented samples of O(1), O(log n), O(n), O(n log n), O(n^2) and O(2^n)
+	- [x] MP-BIGO-1.1.a Each sample counts its basic operations.
+	- [x] MP-BIGO-1.1.b Sizes double on every run.
 	- **Accept:** operation counts match the closed formula for each sample in unit tests.
-- [ ] **MP-BIGO-1.2** Curve fitting
-	- [ ] MP-BIGO-1.2.a Fit measured counts against the candidate curves.
-	- [ ] MP-BIGO-1.2.b Report the best fit and its error.
+- [x] **MP-BIGO-1.2** Curve fitting
+	- [x] MP-BIGO-1.2.a Fit measured counts against the candidate curves.
+	- [x] MP-BIGO-1.2.b Report the best fit and its error.
 	- **Accept:** the tool names the right class for all six samples.
-- [ ] **MP-BIGO-1.3** CLI and static dashboard with counts and time against `n`
+- [x] **MP-BIGO-1.3** CLI and static dashboard with counts and time against `n`
 	- **Accept:** `bun run demo` prints the table and the dashboard plots the committed results.
-- [ ] **MP-BIGO-1.4** Definition of done for mini-projects met.
+- [x] **MP-BIGO-1.4** Definition of done for mini-projects met.
 
 #### MP-BIGO-2 Interactive master theorem
 
 Teaches: how the three cases of the master theorem decide the cost of a recurrence. Languages: TS.
 
-- [ ] **MP-BIGO-2.1** Classifier for `T(n) = aT(n/b) + f(n)`
-	- [ ] MP-BIGO-2.1.a Returns the case and the solution.
-	- [ ] MP-BIGO-2.1.b Reports when the theorem does not apply.
+- [x] **MP-BIGO-2.1** Classifier for `T(n) = aT(n/b) + f(n)`
+	- [x] MP-BIGO-2.1.a Returns the case and the solution.
+	- [x] MP-BIGO-2.1.b Reports when the theorem does not apply.
 	- **Accept:** unit tests cover one recurrence per case and one that does not fit.
-- [ ] **MP-BIGO-2.2** Empirical check: count the calls of a generated recursive function
+- [x] **MP-BIGO-2.2** Empirical check: count the calls of a generated recursive function
 	- **Accept:** the measured growth agrees with the predicted class for merge sort, binary search and a 7-way split.
-- [ ] **MP-BIGO-2.3** CLI and static page with the recursion tree
+- [x] **MP-BIGO-2.3** CLI and static page with the recursion tree
 	- **Accept:** one command prints the case and the page draws the tree for the chosen `a`, `b`.
-- [ ] **MP-BIGO-2.4** Definition of done for mini-projects met.
+- [x] **MP-BIGO-2.4** Definition of done for mini-projects met.
 
 #### MP-BIGO-3 The lower bound of comparison sorting
 
 Teaches: why no comparison sort beats Ω(n lg n) and how counting sorts escape it. Languages: TS, Python.
 
-- [ ] **MP-BIGO-3.1** Decision tree generator for `n` = 3 and 4
+- [x] **MP-BIGO-3.1** Decision tree generator for `n` = 3 and 4
 	- **Accept:** the tree has `n!` leaves and its height equals the ceiling of `lg(n!)`.
-- [ ] **MP-BIGO-3.2** Comparison counters in merge, heap and quicksort
+- [x] **MP-BIGO-3.2** Comparison counters in merge, heap and quicksort
 	- **Accept:** counted comparisons never fall below `lg(n!)` on 1,000 random inputs.
-- [ ] **MP-BIGO-3.3** Counting and radix sort on the same inputs
+- [x] **MP-BIGO-3.3** Counting and radix sort on the same inputs
 	- **Accept:** they sort correctly with zero element comparisons, shown in the same table.
-- [ ] **MP-BIGO-3.4** Definition of done for mini-projects met.
+- [x] **MP-BIGO-3.4** Definition of done for mini-projects met.
 
 #### MP-DS-1 Hash map from scratch
 
@@ -1309,25 +1309,26 @@ Teaches: how names are resolved and how addresses are divided. Languages: Go, TS
 
 Teaches: how selection, projection and three join algorithms work. Languages: Rust, Python.
 
-- [ ] **MP-DB-1.1** In-memory tables with selection and projection
+- [x] **MP-DB-1.1** In-memory tables with selection and projection
 	- **Accept:** results equal SQLite on the same data in tests.
-- [ ] **MP-DB-1.2** Nested-loop, hash and sort-merge join
+- [x] **MP-DB-1.2** Nested-loop, hash and sort-merge join
 	- **Accept:** the three joins return the same rows on random tables.
-- [ ] **MP-DB-1.3** Benchmark by table size
+- [x] **MP-DB-1.3** Benchmark by table size
 	- **Accept:** table shows where nested-loop falls behind, for sizes 10^3 to 10^6.
-- [ ] **MP-DB-1.4** Definition of done for mini-projects met.
+	- Note (2026-10-07): hash and sort-merge are measured from 10^3 to 10^6. Nested-loop is capped at 10^4, where it is already about 100 times slower: 10^5 took 27 s in Rust and 10^6 would take about 45 minutes per run.
+- [x] **MP-DB-1.4** Definition of done for mini-projects met.
 
 #### MP-DB-2 Normalisation tool
 
 Teaches: how functional dependencies drive normal forms. Languages: Python.
 
-- [ ] **MP-DB-2.1** Attribute closure and candidate keys
+- [x] **MP-DB-2.1** Attribute closure and candidate keys
 	- **Accept:** textbook examples return the documented keys.
-- [ ] **MP-DB-2.2** Normal form check and decomposition to 3NF and BCNF
+- [x] **MP-DB-2.2** Normal form check and decomposition to 3NF and BCNF
 	- **Accept:** decompositions are lossless, verified by a chase test.
-- [ ] **MP-DB-2.3** CLI that explains each step
+- [x] **MP-DB-2.3** CLI that explains each step
 	- **Accept:** one command prints the reasoning for an example schema.
-- [ ] **MP-DB-2.4** Definition of done for mini-projects met.
+- [x] **MP-DB-2.4** Definition of done for mini-projects met.
 
 #### MP-ALG-2 Dynamic programming
 
@@ -1405,49 +1406,50 @@ Teaches: how much a program speeds up with more cores, and why not linearly. Lan
 
 Teaches: which anomaly each isolation level allows. Languages: TS + SQL.
 
-- [ ] **MP-TX-1.1** Two-session test harness with controlled interleaving
+- [x] **MP-TX-1.1** Two-session test harness with controlled interleaving
 	- **Accept:** steps run in a fixed order, proven by a log of timestamps.
-- [ ] **MP-TX-1.2** Dirty read, non-repeatable read, phantom, lost update, write skew
+- [x] **MP-TX-1.2** Dirty read, non-repeatable read, phantom, lost update, write skew
 	- **Accept:** each anomaly is reproduced at the weakest level that allows it and blocked at the next.
-- [ ] **MP-TX-1.3** Result matrix
+	- Note (2026-10-07): PostgreSQL never allows a dirty read, even at `READ UNCOMMITTED`, so for that anomaly the test proves the opposite: it does not happen at any level. The other four are reproduced and blocked as stated.
+- [x] **MP-TX-1.3** Result matrix
 	- **Accept:** the README table of level against anomaly is generated by the tests.
-- [ ] **MP-TX-1.4** Definition of done for mini-projects met.
+- [x] **MP-TX-1.4** Definition of done for mini-projects met.
 
 #### MP-TX-2 Overselling at checkout
 
 Teaches: how concurrent purchases oversell stock and three ways to stop it. Languages: TS.
 
-- [ ] **MP-TX-2.1** Naive checkout (read, check, write) with ElysiaJS and PostgreSQL
+- [x] **MP-TX-2.1** Naive checkout (read, check, write) with ElysiaJS and PostgreSQL
 	- **Accept:** local k6 with 200 concurrent buyers of 10 items sells more than 10.
-- [ ] **MP-TX-2.2** Fixes: optimistic version column, `SELECT FOR UPDATE`, `SERIALIZABLE` with retry
+- [x] **MP-TX-2.2** Fixes: optimistic version column, `SELECT FOR UPDATE`, `SERIALIZABLE` with retry
 	- **Accept:** each fix sells exactly 10 under the same load.
-- [ ] **MP-TX-2.3** Throughput and error rate per fix
+- [x] **MP-TX-2.3** Throughput and error rate per fix
 	- **Accept:** table committed with requests per second and rejected requests.
-- [ ] **MP-TX-2.4** Definition of done for mini-projects met.
+- [x] **MP-TX-2.4** Definition of done for mini-projects met.
 
 #### MP-TX-3 Prisma, Drizzle and raw SQL
 
 Teaches: what an ORM costs and what SQL it generates. Languages: TS.
 
-- [ ] **MP-TX-3.1** Same schema and same five queries in the three approaches
+- [x] **MP-TX-3.1** Same schema and same five queries in the three approaches
 	- **Accept:** the three return identical rows in tests.
-- [ ] **MP-TX-3.2** Captured SQL for each query
+- [x] **MP-TX-3.2** Captured SQL for each query
 	- **Accept:** the generated SQL is committed next to each query.
-- [ ] **MP-TX-3.3** Latency benchmark and an N+1 example with its fix
+- [x] **MP-TX-3.3** Latency benchmark and an N+1 example with its fix
 	- **Accept:** table with latency per approach, and the N+1 version issues more than 100 statements where the fix issues 2.
-- [ ] **MP-TX-3.4** Definition of done for mini-projects met.
+- [x] **MP-TX-3.4** Definition of done for mini-projects met.
 
 #### MP-TX-4 Outbox and saga
 
 Teaches: how to keep two services consistent without a distributed transaction. Languages: TS.
 
-- [ ] **MP-TX-4.1** Order and payment services with a message broker
+- [x] **MP-TX-4.1** Order and payment services with a message broker
 	- **Accept:** happy path leaves both databases consistent.
-- [ ] **MP-TX-4.2** Dual-write bug, then transactional outbox
+- [x] **MP-TX-4.2** Dual-write bug, then transactional outbox
 	- **Accept:** with a crash injected between the write and the publish, the bug loses the event and the outbox does not.
-- [ ] **MP-TX-4.3** Saga with compensation
+- [x] **MP-TX-4.3** Saga with compensation
 	- **Accept:** a failed payment cancels the order, checked end to end.
-- [ ] **MP-TX-4.4** Definition of done for mini-projects met.
+- [x] **MP-TX-4.4** Definition of done for mini-projects met.
 
 #### MP-SEC-2 XSS and CSP lab
 
