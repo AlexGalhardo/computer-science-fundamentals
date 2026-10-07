@@ -28,3 +28,5 @@ Code comments are **didactic, bilingual (Portuguese and English) and written for
 ## TypeScript
 
 Strong typing: no `any` (use `unknown` and narrow), explicit return types on exported functions. Never silence an error with `@ts-ignore` or by disabling a test.
+
+Validate every external input (JSON files, HTTP bodies, environment variables) at the boundary with **Zod**, the default schema library of this repository (owner's decision, 2026-10-07). Derive the TypeScript types from the schemas with `z.infer` instead of writing them twice. Do not hand-write validators.

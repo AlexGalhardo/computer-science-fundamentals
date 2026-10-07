@@ -45,7 +45,7 @@ describe("question schema", () => {
 	test("rejects a question with 4 alternatives", () => {
 		const question = clone();
 		(question.en as { alternatives: string[] }).alternatives.pop();
-		expect(errorsOf(question).join("\n")).toContain("en.alternatives: must have exactly 5 items, found 4");
+		expect(errorsOf(question).join("\n")).toContain("en.alternatives: must have exactly 5 items");
 	});
 
 	test("rejects two correct answers", () => {

@@ -1,11 +1,13 @@
 // EN: The content model of the quiz. Every question file is plain JSON, so nothing stops a
-//     typo from reaching the app. This module is the single gate: it turns `unknown` data into
-//     typed values, or into a list of human-readable errors. No library is used on purpose,
-//     so the validation rules can be read top to bottom.
+//     typo from reaching the app. This module is the single gate: Zod schemas describe the
+//     shape once, and from them come both the runtime check and the TypeScript types, so the
+//     two can never drift apart.
 // PT: O modelo de conteúdo do quiz. Todo arquivo de questões é JSON puro, então nada impede
-//     um erro de digitação de chegar ao app. Este módulo é a única porta de entrada: transforma
-//     dados `unknown` em valores tipados, ou em uma lista de erros legíveis. Nenhuma biblioteca
-//     é usada de propósito, para que as regras possam ser lidas de cima a baixo.
+//     um erro de digitação de chegar ao app. Este módulo é a única porta de entrada: schemas
+//     Zod descrevem o formato uma vez, e deles saem tanto a verificação em tempo de execução
+//     quanto os tipos TypeScript, de modo que os dois nunca divergem.
+
+import { z } from "zod";
 
 export const LANGUAGES = ["pt", "en"] as const;
 export type Language = (typeof LANGUAGES)[number];
@@ -15,245 +17,167 @@ export type Difficulty = (typeof DIFFICULTIES)[number];
 
 export const ALTERNATIVE_COUNT = 5;
 
-export interface Example {
-	kind: "code" | "diagram";
-	/** Language used for syntax highlighting. Only meaningful when `kind` is `code`. */
-	language?: string;
-	content: string;
-}
+const NON_EMPTY = "must be a non-empty string";
+const text = z.string({ error: NON_EMPTY }).refine((value) => value.trim().length > 0, NON_EMPTY);
 
-export interface QuestionText {
-	statement: string;
-	alternatives: string[];
-	/** One explanation per alternative, in the same order. */
-	explanations: string[];
-	concept: string;
-	example?: Example;
-}
-
-export interface Question {
-	id: string;
-	area: string;
-	topic: string;
-	difficulty: Difficulty;
-	/** Index (0 to 4) of the correct alternative. */
-	answer: number;
-	source: string;
-	miniProject?: string;
-	pt: QuestionText;
-	en: QuestionText;
-}
-
-export interface LocalisedName {
-	pt: string;
-	en: string;
-}
-
-export interface CoverageTopic {
-	slug: string;
-	name: LocalisedName;
-	source: string;
-	target: number;
-}
-
-export interface Coverage {
-	area: string;
-	sources: string[];
-	topics: CoverageTopic[];
-}
-
-export interface Area {
-	code: string;
-	slug: string;
-	name: LocalisedName;
-	kind: "theory-only" | "theory-and-practice";
-	wave: number;
-	target: number;
-}
-
-export interface MiniProject {
-	code: string;
-	area: string;
-	path: string;
-	status: "planned" | "done";
-}
-
-export type Result<T> = { ok: true; value: T } | { ok: false; errors: string[] };
-
-const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isText(value: unknown): value is string {
-	return typeof value === "string" && value.trim().length > 0;
-}
-
-function checkExample(value: unknown, where: string, errors: string[]): void {
-	if (!isRecord(value)) {
-		errors.push(`${where}: must be an object`);
-		return;
-	}
-	if (value.kind !== "code" && value.kind !== "diagram") {
-		errors.push(`${where}.kind: must be "code" or "diagram"`);
-	}
-	if (!isText(value.content)) {
-		errors.push(`${where}.content: must be a non-empty string`);
-	}
-	if (value.language !== undefined && !isText(value.language)) {
-		errors.push(`${where}.language: must be a non-empty string when present`);
-	}
-}
+const SLUG = "must be a lowercase kebab-case slug";
+const slug = z.string({ error: SLUG }).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, SLUG);
 
 // EN: A list of exactly five non-empty texts. Alternatives and explanations share this rule,
 //     because explanation `i` explains alternative `i`: the two lists must line up.
 // PT: Uma lista de exatamente cinco textos não vazios. Alternativas e explicações seguem a mesma
 //     regra, porque a explicação `i` explica a alternativa `i`: as duas listas precisam casar.
-function checkFiveTexts(value: unknown, where: string, errors: string[]): value is string[] {
-	if (!Array.isArray(value)) {
-		errors.push(`${where}: must be a list of ${ALTERNATIVE_COUNT} texts`);
-		return false;
-	}
-	if (value.length !== ALTERNATIVE_COUNT) {
-		errors.push(`${where}: must have exactly ${ALTERNATIVE_COUNT} items, found ${value.length}`);
-		return false;
-	}
-	let valid = true;
-	value.forEach((item, index) => {
-		if (!isText(item)) {
-			errors.push(`${where}[${index}]: must be a non-empty string`);
-			valid = false;
-		}
-	});
-	return valid;
-}
+const FIVE = `must have exactly ${ALTERNATIVE_COUNT} items`;
+const fiveTexts = z.array(text, { error: FIVE }).length(ALTERNATIVE_COUNT, FIVE);
 
-function checkText(value: unknown, language: Language, errors: string[]): void {
-	if (!isRecord(value)) {
-		errors.push(`${language}: language block is missing`);
-		return;
-	}
-	if (!isText(value.statement)) {
-		errors.push(`${language}.statement: must be a non-empty string`);
-	}
-	if (!isText(value.concept)) {
-		errors.push(`${language}.concept: must be a non-empty string`);
-	}
-	if (checkFiveTexts(value.alternatives, `${language}.alternatives`, errors)) {
+const exampleSchema = z.object({
+	kind: z.enum(["code", "diagram"], { error: 'must be "code" or "diagram"' }),
+	/** Language used for syntax highlighting. Only meaningful when `kind` is `code`. */
+	language: text.optional(),
+	content: text,
+});
+
+const questionTextSchema = z.object(
+	{
+		statement: text,
 		// EN: Two identical alternatives would mean two correct answers (or two identical wrong
 		//     ones), and the rule of the quiz is exactly one correct alternative.
 		// PT: Duas alternativas idênticas significariam duas respostas corretas (ou duas erradas
 		//     iguais), e a regra do quiz é exatamente uma alternativa correta.
-		const unique = new Set(value.alternatives.map((item) => item.trim().toLowerCase()));
-		if (unique.size !== ALTERNATIVE_COUNT) {
-			errors.push(`${language}.alternatives: alternatives must be different from each other`);
-		}
-	}
-	checkFiveTexts(value.explanations, `${language}.explanations`, errors);
-	if (value.example !== undefined) {
-		checkExample(value.example, `${language}.example`, errors);
-	}
-}
+		alternatives: fiveTexts.refine(
+			(items) => new Set(items.map((item) => item.trim().toLowerCase())).size === items.length,
+			"alternatives must be different from each other",
+		),
+		/** One explanation per alternative, in the same order. */
+		explanations: fiveTexts,
+		concept: text,
+		example: exampleSchema.optional(),
+	},
+	{ error: "language block is missing" },
+);
 
-export function validateQuestion(value: unknown): Result<Question> {
-	const errors: string[] = [];
-	if (!isRecord(value)) {
-		return { ok: false, errors: ["question must be an object"] };
-	}
-	if (!isText(value.id) || !SLUG.test(value.id)) {
-		errors.push("id: must be a lowercase kebab-case identifier");
-	}
-	if (!isText(value.area) || !SLUG.test(value.area)) {
-		errors.push("area: must be a lowercase kebab-case slug");
-	}
-	if (!isText(value.topic) || !SLUG.test(value.topic)) {
-		errors.push("topic: must be a lowercase kebab-case slug");
-	}
-	if (!DIFFICULTIES.includes(value.difficulty as Difficulty)) {
-		errors.push(`difficulty: must be one of ${DIFFICULTIES.join(", ")}`);
-	}
-	// EN: `answer` is a single index, so "two correct answers" cannot be expressed as a number.
-	//     A list such as [1, 2] is rejected here, which is how the one-correct rule is enforced.
-	// PT: `answer` é um único índice, então "duas respostas corretas" não cabe em um número.
-	//     Uma lista como [1, 2] é rejeitada aqui, e é assim que a regra de uma correta é garantida.
-	if (
-		typeof value.answer !== "number" ||
-		!Number.isInteger(value.answer) ||
-		value.answer < 0 ||
-		value.answer >= ALTERNATIVE_COUNT
-	) {
-		errors.push(`answer: must be a single integer from 0 to ${ALTERNATIVE_COUNT - 1}`);
-	}
-	if (!isText(value.source)) {
-		errors.push("source: must name the book or lecture and the chapter");
-	}
-	if (value.miniProject !== undefined && !isText(value.miniProject)) {
-		errors.push("miniProject: must be a non-empty path when present");
-	}
-	for (const language of LANGUAGES) {
-		checkText(value[language], language, errors);
-	}
+// EN: `answer` is a single index, so "two correct answers" cannot be expressed as a number.
+//     A list such as [1, 2] is rejected here, which is how the one-correct rule is enforced.
+// PT: `answer` é um único índice, então "duas respostas corretas" não cabe em um número.
+//     Uma lista como [1, 2] é rejeitada aqui, e é assim que a regra de uma correta é garantida.
+const ANSWER = `must be a single integer from 0 to ${ALTERNATIVE_COUNT - 1}`;
+
+export const questionSchema = z
+	.object({
+		id: slug,
+		area: slug,
+		topic: slug,
+		difficulty: z.enum(DIFFICULTIES, { error: `must be one of ${DIFFICULTIES.join(", ")}` }),
+		/** Index (0 to 4) of the correct alternative. */
+		answer: z
+			.number({ error: ANSWER })
+			.int(ANSWER)
+			.min(0, ANSWER)
+			.max(ALTERNATIVE_COUNT - 1, ANSWER),
+		source: text,
+		miniProject: text.optional(),
+		pt: questionTextSchema,
+		en: questionTextSchema,
+	})
 	// EN: Both languages must say the same thing in the same shape: an example in one language
 	//     only would make the two versions of the question different.
 	// PT: Os dois idiomas precisam dizer a mesma coisa no mesmo formato: um exemplo em apenas um
 	//     idioma tornaria as duas versões da questão diferentes.
-	const pt = value.pt;
-	const en = value.en;
-	if (isRecord(pt) && isRecord(en) && (pt.example === undefined) !== (en.example === undefined)) {
-		errors.push("example: must be present in both languages or in neither");
-	}
-	if (errors.length > 0) {
-		return { ok: false, errors };
-	}
-	return { ok: true, value: value as unknown as Question };
+	.refine((question) => (question.pt.example === undefined) === (question.en.example === undefined), {
+		path: ["example"],
+		message: "must be present in both languages or in neither",
+	});
+
+const localisedNameSchema = z.object({ pt: text, en: text });
+
+const coverageTopicSchema = z.object({
+	slug,
+	name: localisedNameSchema,
+	source: text,
+	target: z.number({ error: "must be a positive integer" }).int("must be a positive integer").min(1, {
+		error: "must be a positive integer",
+	}),
+});
+
+export const coverageSchema = z.object({
+	area: slug,
+	sources: z.array(text).min(1, "must be a non-empty list of texts"),
+	topics: z
+		.array(coverageTopicSchema)
+		.min(1, "must be a non-empty list")
+		.superRefine((topics, context) => {
+			const seen = new Set<string>();
+			topics.forEach((topic, index) => {
+				if (seen.has(topic.slug)) {
+					context.addIssue({
+						code: "custom",
+						path: [index, "slug"],
+						message: `duplicate topic "${topic.slug}"`,
+					});
+				}
+				seen.add(topic.slug);
+			});
+		}),
+});
+
+export const areaSchema = z.object({
+	code: text,
+	slug,
+	name: localisedNameSchema,
+	kind: z.enum(["theory-only", "theory-and-practice"]),
+	wave: z.number().int().min(1),
+	target: z.number().int().min(1),
+});
+
+export const miniProjectSchema = z.object({
+	code: text,
+	area: slug,
+	path: text,
+	status: z.enum(["planned", "done"]),
+});
+
+export type Example = z.infer<typeof exampleSchema>;
+export type QuestionText = z.infer<typeof questionTextSchema>;
+export type Question = z.infer<typeof questionSchema>;
+export type LocalisedName = z.infer<typeof localisedNameSchema>;
+export type CoverageTopic = z.infer<typeof coverageTopicSchema>;
+export type Coverage = z.infer<typeof coverageSchema>;
+export type Area = z.infer<typeof areaSchema>;
+export type MiniProject = z.infer<typeof miniProjectSchema>;
+
+export type Result<T> = { ok: true; value: T } | { ok: false; errors: string[] };
+
+// EN: Zod reports where an error is as a path such as ["pt", "explanations", 3]. Writing it as
+//     `pt.explanations[3]` lets an author find the broken field in the JSON file at a glance.
+// PT: O Zod informa onde está o erro como um caminho, por exemplo ["pt", "explanations", 3].
+//     Escrevê-lo como `pt.explanations[3]` deixa o autor achar o campo quebrado no JSON de relance.
+function formatIssue(issue: z.core.$ZodIssue): string {
+	const where = issue.path
+		.map((part, index) => (typeof part === "number" ? `[${part}]` : `${index === 0 ? "" : "."}${String(part)}`))
+		.join("");
+	return where === "" ? issue.message : `${where}: ${issue.message}`;
 }
 
-function checkName(value: unknown, where: string, errors: string[]): void {
-	if (!isRecord(value) || !isText(value.pt) || !isText(value.en)) {
-		errors.push(`${where}: must have non-empty "pt" and "en" texts`);
+function parse<T>(schema: z.ZodType<T>, value: unknown): Result<T> {
+	const result = schema.safeParse(value);
+	if (result.success) {
+		return { ok: true, value: result.data };
 	}
+	return { ok: false, errors: result.error.issues.map(formatIssue) };
+}
+
+export function validateQuestion(value: unknown): Result<Question> {
+	return parse(questionSchema, value);
 }
 
 export function validateCoverage(value: unknown): Result<Coverage> {
-	const errors: string[] = [];
-	if (!isRecord(value)) {
-		return { ok: false, errors: ["coverage must be an object"] };
-	}
-	if (!isText(value.area) || !SLUG.test(value.area)) {
-		errors.push("area: must be a lowercase kebab-case slug");
-	}
-	if (!Array.isArray(value.sources) || value.sources.length === 0 || !value.sources.every(isText)) {
-		errors.push("sources: must be a non-empty list of texts");
-	}
-	if (!Array.isArray(value.topics) || value.topics.length === 0) {
-		errors.push("topics: must be a non-empty list");
-	} else {
-		const seen = new Set<string>();
-		value.topics.forEach((topic: unknown, index: number) => {
-			const where = `topics[${index}]`;
-			if (!isRecord(topic)) {
-				errors.push(`${where}: must be an object`);
-				return;
-			}
-			if (!isText(topic.slug) || !SLUG.test(topic.slug)) {
-				errors.push(`${where}.slug: must be a lowercase kebab-case slug`);
-			} else if (seen.has(topic.slug)) {
-				errors.push(`${where}.slug: duplicate topic "${topic.slug}"`);
-			} else {
-				seen.add(topic.slug);
-			}
-			checkName(topic.name, `${where}.name`, errors);
-			if (!isText(topic.source)) {
-				errors.push(`${where}.source: must name the chapter or lecture`);
-			}
-			if (typeof topic.target !== "number" || !Number.isInteger(topic.target) || topic.target < 1) {
-				errors.push(`${where}.target: must be a positive integer`);
-			}
-		});
-	}
-	if (errors.length > 0) {
-		return { ok: false, errors };
-	}
-	return { ok: true, value: value as unknown as Coverage };
+	return parse(coverageSchema, value);
+}
+
+export function validateAreas(value: unknown): Result<Area[]> {
+	return parse(z.array(areaSchema), value);
+}
+
+export function validateMiniProjects(value: unknown): Result<MiniProject[]> {
+	return parse(z.array(miniProjectSchema), value);
 }

@@ -14,7 +14,10 @@ import {
 	type Difficulty,
 	type MiniProject,
 	type Question,
+	type Result,
+	validateAreas,
 	validateCoverage,
+	validateMiniProjects,
 	validateQuestion,
 } from "./schema";
 
@@ -59,12 +62,22 @@ function readJson(path: string, errors: string[]): unknown {
 	}
 }
 
+// EN: The two catalogs are JSON too, so they pass through the same gate as the questions.
+// PT: Os dois catálogos também são JSON, então passam pela mesma porta que as questões.
+function loadCatalog<T>(path: string, validate: (value: unknown) => Result<T>): T {
+	const parsed = validate(JSON.parse(readFileSync(path, "utf8")));
+	if (!parsed.ok) {
+		throw new Error(`${path}: ${parsed.errors.join("; ")}`);
+	}
+	return parsed.value;
+}
+
 export function loadAreas(contentDir: string): Area[] {
-	return JSON.parse(readFileSync(join(contentDir, "areas.json"), "utf8")) as Area[];
+	return loadCatalog(join(contentDir, "areas.json"), validateAreas);
 }
 
 export function loadMiniProjects(contentDir: string): MiniProject[] {
-	return JSON.parse(readFileSync(join(contentDir, "mini-projects.json"), "utf8")) as MiniProject[];
+	return loadCatalog(join(contentDir, "mini-projects.json"), validateMiniProjects);
 }
 
 export function checkContent(options: CheckOptions): CheckResult {
