@@ -8,6 +8,12 @@
 set -eu
 
 cd "$(dirname "$0")"
+
+# EN: Containers that write into this folder run as the current user (see docker-compose.yml).
+# PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
+export HOST_UID HOST_GID
 ROUNDS="${1:-3}"
 
 trap 'docker compose down -v --remove-orphans' EXIT

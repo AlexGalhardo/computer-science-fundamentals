@@ -9,6 +9,12 @@ set -eu
 
 cd "$(dirname "$0")"
 
+# EN: Containers that write into this folder run as the current user (see docker-compose.yml).
+# PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
+export HOST_UID HOST_GID
+
 if ! command -v docker >/dev/null 2>&1; then
 	echo "Docker is required: https://docs.docker.com/get-docker/" >&2
 	exit 1

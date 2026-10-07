@@ -36,3 +36,7 @@ Bun, Node.js/npm, Next.js, ElysiaJS, Prisma, Drizzle, PostgreSQL, SQLite, MongoD
 - Playwright: the package and the Docker image must have the same version. Check that the image tag exists before pinning.
 - Unique docker-compose project name, no fixed host port unless the demo needs one (then bound to `127.0.0.1`), and `docker compose down -v` at the end of a test run.
 - When an acceptance criterion cannot be met as written (a limit of the tool, of the machine or of the technology), say so in the README and in the report. The main session records the note next to the criterion in `PLAN.md`. Never tick silently.
+- **Containers that write into the mounted project folder run as the host user**: `user: "${HOST_UID:-1000}:${HOST_GID:-1000}"` in docker-compose, with `HOST_UID="$(id -u)"` and `HOST_GID="$(id -g)"` exported by the Unix setup script. On Linux the mount belongs to the host user, and an image user with another uid gets `EACCES`. Docker Desktop hides this, CI does not.
+- **Health checks must test what the client uses.** PostgreSQL: `pg_isready -h 127.0.0.1 -U <user> -d <db>`, over TCP, because during initialisation the server answers on the Unix socket only and then restarts. RabbitMQ: `nc -z 127.0.0.1 5672`, not `rabbitmq-diagnostics`, which runs as root and can create the Erlang cookie before the broker does, making the broker exit.
+- A mini-project is verified on Linux by CI, not only on the Windows machine where it was written.
+

@@ -13,7 +13,7 @@ x-postgres: &postgres
     POSTGRES_PASSWORD: lab-fake-password
     POSTGRES_DB: lab
   healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U lab -d lab"]
+    test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U lab -d lab"]
     interval: 1s
     timeout: 3s
     retries: 30
@@ -57,7 +57,13 @@ services:
       RABBITMQ_DEFAULT_USER: lab
       RABBITMQ_DEFAULT_PASS: lab-fake-password
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      # EN: A plain TCP check. `rabbitmq-diagnostics` would run as root and, when it wins the race
+      #     with a slow start, create the Erlang cookie file as root: the broker, which runs as
+      #     the `rabbitmq` user, then cannot read it and exits.
+      # PT: Uma checagem TCP simples. O `rabbitmq-diagnostics` rodaria como root e, quando ganha
+      #     a corrida contra uma inicialização lenta, cria o arquivo de cookie do Erlang como
+      #     root: o broker, que roda como o usuário `rabbitmq`, não consegue lê-lo e encerra.
+      test: ["CMD", "nc", "-z", "127.0.0.1", "5672"]
       interval: 3s
       timeout: 10s
       retries: 40
@@ -106,6 +112,13 @@ services:
     command: ["bun", "run", "demo"]
     depends_on: *client-depends
     environment: *client-env
+    # EN: Run as the host user. On Linux the mounted project folder belongs to that user, and the
+    #     image's own user (uid 1000) could not write results into it. The setup script exports
+    #     HOST_UID and HOST_GID; on Docker Desktop the default works.
+    # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
+    #     imagem (uid 1000) não conseguiria gravar os resultados. O script de setup exporta
+    #     HOST_UID e HOST_GID; no Docker Desktop o padrão funciona.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       - .:/project
 
