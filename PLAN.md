@@ -268,6 +268,13 @@ Requested by the owner on 2026-10-07: a web dashboard, separate from the quiz, f
 - [ ] **BD-1.5** Memory: an allocation-heavy workload (binary trees) and an idle process
 	- **Accept:** table of peak memory, time and start-up time per language, with garbage-collected and manually managed languages side by side.
 
+- [ ] **BD-1.6** Build time: cold and incremental build of the same small program per language (owner's request, 2026-10-07)
+	- **Accept:** table of cold and warm build time per language, and the README says what is measured for the languages with no compile step.
+- [ ] **BD-1.7** Binary size: size on disk of what is shipped, with and without the runtime it needs
+	- **Accept:** table of artifact size and artifact-plus-runtime size per language, with the build flags recorded.
+- [ ] **BD-1.8** Database access: insert, read by key, filtered aggregate and pooled concurrent reads against one local PostgreSQL
+	- **Accept:** table of operations per second, latency percentiles, CPU and memory per language, with the driver and its version named.
+
 ### BD-2 Dashboard
 
 - [ ] **BD-2.1** Static site (HTML + Tailwind CSS v4, built CSS committed, no CDN) reading the committed results
