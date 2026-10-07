@@ -1,0 +1,383 @@
+[
+	{
+		"id": "parallelism-parallel-sorting-reductions-01",
+		"area": "parallelism",
+		"topic": "parallel-sorting-reductions",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Aho, Lam, Sethi and Ullman, Compilers, 2nd ed., chapter 11 (optimizing for parallelism and locality)",
+		"miniProject": "projects/parallelism/scaling-by-cores",
+		"pt": {
+			"statement": "O que é uma redução paralela?",
+			"alternatives": [
+				"Aplicar uma função a cada elemento, gerando uma saída do mesmo tamanho da entrada",
+				"Combinar muitos valores em um só, unindo os parciais de cada trabalhador",
+				"Diminuir o número de threads em uso à medida que a entrada restante fica menor",
+				"Manter apenas os elementos que satisfazem um predicado, descartando os demais",
+				"Calcular todos os totais acumulados da entrada, com uma saída para cada posição"
+			],
+			"explanations": [
+				"Errado: isso é um map. Ele transforma cada elemento de forma independente e não junta nada em um único valor.",
+				"Certo: a redução usa um operador binário para chegar a um único resultado. Em paralelo, cada trabalhador produz um resultado parcial do seu pedaço, e os parciais são combinados com o mesmo operador.",
+				"Errado: lê a palavra redução ao pé da letra. O que se reduz são os dados a um valor, não a quantidade de threads.",
+				"Errado: isso é um filter. A saída continua sendo uma coleção, e não um valor único.",
+				"Errado: isso é um scan (soma de prefixos), que devolve n resultados. A redução devolve apenas o último deles."
+			],
+			"concept": "Reduzir é combinar uma coleção em um único valor com um operador binário, como somar, contar ou tirar o máximo. Na versão paralela, a entrada é dividida em pedaços, cada trabalhador reduz o seu em uma variável local, e os resultados parciais são combinados no fim. Como cada trabalhador só escreve no próprio parcial, não há disputa durante o cálculo.",
+			"example": {
+				"kind": "code",
+				"language": "rust",
+				"content": "let handles: Vec<_> = chunks\n    .into_iter()\n    .map(|c| thread::spawn(move || count_primes(c)))\n    .collect();\n\nlet total: u64 = handles.into_iter().map(|h| h.join().unwrap()).sum();"
+			}
+		},
+		"en": {
+			"statement": "What is a parallel reduction?",
+			"alternatives": [
+				"Applying a function to each element, producing an output of the same size as the input",
+				"Combining many values into one, merging the partial result of each worker",
+				"Lowering the number of threads in use as the remaining input gets smaller",
+				"Keeping only the elements that satisfy a predicate and discarding the others",
+				"Computing every running total of the input, with one output for each position"
+			],
+			"explanations": [
+				"Wrong: that is a map. It transforms each element independently and merges nothing into a single value.",
+				"Right: a reduction uses a binary operator to reach a single result. In parallel, each worker produces a partial result for its chunk, and the partials are combined with the same operator.",
+				"Wrong: this reads the word reduction literally. What is reduced is the data to one value, not the number of threads.",
+				"Wrong: that is a filter. The output is still a collection, not a single value.",
+				"Wrong: that is a scan (prefix sum), which returns n results. A reduction returns only the last of them."
+			],
+			"concept": "Reducing means combining a collection into a single value with a binary operator, such as adding, counting or taking the maximum. In the parallel version, the input is split into chunks, each worker reduces its own into a local variable, and the partial results are combined at the end. Since each worker writes only to its own partial, there is no contention during the computation.",
+			"example": {
+				"kind": "code",
+				"language": "rust",
+				"content": "let handles: Vec<_> = chunks\n    .into_iter()\n    .map(|c| thread::spawn(move || count_primes(c)))\n    .collect();\n\nlet total: u64 = handles.into_iter().map(|h| h.join().unwrap()).sum();"
+			}
+		}
+	},
+	{
+		"id": "parallelism-parallel-sorting-reductions-02",
+		"area": "parallelism",
+		"topic": "parallel-sorting-reductions",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Aho, Lam, Sethi and Ullman, Compilers, 2nd ed., chapter 11 (optimizing for parallelism and locality)",
+		"miniProject": "projects/parallelism/scaling-by-cores",
+		"pt": {
+			"statement": "Em uma redução paralela, cada trabalhador reduz um pedaço contíguo da entrada e os resultados parciais são combinados na ordem dos pedaços. Qual propriedade do operador garante o mesmo resultado da redução sequencial da esquerda para a direita?",
+			"alternatives": [
+				"Comutatividade: a op b = b op a",
+				"Idempotência: a op a = a",
+				"Distributividade: a op (b + c) = (a op b) + (a op c)",
+				"Associatividade: (a op b) op c = a op (b op c)",
+				"Existência de inverso: a op inv(a) = neutro"
+			],
+			"explanations": [
+				"Errado: trocar operandos de lugar não é o que acontece aqui, pois a ordem é mantida. A comutatividade só passa a ser necessária, além da associatividade, quando os parciais são combinados em ordem arbitrária.",
+				"Errado: idempotência trata de repetir o mesmo valor. A soma não é idempotente e é o exemplo clássico de redução paralela correta.",
+				"Errado: distributividade relaciona dois operadores diferentes. A redução usa um só operador.",
+				"Certo: dividir em pedaços só muda onde ficam os parênteses, por exemplo (a op b) op (c op d) em vez de ((a op b) op c) op d. A associatividade garante que os dois dão o mesmo valor.",
+				"Errado: ter inverso permite desfazer uma operação, o que a redução nunca faz. O máximo não tem inverso e pode ser reduzido em paralelo."
+			],
+			"concept": "Reduzir em pedaços equivale a reagrupar a expressão sem mudar a ordem dos operandos. Por isso a associatividade basta quando os parciais são combinados na ordem dos pedaços. Se a combinação acontece em ordem qualquer, por exemplo na ordem em que as threads terminam, o operador também precisa ser comutativo. Soma e contagem de inteiros têm as duas propriedades."
+		},
+		"en": {
+			"statement": "In a parallel reduction, each worker reduces a contiguous chunk of the input and the partial results are combined in chunk order. Which property of the operator guarantees the same result as the sequential left-to-right reduction?",
+			"alternatives": [
+				"Commutativity: a op b = b op a",
+				"Idempotence: a op a = a",
+				"Distributivity: a op (b + c) = (a op b) + (a op c)",
+				"Associativity: (a op b) op c = a op (b op c)",
+				"Existence of an inverse: a op inv(a) = identity"
+			],
+			"explanations": [
+				"Wrong: swapping operands is not what happens here, since the order is kept. Commutativity becomes necessary, in addition to associativity, only when the partials are combined in arbitrary order.",
+				"Wrong: idempotence is about repeating the same value. Addition is not idempotent and is the classic example of a correct parallel reduction.",
+				"Wrong: distributivity relates two different operators. A reduction uses a single one.",
+				"Right: splitting into chunks only moves the parentheses, for example (a op b) op (c op d) instead of ((a op b) op c) op d. Associativity guarantees that both give the same value.",
+				"Wrong: having an inverse allows an operation to be undone, which a reduction never does. Maximum has no inverse and can be reduced in parallel."
+			],
+			"concept": "Reducing in chunks amounts to regrouping the expression without changing the order of the operands. That is why associativity is enough when the partials are combined in chunk order. If the combination happens in any order, for example the order in which the threads finish, the operator must also be commutative. Integer addition and counting have both properties."
+		}
+	},
+	{
+		"id": "parallelism-parallel-sorting-reductions-03",
+		"area": "parallelism",
+		"topic": "parallel-sorting-reductions",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "Aho, Lam, Sethi and Ullman, Compilers, 2nd ed., chapter 11 (optimizing for parallelism and locality)",
+		"pt": {
+			"statement": "Por que o merge sort é considerado naturalmente paralelizável?",
+			"alternatives": [
+				"Porque a intercalação de duas metades ordenadas não precisa de comparações",
+				"Porque ele ordena no próprio vetor, sem usar memória auxiliar",
+				"Porque o seu custo O(n log n) é o menor entre os algoritmos de ordenação",
+				"Porque cada elemento é comparado com um pivô fixo, conhecido de antemão",
+				"Porque as duas metades são subproblemas independentes, sem dados em comum"
+			],
+			"explanations": [
+				"Errado: a intercalação compara os elementos da frente das duas metades a cada passo. Ela é justamente a parte mais difícil de paralelizar.",
+				"Errado: o merge sort clássico usa um vetor auxiliar de tamanho n. E economia de memória não é o que torna um algoritmo paralelizável.",
+				"Errado: confunde eficiência sequencial com paralelismo. Heap sort também é O(n log n) e é difícil de paralelizar.",
+				"Errado: comparar com um pivô é o particionamento do quicksort. O merge sort divide pela posição, sem pivô.",
+				"Certo: ordenar a metade esquerda não lê nem escreve nada da metade direita, então as duas chamadas recursivas podem rodar ao mesmo tempo."
+			],
+			"concept": "Algoritmos de divisão e conquista se paralelizam bem quando os subproblemas não compartilham dados. No merge sort, o vetor é cortado ao meio pela posição, e cada metade é ordenada sem tocar na outra, de modo que as duas chamadas recursivas podem ser tarefas paralelas. A dependência só aparece na intercalação, que precisa das duas metades prontas."
+		},
+		"en": {
+			"statement": "Why is merge sort considered naturally parallelisable?",
+			"alternatives": [
+				"Because merging two sorted halves needs no comparisons",
+				"Because it sorts inside the array itself, with no auxiliary memory",
+				"Because its O(n log n) cost is the lowest among sorting algorithms",
+				"Because each element is compared with a fixed pivot, known in advance",
+				"Because the two halves are independent subproblems, sharing no data"
+			],
+			"explanations": [
+				"Wrong: the merge compares the front elements of the two halves at every step. It is precisely the hardest part to parallelise.",
+				"Wrong: classic merge sort uses an auxiliary array of size n. And saving memory is not what makes an algorithm parallelisable.",
+				"Wrong: this confuses sequential efficiency with parallelism. Heap sort is also O(n log n) and is hard to parallelise.",
+				"Wrong: comparing with a pivot is the partition step of quicksort. Merge sort splits by position, with no pivot.",
+				"Right: sorting the left half neither reads nor writes anything in the right half, so the two recursive calls can run at the same time."
+			],
+			"concept": "Divide-and-conquer algorithms parallelise well when the subproblems share no data. In merge sort, the array is cut in the middle by position, and each half is sorted without touching the other, so the two recursive calls can be parallel tasks. The dependency appears only in the merge, which needs both halves finished."
+		}
+	},
+	{
+		"id": "parallelism-parallel-sorting-reductions-04",
+		"area": "parallelism",
+		"topic": "parallel-sorting-reductions",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Aho, Lam, Sethi and Ullman, Compilers, 2nd ed., chapter 11 (optimizing for parallelism and locality)",
+		"pt": {
+			"statement": "Uma redução em árvore combina 1000 valores com um operador associativo. Em cada passo, cada processador combina dois valores em um, e há processadores ilimitados. Quantos passos são necessários, no mínimo?",
+			"alternatives": [
+				"10",
+				"9",
+				"999",
+				"500",
+				"1000"
+			],
+			"explanations": [
+				"Certo: cada passo reduz os valores à metade, arredondando para cima: 1000, 500, 250, 125, 63, 32, 16, 8, 4, 2, 1, que são 10 passos. Conferindo pela fórmula: 2^9 = 512 < 1000 <= 1024 = 2^10, logo ceil(log2 1000) = 10.",
+				"Errado: 9 é log2 1000 arredondado para baixo. Com 9 passos só se combinam até 2^9 = 512 valores.",
+				"Errado: 999 é o número total de operações (o trabalho), que é n - 1. A pergunta é sobre passos, e muitas operações acontecem no mesmo passo.",
+				"Errado: 500 é o número de operações feitas apenas no primeiro passo, não o número de passos.",
+				"Errado: 1000 é um passo por elemento, como em um laço sequencial. A árvore usa o paralelismo para fazer vários pares de uma vez."
+			],
+			"concept": "Em uma redução em árvore, cada nível combina os valores aos pares, e a quantidade de valores cai pela metade a cada passo. A profundidade é ceil(log2 n), enquanto o total de operações continua sendo n - 1, igual ao da versão sequencial. Para n = 1000: 10 passos e 999 operações."
+		},
+		"en": {
+			"statement": "A tree reduction combines 1000 values with an associative operator. In each step, each processor combines two values into one, and there are unlimited processors. How many steps are needed, at least?",
+			"alternatives": [
+				"10",
+				"9",
+				"999",
+				"500",
+				"1000"
+			],
+			"explanations": [
+				"Right: each step halves the values, rounding up: 1000, 500, 250, 125, 63, 32, 16, 8, 4, 2, 1, which is 10 steps. Checking with the formula: 2^9 = 512 < 1000 <= 1024 = 2^10, so ceil(log2 1000) = 10.",
+				"Wrong: 9 is log2 1000 rounded down. Nine steps can combine at most 2^9 = 512 values.",
+				"Wrong: 999 is the total number of operations (the work), which is n - 1. The question is about steps, and many operations happen in the same step.",
+				"Wrong: 500 is the number of operations done in the first step only, not the number of steps.",
+				"Wrong: 1000 is one step per element, as in a sequential loop. The tree uses parallelism to do many pairs at once."
+			],
+			"concept": "In a tree reduction, each level combines the values in pairs, and the number of values halves at every step. The depth is ceil(log2 n), while the total number of operations is still n - 1, the same as in the sequential version. For n = 1000: 10 steps and 999 operations."
+		}
+	},
+	{
+		"id": "parallelism-parallel-sorting-reductions-05",
+		"area": "parallelism",
+		"topic": "parallel-sorting-reductions",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Aho, Lam, Sethi and Ullman, Compilers, 2nd ed., chapter 11 (optimizing for parallelism and locality)",
+		"pt": {
+			"statement": "Um merge sort paralelo ordena as duas metades em paralelo, mas faz cada intercalação (merge) de forma sequencial. Chamando de span o tempo com processadores ilimitados, qual é a consequência para um vetor de n elementos?",
+			"alternatives": [
+				"O span é Θ(log n), igual à profundidade da recursão",
+				"O speed-up é linear, pois as duas metades são independentes",
+				"O span é Θ(n), e o speed-up não passa de O(log n)",
+				"O span é Θ(n log n), e não existe speed-up algum",
+				"O trabalho sobe para Θ(n²), pois os merges se repetem"
+			],
+			"explanations": [
+				"Errado: conta só os níveis da recursão e esquece o custo dentro de cada nível. A última intercalação sozinha percorre os n elementos em um só processador.",
+				"Errado: ignora a parte serial. As metades são independentes, mas juntá-las é sequencial, e isso limita o ganho por mais processadores que existam.",
+				"Certo: o span obedece a T(n) = T(n/2) + Θ(n) = n + n/2 + n/4 + ... < 2n. Com trabalho Θ(n log n), o speed-up máximo é trabalho/span = Θ(log n).",
+				"Errado: confunde span com trabalho. Θ(n log n) é a soma de todas as operações. No caminho crítico entra apenas uma intercalação por nível.",
+				"Errado: paralelizar as chamadas recursivas não cria operações novas. O trabalho continua Θ(n log n), o mesmo da versão sequencial."
+			],
+			"concept": "O speed-up máximo de um algoritmo paralelo é a razão entre o trabalho (total de operações) e o span (caminho crítico). No merge sort com intercalação sequencial, o caminho crítico inclui uma intercalação por nível: n + n/2 + n/4 + ..., que é menor que 2n. Para n = 1024, o trabalho é cerca de 1024 × 10 = 10 240 e o span cerca de 2047, razão próxima de 5, da ordem de log2 n = 10. Para ir além é preciso paralelizar a própria intercalação."
+		},
+		"en": {
+			"statement": "A parallel merge sort sorts the two halves in parallel, but performs each merge sequentially. Calling span the time with unlimited processors, what is the consequence for an array of n elements?",
+			"alternatives": [
+				"The span is Θ(log n), equal to the depth of the recursion",
+				"The speed-up is linear, because the two halves are independent",
+				"The span is Θ(n), and the speed-up cannot exceed O(log n)",
+				"The span is Θ(n log n), and there is no speed-up at all",
+				"The work rises to Θ(n²), because the merges are repeated"
+			],
+			"explanations": [
+				"Wrong: this counts only the levels of the recursion and forgets the cost inside each level. The last merge alone walks through the n elements on a single processor.",
+				"Wrong: this ignores the serial part. The halves are independent, but joining them is sequential, and that limits the gain no matter how many processors exist.",
+				"Right: the span follows T(n) = T(n/2) + Θ(n) = n + n/2 + n/4 + ... < 2n. With work Θ(n log n), the maximum speed-up is work/span = Θ(log n).",
+				"Wrong: this confuses span with work. Θ(n log n) is the sum of all operations. Only one merge per level is on the critical path.",
+				"Wrong: running the recursive calls in parallel creates no new operations. The work stays Θ(n log n), the same as the sequential version."
+			],
+			"concept": "The maximum speed-up of a parallel algorithm is the ratio between the work (total operations) and the span (critical path). In merge sort with a sequential merge, the critical path includes one merge per level: n + n/2 + n/4 + ..., which is less than 2n. For n = 1024, the work is about 1024 × 10 = 10 240 and the span about 2047, a ratio close to 5, of the order of log2 n = 10. Going further requires parallelising the merge itself."
+		}
+	},
+	{
+		"id": "parallelism-parallel-sorting-reductions-06",
+		"area": "parallelism",
+		"topic": "parallel-sorting-reductions",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Aho, Lam, Sethi and Ullman, Compilers, 2nd ed., chapter 11 (optimizing for parallelism and locality)",
+		"miniProject": "projects/parallelism/scaling-by-cores",
+		"pt": {
+			"statement": "Os valores [8, 4, 2, 1] são reduzidos em dois pedaços, [8, 4] e [2, 1], e os dois resultados parciais são combinados com o mesmo operador, na ordem dos pedaços. Com qual operador o resultado é DIFERENTE da redução sequencial da esquerda para a direita?",
+			"alternatives": [
+				"Soma (+)",
+				"Máximo (max)",
+				"Mínimo (min)",
+				"Ou exclusivo bit a bit (xor)",
+				"Subtração (-)"
+			],
+			"explanations": [
+				"Errado: a soma é associativa. Sequencial: ((8 + 4) + 2) + 1 = 15. Em pedaços: (8 + 4) + (2 + 1) = 12 + 3 = 15.",
+				"Errado: o máximo é associativo. Sequencial: 8. Em pedaços: max(max(8, 4), max(2, 1)) = max(8, 2) = 8.",
+				"Errado: o mínimo é associativo. Sequencial: 1. Em pedaços: min(min(8, 4), min(2, 1)) = min(4, 1) = 1.",
+				"Errado: o xor é associativo. Sequencial: ((8 xor 4) xor 2) xor 1 = 15. Em pedaços: (8 xor 4) xor (2 xor 1) = 12 xor 3 = 15.",
+				"Certo: a subtração não é associativa. Sequencial: ((8 - 4) - 2) - 1 = 1. Em pedaços: (8 - 4) - (2 - 1) = 4 - 1 = 3. Reagrupar mudou o resultado."
+			],
+			"concept": "Uma redução em pedaços calcula (a op b) op (c op d) no lugar de ((a op b) op c) op d. Os dois valores só coincidem para qualquer entrada se o operador for associativo. Soma, máximo, mínimo e xor de inteiros são associativos; a subtração não é, pois (8 - 4) - (2 - 1) = 3, enquanto ((8 - 4) - 2) - 1 = 1. Antes de paralelizar uma redução, verifique o operador.",
+			"example": {
+				"kind": "diagram",
+				"content": "sequencial:  ((8 - 4) - 2) - 1  =  (4 - 2) - 1  =  2 - 1  =  1\n\nem pedaços:  [8, 4] -> 8 - 4 = 4\n             [2, 1] -> 2 - 1 = 1\n             combinar: 4 - 1 = 3     (diferente de 1)"
+			}
+		},
+		"en": {
+			"statement": "The values [8, 4, 2, 1] are reduced in two chunks, [8, 4] and [2, 1], and the two partial results are combined with the same operator, in chunk order. With which operator is the result DIFFERENT from the sequential left-to-right reduction?",
+			"alternatives": [
+				"Addition (+)",
+				"Maximum (max)",
+				"Minimum (min)",
+				"Bitwise exclusive or (xor)",
+				"Subtraction (-)"
+			],
+			"explanations": [
+				"Wrong: addition is associative. Sequential: ((8 + 4) + 2) + 1 = 15. In chunks: (8 + 4) + (2 + 1) = 12 + 3 = 15.",
+				"Wrong: maximum is associative. Sequential: 8. In chunks: max(max(8, 4), max(2, 1)) = max(8, 2) = 8.",
+				"Wrong: minimum is associative. Sequential: 1. In chunks: min(min(8, 4), min(2, 1)) = min(4, 1) = 1.",
+				"Wrong: xor is associative. Sequential: ((8 xor 4) xor 2) xor 1 = 15. In chunks: (8 xor 4) xor (2 xor 1) = 12 xor 3 = 15.",
+				"Right: subtraction is not associative. Sequential: ((8 - 4) - 2) - 1 = 1. In chunks: (8 - 4) - (2 - 1) = 4 - 1 = 3. Regrouping changed the result."
+			],
+			"concept": "A chunked reduction computes (a op b) op (c op d) in place of ((a op b) op c) op d. The two values agree for every input only if the operator is associative. Integer addition, maximum, minimum and xor are associative; subtraction is not, since (8 - 4) - (2 - 1) = 3, while ((8 - 4) - 2) - 1 = 1. Check the operator before parallelising a reduction.",
+			"example": {
+				"kind": "diagram",
+				"content": "sequential:  ((8 - 4) - 2) - 1  =  (4 - 2) - 1  =  2 - 1  =  1\n\nin chunks:   [8, 4] -> 8 - 4 = 4\n             [2, 1] -> 2 - 1 = 1\n             combine:  4 - 1 = 3     (different from 1)"
+			}
+		}
+	},
+	{
+		"id": "parallelism-parallel-sorting-reductions-07",
+		"area": "parallelism",
+		"topic": "parallel-sorting-reductions",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "Aho, Lam, Sethi and Ullman, Compilers, 2nd ed., chapter 11 (optimizing for parallelism and locality)",
+		"pt": {
+			"statement": "Em um sample sort paralelo com p trabalhadores, p - 1 divisores (splitters) repartem a entrada em p baldes, um por trabalhador. Divisores ruins deixam um balde enorme e os demais trabalhadores ociosos. Como o sample sort escolhe os divisores para equilibrar os baldes?",
+			"alternatives": [
+				"Divide o intervalo entre o menor e o maior valor em p faixas de mesma largura",
+				"Ordena uma amostra aleatória e toma p - 1 elementos igualmente espaçados dela",
+				"Usa a mediana entre o primeiro, o do meio e o último elemento da entrada",
+				"Distribui os elementos em rodízio, de modo que cada balde receba n/p elementos",
+				"Toma os p - 1 primeiros elementos da entrada, que são obtidos em tempo constante"
+			],
+			"explanations": [
+				"Errado: faixas de mesma largura só equilibram dados uniformes. Se os valores se concentram em uma região, quase tudo cai no mesmo balde.",
+				"Certo: a amostra imita a distribuição real dos dados, então seus quantis ficam perto dos quantis da entrada, e cada balde recebe cerca de n/p elementos, qualquer que seja a distribuição.",
+				"Errado: a mediana de três fornece um único pivô, e são necessários p - 1. Além disso, três elementos dizem muito pouco sobre a distribuição.",
+				"Errado: o rodízio iguala os tamanhos mas destrói a propriedade essencial: todo elemento de um balde precisa ser menor que os do balde seguinte.",
+				"Errado: é barato, mas em uma entrada quase ordenada os primeiros elementos são os menores, e o último balde recebe quase tudo."
+			],
+			"concept": "Em quicksort paralelo e sample sort, o equilíbrio das partições decide o speed-up: o tempo paralelo é o do maior balde, então um balde com quase todos os elementos anula o ganho. O sample sort resolve isso por amostragem: sorteia uma amostra, ordena-a e usa seus quantis como divisores. Depois cada trabalhador ordena o seu balde, e a concatenação dos baldes já está ordenada."
+		},
+		"en": {
+			"statement": "In a parallel sample sort with p workers, p - 1 splitters divide the input into p buckets, one per worker. Bad splitters leave one huge bucket and the other workers idle. How does sample sort choose the splitters so that the buckets are balanced?",
+			"alternatives": [
+				"It divides the range between the smallest and the largest value into p bands of equal width",
+				"It sorts a random sample of the input and takes p - 1 equally spaced elements of it",
+				"It uses the median of the first, the middle and the last element of the input",
+				"It deals the elements out round-robin, so that each bucket receives n/p elements",
+				"It takes the first p - 1 elements of the input, which are obtained in constant time"
+			],
+			"explanations": [
+				"Wrong: bands of equal width balance only uniform data. If the values cluster in one region, almost everything falls into the same bucket.",
+				"Right: the sample imitates the real distribution of the data, so its quantiles are close to the quantiles of the input, and each bucket receives about n/p elements whatever the distribution.",
+				"Wrong: median of three gives a single pivot, and p - 1 are needed. Besides, three elements say very little about the distribution.",
+				"Wrong: round-robin equalises the sizes but destroys the essential property: every element of a bucket must be smaller than those of the next bucket.",
+				"Wrong: it is cheap, but in a nearly sorted input the first elements are the smallest ones, and the last bucket receives almost everything."
+			],
+			"concept": "In parallel quicksort and sample sort, the balance of the partitions decides the speed-up: the parallel time is that of the largest bucket, so a bucket with almost all the elements cancels the gain. Sample sort solves this by sampling: it draws a sample, sorts it and uses its quantiles as splitters. Then each worker sorts its bucket, and the concatenation of the buckets is already sorted."
+		}
+	},
+	{
+		"id": "parallelism-parallel-sorting-reductions-08",
+		"area": "parallelism",
+		"topic": "parallel-sorting-reductions",
+		"difficulty": "advanced",
+		"answer": 3,
+		"source": "Aho, Lam, Sethi and Ullman, Compilers, 2nd ed., chapter 11 (optimizing for parallelism and locality)",
+		"pt": {
+			"statement": "A soma de prefixos (scan) de n valores produz, em cada posição i, a combinação dos elementos de 0 a i com um operador associativo. Qual afirmação sobre a sua versão paralela, com processadores suficientes, é verdadeira?",
+			"alternatives": [
+				"Ela é inerentemente sequencial, pois cada saída depende da saída anterior",
+				"Ela atinge profundidade O(log n), mas somente com trabalho O(n log n)",
+				"Ela atinge profundidade O(1), pois cada saída é calculada de forma independente",
+				"Ela atinge profundidade O(log n) com trabalho O(n), em duas passadas em árvore",
+				"Ela exige um operador comutativo, pois as passadas trocam a ordem dos operandos"
+			],
+			"explanations": [
+				"Errado: a dependência em cadeia é do laço sequencial, não do problema. Com a associatividade, as somas podem ser reagrupadas em árvore.",
+				"Errado: O(n log n) é o trabalho da versão ingênua, que recombina todos os elementos em cada nível. A versão em duas passadas faz cerca de 2n operações.",
+				"Errado: calcular cada saída à parte ainda exige combinar até n valores, o que custa profundidade O(log n) por saída e trabalho O(n^2) no total.",
+				"Certo: a subida (up-sweep) calcula somas de blocos, como em uma redução em árvore, e a descida (down-sweep) distribui os prefixos. Cada passada tem log2 n níveis e cerca de n operações.",
+				"Errado: as duas passadas só reagrupam os operandos, sempre na ordem original. A associatividade basta, e a comutatividade não é necessária."
+			],
+			"concept": "A soma de prefixos parece sequencial porque o laço usual calcula cada saída a partir da anterior. Com um operador associativo, ela se resolve em duas passadas sobre uma árvore: a subida guarda a soma de cada bloco e a descida entrega a cada posição a soma de tudo o que está à sua esquerda. O trabalho é O(n) e a profundidade O(log n). Para n = 8 são 3 níveis em cada passada.",
+			"example": {
+				"kind": "diagram",
+				"content": "entrada:      3   1   4   1   5   9   2   6\n\nsubida (somas de blocos):\nnível 1:        4       5      14       8\nnível 2:            9              22\nnível 3:                   31\n\nresultado:    3   4   8   9  14  23  25  31"
+			}
+		},
+		"en": {
+			"statement": "The prefix sum (scan) of n values produces, at each position i, the combination of elements 0 to i with an associative operator. Which statement about its parallel version, with enough processors, is true?",
+			"alternatives": [
+				"It is inherently sequential, because each output depends on the previous output",
+				"It reaches depth O(log n), but only with work O(n log n)",
+				"It reaches depth O(1), because each output is computed independently",
+				"It reaches depth O(log n) with work O(n), using two passes over a tree",
+				"It requires a commutative operator, because the passes change the order of the operands"
+			],
+			"explanations": [
+				"Wrong: the chain dependency belongs to the sequential loop, not to the problem. With associativity, the sums can be regrouped as a tree.",
+				"Wrong: O(n log n) is the work of the naive version, which recombines all elements at every level. The two-pass version does about 2n operations.",
+				"Wrong: computing each output separately still requires combining up to n values, which costs depth O(log n) per output and work O(n^2) in total.",
+				"Right: the up-sweep computes block sums, as in a tree reduction, and the down-sweep distributes the prefixes. Each pass has log2 n levels and about n operations.",
+				"Wrong: the two passes only regroup the operands, always in the original order. Associativity is enough, and commutativity is not needed."
+			],
+			"concept": "The prefix sum looks sequential because the usual loop computes each output from the previous one. With an associative operator, it is solved in two passes over a tree: the up-sweep stores the sum of each block and the down-sweep hands each position the sum of everything to its left. The work is O(n) and the depth O(log n). For n = 8 there are 3 levels in each pass.",
+			"example": {
+				"kind": "diagram",
+				"content": "input:        3   1   4   1   5   9   2   6\n\nup-sweep (block sums):\nlevel 1:        4       5      14       8\nlevel 2:            9              22\nlevel 3:                   31\n\nresult:       3   4   8   9  14  23  25  31"
+			}
+		}
+	}
+]

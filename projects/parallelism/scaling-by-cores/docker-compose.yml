@@ -1,0 +1,47 @@
+# EN: One test service per language, plus one for the report script. Each builds a pinned image
+#     and runs formatter, linter and tests. The formatter and linter configuration files live at
+#     the repository root and are mounted read-only, so there is a single copy of each.
+# PT: Um serviço de teste por linguagem, mais um para o script de relatório. Cada um constrói
+#     uma imagem fixada e roda formatador, linter e testes. Os arquivos de configuração de
+#     formatador e linter ficam na raiz do repositório e são montados como somente leitura,
+#     então existe uma única cópia de cada.
+name: scaling-by-cores
+
+services:
+  rust-test:
+    build: ./rust
+    image: sef-scaling-by-cores-rust:local
+    # Tests need no network, so the container gets none.
+    network_mode: "none"
+    volumes:
+      - ../../../rustfmt.toml:/app/rustfmt.toml:ro
+  go-test:
+    build: ./go
+    image: sef-scaling-by-cores-go:local
+    network_mode: "none"
+    volumes:
+      - ../../../.golangci.yml:/app/.golangci.yml:ro
+  cpp-test:
+    build: ./cpp
+    image: sef-scaling-by-cores-cpp:local
+    network_mode: "none"
+    volumes:
+      - ../../../.clang-format:/app/.clang-format:ro
+  report-test:
+    image: oven/bun:1.4.2
+    network_mode: "none"
+    working_dir: /app
+    volumes:
+      - ./report:/app/report:ro
+    command: ["bun", "test", "report"]
+  # EN: Rebuilds results/scaling.md and results/scaling.json from results/results.json.
+  # PT: Regera results/scaling.md e results/scaling.json a partir de results/results.json.
+  report:
+    image: oven/bun:1.4.2
+    network_mode: "none"
+    working_dir: /app
+    profiles: ["report"]
+    volumes:
+      - ./report:/app/report:ro
+      - ./results:/app/results
+    command: ["bun", "run", "report/scaling.ts", "results"]
