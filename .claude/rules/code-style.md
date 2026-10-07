@@ -6,7 +6,7 @@
 
 ## Comments
 
-Code comments are **didactic, bilingual (Portuguese and English) and written for beginners**. This is a teaching repository, so this rule overrides the usual "comment only the non-obvious" habit. Explain the concept and the reason, not the syntax.
+Code comments are **didactic, bilingual (Portuguese and English) and written for beginners**. This is a teaching repository, so this rule overrides the usual "comment only the non-obvious" habit. Explain the concept and the reason, not the syntax. Write one bilingual block per concept, not a translation of every line.
 
 ```ts
 // EN: Swap only when the left item is bigger, so the largest value "bubbles" to the end.

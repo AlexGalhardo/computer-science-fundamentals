@@ -5,11 +5,13 @@
 ## Phases
 
 - [x] Phase 0: repository setup
-- [ ] Phase 1: import content from the previous repository and external skills
-- [ ] Phase 2: brainstorming and documented decisions
+- [x] Phase 1: import content from the previous repository and external skills
+- [x] Phase 2: brainstorming and documented decisions
 - [ ] Phase 3: full PLAN.md, split by area, with tasks, sub-tasks, micro-tasks and verifiable acceptance criteria
 - [ ] Phase 4: parallel development (up to 5 git worktrees, one mini-project each)
 
 ## Planned areas
 
-Security, Algorithms, Data Structures, Big O, Compilers, State Machines, Information Theory, Concurrency, Parallelism, Transactions, Load Balancing, Performance (k6), OOP, Functional Programming, Design Patterns and SOLID, Testing, Observability, Messaging, Protocols.
+Security, Algorithms, Data Structures, Big O, Compilers, State Machines, Information Theory, Concurrency, Parallelism, Transactions, Load Balancing, Performance (k6), OOP, Functional Programming, Design Patterns and SOLID, Testing, Observability, Messaging, Protocols, Cache, Rate Limiting, File Systems, Digital Logic, Networks, Operating Systems, Blockchain, Continuous Integration.
+
+The decisions behind this plan are in `docs/en/decisions.md` and the backlog in `docs/en/mini-project-catalog.md`.

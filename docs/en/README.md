@@ -6,7 +6,7 @@ Documentation is organised by area and sub-area. Every page here has an equivale
 
 ## Status
 
-The areas below are planned. Each one gets its own folder once the Phase 2 decisions are documented and its first mini-project starts. The roadmap is in [PLAN.md](../../PLAN.md).
+The areas below are planned. Each one gets its own folder when its first mini-project starts. The roadmap is in [PLAN.md](../../PLAN.md).
 
 ## Planned areas
 
@@ -29,6 +29,19 @@ The areas below are planned. Each one gets its own folder once the Phase 2 decis
 - Observability
 - Messaging
 - Protocols
+- Cache
+- Rate Limiting
+- File Systems
+- Digital Logic
+- Networks
+- Operating Systems
+- Blockchain
+- Continuous Integration
+
+## Start here
+
+- [Project decisions](decisions.md)
+- [Mini-project catalog](mini-project-catalog.md)
 
 ## Related
 

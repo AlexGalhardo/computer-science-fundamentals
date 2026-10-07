@@ -1,10 +1,12 @@
 # Mini-projects
 
+Mini-projects live in `projects/<area>/<mini-project>/`, with one subfolder per language (`ts/`, `go/`, `rust/`). TypeScript is the reference implementation, and other languages are added only where the lesson changes. The agreed backlog is `docs/en/mini-project-catalog.md`.
+
 Every mini-project contains:
 
-- A bilingual README (EN + PT) explaining what it teaches.
-- A benchmark or a demo, through a CLI or a simple, didactic web dashboard.
-- Setup scripts named `setup-unix-<project>.sh` and `setup-windows-<project>.ps1`.
+- Two READMEs explaining what it teaches: `README.md` in English and `README.pt-BR.md` in Portuguese.
+- A benchmark or a demo, through a CLI or a simple, didactic web dashboard. The dashboard is a static page (HTML + Tailwind CSS v4 reading the results JSON). Next.js only where the concept needs a server.
+- Setup scripts named `setup-unix-<project>.sh` and `setup-windows-<project>.ps1`. Everything runs in Docker with pinned images, so the scripts require only Docker.
 - Automated tests.
 - Optionally, a short video (up to 30 seconds) showing the main concept.
 
@@ -12,7 +14,7 @@ It is also documented in both `docs/pt/` and `docs/en/`, under its area and sub-
 
 ## Stack
 
-Bun, Node.js/npm, Next.js, ElysiaJS, Prisma, Drizzle, PostgreSQL, SQLite, MongoDB, Redis, Caddy, NGINX, GraphQL, Kafka, BullMQ, RabbitMQ, Docker and docker-compose, shell scripts, PM2, Serverless Framework, LocalStack (SQS, S3, SNS, DynamoDB), k6, Playwright, and Tailwind CSS v4 for web interfaces.
+Bun, Node.js/npm, Next.js, ElysiaJS, Prisma, Drizzle, PostgreSQL, SQLite, MongoDB, Redis, Caddy, NGINX, GraphQL, Kafka, BullMQ, RabbitMQ, Docker and docker-compose, shell scripts, PM2, Serverless Framework, LocalStack (SQS, S3, SNS, DynamoDB), k6, Playwright, and Tailwind CSS v4 for web interfaces. Added in Phase 2: hyperfine for benchmarks, and OpenTelemetry, Prometheus, Grafana, Loki and Tempo for observability.
 
 ## Dependencies
 

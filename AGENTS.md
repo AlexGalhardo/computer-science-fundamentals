@@ -23,7 +23,7 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | Path | Purpose |
 | --- | --- |
 | `docs/en/`, `docs/pt/` | Documentation per area and sub-area. Both languages are mandatory and must stay equivalent |
-| `references/` | Study material imported from the previous repository. Read-only source of ideas, not a mini-project |
+| `references/` | Study material and legacy projects imported from the owner's previous repositories, plus Markdown summaries of the books and lecture PDFs. Read-only source of ideas, not a mini-project |
 | `PLAN.md` | Main roadmap with checklists and verifiable acceptance criteria |
 | `CHANGELOG.md` | Keep a Changelog + SemVer |
 | `.claude/rules/` | Recurring rules, one topic per file |

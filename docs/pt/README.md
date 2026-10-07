@@ -6,7 +6,7 @@ A documentação é organizada por área e subárea. Toda página daqui tem uma 
 
 ## Status
 
-As áreas abaixo estão planejadas. Cada uma ganha sua própria pasta quando as decisões da Fase 2 forem documentadas e o primeiro miniprojeto dela começar. O roadmap está em [PLAN.md](../../PLAN.md).
+As áreas abaixo estão planejadas. Cada uma ganha sua própria pasta quando o primeiro miniprojeto dela começar. O roadmap está em [PLAN.md](../../PLAN.md).
 
 ## Áreas planejadas
 
@@ -29,6 +29,19 @@ As áreas abaixo estão planejadas. Cada uma ganha sua própria pasta quando as 
 - Observabilidade
 - Mensageria
 - Protocolos
+- Cache
+- Rate Limiting
+- Sistemas de Arquivos
+- Lógica Digital
+- Redes
+- Sistemas Operacionais
+- Blockchain
+- Integração Contínua
+
+## Comece por aqui
+
+- [Decisões do projeto](decisions.md)
+- [Catálogo de miniprojetos](mini-project-catalog.md)
 
 ## Relacionados
 
