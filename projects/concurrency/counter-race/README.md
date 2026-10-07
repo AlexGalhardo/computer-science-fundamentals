@@ -61,7 +61,7 @@ Linters and formatters run inside the same containers, before the tests: `gofmt`
 
 ```sh
 bunx biome check projects/concurrency/counter-race
-docker run --rm --network none -v "$PWD/go:/app" -v "$PWD/../../../.golangci.yml:/app/.golangci.yml:ro" -w /app sef-go:local golangci-lint run ./...
+docker run --rm --network none -v "$PWD/go:/app:ro" -v "$PWD/../../..:/repo:ro" -w /app sef-go:local golangci-lint run -c /repo/.golangci.yml ./...
 ```
 
 ## Demo
