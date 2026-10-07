@@ -1,0 +1,480 @@
+[
+	{
+		"id": "transactions-saga-outbox-01",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "O que é uma saga, no contexto de transações que envolvem vários serviços?",
+			"alternatives": [
+				"Uma sequência de transações locais, cada uma com uma ação de compensação",
+				"Um protocolo de votação em que um coordenador pede o commit a todos",
+				"Uma fila que entrega as mensagens aos serviços exatamente uma vez",
+				"Uma réplica do banco que cada serviço consulta para ler dados dos outros",
+				"Uma transação única que bloqueia os dados de todos os serviços até o fim"
+			],
+			"explanations": [
+				"Correta: cada serviço confirma sua transação local, e se uma etapa falha as anteriores são compensadas.",
+				"Isso é o two-phase commit, a alternativa que a saga substitui.",
+				"Saga é um padrão de coordenação de transações, não uma garantia de entrega de mensagens.",
+				"Uma réplica de leitura não coordena escritas entre serviços.",
+				"Isso descreve uma transação distribuída clássica; a saga existe para evitar esses bloqueios longos."
+			],
+			"concept": "Uma saga divide uma operação de negócio em transações locais, uma por serviço, encadeadas por mensagens ou por um orquestrador. Cada etapa confirma de verdade no seu banco. Se uma etapa posterior falha, executam-se ações de compensação que desfazem semanticamente as etapas já confirmadas."
+		},
+		"en": {
+			"statement": "What is a saga, in the context of transactions that span several services?",
+			"alternatives": [
+				"A sequence of local transactions, each with a compensating action",
+				"A voting protocol in which a coordinator asks everyone for the commit",
+				"A queue that delivers the messages to the services exactly once",
+				"A database replica that each service queries to read the others' data",
+				"A single transaction that locks the data of all services until the end"
+			],
+			"explanations": [
+				"Correct: each service commits its local transaction, and if a step fails the previous ones are compensated.",
+				"That is two-phase commit, the alternative that the saga replaces.",
+				"A saga is a pattern for coordinating transactions, not a message delivery guarantee.",
+				"A read replica does not coordinate writes between services.",
+				"That describes a classic distributed transaction; the saga exists to avoid those long locks."
+			],
+			"concept": "A saga splits a business operation into local transactions, one per service, chained by messages or by an orchestrator. Each step really commits in its own database. If a later step fails, compensating actions run to semantically undo the steps already committed."
+		}
+	},
+	{
+		"id": "transactions-saga-outbox-02",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "O que é o problema de dual write (escrita dupla) em um serviço que grava no banco e publica um evento em um broker?",
+			"alternatives": [
+				"O banco grava o dado no log e depois na página, em duas etapas",
+				"O mesmo registro é gravado duas vezes no banco por causa de um retry",
+				"Duas instâncias do serviço gravam a mesma linha ao mesmo tempo",
+				"O evento é entregue a dois consumidores diferentes do mesmo tópico",
+				"As duas escritas não são atômicas: uma falha entre elas deixa só uma feita"
+			],
+			"explanations": [
+				"Isso é write-ahead logging, um mecanismo interno do banco que funciona corretamente.",
+				"Gravação repetida por retry é um problema de idempotência, não de escrita em dois sistemas.",
+				"Isso é concorrência sobre uma linha, resolvida com bloqueios ou controle otimista.",
+				"Entregar a vários consumidores é o funcionamento normal de publicar e assinar.",
+				"Correta: banco e broker não compartilham uma transação, então uma queda no meio deixa os dois sistemas divergentes."
+			],
+			"concept": "Dual write é escrever em dois sistemas diferentes, como um banco e um broker, sem uma transação que cubra os dois. Se o processo cai entre uma escrita e a outra, uma acontece e a outra não. O resultado é um pedido gravado sem evento, ou um evento sem pedido."
+		},
+		"en": {
+			"statement": "What is the dual-write problem in a service that writes to the database and publishes an event to a broker?",
+			"alternatives": [
+				"The database writes the data to the log and then to the page, in two steps",
+				"The same record is written twice to the database because of a retry",
+				"Two instances of the service write the same row at the same time",
+				"The event is delivered to two different consumers of the same topic",
+				"The two writes are not atomic: a failure between them leaves only one done"
+			],
+			"explanations": [
+				"That is write-ahead logging, an internal database mechanism that works correctly.",
+				"A repeated write caused by a retry is an idempotency problem, not one of writing to two systems.",
+				"That is concurrency on one row, solved with locks or optimistic control.",
+				"Delivering to several consumers is how publish and subscribe normally works.",
+				"Correct: database and broker share no transaction, so a crash in the middle leaves the two systems diverging."
+			],
+			"concept": "A dual write is writing to two different systems, such as a database and a broker, without a transaction that covers both. If the process crashes between one write and the other, one happens and the other does not. The result is an order stored without an event, or an event without an order."
+		}
+	},
+	{
+		"id": "transactions-saga-outbox-03",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "Como o padrão transactional outbox garante que um evento não se perca quando o serviço grava um pedido?",
+			"alternatives": [
+				"Grava o evento em uma tabela, na mesma transação do pedido",
+				"Publica o evento no broker antes de gravar o pedido no banco",
+				"Abre um two-phase commit entre o banco e o broker de mensagens",
+				"Guarda o evento em memória e o reenvia até o broker confirmar",
+				"Faz o broker consultar o banco para descobrir os pedidos novos"
+			],
+			"explanations": [
+				"Correta: pedido e evento são confirmados juntos pelo mesmo banco, e um relay publica depois as linhas da tabela outbox.",
+				"Inverter a ordem só troca o defeito: o evento pode sair e a gravação do pedido falhar depois.",
+				"O outbox existe justamente para dispensar uma transação distribuída entre banco e broker.",
+				"O que está só em memória some se o processo cair, que é exatamente a falha a evitar.",
+				"Um broker de mensagens não consulta bancos; quem lê a tabela é um processo relay do próprio serviço."
+			],
+			"concept": "O outbox transforma duas escritas em sistemas diferentes em uma escrita em um sistema só. O evento vira uma linha em uma tabela `outbox`, inserida na mesma transação local que a mudança de negócio. Um processo separado, o relay, lê as linhas pendentes e as publica no broker, repetindo até conseguir.",
+			"example": {
+				"kind": "code",
+				"language": "sql",
+				"content": "BEGIN;\nINSERT INTO orders (id, status) VALUES (42, 'PENDING');\nINSERT INTO outbox (event_type, payload)\n  VALUES ('OrderCreated', '{\"orderId\": 42}');\nCOMMIT; -- os dois INSERTs são confirmados juntos, ou nenhum"
+			}
+		},
+		"en": {
+			"statement": "How does the transactional outbox pattern guarantee that an event is not lost when the service stores an order?",
+			"alternatives": [
+				"It stores the event in a table, in the same transaction as the order",
+				"It publishes the event to the broker before storing the order in the database",
+				"It opens a two-phase commit between the database and the message broker",
+				"It keeps the event in memory and resends it until the broker confirms",
+				"It makes the broker query the database in order to discover new orders"
+			],
+			"explanations": [
+				"Correct: order and event are committed together by the same database, and a relay later publishes the rows of the outbox table.",
+				"Reversing the order only swaps the defect: the event may go out and the order write fail afterwards.",
+				"The outbox exists precisely to avoid a distributed transaction between database and broker.",
+				"What is only in memory vanishes if the process crashes, which is exactly the failure to avoid.",
+				"A message broker does not query databases; the table is read by a relay process of the service itself."
+			],
+			"concept": "The outbox turns two writes to different systems into one write to a single system. The event becomes a row in an `outbox` table, inserted in the same local transaction as the business change. A separate process, the relay, reads the pending rows and publishes them to the broker, retrying until it succeeds.",
+			"example": {
+				"kind": "code",
+				"language": "sql",
+				"content": "BEGIN;\nINSERT INTO orders (id, status) VALUES (42, 'PENDING');\nINSERT INTO outbox (event_type, payload)\n  VALUES ('OrderCreated', '{\"orderId\": 42}');\nCOMMIT; -- both INSERTs are committed together, or neither"
+			}
+		}
+	},
+	{
+		"id": "transactions-saga-outbox-04",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "Em uma saga, o que é uma transação de compensação?",
+			"alternatives": [
+				"O ROLLBACK que o banco executa quando a etapa atual falha",
+				"Uma nova transação que desfaz o efeito de uma etapa já confirmada",
+				"Uma nova tentativa da etapa que falhou, depois de um intervalo",
+				"Um bloqueio mantido até que todas as etapas da saga terminem",
+				"Uma cópia de segurança dos dados feita antes de cada etapa"
+			],
+			"explanations": [
+				"ROLLBACK só desfaz uma transação ainda aberta; as etapas anteriores da saga já foram confirmadas.",
+				"Correta: como o commit já aconteceu, só uma transação nova, como cancelar o pedido ou estornar o pagamento, anula o efeito.",
+				"Tentar de novo é recuperação para a frente (retry); compensar é voltar atrás.",
+				"A saga não mantém bloqueios entre etapas; essa é a diferença dela para uma transação distribuída.",
+				"Restaurar uma cópia apagaria também o trabalho de outras transações feitas no intervalo."
+			],
+			"concept": "Cada etapa de uma saga confirma no seu banco, então não pode ser desfeita por ROLLBACK. A compensação é uma operação de negócio inversa, executada como uma nova transação: cancelar, estornar, devolver ao estoque. Ela desfaz o efeito de forma semântica e deixa o histórico visível, em vez de apagar o que aconteceu."
+		},
+		"en": {
+			"statement": "In a saga, what is a compensating transaction?",
+			"alternatives": [
+				"The ROLLBACK that the database runs when the current step fails",
+				"A new transaction that undoes the effect of a step already committed",
+				"A new attempt of the step that failed, made after an interval",
+				"A lock that is held until all the steps of the saga have finished",
+				"A backup copy of the data that is taken before each step"
+			],
+			"explanations": [
+				"ROLLBACK only undoes a transaction that is still open; the earlier steps of the saga have already committed.",
+				"Correct: since the commit has happened, only a new transaction, such as cancelling the order or refunding the payment, cancels the effect.",
+				"Trying again is forward recovery (retry); compensating is going back.",
+				"A saga holds no locks between steps; that is its difference from a distributed transaction.",
+				"Restoring a copy would also erase the work of other transactions done in the meantime."
+			],
+			"concept": "Each step of a saga commits in its own database, so it cannot be undone by ROLLBACK. The compensation is an inverse business operation, run as a new transaction: cancel, refund, return to stock. It undoes the effect semantically and leaves the history visible, instead of erasing what happened."
+		}
+	},
+	{
+		"id": "transactions-saga-outbox-05",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "No código do exemplo, o processo cai depois da linha 1 e antes da linha 2. Qual é o estado do sistema depois da queda?",
+			"alternatives": [
+				"O pedido é desfeito pelo banco, porque o evento não foi publicado",
+				"O pedido e o evento existem, pois o broker busca o evento no banco",
+				"O evento foi publicado, mas o pedido não existe no banco",
+				"O pedido existe no banco, mas o evento nunca será publicado",
+				"Nem o pedido nem o evento existem, e o cliente pode tentar de novo"
+			],
+			"explanations": [
+				"O banco não sabe do broker: a transação da linha 1 já foi confirmada e não volta atrás.",
+				"O broker só conhece o que lhe é publicado; sem uma tabela outbox e um relay, ninguém reenvia o evento.",
+				"Esse seria o resultado da ordem inversa: publicar primeiro e cair antes de gravar.",
+				"Correta: o commit da linha 1 é durável, e a intenção de publicar existia só na memória do processo que caiu.",
+				"O pedido foi confirmado na linha 1; uma nova tentativa do cliente criaria um segundo pedido."
+			],
+			"concept": "Este é o bug de dual write em sua forma mais comum: confirmar no banco e depois publicar. Uma queda entre os dois passos perde o evento em silêncio, e o serviço de pagamento nunca fica sabendo do pedido. Nenhuma ordem das duas linhas resolve; a solução é gravar o evento na mesma transação do pedido (outbox).",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "await db.insert(orders).values(order);             // 1: COMMIT no banco\n// <- queda aqui\nawait broker.publish(\"order.created\", order);      // 2: publica no broker"
+			}
+		},
+		"en": {
+			"statement": "In the example code, the process crashes after line 1 and before line 2. What is the state of the system after the crash?",
+			"alternatives": [
+				"The order is undone by the database, because the event was not published",
+				"The order and the event exist, since the broker fetches the event from the database",
+				"The event was published, but the order does not exist in the database",
+				"The order exists in the database, but the event will never be published",
+				"Neither the order nor the event exists, and the client can try again"
+			],
+			"explanations": [
+				"The database does not know about the broker: the transaction of line 1 has committed and does not go back.",
+				"The broker only knows what is published to it; without an outbox table and a relay, nobody resends the event.",
+				"That would be the result of the reverse order: publishing first and crashing before the write.",
+				"Correct: the commit of line 1 is durable, and the intention to publish existed only in the memory of the crashed process.",
+				"The order was committed on line 1; a new attempt by the client would create a second order."
+			],
+			"concept": "This is the dual-write bug in its most common form: commit to the database and then publish. A crash between the two steps silently loses the event, and the payment service never hears about the order. No ordering of the two lines fixes it; the solution is to store the event in the same transaction as the order (outbox).",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "await db.insert(orders).values(order);             // 1: COMMIT in the database\n// <- crash here\nawait broker.publish(\"order.created\", order);      // 2: publish to the broker"
+			}
+		}
+	},
+	{
+		"id": "transactions-saga-outbox-06",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "O relay de uma tabela outbox publica um evento no broker e cai antes de marcar a linha como enviada. O que acontece quando o relay reinicia?",
+			"alternatives": [
+				"O evento é publicado de novo, e o consumidor recebe uma duplicata",
+				"O banco desfaz a publicação no broker junto com a transação do relay",
+				"O broker reconhece a repetição e descarta o evento sozinho",
+				"O relay pula a linha, porque o broker confirmou o recebimento",
+				"O evento se perde, pois o relay supõe que a linha já foi enviada"
+			],
+			"explanations": [
+				"Correta: publicar e marcar também são duas escritas, então o outbox garante entrega pelo menos uma vez, não exatamente uma.",
+				"O banco não controla o broker; uma mensagem publicada não é desfeita por ROLLBACK.",
+				"Um broker comum não sabe que duas mensagens são o mesmo evento; a deduplicação cabe ao consumidor.",
+				"A confirmação do broker ficou na memória do processo que caiu; em disco a linha ainda está pendente.",
+				"A linha continua marcada como pendente, então o relay não tem como supor que ela foi enviada."
+			],
+			"concept": "O outbox elimina a perda de eventos, mas não a duplicação. O relay faz duas ações, publicar e marcar como enviado, e uma queda entre elas leva a uma segunda publicação. A garantia é at-least-once, e por isso o consumidor precisa ser idempotente, por exemplo guardando o id das mensagens já processadas."
+		},
+		"en": {
+			"statement": "The relay of an outbox table publishes an event to the broker and crashes before marking the row as sent. What happens when the relay restarts?",
+			"alternatives": [
+				"The event is published again, and the consumer receives a duplicate",
+				"The database undoes the publication on the broker with the relay's transaction",
+				"The broker recognises the repetition and discards the event by itself",
+				"The relay skips the row, because the broker acknowledged the message",
+				"The event is lost, since the relay assumes the row has already been sent"
+			],
+			"explanations": [
+				"Correct: publishing and marking are two writes as well, so the outbox guarantees at-least-once delivery, not exactly once.",
+				"The database does not control the broker; a published message is not undone by ROLLBACK.",
+				"An ordinary broker does not know two messages are the same event; deduplication is up to the consumer.",
+				"The broker's acknowledgement was in the memory of the crashed process; on disk the row is still pending.",
+				"The row is still marked as pending, so the relay has no way to assume it was sent."
+			],
+			"concept": "The outbox removes the loss of events, but not duplication. The relay performs two actions, publish and mark as sent, and a crash between them leads to a second publication. The guarantee is at-least-once, so the consumer must be idempotent, for example by storing the ids of messages already processed."
+		}
+	},
+	{
+		"id": "transactions-saga-outbox-07",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "Qual descrição corresponde a uma saga coreografada, em oposição a uma saga orquestrada?",
+			"alternatives": [
+				"Todos os serviços gravam em um mesmo banco, dentro de uma única transação",
+				"Um serviço central envia comandos a cada participante e acompanha as respostas",
+				"Um coordenador coleta os votos dos participantes antes de mandar confirmar",
+				"Cada serviço reage a eventos dos outros e publica os seus, sem coordenador central",
+				"Um único serviço executa todas as etapas em sequência, no seu próprio banco"
+			],
+			"explanations": [
+				"Um banco compartilhado com uma transação única dispensa a saga, e acopla os serviços.",
+				"Isso é a saga orquestrada, em que um orquestrador concentra a lógica do fluxo.",
+				"Coletar votos antes de confirmar é o two-phase commit, não uma saga.",
+				"Correta: na coreografia o fluxo emerge da troca de eventos, e nenhum componente conhece a saga inteira.",
+				"Com um único serviço e um banco, basta uma transação local; não há saga."
+			],
+			"concept": "Há duas formas de coordenar uma saga. Na coreografia, cada serviço assina eventos e publica novos, o que desacopla os serviços mas espalha o fluxo. Na orquestração, um componente central conhece todas as etapas e manda comandos, o que facilita enxergar e depurar o fluxo ao custo de um ponto central."
+		},
+		"en": {
+			"statement": "Which description matches a choreographed saga, as opposed to an orchestrated saga?",
+			"alternatives": [
+				"All services write to the same database, inside one single transaction",
+				"A central service sends commands to each participant and tracks the replies",
+				"A coordinator collects the votes of the participants before telling them to commit",
+				"Each service reacts to the others' events and publishes its own, with no central coordinator",
+				"A single service runs all the steps in sequence, in its own database"
+			],
+			"explanations": [
+				"A shared database with one transaction makes the saga unnecessary, and couples the services.",
+				"That is the orchestrated saga, where an orchestrator concentrates the logic of the flow.",
+				"Collecting votes before committing is two-phase commit, not a saga.",
+				"Correct: in choreography the flow emerges from the exchange of events, and no component knows the whole saga.",
+				"With a single service and one database, a local transaction is enough; there is no saga."
+			],
+			"concept": "There are two ways to coordinate a saga. In choreography, each service subscribes to events and publishes new ones, which decouples the services but spreads the flow around. In orchestration, a central component knows all the steps and sends commands, which makes the flow easier to see and debug at the cost of a central point."
+		}
+	},
+	{
+		"id": "transactions-saga-outbox-08",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "Em uma saga de compra, o serviço de pedidos confirma um pedido como PENDING e publica `OrderCreated`. O serviço de pagamentos tenta cobrar e o cartão é recusado. Qual é a continuação correta da saga?",
+			"alternatives": [
+				"O serviço de pagamentos publica a falha, e o de pedidos cancela o pedido",
+				"O serviço de pagamentos executa ROLLBACK no banco de pedidos",
+				"O pedido fica PENDING para sempre, até alguém corrigir manualmente",
+				"O serviço de pedidos apaga a linha do pedido e o evento do broker",
+				"O serviço de pagamentos repete a cobrança até o cartão ser aceito"
+			],
+			"explanations": [
+				"Correta: a falha volta como evento (`PaymentFailed`) e o dono do pedido executa a compensação, mudando o status para CANCELLED.",
+				"Um serviço não tem acesso ao banco do outro, e a transação do pedido já foi confirmada de qualquer forma.",
+				"Deixar o estado intermediário para sempre é uma saga incompleta: o sistema fica inconsistente.",
+				"Apagar esconde o histórico, e um evento já entregue a consumidores não pode ser retirado do broker.",
+				"Cartão recusado é falha de negócio, não transitória: repetir não muda o resultado e pode gerar cobranças indevidas."
+			],
+			"concept": "Em uma saga, uma falha de negócio em uma etapa dispara a compensação das etapas anteriores. Cada serviço só altera o próprio banco, então a falha viaja como mensagem até o serviço que precisa compensar. No final, os dois bancos concordam: nenhum pagamento foi feito e o pedido está cancelado.",
+			"example": {
+				"kind": "diagram",
+				"content": "Pedidos                          Pagamentos\n  INSERT pedido (PENDING)\n  --- OrderCreated ------------>  tenta cobrar: recusado\n  <-- PaymentFailed -----------   INSERT pagamento (FAILED)\n  UPDATE pedido -> CANCELLED      (compensação)"
+			}
+		},
+		"en": {
+			"statement": "In a purchase saga, the order service commits an order as PENDING and publishes `OrderCreated`. The payment service tries to charge and the card is declined. What is the correct continuation of the saga?",
+			"alternatives": [
+				"The payment service publishes the failure, and the order service cancels the order",
+				"The payment service runs ROLLBACK on the order database",
+				"The order stays PENDING forever, until someone fixes it manually",
+				"The order service deletes the order row and the event from the broker",
+				"The payment service repeats the charge until the card is accepted"
+			],
+			"explanations": [
+				"Correct: the failure comes back as an event (`PaymentFailed`) and the owner of the order runs the compensation, changing the status to CANCELLED.",
+				"A service has no access to the other's database, and the order transaction has committed anyway.",
+				"Leaving the intermediate state forever is an incomplete saga: the system stays inconsistent.",
+				"Deleting hides the history, and an event already delivered to consumers cannot be taken back from the broker.",
+				"A declined card is a business failure, not a transient one: repeating does not change the result and may cause undue charges."
+			],
+			"concept": "In a saga, a business failure in one step triggers the compensation of the previous steps. Each service changes only its own database, so the failure travels as a message to the service that must compensate. In the end the two databases agree: no payment was made and the order is cancelled.",
+			"example": {
+				"kind": "diagram",
+				"content": "Orders                           Payments\n  INSERT order (PENDING)\n  --- OrderCreated ------------>  tries to charge: declined\n  <-- PaymentFailed -----------   INSERT payment (FAILED)\n  UPDATE order -> CANCELLED       (compensation)"
+			}
+		}
+	},
+	{
+		"id": "transactions-saga-outbox-09",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "advanced",
+		"answer": 2,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "Comparada a uma transação distribuída com two-phase commit, qual propriedade ACID uma saga deixa de oferecer para a operação de negócio como um todo?",
+			"alternatives": [
+				"Durabilidade: as etapas confirmadas podem se perder em uma queda",
+				"Atomicidade local: uma etapa pode ser gravada pela metade no banco",
+				"Isolamento: outros veem estados intermediários entre as etapas",
+				"Integridade: as restrições de cada banco deixam de ser verificadas",
+				"Durabilidade: a compensação apaga o registro das etapas anteriores"
+			],
+			"explanations": [
+				"Cada etapa é uma transação local confirmada, tão durável quanto qualquer outra transação do banco.",
+				"Cada etapa continua atômica dentro do seu banco; o que a saga perde é a visão global.",
+				"Correta: como cada etapa confirma antes das seguintes, um leitor pode ver um pedido PENDING cujo pagamento ainda vai falhar.",
+				"As restrições de cada banco continuam valendo em cada transação local.",
+				"A compensação acrescenta uma nova transação; ela não remove a durabilidade das anteriores."
+			],
+			"concept": "Uma saga troca isolamento por disponibilidade e baixo acoplamento. Não há bloqueio global, então os efeitos de cada etapa ficam visíveis antes de a saga terminar, e outra operação pode agir sobre um estado que será compensado. As contramedidas são de projeto: estados intermediários explícitos como PENDING (bloqueio semântico), releitura antes de agir e ordenação cuidadosa das etapas."
+		},
+		"en": {
+			"statement": "Compared with a distributed transaction using two-phase commit, which ACID property does a saga stop offering for the business operation as a whole?",
+			"alternatives": [
+				"Durability: the committed steps may be lost in a crash",
+				"Local atomicity: a step may be half written to its database",
+				"Isolation: others see intermediate states between the steps",
+				"Integrity: the constraints of each database stop being checked",
+				"Durability: the compensation erases the record of earlier steps"
+			],
+			"explanations": [
+				"Each step is a committed local transaction, as durable as any other transaction of the database.",
+				"Each step is still atomic inside its database; what the saga loses is the global view.",
+				"Correct: since each step commits before the next ones, a reader may see a PENDING order whose payment is still going to fail.",
+				"The constraints of each database still hold in each local transaction.",
+				"The compensation adds a new transaction; it does not remove the durability of the earlier ones."
+			],
+			"concept": "A saga trades isolation for availability and loose coupling. There is no global lock, so the effects of each step are visible before the saga ends, and another operation may act on a state that will be compensated. The countermeasures are design ones: explicit intermediate states such as PENDING (semantic lock), rereading before acting, and careful ordering of the steps."
+		}
+	},
+	{
+		"id": "transactions-saga-outbox-10",
+		"area": "transactions",
+		"topic": "saga-outbox",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "C. J. Date, distributed databases (transaction management), extended with the saga and outbox patterns",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "Para corrigir a perda de eventos, um desenvolvedor inverte a ordem do dual write: primeiro publica `OrderCreated` no broker e só depois faz o COMMIT do pedido no banco. Que falha essa versão ainda permite?",
+			"alternatives": [
+				"O pedido é gravado duas vezes se o broker demorar a responder",
+				"O evento é publicado e o COMMIT falha: existe evento de um pedido que não existe",
+				"O evento chega ao consumidor antes do pedido, mas isso se resolve sozinho",
+				"O pedido é gravado, mas o evento se perde se o broker cair depois",
+				"O banco bloqueia a tabela de pedidos até o broker confirmar o evento"
+			],
+			"explanations": [
+				"A demora do broker atrasa o fluxo, mas há um único INSERT; nada o duplica.",
+				"Correta: uma violação de restrição ou uma queda antes do COMMIT deixa um evento \"fantasma\", e o pagamento pode cobrar por um pedido inexistente.",
+				"Se o COMMIT falha, o pedido nunca aparece: não é só uma questão de ordem de chegada.",
+				"Nessa ordem a publicação já terminou antes do COMMIT, então não é o evento que se perde.",
+				"Publicar em um broker não adquire bloqueio nenhum no banco."
+			],
+			"concept": "Nenhuma ordem resolve o dual write, porque o problema é a falta de atomicidade entre dois sistemas. Banco primeiro perde eventos; broker primeiro cria eventos de fatos que nunca aconteceram, o que costuma ser pior. O outbox resolve porque o evento só passa a existir se a transação do pedido for confirmada."
+		},
+		"en": {
+			"statement": "To fix lost events, a developer reverses the order of the dual write: first publish `OrderCreated` to the broker and only then COMMIT the order in the database. Which failure does this version still allow?",
+			"alternatives": [
+				"The order is stored twice if the broker takes long to answer",
+				"The event is published and the COMMIT fails: there is an event for an order that does not exist",
+				"The event reaches the consumer before the order, but that resolves by itself",
+				"The order is stored, but the event is lost if the broker crashes later",
+				"The database locks the orders table until the broker confirms the event"
+			],
+			"explanations": [
+				"A slow broker delays the flow, but there is a single INSERT; nothing duplicates it.",
+				"Correct: a constraint violation or a crash before the COMMIT leaves a \"ghost\" event, and payment may charge for a non-existent order.",
+				"If the COMMIT fails, the order never appears: it is not just a matter of arrival order.",
+				"In this order the publication has finished before the COMMIT, so it is not the event that gets lost.",
+				"Publishing to a broker acquires no lock at all in the database."
+			],
+			"concept": "No ordering fixes the dual write, because the problem is the lack of atomicity between two systems. Database first loses events; broker first creates events about facts that never happened, which is usually worse. The outbox fixes it because the event only comes to exist if the order transaction commits."
+		}
+	}
+]
