@@ -12,7 +12,9 @@ import { LANGUAGES, type Language } from "../src/content/schema";
 const args = process.argv.slice(2);
 const langFlag = args.indexOf("--lang");
 const language = (langFlag >= 0 ? args[langFlag + 1] : "en") as Language;
-const area = args.find((arg, index) => !arg.startsWith("--") && index !== langFlag + 1);
+// EN: The value that follows `--lang` is not the area. Without the flag, no position is skipped.
+// PT: O valor que vem depois de `--lang` não é a área. Sem a flag, nenhuma posição é pulada.
+const area = args.find((arg, index) => !arg.startsWith("--") && (langFlag < 0 || index !== langFlag + 1));
 
 if (area === undefined || !LANGUAGES.includes(language)) {
 	console.error("usage: bun run quiz:blind <area> [--lang en|pt]");

@@ -15,7 +15,7 @@ const strict = args.includes("--strict");
 const contentFlag = args.indexOf("--content");
 const repoRoot = resolve(import.meta.dir, "..", "..");
 const contentDir = contentFlag >= 0 ? resolve(args[contentFlag + 1] ?? "") : join(repoRoot, "quiz", "content");
-const only = args.find((arg, index) => !arg.startsWith("--") && index !== contentFlag + 1);
+const only = args.find((arg, index) => !arg.startsWith("--") && (contentFlag < 0 || index !== contentFlag + 1));
 
 const result = checkContent({ contentDir, repoRoot, only, requireTargets: strict });
 
