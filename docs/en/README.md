@@ -16,7 +16,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-1870 of 3384 questions written, 50 of 86 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+1970 of 3384 questions written, 52 of 86 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
@@ -35,7 +35,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Information theory | Theory and practice | 100/100 | done | [huffman-lz77](information-theory/huffman-lz77.md), [error-detection-correction](information-theory/error-detection-correction.md) |
 | Digital logic | Theory and practice | 100/100 | done | [gates-karnaugh-adders](digital-logic/gates-karnaugh-adders.md), [nand-alu-cpu](digital-logic/nand-alu-cpu.md) |
 | Electronics | Theory | 170/170 | done | none |
-| Object-oriented programming | Theory and practice | 0/100 |  | oop-vs-functional (planned), code-smells (planned) |
+| Object-oriented programming | Theory and practice | 100/100 | done | [oop-vs-functional](oop/oop-vs-functional.md), [code-smells](oop/code-smells.md) |
 | Functional programming | Theory and practice | 100/100 | done | [pure-functions-properties](functional-programming/pure-functions-properties.md) |
 | Design patterns and SOLID | Theory and practice | 100/100 | done | [backend-patterns](design-patterns/backend-patterns.md), [solid-before-after](design-patterns/solid-before-after.md) |
 | Software architecture | Theory and practice | 100/100 | done | [clean-architecture-app](software-architecture/clean-architecture-app.md) |

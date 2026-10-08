@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1870 de 3384 questões escritas, 50 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+1970 de 3384 questões escritas, 52 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -35,7 +35,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Teoria da informação | Teoria e prática | 100/100 | feita | [huffman-lz77](information-theory/huffman-lz77.md), [error-detection-correction](information-theory/error-detection-correction.md) |
 | Lógica digital | Teoria e prática | 100/100 | feita | [gates-karnaugh-adders](digital-logic/gates-karnaugh-adders.md), [nand-alu-cpu](digital-logic/nand-alu-cpu.md) |
 | Eletrônica | Teoria | 170/170 | feita | nenhum |
-| Programação orientada a objetos | Teoria e prática | 0/100 |  | oop-vs-functional (planejado), code-smells (planejado) |
+| Programação orientada a objetos | Teoria e prática | 100/100 | feita | [oop-vs-functional](oop/oop-vs-functional.md), [code-smells](oop/code-smells.md) |
 | Programação funcional | Teoria e prática | 100/100 | feita | [pure-functions-properties](functional-programming/pure-functions-properties.md) |
 | Padrões de projeto e SOLID | Teoria e prática | 100/100 | feita | [backend-patterns](design-patterns/backend-patterns.md), [solid-before-after](design-patterns/solid-before-after.md) |
 | Arquitetura de software | Teoria e prática | 100/100 | feita | [clean-architecture-app](software-architecture/clean-architecture-app.md) |
