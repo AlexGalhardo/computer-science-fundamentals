@@ -1,0 +1,292 @@
+[
+	{
+		"id": "messaging-backpressure-01",
+		"area": "messaging",
+		"topic": "backpressure",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "The Optimal RabbitMQ Guide (prefetch and flow control); GenStage documentation",
+		"miniProject": "projects/messaging/pubsub-backpressure",
+		"pt": {
+			"statement": "Em um pipeline de dados, o que é backpressure?",
+			"alternatives": [
+				"Uma etapa de compressão que reduz o tamanho de cada mensagem",
+				"Um sinal de um receptor lento que faz o remetente desacelerar",
+				"Uma segunda cópia de cada mensagem guardada caso o receptor falhe",
+				"Um timeout depois do qual mensagens não processadas são descartadas",
+				"Uma rajada de tráfego que um remetente rápido empurra a um receptor lento"
+			],
+			"explanations": [
+				"Mensagens menores podem ajudar a vazão, mas não são um sinal de retorno.",
+				"Correta: a pressão viaja para trás, contra o fluxo dos dados, então o produtor se adapta ao ritmo do consumidor.",
+				"Guardar cópias é redundância, que trata de falhas e não de controle de fluxo.",
+				"Descartar por timeout é load shedding, outra resposta para o mesmo problema.",
+				"Isso é a própria sobrecarga. Backpressure é o mecanismo que reage a ela."
+			],
+			"concept": "Backpressure é controle de fluxo entre estágios: o estágio que não dá conta avisa o anterior para esperar. Ele limita a memória desacelerando a origem em vez de acumular dados no meio."
+		},
+		"en": {
+			"statement": "In a data pipeline, what is backpressure?",
+			"alternatives": [
+				"A compression step that reduces the size of every message",
+				"A signal from a slow receiver that makes the sender slow down",
+				"A second copy of each message kept in case the receiver fails",
+				"A timeout after which unprocessed messages are discarded",
+				"A burst of traffic that a fast sender pushes onto a slow receiver"
+			],
+			"explanations": [
+				"Smaller messages may help throughput, but they are not a feedback signal.",
+				"Correct: the pressure travels backwards, against the data flow, so the producer adapts to the consumer's pace.",
+				"Keeping copies is redundancy, which concerns failures and not flow control.",
+				"Discarding on timeout is load shedding, a different answer to the same problem.",
+				"That is the overload itself. Backpressure is the mechanism that reacts to it."
+			],
+			"concept": "Backpressure is flow control between stages: the stage that cannot keep up tells the previous one to wait. It bounds memory by slowing the source instead of piling data up in between."
+		}
+	},
+	{
+		"id": "messaging-backpressure-02",
+		"area": "messaging",
+		"topic": "backpressure",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "The Optimal RabbitMQ Guide (prefetch and flow control); GenStage documentation",
+		"miniProject": "projects/messaging/pubsub-backpressure",
+		"pt": {
+			"statement": "Um produtor gera itens mais rápido do que o consumidor os trata, por horas, e os coloca em um buffer em memória sem limite de tamanho. O que acaba acontecendo?",
+			"alternatives": [
+				"O consumidor acelera conforme o buffer fica maior",
+				"O produtor desacelera sozinho até a velocidade do consumidor",
+				"O buffer se estabiliza quando atinge a velocidade do consumidor",
+				"O buffer cresce até o processo ficar sem memória",
+				"O buffer descarta os itens mais antigos quando fica grande demais"
+			],
+			"explanations": [
+				"Um acúmulo maior não torna o handler mais rápido; muitas vezes o torna mais lento.",
+				"Nada avisa o produtor para desacelerar; esse sinal que falta é justamente o backpressure.",
+				"Um buffer não tem velocidade. Com entrada acima da saída ele nunca chega a um equilíbrio.",
+				"Correta: a cada segundo entram mais itens do que saem, e nada detém o crescimento além do limite de memória.",
+				"Descartar exige um limite e uma política de descarte; o buffer descrito não tem nenhum dos dois."
+			],
+			"concept": "Um buffer absorve rajadas curtas, não uma diferença duradoura de velocidade. Se a taxa média de entrada fica acima da de saída, um buffer ilimitado só adia a falha e a torna maior: a memória cresce até o processo morrer."
+		},
+		"en": {
+			"statement": "A producer generates items faster than the consumer handles them, for hours, and puts them in an in-memory buffer with no size limit. What eventually happens?",
+			"alternatives": [
+				"The consumer speeds up as the buffer gets larger",
+				"The producer slows down by itself to the consumer's speed",
+				"The buffer stabilises once it reaches the consumer's speed",
+				"The buffer grows until the process runs out of memory",
+				"The buffer discards the oldest items when it becomes too large"
+			],
+			"explanations": [
+				"A bigger backlog does not make the handler faster; often it makes it slower.",
+				"Nothing tells the producer to slow down; that missing signal is precisely backpressure.",
+				"A buffer has no speed. With input above output it never reaches a balance.",
+				"Correct: every second more items enter than leave, and nothing stops the growth except the memory limit.",
+				"Discarding needs a limit and a drop policy; the buffer described has neither."
+			],
+			"concept": "A buffer absorbs short bursts, not a lasting difference in speed. If the average input rate stays above the output rate, an unbounded buffer only postpones the failure and makes it bigger: memory grows until the process dies."
+		}
+	},
+	{
+		"id": "messaging-backpressure-03",
+		"area": "messaging",
+		"topic": "backpressure",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "The Optimal RabbitMQ Guide (prefetch and flow control); GenStage documentation",
+		"miniProject": "projects/messaging/pubsub-backpressure",
+		"pt": {
+			"statement": "Um produtor publica 500 mensagens por segundo e o único consumidor trata 300 por segundo. A fila começa vazia e não tem limite. Quantas mensagens estão esperando depois de 60 segundos?",
+			"alternatives": [
+				"18.000",
+				"30.000",
+				"200",
+				"12.000",
+				"48.000"
+			],
+			"explanations": [
+				"18.000 é o que o consumidor tratou (300 x 60), não o que ficou esperando.",
+				"30.000 é tudo o que foi produzido (500 x 60); ignora o que o consumidor retirou.",
+				"200 é o crescimento em UM segundo, não o acúmulo depois de sessenta.",
+				"Correta: a fila cresce 500 - 300 = 200 mensagens por segundo, e 200 x 60 = 12.000.",
+				"48.000 soma as duas taxas (800 x 60); o consumidor retira mensagens, não acrescenta."
+			],
+			"concept": "Um acúmulo cresce na diferença entre a taxa de chegada e a taxa de atendimento. Um desequilíbrio pequeno mantido por muito tempo produz uma fila grande: 200 mensagens a mais por segundo viram 720.000 em uma hora."
+		},
+		"en": {
+			"statement": "A producer publishes 500 messages per second and the only consumer handles 300 per second. The queue starts empty and has no limit. How many messages are waiting after 60 seconds?",
+			"alternatives": [
+				"18,000",
+				"30,000",
+				"200",
+				"12,000",
+				"48,000"
+			],
+			"explanations": [
+				"18,000 is what the consumer handled (300 x 60), not what is left waiting.",
+				"30,000 is everything produced (500 x 60); it ignores what the consumer removed.",
+				"200 is the growth in ONE second, not the backlog after sixty.",
+				"Correct: the queue grows by 500 - 300 = 200 messages per second, and 200 x 60 = 12,000.",
+				"48,000 adds both rates (800 x 60); the consumer removes messages, it does not add them."
+			],
+			"concept": "A backlog grows at the difference between the arrival rate and the service rate. A small imbalance held for a long time produces a large queue: 200 extra messages per second become 720,000 in an hour."
+		}
+	},
+	{
+		"id": "messaging-backpressure-04",
+		"area": "messaging",
+		"topic": "backpressure",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "The Optimal RabbitMQ Guide (prefetch and flow control); GenStage documentation",
+		"miniProject": "projects/messaging/pubsub-backpressure",
+		"pt": {
+			"statement": "A fila `jobs` tem 50.000 mensagens quando o consumidor RabbitMQ do trecho inicia. Quantas mensagens o broker deixa esse consumidor segurar a cada momento?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "await channel.prefetch(10);\nawait channel.consume(\"jobs\", async (msg) => {\n  await slowWork(msg);   // takes 1 second\n  channel.ack(msg);\n}, { noAck: false });"
+			},
+			"alternatives": [
+				"No máximo 10 por segundo; o prefetch é um limite de taxa medido em tempo",
+				"No máximo 10 no total; depois da décima mensagem o consumidor é cancelado",
+				"Todas as 50.000 de uma vez; o prefetch só define o tamanho de cada frame de rede",
+				"Exatamente 1 por vez; o prefetch é o número de retentativas por mensagem",
+				"No máximo 10 mensagens sem ack; mais uma é enviada a cada ack"
+			],
+			"explanations": [
+				"O prefetch conta mensagens pendentes. Não diz nada sobre tempo: um consumidor rápido pode receber milhares por segundo.",
+				"O limite vale para mensagens em andamento ao mesmo tempo, não para a vida inteira do consumidor.",
+				"Enviar tudo é o que acontece SEM limite de prefetch. A configuração conta mensagens, não bytes.",
+				"O prefetch não tem relação com retentativas, e o valor 10 permite dez mensagens em andamento.",
+				"Correta: o prefetch é uma janela de entregas sem ack. O broker para em 10 e retoma conforme as confirmações liberam vagas."
+			],
+			"concept": "O prefetch count (`basic.qos`) é o backpressure do lado do consumidor no RabbitMQ. Com acks manuais, o broker nunca tem mais que esse número de mensagens sem confirmação com o consumidor, então o acúmulo espera no broker e não na memória do consumidor."
+		},
+		"en": {
+			"statement": "The queue `jobs` holds 50,000 messages when the RabbitMQ consumer in the snippet starts. How many messages does the broker let this consumer hold at any moment?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "await channel.prefetch(10);\nawait channel.consume(\"jobs\", async (msg) => {\n  await slowWork(msg);   // takes 1 second\n  channel.ack(msg);\n}, { noAck: false });"
+			},
+			"alternatives": [
+				"At most 10 per second; prefetch is a rate limit measured in time",
+				"At most 10 in total; after the tenth message the consumer is cancelled",
+				"All 50,000 at once; prefetch only sets the size of each network frame",
+				"Exactly 1 at a time; prefetch is the number of retries per message",
+				"At most 10 unacknowledged messages; one more is sent for each ack"
+			],
+			"explanations": [
+				"Prefetch counts outstanding messages. It says nothing about time: a fast consumer may receive thousands per second.",
+				"The limit applies to messages in flight at the same time, not to the lifetime of the consumer.",
+				"Sending everything is what happens with NO prefetch limit. The setting counts messages, not bytes.",
+				"Prefetch has nothing to do with retries, and a value of 10 allows ten messages in flight.",
+				"Correct: prefetch is a window of unacked deliveries. The broker stops at 10 and resumes as acknowledgements free slots."
+			],
+			"concept": "The prefetch count (`basic.qos`) is RabbitMQ's consumer-side backpressure. With manual acks, the broker never has more than that number of unacknowledged messages out to the consumer, so the backlog waits in the broker instead of in the consumer's memory."
+		}
+	},
+	{
+		"id": "messaging-backpressure-05",
+		"area": "messaging",
+		"topic": "backpressure",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "The Optimal RabbitMQ Guide (prefetch and flow control); GenStage documentation",
+		"miniProject": "projects/messaging/pubsub-backpressure",
+		"pt": {
+			"statement": "No pipeline GenStage do trecho, o produtor consegue gerar um milhão de eventos por segundo e o consumidor trata 100 por segundo. Quantos eventos o produtor pode ter enviado a esse consumidor e que ainda não foram processados?",
+			"snippet": {
+				"kind": "code",
+				"language": "elixir",
+				"content": "# consumer stage\ndef init(:ok) do\n  {:consumer, :ok, subscribe_to: [{Producer, max_demand: 10, min_demand: 5}]}\nend"
+			},
+			"alternatives": [
+				"Exatamente 5, porque `min_demand` é o tamanho de todo lote",
+				"No máximo 15, porque os dois valores de demanda se somam",
+				"Zero, porque os eventos só são criados depois de processados",
+				"Cerca de um milhão, porque o produtor emite na sua própria velocidade",
+				"No máximo 10, porque o produtor só pode enviar o que foi demandado"
+			],
+			"explanations": [
+				"`min_demand` é o limiar em que o consumidor pede mais, não o tamanho do lote nem um teto.",
+				"Os dois valores são um teto e um limiar de reposição da mesma janela; não se somam.",
+				"Os eventos são enviados antes do processamento, até a quantidade demandada; é para isso que a demanda serve.",
+				"Em um fluxo guiado por demanda o produtor não pode empurrar. Velocidade sem demanda não produz nada adiante.",
+				"Correta: o consumidor pede eventos, e a sua demanda pendente nunca passa de `max_demand`. A velocidade do produtor é irrelevante."
+			],
+			"concept": "O GenStage inverte o fluxo de controle: os consumidores enviam demanda para trás e os produtores respondem com no máximo aquela quantidade de eventos. O estágio mais lento dita o ritmo do pipeline inteiro, e os buffers ficam limitados por `max_demand`."
+		},
+		"en": {
+			"statement": "In the GenStage pipeline of the snippet, the producer can generate one million events per second and the consumer handles 100 per second. How many events can the producer have sent to this consumer that are still unprocessed?",
+			"snippet": {
+				"kind": "code",
+				"language": "elixir",
+				"content": "# consumer stage\ndef init(:ok) do\n  {:consumer, :ok, subscribe_to: [{Producer, max_demand: 10, min_demand: 5}]}\nend"
+			},
+			"alternatives": [
+				"Exactly 5, because `min_demand` is the size of every batch",
+				"At most 15, because both demand values are added together",
+				"Zero, because events are created only after being processed",
+				"About one million, because the producer emits at its own speed",
+				"At most 10, because the producer sends only what was demanded"
+			],
+			"explanations": [
+				"`min_demand` is the threshold at which the consumer asks for more, not the batch size or a cap.",
+				"The two values are a ceiling and a refill threshold for the same window; they are not summed.",
+				"Events are sent ahead of processing, up to the demanded amount; that is the purpose of demand.",
+				"In a demand-driven flow the producer cannot push. Speed without demand produces nothing downstream.",
+				"Correct: the consumer asks for events, and its outstanding demand never exceeds `max_demand`. The producer's speed is irrelevant."
+			],
+			"concept": "GenStage inverts the flow of control: consumers send demand upstream and producers answer with at most that many events. The slowest stage therefore sets the pace of the whole pipeline, and buffers stay bounded by `max_demand`."
+		}
+	},
+	{
+		"id": "messaging-backpressure-06",
+		"area": "messaging",
+		"topic": "backpressure",
+		"difficulty": "advanced",
+		"answer": 4,
+		"source": "The Optimal RabbitMQ Guide (prefetch and flow control); GenStage documentation",
+		"miniProject": "projects/messaging/pubsub-backpressure",
+		"pt": {
+			"statement": "Uma fila RabbitMQ tem 1.000.000 de mensagens pequenas. O consumidor A se conecta com acks manuais e SEM limite de prefetch, e trata 10 mensagens por segundo. O consumidor B se conecta um minuto depois com prefetch 10. O que se observa?",
+			"alternatives": [
+				"A memória de A fica estável, pois as mensagens esperam dentro do broker",
+				"B assume o acúmulo, pois o broker prefere consumidores com limite",
+				"A e B dividem o acúmulo por igual, cada um com cerca de metade",
+				"A é desconectado pelo broker por segurar mensagens demais",
+				"A memória do processo A incha com o acúmulo, e B fica quase ocioso"
+			],
+			"explanations": [
+				"Esse é o efeito de um limite de prefetch. Sem ele, o acúmulo se muda para o consumidor.",
+				"O broker não tem essa preferência, e não toma de volta entregas de um consumidor vivo.",
+				"Dividir exige mensagens ainda na fila quando B chega, e elas já tinham sido entregues a A.",
+				"Prefetch ilimitado é permitido. O broker não desconecta um consumidor pelo número de mensagens sem ack.",
+				"Correta: sem limite o broker empurra tudo para A, onde fica sem ack no buffer do cliente. Sobra pouco ou nada na fila para B."
+			],
+			"concept": "O prefetch decide onde o acúmulo mora. Com limite ele fica no broker, que foi feito para guardá-lo e pode reparti-lo entre consumidores. Sem limite ele é empurrado para o primeiro consumidor: a memória dele cresce, e consumidores extras não ajudam."
+		},
+		"en": {
+			"statement": "A RabbitMQ queue holds 1,000,000 small messages. Consumer A connects with manual acks and NO prefetch limit, and handles 10 messages per second. Consumer B connects a minute later with prefetch 10. What is observed?",
+			"alternatives": [
+				"A's memory stays flat, since the messages wait inside the broker",
+				"B takes over the backlog, since the broker prefers limited consumers",
+				"A and B share the backlog evenly, each taking about half of it",
+				"A is disconnected by the broker for holding too many messages",
+				"A's process memory balloons with the backlog, and B stays nearly idle"
+			],
+			"explanations": [
+				"That is the effect of a prefetch limit. Without one, the backlog moves into the consumer.",
+				"The broker has no such preference, and it does not take back deliveries from a live consumer.",
+				"Sharing needs messages still in the queue when B arrives, and they were already delivered to A.",
+				"An unlimited prefetch is legal. The broker does not disconnect a consumer for the number of unacked messages.",
+				"Correct: without a limit the broker pushes everything to A, where it sits unacked in the client's buffer. Little or nothing is left in the queue for B."
+			],
+			"concept": "Prefetch decides where the backlog lives. With a limit it stays in the broker, which is built to store it and can share it among consumers. Without a limit it is pushed into the first consumer: its memory grows, and extra consumers cannot help."
+		}
+	}
+]

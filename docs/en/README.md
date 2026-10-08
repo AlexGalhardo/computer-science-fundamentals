@@ -17,7 +17,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-2734 of 3384 questions written, 75 of 86 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+2834 of 3384 questions written, 78 of 86 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
@@ -42,7 +42,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Software architecture | Theory and practice | 100/100 | done | [clean-architecture-app](software-architecture/clean-architecture-app.md) |
 | Testing | Theory and practice | 100/100 | done | [test-pyramid](testing/test-pyramid.md), [tdd-kata](testing/tdd-kata.md), [mutation-testing](testing/mutation-testing.md), [flaky-tests](testing/flaky-tests.md), [mini-xunit](testing/mini-xunit.md) |
 | Protocols | Theory and practice | 100/100 | done | [rest-graphql-jsonrpc](protocols/rest-graphql-jsonrpc.md), [http-versions](protocols/http-versions.md), [http-server-raw-tcp](protocols/http-server-raw-tcp.md) |
-| Messaging | Theory and practice | 0/100 |  | queue-comparison (planned), idempotency-dlq (planned), pubsub-backpressure (planned) |
+| Messaging | Theory and practice | 100/100 | done | [queue-comparison](messaging/queue-comparison.md), [idempotency-dlq](messaging/idempotency-dlq.md), [pubsub-backpressure](messaging/pubsub-backpressure.md) |
 | Load balancing | Theory and practice | 100/100 | done | [nginx-vs-caddy](load-balancing/nginx-vs-caddy.md), [l7-load-balancer](load-balancing/l7-load-balancer.md) |
 | Performance | Theory and practice | 100/100 | done | [bun-vs-node](performance/bun-vs-node.md), [k6-scenarios](performance/k6-scenarios.md), [cache-friendly-matrix](performance/cache-friendly-matrix.md) |
 | Cache | Theory and practice | 100/100 | done | [cache-strategies](cache/cache-strategies.md) |

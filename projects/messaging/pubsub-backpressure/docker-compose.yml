@@ -1,0 +1,83 @@
+# EN: A RabbitMQ broker and the TypeScript experiments, plus the Elixir GenStage pipeline, which
+#     needs no service. The network is internal: no container reaches the internet and no port
+#     is published on the host. The credentials are fake and exist only inside this lab.
+# PT: Um broker RabbitMQ e os experimentos em TypeScript, mais o pipeline GenStage em Elixir, que
+#     não precisa de serviço. A rede é interna: nenhum contêiner alcança a internet e nenhuma
+#     porta é publicada no host. As credenciais são falsas e existem só dentro deste laboratório.
+name: msg-pubsub-backpressure
+
+x-ts: &ts
+  build: ./ts
+  image: sef-pubsub-backpressure-ts:local
+
+x-lab: &lab
+  <<: *ts
+  networks:
+    - lab
+  environment:
+    AMQP_URL: amqp://lab:lab-fake-password@broker:5672
+    PROJECT_DIR: /project
+  depends_on:
+    broker:
+      condition: service_healthy
+
+x-elixir: &elixir
+  build: ./elixir
+  image: sef-pubsub-backpressure-elixir:local
+  network_mode: "none"
+
+services:
+  broker:
+    image: rabbitmq:4.3.6-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: lab
+      RABBITMQ_DEFAULT_PASS: lab-fake-password
+    healthcheck:
+      # EN: A plain TCP check on the port the client uses. `rabbitmq-diagnostics` would run as
+      #     root and can create the Erlang cookie before the broker does, making the broker exit.
+      # PT: Uma checagem TCP simples na porta que o cliente usa. O `rabbitmq-diagnostics` rodaria
+      #     como root e pode criar o cookie do Erlang antes do broker, fazendo o broker encerrar.
+      test: ["CMD", "nc", "-z", "127.0.0.1", "5672"]
+      interval: 3s
+      timeout: 10s
+      retries: 40
+    networks:
+      - lab
+
+  # EN: Type check and unit tests, including the memory experiment, which is in-process. They
+  #     need no service, so the container gets no network.
+  # PT: Checagem de tipos e testes unitários, incluindo o experimento de memória, que é em
+  #     processo. Não precisam de serviço, então o contêiner fica sem rede.
+  ts-test:
+    <<: *ts
+    network_mode: "none"
+
+  ts-e2e:
+    <<: *lab
+    command: ["bun", "run", "test:e2e"]
+
+  demo:
+    <<: *lab
+    command: ["bun", "run", "demo"]
+    # EN: Run as the host user. On Linux the mounted project folder belongs to that user, and the
+    #     image's own user (uid 1000) could not write results into it. The setup script exports
+    #     HOST_UID and HOST_GID; on Docker Desktop the default works.
+    # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
+    #     imagem (uid 1000) não conseguiria gravar os resultados. O script de setup exporta
+    #     HOST_UID e HOST_GID; no Docker Desktop o padrão funciona.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+  # EN: mix format and the GenStage tests. The dependency is already inside the image.
+  # PT: mix format e os testes do GenStage. A dependência já está dentro da imagem.
+  elixir-test:
+    <<: *elixir
+
+  elixir-demo:
+    <<: *elixir
+    command: ["sh", "-c", "MIX_ENV=prod mix run --no-compile -e 'PubsubBackpressure.main()'"]
+
+networks:
+  lab:
+    internal: true
