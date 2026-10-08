@@ -20,7 +20,7 @@ The only requirement is Docker.
 ./setup-windows-graph-algorithms.ps1    # Windows
 ```
 
-The script builds one pinned image per language and runs format check, linter and tests in each. The ten reference cases are mounted read-only from `references/usp/data-structures-2/trabalhos/grafos/casos-de-teste`, so run it from a full checkout of the repository.
+The script builds one pinned image per language and runs format check, linter and tests in each. The ten reference cases are mounted read-only from `reference-cases/`, so run it from a full checkout of the repository.
 
 ## Structure
 

@@ -20,7 +20,7 @@ O único requisito é o Docker.
 ./setup-windows-graph-algorithms.ps1    # Windows
 ```
 
-O script constrói uma imagem fixada por linguagem e roda checagem de formato, linter e testes em cada uma. Os dez casos de referência são montados como somente leitura a partir de `references/usp/data-structures-2/trabalhos/grafos/casos-de-teste`, então rode a partir de um checkout completo do repositório.
+O script constrói uma imagem fixada por linguagem e roda checagem de formato, linter e testes em cada uma. Os dez casos de referência são montados como somente leitura a partir de `reference-cases/`, então rode a partir de um checkout completo do repositório.
 
 ## Estrutura
 
