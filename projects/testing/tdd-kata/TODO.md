@@ -5,4 +5,5 @@ The list is the memory of the session: every idea that comes up while working on
 - [x] $5 times 2 is $10
 - [x] equality: $5 equals $5
 - [ ] $5 + 10 CHF is $10 with a rate of 2
-- [ ] the amount in the test should not be read directly
+- [x] the amount in the test should not be read directly
+- [ ] 5 CHF times 2 is 10 CHF
