@@ -1,6 +1,6 @@
-# Benchmark: build-time
+# Benchmark: build
 
-Generated at 2026-10-07T23:47:54.487Z. 5 runs per row after 1 warm-up run. The program is the one of `cpu-single`.
+Generated at 2026-10-08T00:22:25.465Z. 5 runs per row after 1 warm-up run. The program is the one of `cpu-single`.
 
 ## Machine
 
@@ -28,17 +28,17 @@ Generated at 2026-10-07T23:47:54.487Z. 5 runs per row after 1 warm-up run. The p
 
 | Language | Mode | Step | time (ms) | range (ms) | CPU (ms) | Command | Before each run |
 | --- | --- | --- | ---: | ---: | ---: | --- | --- |
-| cpp | cold | compile-and-link | 2534 ± 229 | 2278 to 2787 | 2533 | `g++ -std=c++23 -O2 -ffp-contract=off -pthread main.cpp -o main` | `rm -f main` |
-| cpp | warm | compile-and-link | 2530 ± 258 | 2396 to 2989 | 2530 | `g++ -std=c++23 -O2 -ffp-contract=off -pthread main.cpp -o main` | `append one comment line to main.cpp` |
-| rust | cold | compile-and-link | 456 ± 49.3 | 386 to 513 | 461 | `cargo build --release --locked --offline --quiet` | `rm -rf target` |
-| rust | warm | compile-and-link | 346 ± 44.4 | 300 to 398 | 393 | `cargo build --release --locked --offline --quiet` | `append one comment line to src/main.rs` |
-| go | cold | compile-and-link | 3956 ± 439 | 3498 to 4626 | 16551 | `go build -o main .` | `rm -f main && go clean -cache` |
-| go | warm | compile-and-link | 163 ± 11.0 | 147 to 175 | 310 | `go build -o main .` | `append one comment line to main.go` |
-| java | cold | compile-to-bytecode | 799 ± 54.3 | 742 to 870 | 2157 | `javac -d out Main.java` | `rm -rf out` |
-| java | warm | compile-to-bytecode | 1046 ± 190 | 827 to 1275 | 2646 | `javac -d out Main.java` | `append one comment line to Main.java` |
-| ts | cold | bundle-no-typecheck | 7.03 ± 0.29 | 6.60 to 7.28 | 9.23 | `bun build main.ts --target bun --outfile out/main.js` | `rm -rf out` |
-| ts | warm | bundle-no-typecheck | 7.07 ± 0.62 | 6.24 to 7.88 | 9.14 | `bun build main.ts --target bun --outfile out/main.js` | `append one comment line to main.ts` |
-| elixir | cold | compile-to-bytecode | 1064 ± 200 | 913 to 1363 | 3106 | `elixirc --ignore-module-conflict -o out main.ex` | `rm -rf out` |
-| elixir | warm | compile-to-bytecode | 1160 ± 266 | 933 to 1466 | 2618 | `elixirc --ignore-module-conflict -o out main.ex` | `append one comment line to main.ex` |
-| python | cold | bytecode-automatic | 74.7 ± 13.7 | 54.9 to 91.8 | 74.5 | `python -m py_compile main.py` | `rm -rf __pycache__` |
-| python | warm | bytecode-automatic | 74.5 ± 14.7 | 52.6 to 87.0 | 73.0 | `python -m py_compile main.py` | `append one comment line to main.py` |
+| cpp | cold | compile-and-link | 4512 ± 2676 | 1717 to 8562 | 4430 | `g++ -std=c++23 -O2 -ffp-contract=off -pthread main.cpp -o main` | `rm -f main` |
+| cpp | warm | compile-and-link | 4698 ± 1680 | 2696 to 6095 | 4582 | `g++ -std=c++23 -O2 -ffp-contract=off -pthread main.cpp -o main` | `append one comment line to main.cpp` |
+| rust | cold | compile-and-link | 417 ± 54.8 | 361 to 481 | 400 | `cargo build --release --locked --offline --quiet` | `rm -rf target` |
+| rust | warm | compile-and-link | 551 ± 265 | 369 to 1007 | 378 | `cargo build --release --locked --offline --quiet` | `append one comment line to src/main.rs` |
+| go | cold | compile-and-link | 7439 ± 3568 | 4202 to 12814 | 20502 | `go build -o main .` | `rm -f main && go clean -cache` |
+| go | warm | compile-and-link | 335 ± 132 | 183 to 535 | 443 | `go build -o main .` | `append one comment line to main.go` |
+| java | cold | compile-to-bytecode | 768 ± 114 | 672 to 951 | 1807 | `javac -d out Main.java` | `rm -rf out` |
+| java | warm | compile-to-bytecode | 768 ± 127 | 632 to 945 | 1720 | `javac -d out Main.java` | `append one comment line to Main.java` |
+| ts | cold | bundle-no-typecheck | 8.49 ± 1.72 | 5.96 to 10.7 | 9.62 | `bun build main.ts --target bun --outfile out/main.js` | `rm -rf out` |
+| ts | warm | bundle-no-typecheck | 11.3 ± 7.07 | 5.35 to 22.0 | 7.88 | `bun build main.ts --target bun --outfile out/main.js` | `append one comment line to main.ts` |
+| elixir | cold | compile-to-bytecode | 765 ± 84.3 | 695 to 910 | 2543 | `elixirc --ignore-module-conflict -o out main.ex` | `rm -rf out` |
+| elixir | warm | compile-to-bytecode | 1020 ± 148 | 844 to 1253 | 3039 | `elixirc --ignore-module-conflict -o out main.ex` | `append one comment line to main.ex` |
+| python | cold | bytecode-automatic | 75.9 ± 6.72 | 64.2 to 81.1 | 73.6 | `python -m py_compile main.py` | `rm -rf __pycache__` |
+| python | warm | bytecode-automatic | 74.4 ± 15.9 | 49.0 to 91.3 | 69.5 | `python -m py_compile main.py` | `append one comment line to main.py` |
