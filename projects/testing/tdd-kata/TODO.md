@@ -8,4 +8,4 @@ The list is the memory of the session: every idea that comes up while working on
 - [x] the amount in the test should not be read directly
 - [x] 5 CHF times 2 is 10 CHF
 - [ ] duplication between Dollar and Franc
-- [ ] 5 CHF is not equal to $5
+- [x] 5 CHF is not equal to $5
