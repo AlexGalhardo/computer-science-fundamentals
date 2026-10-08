@@ -961,10 +961,10 @@ Sources: Nakamoto, Bitcoin: A Peer-to-Peer Electronic Cash System.
 | Incentives and mining | 8 |
 | Limits and alternatives: proof of stake, scalability | 8 |
 
-- [ ] QC-CHAIN.1 Coverage map committed
-- [ ] QC-CHAIN.2 100 questions written (PT and EN)
-- [ ] QC-CHAIN.3 Validation passing
-- [ ] QC-CHAIN.4 Blind review resolved
+- [x] QC-CHAIN.1 Coverage map committed
+- [x] QC-CHAIN.2 100 questions written (PT and EN)
+- [x] QC-CHAIN.3 Validation passing
+- [x] QC-CHAIN.4 Blind review resolved
 
 #### QC-CI Continuous integration
 
@@ -2001,13 +2001,14 @@ Teaches: how to find where time goes. Languages: Go, TS.
 
 Teaches: how hashing, proof of work and validation make a tamper-evident chain. Languages: TS, Rust.
 
-- [ ] **MP-CHAIN-1.1** Blocks with hash links and a Merkle root
+- [x] **MP-CHAIN-1.1** Blocks with hash links and a Merkle root
 	- **Accept:** changing any transaction invalidates the chain in a test.
-- [ ] **MP-CHAIN-1.2** Proof of work with adjustable difficulty
+- [x] **MP-CHAIN-1.2** Proof of work with adjustable difficulty
 	- **Accept:** average mining time grows about 16 times per extra hex zero, shown in a table.
-- [ ] **MP-CHAIN-1.3** Signed transactions and a longest-chain rule between local nodes
+	- Note (2026-10-08): the number of attempts grows 16.3, 15.3 and 15.2 times per digit, identical in both languages. Time follows from difficulty 2 on (14.3 to 16.9 times). Between difficulties 1 and 2 the time ratio is about 11 to 12, attributed to the fixed cost of preparing the header when a block needs only 16 hashes. Timings were taken on a shared machine.
+- [x] **MP-CHAIN-1.3** Signed transactions and a longest-chain rule between local nodes
 	- **Accept:** a double spend is rejected and a fork resolves to the longest chain.
-- [ ] **MP-CHAIN-1.4** Definition of done for mini-projects met.
+- [x] **MP-CHAIN-1.4** Definition of done for mini-projects met.
 
 #### MP-CI-1 CI pipeline as a lesson
 

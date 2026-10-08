@@ -17,7 +17,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-2834 de 3384 questões escritas, 78 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+2934 de 3384 questões escritas, 79 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -49,7 +49,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Limitação de taxa | Teoria e prática | 100/100 | feita | [rate-limiter](rate-limiting/rate-limiter.md) |
 | Sistemas de arquivos | Teoria e prática | 0/100 |  | file-organisation (planejado), external-sorting (planejado) |
 | Observabilidade | Teoria e prática | 0/100 |  | three-signals (planejado), structured-logs (planejado), slo-alert (planejado), flame-graph (planejado) |
-| Blockchain | Teoria e prática | 0/100 |  | didactic-blockchain (planejado) |
+| Blockchain | Teoria e prática | 100/100 | feita | [didactic-blockchain](blockchain/didactic-blockchain.md) |
 | Integração contínua | Teoria e prática | 0/100 |  | ci-pipeline (planejado) |
 | Engenharia de software | Teoria | 0/150 |  | nenhum |
 | Inteligência artificial e LLMs | Teoria e prática | 164/164 | feita | [bpe-tokenizer](artificial-intelligence/bpe-tokenizer.md), [neural-network-from-scratch](artificial-intelligence/neural-network-from-scratch.md), [embeddings-vector-search](artificial-intelligence/embeddings-vector-search.md), [tiny-language-model](artificial-intelligence/tiny-language-model.md), [diffusion-toy](artificial-intelligence/diffusion-toy.md), [pytorch-basics](artificial-intelligence/pytorch-basics.md), [tensorflow-keras-basics](artificial-intelligence/tensorflow-keras-basics.md), [computer-vision-cnn](artificial-intelligence/computer-vision-cnn.md) |

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.116.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/blockchain/didactic-blockchain` (TypeScript and Rust): blocks with hash links and a Merkle root, proof of work with adjustable difficulty and its timing table, signed transactions, and a longest-chain rule between local nodes that rejects a double spend. A teaching toy that runs only locally. The blockchain area is complete.
+
+## [0.115.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: blockchain, 100 questions in Portuguese and English, blind-reviewed in both languages with 100 of 100 agreement and 8 reviewer notes resolved (`quiz/content/blockchain/review.md`).
+
 ## [0.114.0] - 2026-10-07
 
 ### Added
