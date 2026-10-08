@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1300 de 3220 questões escritas, 44 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+1400 de 3220 questões escritas, 44 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -38,7 +38,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Programação orientada a objetos | Teoria e prática | 0/100 |  | oop-vs-functional (planejado), code-smells (planejado) |
 | Programação funcional | Teoria e prática | 0/100 |  | pure-functions-properties (planejado) |
 | Padrões de projeto e SOLID | Teoria e prática | 0/100 |  | backend-patterns (planejado), solid-before-after (planejado) |
-| Arquitetura de software | Teoria e prática | 0/100 |  | clean-architecture-app (planejado) |
+| Arquitetura de software | Teoria e prática | 100/100 | pendente | clean-architecture-app (planejado) |
 | Testes | Teoria e prática | 0/100 |  | test-pyramid (planejado), tdd-kata (planejado), mutation-testing (planejado), flaky-tests (planejado), mini-xunit (planejado) |
 | Protocolos | Teoria e prática | 0/100 |  | rest-graphql-jsonrpc (planejado), http-versions (planejado), http-server-raw-tcp (planejado) |
 | Mensageria | Teoria e prática | 0/100 |  | queue-comparison (planejado), idempotency-dlq (planejado), pubsub-backpressure (planejado) |
