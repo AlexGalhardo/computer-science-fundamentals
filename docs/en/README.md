@@ -40,7 +40,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Design patterns and SOLID | Theory and practice | 0/100 |  | backend-patterns (planned), solid-before-after (planned) |
 | Software architecture | Theory and practice | 0/100 |  | clean-architecture-app (planned) |
 | Testing | Theory and practice | 0/100 |  | test-pyramid (planned), tdd-kata (planned), mutation-testing (planned), flaky-tests (planned), mini-xunit (planned) |
-| Protocols | Theory and practice | 100/100 | pending | [rest-graphql-jsonrpc](protocols/rest-graphql-jsonrpc.md), http-versions (planned), http-server-raw-tcp (planned) |
+| Protocols | Theory and practice | 100/100 | done | [rest-graphql-jsonrpc](protocols/rest-graphql-jsonrpc.md), http-versions (planned), http-server-raw-tcp (planned) |
 | Messaging | Theory and practice | 0/100 |  | queue-comparison (planned), idempotency-dlq (planned), pubsub-backpressure (planned) |
 | Load balancing | Theory and practice | 0/100 |  | nginx-vs-caddy (planned), l7-load-balancer (planned) |
 | Performance | Theory and practice | 0/100 |  | bun-vs-node (planned), k6-scenarios (planned), cache-friendly-matrix (planned) |
