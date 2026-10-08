@@ -1,0 +1,253 @@
+{
+	"description": "Table-driven cases shared by the TypeScript and the Go tests. Every expected decision was worked out by hand from the definition of the algorithm, not copied from the output of the code. Times are milliseconds. departAtMs exists only for the leaky bucket: the time at which an admitted request leaves the queue.",
+	"cases": [
+		{
+			"name": "fixed window: admits up to the limit, then a new window starts from zero",
+			"algorithm": "fixed-window",
+			"limit": 3,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 100, "allowed": true },
+				{ "atMs": 200, "allowed": true },
+				{ "atMs": 300, "allowed": false },
+				{ "atMs": 999, "allowed": false },
+				{ "atMs": 1000, "allowed": true }
+			]
+		},
+		{
+			"name": "fixed window: double burst at the boundary, 6 admitted in 120 ms with limit 3",
+			"algorithm": "fixed-window",
+			"limit": 3,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 900, "allowed": true },
+				{ "atMs": 950, "allowed": true },
+				{ "atMs": 990, "allowed": true },
+				{ "atMs": 1000, "allowed": true },
+				{ "atMs": 1010, "allowed": true },
+				{ "atMs": 1020, "allowed": true },
+				{ "atMs": 1030, "allowed": false }
+			]
+		},
+		{
+			"name": "fixed window: idle windows are skipped and each one starts empty",
+			"algorithm": "fixed-window",
+			"limit": 1,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 500, "allowed": false },
+				{ "atMs": 5200, "allowed": true },
+				{ "atMs": 5999, "allowed": false },
+				{ "atMs": 6000, "allowed": true }
+			]
+		},
+		{
+			"name": "sliding log: an entry expires exactly one window after it was recorded",
+			"algorithm": "sliding-log",
+			"limit": 3,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 100, "allowed": true },
+				{ "atMs": 200, "allowed": true },
+				{ "atMs": 300, "allowed": false },
+				{ "atMs": 999, "allowed": false },
+				{ "atMs": 1000, "allowed": true },
+				{ "atMs": 1050, "allowed": false },
+				{ "atMs": 1100, "allowed": true },
+				{ "atMs": 1150, "allowed": false }
+			]
+		},
+		{
+			"name": "sliding log: the boundary burst of the fixed window is refused",
+			"algorithm": "sliding-log",
+			"limit": 3,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 900, "allowed": true },
+				{ "atMs": 950, "allowed": true },
+				{ "atMs": 990, "allowed": true },
+				{ "atMs": 1000, "allowed": false },
+				{ "atMs": 1010, "allowed": false },
+				{ "atMs": 1899, "allowed": false },
+				{ "atMs": 1900, "allowed": true },
+				{ "atMs": 1949, "allowed": false },
+				{ "atMs": 1950, "allowed": true }
+			]
+		},
+		{
+			"name": "sliding log: rejected requests are not recorded, so the client recovers",
+			"algorithm": "sliding-log",
+			"limit": 2,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 1, "allowed": true },
+				{ "atMs": 500, "allowed": false },
+				{ "atMs": 900, "allowed": false },
+				{ "atMs": 1000, "allowed": true },
+				{ "atMs": 1001, "allowed": true },
+				{ "atMs": 1002, "allowed": false }
+			]
+		},
+		{
+			"name": "sliding counter: the weight of the previous window fades as the current one advances",
+			"algorithm": "sliding-counter",
+			"limit": 4,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 100, "allowed": true },
+				{ "atMs": 200, "allowed": true },
+				{ "atMs": 300, "allowed": true },
+				{ "atMs": 400, "allowed": false },
+				{ "atMs": 1000, "allowed": false },
+				{ "atMs": 1250, "allowed": true },
+				{ "atMs": 1300, "allowed": true },
+				{ "atMs": 1400, "allowed": false },
+				{ "atMs": 1500, "allowed": false },
+				{ "atMs": 1600, "allowed": true },
+				{ "atMs": 1750, "allowed": false },
+				{ "atMs": 1800, "allowed": true },
+				{ "atMs": 1900, "allowed": false },
+				{ "atMs": 2000, "allowed": false }
+			]
+		},
+		{
+			"name": "sliding counter: after more than one silent window the previous count is zero",
+			"algorithm": "sliding-counter",
+			"limit": 2,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 10, "allowed": true },
+				{ "atMs": 20, "allowed": false },
+				{ "atMs": 2500, "allowed": true },
+				{ "atMs": 2600, "allowed": true },
+				{ "atMs": 2700, "allowed": false }
+			]
+		},
+		{
+			"name": "sliding counter: requests bunched at the end of a window fool the estimate (5 admitted in 200 ms with limit 4)",
+			"algorithm": "sliding-counter",
+			"limit": 4,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 900, "allowed": true },
+				{ "atMs": 950, "allowed": true },
+				{ "atMs": 980, "allowed": true },
+				{ "atMs": 990, "allowed": true },
+				{ "atMs": 1000, "allowed": false },
+				{ "atMs": 1100, "allowed": true },
+				{ "atMs": 1110, "allowed": false },
+				{ "atMs": 1500, "allowed": true },
+				{ "atMs": 1600, "allowed": true },
+				{ "atMs": 1700, "allowed": false }
+			]
+		},
+		{
+			"name": "token bucket: a full bucket passes a burst, then one token per second",
+			"algorithm": "token-bucket",
+			"limit": 3,
+			"windowMs": 3000,
+			"requests": [
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": false },
+				{ "atMs": 500, "allowed": false },
+				{ "atMs": 1000, "allowed": true },
+				{ "atMs": 1500, "allowed": false },
+				{ "atMs": 2000, "allowed": true },
+				{ "atMs": 2999, "allowed": false },
+				{ "atMs": 3000, "allowed": true }
+			]
+		},
+		{
+			"name": "token bucket: a minute of silence earns only the capacity, not 120 tokens",
+			"algorithm": "token-bucket",
+			"limit": 2,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": false },
+				{ "atMs": 60000, "allowed": true },
+				{ "atMs": 60000, "allowed": true },
+				{ "atMs": 60000, "allowed": false },
+				{ "atMs": 60250, "allowed": false },
+				{ "atMs": 60500, "allowed": true }
+			]
+		},
+		{
+			"name": "token bucket: burst, steady refill every 200 ms, then a full bucket again",
+			"algorithm": "token-bucket",
+			"limit": 5,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": true },
+				{ "atMs": 0, "allowed": false },
+				{ "atMs": 100, "allowed": false },
+				{ "atMs": 200, "allowed": true },
+				{ "atMs": 300, "allowed": false },
+				{ "atMs": 400, "allowed": true },
+				{ "atMs": 1400, "allowed": true },
+				{ "atMs": 1400, "allowed": true },
+				{ "atMs": 1400, "allowed": true },
+				{ "atMs": 1400, "allowed": true },
+				{ "atMs": 1400, "allowed": true },
+				{ "atMs": 1400, "allowed": false }
+			]
+		},
+		{
+			"name": "leaky bucket: a burst is admitted up to the capacity and leaves one per second",
+			"algorithm": "leaky-bucket",
+			"limit": 3,
+			"windowMs": 3000,
+			"requests": [
+				{ "atMs": 0, "allowed": true, "departAtMs": 0 },
+				{ "atMs": 0, "allowed": true, "departAtMs": 1000 },
+				{ "atMs": 0, "allowed": true, "departAtMs": 2000 },
+				{ "atMs": 0, "allowed": false },
+				{ "atMs": 999, "allowed": false },
+				{ "atMs": 1000, "allowed": true, "departAtMs": 3000 },
+				{ "atMs": 1500, "allowed": false },
+				{ "atMs": 2000, "allowed": true, "departAtMs": 4000 },
+				{ "atMs": 9000, "allowed": true, "departAtMs": 9000 }
+			]
+		},
+		{
+			"name": "leaky bucket: four requests in the same millisecond come out 250 ms apart",
+			"algorithm": "leaky-bucket",
+			"limit": 4,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 100, "allowed": true, "departAtMs": 100 },
+				{ "atMs": 100, "allowed": true, "departAtMs": 350 },
+				{ "atMs": 100, "allowed": true, "departAtMs": 600 },
+				{ "atMs": 100, "allowed": true, "departAtMs": 850 },
+				{ "atMs": 100, "allowed": false },
+				{ "atMs": 350, "allowed": true, "departAtMs": 1100 }
+			]
+		},
+		{
+			"name": "leaky bucket: silence earns no credit, the output keeps its pace",
+			"algorithm": "leaky-bucket",
+			"limit": 2,
+			"windowMs": 1000,
+			"requests": [
+				{ "atMs": 0, "allowed": true, "departAtMs": 0 },
+				{ "atMs": 60000, "allowed": true, "departAtMs": 60000 },
+				{ "atMs": 60000, "allowed": true, "departAtMs": 60500 },
+				{ "atMs": 60000, "allowed": false },
+				{ "atMs": 60500, "allowed": true, "departAtMs": 61000 }
+			]
+		}
+	]
+}
