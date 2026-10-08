@@ -832,10 +832,10 @@ Sources: Legacy project load-stress-tests, NGINX and Caddy documentation, system
 | Consistent hashing | 6 |
 | High availability and single points of failure | 6 |
 
-- [ ] QC-LB.1 Coverage map committed
-- [ ] QC-LB.2 100 questions written (PT and EN)
-- [ ] QC-LB.3 Validation passing
-- [ ] QC-LB.4 Blind review resolved
+- [x] QC-LB.1 Coverage map committed
+- [x] QC-LB.2 100 questions written (PT and EN)
+- [x] QC-LB.3 Validation passing
+- [x] QC-LB.4 Blind review resolved
 
 #### QC-PERF Performance
 
@@ -1847,25 +1847,26 @@ Teaches: the difference between competing consumers and broadcast, and what happ
 
 Teaches: how balancing algorithms distribute requests and survive a dead node. Languages: config + TS.
 
-- [ ] **MP-LB-1.1** Three identical API instances behind each proxy
+- [x] **MP-LB-1.1** Three identical API instances behind each proxy
 	- **Accept:** one command brings up both stacks on different local ports.
-- [ ] **MP-LB-1.2** Round-robin, least connections and ip-hash
+- [x] **MP-LB-1.2** Round-robin, least connections and ip-hash
 	- **Accept:** request counts per instance match the expected distribution within 5%.
-- [ ] **MP-LB-1.3** Failure experiment: one instance stopped during load
+- [x] **MP-LB-1.3** Failure experiment: one instance stopped during load
 	- **Accept:** error count and recovery time are recorded for both proxies.
-- [ ] **MP-LB-1.4** Definition of done for mini-projects met.
+- [x] **MP-LB-1.4** Definition of done for mini-projects met.
 
 #### MP-LB-2 Hand-written L7 load balancer
 
 Teaches: what a load balancer does on every request. Languages: Go.
 
-- [ ] **MP-LB-2.1** Reverse proxy with round-robin and least connections
+- [x] **MP-LB-2.1** Reverse proxy with round-robin and least connections
 	- **Accept:** integration tests check the distribution.
-- [ ] **MP-LB-2.2** Active health checks and retry on failure
+- [x] **MP-LB-2.2** Active health checks and retry on failure
 	- **Accept:** a stopped back end is removed within the configured interval and no request fails.
-- [ ] **MP-LB-2.3** Benchmark against NGINX with local k6
+- [x] **MP-LB-2.3** Benchmark against NGINX with local k6
 	- **Accept:** table of throughput and p99 latency for both.
-- [ ] **MP-LB-2.4** Definition of done for mini-projects met.
+	- Note (2026-10-08): the table is committed, but the benchmark names no winner. Medians were about 10,600 requests per second for this balancer and 10,100 for NGINX, with fully overlapping ranges, on a machine loaded by other work. Earlier runs on the same day gave medians between about 5,000 and 9,600.
+- [x] **MP-LB-2.4** Definition of done for mini-projects met.
 
 #### MP-PERF-1 Bun against Node
 

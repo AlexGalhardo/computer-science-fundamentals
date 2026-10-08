@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.110.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/load-balancing/l7-load-balancer` (Go): a hand-written layer 7 reverse proxy with round-robin and least connections, active health checks and retry on failure, and a benchmark against NGINX with local k6. The load balancing area is complete.
+
+## [0.109.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/load-balancing/nginx-vs-caddy` (configuration and TypeScript): three identical API instances behind NGINX and behind Caddy, round-robin, least connections and ip-hash with the measured distribution, and a failure experiment that records errors and recovery time for both proxies.
+
+## [0.108.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: load balancing, 100 questions in Portuguese and English, blind-reviewed in both languages with 100 of 100 agreement and 6 reviewer notes resolved (`quiz/content/load-balancing/review.md`).
+
 ## [0.107.0] - 2026-10-07
 
 ### Added
