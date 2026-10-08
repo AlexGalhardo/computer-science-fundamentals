@@ -16,7 +16,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-1670 of 3350 questions written, 47 of 83 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+1770 of 3350 questions written, 48 of 83 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
@@ -36,7 +36,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Digital logic | Theory and practice | 100/100 | done | [gates-karnaugh-adders](digital-logic/gates-karnaugh-adders.md), [nand-alu-cpu](digital-logic/nand-alu-cpu.md) |
 | Electronics | Theory | 170/170 | done | none |
 | Object-oriented programming | Theory and practice | 0/100 |  | oop-vs-functional (planned), code-smells (planned) |
-| Functional programming | Theory and practice | 0/100 |  | pure-functions-properties (planned) |
+| Functional programming | Theory and practice | 100/100 | done | [pure-functions-properties](functional-programming/pure-functions-properties.md) |
 | Design patterns and SOLID | Theory and practice | 0/100 |  | backend-patterns (planned), solid-before-after (planned) |
 | Software architecture | Theory and practice | 100/100 | done | [clean-architecture-app](software-architecture/clean-architecture-app.md) |
 | Testing | Theory and practice | 0/100 |  | test-pyramid (planned), tdd-kata (planned), mutation-testing (planned), flaky-tests (planned), mini-xunit (planned) |

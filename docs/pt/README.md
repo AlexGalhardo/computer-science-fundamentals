@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1670 de 3350 questões escritas, 47 de 83 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+1770 de 3350 questões escritas, 48 de 83 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -36,7 +36,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Lógica digital | Teoria e prática | 100/100 | feita | [gates-karnaugh-adders](digital-logic/gates-karnaugh-adders.md), [nand-alu-cpu](digital-logic/nand-alu-cpu.md) |
 | Eletrônica | Teoria | 170/170 | feita | nenhum |
 | Programação orientada a objetos | Teoria e prática | 0/100 |  | oop-vs-functional (planejado), code-smells (planejado) |
-| Programação funcional | Teoria e prática | 0/100 |  | pure-functions-properties (planejado) |
+| Programação funcional | Teoria e prática | 100/100 | feita | [pure-functions-properties](functional-programming/pure-functions-properties.md) |
 | Padrões de projeto e SOLID | Teoria e prática | 0/100 |  | backend-patterns (planejado), solid-before-after (planejado) |
 | Arquitetura de software | Teoria e prática | 100/100 | feita | [clean-architecture-app](software-architecture/clean-architecture-app.md) |
 | Testes | Teoria e prática | 0/100 |  | test-pyramid (planejado), tdd-kata (planejado), mutation-testing (planejado), flaky-tests (planejado), mini-xunit (planejado) |
