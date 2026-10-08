@@ -1,0 +1,600 @@
+[
+	{
+		"id": "protocols-http2-01",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "RFC 9113 (HTTP/2), section 4 (HTTP frames) and section 5 (streams and multiplexing)",
+		"pt": {
+			"statement": "Como frames, mensagens e streams se relacionam no HTTP/2?",
+			"alternatives": [
+				"Um stream é um único frame, e uma mensagem é o conjunto de streams de uma conexão",
+				"Um frame é uma requisição inteira, e um stream é a conexão TCP que a transporta",
+				"Uma mensagem é uma linha de texto terminada em CRLF, e um frame é o grupo de linhas de um cabeçalho",
+				"Uma mensagem é uma sequência de frames, e todos eles viajam no mesmo stream",
+				"Um stream é uma conexão TCP separada, aberta para cada mensagem enviada"
+			],
+			"explanations": [
+				"Inverte a hierarquia: o stream é o canal lógico que contém muitos frames, não um frame isolado.",
+				"Confunde as três camadas: uma requisição costuma ocupar vários frames, e muitos streams dividem uma só conexão TCP.",
+				"Descreve o formato textual do HTTP/1.1. No HTTP/2 a mensagem é binária e não é delimitada por CRLF.",
+				"Uma requisição ou resposta vira um frame HEADERS seguido de zero ou mais frames DATA, todos marcados com o identificador do mesmo stream.",
+				"O stream é lógico: existe dentro da conexão TCP, que é única e compartilhada por todos eles."
+			],
+			"concept": "O HTTP/2 mantém a semântica do HTTP e muda a forma de transmitir. A unidade mínima é o frame, com um cabeçalho fixo de 9 bytes que traz tamanho, tipo, flags e o identificador do stream. Um stream é um canal lógico bidirecional dentro da conexão, e uma mensagem (requisição ou resposta) é a sequência de frames trocada em um stream.",
+			"example": {
+				"kind": "diagram",
+				"content": "conexão TCP\n  stream 1: HEADERS (requisição) -> HEADERS + DATA + DATA (resposta)\n  stream 3: HEADERS (requisição) -> HEADERS + DATA (resposta)\n  stream 0: SETTINGS, PING, GOAWAY (controle da conexão)"
+			}
+		},
+		"en": {
+			"statement": "How do frames, messages and streams relate to each other in HTTP/2?",
+			"alternatives": [
+				"A stream is a single frame, and a message is the set of streams of one connection",
+				"A frame is a whole request, and a stream is the TCP connection that carries it",
+				"A message is a text line ending in CRLF, and a frame is the group of lines of a header",
+				"A message is a sequence of frames, and all of them travel on the same stream",
+				"A stream is a separate TCP connection, opened for each message that is sent"
+			],
+			"explanations": [
+				"It inverts the hierarchy: the stream is the logical channel that contains many frames, not one isolated frame.",
+				"It mixes up the three layers: a request usually takes several frames, and many streams share a single TCP connection.",
+				"That describes the text format of HTTP/1.1. In HTTP/2 the message is binary and is not delimited by CRLF.",
+				"A request or response becomes a HEADERS frame followed by zero or more DATA frames, all tagged with the identifier of the same stream.",
+				"The stream is logical: it lives inside the TCP connection, which is single and shared by all of them."
+			],
+			"concept": "HTTP/2 keeps the semantics of HTTP and changes how it is transmitted. The smallest unit is the frame, with a fixed 9-byte header carrying length, type, flags and the stream identifier. A stream is a bidirectional logical channel inside the connection, and a message (request or response) is the sequence of frames exchanged on one stream.",
+			"example": {
+				"kind": "diagram",
+				"content": "TCP connection\n  stream 1: HEADERS (request) -> HEADERS + DATA + DATA (response)\n  stream 3: HEADERS (request) -> HEADERS + DATA (response)\n  stream 0: SETTINGS, PING, GOAWAY (connection control)"
+			}
+		}
+	},
+	{
+		"id": "protocols-http2-02",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "RFC 9113 (HTTP/2), section 5 (streams and multiplexing)",
+		"miniProject": "projects/protocols/http-versions",
+		"pt": {
+			"statement": "Com HTTP/1.1, um navegador abre cerca de seis conexões TCP por origem para buscar recursos em paralelo. O que o HTTP/2 faz no lugar disso?",
+			"alternatives": [
+				"Intercala frames de muitos streams em uma única conexão TCP",
+				"Abre uma conexão TCP por recurso, sem limite por origem",
+				"Envia as requisições em fila e exige as respostas na mesma ordem",
+				"Espalha os recursos por vários subdomínios para multiplicar o limite de seis conexões",
+				"Troca o TCP por UDP, de modo que cada recurso viaje em datagramas independentes"
+			],
+			"explanations": [
+				"É a multiplexação: cada requisição ganha um stream, e os frames de todos eles se alternam na mesma conexão, sem esperar uns pelos outros.",
+				"Seria ainda mais caro que o HTTP/1.1: cada conexão custa um handshake e começa com janela de congestionamento pequena.",
+				"Isso é o pipelining do HTTP/1.1, em que uma resposta lenta segura todas as seguintes. O HTTP/2 foi feito para eliminar essa fila.",
+				"Isso é domain sharding, um contorno da época do HTTP/1.1 que o HTTP/2 torna desnecessário.",
+				"Quem faz isso é o HTTP/3, sobre QUIC. O HTTP/2 continua sobre TCP."
+			],
+			"concept": "No HTTP/1.1 cada conexão atende uma requisição por vez, então o paralelismo depende de abrir várias conexões, e os navegadores limitam esse número a cerca de seis por origem. O HTTP/2 multiplexa: muitos streams convivem em uma conexão, e frames de respostas diferentes chegam intercalados. Isso dispensa contornos como domain sharding e pipelining."
+		},
+		"en": {
+			"statement": "With HTTP/1.1, a browser opens about six TCP connections per origin to fetch resources in parallel. What does HTTP/2 do instead?",
+			"alternatives": [
+				"It interleaves frames of many streams over a single TCP connection",
+				"It opens one TCP connection per resource, with no limit per origin",
+				"It sends the requests in a queue and requires the responses in the same order",
+				"It spreads the resources over several subdomains to multiply the limit of six connections",
+				"It replaces TCP with UDP, so that each resource travels in independent datagrams"
+			],
+			"explanations": [
+				"That is multiplexing: each request gets a stream, and the frames of all of them alternate on the same connection, without waiting for one another.",
+				"That would cost even more than HTTP/1.1: every connection needs a handshake and starts with a small congestion window.",
+				"That is HTTP/1.1 pipelining, in which a slow response holds back all the following ones. HTTP/2 was designed to remove that queue.",
+				"That is domain sharding, a workaround of the HTTP/1.1 era that HTTP/2 makes unnecessary.",
+				"That is what HTTP/3 does, over QUIC. HTTP/2 still runs over TCP."
+			],
+			"concept": "In HTTP/1.1 each connection serves one request at a time, so parallelism depends on opening several connections, and browsers cap that number at about six per origin. HTTP/2 multiplexes: many streams live on one connection, and frames of different responses arrive interleaved. This makes workarounds such as domain sharding and pipelining unnecessary."
+		}
+	},
+	{
+		"id": "protocols-http2-03",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "RFC 9113 (HTTP/2), section 5.1.1 (stream identifiers)",
+		"pt": {
+			"statement": "Que identificadores de stream o cliente usa para as requisições que ele abre no HTTP/2?",
+			"alternatives": [
+				"Números pares, em ordem crescente",
+				"O número zero, compartilhado por todas as requisições",
+				"Qualquer número livre, sorteado a cada requisição",
+				"O mesmo número da porta TCP de origem do cliente",
+				"Números ímpares, em ordem crescente"
+			],
+			"explanations": [
+				"Os pares são reservados aos streams iniciados pelo servidor, como os de server push.",
+				"O stream 0 representa a conexão inteira e carrega apenas frames de controle, como SETTINGS e PING.",
+				"Os identificadores não são sorteados: cada novo stream precisa ter número maior que todos os anteriores abertos pelo mesmo lado.",
+				"A porta TCP identifica a conexão. Os streams são numerados dentro dela, sem relação com a porta.",
+				"O cliente usa 1, 3, 5 e assim por diante. A paridade evita que os dois lados escolham o mesmo número ao mesmo tempo."
+			],
+			"concept": "Cada stream tem um identificador inteiro de 31 bits. Os iniciados pelo cliente são ímpares, os iniciados pelo servidor são pares, e o zero é reservado ao controle da conexão. Os números só crescem e nunca são reutilizados: quando acabam, é preciso abrir outra conexão."
+		},
+		"en": {
+			"statement": "Which stream identifiers does the client use for the requests it opens in HTTP/2?",
+			"alternatives": [
+				"Even numbers, in increasing order",
+				"The number zero, shared by all the requests",
+				"Any free number, drawn at random for each request",
+				"The same number as the client's TCP source port",
+				"Odd numbers, in increasing order"
+			],
+			"explanations": [
+				"Even numbers are reserved for streams initiated by the server, such as those of server push.",
+				"Stream 0 stands for the whole connection and carries only control frames, such as SETTINGS and PING.",
+				"Identifiers are not random: each new stream must have a number greater than all the earlier ones opened by the same side.",
+				"The TCP port identifies the connection. Streams are numbered inside it, unrelated to the port.",
+				"The client uses 1, 3, 5 and so on. The parity prevents both sides from choosing the same number at the same time."
+			],
+			"concept": "Every stream has a 31-bit integer identifier. Those initiated by the client are odd, those initiated by the server are even, and zero is reserved for connection control. The numbers only grow and are never reused: when they run out, a new connection must be opened."
+		}
+	},
+	{
+		"id": "protocols-http2-04",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "basic",
+		"answer": 2,
+		"source": "RFC 9113 (HTTP/2), section 8.3 (HTTP control data)",
+		"pt": {
+			"statement": "A resposta HTTP/1.1 abaixo começa com uma linha de status. Onde a informação dessa linha vai no HTTP/2?",
+			"snippet": {
+				"kind": "code",
+				"language": "http",
+				"content": "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 1024\n\n<!doctype html>..."
+			},
+			"alternatives": [
+				"No primeiro frame DATA, como uma linha de texto antes do corpo",
+				"Em um cabeçalho `Status`, com o código e a frase de motivo `OK`",
+				"No pseudo-cabeçalho `:status`, que carrega apenas o código",
+				"No pseudo-cabeçalho `:method`, devolvido pelo servidor",
+				"No campo de tipo do cabeçalho de 9 bytes do próprio frame HEADERS"
+			],
+			"explanations": [
+				"Frames DATA carregam só o corpo. Os dados de controle da mensagem vão no frame HEADERS.",
+				"Não existe cabeçalho comum `Status`, e o HTTP/2 eliminou a frase de motivo.",
+				"A resposta leva um único pseudo-cabeçalho, `:status`, com os três dígitos. A versão e a frase de motivo deixam de ser transmitidas.",
+				"`:method` existe apenas na requisição e informa o método, como GET.",
+				"O campo de tipo diz que o frame é HEADERS, DATA e assim por diante. Ele não conhece códigos de status do HTTP."
+			],
+			"concept": "O HTTP/2 não tem linha de requisição nem linha de status. Esses dados viram pseudo-cabeçalhos, com nome iniciado por dois-pontos, enviados antes dos cabeçalhos comuns: `:method`, `:scheme`, `:authority` e `:path` na requisição, e `:status` na resposta. `:authority` ocupa o papel do cabeçalho `Host`.",
+			"example": {
+				"kind": "code",
+				"language": "http",
+				"content": ":method: GET\n:scheme: https\n:authority: example.test\n:path: /index.html\naccept: text/html\n\n:status: 200\ncontent-type: text/html"
+			}
+		},
+		"en": {
+			"statement": "The HTTP/1.1 response below starts with a status line. Where does the information of that line go in HTTP/2?",
+			"snippet": {
+				"kind": "code",
+				"language": "http",
+				"content": "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 1024\n\n<!doctype html>..."
+			},
+			"alternatives": [
+				"In the first DATA frame, as a text line before the body",
+				"In a `Status` header field, with the code and the reason phrase `OK`",
+				"In the `:status` pseudo-header field, which carries only the code",
+				"In the `:method` pseudo-header field, echoed back by the server",
+				"In the type field of the 9-byte header of the HEADERS frame itself"
+			],
+			"explanations": [
+				"DATA frames carry only the body. The control data of the message goes in the HEADERS frame.",
+				"There is no regular `Status` header field, and HTTP/2 dropped the reason phrase.",
+				"The response carries a single pseudo-header field, `:status`, with the three digits. The version and the reason phrase are no longer transmitted.",
+				"`:method` exists only in the request and tells the method, such as GET.",
+				"The type field says the frame is HEADERS, DATA and so on. It knows nothing about HTTP status codes."
+			],
+			"concept": "HTTP/2 has neither a request line nor a status line. That data becomes pseudo-header fields, whose names start with a colon and which are sent before the regular fields: `:method`, `:scheme`, `:authority` and `:path` in the request, and `:status` in the response. `:authority` plays the role of the `Host` header.",
+			"example": {
+				"kind": "code",
+				"language": "http",
+				"content": ":method: GET\n:scheme: https\n:authority: example.test\n:path: /index.html\naccept: text/html\n\n:status: 200\ncontent-type: text/html"
+			}
+		}
+	},
+	{
+		"id": "protocols-http2-05",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "RFC 9113 (HTTP/2), section 3 (starting HTTP/2); RFC 7301 (ALPN)",
+		"miniProject": "projects/protocols/http-versions",
+		"pt": {
+			"statement": "Como um navegador e um servidor combinam o uso de HTTP/2 em uma conexão com TLS?",
+			"alternatives": [
+				"Por um cabeçalho `Upgrade: h2c` enviado na primeira requisição HTTP/1.1",
+				"Pela extensão ALPN do handshake TLS, com o identificador `h2`",
+				"Pelo cabeçalho de resposta `Alt-Svc`, que anuncia `h2` em uma porta UDP",
+				"Pela porta: 443 sempre significa HTTP/2, e 80 sempre significa HTTP/1.1",
+				"Por um frame SETTINGS enviado antes de o handshake TLS começar"
+			],
+			"explanations": [
+				"`h2c` é o HTTP/2 em texto claro, sem TLS, e os navegadores não o implementam. O mecanismo de `Upgrade` foi inclusive retirado da RFC 9113.",
+				"O cliente lista os protocolos que aceita no ClientHello, e o servidor escolhe `h2`. A decisão sai junto com o handshake, sem viagem extra.",
+				"`Alt-Svc` com porta UDP é a forma de descobrir HTTP/3. O HTTP/2 roda sobre TCP.",
+				"A porta 443 indica TLS, não a versão do HTTP: sobre ela podem rodar HTTP/1.1 ou HTTP/2.",
+				"O SETTINGS é o primeiro frame do HTTP/2, mas só é enviado depois que o protocolo já foi escolhido e o TLS está pronto."
+			],
+			"concept": "O ALPN (Application-Layer Protocol Negotiation) é uma extensão do TLS em que o cliente anuncia os protocolos de aplicação que fala e o servidor escolhe um. Para HTTP/2 sobre TLS o identificador é `h2`. Existe também `h2c`, HTTP/2 sem TLS, usado entre serviços internos e não por navegadores."
+		},
+		"en": {
+			"statement": "How do a browser and a server agree to use HTTP/2 on a connection with TLS?",
+			"alternatives": [
+				"Through an `Upgrade: h2c` header sent in the first HTTP/1.1 request",
+				"Through the ALPN extension of the TLS handshake, with the identifier `h2`",
+				"Through the `Alt-Svc` response header, which announces `h2` on a UDP port",
+				"Through the port: 443 always means HTTP/2, and 80 always means HTTP/1.1",
+				"Through a SETTINGS frame sent before the TLS handshake begins"
+			],
+			"explanations": [
+				"`h2c` is clear-text HTTP/2, without TLS, and browsers do not implement it. The `Upgrade` mechanism was even removed from RFC 9113.",
+				"The client lists the protocols it accepts in the ClientHello, and the server picks `h2`. The decision comes with the handshake, with no extra round trip.",
+				"`Alt-Svc` with a UDP port is how HTTP/3 is discovered. HTTP/2 runs over TCP.",
+				"Port 443 indicates TLS, not the HTTP version: HTTP/1.1 or HTTP/2 can run over it.",
+				"SETTINGS is the first frame of HTTP/2, but it is sent only after the protocol has been chosen and TLS is ready."
+			],
+			"concept": "ALPN (Application-Layer Protocol Negotiation) is a TLS extension in which the client announces the application protocols it speaks and the server picks one. For HTTP/2 over TLS the identifier is `h2`. There is also `h2c`, HTTP/2 without TLS, used between internal services and not by browsers."
+		}
+	},
+	{
+		"id": "protocols-http2-06",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "RFC 7541 (HPACK), section 7 (security considerations)",
+		"pt": {
+			"statement": "O SPDY, antecessor do HTTP/2, comprimia os cabeçalhos com um compressor de uso geral (DEFLATE, o mesmo do gzip). O HTTP/2 o trocou pelo HPACK. Qual foi o principal motivo?",
+			"alternatives": [
+				"O DEFLATE não consegue comprimir textos tão curtos quanto um conjunto de cabeçalhos, e a saída ficava maior que a entrada",
+				"O DEFLATE precisa da mensagem inteira antes de emitir saída, o que impedia enviar cabeçalhos aos poucos",
+				"Um atacante que injeta texto e observa tamanhos conseguia recuperar segredos como cookies (CRIME)",
+				"O DEFLATE era patenteado, e os navegadores não podiam distribuí-lo sem pagar licença",
+				"A saída do DEFLATE não é alinhada em bytes, e por isso não cabe no payload de um frame binário"
+			],
+			"explanations": [
+				"Cabeçalhos HTTP são muito repetitivos e o DEFLATE os comprimia bem. O problema foi de segurança, não de taxa de compressão.",
+				"O DEFLATE funciona em modo de fluxo e emite saída aos poucos, tanto que o SPDY o usava dessa forma.",
+				"Com o segredo e o texto do atacante no mesmo contexto de compressão, um palpite certo repete bytes e encurta a saída. Medindo tamanhos, o segredo sai byte a byte.",
+				"O DEFLATE é um formato aberto, especificado na RFC 1951, e sempre fez parte dos navegadores.",
+				"A saída do compressor é entregue como bytes comuns e viajava sem problema nos frames do SPDY."
+			],
+			"concept": "Comprimir junto um segredo e um texto controlado pelo atacante vaza informação pelo tamanho: é a base do ataque CRIME. O HPACK foi desenhado para limitar isso. Ele não procura repetições parciais dentro dos valores, apenas substitui um cabeçalho inteiro por um índice de tabela ou codifica o valor com um código de Huffman fixo, e permite marcar um campo sensível para nunca ser indexado."
+		},
+		"en": {
+			"statement": "SPDY, the predecessor of HTTP/2, compressed headers with a general-purpose compressor (DEFLATE, the same as gzip). HTTP/2 replaced it with HPACK. What was the main reason?",
+			"alternatives": [
+				"DEFLATE cannot compress texts as short as a set of header fields, and the output was larger than the input",
+				"DEFLATE needs the whole message before it emits output, which prevented sending headers gradually",
+				"An attacker who injects text and watches sizes could recover secrets such as cookies (CRIME)",
+				"DEFLATE was patented, and browsers could not ship it without paying for a licence",
+				"The output of DEFLATE is not byte-aligned, so it does not fit in the payload of a binary frame"
+			],
+			"explanations": [
+				"HTTP headers are very repetitive and DEFLATE compressed them well. The problem was security, not compression ratio.",
+				"DEFLATE works in streaming mode and emits output gradually, and SPDY used it exactly that way.",
+				"With the secret and the attacker's text in the same compression context, a right guess repeats bytes and shortens the output. By measuring sizes, the secret comes out byte by byte.",
+				"DEFLATE is an open format, specified in RFC 1951, and has always been part of browsers.",
+				"The compressor output is delivered as ordinary bytes and travelled without trouble in SPDY frames."
+			],
+			"concept": "Compressing a secret together with attacker-controlled text leaks information through size: this is the basis of the CRIME attack. HPACK was designed to limit that. It does not look for partial repetitions inside values, it only replaces a whole header field with a table index or encodes the value with a fixed Huffman code, and it lets a sensitive field be marked as never indexed."
+		}
+	},
+	{
+		"id": "protocols-http2-07",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "RFC 7541 (HPACK), section 2.3 (indexing tables)",
+		"pt": {
+			"statement": "Os cabeçalhos abaixo são os da primeira de 50 requisições feitas na mesma conexão HTTP/2. Nas seguintes só `:path` muda, e o codificador usa indexação incremental em todos os campos. Com HPACK, como `cookie` e `user-agent` são enviados da segunda requisição em diante?",
+			"snippet": {
+				"kind": "code",
+				"language": "http",
+				"content": ":method: GET\n:scheme: https\n:authority: api.example.test\n:path: /books/1\nuser-agent: ExampleBrowser/1.0 (ExampleOS 10; x64) ExampleEngine/500.1 ExampleKit/20.3\ncookie: session=abc123; theme=dark; lang=pt-BR; consent=yes"
+			},
+			"alternatives": [
+				"Como índices da tabela estática, que já traz os valores dos cookies mais comuns",
+				"São omitidos, pois o servidor reaproveita os cabeçalhos do stream de identificador anterior",
+				"Por extenso de novo, já que cada stream tem o seu próprio contexto de compressão",
+				"Por extenso com código de Huffman, já que a tabela guarda só nomes de cabeçalhos, nunca valores",
+				"Como índices pequenos da tabela dinâmica, preenchida pelas requisições anteriores"
+			],
+			"explanations": [
+				"A tabela estática é fixa e igual para todos: tem o nome `cookie`, mas não o valor, que é próprio de cada usuário.",
+				"Não há herança entre streams. Toda requisição leva todos os seus cabeçalhos, só que em forma compacta.",
+				"O contexto de compressão pertence à conexão (um por sentido), não ao stream. É isso que permite reaproveitar entre requisições.",
+				"A tabela dinâmica guarda pares de nome e valor completos. Huffman é usado quando um valor ainda não está em nenhuma tabela.",
+				"Na primeira requisição o par nome e valor é enviado e inserido na tabela dinâmica dos dois lados. Depois basta citar o índice, de um ou dois bytes."
+			],
+			"concept": "O HPACK usa duas tabelas. A estática tem 61 entradas fixas com cabeçalhos muito comuns, como `:method: GET`. A dinâmica começa vazia e recebe os cabeçalhos vistos na conexão, com tamanho limitado e descarte dos mais antigos. Codificador e decodificador mantêm a mesma tabela dinâmica, por isso um cabeçalho repetido custa só um índice."
+		},
+		"en": {
+			"statement": "The header fields below are those of the first of 50 requests made on the same HTTP/2 connection. In the following ones only `:path` changes, and the encoder uses incremental indexing for every field. With HPACK, how are `cookie` and `user-agent` sent from the second request onwards?",
+			"snippet": {
+				"kind": "code",
+				"language": "http",
+				"content": ":method: GET\n:scheme: https\n:authority: api.example.test\n:path: /books/1\nuser-agent: ExampleBrowser/1.0 (ExampleOS 10; x64) ExampleEngine/500.1 ExampleKit/20.3\ncookie: session=abc123; theme=dark; lang=pt-BR; consent=yes"
+			},
+			"alternatives": [
+				"As indexes into the static table, which already lists the values of the most common cookies",
+				"They are omitted, since the server reuses the headers of the stream with the previous identifier",
+				"In full again, since each stream has its own separate compression context",
+				"In full with a Huffman code, since the table keeps only header names, never values",
+				"As small indexes into the dynamic table, filled by the earlier requests"
+			],
+			"explanations": [
+				"The static table is fixed and the same for everyone: it has the name `cookie`, but not the value, which belongs to each user.",
+				"There is no inheritance between streams. Every request carries all its header fields, only in compact form.",
+				"The compression context belongs to the connection (one per direction), not to the stream. That is what allows reuse across requests.",
+				"The dynamic table keeps complete name and value pairs. Huffman is used when a value is not yet in any table.",
+				"In the first request the name and value pair is sent and inserted into the dynamic table on both sides. After that, citing the index is enough, one or two bytes."
+			],
+			"concept": "HPACK uses two tables. The static one has 61 fixed entries with very common header fields, such as `:method: GET`. The dynamic one starts empty and receives the header fields seen on the connection, with a size limit and eviction of the oldest. Encoder and decoder keep the same dynamic table, so a repeated header field costs only an index."
+		}
+	},
+	{
+		"id": "protocols-http2-08",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "RFC 9113 (HTTP/2), section 5.2 (flow control) and section 6.9 (WINDOW_UPDATE)",
+		"pt": {
+			"statement": "O registro abaixo mostra todos os frames que importam para o controle de fluxo trocados até agora em uma conexão HTTP/2. A janela da conexão e a de cada stream começaram no valor padrão de 65.535 bytes. Quantos bytes de DATA o servidor ainda pode enviar agora no stream 3?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "client -> server   SETTINGS                      (no SETTINGS_INITIAL_WINDOW_SIZE)\nserver -> client   DATA   stream 1   length 16384\nserver -> client   DATA   stream 1   length 16384\nserver -> client   DATA   stream 1   length 7232\n(the server has received no WINDOW_UPDATE so far)"
+			},
+			"alternatives": [
+				"25.535 bytes",
+				"65.535 bytes",
+				"40.000 bytes",
+				"32.767 bytes",
+				"0 bytes"
+			],
+			"explanations": [
+				"Enviado no stream 1: 16.384 + 16.384 + 7.232 = 40.000. O envio é limitado pelo menor dos dois saldos. Conexão: 65.535 - 40.000 = 25.535. Stream 3: 65.535, ainda intacto. O menor é 25.535.",
+				"Considera só a janela do stream 3 e esquece que a janela da conexão é compartilhada e já foi gasta em parte pelo stream 1.",
+				"Confunde o que já foi enviado no stream 1 com o que ainda resta. O saldo é a janela menos o enviado.",
+				"Supõe que a janela da conexão é dividida em partes iguais entre os streams. Ela é um saldo único, consumido por quem enviar primeiro.",
+				"Supõe que um stream precisa terminar antes de outro enviar. Os streams são independentes enquanto houver saldo nas duas janelas."
+			],
+			"concept": "O HTTP/2 tem controle de fluxo em dois níveis, e ele vale apenas para frames DATA. Cada byte enviado desconta da janela do stream e também da janela da conexão, e o receptor devolve crédito com frames WINDOW_UPDATE. O emissor pode enviar no máximo o menor dos dois saldos. Controle de fluxo não é prioridade: a prioridade é só uma dica sobre qual stream o servidor deve atender primeiro."
+		},
+		"en": {
+			"statement": "The trace below shows every frame relevant to flow control exchanged so far on an HTTP/2 connection. The connection window and the window of each stream started at the default value of 65,535 bytes. How many bytes of DATA can the server still send on stream 3 right now?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "client -> server   SETTINGS                      (no SETTINGS_INITIAL_WINDOW_SIZE)\nserver -> client   DATA   stream 1   length 16384\nserver -> client   DATA   stream 1   length 16384\nserver -> client   DATA   stream 1   length 7232\n(the server has received no WINDOW_UPDATE so far)"
+			},
+			"alternatives": [
+				"25,535 bytes",
+				"65,535 bytes",
+				"40,000 bytes",
+				"32,767 bytes",
+				"0 bytes"
+			],
+			"explanations": [
+				"Sent on stream 1: 16,384 + 16,384 + 7,232 = 40,000. Sending is limited by the smaller of the two balances. Connection: 65,535 - 40,000 = 25,535. Stream 3: 65,535, still untouched. The smaller is 25,535.",
+				"It considers only the window of stream 3 and forgets that the connection window is shared and was already partly spent by stream 1.",
+				"It confuses what was already sent on stream 1 with what is left. The balance is the window minus what was sent.",
+				"It assumes the connection window is split into equal parts among the streams. It is a single balance, consumed by whoever sends first.",
+				"It assumes one stream must finish before another sends. Streams are independent while both windows have balance."
+			],
+			"concept": "HTTP/2 has flow control at two levels, and it applies only to DATA frames. Every byte sent is deducted from the stream window and also from the connection window, and the receiver gives credit back with WINDOW_UPDATE frames. The sender may send at most the smaller of the two balances. Flow control is not priority: priority is only a hint about which stream the server should serve first."
+		}
+	},
+	{
+		"id": "protocols-http2-09",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "RFC 9113 (HTTP/2), section 6 (frame definitions)",
+		"pt": {
+			"statement": "Uma página HTTP/2 baixa uma imagem grande no stream 7 enquanto outros streams seguem ativos na mesma conexão. O usuário rola a página e a imagem deixa de ser necessária. Que frame o navegador envia para cancelar apenas esse download?",
+			"alternatives": [
+				"GOAWAY",
+				"PING",
+				"SETTINGS",
+				"RST_STREAM",
+				"WINDOW_UPDATE"
+			],
+			"explanations": [
+				"GOAWAY encerra a conexão inteira de forma ordenada: avisa que nenhum stream novo será aceito. Os outros downloads seriam afetados.",
+				"PING mede o tempo de ida e volta e verifica se a conexão está viva. Não altera nenhum stream.",
+				"SETTINGS ajusta parâmetros da conexão, como o número máximo de streams simultâneos, e viaja no stream 0.",
+				"RST_STREAM termina um stream de imediato, com um código como CANCEL. A conexão e os demais streams continuam.",
+				"WINDOW_UPDATE devolve crédito de controle de fluxo. Deixar de enviá-lo só pausa o emissor, e o stream continuaria aberto."
+			],
+			"concept": "Cada tipo de frame tem um papel. HEADERS e DATA carregam a mensagem, e RST_STREAM cancela um stream, o que no HTTP/1.1 exigia fechar a conexão. GOAWAY encerra a conexão informando o último stream processado. SETTINGS, PING e WINDOW_UPDATE cuidam de parâmetros, vitalidade e controle de fluxo."
+		},
+		"en": {
+			"statement": "An HTTP/2 page downloads a large image on stream 7 while other streams stay active on the same connection. The user scrolls and the image is no longer needed. Which frame does the browser send to cancel only that download?",
+			"alternatives": [
+				"GOAWAY",
+				"PING",
+				"SETTINGS",
+				"RST_STREAM",
+				"WINDOW_UPDATE"
+			],
+			"explanations": [
+				"GOAWAY shuts down the whole connection gracefully: it says no new stream will be accepted. The other downloads would be affected.",
+				"PING measures the round-trip time and checks that the connection is alive. It changes no stream.",
+				"SETTINGS adjusts connection parameters, such as the maximum number of concurrent streams, and travels on stream 0.",
+				"RST_STREAM ends one stream immediately, with a code such as CANCEL. The connection and the other streams go on.",
+				"WINDOW_UPDATE gives flow-control credit back. Withholding it only pauses the sender, and the stream would stay open."
+			],
+			"concept": "Each frame type has a role. HEADERS and DATA carry the message, and RST_STREAM cancels one stream, which in HTTP/1.1 required closing the connection. GOAWAY shuts the connection down, reporting the last stream processed. SETTINGS, PING and WINDOW_UPDATE handle parameters, liveness and flow control."
+		}
+	},
+	{
+		"id": "protocols-http2-10",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "RFC 9113 (HTTP/2), section 8.4 (server push)",
+		"pt": {
+			"statement": "O que era o server push do HTTP/2, e por que os principais navegadores deixaram de aceitá-lo?",
+			"alternatives": [
+				"Mensagens que o servidor envia a qualquer momento aos scripts da página, trocadas pelo WebSocket por ser mais simples",
+				"Respostas enviadas antes de o cliente pedir, que muitas vezes repetiam o que o cache já tinha",
+				"Notificações entregues com o site fechado, que passaram para a Push API dos service workers",
+				"Respostas enviadas antes de o cliente pedir, abandonadas porque exigiam uma conexão TCP extra por recurso",
+				"Frames de cabeçalho enviados antes do corpo, que quebravam a ordem da tabela dinâmica do HPACK"
+			],
+			"explanations": [
+				"O push do HTTP/2 não entrega mensagens ao JavaScript: ele preenche o cache do navegador com respostas HTTP comuns. Mensagens para scripts são o papel de SSE e WebSocket.",
+				"O servidor anunciava com PUSH_PROMISE um recurso que supunha necessário, mas não sabia o que o cliente já guardava, e desperdiçava banda. Os ganhos medidos foram pequenos, e Chrome e Firefox retiraram o suporte.",
+				"Isso é a Web Push, outra tecnologia, que continua em uso e não tem relação com frames do HTTP/2.",
+				"A definição está certa, mas o motivo não: os recursos empurrados viajavam em streams pares da mesma conexão.",
+				"Enviar HEADERS antes de DATA é o funcionamento normal de qualquer mensagem e não tem relação com push."
+			],
+			"concept": "Com server push, o servidor respondia a uma requisição e, por conta própria, abria streams para recursos que o cliente provavelmente pediria em seguida, como o CSS de uma página. Na prática o servidor não conhece o cache do cliente e empurrava dados inúteis. A alternativa adotada é avisar cedo, com `103 Early Hints` e `rel=preload`, e deixar o navegador decidir o que buscar."
+		},
+		"en": {
+			"statement": "What was HTTP/2 server push, and why did the major browsers stop accepting it?",
+			"alternatives": [
+				"Messages the server sends at any time to the page scripts, replaced by WebSocket for being simpler",
+				"Responses sent before the client asks, which often repeated what the cache already had",
+				"Notifications delivered while the site is closed, which moved to the Push API of service workers",
+				"Responses sent before the client asks, dropped because they required one extra TCP connection per resource",
+				"Header frames sent ahead of the body, which broke the ordering of the HPACK dynamic table"
+			],
+			"explanations": [
+				"HTTP/2 push does not deliver messages to JavaScript: it fills the browser cache with ordinary HTTP responses. Messages for scripts are the job of SSE and WebSocket.",
+				"The server announced with PUSH_PROMISE a resource it guessed would be needed, but it did not know what the client already stored, and wasted bandwidth. Measured gains were small, and Chrome and Firefox removed support.",
+				"That is Web Push, a different technology, which is still in use and has nothing to do with HTTP/2 frames.",
+				"The definition is right, but the reason is not: pushed resources travelled on even-numbered streams of the same connection.",
+				"Sending HEADERS before DATA is how any message normally works and has nothing to do with push."
+			],
+			"concept": "With server push, the server answered one request and, on its own initiative, opened streams for resources the client would probably ask for next, such as the CSS of a page. In practice the server does not know the client's cache and pushed useless data. The adopted alternative is to hint early, with `103 Early Hints` and `rel=preload`, and let the browser decide what to fetch."
+		}
+	},
+	{
+		"id": "protocols-http2-11",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "advanced",
+		"answer": 0,
+		"source": "RFC 9113 (HTTP/2), section 5 (streams and multiplexing); RFC 9000 (QUIC), section 2 (streams)",
+		"miniProject": "projects/protocols/http-versions",
+		"pt": {
+			"statement": "Em um enlace com 2% de perda de pacotes, uma página carrega 20 recursos por HTTP/2 em uma única conexão TCP. O diagrama mostra o que aconteceu com quatro segmentos TCP. O que acontece com os dados dos outros streams (7 e 9) até o segmento 2 ser retransmitido, e como isso se compara ao HTTP/1.1 com seis conexões?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "TCP segments of one HTTP/2 connection, in sending order\n\nseg 1  [DATA stream 3]                   arrived\nseg 2  [DATA stream 5]                   LOST\nseg 3  [DATA stream 7] [DATA stream 9]   arrived\nseg 4  [DATA stream 9]                   arrived"
+			},
+			"alternatives": [
+				"Todos esperam, pois o TCP entrega os bytes em ordem; com seis conexões, a perda pararia só uma delas",
+				"Só o stream 5 espera, pois o enquadramento permite processar os frames dos outros streams que chegaram depois da lacuna; o HTTP/1.1 pararia os seis",
+				"Todos esperam, pois o controle de fluxo zera a janela da conexão até a perda ser confirmada; o HTTP/1.1 não tem janelas",
+				"Só o stream 5 espera, e o HTTP/1.1 se sai pior porque cada uma das seis conexões retransmite o mesmo segmento",
+				"Todos são cancelados com RST_STREAM e pedidos de novo; o HTTP/1.1 evita isso por manter conexões ociosas"
+			],
+			"explanations": [
+				"O TCP só entrega à aplicação bytes contíguos. Os frames dos outros streams já estão no buffer do sistema, mas ficam retidos atrás da lacuna. Com seis conexões independentes, as outras cinco seguiriam.",
+				"É o equívoco central: os streams são independentes para o HTTP/2, mas o TCP enxerga um único fluxo de bytes e não entrega nada fora de ordem.",
+				"O bloqueio vem da entrega ordenada do TCP, abaixo do HTTP/2. O controle de fluxo do HTTP/2 conta bytes de DATA e não reage a perda de pacotes.",
+				"Cada conexão TCP retransmite apenas os próprios segmentos. A perda em uma conexão não gera retransmissão nas demais.",
+				"Uma perda de pacote é tratada pelo TCP e nem chega ao HTTP/2 como erro. Nenhum stream é cancelado."
+			],
+			"concept": "O HTTP/2 eliminou o bloqueio de cabeça de fila da camada de aplicação, mas herdou o do transporte. Como todos os streams dividem um fluxo de bytes ordenado, um pacote perdido atrasa todos eles, e em redes com perda uma única conexão pode render menos que as seis do HTTP/1.1. O HTTP/3 resolve isso ao levar cada stream com ordenação própria no QUIC."
+		},
+		"en": {
+			"statement": "On a link with 2% packet loss, a page loads 20 resources over HTTP/2 on a single TCP connection. The diagram shows what happened to four TCP segments. What happens to the data of the other streams (7 and 9) until segment 2 is retransmitted, and how does this compare with HTTP/1.1 over six connections?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "TCP segments of one HTTP/2 connection, in sending order\n\nseg 1  [DATA stream 3]                   arrived\nseg 2  [DATA stream 5]                   LOST\nseg 3  [DATA stream 7] [DATA stream 9]   arrived\nseg 4  [DATA stream 9]                   arrived"
+			},
+			"alternatives": [
+				"All of them wait, since TCP delivers bytes in order; with six connections, the loss would stall only one",
+				"Only stream 5 waits, since framing lets the receiver process frames of other streams that arrived after the gap; HTTP/1.1 would stall all six",
+				"All of them wait, since flow control zeroes the connection window until the loss is acknowledged; HTTP/1.1 has no windows",
+				"Only stream 5 waits, and HTTP/1.1 does worse because each of the six connections retransmits the same segment",
+				"All of them are cancelled with RST_STREAM and requested again; HTTP/1.1 avoids this by keeping connections idle"
+			],
+			"explanations": [
+				"TCP hands only contiguous bytes to the application. The frames of the other streams are already in the system buffer, but they are held behind the gap. With six independent connections, the other five would go on.",
+				"This is the central misconception: streams are independent for HTTP/2, but TCP sees a single byte stream and delivers nothing out of order.",
+				"The blocking comes from TCP's ordered delivery, below HTTP/2. HTTP/2 flow control counts DATA bytes and does not react to packet loss.",
+				"Each TCP connection retransmits only its own segments. A loss on one connection causes no retransmission on the others.",
+				"A packet loss is handled by TCP and never reaches HTTP/2 as an error. No stream is cancelled."
+			],
+			"concept": "HTTP/2 removed head-of-line blocking at the application layer, but inherited the one in the transport. Since all streams share one ordered byte stream, a lost packet delays all of them, and on lossy networks a single connection may perform worse than the six of HTTP/1.1. HTTP/3 solves this by carrying each stream with its own ordering in QUIC."
+		}
+	},
+	{
+		"id": "protocols-http2-12",
+		"area": "protocols",
+		"topic": "http2",
+		"difficulty": "advanced",
+		"answer": 3,
+		"source": "RFC 9113 (HTTP/2), section 9.1 (connection management)",
+		"miniProject": "projects/protocols/http-versions",
+		"pt": {
+			"statement": "Um site ajustado para HTTP/1.1 distribui as imagens por quatro subdomínios, como no trecho abaixo, e cada subdomínio resolve para um endereço IP diferente. Depois de ativar HTTP/2 em todos eles, a página não fica mais rápida e às vezes piora. Qual é a explicação?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "<img src=\"https://img1.example.test/a.png\">\n<img src=\"https://img2.example.test/b.png\">\n<img src=\"https://img3.example.test/c.png\">\n<img src=\"https://img4.example.test/d.png\">\n<!-- ... 196 more images, spread evenly over the four hostnames -->"
+			},
+			"alternatives": [
+				"O HTTP/2 proíbe mais de um nome de host por página, e os recursos dos outros subdomínios falham com erro de protocolo",
+				"Os navegadores ainda limitam o HTTP/2 a seis streams por origem, então os subdomínios só repetem o mesmo limite",
+				"A tabela estática do HPACK guarda o nome do host, e um segundo nome desativa a compressão de cabeçalhos",
+				"Cada subdomínio exige a sua própria conexão, com handshake, janela de congestionamento e tabela HPACK separados",
+				"Os identificadores de stream são compartilhados entre os nomes de host, e quatro subdomínios esgotam os ímpares quatro vezes mais rápido"
+			],
+			"explanations": [
+				"Uma página pode usar quantas origens quiser em qualquer versão do HTTP. Cada origem apenas pede a sua conexão.",
+				"O limite de seis é de conexões no HTTP/1.1. No HTTP/2 o limite de streams simultâneos é negociado por SETTINGS e costuma ser de cem ou mais.",
+				"A tabela estática tem o nome `:authority` sem valor, e a compressão funciona normalmente em cada conexão.",
+				"Com IPs diferentes o navegador não reaproveita a conexão. O sharding divide o tráfego em quatro conexões que começam lentas e não compartilham a tabela dinâmica, justamente o que a multiplexação evitava.",
+				"Os identificadores de stream pertencem a cada conexão. Conexões diferentes numeram os seus streams de forma independente."
+			],
+			"concept": "Domain sharding multiplicava o limite de seis conexões por origem do HTTP/1.1. No HTTP/2 ele atrapalha: uma conexão única já paraleliza tudo, aquece uma só janela de congestionamento e reaproveita a mesma tabela HPACK. Cada nome de host extra custa uma consulta DNS, um handshake TCP e TLS e um novo começo lento."
+		},
+		"en": {
+			"statement": "A site tuned for HTTP/1.1 spreads its images over four subdomains, as in the fragment below, and each subdomain resolves to a different IP address. After HTTP/2 is enabled on all of them, the page gets no faster and sometimes gets worse. What is the explanation?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "<img src=\"https://img1.example.test/a.png\">\n<img src=\"https://img2.example.test/b.png\">\n<img src=\"https://img3.example.test/c.png\">\n<img src=\"https://img4.example.test/d.png\">\n<!-- ... 196 more images, spread evenly over the four hostnames -->"
+			},
+			"alternatives": [
+				"HTTP/2 forbids more than one hostname per page, and the resources of the other subdomains fail with a protocol error",
+				"Browsers still cap HTTP/2 at six streams per origin, so the subdomains only repeat the same limit",
+				"The HPACK static table stores the hostname, and a second name switches header compression off",
+				"Each subdomain requires its own connection, with a separate handshake, congestion window and HPACK table",
+				"Stream identifiers are shared among hostnames, and four subdomains exhaust the odd ones four times faster"
+			],
+			"explanations": [
+				"A page may use as many origins as it wants in any HTTP version. Each origin just asks for its own connection.",
+				"The limit of six applies to connections in HTTP/1.1. In HTTP/2 the limit of concurrent streams is negotiated through SETTINGS and is usually a hundred or more.",
+				"The static table has the name `:authority` with no value, and compression works normally on each connection.",
+				"With different IPs the browser does not reuse the connection. Sharding splits the traffic into four connections that start slow and do not share the dynamic table, exactly what multiplexing avoided.",
+				"Stream identifiers belong to each connection. Different connections number their streams independently."
+			],
+			"concept": "Domain sharding multiplied the HTTP/1.1 limit of six connections per origin. In HTTP/2 it gets in the way: a single connection already parallelises everything, warms up one congestion window and reuses the same HPACK table. Every extra hostname costs a DNS lookup, a TCP and TLS handshake and a new slow start."
+		}
+	}
+]
