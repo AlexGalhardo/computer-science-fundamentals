@@ -1,0 +1,108 @@
+# EN: One service per test suite, so each suite has its own command:
+#       docker compose run --rm unit | integration | regression | smoke | e2e
+#     `shop` is the shop itself, `matrix` runs every suite against every seeded bug (the demo).
+#     SEEDED_BUG (none, unit, integration, e2e, smoke, regression) plants one bug on purpose.
+#     No port is published on the host and the only network is internal, so nothing here reaches
+#     the internet. The suites that need no service get no network at all.
+# PT: Um serviço por suíte de testes, então cada suíte tem o seu próprio comando:
+#       docker compose run --rm unit | integration | regression | smoke | e2e
+#     `shop` é a loja em si, `matrix` roda cada suíte contra cada bug semeado (a demo).
+#     SEEDED_BUG (none, unit, integration, e2e, smoke, regression) planta um bug de propósito.
+#     Nenhuma porta é publicada no host e a única rede é interna, então nada aqui alcança a
+#     internet. As suítes que não precisam de serviço não recebem rede nenhuma.
+name: testing-test-pyramid
+
+x-ts: &ts
+  build: ./ts
+  image: sef-test-pyramid-ts:local
+  environment:
+    SEEDED_BUG: ${SEEDED_BUG:-none}
+
+x-e2e-image: &e2e-image
+  build:
+    context: ./ts
+    dockerfile: e2e.Dockerfile
+  image: sef-test-pyramid-e2e:local
+  # Chromium needs more shared memory than the 64 MB Docker gives by default.
+  shm_size: 1gb
+
+services:
+  typecheck:
+    <<: *ts
+    command: ["bun", "run", "typecheck"]
+    network_mode: "none"
+
+  unit:
+    <<: *ts
+    command: ["bun", "run", "test:unit"]
+    network_mode: "none"
+
+  integration:
+    <<: *ts
+    command: ["bun", "run", "test:integration"]
+    network_mode: "none"
+
+  regression:
+    <<: *ts
+    command: ["bun", "run", "test:regression"]
+    network_mode: "none"
+
+  shop:
+    <<: *ts
+    command: ["bun", "run", "start"]
+    networks:
+      - lab
+    # EN: Healthy means "the port answers", whatever the status. Whether the answer is the right
+    #     one is the smoke suite's question, not the container's.
+    # PT: Saudável significa "a porta responde", seja qual for o status. Se a resposta é a certa
+    #     é pergunta da suíte de fumaça, não do contêiner.
+    healthcheck:
+      test: ["CMD", "bun", "-e", "await fetch('http://127.0.0.1:3000/')"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  smoke:
+    <<: *ts
+    command: ["bun", "run", "test:smoke"]
+    depends_on:
+      shop:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://shop:3000
+    networks:
+      - lab
+
+  e2e:
+    <<: *e2e-image
+    depends_on:
+      shop:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://shop:3000
+    networks:
+      - lab
+
+  # EN: The matrix starts the shop inside its own container, once per seeded bug, and reaches it
+  #     on the loopback interface, so it needs no network. It writes results/ into the mounted
+  #     project folder, so it runs as the host user: on Linux a container user with another uid
+  #     cannot write there. HOME points to /tmp because that user has no home directory.
+  # PT: A matriz inicia a loja dentro do próprio contêiner, uma vez por bug semeado, e a alcança
+  #     pela interface de loopback, então não precisa de rede. Ela escreve results/ na pasta
+  #     montada do projeto, então roda como o usuário do host: no Linux um usuário de contêiner
+  #     com outro uid não consegue escrever ali. HOME aponta para /tmp porque esse usuário não
+  #     tem diretório pessoal.
+  matrix:
+    <<: *e2e-image
+    command: ["bun", "run", "matrix"]
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      HOME: /tmp
+      RESULTS_DIR: /results
+    volumes:
+      - ./results:/results
+    network_mode: "none"
+
+networks:
+  lab:
+    internal: true
