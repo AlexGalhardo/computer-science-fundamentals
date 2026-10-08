@@ -1,0 +1,72 @@
+# EN: `ts-test` runs the type check and the deterministic tests (the fixed ones and the unit
+#     tests). `flaky` runs each flaky test 50 times and `fixed` runs each fixed test 500 times.
+#     `unstable-api` is the "real network" of the lab: a local service that fails one request in
+#     four. Safety: it lives on an `internal` network with no published port, so nothing here
+#     reaches the internet or any third-party host. `fixed` and `ts-test` get no network at all,
+#     which proves that the fixed network test really does not open a socket.
+# PT: `ts-test` roda a checagem de tipos e os testes determinísticos (os corrigidos e os
+#     unitários). `flaky` roda cada teste intermitente 50 vezes e `fixed` roda cada teste
+#     corrigido 500 vezes. `unstable-api` é a "rede real" do laboratório: um serviço local que
+#     falha uma requisição em cada quatro. Segurança: ele vive em uma rede `internal`, sem porta
+#     publicada, então nada aqui alcança a internet nem host de terceiros. `fixed` e `ts-test` não
+#     recebem rede nenhuma, o que prova que o teste de rede corrigido realmente não abre um socket.
+name: testing-flaky-tests
+
+x-ts: &ts
+  build: ./ts
+  image: sef-flaky-tests-ts:local
+
+# EN: The repeat services write results/ into the mounted project folder, so they run as the host
+#     user: on Linux a container user with another uid cannot write there. HOME points to /tmp
+#     because that user has no home directory in the image.
+# PT: Os serviços de repetição escrevem results/ na pasta montada do projeto, então rodam como o
+#     usuário do host: no Linux um usuário de contêiner com outro uid não consegue escrever ali.
+#     HOME aponta para /tmp porque esse usuário não tem diretório pessoal na imagem.
+x-repeat: &repeat
+  <<: *ts
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+  volumes:
+    - ./results:/results
+
+services:
+  ts-test:
+    <<: *ts
+    network_mode: "none"
+
+  unstable-api:
+    <<: *ts
+    command: ["bun", "run", "api"]
+    networks:
+      - lab
+    # EN: The check goes over TCP to the same port the tests use. /health never fails on purpose.
+    # PT: A checagem vai por TCP à mesma porta que os testes usam. /health nunca falha de propósito.
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const r = await fetch('http://127.0.0.1:3000/health'); process.exit(r.ok ? 0 : 1)"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  flaky:
+    <<: *repeat
+    command: ["bun", "run", "repeat", "flaky"]
+    depends_on:
+      unstable-api:
+        condition: service_healthy
+    environment:
+      HOME: /tmp
+      RESULTS_DIR: /results
+      RATES_URL: http://unstable-api:3000
+    networks:
+      - lab
+
+  fixed:
+    <<: *repeat
+    command: ["bun", "run", "repeat", "fixed"]
+    environment:
+      HOME: /tmp
+      RESULTS_DIR: /results
+    network_mode: "none"
+
+networks:
+  lab:
+    internal: true
