@@ -46,3 +46,11 @@ test("$5 + 10 CHF is $10 at a rate of 2 CHF per dollar", () => {
 	const sum = Money.dollar(5).plus(Money.franc(10));
 	expect(bank.reduce(sum, "USD").equals(Money.dollar(10))).toBe(true);
 });
+
+test("a sum can be added to and multiplied", () => {
+	const bank = new Bank();
+	bank.addRate("CHF", "USD", 2);
+	const sum = Money.dollar(5).plus(Money.franc(10));
+	expect(bank.reduce(sum.plus(Money.dollar(5)), "USD").equals(Money.dollar(15))).toBe(true);
+	expect(bank.reduce(sum.times(2), "USD").equals(Money.dollar(20))).toBe(true);
+});
