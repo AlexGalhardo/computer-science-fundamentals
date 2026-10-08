@@ -1,6 +1,6 @@
 # flaky-tests: 500 runs of each fixed test
 
-Written by `docker compose run --rm fixed` in 18.7 s. Expectation: no fixed test may fail, not even once.
+Written by `docker compose run --rm fixed` in 20.2 s. Expectation: no fixed test may fail, not even once.
 
 | Cause | Test file | Runs | Failures | Failure rate | Verdict |
 | --- | --- | --- | --- | --- | --- |

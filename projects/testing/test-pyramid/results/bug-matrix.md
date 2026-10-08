@@ -17,8 +17,8 @@ The duration is the whole command, including the start of the test runner (and o
 
 | Suite | Tests | Duration (ms) | ms per test |
 | --- | --- | --- | --- |
-| unit | 10 | 36 | 3.6 |
-| integration | 8 | 61 | 7.6 |
-| regression | 2 | 52 | 26.0 |
+| unit | 10 | 41 | 4.1 |
+| integration | 8 | 69 | 8.6 |
+| regression | 2 | 56 | 28.0 |
 | smoke | 3 | 9 | 3.0 |
-| e2e | 3 | 2070 | 690.0 |
+| e2e | 3 | 2734 | 911.3 |

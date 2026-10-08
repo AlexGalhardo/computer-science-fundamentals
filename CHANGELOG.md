@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.90.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/testing/mini-xunit` (Python and TypeScript): a test framework written from scratch, with test cases, suites, results, set-up and tear-down, discovery and reporting, that tests itself. The testing area is complete.
+
+## [0.89.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/testing/flaky-tests` (TypeScript): tests that fail intermittently because of time, ordering, shared state and an unreliable local service, and their fixes (fake clock, isolation, deterministic order, stubbed network) passing 500 runs in a row.
+
+## [0.88.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/testing/mutation-testing` (TypeScript): a module with 100% line coverage and weak assertions, a small mutator written from scratch, and the mutation score rising from 21% to 95% when the tests are strengthened.
+
+## [0.87.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/testing/tdd-kata` (TypeScript): the multi-currency money kata in 27 real commits (10 red, 10 green, 7 refactor), a script that checks the rhythm of the history and replays every step, and a walkthrough linking each step to its commit.
+
+## [0.86.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/testing/test-pyramid` (TypeScript): a small application with unit, integration, end-to-end, smoke and regression suites, one seeded bug per level with a generated table of which suite catches it, and the count and duration of each suite.
+
+## [0.85.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: testing, 100 questions in Portuguese and English, blind-reviewed with 100 of 100 agreement and 3 reviewer notes resolved (`quiz/content/testing/review.md`).
+
 ## [0.84.0] - 2026-10-07
 
 ### Added

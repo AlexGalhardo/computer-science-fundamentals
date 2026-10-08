@@ -761,10 +761,10 @@ Sources: Kent Beck (TDD), Sommerville (testing), notes in references/notes/tests
 | Test design: equivalence classes and boundaries | 8 |
 | Tests in CI and test strategy | 4 |
 
-- [ ] QC-TEST.1 Coverage map committed
-- [ ] QC-TEST.2 100 questions written (PT and EN)
-- [ ] QC-TEST.3 Validation passing
-- [ ] QC-TEST.4 Blind review resolved
+- [x] QC-TEST.1 Coverage map committed
+- [x] QC-TEST.2 100 questions written (PT and EN)
+- [x] QC-TEST.3 Validation passing
+- [x] QC-TEST.4 Blind review resolved
 
 ### Wave 5
 
@@ -1732,53 +1732,53 @@ Teaches: how the dependency rule keeps business rules free of frameworks. Langua
 
 Teaches: what each test level is for and what it costs. Languages: TS.
 
-- [ ] **MP-TEST-1.1** Small application with unit, integration, end-to-end (Playwright), smoke and regression suites
+- [x] **MP-TEST-1.1** Small application with unit, integration, end-to-end (Playwright), smoke and regression suites
 	- **Accept:** each suite runs with its own command inside Docker.
-- [ ] **MP-TEST-1.2** A seeded bug per level
+- [x] **MP-TEST-1.2** A seeded bug per level
 	- **Accept:** a table shows which suite catches each bug.
-- [ ] **MP-TEST-1.3** Time and cost
+- [x] **MP-TEST-1.3** Time and cost
 	- **Accept:** the README records count and duration of each suite.
-- [ ] **MP-TEST-1.4** Definition of done for mini-projects met.
+- [x] **MP-TEST-1.4** Definition of done for mini-projects met.
 
 #### MP-TEST-2 TDD kata with commit history
 
 Teaches: the red, green, refactor rhythm. Languages: TS.
 
-- [ ] **MP-TEST-2.1** Multi-currency money kata
+- [x] **MP-TEST-2.1** Multi-currency money kata
 	- **Accept:** the git history alternates failing-test, passing and refactor commits, checked by a script on the commit prefixes.
-- [ ] **MP-TEST-2.2** Walkthrough
+- [x] **MP-TEST-2.2** Walkthrough
 	- **Accept:** the README links each step to its commit.
-- [ ] **MP-TEST-2.3** Definition of done for mini-projects met.
+- [x] **MP-TEST-2.3** Definition of done for mini-projects met.
 
 #### MP-TEST-3 Mutation testing
 
 Teaches: why coverage does not measure test quality. Languages: TS.
 
-- [ ] **MP-TEST-3.1** Module with 100% line coverage and weak assertions
+- [x] **MP-TEST-3.1** Module with 100% line coverage and weak assertions
 	- **Accept:** the coverage report shows 100%.
-- [ ] **MP-TEST-3.2** Mutation run
+- [x] **MP-TEST-3.2** Mutation run
 	- **Accept:** the mutation score is under 60% before and over 90% after the tests are strengthened.
-- [ ] **MP-TEST-3.3** Definition of done for mini-projects met.
+- [x] **MP-TEST-3.3** Definition of done for mini-projects met.
 
 #### MP-TEST-4 Flaky test lab
 
 Teaches: the usual causes of intermittent tests. Languages: TS.
 
-- [ ] **MP-TEST-4.1** Flaky tests caused by time, order dependence, shared state and real network
+- [x] **MP-TEST-4.1** Flaky tests caused by time, order dependence, shared state and real network
 	- **Accept:** each fails at least once in 50 runs.
-- [ ] **MP-TEST-4.2** Fixes: fake clock, isolation, deterministic order, stubbed network
+- [x] **MP-TEST-4.2** Fixes: fake clock, isolation, deterministic order, stubbed network
 	- **Accept:** each fixed test passes 500 consecutive runs.
-- [ ] **MP-TEST-4.3** Definition of done for mini-projects met.
+- [x] **MP-TEST-4.3** Definition of done for mini-projects met.
 
 #### MP-TEST-5 Mini xUnit from scratch
 
 Teaches: how a test framework works inside. Languages: Python, TS.
 
-- [ ] **MP-TEST-5.1** Test case, suite, result, set-up and tear-down
+- [x] **MP-TEST-5.1** Test case, suite, result, set-up and tear-down
 	- **Accept:** the framework tests itself.
-- [ ] **MP-TEST-5.2** Discovery and reporting
+- [x] **MP-TEST-5.2** Discovery and reporting
 	- **Accept:** a failing test reports name, message and location, and the run exits non-zero.
-- [ ] **MP-TEST-5.3** Definition of done for mini-projects met.
+- [x] **MP-TEST-5.3** Definition of done for mini-projects met.
 
 #### MP-PROTO-1 REST, GraphQL and JSON-RPC
 
