@@ -1,6 +1,6 @@
 # PLAN
 
-Main roadmap of the repository: 32 areas, a quiz covering all of them and 83 runnable mini-projects.
+Main roadmap of the repository: 32 areas, a quiz covering all of them and 86 runnable mini-projects.
 
 The decisions behind this plan are in [docs/en/decisions.md](docs/en/decisions.md), the quiz design in [docs/en/quiz.md](docs/en/quiz.md), the backlog in [docs/en/mini-project-catalog.md](docs/en/mini-project-catalog.md) and the brainstorming record in [docs/en/brainstorming.md](docs/en/brainstorming.md).
 
@@ -92,9 +92,9 @@ A quiz area is done when all of these hold:
 | CHAIN | Blockchain | Theory and practice | 6 | 100 | 1 |
 | CI | Continuous integration | Theory and practice | 6 | 100 | 1 |
 | SE | Software engineering | Theory only | 6 | 150 | 0 |
-| AI | Artificial intelligence and LLMs | Theory and practice | 7 | 130 | 5 |
+| AI | Artificial intelligence and LLMs | Theory and practice | 7 | 164 | 8 |
 
-Totals: **3350 questions** and **83 mini-projects**.
+Totals: **3384 questions** and **86 mini-projects**.
 
 ---
 
@@ -1035,9 +1035,12 @@ Sources: found by a web search of primary and well-known material (papers such a
 | Using LLMs: prompting, context, retrieval, tools and agents, hallucination, evaluation | 8 |
 | Image generation: convolution, autoencoders, GANs, diffusion | 10 |
 | Limits, bias, safety and cost: parameters, compute, quantisation | 6 |
+| PyTorch: tensors, automatic differentiation, modules, the training loop | 12 |
+| TensorFlow and Keras: tensors, layers, compiling and fitting a model, graphs against eager execution | 8 |
+| Computer vision: images as tensors, convolution and pooling, CNN architectures, augmentation, transfer learning, detection and segmentation | 14 |
 
 - [ ] QC-AI.1 Coverage map committed
-- [ ] QC-AI.2 130 questions written (PT and EN)
+- [ ] QC-AI.2 164 questions written (PT and EN)
 - [ ] QC-AI.3 Validation passing
 - [ ] QC-AI.4 Blind review resolved
 
@@ -2069,6 +2072,42 @@ Teaches: how an image model learns to remove noise, on two-dimensional points in
 	- **Accept:** the demo writes the points at several steps of the reverse process, committed in `results/`.
 - [ ] **MP-AI-5.4** Definition of done for mini-projects met.
 
+#### MP-AI-6 PyTorch basics
+
+Teaches: what a deep learning framework does for you, by redoing MP-AI-2 with PyTorch. Added at the owner's request on 2026-10-08. Languages: Python (PyTorch, CPU only).
+
+- [ ] **MP-AI-6.1** Tensors and automatic differentiation
+	- **Accept:** the gradients PyTorch computes match numerical gradients, and match the hand-written backpropagation of MP-AI-2 on the same small network, within a tolerance.
+- [ ] **MP-AI-6.2** The training loop written by hand: forward, loss, backward, optimiser step
+	- **Accept:** with a fixed seed the network reaches at least 95% accuracy on the generated two-class dataset of MP-AI-2.
+- [ ] **MP-AI-6.3** From scratch against the framework
+	- **Accept:** a table compares lines of code and training time of MP-AI-2 and of this version, with the machine recorded.
+- [ ] **MP-AI-6.4** Definition of done for mini-projects met.
+
+#### MP-AI-7 TensorFlow and Keras basics
+
+Teaches: the same model in another framework, and what a high-level API hides. Languages: Python (TensorFlow, CPU only).
+
+- [ ] **MP-AI-7.1** The same network and dataset with the Keras API: layers, compile, fit, evaluate
+	- **Accept:** with a fixed seed it reaches at least 95% accuracy on the same dataset.
+- [ ] **MP-AI-7.2** The same training step written with a gradient tape
+	- **Accept:** a test shows the loss falling over the steps, and the gradient of a small expression matching its hand-computed value.
+- [ ] **MP-AI-7.3** PyTorch and TensorFlow side by side
+	- **Accept:** both READMEs have a table mapping each concept (tensor, gradient, layer, optimiser, training loop) to its PyTorch and TensorFlow form, with the measured accuracy of both.
+- [ ] **MP-AI-7.4** Definition of done for mini-projects met.
+
+#### MP-AI-8 Computer vision with a CNN
+
+Teaches: how a network sees: images as numbers, convolution, pooling and learned filters. Languages: Python (PyTorch, CPU only).
+
+- [ ] **MP-AI-8.1** Images as tensors and convolution by hand
+	- **Accept:** a hand-written convolution with an edge filter gives the same output as the framework's convolution on the same image, in a test.
+- [ ] **MP-AI-8.2** A small convolutional network that classifies shapes drawn by the project (no downloaded dataset)
+	- **Accept:** with a fixed seed it reaches at least 95% accuracy on held-out images, and a plain fully connected network with a similar number of parameters does worse on shifted images.
+- [ ] **MP-AI-8.3** Data augmentation and what the network learned
+	- **Accept:** a table shows accuracy on rotated and shifted images with and without augmentation, and the learned first-layer filters and one activation map are committed as images in `results/`.
+- [ ] **MP-AI-8.4** Definition of done for mini-projects met.
+
 ---
 
 ## Order of execution
@@ -2100,3 +2139,4 @@ Mini-project waves are breadth first: every theory-and-practice area gets its fi
 | 15 | MP-TEST-4, MP-OBS-4, MP-DS-5, MP-SEC-5, MP-TEST-5 |
 | 16 | MP-SEC-6, MP-SEC-7, MP-SEC-8 |
 | 17 | MP-AI-1, MP-AI-2, MP-AI-3, MP-AI-4, MP-AI-5 |
+| 18 | MP-AI-6, MP-AI-7, MP-AI-8 |

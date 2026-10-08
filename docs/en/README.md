@@ -16,7 +16,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-1870 of 3350 questions written, 50 of 83 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+1870 of 3384 questions written, 50 of 86 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
@@ -51,4 +51,4 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Blockchain | Theory and practice | 0/100 |  | didactic-blockchain (planned) |
 | Continuous integration | Theory and practice | 0/100 |  | ci-pipeline (planned) |
 | Software engineering | Theory | 0/150 |  | none |
-| Artificial intelligence and LLMs | Theory and practice | 0/130 |  | bpe-tokenizer (planned), neural-network-from-scratch (planned), embeddings-vector-search (planned), tiny-language-model (planned), diffusion-toy (planned) |
+| Artificial intelligence and LLMs | Theory and practice | 0/164 |  | bpe-tokenizer (planned), neural-network-from-scratch (planned), embeddings-vector-search (planned), tiny-language-model (planned), diffusion-toy (planned), pytorch-basics (planned), tensorflow-keras-basics (planned), computer-vision-cnn (planned) |
