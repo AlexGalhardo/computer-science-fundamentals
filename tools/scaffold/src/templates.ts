@@ -78,7 +78,7 @@ ignore = ["EXE002"]
 			"elixir/lib/add.ex": `defmodule ${module} do\n  @moduledoc """\n  EN: ${NOTE_EN}\n\n  PT: ${NOTE_PT}\n  """\n\n  @spec add(integer(), integer()) :: integer()\n  def add(a, b), do: a + b\nend\n`,
 			"elixir/test/add_test.exs": `defmodule ${module}Test do\n  use ExUnit.Case, async: true\n\n  test "adds two numbers" do\n    assert ${module}.add(2, 3) == 5\n  end\nend\n`,
 			"elixir/test/test_helper.exs": "ExUnit.start()\n",
-			"elixir/Dockerfile": `FROM elixir:1.20.4-otp-28-slim\nWORKDIR /app\nCOPY . .\nCMD ["sh", "-c", "mix format --check-formatted && mix test"]\n`,
+			"elixir/Dockerfile": `FROM elixir:1.20.4-otp-28-slim\n# The slim image has no CA certificates, and Hex needs them to download dependencies.\nRUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*\nWORKDIR /app\nCOPY . .\nCMD ["sh", "-c", "mix format --check-formatted && mix test"]\n`,
 		};
 	},
 };

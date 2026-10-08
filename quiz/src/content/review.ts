@@ -96,3 +96,32 @@ export function renderReview(area: string, total: number, disagreements: Disagre
 	}
 	return `${lines.join("\n").trimEnd()}\n`;
 }
+
+export const KEEP_MARKER = "<!-- quiz:compare keeps everything below this line -->";
+
+// EN: Running the comparison again must not erase the resolutions someone wrote by hand.
+//     Everything below the marker in the old file is carried over to the new one. Older files
+//     have no marker, so their "Reviewer notes" section is kept instead.
+// PT: Rodar a comparação de novo não pode apagar as resoluções escritas à mão. Tudo que está
+//     abaixo do marcador no arquivo antigo é levado para o novo. Arquivos antigos não têm o
+//     marcador, então a seção "Reviewer notes" deles é mantida no lugar.
+export function keepHandWritten(fresh: string, previous: string | undefined): string {
+	const marker = previous?.indexOf(KEEP_MARKER) ?? -1;
+	const notes = previous?.search(/^## (Reviewer notes|Second round|Third round)/m) ?? -1;
+	let kept = "";
+	if (previous !== undefined && marker >= 0) {
+		kept = previous.slice(marker + KEEP_MARKER.length).trim();
+	} else if (previous !== undefined && notes >= 0) {
+		kept = previous.slice(notes).trim();
+	}
+	return `${fresh.trimEnd()}
+
+${KEEP_MARKER}
+${
+	kept === ""
+		? ""
+		: `
+${kept}
+`
+}`;
+}

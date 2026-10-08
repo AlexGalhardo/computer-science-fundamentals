@@ -8,7 +8,7 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkContent } from "../../src/content/check";
-import { compareAnswers, renderReview, toBlind } from "../../src/content/review";
+import { compareAnswers, KEEP_MARKER, keepHandWritten, renderReview, toBlind } from "../../src/content/review";
 import { type Question, validateCoverage, validateQuestion } from "../../src/content/schema";
 
 const fixtures = resolve(import.meta.dir, "..", "fixtures", "content");
@@ -201,6 +201,19 @@ describe("blind review", () => {
 		const report = renderReview("big-o", wrongKey.length, disagreements, "2026-01-01");
 		expect(report).toContain("## big-o-searching-02");
 		expect(report).toContain("Disagreements: 1");
+	});
+
+	test("comparing again keeps the resolutions written by hand", () => {
+		const first = keepHandWritten("# Blind review: a", undefined);
+		expect(first).toContain(KEEP_MARKER);
+		const edited = `${first}## Reviewer notes${String.fromCharCode(10)}key kept, because of X`;
+		const second = keepHandWritten("# Blind review: a (new run)", edited);
+		expect(second).toContain("(new run)");
+		expect(second).toContain("key kept, because of X");
+		// EN: A file written before the marker existed keeps its "Reviewer notes" section.
+		// PT: Um arquivo escrito antes de o marcador existir mantém a seção "Reviewer notes".
+		const legacy = ["# old", "", "## Reviewer notes", "", "question rewritten"].join(String.fromCharCode(10));
+		expect(keepHandWritten("# new", legacy)).toContain("question rewritten");
 	});
 
 	test("an unanswered question counts as a disagreement", () => {

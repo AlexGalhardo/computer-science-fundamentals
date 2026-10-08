@@ -5,10 +5,10 @@
 //     Lê as respostas do revisor (`{ "<id>": 2 }` ou `{ "<id>": { "answer": 2, "note": "..." } }`)
 //     e escreve `review.md` com toda questão em que revisor e gabarito discordam.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { checkContent } from "../src/content/check";
-import { compareAnswers, type ReviewerAnswers, renderReview } from "../src/content/review";
+import { compareAnswers, keepHandWritten, type ReviewerAnswers, renderReview } from "../src/content/review";
 
 const args = process.argv.slice(2);
 function flag(name: string): string | undefined {
@@ -32,7 +32,8 @@ const answers = JSON.parse(readFileSync(resolve(answersPath), "utf8")) as Review
 const disagreements = compareAnswers(questions, answers, "en");
 const outFile = resolve(flag("--out") ?? join(contentDir, area, "review.md"));
 const date = new Date().toISOString().slice(0, 10);
-writeFileSync(outFile, renderReview(area, questions.length, disagreements, date));
+const previous = existsSync(outFile) ? readFileSync(outFile, "utf8") : undefined;
+writeFileSync(outFile, keepHandWritten(renderReview(area, questions.length, disagreements, date), previous));
 
 console.log(`${questions.length} questions, ${disagreements.length} disagreements, written to ${outFile}`);
 for (const item of disagreements) {
