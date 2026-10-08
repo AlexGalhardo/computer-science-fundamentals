@@ -11,3 +11,8 @@ test("$5 times 3 is $15", () => {
 	const five = new Dollar(5);
 	expect(five.times(3).amount).toBe(15);
 });
+
+test("dollars are equal when their amounts are equal", () => {
+	expect(new Dollar(5).equals(new Dollar(5))).toBe(true);
+	expect(new Dollar(5).equals(new Dollar(6))).toBe(false);
+});
