@@ -1,0 +1,680 @@
+[
+	{
+		"id": "rate-limiting-sliding-window-01",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "Redis documentation, sorted sets (ZADD, ZREMRANGEBYSCORE, ZCARD; sliding log definition)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Como um limitador de log deslizante (sliding log) decide se admite uma requisição no instante t, com limite L e janela W?",
+			"alternatives": [
+				"Admite enquanto o contador da janela alinhada que contém t está abaixo de L",
+				"Admite enquanto uma soma ponderada dos contadores da janela atual e da anterior está abaixo de L",
+				"Admite enquanto o balde tem uma ficha, com fichas repostas a L / W por segundo",
+				"Admite enquanto a fila tem espaço, e libera as requisições da fila a L / W por segundo",
+				"Admite enquanto menos de L instantes registrados caem nos últimos W segundos"
+			],
+			"explanations": [
+				"Essa é a janela fixa, que conta por janela alinhada ao relógio e por isso sofre com a rajada na fronteira.",
+				"Esse é o contador de janela deslizante, uma aproximação do log que usa só dois contadores.",
+				"Esse é o token bucket, que raciocina com capacidade e taxa de reposição em vez de um histórico de instantes.",
+				"Esse é o leaky bucket usado como fila, que atrasa as requisições para suavizar a saída. O log deslizante não enfileira.",
+				"O log guarda o instante de cada requisição registrada. A cada chegada, descarta os instantes com W segundos ou mais e conta os que restam em (t − W, t]: se forem menos de L, a requisição entra e o seu instante é registrado."
+			],
+			"concept": "O log deslizante guarda, por cliente, os instantes das requisições e avalia sempre os últimos W segundos, contados a partir da própria requisição. Como a janela acompanha cada requisição, não existe fronteira fixa. O resultado é exato: nunca mais de L requisições admitidas em qualquer intervalo de W segundos."
+		},
+		"en": {
+			"statement": "How does a sliding log rate limiter decide whether to admit a request at time t, with limit L and window W?",
+			"alternatives": [
+				"It admits while the counter of the aligned window that contains t is below L",
+				"It admits while a weighted sum of the current and previous window counters is below L",
+				"It admits while the bucket holds a token, with tokens refilled at L / W per second",
+				"It admits while the queue has room, and releases the queued requests at L / W per second",
+				"It admits while fewer than L recorded timestamps lie in the last W seconds"
+			],
+			"explanations": [
+				"That is the fixed window, which counts per window aligned to the clock and therefore suffers from the burst at the boundary.",
+				"That is the sliding window counter, an approximation of the log that uses only two counters.",
+				"That is the token bucket, which reasons with a capacity and a refill rate instead of a history of timestamps.",
+				"That is the leaky bucket used as a queue, which delays requests to smooth the output. A sliding log queues nothing.",
+				"The log stores the timestamp of each recorded request. On every arrival it drops the timestamps that are W seconds old or older and counts the ones left in (t − W, t]: if there are fewer than L, the request gets in and its timestamp is recorded."
+			],
+			"concept": "The sliding log stores, per client, the timestamps of the requests and always evaluates the last W seconds, counted from the request itself. Because the window follows each request, there is no fixed boundary. The result is exact: never more than L admitted requests in any interval of W seconds."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-02",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "Redis documentation, sorted sets (ZADD, ZREMRANGEBYSCORE, ZCARD; memory cost of the sliding log)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Em um log deslizante que registra apenas as requisições admitidas, com limite L por janela W, quanto o limitador guarda para um cliente?",
+			"alternatives": [
+				"Um contador e um identificador de janela, qualquer que seja o valor de L",
+				"Dois contadores, da janela atual e da anterior, qualquer que seja L",
+				"Um instante para cada requisição já recebida, admitida ou rejeitada",
+				"Uma entrada para cada segundo da janela, ou seja, W entradas",
+				"No máximo L instantes, um por requisição admitida ainda na janela"
+			],
+			"explanations": [
+				"Esse é o estado da janela fixa. O log precisa saber quando cada requisição ocorreu, e não só quantas foram.",
+				"Esse é o estado do contador de janela deslizante, que troca a exatidão do log por memória constante.",
+				"Na convenção indicada, as rejeitadas não são registradas, e os instantes que saem da janela são descartados. O log não cresce para sempre.",
+				"O log não tem uma entrada por segundo: tem uma por requisição admitida. O tamanho depende de L, não da duração W.",
+				"Cada requisição admitida deixa um instante, e nunca há mais de L admitidas dentro de uma janela de W segundos. Os instantes mais antigos que isso são removidos, então a memória por cliente é O(L)."
+			],
+			"concept": "O preço da exatidão do log deslizante é a memória: um instante por requisição admitida ainda dentro da janela, ou seja, até L por cliente. Com um limite de 10 000 por hora, um único cliente pode ocupar 10 000 entradas. No Redis, esse log costuma ser um sorted set por cliente, com o instante como score."
+		},
+		"en": {
+			"statement": "In a sliding log that records only admitted requests, with limit L per window W, how much does the limiter store for one client?",
+			"alternatives": [
+				"One counter and one window identifier, whatever the value of L",
+				"Two counters, for the current and the previous window, whatever L",
+				"One timestamp for every request ever received, admitted or rejected",
+				"One entry for each second of the window, that is, W entries",
+				"At most L timestamps, one per admitted request still in the window"
+			],
+			"explanations": [
+				"That is the state of the fixed window. The log needs to know when each request happened, not just how many there were.",
+				"That is the state of the sliding window counter, which trades the exactness of the log for constant memory.",
+				"In the stated convention rejected requests are not recorded, and timestamps that leave the window are dropped. The log does not grow forever.",
+				"The log has no entry per second: it has one per admitted request. Its size depends on L, not on the duration W.",
+				"Each admitted request leaves one timestamp, and there are never more than L admitted within a window of W seconds. Older timestamps are removed, so memory per client is O(L)."
+			],
+			"concept": "The price of the sliding log's exactness is memory: one timestamp per admitted request still inside the window, that is, up to L per client. With a limit of 10,000 per hour, a single client may take 10,000 entries. On Redis this log is usually one sorted set per client, with the timestamp as the score."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-03",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, state of the sliding window counter)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Que estado o contador de janela deslizante (sliding window counter) guarda por cliente?",
+			"alternatives": [
+				"Dois contadores: o da janela fixa atual e o da janela anterior",
+				"Um instante para cada requisição admitida nos últimos W segundos",
+				"Um único contador, que volta a zero a cada fronteira de janela",
+				"Um contador para cada segundo da janela, somados a cada requisição",
+				"O número de fichas restantes e o instante da última reposição"
+			],
+			"explanations": [
+				"O algoritmo mantém a contagem da janela fixa atual e a da janela fixa anterior. A anterior entra na estimativa com um peso igual à fração dela que ainda está dentro dos últimos W segundos.",
+				"Guardar um instante por requisição é o log deslizante. O contador deslizante existe justamente para não pagar esse custo de memória.",
+				"Um contador único que zera na fronteira é a janela fixa. Sem a contagem da janela anterior, não há como suavizar a virada.",
+				"Vários contadores menores formam outra variante, com sub-janelas. O contador de janela deslizante clássico usa só dois contadores do tamanho da janela inteira.",
+				"Fichas e instante de reposição formam o estado do token bucket."
+			],
+			"concept": "O contador de janela deslizante é um meio-termo entre a janela fixa e o log. Ele guarda só dois contadores por cliente, o da janela fixa atual e o da anterior, e combina os dois para estimar quantas requisições houve nos últimos W segundos. A memória é constante, como na janela fixa, e a rajada na fronteira quase desaparece."
+		},
+		"en": {
+			"statement": "Which state does the sliding window counter keep per client?",
+			"alternatives": [
+				"Two counters: the current fixed window's and the previous one's",
+				"One timestamp for each request admitted in the last W seconds",
+				"A single counter, which goes back to zero at each window boundary",
+				"One counter for each second of the window, added up on every request",
+				"The number of tokens left and the time of the last refill"
+			],
+			"explanations": [
+				"The algorithm keeps the count of the current fixed window and that of the previous fixed window. The previous one enters the estimate with a weight equal to the fraction of it still inside the last W seconds.",
+				"Storing one timestamp per request is the sliding log. The sliding counter exists precisely to avoid paying that memory cost.",
+				"A single counter zeroed at the boundary is the fixed window. Without the previous window's count there is no way to smooth the turn.",
+				"Several smaller counters make another variant, with sub-windows. The classic sliding window counter uses only two counters, each the size of the whole window.",
+				"Tokens and the refill time are the state of the token bucket."
+			],
+			"concept": "The sliding window counter is a middle ground between the fixed window and the log. It keeps only two counters per client, the current fixed window's and the previous one's, and combines them to estimate how many requests there were in the last W seconds. Memory is constant, as in the fixed window, and the burst at the boundary almost disappears."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-04",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, assumption of the sliding window counter)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "O contador de janela deslizante pondera a contagem da janela anterior pela fração dessa janela que ainda está dentro dos últimos W segundos. Em que suposição essa ponderação se apoia?",
+			"alternatives": [
+				"Que as requisições da janela anterior chegaram todas bem no fim dela",
+				"Que todos os clientes enviam requisições à mesma taxa média",
+				"Que os relógios de todas as instâncias da aplicação estão sincronizados",
+				"Que as requisições da janela anterior se espalharam por igual ao longo dela",
+				"Que as requisições da janela atual também vão se espalhar por igual"
+			],
+			"explanations": [
+				"Se todas tivessem chegado no fim, todas ainda estariam dentro dos últimos W segundos e o peso correto seria 1, e não a fração de sobreposição.",
+				"A estimativa é feita por cliente, com os contadores daquele cliente. O comportamento dos outros clientes não entra na conta.",
+				"Relógios sincronizados importam para que as instâncias concordem sobre as janelas, mas não são o que justifica multiplicar a contagem anterior por uma fração.",
+				"Se 25% da janela anterior ainda está dentro dos últimos W segundos, o algoritmo supõe que 25% das requisições dela também estão. Isso só é exato quando elas se distribuíram uniformemente.",
+				"A contagem da janela atual entra inteira na estimativa, sem peso, porque todas as suas requisições estão dentro dos últimos W segundos. Nenhuma suposição é feita sobre elas."
+			],
+			"concept": "O contador de janela deslizante não sabe quando as requisições da janela anterior ocorreram, só quantas foram. Para estimar quantas ainda contam, ele supõe uma distribuição uniforme e usa a fração de sobreposição como peso. Quando o tráfego real foi concentrado no início ou no fim da janela anterior, a estimativa erra para mais ou para menos."
+		},
+		"en": {
+			"statement": "The sliding window counter weights the previous window's count by the fraction of that window still inside the last W seconds. Which assumption does this weighting rely on?",
+			"alternatives": [
+				"That the previous window's requests all arrived at its very end",
+				"That every client sends requests at the same average rate",
+				"That the clocks of all application instances are synchronised",
+				"That the previous window's requests were evenly spread over it",
+				"That the current window's requests will be evenly spread as well"
+			],
+			"explanations": [
+				"If they had all arrived at the end, all of them would still be inside the last W seconds and the right weight would be 1, not the overlap fraction.",
+				"The estimate is made per client, with that client's counters. The behaviour of other clients does not enter the calculation.",
+				"Synchronised clocks matter for the instances to agree on the windows, but they are not what justifies multiplying the previous count by a fraction.",
+				"If 25% of the previous window is still inside the last W seconds, the algorithm assumes 25% of its requests are too. That is exact only when they were uniformly distributed.",
+				"The current window's count enters the estimate in full, with no weight, because all of its requests are inside the last W seconds. No assumption is made about them."
+			],
+			"concept": "The sliding window counter does not know when the previous window's requests happened, only how many there were. To estimate how many still count, it assumes a uniform distribution and uses the overlap fraction as the weight. When the real traffic was concentrated at the start or at the end of the previous window, the estimate errs upwards or downwards."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-05",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "basic",
+		"answer": 2,
+		"source": "Redis documentation, sorted sets (ZADD, ZREMRANGEBYSCORE, ZCARD; sliding log and the boundary burst)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Por que um log deslizante que registra as requisições admitidas evita a rajada dupla que a janela fixa deixa passar na fronteira?",
+			"alternatives": [
+				"Porque ele reduz o limite à metade nos segundos em torno de cada fronteira",
+				"Porque ele libera as requisições admitidas por igual, uma a cada W / L segundos",
+				"Porque a janela dele termina na própria requisição, então não há fronteira",
+				"Porque ele também registra as requisições rejeitadas, o que mantém o log cheio",
+				"Porque ele limpa o log com mais frequência do que a janela fixa zera o contador"
+			],
+			"explanations": [
+				"O limite é sempre L. O log não tem tratamento especial perto de fronteiras, porque nem tem fronteiras.",
+				"Espaçar a saída é o comportamento do leaky bucket usado como fila. O log deixa L requisições entrarem juntas se a janela estiver vazia.",
+				"A janela do log é (t − W, t], medida para trás a partir de cada requisição. As admitidas há menos de W segundos continuam contando, então não existe um instante em que tudo é esquecido de uma vez.",
+				"Isso é um defeito de outra variante, não a razão da exatidão. Na convenção indicada só as admitidas são registradas, e isso já basta.",
+				"O log não é limpo de uma vez: cada instante sai individualmente quando completa W segundos. É a ausência de uma limpeza geral que evita a rajada."
+			],
+			"concept": "A rajada dupla da janela fixa nasce do esquecimento total na fronteira: o contador volta a zero e o histórico recente desaparece. O log deslizante esquece cada requisição individualmente, exatamente W segundos depois de admiti-la. Por isso a contagem em qualquer intervalo de W segundos nunca passa de L."
+		},
+		"en": {
+			"statement": "Why does a sliding log that records admitted requests avoid the double burst that a fixed window lets through at the boundary?",
+			"alternatives": [
+				"Because it halves the limit during the seconds around each boundary",
+				"Because it releases admitted requests evenly, one every W / L seconds",
+				"Because its window ends at the request itself, so no boundary exists",
+				"Because it also records rejected requests, which keeps the log full",
+				"Because it clears the log more often than a fixed window zeroes its counter"
+			],
+			"explanations": [
+				"The limit is always L. The log has no special treatment near boundaries, because it has no boundaries at all.",
+				"Spacing the output is the behaviour of the leaky bucket used as a queue. The log lets L requests in together if the window is empty.",
+				"The log's window is (t − W, t], measured backwards from each request. Requests admitted less than W seconds ago keep counting, so there is no instant at which everything is forgotten at once.",
+				"That is a flaw of another variant, not the reason for the exactness. In the stated convention only admitted requests are recorded, and that is enough.",
+				"The log is not cleared all at once: each timestamp leaves individually when it turns W seconds old. It is the absence of a general clean-up that avoids the burst."
+			],
+			"concept": "The double burst of the fixed window comes from total forgetting at the boundary: the counter goes back to zero and the recent history vanishes. The sliding log forgets each request individually, exactly W seconds after admitting it. That is why the count in any interval of W seconds never exceeds L."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-06",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, sliding window counter formula)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Sejam prev a contagem da janela fixa anterior, cur a contagem da janela fixa atual e elapsed o tempo decorrido desde o início da janela atual, de tamanho W. Qual expressão é a estimativa do contador de janela deslizante?",
+			"alternatives": [
+				"prev × (1 − elapsed / W) + cur",
+				"prev × (elapsed / W) + cur",
+				"cur × (1 − elapsed / W) + prev",
+				"(prev + cur) / 2",
+				"prev + cur × (elapsed / W)"
+			],
+			"explanations": [
+				"Os últimos W segundos cobrem toda a parte já decorrida da janela atual (cur inteiro) e o trecho final da janela anterior, cuja fração é 1 − elapsed / W. No início da janela atual o peso de prev é 1; no fim, é 0.",
+				"O peso está invertido: com essa expressão a janela anterior pesaria mais quanto mais longe ela ficasse. No início da janela atual (elapsed = 0) ela seria ignorada, recriando a rajada na fronteira.",
+				"O peso foi aplicado ao contador errado. As requisições da janela atual estão todas dentro dos últimos W segundos e contam por inteiro; a janela anterior é a que só conta em parte.",
+				"A média simples ignora quanto tempo já passou na janela atual, e a estimativa não acompanharia o deslizamento da janela.",
+				"As requisições da janela atual já aconteceram e contam todas. Reduzir cur e contar prev inteiro superestimaria no início da janela e não corresponde a nenhum intervalo de W segundos."
+			],
+			"concept": "A estimativa do contador de janela deslizante é prev × (1 − elapsed / W) + cur. Ela corresponde aos últimos W segundos: a parte já vivida da janela atual mais o trecho final da janela anterior, suposto uniforme. A requisição é admitida quando essa estimativa, calculada antes de contá-la, está abaixo do limite.",
+			"example": {
+				"kind": "diagram",
+				"content": "W = 60 s, elapsed = 15 s\n\n     janela anterior          janela atual\n|------------|###########|#####----------------|\n             <---- últimos 60 s ---->\n             45 s de prev (peso 0,75) + 15 s de cur (inteiro)"
+			}
+		},
+		"en": {
+			"statement": "Let prev be the count of the previous fixed window, cur the count of the current fixed window and elapsed the time since the current window, of size W, started. Which expression is the sliding window counter's estimate?",
+			"alternatives": [
+				"prev × (1 − elapsed / W) + cur",
+				"prev × (elapsed / W) + cur",
+				"cur × (1 − elapsed / W) + prev",
+				"(prev + cur) / 2",
+				"prev + cur × (elapsed / W)"
+			],
+			"explanations": [
+				"The last W seconds cover the whole elapsed part of the current window (cur in full) and the final stretch of the previous window, whose fraction is 1 − elapsed / W. At the start of the current window the weight of prev is 1; at the end it is 0.",
+				"The weight is inverted: with this expression the previous window would weigh more the further away it got. At the start of the current window (elapsed = 0) it would be ignored, recreating the burst at the boundary.",
+				"The weight was applied to the wrong counter. The current window's requests are all inside the last W seconds and count in full; the previous window is the one that counts only in part.",
+				"A plain average ignores how much time has passed in the current window, and the estimate would not follow the sliding of the window.",
+				"The current window's requests have already happened and all count. Shrinking cur and counting prev in full would overestimate at the start of the window and matches no interval of W seconds."
+			],
+			"concept": "The sliding window counter's estimate is prev × (1 − elapsed / W) + cur. It corresponds to the last W seconds: the part of the current window already lived plus the final stretch of the previous window, assumed uniform. The request is admitted when this estimate, computed before counting it, is below the limit.",
+			"example": {
+				"kind": "diagram",
+				"content": "W = 60 s, elapsed = 15 s\n\n     previous window          current window\n|------------|###########|#####----------------|\n             <----- last 60 s ----->\n             45 s of prev (weight 0.75) + 15 s of cur (in full)"
+			}
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-07",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Redis documentation, sorted sets (ZADD, ZREMRANGEBYSCORE, ZCARD; simulating a sliding log)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um log deslizante registra apenas as requisições ADMITIDAS. Uma requisição no instante t é admitida quando menos de 3 instantes registrados estão em (t − 10, t]; um instante com exatamente 10 segundos já expirou. Para o cliente abaixo, quais requisições são rejeitadas?",
+			"alternatives": [
+				"t = 9, t = 15 e t = 16",
+				"t = 9, t = 10 e t = 12",
+				"Todas a partir de t = 9",
+				"t = 9, t = 10, t = 12 e t = 16",
+				"t = 9, t = 11 e t = 16"
+			],
+			"explanations": [
+				"Esse é o resultado da janela fixa alinhada: [0,10) admite t = 0, 2 e 5; [10,20) admite t = 10, 11 e 12 e rejeita t = 15 e 16. O log não zera nada em t = 10.",
+				"Esse resultado conta um instante com exatamente 10 segundos como ainda válido: em t = 10 o registro de t = 0 seguraria a vaga. Pela convenção, o intervalo é (t − 10, t], aberto à esquerda, e o registro de t = 0 já expirou em t = 10.",
+				"Isso acontece quando as rejeitadas também são registradas: as próprias tentativas mantêm o log cheio. Aqui só as admitidas entram no log.",
+				"Esse é o resultado do contador de janela deslizante, que estima com dois contadores e pesos. O log conta os instantes reais.",
+				"t = 0, 2 e 5 entram (log: 0, 2, 5). t = 9: três registros em (−1, 9], rejeitada. t = 10: em (0, 10] restam 2 e 5, admitida (log: 2, 5, 10). t = 11: três em (1, 11], rejeitada. t = 12: em (2, 12] restam 5 e 10, admitida (log: 5, 10, 12). t = 15: em (5, 15] restam 10 e 12, admitida (log: 10, 12, 15). t = 16: três em (6, 16], rejeitada. Conferindo por outro caminho: as admitidas são 0, 2, 5, 10, 12 e 15, e cada vaga reaparece exatamente 10 segundos depois de uma admissão (0 → 10, 2 → 12, 5 → 15)."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limite = 3, W = 10 s\nrequisições em t = 0, 2, 5, 9, 10, 11, 12, 15, 16"
+			},
+			"concept": "No log deslizante, cada requisição admitida ocupa uma vaga por exatamente W segundos. Para simular, mantenha a lista de instantes admitidos, remova os que têm W segundos ou mais e compare o tamanho com o limite. As requisições rejeitadas não entram na lista, então não atrasam a liberação das vagas."
+		},
+		"en": {
+			"statement": "A sliding log records only ADMITTED requests. A request at time t is admitted when fewer than 3 recorded timestamps lie in (t − 10, t]; a timestamp exactly 10 seconds old has expired. For the client below, which requests are rejected?",
+			"alternatives": [
+				"t = 9, t = 15 and t = 16",
+				"t = 9, t = 10 and t = 12",
+				"Every request from t = 9 onwards",
+				"t = 9, t = 10, t = 12 and t = 16",
+				"t = 9, t = 11 and t = 16"
+			],
+			"explanations": [
+				"That is the result of the aligned fixed window: [0,10) admits t = 0, 2 and 5; [10,20) admits t = 10, 11 and 12 and rejects t = 15 and 16. The log zeroes nothing at t = 10.",
+				"This result counts a timestamp exactly 10 seconds old as still valid: at t = 10 the record of t = 0 would hold the slot. By the convention the interval is (t − 10, t], open on the left, and the record of t = 0 has already expired at t = 10.",
+				"That happens when rejected requests are recorded too: the client's own attempts keep the log full. Here only admitted requests go into the log.",
+				"That is the result of the sliding window counter, which estimates with two counters and weights. The log counts the real timestamps.",
+				"t = 0, 2 and 5 get in (log: 0, 2, 5). t = 9: three records in (−1, 9], rejected. t = 10: in (0, 10] only 2 and 5 remain, admitted (log: 2, 5, 10). t = 11: three in (1, 11], rejected. t = 12: in (2, 12] only 5 and 10 remain, admitted (log: 5, 10, 12). t = 15: in (5, 15] only 10 and 12 remain, admitted (log: 10, 12, 15). t = 16: three in (6, 16], rejected. Checking another way: the admitted ones are 0, 2, 5, 10, 12 and 15, and each slot reappears exactly 10 seconds after an admission (0 → 10, 2 → 12, 5 → 15)."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limit = 3, W = 10 s\nrequests at t = 0, 2, 5, 9, 10, 11, 12, 15, 16"
+			},
+			"concept": "In a sliding log each admitted request holds a slot for exactly W seconds. To simulate it, keep the list of admitted timestamps, remove the ones that are W seconds old or older and compare its size with the limit. Rejected requests do not go into the list, so they do not delay the release of the slots."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-08",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, computing the sliding window counter estimate)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um contador de janela deslizante tem limite de 100 por janela de 60 segundos e usa estimativa = prev × (1 − elapsed / W) + cur. A janela anterior contou 80 requisições e a atual já contou 30. Uma requisição chega 15 segundos depois do início da janela atual. Qual é a estimativa calculada antes de contar essa requisição?",
+			"alternatives": [
+				"50",
+				"55",
+				"60",
+				"90",
+				"110"
+			],
+			"explanations": [
+				"Esse valor usa o peso invertido: 80 × (15 / 60) + 30 = 50. A fração da janela anterior que ainda conta é a que falta decorrer, 1 − 15 / 60 = 0,75.",
+				"Essa é a média simples, (80 + 30) / 2 = 55. A estimativa não é uma média: a janela atual entra inteira e a anterior entra com o peso da sobreposição.",
+				"Esse é só o termo da janela anterior, 80 × 0,75 = 60. Falta somar as 30 requisições já contadas na janela atual.",
+				"elapsed / W = 15 / 60 = 0,25, então o peso da janela anterior é 0,75. Estimativa = 80 × 0,75 + 30 = 60 + 30 = 90. Conferindo por outro caminho: dos últimos 60 segundos, 45 caem na janela anterior, que teve 80 / 60 por segundo em média, logo 45 × 80 / 60 = 60, mais 30 da atual. Como 90 < 100, a requisição é admitida.",
+				"Essa é a soma sem peso, 80 + 30 = 110, que contaria a janela anterior inteira. Com ela, a requisição seria rejeitada sem motivo."
+			],
+			"concept": "A estimativa combina a contagem da janela atual, inteira, com a da janela anterior multiplicada pela fração que ainda está dentro dos últimos W segundos. Com 15 segundos decorridos de uma janela de 60, três quartos da janela anterior ainda contam. O peso da janela anterior cai linearmente de 1 para 0 ao longo da janela atual."
+		},
+		"en": {
+			"statement": "A sliding window counter has limit 100 per 60-second window and uses estimate = prev × (1 − elapsed / W) + cur. The previous window counted 80 requests and the current one has counted 30. A request arrives 15 seconds after the current window started. What is the estimate computed before counting this request?",
+			"alternatives": [
+				"50",
+				"55",
+				"60",
+				"90",
+				"110"
+			],
+			"explanations": [
+				"This value uses the inverted weight: 80 × (15 / 60) + 30 = 50. The fraction of the previous window that still counts is the part yet to elapse, 1 − 15 / 60 = 0.75.",
+				"That is the plain average, (80 + 30) / 2 = 55. The estimate is not an average: the current window enters in full and the previous one with the overlap weight.",
+				"That is only the previous window's term, 80 × 0.75 = 60. The 30 requests already counted in the current window still have to be added.",
+				"elapsed / W = 15 / 60 = 0.25, so the previous window's weight is 0.75. Estimate = 80 × 0.75 + 30 = 60 + 30 = 90. Checking another way: of the last 60 seconds, 45 fall in the previous window, which had 80 / 60 per second on average, so 45 × 80 / 60 = 60, plus 30 from the current one. As 90 < 100, the request is admitted.",
+				"That is the unweighted sum, 80 + 30 = 110, which would count the whole previous window. With it the request would be rejected for no reason."
+			],
+			"concept": "The estimate combines the current window's count, in full, with the previous window's count multiplied by the fraction still inside the last W seconds. With 15 seconds elapsed of a 60-second window, three quarters of the previous window still count. The previous window's weight falls linearly from 1 to 0 over the current window."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-09",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "Redis documentation, sorted sets and the INCR command (pattern: rate limiter, memory of the three window algorithms)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um limite de 1000 requisições por hora é aplicado a um cliente que usa o limite inteiro. Contando apenas contadores e instantes (sem o identificador da janela), quanto guardam para esse cliente, nesta ordem, a janela fixa, o log deslizante (só admitidas) e o contador de janela deslizante?",
+			"alternatives": [
+				"1000 instantes, 1 contador, 2 contadores",
+				"1 contador, 2 contadores, 1000 instantes",
+				"1 contador, 1000 instantes, 1000 instantes",
+				"1 contador, 1000 instantes, 2 contadores",
+				"1 contador, 3600 instantes, 2 contadores"
+			],
+			"explanations": [
+				"A janela fixa e o log estão trocados. Quem guarda um instante por requisição admitida é o log; a janela fixa só conta.",
+				"O log e o contador deslizante estão trocados. O contador deslizante é o que se contenta com dois contadores; o log precisa dos instantes.",
+				"Isso supõe que, para deslizar, o contador deslizante também precisa dos instantes. Ele desliza por estimativa, com a contagem da janela anterior ponderada, e por isso é aproximado.",
+				"Janela fixa: um contador por cliente. Log deslizante: um instante por requisição admitida ainda na janela, até o limite, ou seja, 1000. Contador deslizante: os contadores da janela atual e da anterior. Conferindo pelas ordens de grandeza: O(1), O(limite) e O(1).",
+				"O log guarda uma entrada por requisição admitida, e não uma por segundo da janela. Com limite de 1000, nunca há mais de 1000 instantes válidos."
+			],
+			"concept": "Os três algoritmos de janela trocam memória por precisão. A janela fixa usa um contador e admite até o dobro do limite na fronteira. O log deslizante é exato e guarda um instante por requisição admitida, O(limite) por cliente. O contador deslizante guarda dois contadores e fica perto do log, com um erro que depende de como o tráfego da janela anterior se distribuiu."
+		},
+		"en": {
+			"statement": "A limit of 1000 requests per hour is applied to a client that uses the whole limit. Counting only counters and timestamps (not the window identifier), how much do the fixed window, the sliding log (admitted only) and the sliding window counter store for this client, in this order?",
+			"alternatives": [
+				"1000 timestamps, 1 counter, 2 counters",
+				"1 counter, 2 counters, 1000 timestamps",
+				"1 counter, 1000 timestamps, 1000 timestamps",
+				"1 counter, 1000 timestamps, 2 counters",
+				"1 counter, 3600 timestamps, 2 counters"
+			],
+			"explanations": [
+				"The fixed window and the log are swapped. The log is the one that stores a timestamp per admitted request; the fixed window only counts.",
+				"The log and the sliding counter are swapped. The sliding counter is the one that makes do with two counters; the log needs the timestamps.",
+				"That assumes the sliding counter also needs the timestamps in order to slide. It slides by estimation, with the previous window's count weighted, which is why it is approximate.",
+				"Fixed window: one counter per client. Sliding log: one timestamp per admitted request still in the window, up to the limit, that is, 1000. Sliding counter: the counters of the current and of the previous window. Checking by orders of magnitude: O(1), O(limit) and O(1).",
+				"The log stores one entry per admitted request, not one per second of the window. With a limit of 1000 there are never more than 1000 valid timestamps."
+			],
+			"concept": "The three window algorithms trade memory for precision. The fixed window uses one counter and admits up to twice the limit at the boundary. The sliding log is exact and stores one timestamp per admitted request, O(limit) per client. The sliding counter stores two counters and stays close to the log, with an error that depends on how the previous window's traffic was distributed."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-10",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "Redis documentation, sorted sets (ZADD, ZREMRANGEBYSCORE, ZCARD; recording rejected requests in the log)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um log deslizante com limite de 3 por 10 segundos é alterado para registrar todas as requisições, inclusive as rejeitadas. Um crawler envia uma requisição por segundo, sem parar, a partir de t = 0. O que acontece depois que as 3 primeiras são admitidas?",
+			"alternatives": [
+				"Ele é admitido 3 vezes a cada 10 segundos, exatamente como no log original",
+				"Ele nunca mais é admitido, pois as próprias rejeições mantêm o log cheio",
+				"Ele volta a ser admitido a partir de t = 10, quando os três primeiros instantes expiram",
+				"Ele é admitido uma vez a cada 10 segundos, quando a rejeição mais antiga expira",
+				"Ele é admitido uma vez a cada 3,33 segundos, pois o log espaça as requisições"
+			],
+			"explanations": [
+				"Esse é o comportamento do log que registra só as admitidas: t = 0, 1, 2 entram, depois t = 10, 11, 12 e assim por diante. Registrando as rejeitadas, o resultado é outro.",
+				"t = 0, 1 e 2 entram. A partir de t = 3, toda requisição encontra no log pelo menos as três tentativas anteriores (t − 1, t − 2 e t − 3), admitidas ou não, todas dentro de (t − 10, t]. Conferindo em t = 10: os registros em (0, 10] são t = 1 a 9, nove entradas, muito acima de 3. O cliente só se recupera se ficar em silêncio até o log esvaziar.",
+				"Em t = 10 o registro de t = 0 já expirou, e os de t = 1 e 2 expiram logo em seguida, mas as rejeitadas de t = 3 a 9 também foram registradas e ainda estão na janela.",
+				"Quando uma rejeição antiga expira, as nove tentativas seguintes ainda estão no log. Com uma requisição por segundo há sempre cerca de dez registros na janela.",
+				"O log não espaça requisições: ele só conta instantes. E, com as rejeições registradas, nem esse ritmo o cliente consegue."
+			],
+			"concept": "A escolha do que registrar muda o comportamento do log deslizante. Registrando só as admitidas, um cliente que excede o limite volta a ser atendido assim que as vagas expiram. Registrando também as rejeitadas, cada tentativa negada renova o bloqueio, e um cliente que insiste nunca se recupera. Isso pode ser desejado como punição, mas precisa ser uma decisão consciente."
+		},
+		"en": {
+			"statement": "A sliding log with limit 3 per 10 seconds is changed to record every request, including the rejected ones. A crawler sends one request per second, without stopping, from t = 0. What happens after its first 3 requests are admitted?",
+			"alternatives": [
+				"It is admitted 3 times in every 10 seconds, exactly as with the original log",
+				"It is never admitted again, since its own rejections keep the log full",
+				"It is admitted again from t = 10, when the first three timestamps expire",
+				"It is admitted once every 10 seconds, when the oldest rejection expires",
+				"It is admitted once every 3.33 seconds, since the log spaces requests out"
+			],
+			"explanations": [
+				"That is the behaviour of the log that records only admitted requests: t = 0, 1, 2 get in, then t = 10, 11, 12 and so on. With rejections recorded the result is different.",
+				"t = 0, 1 and 2 get in. From t = 3 onwards every request finds in the log at least the three previous attempts (t − 1, t − 2 and t − 3), admitted or not, all inside (t − 10, t]. Checking at t = 10: the records in (0, 10] are t = 1 to 9, nine entries, far above 3. The client recovers only if it stays silent until the log empties.",
+				"At t = 10 the record of t = 0 has expired, and those of t = 1 and 2 expire right after, but the rejected requests of t = 3 to 9 were recorded too and are still in the window.",
+				"When an old rejection expires, the nine following attempts are still in the log. With one request per second there are always about ten records in the window.",
+				"The log does not space requests out: it only counts timestamps. And with rejections recorded the client does not even get that pace."
+			],
+			"concept": "The choice of what to record changes the behaviour of the sliding log. Recording only admitted requests, a client that exceeds the limit is served again as soon as the slots expire. Recording rejected ones too, each denied attempt renews the block, and a client that insists never recovers. That may be wanted as a punishment, but it has to be a conscious decision."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-11",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, admission decisions of the sliding window counter)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um contador de janela deslizante calcula estimativa = prev × (1 − elapsed / W) + cur antes de contar a nova requisição e a admite quando estimativa < limite; só as requisições admitidas aumentam cur. Para o cliente abaixo, quais requisições são rejeitadas?",
+			"alternatives": [
+				"Nenhuma requisição é rejeitada",
+				"t = 21 e t = 22",
+				"Apenas t = 22",
+				"t = 26 e t = 29",
+				"Todas as cinco requisições"
+			],
+			"explanations": [
+				"Isso admite quando a estimativa é menor ou igual ao limite. Em t = 22 a estimativa é exatamente 5, que não é menor que 5, então a requisição é rejeitada.",
+				"Esse resultado soma a nova requisição à estimativa antes de comparar (4,5 + 1 em t = 21). Pela convenção, a estimativa é calculada antes de contar a requisição, e 4,5 < 5 admite t = 21.",
+				"t = 21: 5 × 0,9 + 0 = 4,5, admitida (cur = 1). t = 22: 5 × 0,8 + 1 = 5,0, que não é menor que 5, rejeitada. t = 24: 5 × 0,6 + 1 = 4,0, admitida (cur = 2). t = 26: 5 × 0,4 + 2 = 4,0, admitida (cur = 3). t = 29: 5 × 0,1 + 3 = 3,5, admitida (cur = 4). Conferindo pelo total: 4 admitidas e 1 rejeitada, e cur termina em 4.",
+				"Esse resultado usa o peso invertido, prev × (elapsed / W): a janela anterior pesaria quase nada no início e quase tudo no fim. O peso correto é a fração que falta decorrer.",
+				"Isso conta a janela anterior inteira (5 + cur), sem peso, como se ela nunca saísse da conta. O peso de prev cai de 0,9 para 0,1 ao longo destas requisições."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limite = 5, W = 10 s\njanela anterior [10,20): prev = 5\njanela atual    [20,30): cur = 0 em t = 20\nrequisições em t = 21, 22, 24, 26, 29"
+			},
+			"concept": "No contador de janela deslizante, a cada requisição o peso da janela anterior diminui e o contador atual pode ter crescido. Logo depois da fronteira, a janela anterior ainda pesa quase tudo, e por isso o cliente que tinha esgotado o limite não ganha um limite novo de uma vez, como ganharia na janela fixa. As vagas voltam aos poucos, à medida que o peso cai."
+		},
+		"en": {
+			"statement": "A sliding window counter computes estimate = prev × (1 − elapsed / W) + cur before counting the new request and admits it when estimate < limit; only admitted requests increase cur. For the client below, which requests are rejected?",
+			"alternatives": [
+				"No request is rejected",
+				"t = 21 and t = 22",
+				"Only t = 22",
+				"t = 26 and t = 29",
+				"All five requests"
+			],
+			"explanations": [
+				"That admits when the estimate is lower than or equal to the limit. At t = 22 the estimate is exactly 5, which is not below 5, so the request is rejected.",
+				"This result adds the new request to the estimate before comparing (4.5 + 1 at t = 21). By the convention the estimate is computed before counting the request, and 4.5 < 5 admits t = 21.",
+				"t = 21: 5 × 0.9 + 0 = 4.5, admitted (cur = 1). t = 22: 5 × 0.8 + 1 = 5.0, which is not below 5, rejected. t = 24: 5 × 0.6 + 1 = 4.0, admitted (cur = 2). t = 26: 5 × 0.4 + 2 = 4.0, admitted (cur = 3). t = 29: 5 × 0.1 + 3 = 3.5, admitted (cur = 4). Checking by the total: 4 admitted and 1 rejected, and cur ends at 4.",
+				"This result uses the inverted weight, prev × (elapsed / W): the previous window would weigh almost nothing at the start and almost everything at the end. The right weight is the fraction yet to elapse.",
+				"That counts the whole previous window (5 + cur), unweighted, as if it never left the calculation. The weight of prev falls from 0.9 to 0.1 over these requests."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limit = 5, W = 10 s\nprevious window [10,20): prev = 5\ncurrent window  [20,30): cur = 0 at t = 20\nrequests at t = 21, 22, 24, 26, 29"
+			},
+			"concept": "In the sliding window counter, at each request the previous window's weight has decreased and the current counter may have grown. Right after the boundary the previous window still weighs almost in full, so a client that had used up the limit does not get a whole new limit at once, as it would in a fixed window. The slots come back little by little, as the weight falls."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-12",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "advanced",
+		"answer": 0,
+		"source": "Redis documentation, sorted sets and the INCR command (pattern: rate limiter, fixed window versus sliding log on the same traffic)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um endpoint de login limita cada cliente a 3 tentativas por 60 segundos. O mesmo tráfego é avaliado por uma janela fixa alinhada (a janela k cobre [k·60, (k+1)·60)) e por um log deslizante que registra só as requisições admitidas e conta os instantes em (t − 60, t]. Quantas das 9 requisições cada um admite?",
+			"alternatives": [
+				"Janela fixa: 6, log deslizante: 5",
+				"Janela fixa: 6, log deslizante: 6",
+				"Janela fixa: 5, log deslizante: 6",
+				"Janela fixa: 6, log deslizante: 3",
+				"Janela fixa: 5, log deslizante: 5"
+			],
+			"explanations": [
+				"Janela fixa: [0,60) admite t = 50, 55 e 58; [60,120) admite t = 61, 62 e 63 e rejeita t = 70, 112 e 119. Total 6, todas em 13 segundos. Log: t = 50, 55 e 58 entram; t = 61, 62, 63 e 70 encontram os três registros ainda dentro de 60 segundos e são rejeitadas; em t = 112 o intervalo (52, 112] tem só 55 e 58, admitida; em t = 119 o intervalo (59, 119] tem só 112, admitida. Total 5. Conferindo pelas rejeitadas: 3 na janela fixa (9 − 3 = 6) e 4 no log (9 − 4 = 5).",
+				"Isso supõe que o log também libera tudo em t = 60. No log, os registros de t = 50, 55 e 58 só expiram em t = 110, 115 e 118.",
+				"Os resultados estão trocados: quem aceita a rajada em torno de t = 60 é a janela fixa, não o log.",
+				"O valor 3 para o log aparece quando as rejeitadas também são registradas: as tentativas de t = 61 a 70 ainda ocupariam o log em t = 112 e t = 119. Aqui só as admitidas são registradas.",
+				"Isso aplica a regra deslizante também à janela fixa. Na janela fixa o contador recomeça em t = 60, e t = 61, 62 e 63 entram."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limite = 3, W = 60 s\nrequisições em t = 50, 55, 58, 61, 62, 63, 70, 112, 119"
+			},
+			"concept": "O mesmo tráfego mostra a diferença entre os dois algoritmos. A janela fixa admite 6 tentativas de login entre t = 50 e t = 63, o dobro do limite em 13 segundos, e depois bloqueia o cliente até t = 120. O log nunca deixa passar mais de 3 em 60 segundos, e por isso libera vagas mais tarde, mas uma a uma. Admitir mais no total não significa proteger melhor."
+		},
+		"en": {
+			"statement": "A login endpoint limits each client to 3 attempts per 60 seconds. The same traffic is evaluated by an aligned fixed window (window k covers [k·60, (k+1)·60)) and by a sliding log that records only admitted requests and counts the timestamps in (t − 60, t]. How many of the 9 requests does each one admit?",
+			"alternatives": [
+				"Fixed window: 6, sliding log: 5",
+				"Fixed window: 6, sliding log: 6",
+				"Fixed window: 5, sliding log: 6",
+				"Fixed window: 6, sliding log: 3",
+				"Fixed window: 5, sliding log: 5"
+			],
+			"explanations": [
+				"Fixed window: [0,60) admits t = 50, 55 and 58; [60,120) admits t = 61, 62 and 63 and rejects t = 70, 112 and 119. Total 6, all within 13 seconds. Log: t = 50, 55 and 58 get in; t = 61, 62, 63 and 70 find the three records still within 60 seconds and are rejected; at t = 112 the interval (52, 112] holds only 55 and 58, admitted; at t = 119 the interval (59, 119] holds only 112, admitted. Total 5. Checking by the rejected ones: 3 in the fixed window (9 − 3 = 6) and 4 in the log (9 − 4 = 5).",
+				"That assumes the log also frees everything at t = 60. In the log the records of t = 50, 55 and 58 expire only at t = 110, 115 and 118.",
+				"The results are swapped: the one that accepts the burst around t = 60 is the fixed window, not the log.",
+				"The value 3 for the log appears when rejected requests are recorded too: the attempts from t = 61 to 70 would still fill the log at t = 112 and t = 119. Here only admitted requests are recorded.",
+				"That applies the sliding rule to the fixed window as well. In the fixed window the counter starts again at t = 60, and t = 61, 62 and 63 get in."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limit = 3, W = 60 s\nrequests at t = 50, 55, 58, 61, 62, 63, 70, 112, 119"
+			},
+			"concept": "The same traffic shows the difference between the two algorithms. The fixed window admits 6 login attempts between t = 50 and t = 63, twice the limit in 13 seconds, and then blocks the client until t = 120. The log never lets more than 3 through in 60 seconds, so it frees slots later, but one by one. Admitting more in total does not mean protecting better."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-13",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "advanced",
+		"answer": 2,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, underestimation by the sliding window counter)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um contador de janela deslizante usa estimativa = prev × (1 − elapsed / W) + cur, calculada antes de contar a requisição, e admite quando estimativa < limite. Ele recebe o tráfego abaixo. Depois de t = 90, quantas requisições admitidas existem no intervalo real (30, 90]?",
+			"alternatives": [
+				"6",
+				"10",
+				"14",
+				"15",
+				"18"
+			],
+			"explanations": [
+				"Esse é o número de requisições admitidas em t = 90. A pergunta é sobre o intervalo real (30, 90], que também contém as 8 admitidas entre t = 50 e t = 59.",
+				"Isso supõe que o contador é exato como um log, que deixaria entrar só 2 em t = 90. O contador só enxerga metade das 8 requisições anteriores.",
+				"Em t = 90, elapsed = 30 e o peso de prev é 0,5, então a janela anterior vale 8 × 0,5 = 4. As estimativas sucessivas são 4, 5, 6, 7, 8 e 9, todas abaixo de 10: seis admitidas. A sétima encontra 4 + 6 = 10 e é rejeitada, assim como as demais. No intervalo real (30, 90] estão as 8 de t = 50 a 59 e mais essas 6: 14. Conferindo por outro caminho: cur pode crescer até a menor estimativa não admitida, 10 − 4 = 6, e 8 + 6 = 14.",
+				"Esse valor admite enquanto a estimativa é menor ou igual ao limite, deixando entrar 7 em t = 90. A regra é estimativa < limite, e a sétima requisição encontra exatamente 10.",
+				"Esse valor ignora a janela anterior, como uma janela fixa: admitiria as 10 em t = 90, somando 8 + 10. O contador deslizante ainda desconta 4 pela janela anterior."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limite = 10, W = 60 s\njanela [0,60):   8 requisições admitidas, todas entre t = 50 e t = 59\njanela [60,120): nenhuma requisição até t = 90\nem t = 90: chegam 10 requisições juntas, processadas em ordem"
+			},
+			"concept": "O contador de janela deslizante subestima quando as requisições da janela anterior se concentraram no fim dela: todas ainda estão dentro dos últimos W segundos, mas o peso só conta uma fração. Aqui ele acredita em 4 quando o valor real é 8, e acaba admitindo 14 requisições em um intervalo real de 60 segundos com limite 10. O erro é limitado, bem menor que o dobro da janela fixa, e é o preço de guardar só dois contadores."
+		},
+		"en": {
+			"statement": "A sliding window counter uses estimate = prev × (1 − elapsed / W) + cur, computed before counting the request, and admits when estimate < limit. It receives the traffic below. After t = 90, how many admitted requests lie in the real interval (30, 90]?",
+			"alternatives": [
+				"6",
+				"10",
+				"14",
+				"15",
+				"18"
+			],
+			"explanations": [
+				"That is the number of requests admitted at t = 90. The question is about the real interval (30, 90], which also contains the 8 admitted between t = 50 and t = 59.",
+				"That assumes the counter is exact like a log, which would let only 2 in at t = 90. The counter sees only half of the 8 earlier requests.",
+				"At t = 90, elapsed = 30 and the weight of prev is 0.5, so the previous window is worth 8 × 0.5 = 4. The successive estimates are 4, 5, 6, 7, 8 and 9, all below 10: six admitted. The seventh finds 4 + 6 = 10 and is rejected, as are the rest. The real interval (30, 90] holds the 8 from t = 50 to 59 plus these 6: 14. Checking another way: cur can grow up to the smallest estimate that is not admitted, 10 − 4 = 6, and 8 + 6 = 14.",
+				"This value admits while the estimate is lower than or equal to the limit, letting 7 in at t = 90. The rule is estimate < limit, and the seventh request finds exactly 10.",
+				"This value ignores the previous window, like a fixed window: it would admit all 10 at t = 90, adding up to 8 + 10. The sliding counter still deducts 4 for the previous window."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limit = 10, W = 60 s\nwindow [0,60):   8 requests admitted, all between t = 50 and t = 59\nwindow [60,120): no request until t = 90\nat t = 90: 10 requests arrive together, processed in order"
+			},
+			"concept": "The sliding window counter underestimates when the previous window's requests were concentrated at its end: all of them are still inside the last W seconds, but the weight counts only a fraction. Here it believes 4 when the real value is 8, and ends up admitting 14 requests in a real 60-second interval with limit 10. The error is bounded, well below the fixed window's double, and it is the price of storing only two counters."
+		}
+	},
+	{
+		"id": "rate-limiting-sliding-window-14",
+		"area": "rate-limiting",
+		"topic": "sliding-window",
+		"difficulty": "advanced",
+		"answer": 3,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, overestimation by the sliding window counter)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um contador de janela deslizante (estimativa = prev × (1 − elapsed / W) + cur, calculada antes de contar a requisição, admite quando estimativa < limite) e um log deslizante (registra só as admitidas e conta os instantes em (t − W, t]) viram o mesmo histórico abaixo. Quantas das 5 requisições de t = 70 cada um admite?",
+			"alternatives": [
+				"Contador: 5, log: 5",
+				"Contador: 1, log: 5",
+				"Contador: 0, log: 5",
+				"Contador: 2, log: 5",
+				"Contador: 2, log: 2"
+			],
+			"explanations": [
+				"Isso supõe que o contador é exato como o log. O contador não sabe que as 10 requisições anteriores ficaram todas no início da janela e ainda as conta em parte.",
+				"Esse valor arredonda a estimativa para cima (8,33 vira 9) ou soma a nova requisição antes de comparar. Sem arredondar, 8,33 e 9,33 estão abaixo de 10, então duas entram.",
+				"Isso conta a janela anterior inteira (10 + cur), sem peso. Em t = 70 já se passaram 10 dos 60 segundos, e o peso de prev é 50 / 60.",
+				"Contador: elapsed = 10, peso = 1 − 10 / 60 = 5 / 6, então a janela anterior vale 10 × 5 / 6 ≈ 8,33. Estimativas: 8,33 (admitida), 9,33 (admitida), 10,33 (rejeitada), e as demais também. Duas admitidas. Log: o intervalo (10, 70] não contém nenhum dos instantes entre t = 0 e t = 4, então o log está vazio e as 5 entram (5 ≤ 10). Conferindo o contador por outro caminho: cur pode chegar ao menor inteiro n com 8,33 + n ≥ 10, que é 2.",
+				"Isso aplica a estimativa ponderada também ao log. O log trabalha com os instantes reais, e todos já expiraram em t = 70."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limite = 10, W = 60 s\njanela [0,60):   10 requisições admitidas, todas entre t = 0 e t = 4\njanela [60,120): nenhuma requisição até t = 70\nem t = 70: chegam 5 requisições juntas, processadas em ordem"
+			},
+			"concept": "O contador de janela deslizante superestima quando as requisições da janela anterior se concentraram no início dela: nenhuma está mais dentro dos últimos W segundos, mas o peso ainda as conta em parte. O efeito é rejeitar requisições que o log, exato, admitiria. É o erro oposto ao da concentração no fim da janela, em que o contador subestima e admite além do limite."
+		},
+		"en": {
+			"statement": "A sliding window counter (estimate = prev × (1 − elapsed / W) + cur, computed before counting the request, admits when estimate < limit) and a sliding log (records only admitted requests and counts the timestamps in (t − W, t]) both saw the history below. How many of the 5 requests at t = 70 does each one admit?",
+			"alternatives": [
+				"Counter: 5, log: 5",
+				"Counter: 1, log: 5",
+				"Counter: 0, log: 5",
+				"Counter: 2, log: 5",
+				"Counter: 2, log: 2"
+			],
+			"explanations": [
+				"That assumes the counter is exact like the log. The counter does not know that the 10 earlier requests were all at the start of the window and still counts them in part.",
+				"This value rounds the estimate up (8.33 becomes 9) or adds the new request before comparing. Without rounding, 8.33 and 9.33 are below 10, so two get in.",
+				"That counts the whole previous window (10 + cur), unweighted. At t = 70, 10 of the 60 seconds have passed, and the weight of prev is 50 / 60.",
+				"Counter: elapsed = 10, weight = 1 − 10 / 60 = 5 / 6, so the previous window is worth 10 × 5 / 6 ≈ 8.33. Estimates: 8.33 (admitted), 9.33 (admitted), 10.33 (rejected), and so are the rest. Two admitted. Log: the interval (10, 70] contains none of the timestamps between t = 0 and t = 4, so the log is empty and all 5 get in (5 ≤ 10). Checking the counter another way: cur can reach the smallest integer n with 8.33 + n ≥ 10, which is 2.",
+				"That applies the weighted estimate to the log as well. The log works with the real timestamps, and all of them have expired by t = 70."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limit = 10, W = 60 s\nwindow [0,60):   10 requests admitted, all between t = 0 and t = 4\nwindow [60,120): no request until t = 70\nat t = 70: 5 requests arrive together, processed in order"
+			},
+			"concept": "The sliding window counter overestimates when the previous window's requests were concentrated at its start: none of them is still inside the last W seconds, but the weight still counts them in part. The effect is to reject requests that the exact log would admit. It is the opposite error to concentration at the end of the window, where the counter underestimates and admits beyond the limit."
+		}
+	}
+]

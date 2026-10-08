@@ -1,0 +1,695 @@
+[
+	{
+		"id": "rate-limiting-token-bucket-01",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, capacity and rate)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um token bucket tem dois parâmetros: a capacidade B do balde e a taxa de reposição r. O que cada um deles limita?",
+			"alternatives": [
+				"B limita o tamanho de uma rajada; r limita a taxa média de longo prazo",
+				"B limita a taxa média de longo prazo; r limita o tamanho de uma rajada",
+				"B limita as requisições por janela; r é a duração de cada janela",
+				"B limita o tamanho da fila de espera; r é a taxa de saída dessa fila",
+				"B limita o total de requisições do cliente; r é o custo de cada uma"
+			],
+			"explanations": [
+				"Com o balde cheio, o cliente pode gastar B fichas de uma vez (a rajada). Depois disso só passa o que a reposição permite, r por segundo, que é a taxa média sustentada.",
+				"Os papéis estão trocados: quem define a média sustentada é a velocidade com que as fichas voltam (r), e não quantas cabem no balde.",
+				"Essa é a descrição da janela fixa (limite e tamanho da janela). O token bucket não tem janelas: as fichas voltam continuamente.",
+				"Fila com saída a taxa constante é a leitura do leaky bucket como fila. O token bucket não guarda requisições, guarda fichas.",
+				"Um total que não se renova é uma cota, e o custo por requisição é outro parâmetro (custo ponderado). As fichas de B voltam com o tempo."
+			],
+			"concept": "No token bucket, fichas são repostas à taxa r até o máximo B, e cada requisição gasta uma ficha. A capacidade B define a maior rajada que passa de uma vez, e a taxa r define quantas requisições por segundo passam em média quando o cliente insiste. Ajustar os dois separadamente é a vantagem do algoritmo: rajada tolerada e média sustentada deixam de ser o mesmo número."
+		},
+		"en": {
+			"statement": "A token bucket has two parameters: the bucket capacity B and the refill rate r. What does each of them limit?",
+			"alternatives": [
+				"B limits the size of a burst; r limits the long-term average rate",
+				"B limits the long-term average rate; r limits the size of a burst",
+				"B limits the requests per window; r is the length of each window",
+				"B limits the size of the waiting queue; r is the output rate of that queue",
+				"B limits the client's total number of requests; r is the cost of each one"
+			],
+			"explanations": [
+				"With a full bucket the client can spend B tokens at once (the burst). After that only what the refill allows gets through, r per second, which is the sustained average rate.",
+				"The roles are swapped: the sustained average is set by how fast tokens come back (r), not by how many fit in the bucket.",
+				"This describes the fixed window (limit and window size). The token bucket has no windows: tokens come back continuously.",
+				"A queue with a constant output rate is the leaky bucket read as a queue. The token bucket does not hold requests, it holds tokens.",
+				"A total that is not renewed is a quota, and the cost per request is another parameter (weighted cost). The B tokens come back over time."
+			],
+			"concept": "In a token bucket, tokens are added at rate r up to the maximum B, and each request spends one token. The capacity B sets the largest burst that passes at once, and the rate r sets how many requests per second pass on average when the client keeps pushing. Tuning the two separately is the advantage of the algorithm: tolerated burst and sustained average stop being the same number."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-02",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, empty bucket)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Em um token bucket que limita uma API (cada requisição custa 1 ficha), o que acontece com uma requisição que chega no instante em que o balde está vazio?",
+			"alternatives": [
+				"É admitida, porque um balde vazio tem espaço livre para mais requisições",
+				"É admitida, e o saldo fica negativo para ser descontado da reposição",
+				"É recusada, e o cliente fica bloqueado até o balde encher por completo",
+				"É recusada (ou espera) até a reposição formar uma ficha inteira",
+				"É recusada, e o cliente só volta a ser atendido quando começar a próxima janela"
+			],
+			"explanations": [
+				"Esse raciocínio vale para o leaky bucket lido como medidor, em que o nível sobe a cada requisição. No token bucket o balde guarda permissões: vazio significa sem permissão.",
+				"No algoritmo clássico o saldo nunca fica negativo: sem uma ficha inteira disponível, a requisição não passa. Dívida de fichas é uma variante, não a regra.",
+				"Não é preciso esperar o balde encher. Basta a reposição produzir uma ficha (1/r segundos a partir do zero) para a próxima requisição passar.",
+				"Balde vazio significa que o cliente gastou toda a rajada. A partir daí ele fica limitado à taxa de reposição: uma requisição a cada 1/r segundos.",
+				"Não há janelas no token bucket. A permissão volta aos poucos, à taxa r, e não de uma vez em um instante de virada."
+			],
+			"concept": "As fichas do token bucket são permissões para enviar. Balde vazio quer dizer que o cliente já consumiu a rajada permitida, então as próximas requisições são recusadas (em um limitador de API) ou atrasadas (em um modelador de tráfego) até a reposição gerar uma ficha. Em regime de balde vazio, a vazão do cliente é exatamente a taxa de reposição r."
+		},
+		"en": {
+			"statement": "In a token bucket that limits an API (each request costs 1 token), what happens to a request that arrives at a moment when the bucket is empty?",
+			"alternatives": [
+				"It is admitted, because an empty bucket has free room for more requests",
+				"It is admitted, and the balance goes negative to be deducted from the refill",
+				"It is refused, and the client stays blocked until the bucket is completely full",
+				"It is refused (or waits) until the refill has produced a whole token",
+				"It is refused, and the client is only served again when the next window starts"
+			],
+			"explanations": [
+				"That reasoning fits the leaky bucket read as a meter, where the level rises with each request. In the token bucket the bucket holds permissions: empty means no permission.",
+				"In the classic algorithm the balance never goes negative: without a whole token available the request does not pass. Token debt is a variant, not the rule.",
+				"There is no need to wait for a full bucket. As soon as the refill produces one token (1/r seconds starting from zero) the next request passes.",
+				"An empty bucket means the client has spent its whole burst. From then on it is limited to the refill rate: one request every 1/r seconds.",
+				"There are no windows in a token bucket. The permission comes back little by little, at rate r, not all at once at a boundary."
+			],
+			"concept": "The tokens of a token bucket are permissions to send. An empty bucket means the client has already used the burst it was allowed, so the next requests are refused (in an API limiter) or delayed (in a traffic shaper) until the refill produces a token. While the bucket stays empty, the client's throughput is exactly the refill rate r."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-03",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, full bucket)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "O balde de um token bucket já está cheio (B fichas) e o cliente continua sem enviar nada. O que acontece com as fichas que a reposição produziria nesse período?",
+			"alternatives": [
+				"Acumulam-se acima de B e permitem uma rajada maior quando o cliente voltar",
+				"São repartidas entre os baldes dos outros clientes do mesmo serviço",
+				"Aumentam a taxa de reposição do cliente pelos segundos seguintes",
+				"Esvaziam o balde, que recomeça a contagem a partir de zero",
+				"São descartadas: o saldo permanece em B"
+			],
+			"explanations": [
+				"Esse é o erro mais comum: achar que tempo parado vira crédito ilimitado. O saldo é limitado a B justamente para que a rajada tenha tamanho máximo conhecido.",
+				"Cada cliente (ou chave) tem o seu balde, independente dos demais. Fichas não migram de um balde para outro.",
+				"A taxa r é um parâmetro fixo da configuração. Fichas excedentes não mudam a taxa, apenas se perdem.",
+				"Isso confunde o balde com o contador de uma janela fixa, que zera na virada. No token bucket, balde cheio continua cheio.",
+				"Balde cheio significa que o cliente tem a rajada máxima disponível, e nada além dela. Fichas que chegam com o balde cheio transbordam e se perdem."
+			],
+			"concept": "O saldo de um token bucket é sempre min(B, saldo + r × tempo). O teto B impede que um cliente ocioso por uma hora acumule uma hora de permissões e as gaste de uma vez. Por isso a maior rajada possível é B, não importa quanto tempo o cliente tenha ficado parado.",
+			"example": {
+				"kind": "code",
+				"language": "text",
+				"content": "B = 10, r = 1/s\nt = 0     tokens = 10\nt = 3600  tokens = min(10, 10 + 1 * 3600) = 10"
+			}
+		},
+		"en": {
+			"statement": "The bucket of a token bucket is already full (B tokens) and the client keeps sending nothing. What happens to the tokens the refill would produce during that period?",
+			"alternatives": [
+				"They pile up above B and allow a larger burst when the client comes back",
+				"They are shared out among the buckets of the other clients of the service",
+				"They raise the client's refill rate for the following seconds",
+				"They empty the bucket, which starts counting again from zero",
+				"They are discarded: the balance stays at B"
+			],
+			"explanations": [
+				"This is the most common mistake: thinking idle time becomes unlimited credit. The balance is capped at B precisely so that the burst has a known maximum size.",
+				"Each client (or key) has its own bucket, independent of the others. Tokens do not move from one bucket to another.",
+				"The rate r is a fixed configuration parameter. Surplus tokens do not change the rate, they are simply lost.",
+				"This confuses the bucket with the counter of a fixed window, which resets at the boundary. In a token bucket a full bucket stays full.",
+				"A full bucket means the client has the maximum burst available, and nothing beyond it. Tokens arriving at a full bucket overflow and are lost."
+			],
+			"concept": "The balance of a token bucket is always min(B, balance + r × time). The cap B prevents a client that was idle for an hour from saving an hour of permissions and spending them at once. That is why the largest possible burst is B, no matter how long the client stayed idle.",
+			"example": {
+				"kind": "code",
+				"language": "text",
+				"content": "B = 10, r = 1/s\nt = 0     tokens = 10\nt = 3600  tokens = min(10, 10 + 1 * 3600) = 10"
+			}
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-04",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, lazy refill)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "A maioria das implementações de token bucket não usa um temporizador que acrescenta fichas a cada instante. O que elas guardam por cliente para saber, na chegada de uma requisição, quantas fichas existem?",
+			"alternatives": [
+				"O instante de cada requisição admitida, contando as que caem no último segundo",
+				"O saldo de fichas e o instante da última atualização",
+				"Um contador de requisições que volta a zero no início de cada intervalo fixo",
+				"A fila das requisições em espera, liberadas uma a uma a intervalos regulares",
+				"Apenas o saldo de fichas, que recebe uma ficha a cada requisição recebida"
+			],
+			"explanations": [
+				"Guardar um instante por requisição admitida é o log deslizante, que custa memória proporcional ao limite. O token bucket precisa só de dois números.",
+				"Na chegada da requisição calcula-se saldo = min(B, saldo + r × (agora − última atualização)) e grava-se o novo instante. É a reposição preguiçosa (lazy refill).",
+				"Contador zerado a cada intervalo é a janela fixa. Ele não representa fichas que voltam continuamente.",
+				"Fila de requisições liberadas a ritmo constante é o leaky bucket lido como fila. O token bucket não enfileira requisições.",
+				"Sem o instante da última atualização não há como saber quanto tempo passou. E a reposição depende do tempo decorrido, não do número de requisições."
+			],
+			"concept": "A reposição preguiçosa troca o temporizador por uma conta: como as fichas chegam a uma taxa constante, basta saber o saldo anterior e quanto tempo passou para obter o saldo atual. O estado por cliente tem só dois campos, o saldo e o instante da última atualização. Isso torna o algoritmo barato em memória e fácil de guardar em um armazenamento compartilhado.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const elapsed = now - bucket.last;\nbucket.tokens = Math.min(CAPACITY, bucket.tokens + elapsed * RATE);\nbucket.last = now;"
+			}
+		},
+		"en": {
+			"statement": "Most token bucket implementations do not use a timer that adds tokens at every instant. What do they store per client to know, when a request arrives, how many tokens there are?",
+			"alternatives": [
+				"The time of each admitted request, counting those that fall in the last second",
+				"The token balance and the time of the last update",
+				"A request counter that goes back to zero at the start of each fixed interval",
+				"The queue of waiting requests, released one by one at regular intervals",
+				"Only the token balance, which gains one token for every request received"
+			],
+			"explanations": [
+				"Storing one timestamp per admitted request is the sliding log, whose memory grows with the limit. The token bucket needs only two numbers.",
+				"When a request arrives, balance = min(B, balance + r × (now − last update)) is computed and the new time is stored. This is the lazy refill.",
+				"A counter reset at every interval is the fixed window. It does not represent tokens that come back continuously.",
+				"A queue of requests released at a constant pace is the leaky bucket read as a queue. The token bucket does not queue requests.",
+				"Without the time of the last update there is no way to know how much time has passed. And the refill depends on elapsed time, not on the number of requests."
+			],
+			"concept": "The lazy refill replaces the timer with arithmetic: since tokens arrive at a constant rate, the previous balance and the elapsed time are enough to obtain the current balance. The state per client has only two fields, the balance and the time of the last update. This makes the algorithm cheap in memory and easy to keep in a shared store.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const elapsed = now - bucket.last;\nbucket.tokens = Math.min(CAPACITY, bucket.tokens + elapsed * RATE);\nbucket.last = now;"
+			}
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-05",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "basic",
+		"answer": 2,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, compared with a fixed window)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Uma janela fixa de 100 requisições por minuto devolve toda a permissão de uma vez, na virada da janela. Como um token bucket devolve a permissão gasta pelo cliente?",
+			"alternatives": [
+				"De uma vez também, no instante em que o balde fica vazio",
+				"De uma vez, quando passa um minuto desde a primeira requisição do cliente",
+				"Aos poucos: as fichas voltam continuamente, à taxa de reposição",
+				"Aos poucos: cada ficha volta exatamente um minuto depois de ter sido gasta",
+				"Somente quando a requisição termina: a ficha volta ao final da resposta"
+			],
+			"explanations": [
+				"Esvaziar o balde não dispara reposição nenhuma. O balde vazio se recupera no mesmo ritmo de sempre, r fichas por segundo.",
+				"Isso descreve uma janela que começa na primeira requisição, ainda uma janela fixa. O token bucket não tem instante de virada.",
+				"A reposição é contínua e independe do que o cliente fez: a cada segundo voltam r fichas, até o teto B. Por isso não existe uma fronteira em que tudo é liberado de novo.",
+				"Devolver cada permissão um intervalo depois do uso é o comportamento do log deslizante. No token bucket as fichas voltam à taxa r, gastas há muito ou há pouco tempo.",
+				"Ficha devolvida ao fim da requisição é um limite de concorrência (semáforo), que controla requisições simultâneas, e não a taxa."
+			],
+			"concept": "Na janela fixa o contador zera em instantes marcados, o que permite duas rajadas coladas, uma no fim de uma janela e outra no começo da seguinte. No token bucket a permissão é reposta continuamente, de modo que nenhum instante é especial. A rajada possível é sempre limitada pela capacidade B."
+		},
+		"en": {
+			"statement": "A fixed window of 100 requests per minute gives the whole allowance back at once, at the window boundary. How does a token bucket give back the allowance a client has spent?",
+			"alternatives": [
+				"All at once too, at the moment the bucket becomes empty",
+				"All at once, when a minute has passed since the client's first request",
+				"Gradually: tokens come back continuously, at the refill rate",
+				"Gradually: each token comes back exactly one minute after it was spent",
+				"Only when the request finishes: the token returns at the end of the response"
+			],
+			"explanations": [
+				"Emptying the bucket triggers no refill. An empty bucket recovers at the usual pace, r tokens per second.",
+				"This describes a window that starts at the first request, which is still a fixed window. The token bucket has no boundary instant.",
+				"The refill is continuous and does not depend on what the client did: r tokens come back every second, up to the cap B. So there is no boundary at which everything is released again.",
+				"Giving each permission back one interval after its use is how the sliding log behaves. In a token bucket tokens come back at rate r, whether they were spent long ago or just now.",
+				"A token returned at the end of the request is a concurrency limit (semaphore), which controls simultaneous requests, not the rate."
+			],
+			"concept": "In a fixed window the counter resets at marked instants, which allows two bursts back to back, one at the end of a window and another at the start of the next. In a token bucket the allowance is refilled continuously, so no instant is special. The possible burst is always bounded by the capacity B."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-06",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, timeline)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um crawler é limitado pelo token bucket abaixo. A reposição é contínua (frações de ficha contam) e limitada à capacidade, cada requisição custa 1 ficha e é admitida quando há pelo menos 1 ficha inteira. Todas as requisições da linha do tempo são admitidas. Quantas fichas restam logo depois da requisição em t = 12?",
+			"alternatives": [
+				"0 ficha",
+				"0,5 ficha",
+				"2 fichas",
+				"3 fichas",
+				"1 ficha"
+			],
+			"explanations": [
+				"Esse resultado ignora a reposição: 4 fichas iniciais não cobririam 7 requisições. Entre t = 0 e t = 12 o balde recebe fichas a 0,5 por segundo.",
+				"Aqui faltou a reposição entre t = 11 e t = 12. Em t = 11 sobram 1,5 ficha; um segundo depois são 2,0, e a requisição deixa 1,0.",
+				"2 é o saldo em t = 12 antes de descontar a última requisição. A pergunta pede o saldo depois dela.",
+				"Esse valor esquece o teto: em t = 10 a conta 1 + 0,5 × 10 = 6 passa da capacidade 4. O saldo real é 4, e não 6, o que tira 2 fichas do resultado.",
+				"t = 0: 4 − 3 = 1. t = 10: min(4, 1 + 5) = 4, menos 1 = 3. t = 11: 3 + 0,5 = 3,5, menos 2 = 1,5. t = 12: 1,5 + 0,5 = 2, menos 1 = 1. Conferindo: 4 iniciais + 6 repostas − 2 descartadas pelo teto − 7 gastas = 1."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "capacidade B = 4 fichas, reposição r = 0,5 ficha/s, balde cheio em t = 0\n\nt = 0    3 requisições\nt = 10   1 requisição\nt = 11   2 requisições\nt = 12   1 requisição"
+			},
+			"concept": "Para seguir um token bucket no tempo, a cada chegada soma-se r × tempo decorrido ao saldo, aplica-se o teto B e só então se desconta a requisição. O teto importa nos períodos ociosos: aqui, dez segundos parados renderiam 5 fichas, mas só 3 cabem no balde. Frações de ficha se acumulam e contam para as requisições seguintes."
+		},
+		"en": {
+			"statement": "A crawler is limited by the token bucket below. The refill is continuous (fractions of a token count) and capped at the capacity, each request costs 1 token and is admitted when at least 1 whole token is available. All the requests of the timeline are admitted. How many tokens are left right after the request at t = 12?",
+			"alternatives": [
+				"0 tokens",
+				"0.5 token",
+				"2 tokens",
+				"3 tokens",
+				"1 token"
+			],
+			"explanations": [
+				"This result ignores the refill: 4 initial tokens would not cover 7 requests. Between t = 0 and t = 12 the bucket receives tokens at 0.5 per second.",
+				"The refill between t = 11 and t = 12 is missing here. At t = 11 there are 1.5 tokens left; one second later there are 2.0, and the request leaves 1.0.",
+				"2 is the balance at t = 12 before the last request is deducted. The question asks for the balance after it.",
+				"This value forgets the cap: at t = 10 the sum 1 + 0.5 × 10 = 6 exceeds the capacity 4. The real balance is 4, not 6, which removes 2 tokens from the result.",
+				"t = 0: 4 − 3 = 1. t = 10: min(4, 1 + 5) = 4, minus 1 = 3. t = 11: 3 + 0.5 = 3.5, minus 2 = 1.5. t = 12: 1.5 + 0.5 = 2, minus 1 = 1. Checking: 4 initial + 6 refilled − 2 discarded by the cap − 7 spent = 1."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "capacity B = 4 tokens, refill r = 0.5 token/s, bucket full at t = 0\n\nt = 0    3 requests\nt = 10   1 request\nt = 11   2 requests\nt = 12   1 request"
+			},
+			"concept": "To follow a token bucket over time, at each arrival add r × elapsed time to the balance, apply the cap B, and only then deduct the request. The cap matters in idle periods: here, ten idle seconds would yield 5 tokens, but only 3 fit in the bucket. Fractions of a token accumulate and count towards later requests."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-07",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, burst admission)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um API gateway aplica o token bucket abaixo a um cliente. A reposição é contínua e limitada à capacidade, cada requisição custa 1 ficha, é admitida quando há pelo menos 1 ficha inteira, e uma requisição recusada não gasta ficha. Quantas das 10 requisições da rajada em t = 1 são admitidas?",
+			"alternatives": [
+				"2",
+				"5",
+				"3",
+				"8",
+				"10"
+			],
+			"explanations": [
+				"2 conta só as fichas repostas entre t = 0 e t = 1 e esquece as 3 que sobraram da primeira leva.",
+				"Em t = 0 o balde tem 8 fichas e gasta 5, restando 3. Até t = 1 voltam 2 × 1 = 2 fichas, total 5 (abaixo do teto 8). Passam 5 requisições e 5 são recusadas. Conferindo: 8 + 2 = 10 fichas disponíveis até t = 1, das quais 5 já gastas.",
+				"3 é o saldo que sobrou em t = 0, sem a reposição de 2 fichas durante o segundo seguinte.",
+				"8 supõe que o balde voltou a ficar cheio em t = 1. Em um segundo só voltam 2 fichas, não as 5 que foram gastas.",
+				"10 raciocina pela média: 15 requisições em pouco tempo parecem poucas. Mas o que decide é o saldo no instante da rajada, que é 5."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "capacidade B = 8 fichas, reposição r = 2 fichas/s, balde cheio em t = 0\n\nt = 0   5 requisições\nt = 1   10 requisições (rajada)"
+			},
+			"concept": "O tamanho da rajada que passa em um instante é o saldo naquele instante: o que sobrou de antes mais o que foi reposto desde então, limitado a B. A capacidade B é apenas o melhor caso, quando o cliente ficou parado tempo suficiente para encher o balde. Um cliente que acabou de gastar fichas tem uma rajada menor disponível."
+		},
+		"en": {
+			"statement": "An API gateway applies the token bucket below to a client. The refill is continuous and capped at the capacity, each request costs 1 token, is admitted when at least 1 whole token is available, and a refused request spends no token. How many of the 10 requests of the burst at t = 1 are admitted?",
+			"alternatives": [
+				"2",
+				"5",
+				"3",
+				"8",
+				"10"
+			],
+			"explanations": [
+				"2 counts only the tokens refilled between t = 0 and t = 1 and forgets the 3 left over from the first batch.",
+				"At t = 0 the bucket has 8 tokens and spends 5, leaving 3. By t = 1, 2 × 1 = 2 tokens come back, 5 in total (below the cap 8). 5 requests pass and 5 are refused. Checking: 8 + 2 = 10 tokens available up to t = 1, of which 5 already spent.",
+				"3 is the balance left at t = 0, without the 2 tokens refilled during the following second.",
+				"8 assumes the bucket was full again at t = 1. In one second only 2 tokens come back, not the 5 that were spent.",
+				"10 reasons by the average: 15 requests in a short time look few. But what decides is the balance at the instant of the burst, which is 5."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "capacity B = 8 tokens, refill r = 2 tokens/s, bucket full at t = 0\n\nt = 0   5 requests\nt = 1   10 requests (burst)"
+			},
+			"concept": "The size of the burst that passes at an instant is the balance at that instant: what was left from before plus what was refilled since, capped at B. The capacity B is only the best case, when the client has been idle long enough to fill the bucket. A client that has just spent tokens has a smaller burst available."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-08",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, time until the next token)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um endpoint de login usa um token bucket com capacidade B = 5 e reposição contínua r = 0,2 ficha por segundo. Cada tentativa custa 1 ficha, é admitida quando há pelo menos 1 ficha inteira, e uma tentativa recusada não gasta ficha. Com o balde cheio, um cliente faz 5 tentativas em t = 0 (todas admitidas) e mais uma em t = 2, que é recusada. Qual é o primeiro instante em que uma nova tentativa será admitida?",
+			"alternatives": [
+				"t = 5",
+				"t = 7",
+				"t = 2,2",
+				"t = 3",
+				"t = 25"
+			],
+			"explanations": [
+				"O balde zera em t = 0 e recebe 0,2 ficha por segundo, então o saldo é 0,2 × t. Ele chega a 1 ficha em t = 1 / 0,2 = 5. A recusa em t = 2 (saldo 0,4) não altera nada. Conferindo: em t = 2 faltam 0,6 ficha, ou 0,6 / 0,2 = 3 s, e 2 + 3 = 5.",
+				"t = 7 conta os 5 segundos a partir da tentativa recusada, como se a recusa zerasse a espera. A reposição não depende das requisições: ela corre desde t = 0.",
+				"t = 2,2 lê 0,2 como o tempo em segundos para gerar uma ficha. A taxa é 0,2 ficha por segundo, ou seja, uma ficha a cada 5 segundos.",
+				"t = 3 supõe uma ficha por segundo depois da recusa. A taxa configurada é cinco vezes menor.",
+				"t = 25 espera o balde encher por completo (5 fichas a 0,2 por segundo). Basta uma ficha inteira para admitir uma tentativa."
+			],
+			"concept": "Com o balde em um saldo s menor que 1, o tempo até a próxima admissão é (1 − s) / r. Esse valor é o que um servidor HTTP pode informar no cabeçalho Retry-After junto com a resposta 429. Requisições recusadas não consomem fichas nem atrasam a reposição, que depende apenas do tempo."
+		},
+		"en": {
+			"statement": "A login endpoint uses a token bucket with capacity B = 5 and continuous refill r = 0.2 token per second. Each attempt costs 1 token, is admitted when at least 1 whole token is available, and a refused attempt spends no token. With a full bucket, a client makes 5 attempts at t = 0 (all admitted) and one more at t = 2, which is refused. What is the earliest instant at which a new attempt will be admitted?",
+			"alternatives": [
+				"t = 5",
+				"t = 7",
+				"t = 2.2",
+				"t = 3",
+				"t = 25"
+			],
+			"explanations": [
+				"The bucket is emptied at t = 0 and receives 0.2 token per second, so the balance is 0.2 × t. It reaches 1 token at t = 1 / 0.2 = 5. The refusal at t = 2 (balance 0.4) changes nothing. Checking: at t = 2 it lacks 0.6 token, or 0.6 / 0.2 = 3 s, and 2 + 3 = 5.",
+				"t = 7 counts the 5 seconds from the refused attempt, as if the refusal restarted the wait. The refill does not depend on requests: it has been running since t = 0.",
+				"t = 2.2 reads 0.2 as the time in seconds to produce one token. The rate is 0.2 token per second, that is, one token every 5 seconds.",
+				"t = 3 assumes one token per second after the refusal. The configured rate is five times lower.",
+				"t = 25 waits for the bucket to fill completely (5 tokens at 0.2 per second). One whole token is enough to admit an attempt."
+			],
+			"concept": "With the bucket at a balance s below 1, the time until the next admission is (1 − s) / r. That value is what an HTTP server can announce in the Retry-After header together with the 429 response. Refused requests neither consume tokens nor delay the refill, which depends only on time."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-09",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, long-run admitted volume)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um token bucket tem capacidade B = 50 e reposição contínua r = 10 fichas por segundo, e cada requisição custa 1 ficha. Com o balde cheio em t = 0, um cliente envia requisições sem parar, muito mais do que o limite permite, de t = 0 até t = 60 (extremos incluídos). Quantas requisições são admitidas nesse intervalo, no máximo?",
+			"alternatives": [
+				"600",
+				"650",
+				"110",
+				"3000",
+				"50"
+			],
+			"explanations": [
+				"600 conta só a reposição (10 × 60) e esquece as 50 fichas que já estavam no balde em t = 0.",
+				"O cliente gasta as 50 fichas iniciais e depois tudo o que é reposto: 50 + 10 × 60 = 650. Como ele nunca deixa o balde encher, nenhuma ficha é descartada. Conferindo por segundo: 60 no primeiro segundo (50 + 10) e 10 em cada um dos outros 59, total 60 + 590 = 650.",
+				"110 soma uma ficha por segundo (50 + 60), sem usar a taxa de 10 fichas por segundo.",
+				"3000 supõe que o balde volta a ficar cheio a cada segundo (50 × 60). O que volta por segundo é r = 10, não B.",
+				"50 trata a capacidade como um total que não se renova. As fichas são repostas durante todo o intervalo."
+			],
+			"concept": "Em qualquer intervalo de duração T, um token bucket admite no máximo B + r × T requisições: a rajada inicial mais o que a reposição produz. Quanto maior o intervalo, menos a parcela B pesa, e a taxa efetiva se aproxima de r. É por isso que r é a taxa média de longo prazo e B é só a folga para rajadas."
+		},
+		"en": {
+			"statement": "A token bucket has capacity B = 50 and continuous refill r = 10 tokens per second, and each request costs 1 token. With a full bucket at t = 0, a client sends requests non-stop, far more than the limit allows, from t = 0 to t = 60 (both ends included). How many requests are admitted in that interval, at most?",
+			"alternatives": [
+				"600",
+				"650",
+				"110",
+				"3000",
+				"50"
+			],
+			"explanations": [
+				"600 counts only the refill (10 × 60) and forgets the 50 tokens that were already in the bucket at t = 0.",
+				"The client spends the 50 initial tokens and then everything that is refilled: 50 + 10 × 60 = 650. Since it never lets the bucket fill up, no token is discarded. Checking per second: 60 in the first second (50 + 10) and 10 in each of the other 59, 60 + 590 = 650 in total.",
+				"110 adds one token per second (50 + 60), without using the rate of 10 tokens per second.",
+				"3000 assumes the bucket is full again every second (50 × 60). What comes back per second is r = 10, not B.",
+				"50 treats the capacity as a total that is never renewed. Tokens are refilled during the whole interval."
+			],
+			"concept": "In any interval of length T, a token bucket admits at most B + r × T requests: the initial burst plus what the refill produces. The longer the interval, the less the B term weighs, and the effective rate approaches r. That is why r is the long-term average rate and B is only the slack for bursts."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-10",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, maximum burst length S = B / (M − R))",
+		"pt": {
+			"statement": "Um host modela o seu tráfego com um token bucket em que as fichas valem bytes: capacidade B = 16 MB e taxa de fichas R = 2 MB/s. O enlace permite enviar no máximo a M = 10 MB/s. Com o balde cheio, por quanto tempo o host consegue transmitir à taxa máxima M antes de ficar limitado a R?",
+			"alternatives": [
+				"1,6 s",
+				"8 s",
+				"2 s",
+				"1,33 s",
+				"0,5 s"
+			],
+			"explanations": [
+				"1,6 s é B / M: considera só as fichas que já estavam no balde e esquece as que chegam durante a rajada.",
+				"8 s é B / R, o tempo para encher um balde vazio. A pergunta é quanto tempo a rajada dura, com o balde esvaziando a M − R.",
+				"Durante a rajada de duração S saem M × S bytes, pagos por B + R × S fichas. De 16 + 2S = 10S vem S = 16 / (10 − 2) = 2 s. Conferindo: em 2 s saem 20 MB, e há 16 MB no balde mais 4 MB repostos.",
+				"1,33 s é B / (M + R): soma as taxas quando elas atuam em sentidos opostos. A reposição prolonga a rajada, logo o saldo cai a M − R.",
+				"0,5 s é (M − R) / B, a fórmula invertida. As unidades mostram o erro: MB/s dividido por MB não dá segundos."
+			],
+			"concept": "Enquanto transmite à taxa máxima M, o host gasta fichas a M e recebe fichas a R, então o balde esvazia à taxa M − R. A duração máxima da rajada S satisfaz B + R × S = M × S, o que dá S = B / (M − R). Depois disso o balde está vazio e a saída cai para a taxa de fichas R."
+		},
+		"en": {
+			"statement": "A host shapes its traffic with a token bucket whose tokens are worth bytes: capacity B = 16 MB and token rate R = 2 MB/s. The link allows sending at most at M = 10 MB/s. With a full bucket, for how long can the host transmit at the maximum rate M before being limited to R?",
+			"alternatives": [
+				"1.6 s",
+				"8 s",
+				"2 s",
+				"1.33 s",
+				"0.5 s"
+			],
+			"explanations": [
+				"1.6 s is B / M: it considers only the tokens already in the bucket and forgets those arriving during the burst.",
+				"8 s is B / R, the time to fill an empty bucket. The question is how long the burst lasts, with the bucket draining at M − R.",
+				"During a burst of length S, M × S bytes leave, paid for by B + R × S tokens. From 16 + 2S = 10S comes S = 16 / (10 − 2) = 2 s. Checking: in 2 s 20 MB leave, and there are 16 MB in the bucket plus 4 MB refilled.",
+				"1.33 s is B / (M + R): it adds the rates when they act in opposite directions. The refill prolongs the burst, so the balance falls at M − R.",
+				"0.5 s is (M − R) / B, the formula upside down. The units show the mistake: MB/s divided by MB does not give seconds."
+			],
+			"concept": "While it transmits at the maximum rate M, the host spends tokens at M and receives tokens at R, so the bucket drains at rate M − R. The maximum burst length S satisfies B + R × S = M × S, which gives S = B / (M − R). After that the bucket is empty and the output drops to the token rate R."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-11",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, requests with weighted cost)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Uma API de relatórios cobra fichas conforme o peso da operação, como mostra a configuração abaixo. Uma requisição é admitida quando o saldo é maior ou igual ao seu custo, e uma requisição recusada não gasta ficha. A reposição é contínua e limitada à capacidade. O que acontece com as requisições enviadas em t = 2, processadas na ordem indicada?",
+			"alternatives": [
+				"A exportação é admitida e nenhuma leitura é admitida",
+				"A exportação é recusada e 2 leituras são admitidas",
+				"A exportação é recusada e 20 leituras são admitidas",
+				"A exportação é recusada e as 30 leituras são admitidas",
+				"A exportação é recusada e nenhuma leitura é admitida"
+			],
+			"explanations": [
+				"Isso supõe pagamento parcial: gastar as 20 fichas existentes em uma operação que custa 25. Sem saldo para o custo inteiro, a operação não passa e não gasta nada.",
+				"2 leituras viria de uma reposição de 1 ficha por segundo. A taxa configurada é 10 por segundo, então em 2 s voltam 20 fichas.",
+				"Em t = 0 as 4 exportações gastam 4 × 25 = 100 fichas, e o saldo vai a 0. Em t = 2 o saldo é min(100, 0 + 10 × 2) = 20. A exportação pede 25 e é recusada; as leituras gastam 1 cada, então passam 20 e as outras 10 são recusadas.",
+				"Admitir as 30 leituras exigiria 30 fichas, como se o balde tivesse voltado a encher. Em 2 s só voltaram 20.",
+				"Uma recusa não esvazia nem bloqueia o balde. As 20 fichas continuam lá e servem para operações mais baratas."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "capacidade B = 100 fichas, reposição r = 10 fichas/s, balde cheio em t = 0\ncusto: leitura = 1 ficha, exportação = 25 fichas\n\nt = 0   4 exportações (todas admitidas)\nt = 2   1 exportação e, em seguida, 30 leituras"
+			},
+			"concept": "O custo ponderado faz o mesmo balde limitar trabalho, e não só contagem de requisições: uma operação cara gasta várias fichas. A regra de admissão passa a ser saldo ≥ custo, sem pagamento parcial. Um efeito prático é que, com o saldo baixo, operações baratas continuam passando enquanto as caras esperam a reposição."
+		},
+		"en": {
+			"statement": "A reporting API charges tokens according to the weight of the operation, as the configuration below shows. A request is admitted when the balance is greater than or equal to its cost, and a refused request spends no token. The refill is continuous and capped at the capacity. What happens to the requests sent at t = 2, processed in the order given?",
+			"alternatives": [
+				"The export is admitted and none of the reads is admitted",
+				"The export is refused and 2 of the reads are admitted",
+				"The export is refused and 20 of the reads are admitted",
+				"The export is refused and all 30 reads are admitted",
+				"The export is refused and none of the reads is admitted"
+			],
+			"explanations": [
+				"This assumes partial payment: spending the 20 existing tokens on an operation that costs 25. Without balance for the full cost the operation does not pass and spends nothing.",
+				"2 reads would come from a refill of 1 token per second. The configured rate is 10 per second, so 20 tokens come back in 2 s.",
+				"At t = 0 the 4 exports spend 4 × 25 = 100 tokens, and the balance goes to 0. At t = 2 the balance is min(100, 0 + 10 × 2) = 20. The export asks for 25 and is refused; reads spend 1 each, so 20 pass and the other 10 are refused.",
+				"Admitting all 30 reads would take 30 tokens, as if the bucket had filled up again. Only 20 came back in 2 s.",
+				"A refusal neither empties nor blocks the bucket. The 20 tokens are still there and serve cheaper operations."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "capacity B = 100 tokens, refill r = 10 tokens/s, bucket full at t = 0\ncost: read = 1 token, export = 25 tokens\n\nt = 0   4 exports (all admitted)\nt = 2   1 export and then 30 reads"
+			},
+			"concept": "Weighted cost makes the same bucket limit work, not just the number of requests: an expensive operation spends several tokens. The admission rule becomes balance ≥ cost, with no partial payment. A practical effect is that, with a low balance, cheap operations keep passing while expensive ones wait for the refill."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-12",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "advanced",
+		"answer": 3,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, choosing capacity and rate)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Uma API de pagamentos suporta no máximo 100 requisições em qualquer intervalo de 10 segundos. Os clientes devem poder enviar uma rajada de 40 requisições de uma vez, então o token bucket terá capacidade B = 40, com cada requisição custando 1 ficha. Considerando o pior caso, em que o intervalo começa com o balde cheio e o cliente gasta tudo o que pode, qual é a maior taxa de reposição r que respeita o requisito?",
+			"alternatives": [
+				"10 fichas por segundo",
+				"4 fichas por segundo",
+				"14 fichas por segundo",
+				"6 fichas por segundo",
+				"2,5 fichas por segundo"
+			],
+			"explanations": [
+				"10/s é 100 / 10, a conta que ignora a rajada. Com B = 40, o pior intervalo de 10 s admitiria 40 + 10 × 10 = 140 requisições.",
+				"4/s é B / 10, o que confunde a rajada com a taxa. O requisito seria respeitado (40 + 40 = 80), mas essa não é a maior taxa possível.",
+				"14/s soma a rajada ao orçamento, (100 + 40) / 10, quando ela deve ser subtraída. O pior intervalo teria 40 + 140 = 180 requisições.",
+				"No pior intervalo de 10 s passam B + r × 10 requisições. De 40 + 10r ≤ 100 vem r ≤ 6. Conferindo: 40 da rajada mais 6 × 10 = 60 repostas somam exatamente 100, e com r = 7 seriam 110.",
+				"2,5/s é 100 / 40, uma divisão entre o limite e a rajada que não tem significado aqui. Respeita o requisito, mas desperdiça capacidade."
+			],
+			"concept": "Um token bucket admite no máximo B + r × T requisições em um intervalo de duração T. Para garantir um teto N em qualquer intervalo T, é preciso B + r × T ≤ N, e não apenas r × T ≤ N. Cada ficha concedida à rajada é uma ficha a menos para a taxa sustentada, e é esse o compromisso ao escolher B e r."
+		},
+		"en": {
+			"statement": "A payment API withstands at most 100 requests in any 10-second interval. Clients must be able to send a burst of 40 requests at once, so the token bucket will have capacity B = 40, with each request costing 1 token. Considering the worst case, in which the interval starts with a full bucket and the client spends all it can, what is the highest refill rate r that respects the requirement?",
+			"alternatives": [
+				"10 tokens per second",
+				"4 tokens per second",
+				"14 tokens per second",
+				"6 tokens per second",
+				"2.5 tokens per second"
+			],
+			"explanations": [
+				"10/s is 100 / 10, the sum that ignores the burst. With B = 40, the worst 10-second interval would admit 40 + 10 × 10 = 140 requests.",
+				"4/s is B / 10, which confuses the burst with the rate. The requirement would be met (40 + 40 = 80), but this is not the highest possible rate.",
+				"14/s adds the burst to the budget, (100 + 40) / 10, when it must be subtracted. The worst interval would have 40 + 140 = 180 requests.",
+				"In the worst 10-second interval B + r × 10 requests pass. From 40 + 10r ≤ 100 comes r ≤ 6. Checking: 40 of the burst plus 6 × 10 = 60 refilled add up to exactly 100, and with r = 7 it would be 110.",
+				"2.5/s is 100 / 40, a division of the limit by the burst that means nothing here. It meets the requirement but wastes capacity."
+			],
+			"concept": "A token bucket admits at most B + r × T requests in an interval of length T. To guarantee a ceiling N in any interval T, B + r × T ≤ N is needed, not just r × T ≤ N. Every token granted to the burst is one token less for the sustained rate, and that is the trade-off when choosing B and r."
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-13",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "advanced",
+		"answer": 4,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, lazy refill and the capacity cap)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "A função abaixo deveria implementar um token bucket com capacidade 10 e reposição de 2 fichas por segundo. O balde de um cliente começa em t = 0 com tokens = 10 e last = 0. O cliente fica parado até t = 100 e então envia 50 requisições no mesmo instante. Quantas esse código admite, e quantas um token bucket correto admitiria?",
+			"alternatives": [
+				"Admite 10; um token bucket correto também admitiria 10",
+				"Admite 50; um token bucket correto também admitiria 50",
+				"Admite 10; um token bucket correto admitiria 50",
+				"Admite 0; um token bucket correto admitiria 10",
+				"Admite 50; um token bucket correto admitiria 10"
+			],
+			"explanations": [
+				"Isso não percebe o defeito: a soma tokens + elapsed * RATE não é limitada à capacidade. Em t = 100 o saldo calculado é 210, não 10.",
+				"Isso aceita a ideia de que tempo parado vira crédito sem limite. Um token bucket correto descarta as fichas que passam da capacidade, e a rajada máxima é 10.",
+				"Os papéis estão invertidos: é o código com defeito que deixa passar a rajada inteira, e o balde correto que a corta em 10.",
+				"A atribuição b.last = now antes do teste não zera o saldo: ela só registra o instante da reposição. O saldo já foi atualizado na linha anterior.",
+				"Falta o teto. O código calcula 10 + 100 × 2 = 210 fichas, admite as 50 e ainda sobram 160. O correto é min(10, 210) = 10: passam 10 e 40 são recusadas."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const RATE = 2;\n\ntype Bucket = { tokens: number; last: number };\n\nfunction allow(b: Bucket, now: number): boolean {\n\tconst elapsed = now - b.last;\n\tb.tokens = b.tokens + elapsed * RATE;\n\tb.last = now;\n\tif (b.tokens >= 1) {\n\t\tb.tokens -= 1;\n\t\treturn true;\n\t}\n\treturn false;\n}"
+			},
+			"concept": "Na reposição preguiçosa, o saldo é recalculado a partir do tempo decorrido, e esse cálculo precisa do teto: saldo = min(capacidade, saldo + decorrido × taxa). Sem o min, um cliente ocioso acumula fichas sem limite e o limitador deixa de limitar rajadas. O defeito não aparece em testes com tráfego contínuo, só depois de um período parado.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "b.tokens = Math.min(CAPACITY, b.tokens + elapsed * RATE);"
+			}
+		},
+		"en": {
+			"statement": "The function below is supposed to implement a token bucket with capacity 10 and a refill of 2 tokens per second. A client's bucket starts at t = 0 with tokens = 10 and last = 0. The client stays idle until t = 100 and then sends 50 requests at the same instant. How many does this code admit, and how many would a correct token bucket admit?",
+			"alternatives": [
+				"It admits 10; a correct token bucket would also admit 10",
+				"It admits 50; a correct token bucket would also admit 50",
+				"It admits 10; a correct token bucket would admit 50",
+				"It admits 0; a correct token bucket would admit 10",
+				"It admits 50; a correct token bucket would admit 10"
+			],
+			"explanations": [
+				"This misses the defect: the sum tokens + elapsed * RATE is not capped at the capacity. At t = 100 the computed balance is 210, not 10.",
+				"This accepts the idea that idle time becomes unlimited credit. A correct token bucket discards the tokens beyond the capacity, and the maximum burst is 10.",
+				"The roles are inverted: it is the faulty code that lets the whole burst through, and the correct bucket that cuts it to 10.",
+				"The assignment b.last = now before the test does not zero the balance: it only records the time of the refill. The balance was already updated on the previous line.",
+				"The cap is missing. The code computes 10 + 100 × 2 = 210 tokens, admits all 50 and still has 160 left. The correct value is min(10, 210) = 10: 10 pass and 40 are refused."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const RATE = 2;\n\ntype Bucket = { tokens: number; last: number };\n\nfunction allow(b: Bucket, now: number): boolean {\n\tconst elapsed = now - b.last;\n\tb.tokens = b.tokens + elapsed * RATE;\n\tb.last = now;\n\tif (b.tokens >= 1) {\n\t\tb.tokens -= 1;\n\t\treturn true;\n\t}\n\treturn false;\n}"
+			},
+			"concept": "In the lazy refill the balance is recomputed from the elapsed time, and that computation needs the cap: balance = min(capacity, balance + elapsed × rate). Without the min, an idle client piles up tokens without limit and the limiter stops limiting bursts. The defect does not show in tests with continuous traffic, only after an idle period.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "b.tokens = Math.min(CAPACITY, b.tokens + elapsed * RATE);"
+			}
+		}
+	},
+	{
+		"id": "rate-limiting-token-bucket-14",
+		"area": "rate-limiting",
+		"topic": "token-bucket",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "Tanenbaum & Wetherall, Computer Networks, 5th ed., chapter 5 (traffic shaping: token bucket, worst-case burst compared with a fixed window)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Dois limitadores foram configurados para a mesma média de 60 requisições por minuto. O primeiro é uma janela fixa de 60 requisições por janela de 60 s, com janelas alinhadas aos múltiplos de 60 s e contador zerado em cada virada. O segundo é um token bucket com B = 10, reposição contínua r = 1 ficha por segundo e custo de 1 ficha por requisição. Qual é o maior número de requisições que cada um pode admitir em um intervalo de 2 segundos (extremos incluídos), no pior caso?",
+			"alternatives": [
+				"Janela fixa: 60; token bucket: 12",
+				"Janela fixa: 120; token bucket: 12",
+				"Janela fixa: 120; token bucket: 10",
+				"Janela fixa: 120; token bucket: 20",
+				"Janela fixa: 60; token bucket: 10"
+			],
+			"explanations": [
+				"60 esquece a virada da janela: o cliente pode gastar o limite inteiro no fim de uma janela e de novo no começo da seguinte, dentro dos mesmos 2 segundos.",
+				"Janela fixa: 60 requisições em t = 59 e mais 60 em t = 60 (contador zerado) cabem em [59, 61], total 120. Token bucket: balde cheio dá 10 em t = 0, e a reposição permite 1 em t = 1 e 1 em t = 2, total 10 + 1 × 2 = 12.",
+				"10 conta só a rajada e esquece as fichas repostas durante os 2 segundos do intervalo, que valem mais 2 requisições.",
+				"20 aplica ao token bucket o efeito de virada da janela fixa, como se a rajada pudesse dobrar. Não há instante em que o balde volte a encher de uma vez.",
+				"Aqui há os dois erros: ignorar a rajada dupla na virada da janela fixa e ignorar a reposição do token bucket dentro do intervalo."
+			],
+			"concept": "Dois limitadores com a mesma média podem ter picos muito diferentes. A janela fixa admite até 2 × limite em torno de uma virada, porque o contador zera de uma vez. O token bucket admite no máximo B + r × T em qualquer intervalo de duração T, de modo que o pico é escolhido pela capacidade B, independente da média r."
+		},
+		"en": {
+			"statement": "Two limiters were configured for the same average of 60 requests per minute. The first is a fixed window of 60 requests per 60-second window, with windows aligned to multiples of 60 s and the counter reset at each boundary. The second is a token bucket with B = 10, continuous refill r = 1 token per second and a cost of 1 token per request. What is the largest number of requests each one can admit in an interval of 2 seconds (both ends included), in the worst case?",
+			"alternatives": [
+				"Fixed window: 60; token bucket: 12",
+				"Fixed window: 120; token bucket: 12",
+				"Fixed window: 120; token bucket: 10",
+				"Fixed window: 120; token bucket: 20",
+				"Fixed window: 60; token bucket: 10"
+			],
+			"explanations": [
+				"60 forgets the window boundary: the client can spend the whole limit at the end of one window and again at the start of the next, within the same 2 seconds.",
+				"Fixed window: 60 requests at t = 59 and 60 more at t = 60 (counter reset) fit in [59, 61], 120 in total. Token bucket: a full bucket gives 10 at t = 0, and the refill allows 1 at t = 1 and 1 at t = 2, 10 + 1 × 2 = 12 in total.",
+				"10 counts only the burst and forgets the tokens refilled during the 2 seconds of the interval, which are worth 2 more requests.",
+				"20 applies the boundary effect of the fixed window to the token bucket, as if the burst could double. There is no instant at which the bucket fills up again all at once.",
+				"Both mistakes are here: ignoring the double burst at the fixed-window boundary and ignoring the token bucket refill inside the interval."
+			],
+			"concept": "Two limiters with the same average can have very different peaks. The fixed window admits up to 2 × limit around a boundary, because the counter resets all at once. The token bucket admits at most B + r × T in any interval of length T, so the peak is chosen by the capacity B, independently of the average r."
+		}
+	}
+]

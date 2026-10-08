@@ -1,0 +1,118 @@
+# EN: Three groups of services.
+#     1. `ts-test` and `go-test`: the in-memory algorithms. No network at all.
+#     2. `experiment`: the burst experiment, writes `results/`. No network at all.
+#     3. `redis`, `limiter-a`, `limiter-b` and `distributed-test`: two application instances
+#        sharing one Redis, and a test that sends concurrent requests to both. They talk on an
+#        internal network: no container reaches the internet and no port is published on the
+#        host, so the load can only ever hit the two services of this lab.
+# PT: Três grupos de serviços.
+#     1. `ts-test` e `go-test`: os algoritmos em memória. Sem rede nenhuma.
+#     2. `experiment`: o experimento de rajada, grava `results/`. Sem rede nenhuma.
+#     3. `redis`, `limiter-a`, `limiter-b` e `distributed-test`: duas instâncias da aplicação
+#        compartilhando um Redis, e um teste que envia requisições concorrentes às duas. Elas se
+#        falam em uma rede interna: nenhum contêiner alcança a internet e nenhuma porta é
+#        publicada no host, então a carga só consegue atingir os dois serviços deste laboratório.
+name: rl-rate-limiter
+
+x-ts: &ts
+  build:
+    context: .
+    dockerfile: ts/Dockerfile
+  image: sef-rate-limiter-ts:local
+
+# EN: A long window on purpose: 50 requests per minute. The whole concurrent test fits inside
+#     one window, so "exactly 50 admitted" is a fact, not a matter of timing.
+# PT: Uma janela longa de propósito: 50 requisições por minuto. O teste concorrente inteiro cabe
+#     em uma janela, então "exatamente 50 admitidas" é um fato, não uma questão de tempo.
+x-limits: &limits
+  LIMIT: "50"
+  WINDOW_MS: "60000"
+
+x-limiter: &limiter
+  <<: *ts
+  command: ["bun", "run", "start"]
+  depends_on:
+    redis:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "bun", "-e", "const r = await fetch('http://127.0.0.1:3000/health'); process.exit(r.ok ? 0 : 1)"]
+    interval: 1s
+    timeout: 3s
+    retries: 30
+  networks:
+    - lab
+
+services:
+  ts-test:
+    <<: *ts
+    network_mode: "none"
+
+  go-test:
+    build:
+      context: .
+      dockerfile: go/Dockerfile
+    image: sef-rate-limiter-go:local
+    network_mode: "none"
+
+  experiment:
+    <<: *ts
+    command: ["bun", "run", "experiment"]
+    network_mode: "none"
+    environment:
+      PROJECT_DIR: /project
+    # EN: Runs as the host user. On Linux the mounted folder belongs to that user, and the
+    #     image's own user could not write the results into it. The setup script exports
+    #     HOST_UID and HOST_GID; on Docker Desktop the default works.
+    # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
+    #     própria imagem não conseguiria gravar os resultados. O script de setup exporta
+    #     HOST_UID e HOST_GID; no Docker Desktop o padrão funciona.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+  redis:
+    image: redis:8.10.2-alpine
+    # EN: A cache of counters: nothing is written to disk.
+    # PT: Um cache de contadores: nada é gravado em disco.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    # EN: The check goes through TCP on the real port, the same way the application connects.
+    # PT: A verificação passa por TCP na porta real, do mesmo jeito que a aplicação se conecta.
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "127.0.0.1", "-p", "6379", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      - lab
+
+  limiter-a:
+    <<: *limiter
+    environment:
+      <<: *limits
+      REDIS_URL: redis://redis:6379
+      INSTANCE: limiter-a
+
+  limiter-b:
+    <<: *limiter
+    environment:
+      <<: *limits
+      REDIS_URL: redis://redis:6379
+      INSTANCE: limiter-b
+
+  distributed-test:
+    <<: *ts
+    command: ["bun", "run", "test:distributed"]
+    depends_on:
+      limiter-a:
+        condition: service_healthy
+      limiter-b:
+        condition: service_healthy
+    environment:
+      <<: *limits
+      TARGETS: http://limiter-a:3000,http://limiter-b:3000
+    networks:
+      - lab
+
+networks:
+  lab:
+    internal: true
