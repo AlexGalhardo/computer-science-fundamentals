@@ -17,7 +17,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-3034 de 3384 questões escritas, 81 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+3134 de 3384 questões escritas, 85 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -48,7 +48,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Cache | Teoria e prática | 100/100 | feita | [cache-strategies](cache/cache-strategies.md) |
 | Limitação de taxa | Teoria e prática | 100/100 | feita | [rate-limiter](rate-limiting/rate-limiter.md) |
 | Sistemas de arquivos | Teoria e prática | 100/100 | feita | [file-organisation](file-systems/file-organisation.md), [external-sorting](file-systems/external-sorting.md) |
-| Observabilidade | Teoria e prática | 0/100 |  | three-signals (planejado), structured-logs (planejado), slo-alert (planejado), flame-graph (planejado) |
+| Observabilidade | Teoria e prática | 100/100 | feita | [three-signals](observability/three-signals.md), [structured-logs](observability/structured-logs.md), [slo-alert](observability/slo-alert.md), [flame-graph](observability/flame-graph.md) |
 | Blockchain | Teoria e prática | 100/100 | feita | [didactic-blockchain](blockchain/didactic-blockchain.md) |
 | Integração contínua | Teoria e prática | 0/100 |  | ci-pipeline (planejado) |
 | Engenharia de software | Teoria | 0/150 |  | nenhum |
