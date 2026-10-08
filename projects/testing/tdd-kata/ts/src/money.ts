@@ -1,3 +1,5 @@
+import type { Bank } from "./bank";
+
 export class Money {
 	readonly amount: number;
 	readonly currency: string;
@@ -21,6 +23,10 @@ export class Money {
 
 	plus(addend: Money): Money {
 		return new Money(this.amount + addend.amount, this.currency);
+	}
+
+	reduce(bank: Bank, to: string): Money {
+		return new Money(this.amount / bank.rate(this.currency, to), to);
 	}
 
 	equals(other: Money): boolean {
