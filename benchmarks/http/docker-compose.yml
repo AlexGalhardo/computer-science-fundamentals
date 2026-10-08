@@ -1,0 +1,73 @@
+# EN: The HTTP workload. Seven servers that speak the same protocol, the load generator (k6)
+#     and a small tools container, all on one network marked `internal`: containers on it can
+#     talk to each other and to nothing else, not even the internet. No port is published to
+#     the host, so nothing outside Docker can reach the servers either.
+#     Every server gets the same budget (4 CPUs, 2 GiB), and so does the load generator.
+# PT: A carga HTTP. Sete servidores que falam o mesmo protocolo, o gerador de carga (k6) e um
+#     pequeno contêiner de ferramentas, todos em uma rede marcada como `internal`: os
+#     contêineres nela conversam entre si e com mais nada, nem com a internet. Nenhuma porta é
+#     publicada no host, então nada fora do Docker alcança os servidores.
+#     Todo servidor recebe o mesmo orçamento (4 CPUs, 2 GiB), e o gerador de carga também.
+name: sef-bd-http
+
+x-server: &server
+  networks: [bench]
+  cpus: 4
+  mem_limit: 2g
+  init: true
+  stop_grace_period: 2s
+
+services:
+  server-cpp:
+    <<: *server
+    build: ./servers/cpp
+    image: sef-bd-http-cpp:local
+  server-rust:
+    <<: *server
+    build: ./servers/rust
+    image: sef-bd-http-rust:local
+  server-go:
+    <<: *server
+    build: ./servers/go
+    image: sef-bd-http-go:local
+  server-java:
+    <<: *server
+    build: ./servers/java
+    image: sef-bd-http-java:local
+  server-ts:
+    <<: *server
+    build: ./servers/ts
+    image: sef-bd-http-ts:local
+  server-elixir:
+    <<: *server
+    build: ./servers/elixir
+    image: sef-bd-http-elixir:local
+  server-python:
+    <<: *server
+    build: ./servers/python
+    image: sef-bd-http-python:local
+
+  # EN: Started only by `docker compose run`. The script refuses any target that is not local.
+  # PT: Iniciado só por `docker compose run`. O script recusa qualquer alvo que não seja local.
+  k6:
+    image: grafana/k6:2.3.0
+    profiles: [tools]
+    networks: [bench]
+    cpus: 4
+    mem_limit: 2g
+    volumes:
+      - ./k6:/scripts:ro
+
+  # EN: Runs the protocol tests and the readiness check from inside the internal network.
+  # PT: Roda os testes de protocolo e a verificação de prontidão de dentro da rede interna.
+  tools:
+    image: oven/bun:1.4.2
+    profiles: [tools]
+    networks: [bench]
+    working_dir: /work
+    volumes:
+      - ./tests:/work/tests:ro
+
+networks:
+  bench:
+    internal: true

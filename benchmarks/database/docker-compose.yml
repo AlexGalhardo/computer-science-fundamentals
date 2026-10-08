@@ -1,0 +1,83 @@
+# EN: The database workload: one PostgreSQL and seven clients, on a network marked `internal`
+#     (containers talk to each other and to nothing else) with no published port. The data is
+#     obviously fake ("item-1", "item-2"...) and so is the password: this database exists only
+#     inside this network and is deleted after each run.
+#     The data directory is a tmpfs (memory), so the numbers show the driver and the round
+#     trip to the server, not the speed of the disk under Docker.
+# PT: A carga de banco de dados: um PostgreSQL e sete clientes, em uma rede marcada como
+#     `internal` (os contêineres conversam entre si e com mais nada) sem porta publicada. Os
+#     dados são obviamente falsos ("item-1", "item-2"...) e a senha também: este banco só existe
+#     dentro desta rede e é apagado depois de cada execução.
+#     O diretório de dados é um tmpfs (memória), então os números mostram o driver e a ida e
+#     volta ao servidor, não a velocidade do disco sob o Docker.
+name: sef-bd-database
+
+x-client: &client
+  profiles: [clients]
+  networks: [bench]
+  cpus: 4
+  mem_limit: 2g
+  environment:
+    PGHOST: postgres
+    PGPORT: "5432"
+    PGUSER: bench
+    PGPASSWORD: fake-password-local-lab-only
+    PGDATABASE: bench
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:18.6
+    networks: [bench]
+    cpus: 4
+    mem_limit: 2g
+    environment:
+      POSTGRES_USER: bench
+      POSTGRES_PASSWORD: fake-password-local-lab-only
+      POSTGRES_DB: bench
+    tmpfs:
+      - /var/lib/postgresql
+    # EN: `-h 127.0.0.1` checks over TCP. Without it the check passes while PostgreSQL is still
+    #     initialising and listens only on its Unix socket, and the first client is refused.
+    # PT: O `-h 127.0.0.1` confere por TCP. Sem ele a verificação passa enquanto o PostgreSQL
+    #     ainda inicializa e escuta só no socket Unix, e o primeiro cliente é recusado.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U bench -d bench"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+
+  client-cpp:
+    <<: *client
+    build: ./clients/cpp
+    image: sef-bd-database-cpp:local
+  client-rust:
+    <<: *client
+    build: ./clients/rust
+    image: sef-bd-database-rust:local
+  client-go:
+    <<: *client
+    build: ./clients/go
+    image: sef-bd-database-go:local
+  client-java:
+    <<: *client
+    build: ./clients/java
+    image: sef-bd-database-java:local
+  client-ts:
+    <<: *client
+    build: ./clients/ts
+    image: sef-bd-database-ts:local
+  client-elixir:
+    <<: *client
+    build: ./clients/elixir
+    image: sef-bd-database-elixir:local
+  client-python:
+    <<: *client
+    build: ./clients/python
+    image: sef-bd-database-python:local
+
+networks:
+  bench:
+    internal: true

@@ -1,0 +1,26 @@
+defmodule Server.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :server,
+      version: "0.1.0",
+      elixir: "~> 1.20",
+      start_permanent: Mix.env() == :prod,
+      deps: deps()
+    ]
+  end
+
+  def application do
+    [extra_applications: [:logger], mod: {Server.Application, []}]
+  end
+
+  # EN: Exact versions, and mix.lock pins every transitive package too.
+  # PT: Versões exatas, e o mix.lock fixa também todo pacote transitivo.
+  defp deps do
+    [
+      {:bandit, "1.12.5"},
+      {:plug, "1.20.3"}
+    ]
+  end
+end
