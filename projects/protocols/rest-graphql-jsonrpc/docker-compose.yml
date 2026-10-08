@@ -1,0 +1,60 @@
+# EN: A local PostgreSQL and one TypeScript image that runs the tests or the benchmark. The HTTP
+#     server with the three API styles starts inside that same container, on loopback. The
+#     network is internal: no container reaches the internet and no port is published on the
+#     host. The credentials are fake and exist only inside this lab.
+# PT: Um PostgreSQL local e uma imagem TypeScript que roda os testes ou o benchmark. O servidor
+#     HTTP com os três estilos de API sobe dentro desse mesmo contêiner, em loopback. A rede é
+#     interna: nenhum contêiner alcança a internet e nenhuma porta é publicada no host. As
+#     credenciais são falsas e existem só dentro deste laboratório.
+name: proto-rest-graphql-jsonrpc
+
+x-lab: &lab
+  build: ./ts
+  image: sef-rest-graphql-jsonrpc-ts:local
+  depends_on:
+    db:
+      condition: service_healthy
+  environment:
+    DATABASE_URL: postgres://lab:lab-fake-password@db:5432/lab
+    PROJECT_DIR: /project
+  networks:
+    - lab
+
+services:
+  db:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab-fake-password
+      POSTGRES_DB: lab
+    # EN: The check goes through TCP, like the client does. During initialisation PostgreSQL
+    #     answers on the Unix socket only and then restarts.
+    # PT: A checagem passa por TCP, como o cliente faz. Durante a inicialização o PostgreSQL
+    #     responde só no socket Unix e depois reinicia.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U lab -d lab"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      - lab
+
+  ts-test:
+    <<: *lab
+
+  bench:
+    <<: *lab
+    command: ["bun", "run", "bench"]
+    # EN: The benchmark writes results/ into the project folder, so it runs as the host user.
+    #     On Linux the mounted folder belongs to that user, and the image's own user could not
+    #     write into it. The setup script exports HOST_UID and HOST_GID.
+    # PT: O benchmark grava results/ na pasta do projeto, então roda como o usuário do host. No
+    #     Linux a pasta montada pertence a ele, e o usuário da imagem não conseguiria gravar
+    #     nela. O script de setup exporta HOST_UID e HOST_GID.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+networks:
+  lab:
+    internal: true
