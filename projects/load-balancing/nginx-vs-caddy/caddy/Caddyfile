@@ -1,0 +1,97 @@
+# EN: Caddy as a layer 7 load balancer in front of the same three instances, with the same
+#     routes as nginx/nginx.conf. Read the two files side by side.
+# PT: Caddy como balanceador de carga de camada 7 na frente das mesmas três instâncias, com as
+#     mesmas rotas de nginx/nginx.conf. Leia os dois arquivos lado a lado.
+{
+	admin off
+
+	# EN: The site address below is only a port, so there is no host name to get a certificate
+	#     for. Automatic HTTPS is switched off to make that explicit: this lab speaks plain HTTP.
+	# PT: O endereço do site abaixo é só uma porta, então não há nome de host para obter
+	#     certificado. O HTTPS automático é desligado para deixar isso explícito: este
+	#     laboratório fala HTTP puro.
+	auto_https off
+
+	# EN: client_ip_hash uses the client address taken from X-Forwarded-For, and Caddy believes
+	#     that header ONLY when the request comes from a trusted proxy. Here: private networks.
+	#     On the internet, list only the addresses of your own proxies.
+	# PT: O client_ip_hash usa o endereço do cliente tirado de X-Forwarded-For, e o Caddy só
+	#     acredita nesse cabeçalho quando a requisição vem de um proxy confiável. Aqui: redes
+	#     privadas. Na internet, liste apenas os endereços dos seus próprios proxies.
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:8080 {
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	# EN: Caddy's default policy is `random`, so round robin has to be asked for.
+	# PT: A política padrão do Caddy é `random`, então o round robin precisa ser pedido.
+	handle /rr {
+		rewrite * /work
+		reverse_proxy api-1:3000 api-2:3000 api-3:3000 {
+			lb_policy round_robin
+		}
+	}
+
+	# EN: The weights follow the order of the upstreams: 3 for api-1, 2 for api-2, 1 for api-3.
+	# PT: Os pesos seguem a ordem dos upstreams: 3 para api-1, 2 para api-2, 1 para api-3.
+	handle /wrr {
+		rewrite * /work
+		reverse_proxy api-1:3000 api-2:3000 api-3:3000 {
+			lb_policy weighted_round_robin 3 2 1
+		}
+	}
+
+	handle /lc {
+		rewrite * /work
+		reverse_proxy api-1:3000 api-2:3000 api-3:3000 {
+			lb_policy least_conn
+		}
+	}
+
+	handle /iphash {
+		rewrite * /work
+		reverse_proxy api-1:3000 api-2:3000 api-3:3000 {
+			lb_policy client_ip_hash
+		}
+	}
+
+	# EN: Everything that /rr does not have. Without these lines Caddy never retries and never
+	#     stops choosing a dead upstream.
+	#     - lb_try_duration: keep trying other upstreams for up to 2 s before giving up.
+	#     - fail_duration and max_fails: passive check, one failure removes an upstream for 3 s.
+	#     - health_*: active check, Caddy itself asks /health every second.
+	#     - transport timeouts: a frozen upstream costs one second, not the client's patience.
+	# PT: Tudo que /rr não tem. Sem estas linhas o Caddy nunca tenta de novo e nunca para de
+	#     escolher um upstream morto.
+	#     - lb_try_duration: continua tentando outros upstreams por até 2 s antes de desistir.
+	#     - fail_duration e max_fails: verificação passiva, uma falha tira o upstream por 3 s.
+	#     - health_*: verificação ativa, o próprio Caddy pede /health a cada segundo.
+	#     - timeouts do transporte: um upstream congelado custa um segundo, não a paciência do
+	#       cliente.
+	handle /tuned {
+		rewrite * /work
+		reverse_proxy api-1:3000 api-2:3000 api-3:3000 {
+			lb_policy round_robin
+			lb_try_duration 2s
+			lb_try_interval 50ms
+			fail_duration 3s
+			max_fails 1
+			health_uri /health
+			health_interval 1s
+			health_timeout 500ms
+			transport http {
+				dial_timeout 1s
+				response_header_timeout 1s
+			}
+		}
+	}
+
+	handle {
+		respond 404
+	}
+}
