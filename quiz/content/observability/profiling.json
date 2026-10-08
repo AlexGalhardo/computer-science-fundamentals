@@ -42,6 +42,24 @@
 				"Counting calls requires instrumenting every function. Sampling estimates time spent, not the number of calls."
 			],
 			"concept": "A sampling profiler interrupts the program many times per second and notes the call stack of that instant. Adding the samples up shows in which functions the CPU time concentrates, at a cost low enough to run in production. A trace answers where a request was slow across services; a profile answers which code spent the CPU inside one process."
+		},
+		"es": {
+			"statement": "¿Qué registra un profiler de CPU por muestreo mientras el programa se ejecuta?",
+			"alternatives": [
+				"El inicio y el fin de cada solicitud en cada servicio por el que pasa",
+				"Una línea de texto por cada función llamada, con sus argumentos",
+				"La pila de llamadas que se está ejecutando, capturada muchas veces por segundo",
+				"El valor de los contadores y gauges del proceso en cada intervalo de scrape",
+				"La cantidad exacta de veces que se llamó cada función del programa"
+			],
+			"explanations": [
+				"Eso es tracing distribuido: spans por solicitud, entre servicios. El profiler mira dentro de un proceso.",
+				"Eso sería un log de llamadas, demasiado caro para producción. El profiler solo toma muestras periódicas.",
+				"Correcto: a intervalos regulares anota qué pila está en la CPU. Las funciones que aparecen en muchas muestras son las que gastan tiempo.",
+				"Esas son métricas. Dicen cuánta CPU usa el proceso, pero no qué función la consume.",
+				"Contar llamadas exige instrumentar cada función. El muestreo estima el tiempo gastado, no la cantidad de llamadas."
+			],
+			"concept": "Un profiler por muestreo interrumpe el programa muchas veces por segundo y anota la pila de llamadas de ese instante. Sumar las muestras muestra en qué funciones se concentra el tiempo de CPU, con un costo lo bastante bajo para ejecutarse en producción. Un trace responde dónde fue lenta una solicitud entre servicios; un profile responde qué código gastó la CPU dentro de un proceso."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"Depth is the vertical axis: each level above is a function called by the one below."
 			],
 			"concept": "In a flame graph each rectangle is a function in a stack, the vertical axis is the stack depth and the width is the share of samples that contain that frame. The horizontal axis has nothing to do with time: equal stacks are merged and sorted to make reading easier. You look for what is wide, not for what comes first."
+		},
+		"es": {
+			"statement": "En un flame graph de CPU, ¿qué representa el ancho de un rectángulo (un frame)?",
+			"alternatives": [
+				"La proporción de las muestras en las que esa función estaba en la pila",
+				"El momento, a lo largo de la línea de tiempo, en que esa función empezó a ejecutarse",
+				"La cantidad de veces que se llamó esa función durante el periodo",
+				"La cantidad de memoria asignada por esa función durante el periodo",
+				"La profundidad de esa función en la pila de llamadas del programa"
+			],
+			"explanations": [
+				"Correcto: cuanto más ancho el frame, más muestras lo contienen, es decir, más tiempo de CPU pasó por él y por lo que llama.",
+				"El eje horizontal NO es el tiempo. Los frames se ordenan (normalmente por nombre) para que las pilas iguales se fusionen.",
+				"El muestreo no cuenta llamadas. Una función llamada una vez y lenta es más ancha que una llamada mil veces y rápida.",
+				"En un profile de CPU el ancho mide muestras de CPU. La memoria aparece en otro tipo de profile, de asignaciones.",
+				"La profundidad es el eje vertical: cada nivel de arriba es una función llamada por la de abajo."
+			],
+			"concept": "En un flame graph cada rectángulo es una función en una pila, el eje vertical es la profundidad de la pila y el ancho es la proporción de muestras que contienen ese frame. El eje horizontal no tiene nada que ver con el tiempo: las pilas iguales se fusionan y se ordenan para facilitar la lectura. Se busca lo que es ancho, no lo que viene primero."
 		}
 	},
 	{
@@ -99,7 +135,13 @@
 		"miniProject": "projects/observability/flame-graph",
 		"pt": {
 			"statement": "A saída abaixo vem de `go tool pprof` com o comando `top -cum`, em um profile de CPU de 10 segundos. Em qual função o código da PRÓPRIA função, sem contar o que ela chama, consome mais CPU?",
-			"alternatives": ["`net/http.(*conn).serve`", "`main.handleReport`", "`main.buildRows`", "`main.normalizeKey`", "`runtime.mallocgc`"],
+			"alternatives": [
+				"`net/http.(*conn).serve`",
+				"`main.handleReport`",
+				"`main.buildRows`",
+				"`main.normalizeKey`",
+				"`runtime.mallocgc`"
+			],
 			"explanations": [
 				"Ela tem o maior `cum` (98%), mas `flat` de só 0,05 s: quase todo o tempo é de funções que ela chama.",
 				"`cum` de 96% e `flat` de 0,10 s: ela está no caminho do tempo, mas quem o gasta são as funções abaixo dela.",
@@ -116,7 +158,13 @@
 		},
 		"en": {
 			"statement": "The output below comes from `go tool pprof` with the `top -cum` command, on a 10-second CPU profile. In which function does the code of the function ITSELF, not counting what it calls, consume the most CPU?",
-			"alternatives": ["`net/http.(*conn).serve`", "`main.handleReport`", "`main.buildRows`", "`main.normalizeKey`", "`runtime.mallocgc`"],
+			"alternatives": [
+				"`net/http.(*conn).serve`",
+				"`main.handleReport`",
+				"`main.buildRows`",
+				"`main.normalizeKey`",
+				"`runtime.mallocgc`"
+			],
 			"explanations": [
 				"It has the largest `cum` (98%), but a `flat` of only 0.05 s: nearly all the time belongs to functions it calls.",
 				"`cum` of 96% and `flat` of 0.10 s: it is on the path of the time, but the functions below it are the ones spending it.",
@@ -130,6 +178,29 @@
 				"content": "      flat  flat%        cum   cum%\n     0.05s  0.50%      9.80s 98.00%  net/http.(*conn).serve\n     0.10s  1.00%      9.60s 96.00%  main.handleReport\n     0.30s  3.00%      9.40s 94.00%  main.buildRows\n     6.50s 65.00%      6.50s 65.00%  main.normalizeKey\n     1.20s 12.00%      1.20s 12.00%  runtime.mallocgc"
 			},
 			"concept": "In pprof, `flat` is the time spent in the function's own code, and `cum` (cumulative) also includes everything it calls. Functions near the root, such as the HTTP server loop, have a huge `cum` and a `flat` close to zero. The hot spot is the function with a high `flat`: that is where the work actually happens."
+		},
+		"es": {
+			"statement": "La salida de abajo viene de `go tool pprof` con el comando `top -cum`, sobre un profile de CPU de 10 segundos. ¿En qué función el código de la PROPIA función, sin contar lo que llama, consume más CPU?",
+			"alternatives": [
+				"`net/http.(*conn).serve`",
+				"`main.handleReport`",
+				"`main.buildRows`",
+				"`main.normalizeKey`",
+				"`runtime.mallocgc`"
+			],
+			"explanations": [
+				"Tiene el mayor `cum` (98%), pero un `flat` de solo 0.05 s: casi todo el tiempo pertenece a funciones que llama.",
+				"`cum` de 96% y `flat` de 0.10 s: está en el camino del tiempo, pero las funciones de abajo son las que lo gastan.",
+				"`cum` de 94% y `flat` de 0.30 s: pasa casi todo el tiempo a las funciones que llama.",
+				"Correcto: `flat` es el tiempo en el código propio de la función, y 6.50 s (65%) es el mayor. Como `flat` y `cum` son iguales, no le pasa tiempo a nadie.",
+				"Tiene el segundo mayor `flat` (1.20 s, 12%), muy por debajo de los 6.50 s de `main.normalizeKey`."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "      flat  flat%        cum   cum%\n     0.05s  0.50%      9.80s 98.00%  net/http.(*conn).serve\n     0.10s  1.00%      9.60s 96.00%  main.handleReport\n     0.30s  3.00%      9.40s 94.00%  main.buildRows\n     6.50s 65.00%      6.50s 65.00%  main.normalizeKey\n     1.20s 12.00%      1.20s 12.00%  runtime.mallocgc"
+			},
+			"concept": "En pprof, `flat` es el tiempo gastado en el código propio de la función, y `cum` (acumulado) incluye además todo lo que llama. Las funciones cercanas a la raíz, como el bucle del servidor HTTP, tienen un `cum` enorme y un `flat` cercano a cero. El punto caliente es la función con `flat` alto: ahí es donde realmente ocurre el trabajo."
 		}
 	},
 	{
@@ -142,7 +213,13 @@
 		"miniProject": "projects/observability/flame-graph",
 		"pt": {
 			"statement": "O flame graph abaixo está em forma de texto: cada número é a quantidade de amostras (de um total de 1.000) em que o frame estava na pilha, e os filhos aparecem recuados sob quem os chamou. Qual função tem mais tempo próprio (self time), somando todos os lugares onde aparece?",
-			"alternatives": ["`handleSearch`", "`compileRegex`", "`rankResults`", "`handleExport`", "`writeCsv`"],
+			"alternatives": [
+				"`handleSearch`",
+				"`compileRegex`",
+				"`rankResults`",
+				"`handleExport`",
+				"`writeCsv`"
+			],
 			"explanations": [
 				"É o frame mais largo (520), mas seus filhos somam 60 + 230 + 230 = 520. O tempo próprio dela é zero.",
 				"Correta: ela aparece em duas pilhas, e 230 + 210 = 440 amostras (44%). Conferindo: as outras folhas somam 60 + 230 + 190 + 80 = 560, e 1.000 - 560 = 440.",
@@ -158,7 +235,13 @@
 		},
 		"en": {
 			"statement": "The flame graph below is in text form: each number is the count of samples (out of 1,000) in which the frame was on the stack, and children are indented under their caller. Which function has the most self time, adding up every place where it appears?",
-			"alternatives": ["`handleSearch`", "`compileRegex`", "`rankResults`", "`handleExport`", "`writeCsv`"],
+			"alternatives": [
+				"`handleSearch`",
+				"`compileRegex`",
+				"`rankResults`",
+				"`handleExport`",
+				"`writeCsv`"
+			],
 			"explanations": [
 				"It is the widest frame (520), but its children add up to 60 + 230 + 230 = 520. Its self time is zero.",
 				"Correct: it appears in two stacks, and 230 + 210 = 440 samples (44%). Checking: the other leaves add up to 60 + 230 + 190 + 80 = 560, and 1,000 - 560 = 440.",
@@ -171,6 +254,28 @@
 				"content": "root                      1000\n├─ handleSearch            520\n│  ├─ parseQuery            60\n│  ├─ compileRegex         230\n│  └─ rankResults          230\n├─ handleExport            400\n│  ├─ compileRegex         210\n│  └─ writeCsv             190\n└─ gc                       80"
 			},
 			"concept": "The self time of a frame is its width minus the sum of the widths of its children: it is the exposed top of the \"flame\". A flame graph splits the same function when it is called through different paths, so a hot spot can hide in several medium frames. Adding up per function, as the pprof `top` does, reveals that `compileRegex` spends 44% of the CPU."
+		},
+		"es": {
+			"statement": "El flame graph de abajo está en forma de texto: cada número es la cantidad de muestras (de 1,000) en las que el frame estaba en la pila, y los hijos aparecen con sangría bajo quien los llama. ¿Qué función tiene más tiempo propio, sumando todos los lugares donde aparece?",
+			"alternatives": [
+				"`handleSearch`",
+				"`compileRegex`",
+				"`rankResults`",
+				"`handleExport`",
+				"`writeCsv`"
+			],
+			"explanations": [
+				"Es el frame más ancho (520), pero sus hijos suman 60 + 230 + 230 = 520. Su tiempo propio es cero.",
+				"Correcto: aparece en dos pilas, y 230 + 210 = 440 muestras (44%). Comprobación: las demás hojas suman 60 + 230 + 190 + 80 = 560, y 1,000 - 560 = 440.",
+				"Es la hoja individual más ancha, empatada con uno de los frames de `compileRegex` (230). Sumando las dos pilas, `compileRegex` llega a 440.",
+				"Sus hijos suman 210 + 190 = 400, todo su ancho. Su tiempo propio es cero.",
+				"Tiene 190 muestras de tiempo propio, menos que las 440 de `compileRegex` en las dos pilas."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "root                      1000\n├─ handleSearch            520\n│  ├─ parseQuery            60\n│  ├─ compileRegex         230\n│  └─ rankResults          230\n├─ handleExport            400\n│  ├─ compileRegex         210\n│  └─ writeCsv             190\n└─ gc                       80"
+			},
+			"concept": "El tiempo propio de un frame es su ancho menos la suma de los anchos de sus hijos: es la parte superior expuesta de la \"llama\". Un flame graph separa la misma función cuando se llama por caminos distintos, así que un punto caliente puede esconderse en varios frames medianos. Sumar por función, como hace el `top` de pprof, revela que `compileRegex` gasta el 44% de la CPU."
 		}
 	}
 ]

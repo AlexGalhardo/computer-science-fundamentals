@@ -52,6 +52,29 @@
 				"language": "json",
 				"content": "{ \"jsonrpc\": \"2.0\", \"method\": \"book.viewed\", \"params\": { \"id\": 42 } }"
 			}
+		},
+		"es": {
+			"statement": "En JSON-RPC 2.0, ¿qué hace que un objeto de solicitud sea una notificación, y cómo reacciona el servidor?",
+			"alternatives": [
+				"Lleva `\"id\": 0`, y el servidor responde con un `result` vacío",
+				"No tiene el miembro `params`, y el servidor responde con `result` igual a `null`",
+				"Lleva `\"notify\": true`, y el servidor responde solo si ocurre un error",
+				"No tiene el miembro `jsonrpc`, y el servidor responde después, por otro canal",
+				"No tiene el miembro `id`, y el servidor no envía respuesta"
+			],
+			"explanations": [
+				"`0` es un `id` válido como cualquier otro número. Una solicitud con `id` siempre recibe respuesta.",
+				"`params` es opcional en cualquier solicitud; su ausencia solo significa que el método no recibe argumentos.",
+				"No existe el miembro `notify`. Y una notificación no recibe respuesta ni siquiera ante error: el cliente no se entera de las fallas.",
+				"`jsonrpc` es obligatorio y vale exactamente `\"2.0\"`. Sin él, el objeto ni siquiera es una solicitud válida.",
+				"La ausencia de `id` dice que el cliente no quiere respuesta. El servidor ejecuta el método y no devuelve nada, ni resultado ni error."
+			],
+			"concept": "Una solicitud JSON-RPC 2.0 tiene `jsonrpc`, `method`, `params` (opcional) e `id`. El `id` permite al cliente emparejar la respuesta con la solicitud. Sin `id`, el objeto es una notificación: una llamada sin respuesta, útil para eventos y logging, a costa de que el cliente no sepa si falló.",
+			"example": {
+				"kind": "code",
+				"language": "json",
+				"content": "{ \"jsonrpc\": \"2.0\", \"method\": \"book.viewed\", \"params\": { \"id\": 42 } }"
+			}
 		}
 	},
 	{
@@ -102,6 +125,29 @@
 				"There is no error code for success. Success is indicated by the presence of `result`, without `error`."
 			],
 			"concept": "A JSON-RPC 2.0 response has `jsonrpc`, `id` and exactly one of `result` and `error`. The `error` object has `code` (an integer), `message` and, optionally, `data`. This mutual exclusion gives the client a simple and unambiguous test to know whether the call succeeded.",
+			"example": {
+				"kind": "code",
+				"language": "json",
+				"content": "{ \"jsonrpc\": \"2.0\", \"result\": { \"title\": \"Example Book\" }, \"id\": 7 }\n\n{ \"jsonrpc\": \"2.0\", \"error\": { \"code\": -32601, \"message\": \"Method not found\" }, \"id\": 8 }"
+			}
+		},
+		"es": {
+			"statement": "¿Qué regla impone JSON-RPC 2.0 a los miembros `result` y `error` de un objeto de respuesta?",
+			"alternatives": [
+				"Ambos están siempre presentes, y el que no aplica viene con el valor `null`",
+				"`result` está siempre presente, y se le agrega `error` en caso de falla",
+				"Exactamente uno de ellos está presente: `result` en éxito, `error` en falla",
+				"Ninguno es obligatorio, ya que el código de estado HTTP ya dice si tuvo éxito",
+				"`error` está siempre presente, y el código `0` indica que la llamada tuvo éxito"
+			],
+			"explanations": [
+				"Esa era la regla de JSON-RPC 1.0. En la versión 2.0, el miembro que no aplica no debe existir.",
+				"En caso de error, `result` no debe existir. Un cliente que solo lee `result` trataría una falla como un éxito.",
+				"La presencia de `result` significa éxito y la de `error` significa falla; los dos nunca aparecen juntos. El `id` repite el de la solicitud.",
+				"JSON-RPC no depende del transporte y puede ni siquiera correr sobre HTTP. El resultado de la llamada siempre está en el cuerpo.",
+				"No hay código de error para el éxito. El éxito se indica por la presencia de `result`, sin `error`."
+			],
+			"concept": "Una respuesta JSON-RPC 2.0 tiene `jsonrpc`, `id` y exactamente uno de `result` y `error`. El objeto `error` tiene `code` (un entero), `message` y, opcionalmente, `data`. Esta exclusión mutua da al cliente una prueba simple y sin ambigüedad para saber si la llamada tuvo éxito.",
 			"example": {
 				"kind": "code",
 				"language": "json",
@@ -161,6 +207,29 @@
 				"language": "proto",
 				"content": "syntax = \"proto3\";\n\nservice Library {\n\trpc GetBook(GetBookRequest) returns (Book);\n}\n\nmessage GetBookRequest {\n\tint32 id = 1;\n}\n\nmessage Book {\n\tint32 id = 1;\n\tstring title = 2;\n}"
 			}
+		},
+		"es": {
+			"statement": "¿Qué usa gRPC, por defecto, para definir la interfaz de un servicio y para codificar los mensajes?",
+			"alternatives": [
+				"Protocol Buffers: archivos `.proto` y una codificación binaria",
+				"Documentos OpenAPI y cuerpos JSON, como en la mayoría de las APIs REST",
+				"Archivos WSDL y sobres XML, heredados de SOAP",
+				"El lenguaje de esquemas de GraphQL y respuestas JSON con los campos elegidos",
+				"JSON Schema y una codificación de texto comprimida con gzip en cada llamada"
+			],
+			"explanations": [
+				"El archivo `.proto` declara los servicios, los métodos y los mensajes. El código de cliente y servidor se genera a partir de él, y los mensajes viajan en un formato binario compacto.",
+				"OpenAPI describe APIs HTTP al estilo REST. gRPC no usa URLs de recursos ni JSON por defecto.",
+				"WSDL y XML pertenecen a SOAP, una generación anterior de RPC. gRPC comparte con él el contrato explícito, pero no el formato.",
+				"GraphQL es otro estilo de API, en el que el cliente elige los campos. En gRPC, el mensaje de respuesta de cada método es fijo.",
+				"gRPC puede comprimir mensajes, pero la codificación por defecto es la binaria de Protocol Buffers, no texto."
+			],
+			"concept": "gRPC parte de un contrato escrito en Protocol Buffers. El mismo archivo `.proto` sirve como lenguaje de definición de interfaces y como base de la codificación binaria, en la que cada campo se identifica por un número, no por su nombre. Un compilador genera stubs tipados en varios lenguajes, de modo que llamar al servicio remoto parece llamar a una función local.",
+			"example": {
+				"kind": "code",
+				"language": "proto",
+				"content": "syntax = \"proto3\";\n\nservice Library {\n\trpc GetBook(GetBookRequest) returns (Book);\n}\n\nmessage GetBookRequest {\n\tint32 id = 1;\n}\n\nmessage Book {\n\tint32 id = 1;\n\tstring title = 2;\n}"
+			}
 		}
 	},
 	{
@@ -205,6 +274,24 @@
 				"Opening one connection per call is exactly the cost that multiplexing avoids. gRPC requires HTTP/2."
 			],
 			"concept": "gRPC uses HTTP/2 as its transport. A call is a stream: headers with the method name, messages in DATA frames and, at the end, trailers with the status of the call. Multiplexing allows many calls on the same connection, and long-lived streams make client, server and bidirectional streaming possible."
+		},
+		"es": {
+			"statement": "¿Sobre qué protocolo viaja gRPC, y qué característica de él permite varias llamadas simultáneas en la misma conexión?",
+			"alternatives": [
+				"HTTP/1.1, con pipelining de solicitudes respondidas en orden",
+				"UDP simple, con un datagrama independiente por cada llamada",
+				"WebSocket, con un frame de texto por cada mensaje enviado",
+				"HTTP/2, con streams multiplexados",
+				"HTTP/1.1, con una nueva conexión TCP por cada llamada"
+			],
+			"explanations": [
+				"Con pipelining, las respuestas tienen que volver en el orden de las solicitudes, lo que impide llamadas realmente simultáneas y el streaming en ambas direcciones.",
+				"gRPC necesita entrega confiable y ordenada dentro de cada llamada, que UDP simple no ofrece.",
+				"gRPC no usa WebSocket, y los mensajes son binarios. Cada llamada es un stream de HTTP/2.",
+				"Cada llamada gRPC ocupa un stream de HTTP/2. Los frames de varios streams se intercalan en la misma conexión TCP, y un stream puede llevar varios mensajes en cada dirección.",
+				"Abrir una conexión por llamada es exactamente el costo que la multiplexación evita. gRPC requiere HTTP/2."
+			],
+			"concept": "gRPC usa HTTP/2 como transporte. Una llamada es un stream: encabezados con el nombre del método, mensajes en frames DATA y, al final, trailers con el estado de la llamada. La multiplexación permite muchas llamadas en la misma conexión, y los streams de larga duración hacen posible el streaming de cliente, de servidor y bidireccional."
 		}
 	},
 	{
@@ -260,6 +347,29 @@
 				"content": "{ \"jsonrpc\": \"2.0\", \"method\": \"book.get\", \"params\": { \"id\": \"abc\" }, \"id\": 7 }"
 			},
 			"concept": "JSON-RPC 2.0 reserves five codes that follow the stages of handling a request: `-32700` (the text is not JSON), `-32600` (the JSON is not a valid request), `-32601` (the method does not exist), `-32602` (the parameters are invalid) and `-32603` (internal error). Errors of the application itself use codes outside the reserved range."
+		},
+		"es": {
+			"statement": "Un servidor JSON-RPC 2.0 tiene el método `book.get`, que requiere el parámetro `id` como entero. Recibe la solicitud de abajo. ¿Qué código de error predefinido describe la falla?",
+			"alternatives": [
+				"`-32700` (Parse error)",
+				"`-32602` (Invalid params)",
+				"`-32601` (Method not found)",
+				"`-32600` (Invalid Request)",
+				"`-32603` (Internal error)"
+			],
+			"explanations": [
+				"`-32700` es para un texto que ni siquiera es JSON válido. El JSON recibido está bien formado.",
+				"El método existe y la solicitud es válida, pero el parámetro `id` vino como texto en lugar de entero: los parámetros del método son inválidos.",
+				"`-32601` es para un método que no existe o no está disponible. `book.get` existe.",
+				"`-32600` es para un JSON válido que no es un objeto de solicitud correcto, por ejemplo sin `method`. Aquí todos los miembros de la solicitud son correctos; el problema está en el contenido de `params`.",
+				"`-32603` es para una falla interna del servidor al procesar la llamada, no para un error de quien llama."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "json",
+				"content": "{ \"jsonrpc\": \"2.0\", \"method\": \"book.get\", \"params\": { \"id\": \"abc\" }, \"id\": 7 }"
+			},
+			"concept": "JSON-RPC 2.0 reserva cinco códigos que siguen las etapas del manejo de una solicitud: `-32700` (el texto no es JSON), `-32600` (el JSON no es una solicitud válida), `-32601` (el método no existe), `-32602` (los parámetros son inválidos) y `-32603` (error interno). Los errores de la propia aplicación usan códigos fuera del rango reservado."
 		}
 	},
 	{
@@ -315,6 +425,29 @@
 				"content": "[\n\t{ \"jsonrpc\": \"2.0\", \"method\": \"sum\", \"params\": [1, 2], \"id\": 1 },\n\t{ \"jsonrpc\": \"2.0\", \"method\": \"log\", \"params\": [\"hello\"] },\n\t{ \"jsonrpc\": \"2.0\", \"method\": \"nope\", \"id\": 2 }\n]"
 			},
 			"concept": "A batch is an array of request objects sent at once. The server returns an array with one response for each request that has an `id`, and may process them in parallel and in any order. Notifications produce no response, and the error of one element does not affect the others. If the batch has only notifications, the server returns nothing."
+		},
+		"es": {
+			"statement": "Un servidor JSON-RPC 2.0 tiene los métodos `sum` y `log`, pero no `nope`. Recibe el batch de abajo. ¿Qué devuelve?",
+			"alternatives": [
+				"Un array con 3 elementos, en el orden de las solicitudes, con `null` en lugar de la notificación",
+				"Un solo objeto con el error `-32601`, ya que una falla invalida todo el batch",
+				"Un array con 2 elementos, necesariamente en el orden de las solicitudes: `id` 1 y luego `id` 2",
+				"Un array con 2 elementos, en cualquier orden, que el cliente empareja por `id`",
+				"Un array con 3 elementos, en cualquier orden, con un `result` vacío para la notificación"
+			],
+			"explanations": [
+				"La notificación (el elemento sin `id`) no produce ningún elemento en la respuesta, ni siquiera `null`. Y el orden no está garantizado.",
+				"Cada elemento del batch se maneja de forma independiente. El error de `nope` va en un objeto de respuesta con `id` 2, y `sum` recibe su propio resultado.",
+				"La cuenta es correcta, pero la especificación permite devolver las respuestas en cualquier orden. Para eso está el `id`.",
+				"Hay una respuesta para `sum` (`id` 1, con `result`) y una para `nope` (`id` 2, con `error` de código `-32601`). La notificación `log` no se responde, y el orden dentro del array es libre.",
+				"Una notificación nunca se responde, con o sin resultado."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "json",
+				"content": "[\n\t{ \"jsonrpc\": \"2.0\", \"method\": \"sum\", \"params\": [1, 2], \"id\": 1 },\n\t{ \"jsonrpc\": \"2.0\", \"method\": \"log\", \"params\": [\"hello\"] },\n\t{ \"jsonrpc\": \"2.0\", \"method\": \"nope\", \"id\": 2 }\n]"
+			},
+			"concept": "Un batch es un array de objetos de solicitud enviados de una vez. El servidor devuelve un array con una respuesta por cada solicitud que tiene `id`, y puede procesarlas en paralelo y en cualquier orden. Las notificaciones no producen respuesta, y el error de un elemento no afecta a los demás. Si el batch solo tiene notificaciones, el servidor no devuelve nada."
 		}
 	},
 	{
@@ -360,6 +493,24 @@
 				"The body would be something like `{\"jsonrpc\": \"2.0\", \"method\": \"book.delete\", \"params\": {\"id\": 42}, \"id\": 1}`. The result or the error comes back in the response body."
 			],
 			"concept": "In REST, the URL says the resource, the HTTP method says the operation and the status says the outcome. In JSON-RPC, all of that goes in the body: a single endpoint receives POSTs, `method` names the action and the response carries `result` or `error`. JSON-RPC gains simplicity and transport independence, and loses what HTTP offers for free, such as GET caching and status semantics."
+		},
+		"es": {
+			"statement": "Una API REST elimina el libro 42 con `DELETE /books/42`. ¿Cómo se ve la llamada equivalente en una API JSON-RPC 2.0 típica sobre HTTP?",
+			"alternatives": [
+				"Un DELETE a `/books/42`, con `jsonrpc: 2.0` agregado como encabezado HTTP",
+				"Un GET a `/rpc/book.delete/42`, ya que el nombre del método va en la ruta de la URL",
+				"Un POST a `/books/42/delete`, con la falla informada solo por el estado `404`",
+				"Un DELETE a un endpoint único, ya que el verbo HTTP selecciona el procedimiento",
+				"Un POST a un endpoint único, con la acción en el miembro `method` del cuerpo"
+			],
+			"explanations": [
+				"Eso sigue siendo REST con un encabezado más. En JSON-RPC, la URL no identifica el recurso y el verbo HTTP no lleva la acción.",
+				"El nombre del método va en el cuerpo, en el miembro `method`, no en la URL. Y GET no tiene cuerpo para llevar el objeto de solicitud.",
+				"La acción en la ruta es RPC improvisado sobre URLs, no JSON-RPC. Y en JSON-RPC la falla viene en el objeto `error` del cuerpo, no solo en el estado HTTP.",
+				"El verbo HTTP no selecciona nada en JSON-RPC: HTTP es solo el transporte, y la práctica es usar siempre POST.",
+				"El cuerpo sería algo como `{\"jsonrpc\": \"2.0\", \"method\": \"book.delete\", \"params\": {\"id\": 42}, \"id\": 1}`. El resultado o el error vuelven en el cuerpo de la respuesta."
+			],
+			"concept": "En REST, la URL dice el recurso, el método HTTP dice la operación y el estado dice el resultado. En JSON-RPC, todo eso va en el cuerpo: un endpoint único recibe POSTs, `method` nombra la acción y la respuesta lleva `result` o `error`. JSON-RPC gana simplicidad e independencia del transporte, y pierde lo que HTTP ofrece gratis, como la cache de GET y la semántica de los estados."
 		}
 	},
 	{
@@ -404,6 +555,24 @@
 				"`repeated` is a field label inside a message and is not accepted in the signature of an `rpc`. A repeated field inside a single message would be a unary call."
 			],
 			"concept": "gRPC has four call types, defined by the word `stream` in the signature: unary (one message in each direction), server streaming (one request, several responses), client streaming (several requests, one response) and bidirectional (several in both directions, in independent flows). All of them use a single HTTP/2 stream per call."
+		},
+		"es": {
+			"statement": "Un cliente envía un archivo grande como una secuencia de mensajes `Chunk` en la misma llamada y, tras el último, el servidor responde con un solo mensaje `Summary`. ¿Qué declaración en un archivo `.proto` describe este tipo de llamada gRPC?",
+			"alternatives": [
+				"`rpc Upload(stream Chunk) returns (Summary);`",
+				"`rpc Upload(Chunk) returns (stream Summary);`",
+				"`rpc Upload(stream Chunk) returns (stream Summary);`",
+				"`rpc Upload(Chunk) returns (Summary);`",
+				"`rpc Upload(repeated Chunk) returns (Summary);`"
+			],
+			"explanations": [
+				"Esto es client streaming: `stream` aparece solo en el parámetro. El cliente envía varios mensajes, y el servidor devuelve una sola respuesta al final.",
+				"Esto es server streaming, lo inverso de lo pedido: una solicitud y varias respuestas, como en una descarga o un feed.",
+				"Esto es streaming bidireccional, en el que ambos lados envían varios mensajes. Aquí el servidor envía un solo mensaje.",
+				"Esta es la llamada unaria: un mensaje en cada dirección. Todo el archivo tendría que caber en un solo mensaje.",
+				"`repeated` es una etiqueta de campo dentro de un mensaje y no se acepta en la firma de un `rpc`. Un campo repetido dentro de un solo mensaje sería una llamada unaria."
+			],
+			"concept": "gRPC tiene cuatro tipos de llamada, definidos por la palabra `stream` en la firma: unaria (un mensaje en cada dirección), server streaming (una solicitud, varias respuestas), client streaming (varias solicitudes, una respuesta) y bidireccional (varios en ambas direcciones, en flujos independientes). Todos usan un solo stream de HTTP/2 por llamada."
 		}
 	},
 	{
@@ -468,6 +637,34 @@
 				"language": "proto",
 				"content": "message Book {\n\treserved 2;\n\treserved \"year\";\n\tstring title = 1;\n\tint32 pages = 3;\n}"
 			}
+		},
+		"es": {
+			"statement": "Un equipo reemplazó la versión 1 del mensaje de abajo por la versión 2, quitando `year` y reutilizando el número 2 para un campo nuevo. Un cliente antiguo, aún compilado con la versión 1, envía `year = 1965` a un servidor que ya usa la versión 2. ¿Qué observa el servidor?",
+			"alternatives": [
+				"La decodificación falla con un error, porque el nombre `year` ya no existe en la versión 2",
+				"El valor se ignora como campo desconocido, y `pages` conserva el valor por defecto `0`",
+				"El servidor lee `pages = 1965`, ya que en el cable va el número del campo, no el nombre",
+				"El servidor lee `year = 1965`, ya que cada mensaje lleva consigo su propio esquema",
+				"La llamada se rechaza al abrir la conexión, ya que los archivos `.proto` difieren"
+			],
+			"explanations": [
+				"Los nombres de los campos no viajan en la codificación binaria, así que el servidor no tiene forma de notar que el nombre cambió.",
+				"Eso pasaría si el número 2 no existiera en la versión 2. Como se reutilizó, con el mismo tipo, el campo es conocido y se lee normalmente.",
+				"El mensaje lleva el par (número 2, valor 1965). En la versión 2, el número 2 significa `pages`, así que un año se lee en silencio como un conteo de páginas: datos corruptos sin ningún error.",
+				"La codificación de Protocol Buffers no es autodescriptiva. Solo quien tiene el `.proto` sabe qué significa cada número.",
+				"gRPC no compara esquemas al conectar. Cliente y servidor pueden estar en versiones distintas, por eso existen las reglas de compatibilidad."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "proto",
+				"content": "// version 1\nmessage Book {\n\tstring title = 1;\n\tint32 year = 2;\n}\n\n// version 2\nmessage Book {\n\tstring title = 1;\n\tint32 pages = 2;\n}"
+			},
+			"concept": "En la codificación binaria de Protocol Buffers, un campo se identifica por su número, y eso es lo que permite que clientes y servidores de versiones distintas se comuniquen: los campos desconocidos se ignoran y los faltantes toman el valor por defecto. La contrapartida es una regla estricta: un número nunca cambia de significado. Cuando se quita un campo, su número se declara reservado, para que nadie lo reutilice.",
+			"example": {
+				"kind": "code",
+				"language": "proto",
+				"content": "message Book {\n\treserved 2;\n\treserved \"year\";\n\tstring title = 1;\n\tint32 pages = 3;\n}"
+			}
 		}
 	},
 	{
@@ -520,6 +717,28 @@
 				"content": "t = 0 ms     A calls B with a deadline of 500 ms\nt = 200 ms   B finishes its own work and calls C, propagating the deadline\n             C needs 400 ms to produce its answer\n\nA ──▶ B ──▶ C"
 			},
 			"concept": "In gRPC, the client sets a deadline: until when it is willing to wait. When it expires, the call ends with `DEADLINE_EXCEEDED`, and the server is told about the cancellation so that it stops working. In a chain of services, the deadline is propagated as remaining time, so that no service keeps working for someone who has already given up. Here: 500 − 200 = 300 ms for C, which needs 400 ms."
+		},
+		"es": {
+			"statement": "En la cadena de llamadas gRPC de abajo, el deadline fijado por A se propaga de B a C. ¿En qué instante termina la llamada hecha por A, y con qué estado?",
+			"alternatives": [
+				"A los 600 ms, con `OK`: el deadline solo se verifica antes de que empiece la llamada",
+				"A los 500 ms, con `DEADLINE_EXCEEDED`: C tenía solo 300 ms disponibles",
+				"A los 700 ms, con `DEADLINE_EXCEEDED`: cada salto recibe 500 ms nuevos",
+				"A los 500 ms, con `UNAVAILABLE`: el deadline vencido corta la conexión con B",
+				"A los 300 ms, con `DEADLINE_EXCEEDED`: C tenía solo 300 ms disponibles"
+			],
+			"explanations": [
+				"600 ms es cuando C terminaría (200 + 400), pero el deadline rige durante toda la llamada. Cuando vence, la llamada termina aunque el servidor siga trabajando.",
+				"El deadline es el instante absoluto 0 + 500 = 500 ms. A los 200 ms, B pasa lo que queda: 500 − 200 = 300 ms. C necesita 400 ms, más que 300. A los 200 + 300 = 500 ms el deadline vence, y A recibe `DEADLINE_EXCEEDED`.",
+				"Eso valdría si B creara un nuevo deadline de 500 ms (200 + 500 = 700). Con propagación, el deadline es el mismo instante absoluto para toda la cadena.",
+				"El instante es correcto, pero el estado no. `UNAVAILABLE` indica un servicio inalcanzable; un deadline vencido tiene su propio estado y no cierra la conexión HTTP/2, solo cancela el stream.",
+				"Esto confunde el tiempo que le queda a C (300 ms) con el instante en que A recibe la respuesta. Los 300 ms empiezan a contar a los 200 ms."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "t = 0 ms     A calls B with a deadline of 500 ms\nt = 200 ms   B finishes its own work and calls C, propagating the deadline\n             C needs 400 ms to produce its answer\n\nA ──▶ B ──▶ C"
+			},
+			"concept": "En gRPC, el cliente fija un deadline: hasta cuándo está dispuesto a esperar. Cuando vence, la llamada termina con `DEADLINE_EXCEEDED`, y al servidor se le avisa de la cancelación para que deje de trabajar. En una cadena de servicios, el deadline se propaga como tiempo restante, para que ningún servicio siga trabajando para alguien que ya desistió. Aquí: 500 − 200 = 300 ms para C, que necesita 400 ms."
 		}
 	}
 ]

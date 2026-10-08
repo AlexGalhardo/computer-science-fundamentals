@@ -41,6 +41,24 @@
 				"QUIC never uses TCP. The handshake also travels in UDP datagrams."
 			],
 			"concept": "QUIC is a reliable transport protocol built on top of UDP. UDP is only an envelope that crosses the existing Internet, and everything else lives in QUIC: streams, retransmission, flow control, congestion control and encryption. Since it is usually implemented in user space, it evolves with the browser or the server, without depending on an operating system update."
+		},
+		"es": {
+			"statement": "¿Sobre qué protocolo corre QUIC, y dónde viven la retransmisión y el control de congestión?",
+			"alternatives": [
+				"Sobre TCP, con una capa extra que divide el flujo de bytes en streams independientes",
+				"Sobre UDP, con la retransmisión y el control de congestión hechos por el propio QUIC",
+				"Sobre UDP, sin retransmisión, ya que HTTP/3 tolera datos perdidos como el video en vivo",
+				"Directamente sobre IP, como un nuevo número de protocolo de transporte implementado en los kernels",
+				"Sobre TCP durante el handshake y sobre UDP para los datos enviados después"
+			],
+			"explanations": [
+				"Eso describe HTTP/2. QUIC dejó TCP precisamente para no heredar la entrega ordenada única.",
+				"UDP solo entrega datagramas. La confiabilidad, el orden por stream, el control de flujo y el control de congestión los implementa QUIC, normalmente en espacio de usuario.",
+				"HTTP requiere entrega completa. QUIC detecta pérdidas y vuelve a enviar los datos, solo que en paquetes nuevos.",
+				"Un protocolo nuevo directamente sobre IP sería bloqueado por NATs y firewalls, que solo conocen TCP y UDP. Por eso QUIC viaja dentro de UDP.",
+				"QUIC nunca usa TCP. El handshake también viaja en datagramas UDP."
+			],
+			"concept": "QUIC es un protocolo de transporte confiable construido sobre UDP. UDP es solo un sobre que atraviesa la Internet existente, y todo lo demás vive en QUIC: streams, retransmisión, control de flujo, control de congestión y cifrado. Como suele implementarse en espacio de usuario, evoluciona con el navegador o el servidor, sin depender de una actualización del sistema operativo."
 		}
 	},
 	{
@@ -86,6 +104,24 @@
 				"In TCP, a loss holds back all the following bytes of the connection. In QUIC it holds back only the streams that had data in the lost packet."
 			],
 			"concept": "Head-of-line blocking shows up at two layers. HTTP/2 solved the application one, but all its streams share the single ordered byte stream of TCP, so one loss stops them all. QUIC orders data per stream: when a packet is lost, the other streams keep being delivered."
+		},
+		"es": {
+			"statement": "En QUIC, cada stream tiene su propia entrega ordenada. ¿Qué problema de HTTP/2 elimina HTTP/3 con esto?",
+			"alternatives": [
+				"Encabezados repetidos completos en cada solicitud de la conexión",
+				"El límite de unas seis conexiones por origen impuesto por los navegadores",
+				"Solicitudes que viajan en texto claro cuando el servidor no tiene certificado",
+				"Una respuesta lenta de la aplicación que retrasa las siguientes, devueltas en orden de solicitud",
+				"Un paquete perdido que retrasa streams cuyos datos no estaban en él"
+			],
+			"explanations": [
+				"La repetición de encabezados ya la resolvió HTTP/2 con HPACK. HTTP/3 tiene QPACK para lo mismo.",
+				"Ese límite pertenece a HTTP/1.1 y ya dejó de importar en HTTP/2, que multiplexa en una conexión.",
+				"El cifrado depende de TLS, no del orden de los streams.",
+				"Ese es el head-of-line blocking a nivel de aplicación, típico de HTTP/1.1, que HTTP/2 ya había eliminado con la multiplexación.",
+				"En TCP, una pérdida retiene todos los bytes siguientes de la conexión. En QUIC retiene solo los streams que tenían datos en el paquete perdido."
+			],
+			"concept": "El head-of-line blocking aparece en dos capas. HTTP/2 resolvió el de la aplicación, pero todos sus streams comparten el único flujo de bytes ordenado de TCP, así que una pérdida los detiene a todos. QUIC ordena los datos por stream: cuando se pierde un paquete, los demás streams se siguen entregando."
 		}
 	},
 	{
@@ -141,6 +177,29 @@
 				"language": "http",
 				"content": "HTTP/2 200\ncontent-type: text/html\nalt-svc: h3=\":443\"; ma=86400"
 			}
+		},
+		"es": {
+			"statement": "Un navegador abre `https://example.test` por primera vez, y el DNS del dominio solo tiene registros A y AAAA. ¿Cómo suele enterarse de que el servidor ofrece HTTP/3?",
+			"alternatives": [
+				"Por la lista ALPN de un handshake TLS sobre TCP, en la que el servidor elige `h3`",
+				"Por un encabezado `Upgrade: h3` respondido con `101 Switching Protocols`",
+				"Por un encabezado `Alt-Svc` en una respuesta recibida por HTTP/1.1 o HTTP/2",
+				"Por el esquema de la URL, ya que los sitios con HTTP/3 usan `quic://` en lugar de `https://`",
+				"Por un frame SETTINGS de la conexión HTTP/2, que lista las versiones aceptadas"
+			],
+			"explanations": [
+				"El identificador `h3` se negocia solo dentro del handshake QUIC. En una conexión TCP el servidor no tiene forma de ofrecer HTTP/3.",
+				"`Upgrade` cambia de protocolo en la misma conexión TCP. HTTP/3 necesita otra conexión, sobre UDP.",
+				"El servidor responde con algo como `Alt-Svc: h3=\":443\"; ma=86400`. El navegador guarda la información e intenta QUIC en las siguientes solicitudes.",
+				"El esquema sigue siendo `https://`. La versión de HTTP no aparece en la URL.",
+				"SETTINGS lleva parámetros de la propia conexión HTTP/2 y no anuncia otras versiones."
+			],
+			"concept": "Una URL `https://` no dice qué versión de HTTP usar, así que el cliente empieza por TCP. El servidor anuncia HTTP/3 con el encabezado `Alt-Svc`, que indica el protocolo `h3`, el puerto UDP y cuánto tiempo vale la información. Otra vía es el registro DNS de tipo HTTPS, que permite intentar QUIC ya en la primera conexión.",
+			"example": {
+				"kind": "code",
+				"language": "http",
+				"content": "HTTP/2 200\ncontent-type: text/html\nalt-svc: h3=\":443\"; ma=86400"
+			}
 		}
 	},
 	{
@@ -185,6 +244,24 @@
 				"QUIC does not use DTLS. It uses the TLS 1.3 handshake and protects the packets on its own."
 			],
 			"concept": "In QUIC, setting up the connection and negotiating the keys are one single thing. The TLS 1.3 handshake is carried by QUIC, and its result is the keys that protect all the following packets. There is no unencrypted mode, and TLS versions before 1.3 are not accepted."
+		},
+		"es": {
+			"statement": "¿Cómo se relaciona el cifrado con el handshake de QUIC?",
+			"alternatives": [
+				"El handshake de TLS 1.3 corre dentro de QUIC, junto con la configuración del transporte",
+				"TLS 1.3 corre como una capa aparte, después de completado el handshake de QUIC",
+				"QUIC define su propio intercambio de claves y sus propios cifrados, sin relación con TLS",
+				"El cifrado es opcional: `h3c` es la variante en texto claro, usada en el puerto 80",
+				"DTLS 1.2 protege cada datagrama, y QUIC solo agrega los streams encima"
+			],
+			"explanations": [
+				"Los mensajes de TLS 1.3 viajan en frames propios de QUIC, y los parámetros de transporte van dentro de ellos. Transporte y claves quedan listos en el mismo round trip.",
+				"Ese es el modelo de TCP con TLS, en el que un handshake sigue al otro. QUIC los fusionó para ahorrar un round trip.",
+				"QUIC reutiliza el intercambio de claves, los certificados y los cifrados de TLS 1.3. Solo cambia la forma en que se transportan los mensajes.",
+				"No existe HTTP/3 en texto claro. En QUIC el cifrado es obligatorio y parte del protocolo.",
+				"QUIC no usa DTLS. Usa el handshake de TLS 1.3 y protege los paquetes por su cuenta."
+			],
+			"concept": "En QUIC, establecer la conexión y negociar las claves son una sola cosa. El handshake de TLS 1.3 lo transporta QUIC, y su resultado son las claves que protegen todos los paquetes siguientes. No hay modo sin cifrado, y no se aceptan versiones de TLS anteriores a la 1.3."
 		}
 	},
 	{
@@ -237,6 +314,28 @@
 				"kind": "diagram",
 				"content": "TCP + TLS 1.3                      QUIC\nSYN            ->                  Initial (ClientHello)   ->\n               <- SYN-ACK                                  <- Initial + Handshake\nACK + ClientHello ->               Handshake + GET /       ->\n               <- ServerHello ... Finished\nFinished + GET /  ->\n\n2 RTT                              1 RTT"
 			}
+		},
+		"es": {
+			"statement": "Un cliente se conecta a un servidor por primera vez, sin reanudación de sesión y sin TCP Fast Open. Cuenta los round trips completos (RTT) que deben terminar antes de que el cliente pueda enviar su primera solicitud HTTP, suponiendo que el ACK final de TCP viaja junto con el ClientHello. ¿Cuántos hay con TCP + TLS 1.3 y cuántos con QUIC?",
+			"alternatives": [
+				"3 con TCP + TLS 1.3 y 1 con QUIC",
+				"2 con TCP + TLS 1.3 y 0 con QUIC",
+				"1 con TCP + TLS 1.3 y 1 con QUIC",
+				"2 con TCP + TLS 1.3 y 1 con QUIC",
+				"2 con TCP + TLS 1.3 y 2 con QUIC"
+			],
+			"explanations": [
+				"Tres round trips es la cuenta para TCP con TLS 1.2, cuyo handshake completo cuesta dos. TLS 1.3 cuesta uno.",
+				"Cero round trips (0-RTT) existe solo en la reanudación, con una clave guardada de una visita anterior. El enunciado trata de una primera conexión.",
+				"Olvida el handshake TCP: SYN y SYN-ACK cuestan un round trip antes de que TLS pueda empezar.",
+				"TCP: SYN y SYN-ACK (1). TLS 1.3: ClientHello y la respuesta del servidor hasta Finished (1). Total 2. QUIC: el primer paquete ya lleva el ClientHello, y la respuesta del servidor completa transporte y claves (1).",
+				"Supone que QUIC también ejecuta dos handshakes en secuencia. En QUIC, transporte y TLS comparten el mismo round trip."
+			],
+			"concept": "Con TCP, transporte y cifrado se establecen uno después del otro: un round trip para TCP y uno para TLS 1.3. QUIC lleva el ClientHello en su primer paquete y queda listo en uno. En una conexión reanudada ambos permiten 0-RTT, enviando la solicitud junto con el primer paquete, con el riesgo de que un atacante reproduzca esos datos tempranos.",
+			"example": {
+				"kind": "diagram",
+				"content": "TCP + TLS 1.3                      QUIC\nSYN            ->                  Initial (ClientHello)   ->\n               <- SYN-ACK                                  <- Initial + Handshake\nACK + ClientHello ->               Handshake + GET /       ->\n               <- ServerHello ... Finished\nFinished + GET /  ->\n\n2 RTT                              1 RTT"
+			}
 		}
 	},
 	{
@@ -281,6 +380,24 @@
 				"`Range` is an HTTP feature to restart a download in any version. It is not what keeps the connection alive."
 			],
 			"concept": "TCP ties the connection to the four-tuple of addresses and ports, so a network change tears it down. QUIC uses connection IDs chosen by both sides and carried in the packets. When the client's address changes, the server checks the new path and continues the same connection, with the same keys and the same streams."
+		},
+		"es": {
+			"statement": "Un teléfono sale del Wi-Fi y pasa a la red móvil en medio de una descarga, y su dirección IP cambia. ¿Por qué una conexión QUIC puede continuar, mientras que una conexión TCP se perdería?",
+			"alternatives": [
+				"QUIC mantiene viva la dirección IP antigua mediante un túnel que el router Wi-Fi mantiene para él",
+				"QUIC identifica la conexión por connection IDs, no por direcciones y puertos",
+				"UDP no tiene conexiones, así que el servidor acepta como válido cualquier datagrama que llegue al puerto",
+				"El session ticket de TLS 1.3 permite reanudar la sesión, lo que equivale a no perderla nunca",
+				"QUIC guarda la respuesta en la cache del navegador y pide los bytes faltantes con `Range`"
+			],
+			"explanations": [
+				"No hay túnel: al salir del Wi-Fi la dirección antigua deja de existir, y los paquetes empiezan a salir desde la nueva.",
+				"Una conexión TCP se define por IP y puerto de origen y destino, y cambia si uno de ellos cambia. En QUIC el paquete lleva un connection ID, y el servidor reconoce la conexión que viene de la nueva dirección, tras validar el camino.",
+				"QUIC sí tiene conexiones, con estado y claves. Un datagrama suelto se descarta si no se descifra con las claves de una conexión conocida.",
+				"La reanudación crea una conexión nueva, más barata, pero los streams en curso se pierden. La migración preserva la conexión y sus streams.",
+				"`Range` es una funcionalidad de HTTP para reanudar una descarga en cualquier versión. No es lo que mantiene viva la conexión."
+			],
+			"concept": "TCP ata la conexión a la tupla de cuatro elementos de direcciones y puertos, así que un cambio de red la derriba. QUIC usa connection IDs elegidos por ambos lados y transportados en los paquetes. Cuando la dirección del cliente cambia, el servidor verifica el nuevo camino y continúa la misma conexión, con las mismas claves y los mismos streams."
 		}
 	},
 	{
@@ -325,6 +442,24 @@
 				"In HPACK, each block may change the dynamic table and the next one depends on that, which works only with the total order of TCP. In QUIC, one stream may arrive before another that was sent earlier."
 			],
 			"concept": "The HPACK dynamic table is updated by the header blocks themselves, which must be decoded in the exact order they were sent. QUIC orders data only inside each stream. QPACK separates the two: table updates go on a dedicated unidirectional stream, and each block states which entries it depends on, so the decoder knows whether it can process it or must wait."
+		},
+		"es": {
+			"statement": "¿Por qué HTTP/3 no reutiliza HPACK y usa en su lugar QPACK para comprimir los encabezados?",
+			"alternatives": [
+				"HPACK es vulnerable a CRIME, y QPACK es la corrección que elimina la tabla dinámica",
+				"HPACK depende del tamaño de los registros de TLS 1.2, que TLS 1.3 dentro de QUIC ya no expone",
+				"El código Huffman de HPACK requiere segmentos TCP alineados a bytes, que los datagramas UDP no ofrecen",
+				"HPACK no tiene tabla estática, y cada conexión empezaría con un diccionario vacío",
+				"HPACK supone que los bloques de encabezados llegan en el orden enviado, lo que los streams separados de QUIC no garantizan"
+			],
+			"explanations": [
+				"HPACK ya se diseñó para resistir CRIME, y QPACK conserva la tabla dinámica.",
+				"HPACK trabaja sobre encabezados y no sabe nada de registros TLS. El cambio de versión de TLS no lo afecta.",
+				"Ambos producen bytes comunes, y QPACK usa el mismo código Huffman que HPACK.",
+				"HPACK sí tiene tabla estática, con 61 entradas. QPACK tiene una parecida, algo mayor.",
+				"En HPACK, cada bloque puede cambiar la tabla dinámica y el siguiente depende de eso, lo que solo funciona con el orden total de TCP. En QUIC, un stream puede llegar antes que otro enviado antes."
+			],
+			"concept": "La tabla dinámica de HPACK se actualiza con los propios bloques de encabezados, que deben decodificarse en el orden exacto en que se enviaron. QUIC ordena los datos solo dentro de cada stream. QPACK separa las dos cosas: las actualizaciones de la tabla van en un stream unidireccional dedicado, y cada bloque declara de qué entradas depende, así el decodificador sabe si puede procesarlo o debe esperar."
 		}
 	},
 	{
@@ -370,6 +505,24 @@
 				"If nothing is fetched from the network, the protocol version makes no difference."
 			],
 			"concept": "The gains of HTTP/3 come from two points: a shorter handshake and no head-of-line blocking in the transport. The first matters when latency is high, the second when there is loss. On fast, clean networks HTTP/2 and HTTP/3 perform alike, and QUIC in user space may even use more CPU."
+		},
+		"es": {
+			"statement": "Una página con decenas de recursos pequeños se sirve por HTTP/2 y por HTTP/3. ¿En cuál de estos escenarios la ventaja de HTTP/3 tiende a ser mayor?",
+			"alternatives": [
+				"Entre dos servidores del mismo data center, con latencia menor a 1 ms y sin pérdidas",
+				"En una conexión de fibra estable y sin pérdidas, con la página ya visitada poco antes",
+				"En una red móvil con alta latencia y pérdida de paquetes frecuente",
+				"En una red corporativa cuyo firewall descarta todo datagrama UDP",
+				"En una visita repetida en la que todos los recursos siguen válidos en la cache del navegador"
+			],
+			"explanations": [
+				"Sin pérdidas no hay head-of-line blocking en TCP, y con latencia mínima el handshake más corto casi no se nota. Las dos versiones empatan.",
+				"En un enlace limpio TCP rara vez retransmite, y HTTP/2 ya multiplexa bien. La diferencia es pequeña.",
+				"Cada pérdida en TCP detiene todos los streams de HTTP/2, y en QUIC solo los afectados. Con alta latencia, ahorrar un round trip en el handshake también pesa más.",
+				"Sin UDP, QUIC ni siquiera se establece, y el navegador usa HTTP/2 sobre TCP. No hay ventaja que medir.",
+				"Si no se obtiene nada de la red, la versión del protocolo no hace diferencia."
+			],
+			"concept": "Las ganancias de HTTP/3 vienen de dos puntos: un handshake más corto y la ausencia de head-of-line blocking en el transporte. El primero importa cuando la latencia es alta, el segundo cuando hay pérdidas. En redes rápidas y limpias HTTP/2 y HTTP/3 rinden parecido, y QUIC en espacio de usuario puede incluso usar más CPU."
 		}
 	},
 	{
@@ -424,6 +577,29 @@
 				"With no reply to the initial packet, the browser gives up on QUIC, usually after racing it in parallel with a TCP connection, and marks the alternative as unavailable for a while."
 			],
 			"concept": "Since part of the networks blocks UDP, HTTP/3 is never the only option of a site. The client treats the `Alt-Svc` announcement as a hint: it tries QUIC and, if the handshake does not progress, uses the TCP connection with HTTP/2 or HTTP/1.1. Browsers usually race the two attempts in parallel, so the user does not wait for the QUIC timeout."
+		},
+		"es": {
+			"statement": "Ayer un navegador recibió la respuesta de abajo de `https://example.com`. Hoy el usuario está en una red corporativa cuyo firewall descarta en silencio todo datagrama UDP al puerto 443, pero deja pasar TCP. ¿Qué ocurre cuando el usuario abre el sitio de nuevo?",
+			"snippet": {
+				"kind": "code",
+				"language": "http",
+				"content": "HTTP/2 200\ncontent-type: text/html\nalt-svc: h3=\":443\"; ma=86400"
+			},
+			"alternatives": [
+				"La página falla con un error de conexión hasta que la entrada `Alt-Svc` expire, al final de `ma`",
+				"QUIC detecta el bloqueo y mueve la misma conexión a TCP, conservando streams y connection ID",
+				"El navegador repite el intento QUIC en el puerto TCP 443, ya que HTTP/3 corre sobre ambos transportes",
+				"El firewall devuelve un error ICMP, que el servidor usa para bajar al cliente a HTTP/1.1",
+				"El intento QUIC no recibe respuesta, y la página carga por TCP, con HTTP/2 o HTTP/1.1"
+			],
+			"explanations": [
+				"`Alt-Svc` anuncia una alternativa, no una obligación. El origen TCP sigue siendo válido, y el cliente debe volver a él cuando la alternativa falla.",
+				"Una conexión QUIC no puede transferirse a TCP: son transportes distintos, cada uno con su estado y su handshake. La migración de QUIC cambia de dirección, no de protocolo.",
+				"HTTP/3 está definido solo sobre QUIC, y QUIC solo sobre UDP. Lo que existe sobre TCP es HTTP/2 o HTTP/1.1.",
+				"El descarte es silencioso, y en todo caso el servidor ni siquiera recibe los paquetes. Quien decide volver a TCP es el cliente.",
+				"Sin respuesta al paquete inicial, el navegador desiste de QUIC, normalmente tras competir en paralelo con una conexión TCP, y marca la alternativa como no disponible por un tiempo."
+			],
+			"concept": "Como parte de las redes bloquea UDP, HTTP/3 nunca es la única opción de un sitio. El cliente trata el anuncio `Alt-Svc` como una pista: intenta QUIC y, si el handshake no avanza, usa la conexión TCP con HTTP/2 o HTTP/1.1. Los navegadores suelen hacer competir los dos intentos en paralelo, para que el usuario no espere el timeout de QUIC."
 		}
 	},
 	{
@@ -468,6 +644,24 @@
 				"Congestion control is still mandatory: the network keeps dropping packets when queues fill up, encrypted or not."
 			],
 			"concept": "Ossification is what happens when devices in the middle of the path come to rely on the current format of a protocol: any change is blocked, even a valid one. TCP suffered from this by exposing its header. QUIC encrypts and authenticates almost everything and leaves visible only the minimum needed for routing, such as the connection ID, so the network cannot build dependencies."
+		},
+		"es": {
+			"statement": "El encabezado TCP viaja en texto claro, y las nuevas extensiones de TCP a menudo fallan en la Internet real. QUIC cifra casi toda su información de transporte, como números de paquete, confirmaciones y frames de control de flujo. ¿Qué problema de diseño aborda esta elección?",
+			"alternatives": [
+				"Los encabezados en texto claro permiten a un atacante en el camino leer el cuerpo de las respuestas HTTP aun usando TLS",
+				"Los middleboxes pasan a depender de los campos que pueden leer, lo que congela la evolución del protocolo",
+				"Los encabezados cifrados son más pequeños, lo que compensa el límite de 512 bytes de los datagramas UDP",
+				"Los dispositivos NAT no pueden traducir puertos en texto claro, y ocultarlos es lo que permite a QUIC cruzar routers domésticos",
+				"Cifrar el encabezado elimina la necesidad de control de congestión, ya que los routers dejan de descartar paquetes selectivamente"
+			],
+			"explanations": [
+				"Con TLS sobre TCP el cuerpo ya va cifrado. Lo que queda visible es el encabezado TCP, que no revela el contenido.",
+				"Esto es la osificación: firewalls, NATs y optimizadores inspeccionan o alteran campos TCP y descartan lo que no reconocen. Lo que QUIC cifra no pueden leerlo ni alterarlo, así que puede cambiar en versiones futuras.",
+				"Cifrar agrega bytes, por la etiqueta de autenticación. Y los datagramas UDP no tienen límite de 512 bytes: QUIC exige que el camino admita al menos 1,200.",
+				"El NAT necesita justamente leer y reescribir los puertos, que están en el encabezado UDP, en texto claro. QUIC no los oculta.",
+				"El control de congestión sigue siendo obligatorio: la red sigue descartando paquetes cuando las colas se llenan, cifrados o no."
+			],
+			"concept": "La osificación es lo que ocurre cuando los dispositivos en medio del camino pasan a depender del formato actual de un protocolo: cualquier cambio queda bloqueado, incluso uno válido. TCP la sufrió por exponer su encabezado. QUIC cifra y autentica casi todo y deja visible solo lo mínimo necesario para el enrutamiento, como el connection ID, así la red no puede crear dependencias."
 		}
 	}
 ]

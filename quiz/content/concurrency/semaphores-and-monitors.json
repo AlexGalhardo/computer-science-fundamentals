@@ -41,6 +41,24 @@
 				"The mistake is confusing a semaphore with the technique of disabling interrupts. A semaphore blocks the calling thread, not the CPU."
 			],
 			"concept": "A semaphore is an integer counter with two atomic operations. `down` (P) takes one unit and puts the thread to sleep when the counter is zero; `up` (V) gives one unit back and wakes a sleeping thread. Because testing and changing the counter is one indivisible action, no wakeup is lost."
+		},
+		"es": {
+			"statement": "¿Qué hace la operación `down` (también llamada P) sobre un semáforo?",
+			"alternatives": [
+				"Decrementa el valor si es positivo; si no, bloquea a quien llama hasta un `up`",
+				"Incrementa el valor y despierta a uno de los threads bloqueados en el semáforo",
+				"Siempre bloquea a quien llama hasta que algún otro thread llame a `up` sobre el semáforo",
+				"Decrementa el valor incluso por debajo de cero y deja que quien llama siga de inmediato",
+				"Deshabilita las interrupciones hasta que el mismo thread llame a `up` sobre el semáforo"
+			],
+			"explanations": [
+				"Correcto: `down` consume una unidad cuando la hay y pone a dormir al thread cuando el valor es 0. La prueba y el decremento forman una única acción atómica.",
+				"Esto describe `up` (V). El error es intercambiar las dos operaciones: `down` toma una unidad, `up` devuelve una.",
+				"El error es confundir `down` con `wait` sobre una variable de condición, que siempre bloquea. `down` bloquea solo cuando el valor es 0.",
+				"El error es tratar el semáforo como un simple contador. Sin bloquear cuando no queda ninguna unidad, no protegería nada.",
+				"El error es confundir un semáforo con la técnica de deshabilitar interrupciones. Un semáforo bloquea al thread que llama, no a la CPU."
+			],
+			"concept": "Un semáforo es un contador entero con dos operaciones atómicas. `down` (P) toma una unidad y pone a dormir al thread cuando el contador es cero; `up` (V) devuelve una unidad y despierta a un thread dormido. Como probar y cambiar el contador es una sola acción indivisible, no se pierde ningún despertar."
 		}
 	},
 	{
@@ -95,6 +113,29 @@
 				"language": "java",
 				"content": "class Slot {\n\tprivate Integer value;\n\n\tsynchronized int take() throws InterruptedException {\n\t\twhile (value == null) {\n\t\t\twait();\n\t\t}\n\t\tint v = value;\n\t\tvalue = null;\n\t\tnotifyAll();\n\t\treturn v;\n\t}\n}"
 			}
+		},
+		"es": {
+			"statement": "En Java, un método `synchronized` llamado `take()` ejecuta el bucle `while (value == null) { wait(); }` antes de leer el campo `value` del objeto. ¿Qué le hace la llamada a `wait()` al thread que la ejecuta?",
+			"alternatives": [
+				"Mantiene el lock del objeto y duerme durante un tiempo elegido por la JVM",
+				"Mantiene el lock del objeto y vuelve a probar `value` en un bucle cerrado",
+				"Libera el lock del objeto y cede la CPU, quedando listo para ejecutarse",
+				"Libera el lock del objeto y termina `take()` con una excepción",
+				"Libera el lock del objeto y suspende el thread hasta que sea notificado"
+			],
+			"explanations": [
+				"El error es confundir `wait()` con `Thread.sleep()`, que duerme sin liberar ningún lock. Si `wait()` mantuviera el lock, nadie podría entrar a cambiar `value`.",
+				"El error es imaginar una espera activa. La nueva prueba la hace el `while` del código, y solo después de que el thread fue despertado.",
+				"El error es confundir `wait()` con `Thread.yield()`. Un thread que llama a `wait()` sale de la cola de listos hasta que llega una notificación.",
+				"El error es pensar que `wait()` aborta el método. La ejecución continúa en la línea siguiente una vez que el thread es despertado y recupera el lock.",
+				"Correcto: `wait()` libera el lock del monitor y pone al thread en el conjunto de espera (wait set) del objeto. Después de ser notificado, debe recuperar el lock antes de continuar."
+			],
+			"concept": "En Java todo objeto tiene un monitor con un lock y un conjunto de espera. `wait()` solo lo puede llamar quien tiene el lock, libera ese lock y suspende el thread, lo que permite que otro thread entre y cambie el estado. `notify()` y `notifyAll()` despiertan threads en espera, que luego vuelven a competir por el lock.",
+			"example": {
+				"kind": "code",
+				"language": "java",
+				"content": "class Slot {\n\tprivate Integer value;\n\n\tsynchronized int take() throws InterruptedException {\n\t\twhile (value == null) {\n\t\t\twait();\n\t\t}\n\t\tint v = value;\n\t\tvalue = null;\n\t\tnotifyAll();\n\t\treturn v;\n\t}\n}"
+			}
 		}
 	},
 	{
@@ -139,6 +180,24 @@
 				"The mistake is tying the kind of semaphore to where it is implemented. The difference is only the range of values."
 			],
 			"concept": "A counting semaphore represents the number of available units of a resource, such as free slots in a buffer or connections in a pool. A binary semaphore is the case where only the values 0 and 1 exist, used to let one thread at a time into a critical region. The operations `down` and `up` are the same in both."
+		},
+		"es": {
+			"statement": "¿Qué distingue a un semáforo binario de un semáforo contador?",
+			"alternatives": [
+				"Uno binario puede ser compartido solo por dos threads; uno contador por cualquier número",
+				"Uno binario bloquea con espera activa; uno contador pone a dormir a los threads",
+				"Uno binario guarda solo 0 o 1; uno contador guarda cualquier cuenta no negativa",
+				"Uno binario tiene `down` y `up`; uno contador agrega una tercera operación",
+				"Uno binario vive dentro del kernel; uno contador vive en espacio de usuario"
+			],
+			"explanations": [
+				"El error es leer \"binario\" como \"para dos threads\". El nombre trata de los valores posibles, no de cuántos threads usan el semáforo.",
+				"El error es confundir un semáforo binario con un spinlock. Ambos tipos de semáforo bloquean al thread de la misma forma.",
+				"Correcto: el binario vale 0 o 1 y se usa para exclusión mutua; el contador representa cuántas unidades de un recurso están libres.",
+				"El error es suponer que contar necesita una operación extra. Ambos tipos tienen exactamente las mismas operaciones, `down` y `up`.",
+				"El error es ligar el tipo de semáforo al lugar donde se implementa. La diferencia es solo el rango de valores."
+			],
+			"concept": "Un semáforo contador representa el número de unidades disponibles de un recurso, como posiciones libres en un buffer o conexiones en un pool. Un semáforo binario es el caso en que solo existen los valores 0 y 1, usado para dejar entrar a un thread a la vez en una región crítica. Las operaciones `down` y `up` son las mismas en ambos."
 		}
 	},
 	{
@@ -183,6 +242,24 @@
 				"The mistake is looking for the difference in the queue order. Both classes have a fair and a non-fair mode, and that does not change who may release."
 			],
 			"concept": "A mutex has an owner: the thread that locked it is the only one allowed to unlock it, which makes it suitable for protecting a critical region. A semaphore records no owner, so one thread can do `down` and another can do `up`. That is why a semaphore also works for signalling events between threads, not only for mutual exclusion."
+		},
+		"es": {
+			"statement": "En Java, el thread A llama a `acquire()` sobre un `java.util.concurrent.Semaphore` creado con 0 permisos y se bloquea; más tarde el thread B llama a `release()` sobre él y A continúa. ¿Por qué esta entrega funciona con un semáforo pero no con un `ReentrantLock`?",
+			"alternatives": [
+				"El semáforo no tiene dueño, así que cualquier thread puede liberarlo; el lock solo lo libera quien lo tiene",
+				"El semáforo es reentrante, así que B hereda el permiso que A esperaba; el lock no lo es",
+				"El semáforo pone a dormir a A, mientras que el lock haría girar a A sin notar a B",
+				"El semáforo se comparte entre threads, mientras que el lock es visible para un solo thread",
+				"El semáforo atiende a quienes esperan en orden de llegada, mientras que el lock elige uno al azar"
+			],
+			"explanations": [
+				"Correcto: un semáforo es solo un contador, y `release()` puede venir de cualquier thread. Un `ReentrantLock` registra su thread dueño, y un `unlock()` desde otro lanza `IllegalMonitorStateException`.",
+				"El error es invertir la reentrancia: el reentrante es `ReentrantLock`. Un semáforo ni siquiera sabe qué thread tomó cada permiso.",
+				"El error es pensar que los locks hacen espera activa. `lock()` sobre un `ReentrantLock` también bloquea al thread; la diferencia es quién puede liberar.",
+				"El error es confundir propiedad con visibilidad. El lock también lo comparten varios threads; solo la liberación está restringida al dueño.",
+				"El error es buscar la diferencia en el orden de la cola. Ambas clases tienen un modo justo y uno no justo, y eso no cambia quién puede liberar."
+			],
+			"concept": "Un mutex tiene dueño: el thread que lo bloqueó es el único autorizado a desbloquearlo, lo que lo hace adecuado para proteger una región crítica. Un semáforo no registra dueño, así que un thread puede hacer `down` y otro puede hacer `up`. Por eso un semáforo también sirve para señalar eventos entre threads, no solo para la exclusión mutua."
 		}
 	},
 	{
@@ -228,6 +305,24 @@
 				"The mistake is imagining preemption. The semaphore only limits who gets in; no fork is taken by force."
 			],
 			"concept": "A counting semaphore initialised to N-1 limits to N-1 the philosophers competing for N forks. With five forks and four philosophers, the cycle in which each one holds a fork and waits for the neighbour's cannot close: one fork is left over, and the philosopher next to it completes the pair. This uses a semaphore to limit concurrency, not for mutual exclusion."
+		},
+		"es": {
+			"statement": "Cinco filósofos deben primero obtener un permiso de un semáforo `waiter` inicializado en 4, luego tomar el tenedor izquierdo y el derecho, y devuelven el permiso al terminar de comer. ¿Por qué esto elimina el deadlock?",
+			"alternatives": [
+				"Solo un filósofo come a la vez, así que dos vecinos nunca quieren el mismo tenedor",
+				"Ambos tenedores se toman en un paso atómico, así que nadie queda con un solo tenedor",
+				"El mozo impone un orden global sobre los tenedores, así que no se puede formar ningún ciclo de esperas",
+				"Como máximo cuatro tienen tenedores al mismo tiempo, así que uno de ellos siempre obtiene un segundo",
+				"El mozo le quita un tenedor a un filósofo que esperó demasiado por el otro"
+			],
+			"explanations": [
+				"El error es confundir un semáforo de valor 4 con un mutex. Entran cuatro filósofos a la vez, y dos que no son vecinos pueden comer juntos.",
+				"El error es confundir al mozo con un único lock alrededor de ambos tenedores. Los tenedores se siguen tomando de a uno.",
+				"El error es confundir esta solución con el ordenamiento de recursos. El orden en que cada filósofo toma los tenedores no cambió.",
+				"Correcto: con un lugar vacío, el tenedor junto a él no lo disputan dos. Cinco tenedores para cuatro filósofos garantizan que al menos uno obtenga dos, coma y los libere.",
+				"El error es imaginar expropiación. El semáforo solo limita quién entra; ningún tenedor se quita a la fuerza."
+			],
+			"concept": "Un semáforo contador inicializado en N-1 limita a N-1 los filósofos que compiten por N tenedores. Con cinco tenedores y cuatro filósofos, el ciclo en que cada uno tiene un tenedor y espera el del vecino no puede cerrarse: sobra un tenedor, y el filósofo junto a él completa el par. Esto usa un semáforo para limitar la concurrencia, no para la exclusión mutua."
 		}
 	},
 	{
@@ -282,6 +377,29 @@
 				"language": "java",
 				"content": "class Mailbox {\n\tprivate final Deque<String> items = new ArrayDeque<>();\n\n\tsynchronized void put(String s) {\n\t\titems.addLast(s);\n\t\tnotifyAll();\n\t}\n\n\tsynchronized String take() throws InterruptedException {\n\t\tif (items.isEmpty()) {\n\t\t\twait();\n\t\t}\n\t\treturn items.removeFirst();\n\t}\n}"
 			}
+		},
+		"es": {
+			"statement": "Una clase Java `Mailbox` guarda sus ítems en un `ArrayDeque` llamado `items` y tiene dos métodos `synchronized`. `put(s)` ejecuta `items.addLast(s); notifyAll();`. `take()` ejecuta `if (items.isEmpty()) { wait(); }` seguido de `return items.removeFirst();`. Dos threads consumidores están bloqueados en `take()`, y un productor llama a `put()` una vez. ¿Qué puede salir mal?",
+			"alternatives": [
+				"Ambos consumidores siguen bloqueados, porque `notifyAll()` se ignora mientras el productor tiene el lock",
+				"El productor recibe una `IllegalMonitorStateException`, porque dos threads están esperando sobre el objeto",
+				"Ambos consumidores despiertan, y el segundo llama a `removeFirst()` sobre un deque que ya está vacío",
+				"Ambos consumidores reciben el mismo string, porque `removeFirst()` no está sincronizado",
+				"Nada: `synchronized` garantiza que solo se despierte uno de los dos consumidores"
+			],
+			"explanations": [
+				"El error es pensar que la notificación se pierde porque quien notifica todavía tiene el lock. Los threads se despiertan y simplemente esperan a que el lock quede libre.",
+				"El error es confundir la causa de esta excepción: ocurre cuando se llama a `wait()` o `notifyAll()` sin el lock del objeto, no porque varios threads estén esperando.",
+				"Correcto: `notifyAll()` despierta a ambos. El primero quita el ítem; el segundo continúa después del `if`, no vuelve a probar, y `removeFirst()` lanza `NoSuchElementException`. Con `while` en lugar de `if` volvería a esperar.",
+				"El error es olvidar que todo `take()` es `synchronized`: los consumidores ejecutan `removeFirst()` de a uno, y el ítem sale una sola vez.",
+				"El error es atribuirle a `synchronized` la elección de quién despierta. Solo garantiza un thread a la vez en el monitor; `notifyAll()` despierta a todos los que esperan."
+			],
+			"concept": "Un monitor de Java sigue la semántica Mesa: ser notificado solo pone al thread en listo, y la condición puede haber cambiado cuando recupera el lock. La especificación también admite despertares espurios, sin ninguna notificación. Por eso `wait()` siempre va dentro de un `while` que vuelve a probar la condición, nunca dentro de un `if`.",
+			"example": {
+				"kind": "code",
+				"language": "java",
+				"content": "class Mailbox {\n\tprivate final Deque<String> items = new ArrayDeque<>();\n\n\tsynchronized void put(String s) {\n\t\titems.addLast(s);\n\t\tnotifyAll();\n\t}\n\n\tsynchronized String take() throws InterruptedException {\n\t\tif (items.isEmpty()) {\n\t\t\twait();\n\t\t}\n\t\treturn items.removeFirst();\n\t}\n}"
+			}
 		}
 	},
 	{
@@ -326,6 +444,24 @@
 				"Correct: the `wakeup` arrived before the consumer was asleep and was discarded. It acts on the old test, calls `sleep()`, and nobody wakes it again, although an item exists."
 			],
 			"concept": "A lost wakeup happens when testing the condition and going to sleep are not one atomic action: the signal arrives in the gap between the two and vanishes. The solutions make that pair indivisible. A semaphore stores the signal in its counter, and a monitor requires the test and the `wait` to happen under the same lock that protects the condition."
+		},
+		"es": {
+			"statement": "Un consumidor prueba `count == 0` sin tener ningún lock y, como la prueba es verdadera, está por llamar a `sleep()`. Antes de esa llamada, el planificador ejecuta al productor, que agrega un ítem, pone `count` en 1 y llama a `wakeup(consumer)`. ¿Qué sale mal cuando el consumidor vuelve a ejecutarse?",
+			"alternatives": [
+				"Quita el ítem dos veces, ya que `count` cambió mientras se probaba",
+				"Encuentra al productor atascado en `wakeup()`, esperando que alguien duerma",
+				"Vuelve de `sleep()` de inmediato y gira, ya que el despertar quedó guardado",
+				"Despierta de forma espuria y quita un ítem de un buffer que está vacío",
+				"Duerme aunque exista un ítem, ya que el despertar ya se perdió"
+			],
+			"explanations": [
+				"El error es ver aquí una actualización perdida en el contador. El consumidor todavía no quitó nada: el problema es que duerme, no que quite dos veces.",
+				"El error es suponer que `wakeup()` bloquea hasta que alguien esté dormido. La llamada retorna de inmediato y, sin nadie dormido, no tiene efecto.",
+				"El error es darle a `wakeup()` la memoria de un semáforo. Guardar la señal es justamente lo que falta aquí, y es lo que hace `up` al incrementar el contador.",
+				"El error es confundir un despertar perdido con un despertar espurio. Aquí el thread no despierta sin motivo: no es despertado cuando debería.",
+				"Correcto: el `wakeup` llegó antes de que el consumidor estuviera dormido y se descartó. Actúa según la prueba vieja, llama a `sleep()`, y nadie lo vuelve a despertar, aunque exista un ítem."
+			],
+			"concept": "Un despertar perdido ocurre cuando probar la condición e ir a dormir no son una sola acción atómica: la señal llega en el hueco entre ambas y desaparece. Las soluciones hacen indivisible ese par. Un semáforo guarda la señal en su contador, y un monitor exige que la prueba y el `wait` ocurran bajo el mismo lock que protege la condición."
 		}
 	},
 	{
@@ -370,6 +506,24 @@
 				"The mistake is forgetting the `while`: on waking, the producer tests again, sees the full buffer and waits again, overwriting nothing."
 			],
 			"concept": "An object monitor in Java has a single wait set, even when threads wait for different conditions (buffer not full, buffer not empty). `notify()` wakes an arbitrary thread, which may be of the wrong kind and go back to sleep, and the signal is lost. The ways out are `notifyAll()` or a `Lock` with one `Condition` object per condition."
+		},
+		"es": {
+			"statement": "Un buffer de capacidad 1 en Java usa un único monitor de objeto: los productores esperan mientras está lleno, los consumidores esperan mientras está vacío, todo `wait()` está dentro de un `while`, y todo thread llama a `notify()` después de cambiar el buffer. Con dos productores y dos consumidores, ¿qué falla es posible?",
+			"alternatives": [
+				"`notify()` despierta a todos los que esperan, y dos productores llenan la misma posición a la vez",
+				"`notify()` despierta a un thread del mismo tipo, y los cuatro terminan esperando",
+				"`notify()` mantiene el lock, y el thread despertado gira en su `while` para siempre",
+				"`notify()` lanza una excepción cuando productores y consumidores esperan juntos",
+				"`notify()` deja que el productor despertado se salte la prueba y sobrescriba el ítem"
+			],
+			"explanations": [
+				"El error es confundir `notify()` con `notifyAll()`. `notify()` despierta a un solo thread, y el `while` impediría que dos productores usen la misma posición.",
+				"Correcto: los consumidores C1 y C2 esperan; P1 inserta y despierta a C1; P1 y P2 luego esperan con el buffer lleno; C1 quita y su `notify()` despierta a C2, no a un productor; C1 y C2 vuelven a esperar con el buffer vacío. No queda nadie para notificar.",
+				"El error es pensar que el thread despertado se ejecuta mientras quien notifica todavía tiene el lock. Continúa solo después de recuperar el lock, y el `while` prueba una vez por despertar.",
+				"El error es suponer que el conjunto de espera rechaza threads con condiciones distintas. Los acepta a todos; el problema es no elegir a cuál despertar.",
+				"El error es olvidar el `while`: al despertar, el productor vuelve a probar, ve el buffer lleno y vuelve a esperar, sin sobrescribir nada."
+			],
+			"concept": "Un monitor de objeto en Java tiene un único conjunto de espera, incluso cuando los threads esperan condiciones distintas (buffer no lleno, buffer no vacío). `notify()` despierta a un thread arbitrario, que puede ser del tipo equivocado y volver a dormir, y la señal se pierde. Las salidas son `notifyAll()` o un `Lock` con un objeto `Condition` por cada condición."
 		}
 	}
 ]

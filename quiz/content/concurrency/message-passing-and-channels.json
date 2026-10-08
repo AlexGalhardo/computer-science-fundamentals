@@ -42,6 +42,24 @@
 				"Wrong. It confuses immutability with communication: read-only data is safe, but the motto is about state that changes and moves from one goroutine to another."
 			],
 			"concept": "In message passing, concurrent tasks do not access the same variable: they send and receive values. In Go the channel is the means of sending, and the convention is that whoever receives the value becomes the only one using it. Synchronisation is therefore built into the communication itself, instead of relying on locks scattered through the code."
+		},
+		"es": {
+			"statement": "El lema de Go dice: \"no comuniques compartiendo memoria; comparte memoria comunicando\". En ese estilo, ¿qué reemplaza a los locks alrededor de las variables compartidas?",
+			"alternatives": [
+				"Enviar los valores por canales, para que una goroutine a la vez maneje cada uno",
+				"Copiar cada variable en cada goroutine, para que nunca haga falta enviar nada",
+				"Declarar las variables como atómicas, para que el runtime ordene los accesos",
+				"Ejecutar todas las goroutines en un solo thread del sistema, para que los accesos nunca se superpongan",
+				"Marcar las variables como de solo lectura, para que ninguna goroutine pueda cambiarlas"
+			],
+			"explanations": [
+				"Correcto. Los datos viajan en mensajes por un canal y, en cada momento, solo la goroutine que los recibió los toca, así que no hay acceso simultáneo que proteger.",
+				"Incorrecto. Confunde aislar con comunicar: las copias independientes evitan la carrera, pero las goroutines dejan de cooperar, y el lema trata justamente de intercambiar datos.",
+				"Incorrecto. Confunde el paso de mensajes con las operaciones atómicas: las variables atómicas siguen siendo memoria compartida, solo que con instrucciones indivisibles.",
+				"Incorrecto. Confunde la ausencia de paralelismo con la ausencia de carreras: aun en un solo thread el planificador puede cambiar de goroutine en medio de una actualización.",
+				"Incorrecto. Confunde inmutabilidad con comunicación: los datos de solo lectura son seguros, pero el lema trata de estado que cambia y pasa de una goroutine a otra."
+			],
+			"concept": "En el paso de mensajes, las tareas concurrentes no acceden a la misma variable: envían y reciben valores. En Go el canal es el medio de envío, y la convención es que quien recibe el valor pasa a ser el único que lo usa. Así, la sincronización está incorporada en la propia comunicación, en lugar de depender de locks repartidos por el código."
 		}
 	},
 	{
@@ -96,6 +114,29 @@
 				"language": "go",
 				"content": "ch := make(chan int) // unbuffered\n\ngo func() {\n\tch <- 42 // stays blocked here for about 1 s\n\tfmt.Println(\"sent\")\n}()\n\ntime.Sleep(time.Second)\nfmt.Println(<-ch) // the receive releases the send"
 			}
+		},
+		"es": {
+			"statement": "En Go, ¿cuándo termina un envío por un canal sin buffer, creado con make(chan int)?",
+			"alternatives": [
+				"De inmediato, ya que el valor queda guardado en el canal hasta que alguien lo lea",
+				"Después de la próxima porción de tiempo del planificador, se lea o no",
+				"Solo cuando la goroutine que recibe cierra el canal",
+				"Solo cuando otra goroutine recibe el valor de ese canal",
+				"En cuanto alguna otra goroutine tiene una referencia al canal"
+			],
+			"explanations": [
+				"Incorrecto. Confunde un canal sin buffer con uno con buffer: sin capacidad, el canal no tiene dónde guardar el valor mientras espera un lector.",
+				"Incorrecto. Confunde bloquearse con esperar tiempo: el envío no depende del reloj del planificador, sino de que exista un receptor.",
+				"Incorrecto. Confunde cerrar con recibir: close anuncia que no vendrán más valores y no es lo que libera un envío pendiente.",
+				"Correcto. Sin buffer, el envío y la recepción ocurren juntos: la goroutine que envía queda bloqueada hasta que otra ejecuta la recepción.",
+				"Incorrecto. Confunde conocer el canal con recibir de él: tener la referencia no basta, hay que ejecutar la operación de recepción."
+			],
+			"concept": "Un canal de Go sin buffer no guarda nada: entrega un valor solo cuando el emisor y el receptor están listos al mismo tiempo. Así, el envío se bloquea hasta que haya un receptor, y la recepción se bloquea hasta que haya un emisor. Además de transportar los datos, el canal sincroniza las dos goroutines.",
+			"example": {
+				"kind": "code",
+				"language": "go",
+				"content": "ch := make(chan int) // sin buffer\n\ngo func() {\n\tch <- 42 // queda bloqueado aquí cerca de 1 s\n\tfmt.Println(\"sent\")\n}()\n\ntime.Sleep(time.Second)\nfmt.Println(<-ch) // la recepción libera el envío"
+			}
 		}
 	},
 	{
@@ -107,7 +148,13 @@
 		"source": "Tanenbaum, chapter 2 (message passing)",
 		"pt": {
 			"statement": "Na troca de mensagens entre processos, que nome recebe a estratégia sem nenhum buffer, em que o remetente fica bloqueado até o destinatário executar o receive e a mensagem passa diretamente de um para o outro?",
-			"alternatives": ["Mailbox", "Spooling", "Espera ocupada", "Rendezvous", "Broadcast"],
+			"alternatives": [
+				"Mailbox",
+				"Spooling",
+				"Espera ocupada",
+				"Rendezvous",
+				"Broadcast"
+			],
 			"explanations": [
 				"Errada. Confunde as duas estratégias: a mailbox é justamente o buffer que guarda mensagens enviadas e ainda não recebidas.",
 				"Errada. Confunde troca de mensagens com fila de serviço: spooling é enfileirar trabalhos para um dispositivo, como uma impressora.",
@@ -119,7 +166,13 @@
 		},
 		"en": {
 			"statement": "In message passing between processes, what is the name of the strategy with no buffer at all, where the sender stays blocked until the receiver executes receive and the message goes directly from one to the other?",
-			"alternatives": ["Mailbox", "Spooling", "Busy waiting", "Rendezvous", "Broadcast"],
+			"alternatives": [
+				"Mailbox",
+				"Spooling",
+				"Busy waiting",
+				"Rendezvous",
+				"Broadcast"
+			],
 			"explanations": [
 				"Wrong. It mixes up the two strategies: the mailbox is precisely the buffer that holds messages already sent and not yet received.",
 				"Wrong. It confuses message passing with a job queue: spooling is queuing jobs for a device, such as a printer.",
@@ -128,6 +181,24 @@
 				"Wrong. It confuses the number of receivers with the moment of delivery: broadcast is sending the same message to everyone."
 			],
 			"concept": "Message passing can be buffered or not. With a mailbox, the sender deposits the message and moves on while there is room. With no buffer, delivery happens only when both sides are ready: whoever arrives first waits for the other, and that meeting is called a rendezvous."
+		},
+		"es": {
+			"statement": "En el paso de mensajes entre procesos, ¿cómo se llama la estrategia sin ningún buffer, en la que el emisor queda bloqueado hasta que el receptor ejecuta receive y el mensaje pasa directamente de uno al otro?",
+			"alternatives": [
+				"Buzón (mailbox)",
+				"Spooling",
+				"Espera activa",
+				"Rendezvous",
+				"Broadcast"
+			],
+			"explanations": [
+				"Incorrecto. Mezcla las dos estrategias: el buzón es justamente el buffer que guarda los mensajes ya enviados y todavía no recibidos.",
+				"Incorrecto. Confunde el paso de mensajes con una cola de trabajos: el spooling es encolar trabajos para un dispositivo, como una impresora.",
+				"Incorrecto. Confunde bloquearse con girar en un bucle: en la espera activa el proceso prueba la condición una y otra vez, quemando CPU, en lugar de dormir.",
+				"Correcto. En un rendezvous no hay almacenamiento intermedio: emisor y receptor deben encontrarse para que el mensaje se copie.",
+				"Incorrecto. Confunde el número de receptores con el momento de la entrega: el broadcast es enviar el mismo mensaje a todos."
+			],
+			"concept": "El paso de mensajes puede tener buffer o no. Con un buzón, el emisor deposita el mensaje y sigue mientras haya lugar. Sin buffer, la entrega ocurre solo cuando ambos lados están listos: quien llega primero espera al otro, y ese encuentro se llama rendezvous."
 		}
 	},
 	{
@@ -172,6 +243,24 @@
 				"Wrong. It confuses a Go channel with a queue that drops items: a plain send never loses values, it waits for room."
 			],
 			"concept": "A buffered channel of capacity n accepts n sends with no receiver, because the values are kept in its internal queue. Once the buffer is full, the next send blocks until a receive frees a slot. For capacity 3: three sends go through (3 of 3 slots taken) and the fourth blocks."
+		},
+		"es": {
+			"statement": "En Go, una goroutine crea un canal con make(chan int, 3) y ejecuta cinco envíos seguidos sobre él. Ninguna goroutine recibe de él. ¿En qué envío se bloquea?",
+			"alternatives": [
+				"En el 1.º envío, ya que no hay ningún receptor listo",
+				"En el 4.º envío, ya que el buffer ya tiene tres valores",
+				"En el 3.º envío, ya que ocupa la última posición libre",
+				"En el 5.º envío, ya que el buffer acepta un valor más allá de su capacidad",
+				"En ninguno, ya que los valores de más se descartan"
+			],
+			"explanations": [
+				"Incorrecto. Así se comporta un canal sin buffer: con capacidad 3, los primeros envíos no necesitan receptor.",
+				"Correcto. Los envíos 1, 2 y 3 llenan las tres posiciones y retornan de inmediato; el 4.º no encuentra lugar y se bloquea hasta que alguien reciba.",
+				"Incorrecto. Es un error de uno: el 3.º envío todavía cabe en la última posición, y solo el siguiente encuentra el buffer lleno.",
+				"Incorrecto. Supone una posición extra, como si el valor en tránsito no contara: la capacidad es exactamente 3.",
+				"Incorrecto. Confunde un canal de Go con una cola que descarta ítems: un envío común nunca pierde valores, espera a que haya lugar."
+			],
+			"concept": "Un canal con buffer de capacidad n acepta n envíos sin receptor, porque los valores se guardan en su cola interna. Una vez lleno el buffer, el siguiente envío se bloquea hasta que una recepción libere una posición. Para capacidad 3: pasan tres envíos (3 de 3 posiciones ocupadas) y el cuarto se bloquea."
 		}
 	},
 	{
@@ -216,6 +305,24 @@
 				"Wrong. It describes the case where the producer forgets close: the close is exactly what tells range that no fourth value will come."
 			],
 			"concept": "In Go, close marks the end of the sends, and doing it is the sender's job. The values already in the channel are still delivered, and a range loop ends when the channel is closed and empty. Without close, range would wait forever for one more value."
+		},
+		"es": {
+			"statement": "En Go, un productor envía tres valores por un canal con buffer de capacidad 3 y luego llama a close sobre él. Solo después de eso un consumidor empieza a ejecutar for v := range ch. ¿Qué le pasa al bucle?",
+			"alternatives": [
+				"Recibe los tres valores y termina normalmente",
+				"Termina sin recibir nada, ya que close vacía el buffer",
+				"Recibe los tres valores y luego ceros, sin terminar nunca",
+				"Entra en pánico al intentar recibir de un canal cerrado",
+				"Recibe los tres valores y se bloquea esperando un cuarto"
+			],
+			"explanations": [
+				"Correcto. Cerrar no borra lo que ya está en el buffer: range entrega los tres valores pendientes y sale cuando el canal está cerrado y vacío.",
+				"Incorrecto. Confunde cerrar con vaciar: close solo prohíbe envíos nuevos, y los valores ya enviados siguen disponibles.",
+				"Incorrecto. Confunde range con una recepción común: v := <-ch sobre un canal cerrado y vacío da el valor cero, pero range detecta el cierre y se detiene.",
+				"Incorrecto. Mezcla los dos lados: el pánico ocurre al enviar a un canal cerrado, y recibir de uno está permitido.",
+				"Incorrecto. Describe el caso en que el productor olvida el close: el close es justamente lo que le dice a range que no vendrá un cuarto valor."
+			],
+			"concept": "En Go, close marca el fin de los envíos, y hacerlo es tarea del emisor. Los valores que ya están en el canal se siguen entregando, y un bucle range termina cuando el canal está cerrado y vacío. Sin close, range esperaría para siempre un valor más."
 		}
 	},
 	{
@@ -271,6 +378,29 @@
 				"language": "go",
 				"content": "inc := make(chan int)\ndone := make(chan int)\n\n// The owner: the only goroutine that accesses count.\ngo func() {\n\tcount := 0\n\tfor n := range inc {\n\t\tcount += n\n\t}\n\tdone <- count\n}()\n\nvar wg sync.WaitGroup\nfor w := 0; w < 8; w++ {\n\twg.Add(1)\n\tgo func() {\n\t\tdefer wg.Done()\n\t\tfor i := 0; i < 1000; i++ {\n\t\t\tinc <- 1\n\t\t}\n\t}()\n}\n\nwg.Wait()\nclose(inc)\nfmt.Println(<-done) // 8000"
 			}
+		},
+		"es": {
+			"statement": "En Go, una goroutine dueña mantiene una variable local count, que empieza en 0, y le suma cada valor recibido de un canal sin buffer inc. Ocho goroutines trabajadoras envían cada una el valor 1 por inc 1,000 veces. Cuando todas terminan, se cierra inc y la dueña informa count. ¿Qué valor se informa?",
+			"alternatives": [
+				"Un valor por debajo de 8,000, ya que ocho goroutines actualizan count sin lock",
+				"Siempre 1,000, ya que un canal sin buffer mantiene activo un solo emisor",
+				"Ninguno: entra en deadlock, ya que inc no tiene buffer para ocho emisores",
+				"Un valor por encima de 8,000, ya que los envíos bloqueados se repiten",
+				"Siempre 8,000, ya que solo la goroutine dueña lee y escribe count"
+			],
+			"explanations": [
+				"Incorrecto. Confunde enviar un pedido con cambiar los datos: las trabajadoras nunca tocan count, solo envían mensajes, así que no se pierde ninguna actualización.",
+				"Incorrecto. Confunde bloquear con excluir: los emisores se turnan en el canal, y todo envío de las ocho goroutines acaba siendo entregado.",
+				"Incorrecto. Confunde un bloqueo temporal con un deadlock: los emisores esperan su turno, pero la dueña siempre está recibiendo, así que todos progresan.",
+				"Incorrecto. Supone retransmisión, como en una red: un envío bloqueado simplemente espera y se entrega exactamente una vez.",
+				"Correcto. Hay 8 × 1,000 = 8,000 envíos del valor 1, sumados de a uno por la única goroutine que accede a count, lo que siempre da 8,000."
+			],
+			"concept": "Cuando una sola goroutine es dueña de un dato y las demás solo le envían mensajes, las actualizaciones se aplican de a una, en el orden en que llegan al canal. El dato nunca se lee y escribe simultáneamente, así que no hay carrera ni necesidad de lock. El canal cumple el papel de una cola de pedidos.",
+			"example": {
+				"kind": "code",
+				"language": "go",
+				"content": "inc := make(chan int)\ndone := make(chan int)\n\n// La dueña: la única goroutine que accede a count.\ngo func() {\n\tcount := 0\n\tfor n := range inc {\n\t\tcount += n\n\t}\n\tdone <- count\n}()\n\nvar wg sync.WaitGroup\nfor w := 0; w < 8; w++ {\n\twg.Add(1)\n\tgo func() {\n\t\tdefer wg.Done()\n\t\tfor i := 0; i < 1000; i++ {\n\t\t\tinc <- 1\n\t\t}\n\t}()\n}\n\nwg.Wait()\nclose(inc)\nfmt.Println(<-done) // 8000"
+			}
 		}
 	},
 	{
@@ -315,6 +445,24 @@
 				"Wrong. It confuses a plain send with a non-blocking send written with select and default: a plain send waits for a receiver, it never discards."
 			],
 			"concept": "On an unbuffered channel, a send completes only when another goroutine is already ready to receive, so the receiver must exist before the send. If the only goroutine of the program blocks, nobody else can unblock it. The Go runtime recognises the case where every goroutine is blocked and ends the program with a fatal deadlock error."
+		},
+		"es": {
+			"statement": "En un programa Go, la goroutine main crea un canal sin buffer, envía un valor por él y, recién en la línea siguiente, iniciaría la goroutine que recibe de ese canal. No existe ninguna otra goroutine. ¿Qué ocurre cuando se ejecuta el programa?",
+			"alternatives": [
+				"El valor espera en el canal y la goroutine receptora lo lee una vez iniciada",
+				"El programa se cuelga para siempre, sin ningún mensaje de error",
+				"El runtime aborta con el error \"all goroutines are asleep - deadlock!\"",
+				"El compilador rechaza el programa por un envío sin receptor activo",
+				"El envío retorna de inmediato y el valor se descarta por falta de receptor"
+			],
+			"explanations": [
+				"Incorrecto. Confunde un canal sin buffer con uno con buffer: sin capacidad, el envío no puede dejar el valor y pasar a la línea que crea el receptor.",
+				"Incorrecto. Supone que el runtime no nota el bloqueo: como la única goroutine existente está bloqueada y nada puede despertarla, el runtime de Go detecta la situación y termina.",
+				"Correcto. El envío bloquea a main antes de que se cree el receptor; con todas las goroutines dormidas, el runtime informa un deadlock y termina el programa.",
+				"Incorrecto. Confunde el análisis en tiempo de compilación con la detección en tiempo de ejecución: el compilador no verifica quién recibe de un canal, y el programa compila.",
+				"Incorrecto. Confunde un envío común con un envío no bloqueante escrito con select y default: un envío común espera un receptor, nunca descarta."
+			],
+			"concept": "En un canal sin buffer, un envío termina solo cuando otra goroutine ya está lista para recibir, así que el receptor debe existir antes del envío. Si la única goroutine del programa se bloquea, nadie más puede desbloquearla. El runtime de Go reconoce el caso en que todas las goroutines están bloqueadas y termina el programa con un error fatal de deadlock."
 		}
 	},
 	{
@@ -359,6 +507,24 @@
 				"Wrong. It gets the outcome right for the wrong reason: Vec<u8> does implement Send and can be sent; the problem is using it after the move."
 			],
 			"concept": "In Rust, sending a value through an mpsc channel moves its ownership to the receiver. The sending thread loses access, and the compiler rejects any later use. Two threads therefore never modify the same sent data, and the absence of data races is guaranteed at compile time, with no copy and no lock."
+		},
+		"es": {
+			"statement": "En Rust, un thread envía un Vec<u8> llamado data por un canal std::sync::mpsc, con tx.send(data), y en la línea siguiente llama a data.push(1). ¿Qué ocurre?",
+			"alternatives": [
+				"No compila: send movió el vector, así que el emisor ya no es su dueño",
+				"Compila: send hizo una copia profunda, y cada thread tiene un vector propio",
+				"Compila: el push queda bloqueado hasta que el thread receptor libere el vector",
+				"Compila, pero el push entra en pánico, ya que el vector está prestado",
+				"No compila: Vec<u8> no implementa Send y no puede cruzar un canal"
+			],
+			"explanations": [
+				"Correcto. send toma el valor por movimiento, así que la propiedad pasa al canal y luego al receptor; usar data después es un error de compilación por uso de un valor movido.",
+				"Incorrecto. Confunde el canal de Rust con el postMessage de los workers de JavaScript, que copia los datos por clonación estructurada: en Rust el envío transfiere la propiedad sin copiar el contenido.",
+				"Incorrecto. Confunde un canal con un mutex: no hay ningún lock alrededor del vector, solo un único dueño a la vez, verificado por el compilador.",
+				"Incorrecto. Confunde un movimiento con las comprobaciones de préstamo en tiempo de ejecución de RefCell: aquí el error aparece en tiempo de compilación, y el programa nunca se ejecuta.",
+				"Incorrecto. Acierta en el resultado por el motivo equivocado: Vec<u8> sí implementa Send y puede enviarse; el problema es usarlo después del movimiento."
+			],
+			"concept": "En Rust, enviar un valor por un canal mpsc mueve su propiedad al receptor. El thread emisor pierde el acceso, y el compilador rechaza cualquier uso posterior. Así, dos threads nunca modifican los mismos datos enviados, y la ausencia de data races se garantiza en tiempo de compilación, sin copia y sin lock."
 		}
 	}
 ]

@@ -51,6 +51,29 @@
 				"`100 Continue` authorises sending the body of a request and has nothing to do with switching protocols."
 			],
 			"concept": "A WebSocket connection is born as an HTTP/1.1 GET request with `Upgrade: websocket`. If the server accepts, it answers `101 Switching Protocols`, and the TCP connection is then used by the WebSocket protocol. The `ws://` scheme does this over plain TCP, and `wss://` does the same inside a TLS connection, like `http://` and `https://`."
+		},
+		"es": {
+			"statement": "Un navegador envía la solicitud de abajo. ¿Cómo responde un servidor que acepta la conexión WebSocket?",
+			"snippet": {
+				"kind": "code",
+				"language": "http",
+				"content": "GET /chat HTTP/1.1\nHost: api.example.test\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: AAECAwQFBgcICQoLDA0ODw==\nSec-WebSocket-Version: 13"
+			},
+			"alternatives": [
+				"Con estado 200 y `Content-Type: text/event-stream`, manteniendo el cuerpo abierto",
+				"Con estado 200 y un primer frame binario como cuerpo de la respuesta",
+				"Con estado 101 y el encabezado `Sec-WebSocket-Accept`, sin cuerpo",
+				"Con estado 426 y el encabezado `Upgrade: websocket`, confirmando el cambio",
+				"Con estado 100, tras lo cual el cliente repite la solicitud como POST"
+			],
+			"explanations": [
+				"Esa es una respuesta de server-sent events, que sigue siendo HTTP común y no cambia de protocolo.",
+				"Una respuesta 200 terminaría la solicitud como HTTP normal. Los frames empiezan solo después de confirmado el cambio de protocolo.",
+				"`101 Switching Protocols` confirma el cambio. Desde entonces, la misma conexión TCP deja de hablar HTTP y lleva frames WebSocket en ambas direcciones.",
+				"`426 Upgrade Required` es un rechazo: el servidor dice que solo atenderá si el cliente cambia de protocolo. No confirma nada.",
+				"`100 Continue` autoriza el envío del cuerpo de una solicitud y no tiene nada que ver con cambiar de protocolo."
+			],
+			"concept": "Una conexión WebSocket nace como una solicitud GET de HTTP/1.1 con `Upgrade: websocket`. Si el servidor acepta, responde `101 Switching Protocols`, y la conexión TCP pasa a usarla el protocolo WebSocket. El esquema `ws://` hace esto sobre TCP simple, y `wss://` hace lo mismo dentro de una conexión TLS, como `http://` y `https://`."
 		}
 	},
 	{
@@ -95,6 +118,24 @@
 				"The stream is indeed UTF-8 text, but the generic type is not enough: `EventSource` checks the exact type."
 			],
 			"concept": "Server-sent events (SSE) is an ordinary HTTP response that never ends: the server keeps the body open and writes events as text, one per block of lines. The `text/event-stream` type tells the browser to parse the body in that format and hand each event to the script through the `EventSource` API."
+		},
+		"es": {
+			"statement": "¿Qué `Content-Type` usa un servidor en la respuesta de un stream de server-sent events?",
+			"alternatives": [
+				"`text/event-stream`",
+				"`application/x-ndjson`",
+				"`multipart/x-mixed-replace`",
+				"`application/octet-stream`",
+				"`text/plain; charset=utf-8`"
+			],
+			"explanations": [
+				"Es el tipo que exige `EventSource`. Con otro tipo, el navegador termina la conexión y dispara un error.",
+				"JSON delimitado por líneas es un formato de streaming común con `fetch`, pero `EventSource` no lo reconoce.",
+				"Ese tipo reemplaza todo el documento en cada parte y lo usaban cámaras y los primeros experimentos de push. No es el formato de eventos.",
+				"Ese tipo significa bytes sin interpretar. El stream de eventos es texto UTF-8 con un formato de líneas definido.",
+				"El stream sí es texto UTF-8, pero el tipo genérico no basta: `EventSource` verifica el tipo exacto."
+			],
+			"concept": "Server-sent events (SSE) es una respuesta HTTP común que nunca termina: el servidor mantiene abierto el cuerpo y escribe eventos como texto, uno por bloque de líneas. El tipo `text/event-stream` le dice al navegador que interprete el cuerpo en ese formato y entregue cada evento al script a través de la API `EventSource`."
 		}
 	},
 	{
@@ -139,6 +180,24 @@
 				"It inverts SSE: the one that emits events is the server. And WebSocket is not one-way."
 			],
 			"concept": "SSE is one-way: the client makes a request and the server starts sending text events through the response. To talk to the server, the client makes other HTTP requests. WebSocket is full-duplex on a single connection, and its messages may be text (UTF-8) or binary."
+		},
+		"es": {
+			"statement": "¿Qué afirmación describe la dirección de los datos en server-sent events (SSE) y en WebSocket, una vez abierta la conexión?",
+			"alternatives": [
+				"Ambos llevan datos en ambas direcciones; SSE difiere solo en estar limitado a texto, nunca binario",
+				"SSE es bidireccional sobre HTTP; WebSocket lleva mensajes solo del cliente al servidor",
+				"Ambos son unidireccionales, partiendo del servidor; el cliente siempre responde mediante `fetch`",
+				"SSE lleva eventos solo del servidor al cliente; WebSocket lleva mensajes en ambos sentidos",
+				"SSE lleva eventos del cliente al servidor; WebSocket lleva mensajes del servidor al cliente"
+			],
+			"explanations": [
+				"La limitación a texto es real, pero SSE tampoco tiene camino de vuelta: la solicitud del cliente termina antes de que empiecen los eventos.",
+				"Invierte los dos. WebSocket es precisamente lo que permite a servidor y cliente enviar cuando quieran.",
+				"Cierto para SSE, pero no para WebSocket, en el que el cliente envía frames por la misma conexión.",
+				"SSE es el cuerpo de una respuesta HTTP, así que solo el servidor escribe. WebSocket es full-duplex: ambos lados envían mensajes de forma independiente.",
+				"Invierte SSE: quien emite eventos es el servidor. Y WebSocket no es unidireccional."
+			],
+			"concept": "SSE es unidireccional: el cliente hace una solicitud y el servidor empieza a enviar eventos de texto por la respuesta. Para hablar con el servidor, el cliente hace otras solicitudes HTTP. WebSocket es full-duplex en una sola conexión, y sus mensajes pueden ser texto (UTF-8) o binarios."
 		}
 	},
 	{
@@ -183,6 +242,24 @@
 				"The type goes in the opcode of each message, text or binary, with no prior negotiation."
 			],
 			"concept": "Besides data frames, WebSocket has three control frames. Ping and pong form a heartbeat: one side asks, the other answers. Close starts the orderly shutdown, with a code and a reason, and the other side answers with its own close before the TCP connection is closed."
+		},
+		"es": {
+			"statement": "¿Para qué sirven los frames de control ping y pong de WebSocket?",
+			"alternatives": [
+				"Para medir la ventana de recepción, así el emisor sabe cuántos bytes puede enviar",
+				"Para verificar que el otro lado sigue vivo y mantener abierta una conexión inactiva",
+				"Para abrir y cerrar la conexión, en lugar del handshake HTTP",
+				"Para confirmar cada frame de datos, para que los mensajes perdidos se reenvíen",
+				"Para negociar si los próximos mensajes serán texto o binarios"
+			],
+			"explanations": [
+				"WebSocket no tiene control de flujo propio. Lo que limita el envío es TCP, debajo.",
+				"Quien recibe un ping debe responder con un pong. El intercambio muestra que la conexión sigue funcionando y genera tráfico, lo que evita que los intermediarios la cierren por inactividad.",
+				"La apertura es el handshake HTTP con estado 101, y el cierre usa otro frame de control, close.",
+				"La entrega confiable ya la garantiza TCP. WebSocket no confirma ni reenvía mensajes.",
+				"El tipo va en el opcode de cada mensaje, texto o binario, sin negociación previa."
+			],
+			"concept": "Además de los frames de datos, WebSocket tiene tres frames de control. Ping y pong forman un heartbeat: un lado pregunta, el otro responde. Close inicia el cierre ordenado, con un código y un motivo, y el otro lado responde con su propio close antes de que se cierre la conexión TCP."
 		}
 	},
 	{
@@ -237,6 +314,29 @@
 				"Any page, from any origin, makes the browser generate a valid key. The origin appears in the `Origin` header, which the server has to check."
 			],
 			"concept": "The `Sec-WebSocket-Key` and `Sec-WebSocket-Accept` pair is a protocol check, not a security check. It ensures that both sides are really speaking WebSocket and that the response was generated for that request. It authenticates nobody and encrypts nothing: those jobs belong to TLS and to the application."
+		},
+		"es": {
+			"statement": "En el handshake de abajo, el servidor calculó `Sec-WebSocket-Accept` a partir del `Sec-WebSocket-Key` del cliente: SHA-1 de la clave concatenada con un GUID fijo y público, en Base64. ¿Qué le prueba al cliente un valor correcto?",
+			"snippet": {
+				"kind": "code",
+				"language": "http",
+				"content": "GET /chat HTTP/1.1\nHost: api.example.test\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: AAECAwQFBgcICQoLDA0ODw==\nSec-WebSocket-Version: 13\n\nHTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: Bz3qJYTGdOe8gUSpLosEdiLKDrk="
+			},
+			"alternatives": [
+				"Que el servidor entendió la solicitud WebSocket y no devolvió alguna respuesta HTTP sin relación",
+				"Que el servidor tiene la clave privada del dominio, ya que el valor es una firma de la clave del cliente",
+				"Que el cliente está autenticado, ya que la clave se deriva de su cookie de sesión",
+				"Que los frames irán cifrados, con el par de valores actuando como secreto de sesión",
+				"Que la solicitud vino de una página del propio origen del servidor, lo que hace innecesario verificar `Origin`"
+			],
+			"explanations": [
+				"Solo un servidor que implementa el protocolo sabe unir la clave al GUID y devolver el hash. Un servidor HTTP común o una cache que reproduce una respuesta antigua no produciría el valor correcto para esta clave.",
+				"No interviene ninguna clave privada: el cálculo usa solo datos públicos, y cualquiera puede repetirlo. Lo que prueba la identidad del servidor es TLS, en `wss://`.",
+				"La clave es un valor aleatorio de 16 bytes generado para cada conexión, sin relación con cookies ni con el usuario.",
+				"Ambos valores viajan en claro y no producen ningún secreto. La confidencialidad viene de TLS.",
+				"Cualquier página, de cualquier origen, hace que el navegador genere una clave válida. El origen aparece en el encabezado `Origin`, que el servidor tiene que verificar."
+			],
+			"concept": "El par `Sec-WebSocket-Key` y `Sec-WebSocket-Accept` es una verificación de protocolo, no de seguridad. Asegura que ambos lados realmente hablan WebSocket y que la respuesta se generó para esa solicitud. No autentica a nadie ni cifra nada: esas tareas pertenecen a TLS y a la aplicación."
 		}
 	},
 	{
@@ -291,6 +391,29 @@
 				"The key is a random value the browser generates for any page. It does not identify the origin."
 			],
 			"concept": "WebSocket sits outside the same-origin policy and CORS: any page can open a connection to any server, and the browser attaches whatever cookies the `SameSite` rules allow. The defence belongs to the server, which must validate the `Origin` header in the handshake. Without it, a foreign site uses the victim's session, a flaw known as cross-site WebSocket hijacking."
+		},
+		"es": {
+			"statement": "Una página en `https://attacker.example.com` ejecuta `new WebSocket('wss://bank.example.test/ws')` en el navegador de un usuario con una sesión abierta en el banco, cuya cookie se creó con `SameSite=None; Secure`. El navegador envía el handshake de abajo, y el servidor acepta cualquier handshake con una cookie válida. ¿Qué puede proteger al usuario en este escenario?",
+			"snippet": {
+				"kind": "code",
+				"language": "http",
+				"content": "GET /ws HTTP/1.1\nHost: bank.example.test\nUpgrade: websocket\nConnection: Upgrade\nOrigin: https://attacker.example.com\nCookie: session=abc123\nSec-WebSocket-Key: AAECAwQFBgcICQoLDA0ODw==\nSec-WebSocket-Version: 13"
+			},
+			"alternatives": [
+				"La política de mismo origen: el navegador descarta la respuesta 101 que viene de otro origen",
+				"CORS: el navegador envía un preflight y desiste sin `Access-Control-Allow-Origin`",
+				"TLS: con `wss://`, el certificado garantiza que página y servidor tienen el mismo origen",
+				"Solo el servidor: debe comparar `Origin` con una lista de orígenes permitidos",
+				"La clave del handshake: solo páginas del origen del banco pueden generar un `Sec-WebSocket-Key` válido"
+			],
+			"explanations": [
+				"La política de mismo origen no se aplica a las conexiones WebSocket. El navegador abre la conexión y entrega los mensajes al script del otro origen.",
+				"El handshake WebSocket no pasa por ningún preflight ni depende de encabezados CORS. Ese mecanismo se aplica a `fetch` y `XMLHttpRequest`.",
+				"El certificado prueba la identidad del servidor al cliente. No dice nada sobre qué página inició la conexión.",
+				"El navegador informa el origen de la página en el encabezado `Origin`, que un script no puede falsificar, y no hace nada más. Le corresponde al servidor rechazar orígenes que no reconoce, o la página ajena usa la sesión del usuario.",
+				"La clave es un valor aleatorio que el navegador genera para cualquier página. No identifica el origen."
+			],
+			"concept": "WebSocket queda fuera de la política de mismo origen y de CORS: cualquier página puede abrir una conexión a cualquier servidor, y el navegador adjunta las cookies que las reglas `SameSite` permitan. La defensa le corresponde al servidor, que debe validar el encabezado `Origin` en el handshake. Sin ello, un sitio ajeno usa la sesión de la víctima, una falla conocida como cross-site WebSocket hijacking."
 		}
 	},
 	{
@@ -345,6 +468,29 @@
 				"It confuses `id` with a waiting time. And `Retry-After` is an HTTP response header, unrelated to the `retry` field of the stream."
 			],
 			"concept": "Each SSE event is a block of `field: value` lines ended by a blank line. `data` is the content, `event` names the event, `id` marks the position in the stream and `retry` adjusts the reconnection time. When the connection drops, `EventSource` waits that long and repeats the request with `Last-Event-ID`, which lets the server resume without losing events."
+		},
+		"es": {
+			"statement": "Un `EventSource` recibió el fragmento de abajo de un stream `text/event-stream`, incluida la línea en blanco final, y justo después se cayó la red. ¿Qué hace el navegador a continuación?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "retry: 5000\nid: 41\nevent: price\ndata: 10\n\nid: 42\nevent: price\ndata: 11\n\n"
+			},
+			"alternatives": [
+				"Dispara `error` y queda cerrado hasta que el script cree un nuevo `EventSource`",
+				"Se reconecta de inmediato y envía el encabezado `Last-Event-ID: 5000`",
+				"Espera unos 5 s y se reconecta, enviando el encabezado `Last-Event-ID: 42`",
+				"Espera unos 5 s y se reconecta sin encabezado extra, y el servidor reenvía los eventos 41 y 42",
+				"Espera unos 42 s y se reconecta, enviando `Retry-After: 5000` al servidor"
+			],
+			"explanations": [
+				"El evento `error` se dispara, pero una caída de red no es definitiva: `EventSource` se reconecta solo. Se detiene solo si el script llama a `close()` o el servidor responde con un error HTTP.",
+				"Intercambia los campos: `retry` es el tiempo de espera en milisegundos, no un identificador de evento.",
+				"`retry: 5000` fija una espera de 5,000 ms antes de reconectar. El último `id` recibido, 42, vuelve al servidor en `Last-Event-ID`, para que pueda continuar desde el siguiente evento.",
+				"El navegador guarda el último `id` precisamente para informarlo al reconectar. Sin él, el servidor no sabría desde dónde continuar.",
+				"Confunde `id` con un tiempo de espera. Y `Retry-After` es un encabezado de respuesta HTTP, sin relación con el campo `retry` del stream."
+			],
+			"concept": "Cada evento SSE es un bloque de líneas `campo: valor` terminado por una línea en blanco. `data` es el contenido, `event` nombra el evento, `id` marca la posición en el stream y `retry` ajusta el tiempo de reconexión. Cuando la conexión se cae, `EventSource` espera ese tiempo y repite la solicitud con `Last-Event-ID`, lo que permite al servidor continuar sin perder eventos."
 		}
 	},
 	{
@@ -389,6 +535,24 @@
 				"The case is one-way, from server to client. SSE is an ordinary HTTP response, and `EventSource` already reconnects by itself and reports the last event received."
 			],
 			"concept": "The choice depends on the direction and the frequency of the data. Polling suits rare changes, and long polling holds the request until there is news, at one request per message. SSE is a continuous one-way stream with built-in reconnection. WebSocket pays off when both sides send often, as in chat or games."
+		},
+		"es": {
+			"statement": "Un dashboard muestra cotizaciones que el servidor actualiza varias veces por segundo. Tras cargar la página, el navegador solo lee: no se envía nada al servidor. El equipo quiere reconexión automática con el menor código de cliente posible, usando HTTP común. ¿Qué opción encaja mejor?",
+			"alternatives": [
+				"Short polling, con un `fetch` cada 30 segundos",
+				"Long polling, con una nueva solicitud por cada actualización recibida",
+				"WebSocket, con un bucle de reconexión escrito a mano",
+				"HTTP/2 server push, con un recurso JSON por cotización",
+				"Server-sent events, con la API `EventSource`"
+			],
+			"explanations": [
+				"Con un intervalo de 30 s el dashboard perdería casi todas las actualizaciones, y acortar el intervalo multiplica solicitudes que casi siempre no traen nada nuevo.",
+				"Funciona, pero con varias actualizaciones por segundo cada una costaría una solicitud completa, con todos sus encabezados.",
+				"Entrega las actualizaciones, pero trae un canal de envío que el caso no usa, un cambio de protocolo y la reconexión a cargo de la aplicación, lo opuesto a lo pedido.",
+				"El server push llena la cache del navegador y no entrega eventos al script. Además, los navegadores dejaron de aceptarlo.",
+				"El caso es unidireccional, del servidor al cliente. SSE es una respuesta HTTP común, y `EventSource` ya se reconecta solo e informa el último evento recibido."
+			],
+			"concept": "La elección depende de la dirección y la frecuencia de los datos. El polling sirve para cambios raros, y el long polling retiene la solicitud hasta que hay novedades, a una solicitud por mensaje. SSE es un stream unidireccional continuo con reconexión incorporada. WebSocket compensa cuando ambos lados envían a menudo, como en chat o juegos."
 		}
 	},
 	{
@@ -433,6 +597,24 @@
 				"XOR reduces the size of nothing. Compression is a separate extension, `permessage-deflate`."
 			],
 			"concept": "Masking protects the infrastructure, not the data. The risk was cache poisoning in proxies that interpret the traffic of a WebSocket connection as HTTP. Since the code running in the browser comes from any site, it is the client side that must lose control over the bytes sent. The server is not masked because its content is not chosen by a hostile script."
+		},
+		"es": {
+			"statement": "En WebSocket, cada frame enviado por el cliente tiene su payload combinado con XOR con una clave aleatoria de 32 bits, y esa clave viaja en claro en el mismo frame. Los frames del servidor no se enmascaran. ¿Por qué el protocolo exige esto al cliente?",
+			"alternatives": [
+				"Para mantener el payload confidencial frente a intermediarios cuando la conexión usa `ws://` y no `wss://`",
+				"Para que el servidor autentique al cliente, ya que solo el cliente real conoce la clave de enmascaramiento",
+				"Para que un script no pueda elegir los bytes en el cable y engañar a un proxy con una solicitud HTTP falsificada",
+				"Para detectar corrupción en el camino, con la clave funcionando como checksum del payload",
+				"Para comprimir payloads de texto repetitivos antes de que el mensaje se divida en fragmentos"
+			],
+			"explanations": [
+				"La clave va en el propio frame, así que cualquier intermediario deshace la máscara. La confidencialidad requiere TLS.",
+				"La clave es aleatoria, nueva en cada frame y visible para todos. No prueba la identidad de nadie.",
+				"Sin enmascaramiento, una página maliciosa enviaría un payload idéntico a una solicitud HTTP, y un proxy que no entiende WebSocket podría guardar en cache la respuesta elegida por el atacante. Con una clave impredecible, el script no controla los bytes transmitidos.",
+				"XOR con una clave no detecta ninguna alteración. La integridad en el camino queda a cargo de TCP y, en `wss://`, de TLS.",
+				"XOR no reduce el tamaño de nada. La compresión es una extensión aparte, `permessage-deflate`."
+			],
+			"concept": "El enmascaramiento protege la infraestructura, no los datos. El riesgo era el envenenamiento de cache en proxies que interpretan el tráfico de una conexión WebSocket como HTTP. Como el código que corre en el navegador viene de cualquier sitio, es el lado del cliente el que debe perder el control sobre los bytes enviados. El servidor no se enmascara porque su contenido no lo elige un script hostil."
 		}
 	},
 	{
@@ -487,6 +669,29 @@
 				"Events are delivered one by one, as soon as the blank line of each block arrives. Waiting for the end of the response would defeat the purpose of the stream."
 			],
 			"concept": "The SSE stream is parsed line by line, and an event is dispatched only when the blank line that closes its block arrives. Several `data` lines in the same block become a single value with line breaks. The `event` field picks the event name: without it, the event is `message` and reaches `onmessage`, and with it the event reaches only the listeners of that name. Lines starting with a colon are comments."
+		},
+		"es": {
+			"statement": "Una conexión `EventSource` está abierta, y hasta ahora el servidor envió exactamente el fragmento de abajo. Después de `data: done` llegó un solo salto de línea y nada más. La página registró un handler `onmessage` y un `addEventListener('update', ...)`. ¿Qué recibieron los handlers hasta este momento?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": ": keep-alive\n\nevent: update\ndata: first\ndata: second\n\ndata: done\n"
+			},
+			"alternatives": [
+				"Un evento `update` con las dos líneas unidas por un salto de línea; `done` aún no se entregó",
+				"Dos eventos `update`, uno por cada línea `data`, y un evento `message` con `done`",
+				"Un evento `message` con `keep-alive`, un evento `update` y un evento `message` con `done`",
+				"Un evento `update` con `firstsecond`, sin separador, y un evento `message` con `done`",
+				"Nada aún: el navegador entrega los eventos solo cuando el servidor termina la respuesta"
+			],
+			"explanations": [
+				"La línea que empieza con dos puntos es un comentario. Las dos líneas `data` del mismo bloque forman un solo evento, con el valor `first`, un salto de línea y `second`, entregado al listener de `update`. El bloque `done` aún no recibió la línea en blanco que lo termina.",
+				"Las líneas `data` consecutivas no son eventos separados: el evento termina solo en la línea en blanco. Y `done` sigue pendiente.",
+				"Una línea que empieza con dos puntos se ignora, y existe precisamente para mantener activa la conexión sin producir un evento. Y `done` sigue pendiente.",
+				"Las líneas `data` se unen con un salto de línea entre ellas, no pegadas. Y `done` sigue pendiente.",
+				"Los eventos se entregan uno por uno, en cuanto llega la línea en blanco de cada bloque. Esperar el fin de la respuesta anularía el propósito del stream."
+			],
+			"concept": "El stream SSE se interpreta línea por línea, y un evento se despacha solo cuando llega la línea en blanco que cierra su bloque. Varias líneas `data` en el mismo bloque se vuelven un solo valor con saltos de línea. El campo `event` elige el nombre del evento: sin él, el evento es `message` y llega a `onmessage`, y con él llega solo a los listeners de ese nombre. Las líneas que empiezan con dos puntos son comentarios."
 		}
 	}
 ]
