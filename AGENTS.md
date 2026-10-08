@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Project name: **Computer Science Fundamentals** (the GitHub repository is still `AlexGalhardo/Software-Engineer-Fundamentals`).
+Project name: **Computer Science Fundamentals** (the GitHub repository is still `AlexGalhardo/computer-science-fundamentals`).
 
 Onboarding for AI coding agents working in this repository. `CLAUDE.md` imports this file, so keep the two in sync by editing only this one.
 

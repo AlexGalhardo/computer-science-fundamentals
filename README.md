@@ -8,7 +8,7 @@ quiz covering 32 areas, and small runnable mini-projects that show each concept
 working, with tests, benchmarks and step-by-step explanations written for
 beginners.
 
-[![CI](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/actions/workflows/ci.yml)
+[![CI](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://www.conventionalcommits.org/en/v1.0.0/)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-blue.svg)](https://semver.org/)

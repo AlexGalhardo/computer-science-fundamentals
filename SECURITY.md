@@ -24,7 +24,7 @@ k6 scripts and similar tools target **only local services** (`localhost` or `doc
 
 ### Reporting a vulnerability
 
-Flaws inside the labs are intentional and documented. If you find an **unintended** problem (for example, a lab that can reach the external network, a leaked secret, or a vulnerable dependency in non-lab code), please report it privately through [GitHub Security Advisories](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/security/advisories/new) instead of opening a public issue.
+Flaws inside the labs are intentional and documented. If you find an **unintended** problem (for example, a lab that can reach the external network, a leaked secret, or a vulnerable dependency in non-lab code), please report it privately through [GitHub Security Advisories](https://github.com/AlexGalhardo/computer-science-fundamentals/security/advisories/new) instead of opening a public issue.
 
 ---
 
@@ -50,4 +50,4 @@ Scripts de k6 e ferramentas similares têm como alvo **somente serviços locais*
 
 ### Como reportar uma vulnerabilidade
 
-Falhas dentro dos labs são intencionais e documentadas. Se você encontrar um problema **não intencional** (por exemplo, um lab que consegue acessar a rede externa, um segredo vazado ou uma dependência vulnerável em código fora dos labs), reporte de forma privada pelo [GitHub Security Advisories](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/security/advisories/new) em vez de abrir uma issue pública.
+Falhas dentro dos labs são intencionais e documentadas. Se você encontrar um problema **não intencional** (por exemplo, um lab que consegue acessar a rede externa, um segredo vazado ou uma dependência vulnerável em código fora dos labs), reporte de forma privada pelo [GitHub Security Advisories](https://github.com/AlexGalhardo/computer-science-fundamentals/security/advisories/new) em vez de abrir uma issue pública.

@@ -535,9 +535,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent onboarding: `CLAUDE.md`, `AGENTS.md`, `.claude/agents.md` and `.claude/rules/`.
 - `.gitattributes` enforcing LF line endings, CRLF only for Windows scripts.
 
-[Unreleased]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.5.0...HEAD
-[0.5.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/releases/tag/v0.1.0
+[Unreleased]: https://github.com/AlexGalhardo/computer-science-fundamentals/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/AlexGalhardo/computer-science-fundamentals/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/AlexGalhardo/computer-science-fundamentals/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/AlexGalhardo/computer-science-fundamentals/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/AlexGalhardo/computer-science-fundamentals/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/AlexGalhardo/computer-science-fundamentals/releases/tag/v0.1.0

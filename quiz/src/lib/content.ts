@@ -18,7 +18,7 @@ import {
 	validateCoverage,
 } from "../content/schema";
 
-const REPOSITORY_URL = "https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/tree/main";
+const REPOSITORY_URL = "https://github.com/AlexGalhardo/computer-science-fundamentals/tree/main";
 
 // EN: `next build` runs inside `quiz/`. Tests point QUIZ_CONTENT_DIR at a small fixture, so
 //     the end-to-end tests do not depend on the real questions.
