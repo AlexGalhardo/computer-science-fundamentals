@@ -19,6 +19,10 @@ export class Money {
 		return new Money(this.amount * multiplier, this.currency);
 	}
 
+	plus(addend: Money): Money {
+		return new Money(this.amount + addend.amount, this.currency);
+	}
+
 	equals(other: Money): boolean {
 		return this.amount === other.amount && this.currency === other.currency;
 	}
