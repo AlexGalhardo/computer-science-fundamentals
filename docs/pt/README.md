@@ -17,7 +17,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-2470 de 3384 questões escritas, 65 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+2634 de 3384 questões escritas, 73 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -52,4 +52,4 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Blockchain | Teoria e prática | 0/100 |  | didactic-blockchain (planejado) |
 | Integração contínua | Teoria e prática | 0/100 |  | ci-pipeline (planejado) |
 | Engenharia de software | Teoria | 0/150 |  | nenhum |
-| Inteligência artificial e LLMs | Teoria e prática | 0/164 |  | bpe-tokenizer (planejado), neural-network-from-scratch (planejado), embeddings-vector-search (planejado), tiny-language-model (planejado), diffusion-toy (planejado), pytorch-basics (planejado), tensorflow-keras-basics (planejado), computer-vision-cnn (planejado) |
+| Inteligência artificial e LLMs | Teoria e prática | 164/164 | feita | [bpe-tokenizer](artificial-intelligence/bpe-tokenizer.md), [neural-network-from-scratch](artificial-intelligence/neural-network-from-scratch.md), [embeddings-vector-search](artificial-intelligence/embeddings-vector-search.md), [tiny-language-model](artificial-intelligence/tiny-language-model.md), [diffusion-toy](artificial-intelligence/diffusion-toy.md), [pytorch-basics](artificial-intelligence/pytorch-basics.md), [tensorflow-keras-basics](artificial-intelligence/tensorflow-keras-basics.md), [computer-vision-cnn](artificial-intelligence/computer-vision-cnn.md) |
