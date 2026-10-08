@@ -13,3 +13,19 @@ export class Dollar {
 		return this.amount === other.amount;
 	}
 }
+
+export class Franc {
+	readonly amount: number;
+
+	constructor(amount: number) {
+		this.amount = amount;
+	}
+
+	times(multiplier: number): Franc {
+		return new Franc(this.amount * multiplier);
+	}
+
+	equals(other: Franc): boolean {
+		return this.amount === other.amount;
+	}
+}
