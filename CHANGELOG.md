@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.92.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/rate-limiting/rate-limiter` (TypeScript and Go): fixed window, sliding log, sliding counter, token bucket and leaky bucket with an injected clock and shared table-driven cases, a distributed version on Redis with an atomic script, and a burst experiment with a generated chart. The rate limiting area is complete.
+
+## [0.91.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: rate limiting, 100 questions in Portuguese and English, blind-reviewed in both languages with no disagreement and 6 reviewer notes resolved (`quiz/content/rate-limiting/review.md`).
+
 ## [0.90.0] - 2026-10-07
 
 ### Added

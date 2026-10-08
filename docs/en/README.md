@@ -16,7 +16,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-2170 of 3384 questions written, 60 of 86 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+2270 of 3384 questions written, 61 of 86 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
@@ -45,7 +45,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Load balancing | Theory and practice | 0/100 |  | nginx-vs-caddy (planned), l7-load-balancer (planned) |
 | Performance | Theory and practice | 0/100 |  | bun-vs-node (planned), k6-scenarios (planned), cache-friendly-matrix (planned) |
 | Cache | Theory and practice | 0/100 |  | cache-strategies (planned) |
-| Rate limiting | Theory and practice | 0/100 |  | rate-limiter (planned) |
+| Rate limiting | Theory and practice | 100/100 | done | [rate-limiter](rate-limiting/rate-limiter.md) |
 | File systems | Theory and practice | 0/100 |  | file-organisation (planned), external-sorting (planned) |
 | Observability | Theory and practice | 0/100 |  | three-signals (planned), structured-logs (planned), slo-alert (planned), flame-graph (planned) |
 | Blockchain | Theory and practice | 0/100 |  | didactic-blockchain (planned) |

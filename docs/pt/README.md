@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-2170 de 3384 questões escritas, 60 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+2270 de 3384 questões escritas, 61 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -45,7 +45,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Balanceamento de carga | Teoria e prática | 0/100 |  | nginx-vs-caddy (planejado), l7-load-balancer (planejado) |
 | Performance | Teoria e prática | 0/100 |  | bun-vs-node (planejado), k6-scenarios (planejado), cache-friendly-matrix (planejado) |
 | Cache | Teoria e prática | 0/100 |  | cache-strategies (planejado) |
-| Limitação de taxa | Teoria e prática | 0/100 |  | rate-limiter (planejado) |
+| Limitação de taxa | Teoria e prática | 100/100 | feita | [rate-limiter](rate-limiting/rate-limiter.md) |
 | Sistemas de arquivos | Teoria e prática | 0/100 |  | file-organisation (planejado), external-sorting (planejado) |
 | Observabilidade | Teoria e prática | 0/100 |  | three-signals (planejado), structured-logs (planejado), slo-alert (planejado), flame-graph (planejado) |
 | Blockchain | Teoria e prática | 0/100 |  | didactic-blockchain (planejado) |

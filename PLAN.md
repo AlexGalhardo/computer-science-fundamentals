@@ -893,10 +893,10 @@ Sources: Tanenbaum Networks (leaky and token bucket), Redis documentation.
 | HTTP 429, headers and client backoff | 12 |
 | Quotas, throttling and load shedding | 14 |
 
-- [ ] QC-RL.1 Coverage map committed
-- [ ] QC-RL.2 100 questions written (PT and EN)
-- [ ] QC-RL.3 Validation passing
-- [ ] QC-RL.4 Blind review resolved
+- [x] QC-RL.1 Coverage map committed
+- [x] QC-RL.2 100 questions written (PT and EN)
+- [x] QC-RL.3 Validation passing
+- [x] QC-RL.4 Blind review resolved
 
 #### QC-FS File systems
 
@@ -1917,13 +1917,13 @@ Teaches: how caching patterns behave and how they fail. Languages: TS.
 
 Teaches: how each algorithm treats bursts. Languages: TS, Go.
 
-- [ ] **MP-RL-1.1** Fixed window, sliding window, token bucket and leaky bucket in memory
+- [x] **MP-RL-1.1** Fixed window, sliding window, token bucket and leaky bucket in memory
 	- **Accept:** each passes a table-driven test of allowed and rejected requests over time.
-- [ ] **MP-RL-1.2** Distributed version on Redis with an atomic script
+- [x] **MP-RL-1.2** Distributed version on Redis with an atomic script
 	- **Accept:** two instances together never allow more than the limit under concurrent load.
-- [ ] **MP-RL-1.3** Burst experiment
+- [x] **MP-RL-1.3** Burst experiment
 	- **Accept:** chart of accepted requests over time for the four algorithms with the same traffic.
-- [ ] **MP-RL-1.4** Definition of done for mini-projects met.
+- [x] **MP-RL-1.4** Definition of done for mini-projects met.
 
 #### MP-FS-1 File organisation and indexes
 
