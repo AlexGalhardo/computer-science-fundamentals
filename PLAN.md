@@ -643,10 +643,10 @@ Sources: Gabriel Torres, Eletrônica (2nd edition), 34 chapters, 5 questions per
 | Integrated circuits (30) | 5 |
 | Power supplies, voltage multipliers, filters, waveform generators (31 to 34) | 20 |
 
-- [ ] QC-ELEC.1 Coverage map committed
-- [ ] QC-ELEC.2 170 questions written (PT and EN)
-- [ ] QC-ELEC.3 Validation passing
-- [ ] QC-ELEC.4 Blind review resolved
+- [x] QC-ELEC.1 Coverage map committed
+- [x] QC-ELEC.2 170 questions written (PT and EN)
+- [x] QC-ELEC.3 Validation passing
+- [x] QC-ELEC.4 Blind review resolved
 
 ### Wave 4
 

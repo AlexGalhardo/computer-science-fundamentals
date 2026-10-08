@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.69.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: electronics, a theory-only area, 170 questions in Portuguese and English following the 34 chapters of the source book, blind-reviewed with 170 of 170 agreement and 3 reviewer notes resolved (`quiz/content/electronics/review.md`).
+
 ## [0.68.0] - 2026-10-07
 
 ### Added
