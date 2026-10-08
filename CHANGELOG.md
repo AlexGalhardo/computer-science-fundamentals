@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.114.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/messaging/pubsub-backpressure` (TypeScript and Elixir): a work queue against fan-out on RabbitMQ, a producer faster than its consumer with and without backpressure, and a demand-driven GenStage pipeline. The messaging area is complete.
+
+## [0.113.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/messaging/idempotency-dlq` (TypeScript and Go): a consumer that fails randomly and applies an effect more than once, an idempotency key store that yields exactly 1,000 effects for 1,000 messages delivered at least twice, and retry with backoff into a dead-letter queue.
+
+## [0.112.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/messaging/queue-comparison` (TypeScript): the same task on BullMQ, RabbitMQ, Kafka and SQS (LocalStack) behind one interface, 1,000 messages through each adapter, ordering and redelivery experiments with their observed results, and a throughput table.
+
+## [0.111.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: messaging, 100 questions in Portuguese and English, blind-reviewed with no disagreement and the reviewer notes resolved (`quiz/content/messaging/review.md`).
+
 ## [0.110.0] - 2026-10-07
 
 ### Added

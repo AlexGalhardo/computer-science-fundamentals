@@ -809,10 +809,10 @@ Sources: The Optimal RabbitMQ Guide, legacy project message-queues-pubsub, Kafka
 | SQS and SNS | 6 |
 | Outbox, saga and event sourcing | 4 |
 
-- [ ] QC-MSG.1 Coverage map committed
-- [ ] QC-MSG.2 100 questions written (PT and EN)
-- [ ] QC-MSG.3 Validation passing
-- [ ] QC-MSG.4 Blind review resolved
+- [x] QC-MSG.1 Coverage map committed
+- [x] QC-MSG.2 100 questions written (PT and EN)
+- [x] QC-MSG.3 Validation passing
+- [x] QC-MSG.4 Blind review resolved
 
 #### QC-LB Load balancing
 
@@ -1131,21 +1131,22 @@ Teaches: how source text becomes tokens and then a tree. First step of the compi
 
 Teaches: what changes when the same task runs on BullMQ, RabbitMQ, Kafka and SQS. Rebuilds the legacy `message-queues-pubsub` project.
 
-- [ ] **MP-MSG-1.1** Common task and interface: an "order placed" message that triggers a simulated e-mail, with one producer and one consumer interface.
+- [x] **MP-MSG-1.1** Common task and interface: an "order placed" message that triggers a simulated e-mail, with one producer and one consumer interface.
 	- **Accept:** the four adapters implement the same TypeScript interface, checked by the compiler.
-- [ ] **MP-MSG-1.2** Adapters
-	- [ ] MP-MSG-1.2.a BullMQ on Redis.
-	- [ ] MP-MSG-1.2.b RabbitMQ.
-	- [ ] MP-MSG-1.2.c Kafka.
-	- [ ] MP-MSG-1.2.d SQS on LocalStack.
+- [x] **MP-MSG-1.2** Adapters
+	- [x] MP-MSG-1.2.a BullMQ on Redis.
+	- [x] MP-MSG-1.2.b RabbitMQ.
+	- [x] MP-MSG-1.2.c Kafka.
+	- [x] MP-MSG-1.2.d SQS on LocalStack.
 	- **Accept:** an integration test per adapter sends 1,000 messages and the consumer receives 1,000.
-- [ ] **MP-MSG-1.3** Behaviour experiments
-	- [ ] MP-MSG-1.3.a Ordering: are messages received in the order sent?
-	- [ ] MP-MSG-1.3.b Redelivery: consumer crashes before acknowledging.
+	- Note (2026-10-08): SQS runs on LocalStack 4.14.0, not on the newest tag, which refuses to start without a licence token. The Kafka ordering test first failed on the main session: a retried produce request wrote duplicate records. It was fixed at the root with an idempotent producer and by waiting for the topic to be ready, then passed 10 runs in a row.
+- [x] **MP-MSG-1.3** Behaviour experiments
+	- [x] MP-MSG-1.3.a Ordering: are messages received in the order sent?
+	- [x] MP-MSG-1.3.b Redelivery: consumer crashes before acknowledging.
 	- **Accept:** a table in the README states, per broker, the observed result of each experiment, produced by a test.
-- [ ] **MP-MSG-1.4** Throughput benchmark, all brokers local in docker-compose.
+- [x] **MP-MSG-1.4** Throughput benchmark, all brokers local in docker-compose.
 	- **Accept:** table with messages per second per broker, with the machine and versions recorded.
-- [ ] **MP-MSG-1.5** Definition of done for mini-projects met.
+- [x] **MP-MSG-1.5** Definition of done for mini-projects met.
 
 ### Remaining mini-projects, by area
 
@@ -1823,25 +1824,26 @@ Teaches: what is inside an HTTP request and response. Languages: Go.
 
 Teaches: how to survive duplicated and poisoned messages. Languages: TS, Go.
 
-- [ ] **MP-MSG-2.1** Consumer that fails randomly, with redelivery
+- [x] **MP-MSG-2.1** Consumer that fails randomly, with redelivery
 	- **Accept:** without protection, the side effect is applied more than once in the test.
-- [ ] **MP-MSG-2.2** Idempotency key store
+- [x] **MP-MSG-2.2** Idempotency key store
 	- **Accept:** with the store, 1,000 messages delivered at least twice produce exactly 1,000 effects.
-- [ ] **MP-MSG-2.3** Retry with backoff and dead-letter queue
+- [x] **MP-MSG-2.3** Retry with backoff and dead-letter queue
 	- **Accept:** a poisoned message lands in the dead-letter queue after the configured attempts.
-- [ ] **MP-MSG-2.4** Definition of done for mini-projects met.
+- [x] **MP-MSG-2.4** Definition of done for mini-projects met.
 
 #### MP-MSG-3 Queue, pub/sub and backpressure
 
 Teaches: the difference between competing consumers and broadcast, and what happens when producers are faster. Languages: TS, Elixir.
 
-- [ ] **MP-MSG-3.1** Work queue against fan-out on RabbitMQ
+- [x] **MP-MSG-3.1** Work queue against fan-out on RabbitMQ
 	- **Accept:** a queue delivers each message once, and a fan-out delivers it to every subscriber, asserted in tests.
-- [ ] **MP-MSG-3.2** Producer faster than consumer, without and with backpressure
+- [x] **MP-MSG-3.2** Producer faster than consumer, without and with backpressure
 	- **Accept:** memory grows without bound in the first case and stays flat in the second.
-- [ ] **MP-MSG-3.3** GenStage pipeline in Elixir
+	- Note (2026-10-08): "without bound" is shown as linear growth that does not slow down (about 45 MiB per second over a 2 second run), not by exhausting the memory of a shared machine.
+- [x] **MP-MSG-3.3** GenStage pipeline in Elixir
 	- **Accept:** demand-driven flow keeps the buffer under the configured size.
-- [ ] **MP-MSG-3.4** Definition of done for mini-projects met.
+- [x] **MP-MSG-3.4** Definition of done for mini-projects met.
 
 #### MP-LB-1 NGINX against Caddy
 
