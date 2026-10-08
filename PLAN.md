@@ -1,6 +1,6 @@
 # PLAN
 
-Main roadmap of the repository: 31 areas, a quiz covering all of them and 78 runnable mini-projects.
+Main roadmap of the repository: 32 areas, a quiz covering all of them and 83 runnable mini-projects.
 
 The decisions behind this plan are in [docs/en/decisions.md](docs/en/decisions.md), the quiz design in [docs/en/quiz.md](docs/en/quiz.md), the backlog in [docs/en/mini-project-catalog.md](docs/en/mini-project-catalog.md) and the brainstorming record in [docs/en/brainstorming.md](docs/en/brainstorming.md).
 
@@ -17,7 +17,7 @@ The decisions behind this plan are in [docs/en/decisions.md](docs/en/decisions.m
 Every area gets a quiz. What else it gets depends on the kind of content:
 
 - **Theory only** (Electronics, Software engineering): no mini-project. The quiz is the whole deliverable, so it is larger and follows the source book chapter by chapter, covering every aspect of the content.
-- **Theory and practice** (the other 29 areas): runnable practical examples (Docker, shell scripts, CLI or a simple web page) **and** the quiz. The two complement each other: the quiz explains the concept and links to the mini-project that shows it running, and the mini-project README links back to the quiz topics it demonstrates.
+- **Theory and practice** (the other 30 areas): runnable practical examples (Docker, shell scripts, CLI or a simple web page) **and** the quiz. The two complement each other: the quiz explains the concept and links to the mini-project that shows it running, and the mini-project README links back to the quiz topics it demonstrates.
 
 ## How to read this plan
 
@@ -57,7 +57,7 @@ A quiz area is done when all of these hold:
 
 ## Area index
 
-31 areas. "Quiz wave" is the wave in which the area gets its questions.
+32 areas. "Quiz wave" is the wave in which the area gets its questions.
 
 | Code | Area | Kind | Quiz wave | Questions | Mini-projects |
 | --- | --- | --- | --- | --- | --- |
@@ -92,8 +92,9 @@ A quiz area is done when all of these hold:
 | CHAIN | Blockchain | Theory and practice | 6 | 100 | 1 |
 | CI | Continuous integration | Theory and practice | 6 | 100 | 1 |
 | SE | Software engineering | Theory only | 6 | 150 | 0 |
+| AI | Artificial intelligence and LLMs | Theory and practice | 7 | 130 | 5 |
 
-Totals: **3220 questions** and **78 mini-projects**.
+Totals: **3350 questions** and **83 mini-projects**.
 
 ---
 
@@ -1009,6 +1010,35 @@ Sources: Sommerville (9th edition), Brooks, Clean Code, Code Simplicity, The Lea
 - [ ] QC-SE.2 150 questions written (PT and EN)
 - [ ] QC-SE.3 Validation passing
 - [ ] QC-SE.4 Blind review resolved
+
+### Wave 7
+
+Added by the owner on 2026-10-07.
+
+#### QC-AI Artificial intelligence and LLMs
+
+Sources: found by a web search of primary and well-known material (papers such as "Attention Is All You Need" and "Denoising Diffusion Probabilistic Models", the GPT and BERT papers, university courses such as Stanford CS229, CS231n and CS224n, the Deep Learning book by Goodfellow, Bengio and Courville, official documentation, and widely used tutorials). The list actually used is recorded in `quiz/content/artificial-intelligence/coverage.json` and in `REFERENCES.md`.
+
+| Topic | Questions |
+| --- | --- |
+| What AI, machine learning and deep learning are, and the kinds of learning | 8 |
+| Probability and statistics foundations: distributions, expectation, Bayes, likelihood | 12 |
+| Linear algebra for machine learning: vectors, matrices, dot product, cosine similarity | 10 |
+| Supervised learning: regression, classification, loss, overfitting, train and test sets | 10 |
+| Neural networks: neurons, activation functions, layers | 10 |
+| Training: gradient descent, backpropagation, optimisers, regularisation | 12 |
+| Tokens and tokenisation: BPE, vocabulary, context window | 10 |
+| Embeddings and vector search | 10 |
+| Attention and the transformer architecture | 12 |
+| Language models: next-token prediction, sampling, pre-training and fine-tuning | 12 |
+| Using LLMs: prompting, context, retrieval, tools and agents, hallucination, evaluation | 8 |
+| Image generation: convolution, autoencoders, GANs, diffusion | 10 |
+| Limits, bias, safety and cost: parameters, compute, quantisation | 6 |
+
+- [ ] QC-AI.1 Coverage map committed
+- [ ] QC-AI.2 130 questions written (PT and EN)
+- [ ] QC-AI.3 Validation passing
+- [ ] QC-AI.4 Blind review resolved
 
 ---
 
@@ -1978,6 +2008,66 @@ Teaches: what the pipeline of this repository does and why. Languages: YAML.
 	- **Accept:** one branch fails each quality gate, with links to the failed runs.
 - [ ] **MP-CI-1.3** Definition of done for mini-projects met.
 
+#### MP-AI-1 BPE tokenizer
+
+Teaches: how text becomes tokens, and why a model counts tokens and not words. Languages: TS, Python.
+
+- [ ] **MP-AI-1.1** Byte-pair encoding trained on a small corpus written for the project
+	- **Accept:** encode then decode returns the original text for ASCII, accented and emoji input.
+- [ ] **MP-AI-1.2** Vocabulary size against number of tokens
+	- **Accept:** a table shows the token count of the same text falling as the number of merges grows, identical in both languages.
+- [ ] **MP-AI-1.3** CLI that shows the tokens of a sentence, with ids and boundaries
+	- **Accept:** one command prints the tokens of a sentence, and the README shows the output.
+- [ ] **MP-AI-1.4** Definition of done for mini-projects met.
+
+#### MP-AI-2 Neural network from scratch
+
+Teaches: what a neuron computes and how backpropagation finds the gradients. Languages: Python.
+
+- [ ] **MP-AI-2.1** Scalar automatic differentiation: values, operations and the backward pass
+	- **Accept:** every analytic gradient matches a numerical gradient within a tolerance, in a test.
+- [ ] **MP-AI-2.2** Multi-layer perceptron trained with gradient descent
+	- **Accept:** with a fixed seed it learns XOR exactly and reaches at least 95% accuracy on a generated two-class dataset.
+- [ ] **MP-AI-2.3** Loss curve and decision boundary
+	- **Accept:** the demo writes the loss per epoch and a rendering of the decision boundary, committed in `results/`.
+- [ ] **MP-AI-2.4** Definition of done for mini-projects met.
+
+#### MP-AI-3 Embeddings and vector search
+
+Teaches: how meaning becomes a vector and how similar vectors are found. Languages: TS, Python.
+
+- [ ] **MP-AI-3.1** Word vectors built from co-occurrence counts on a corpus written for the project
+	- **Accept:** for a list of test words, the nearest neighbours by cosine similarity fall in the expected group.
+- [ ] **MP-AI-3.2** Brute-force search and a simple index
+	- **Accept:** the index returns the same top result as brute force in at least 95% of queries, with the number of comparisons tabled.
+- [ ] **MP-AI-3.3** Retrieval demo: the question picks the most relevant passages
+	- **Accept:** one command prints the passages retrieved for a question, shown in the README.
+- [ ] **MP-AI-3.4** Definition of done for mini-projects met.
+
+#### MP-AI-4 Tiny language model
+
+Teaches: how a language model predicts the next token, from counting to self-attention. Languages: Python.
+
+- [ ] **MP-AI-4.1** Bigram model by counting, with sampling
+	- **Accept:** the probabilities of each row sum to 1 and sampling is reproducible with a fixed seed.
+- [ ] **MP-AI-4.2** Small transformer with self-attention written from scratch, trained on CPU
+	- **Accept:** on held-out text its loss is lower than the loss of the bigram model, in a test with a fixed seed.
+- [ ] **MP-AI-4.3** Sampling controls: temperature, top-k and top-p
+	- **Accept:** a table shows that a lower temperature gives less varied output, measured by the entropy of the samples.
+- [ ] **MP-AI-4.4** Definition of done for mini-projects met.
+
+#### MP-AI-5 Diffusion toy
+
+Teaches: how an image model learns to remove noise, on two-dimensional points instead of pixels. Languages: Python.
+
+- [ ] **MP-AI-5.1** Forward process: noise added step by step
+	- **Accept:** after the last step the points are statistically indistinguishable from Gaussian noise, in a test.
+- [ ] **MP-AI-5.2** Reverse process: a small network trained to predict the noise
+	- **Accept:** samples generated from pure noise land on the target shape, with a mean distance below a documented threshold.
+- [ ] **MP-AI-5.3** Step-by-step picture
+	- **Accept:** the demo writes the points at several steps of the reverse process, committed in `results/`.
+- [ ] **MP-AI-5.4** Definition of done for mini-projects met.
+
 ---
 
 ## Order of execution
@@ -2008,3 +2098,4 @@ Mini-project waves are breadth first: every theory-and-practice area gets its fi
 | 14 | MP-OS-4, MP-ALG-4, MP-TX-4, MP-SEC-4, MP-COMP-4 |
 | 15 | MP-TEST-4, MP-OBS-4, MP-DS-5, MP-SEC-5, MP-TEST-5 |
 | 16 | MP-SEC-6, MP-SEC-7, MP-SEC-8 |
+| 17 | MP-AI-1, MP-AI-2, MP-AI-3, MP-AI-4, MP-AI-5 |
