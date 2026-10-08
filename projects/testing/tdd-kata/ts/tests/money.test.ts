@@ -39,3 +39,10 @@ test("2 CHF is $1 at a rate of 2 CHF per dollar", () => {
 	bank.addRate("CHF", "USD", 2);
 	expect(bank.reduce(Money.franc(2), "USD").equals(Money.dollar(1))).toBe(true);
 });
+
+test("$5 + 10 CHF is $10 at a rate of 2 CHF per dollar", () => {
+	const bank = new Bank();
+	bank.addRate("CHF", "USD", 2);
+	const sum = Money.dollar(5).plus(Money.franc(10));
+	expect(bank.reduce(sum, "USD").equals(Money.dollar(10))).toBe(true);
+});
