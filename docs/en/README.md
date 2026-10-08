@@ -16,7 +16,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-1000 of 3220 questions written, 34 of 78 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+1000 of 3220 questions written, 35 of 78 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
@@ -35,7 +35,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Information theory | Theory and practice | 0/100 |  | huffman-lz77 (planned), error-detection-correction (planned) |
 | Digital logic | Theory and practice | 0/100 |  | gates-karnaugh-adders (planned), nand-alu-cpu (planned) |
 | Electronics | Theory | 0/170 |  | none |
-| Object-oriented programming | Theory and practice | 100/100 | done | [oop-vs-functional](oop/oop-vs-functional.md), code-smells (planned) |
+| Object-oriented programming | Theory and practice | 100/100 | done | [oop-vs-functional](oop/oop-vs-functional.md), [code-smells](oop/code-smells.md) |
 | Functional programming | Theory and practice | 0/100 |  | pure-functions-properties (planned) |
 | Design patterns and SOLID | Theory and practice | 0/100 |  | backend-patterns (planned), solid-before-after (planned) |
 | Software architecture | Theory and practice | 0/100 |  | clean-architecture-app (planned) |

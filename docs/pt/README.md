@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1000 de 3220 questões escritas, 34 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+1000 de 3220 questões escritas, 35 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -35,7 +35,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Teoria da informação | Teoria e prática | 0/100 |  | huffman-lz77 (planejado), error-detection-correction (planejado) |
 | Lógica digital | Teoria e prática | 0/100 |  | gates-karnaugh-adders (planejado), nand-alu-cpu (planejado) |
 | Eletrônica | Teoria | 0/170 |  | nenhum |
-| Programação orientada a objetos | Teoria e prática | 100/100 | feita | [oop-vs-functional](oop/oop-vs-functional.md), code-smells (planejado) |
+| Programação orientada a objetos | Teoria e prática | 100/100 | feita | [oop-vs-functional](oop/oop-vs-functional.md), [code-smells](oop/code-smells.md) |
 | Programação funcional | Teoria e prática | 0/100 |  | pure-functions-properties (planejado) |
 | Padrões de projeto e SOLID | Teoria e prática | 0/100 |  | backend-patterns (planejado), solid-before-after (planejado) |
 | Arquitetura de software | Teoria e prática | 0/100 |  | clean-architecture-app (planejado) |
