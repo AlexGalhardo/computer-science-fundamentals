@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.73.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/functional-programming/pure-functions-properties` (TypeScript and Elixir): impure and pure versions of the same module, a small property-testing library written from scratch with shrinking, a property that finds a seeded bug the example tests miss, and the same pipeline in both languages. The functional programming area is complete.
+
+## [0.72.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: functional programming, 100 questions in Portuguese and English, with every code fragment executed, blind-reviewed with 100 of 100 agreement and 5 reviewer notes resolved (`quiz/content/functional-programming/review.md`).
+
 ## [0.71.0] - 2026-10-07
 
 ### Added

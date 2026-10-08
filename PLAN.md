@@ -692,10 +692,10 @@ Sources: Deitel (lambdas and streams), language documentation of Elixir and Type
 | Managing side effects | 6 |
 | Functional style in Elixir and TypeScript | 6 |
 
-- [ ] QC-FP.1 Coverage map committed
-- [ ] QC-FP.2 100 questions written (PT and EN)
-- [ ] QC-FP.3 Validation passing
-- [ ] QC-FP.4 Blind review resolved
+- [x] QC-FP.1 Coverage map committed
+- [x] QC-FP.2 100 questions written (PT and EN)
+- [x] QC-FP.3 Validation passing
+- [x] QC-FP.4 Blind review resolved
 
 #### QC-PAT Design patterns and SOLID
 
@@ -1680,13 +1680,13 @@ Teaches: how to recognise and remove common smells. Languages: TS, Java.
 
 Teaches: why pure code is easy to test and what properties find. Languages: TS, Elixir.
 
-- [ ] **MP-FP-1.1** Impure and pure versions of the same module
+- [x] **MP-FP-1.1** Impure and pure versions of the same module
 	- **Accept:** the pure version is tested with no mock.
-- [ ] **MP-FP-1.2** Properties: round trip, idempotence, invariants
+- [x] **MP-FP-1.2** Properties: round trip, idempotence, invariants
 	- **Accept:** a property finds a seeded bug that the example tests miss, and the shrunk counterexample is in the README.
-- [ ] **MP-FP-1.3** Composition and pipeline examples
+- [x] **MP-FP-1.3** Composition and pipeline examples
 	- **Accept:** the same pipeline is written in both languages with equivalent tests.
-- [ ] **MP-FP-1.4** Definition of done for mini-projects met.
+- [x] **MP-FP-1.4** Definition of done for mini-projects met.
 
 #### MP-PAT-1 Back-end design patterns
 
