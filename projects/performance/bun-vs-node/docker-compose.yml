@@ -1,0 +1,135 @@
+# EN: The same API three times (Bun, Node.js, Node.js under PM2 cluster mode), k6 as the load
+#     generator, and the helpers that test and report. The network is internal: no container
+#     reaches the internet and no port is published on the host, so k6 can only ever hit the
+#     services of this lab.
+# PT: A mesma API três vezes (Bun, Node.js, Node.js no modo cluster do PM2), o k6 como gerador de
+#     carga, e os auxiliares que testam e geram o relatório. A rede é interna: nenhum contêiner
+#     alcança a internet e nenhuma porta é publicada no host, então o k6 só consegue atingir os
+#     serviços deste laboratório.
+name: perf-bun-vs-node
+
+x-bun: &bun
+  build:
+    context: .
+    dockerfile: ts/Dockerfile
+  image: sef-bun-vs-node-ts:local
+
+x-node: &node
+  build:
+    context: .
+    dockerfile: ts/node.Dockerfile
+  image: sef-bun-vs-node-node:local
+
+# EN: Every server gets the same CPU budget. A single process uses about one core of it for
+#     JavaScript, and the cluster can use all of it: that difference is the lesson, so the
+#     budget itself must be equal.
+# PT: Todo servidor recebe o mesmo orçamento de CPU. Um processo único usa cerca de um núcleo dele
+#     para JavaScript, e o cluster consegue usar tudo: essa diferença é a lição, então o
+#     orçamento em si precisa ser igual.
+x-server: &server
+  cpus: ${CPU_LIMIT:-4}
+  networks: [lab]
+
+services:
+  bun-server:
+    <<: [*bun, *server]
+    command: ["bun", "run", "start:bun"]
+    environment: { SETUP: bun }
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const r = await fetch('http://localhost:3000/health'); process.exit(r.ok ? 0 : 1)"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  node-server:
+    <<: [*node, *server]
+    command: ["node", "dist/node-server.cjs"]
+    environment: { SETUP: node }
+    healthcheck: &node-health
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  node-pm2-server:
+    <<: [*node, *server]
+    command: ["pm2-runtime", "start", "ecosystem.config.cjs"]
+    environment:
+      SETUP: node-pm2
+      WORKERS: ${WORKERS:-4}
+    healthcheck: *node-health
+
+  # EN: Type check and unit tests. They need no network, so the container gets none.
+  # PT: Checagem de tipos e testes de unidade. Não precisam de rede, então o contêiner não tem nenhuma.
+  ts-test:
+    <<: *bun
+    network_mode: "none"
+
+  # EN: One test suite, run against the three servers.
+  # PT: Uma única suíte de testes, executada contra os três servidores.
+  api-test:
+    <<: *bun
+    networks: [lab]
+    command: ["bun", "run", "test:api"]
+    depends_on:
+      bun-server: { condition: service_healthy }
+      node-server: { condition: service_healthy }
+      node-pm2-server: { condition: service_healthy }
+    environment:
+      TARGETS: bun=http://bun-server:3000,node=http://node-server:3000,node-pm2=http://node-pm2-server:3000
+      WORKERS: ${WORKERS:-4}
+
+  # EN: Proves the safety rule: with a target that is not local, k6 must exit with an error.
+  #     The network is internal anyway, so even a broken rule could not reach the internet.
+  # PT: Prova a regra de segurança: com um alvo que não é local, o k6 precisa terminar com erro.
+  #     A rede é interna de qualquer forma, então nem uma regra quebrada alcançaria a internet.
+  k6-refusal-test:
+    image: grafana/k6:2.3.0
+    networks: [lab]
+    volumes:
+      - ./load:/load:ro
+    environment: { BASE_URL: "https://example.com" }
+    entrypoint: ["sh", "/load/refusal-test.sh"]
+
+  # EN: One run is one setup and one round. The load-test script starts the server, passes
+  #     BASE_URL, SETUP and ROUND, and stops the server, so the setups never compete for the CPU.
+  #     The raw summaries go to k6-results/, which is git-ignored.
+  # PT: Uma execução é uma configuração e uma rodada. O script de teste de carga sobe o servidor,
+  #     passa BASE_URL, SETUP e ROUND, e para o servidor, então as configurações nunca disputam a
+  #     CPU. Os resumos brutos vão para k6-results/, que o git ignora.
+  k6:
+    image: grafana/k6:2.3.0
+    command: ["run", "--quiet", "--no-usage-report", "/load/scenario.js"]
+    environment:
+      BASE_URL: http://bun-server:3000
+      SETUP: bun
+      ROUND: "1"
+    volumes:
+      - ./load:/load:ro
+      - ./k6-results:/results
+    networks: [lab]
+
+  report:
+    <<: *bun
+    network_mode: "none"
+    command: ["bun", "run", "report"]
+    environment:
+      PROJECT_DIR: /project
+      IMAGES: "oven/bun:1.4.2, node:24.21.0-bookworm-slim, PM2 7.0.4"
+      K6_IMAGE: grafana/k6:2.3.0
+      CPU_LIMIT: ${CPU_LIMIT:-4}
+      WORKERS: ${WORKERS:-4}
+      LOAD_TEST_COMMAND: ${LOAD_TEST_COMMAND:-./load-test-unix.sh}
+    # EN: Run as the host user. On Linux the mounted project folder belongs to that user, and the
+    #     image's own user (uid 1000) could not write results into it. The scripts export HOST_UID
+    #     and HOST_GID; on Docker Desktop the default works.
+    # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
+    #     imagem (uid 1000) não conseguiria gravar os resultados. Os scripts exportam HOST_UID e
+    #     HOST_GID; no Docker Desktop o padrão funciona.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+networks:
+  lab:
+    internal: true

@@ -1,0 +1,590 @@
+[
+	{
+		"id": "performance-benchmarking-methodology-01",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "Repository benchmark contract (docs/en/benchmarks.md: warm-up runs)",
+		"miniProject": "projects/performance/cache-friendly-matrix",
+		"pt": {
+			"statement": "Por que os executores de benchmark descartam algumas execuções de warm-up antes de medir?",
+			"alternatives": [
+				"Porque as primeiras execuções são sempre as mais rápidas, e mantê-las favoreceria o resultado final",
+				"Porque as execuções de warm-up tornam o próprio algoritmo assintoticamente mais rápido",
+				"Porque descartar execuções reduz o número de medições que precisam ser guardadas",
+				"Porque o compilador só remove código não utilizado depois de algumas execuções",
+				"Porque as primeiras execuções pagam custos únicos: caches frios e código ainda sem JIT"
+			],
+			"explanations": [
+				"É o contrário: as primeiras execuções tendem a ser as mais lentas, porque nada foi carregado ou compilado ainda.",
+				"O warm-up não muda o algoritmo nem a sua complexidade; ele só tira da medição um custo que acontece uma vez.",
+				"O objetivo não é economizar armazenamento. Descartam-se as execuções que não representam o regime normal do programa.",
+				"Confunde warm-up com eliminação de código morto, que é uma otimização feita na compilação e não depende de repetir a execução.",
+				"Na primeira execução, o cache de disco e os caches da CPU estão frios e, em runtimes com JIT, o código ainda é interpretado. Esses custos acontecem uma vez e distorcem a média se entrarem na medição."
+			],
+			"concept": "Um programa recém-iniciado não está em regime estável: arquivos ainda não estão no cache do sistema, os caches da CPU estão frios e runtimes com compilação JIT ainda não otimizaram o código quente. O warm-up executa a carga algumas vezes sem registrar o tempo, para que as medições seguintes reflitam o comportamento normal. Se o que interessa é o tempo de partida, ele é medido à parte e declarado como tal."
+		},
+		"en": {
+			"statement": "Why do benchmark runners discard a few warm-up runs before measuring?",
+			"alternatives": [
+				"Because the first runs are always the fastest ones, and keeping them would flatter the final result",
+				"Because the warm-up runs make the algorithm itself asymptotically faster",
+				"Because discarding runs reduces the number of measurements that must be stored",
+				"Because the compiler removes unused code only after a few runs have happened",
+				"Because the first runs pay one-off costs: cold caches and code not yet JIT-compiled"
+			],
+			"explanations": [
+				"It is the opposite: the first runs tend to be the slowest, because nothing has been loaded or compiled yet.",
+				"Warm-up changes neither the algorithm nor its complexity; it only keeps a one-off cost out of the measurement.",
+				"The goal is not to save storage. The discarded runs are those that do not represent the normal regime of the program.",
+				"It confuses warm-up with dead-code elimination, a compile-time optimisation that does not depend on repeating the run.",
+				"On the first run, the disk cache and the CPU caches are cold and, in runtimes with a JIT, the code is still interpreted. These costs happen once and distort the mean if they enter the measurement."
+			],
+			"concept": "A freshly started program is not in a steady state: files are not yet in the system cache, the CPU caches are cold and runtimes with JIT compilation have not yet optimised the hot code. Warm-up runs the workload a few times without recording the time, so the following measurements reflect normal behaviour. If start-up time is what matters, it is measured separately and declared as such."
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-02",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Repository rule for load tests and benchmarks (several runs, report the spread)",
+		"pt": {
+			"statement": "Dez execuções do mesmo benchmark, com a mesma entrada, levam cerca de 120 ms cada, exceto uma, que levou 410 ms enquanto uma videochamada estava aberta na mesma máquina. Qual é a leitura mais razoável?",
+			"alternatives": [
+				"A execução de 410 ms é o custo verdadeiro; as outras nove tiveram sorte",
+				"Outro processo disputou a máquina; repita em uma máquina sem outras cargas",
+				"O algoritmo tem um pior caso de 410 ms que aparece em uma de cada dez entradas",
+				"A execução deve ser apagada em silêncio, para a tabela mostrar uma dispersão pequena",
+				"O relógio está com defeito, pois um programa determinístico sempre leva o mesmo tempo"
+			],
+			"explanations": [
+				"Nove medições concordantes contra uma discordante, coincidindo com outra carga na máquina, apontam para interferência, não para o custo real.",
+				"A videochamada disputou CPU, cache e memória com o benchmark (um vizinho barulhento). O correto é medir de novo com a máquina sem outras cargas, com várias execuções, e relatar a dispersão.",
+				"O pior caso de um algoritmo depende da entrada, e aqui a entrada foi a mesma nas dez execuções.",
+				"Esconder uma medição falsifica a dispersão. O caminho honesto é eliminar a causa da interferência e medir de novo, ou relatar o valor e a sua causa.",
+				"O programa pode ser determinístico, mas o tempo depende do que mais a máquina está fazendo: escalonador, caches, frequência da CPU."
+			],
+			"concept": "O tempo de execução depende do programa e de tudo o que divide a máquina com ele: outros processos, outras máquinas virtuais no mesmo hospedeiro, tarefas do sistema. Esse efeito é chamado de vizinho barulhento. Por isso um benchmark é repetido várias vezes em uma máquina o mais ociosa possível, e o resultado é relatado com a dispersão, que revela quando houve interferência."
+		},
+		"en": {
+			"statement": "Ten runs of the same benchmark, with the same input, take about 120 ms each, except one that took 410 ms while a video call was open on the same machine. What is the most reasonable reading?",
+			"alternatives": [
+				"The 410 ms run is the true cost; the other nine were lucky runs",
+				"Another process competed for the machine; rerun on a quiet machine",
+				"The algorithm has a worst case of 410 ms that appears on one input in ten",
+				"The run should be deleted silently, so that the table shows a small spread",
+				"The timer is broken, since a deterministic program always takes the same time"
+			],
+			"explanations": [
+				"Nine agreeing measurements against one that disagrees, coinciding with another load on the machine, point to interference, not to the real cost.",
+				"The video call competed with the benchmark for CPU, cache and memory (a noisy neighbour). The right move is to measure again on a quiet machine, with several runs, and report the spread.",
+				"The worst case of an algorithm depends on the input, and here the input was the same in all ten runs.",
+				"Hiding a measurement falsifies the spread. The honest path is to remove the cause of the interference and measure again, or to report the value and its cause.",
+				"The program may be deterministic, but its time depends on what else the machine is doing: scheduler, caches, CPU frequency."
+			],
+			"concept": "Run time depends on the program and on everything that shares the machine with it: other processes, other virtual machines on the same host, system tasks. This effect is called a noisy neighbour. That is why a benchmark is repeated several times on a machine that is as idle as possible, and the result is reported with its spread, which reveals when there was interference."
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-03",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "basic",
+		"answer": 2,
+		"source": "Repository benchmark contract (docs/en/benchmarks.md: results record machine, versions and commands)",
+		"pt": {
+			"statement": "Que conjunto de informações torna um resultado de benchmark publicado reproduzível por outra pessoa?",
+			"alternatives": [
+				"O melhor tempo obtido e o nome da linguagem mais rápida",
+				"O código-fonte da implementação mais rápida e o seu tempo final",
+				"A máquina, as versões dos runtimes e o comando exato que foi executado",
+				"Uma captura de tela do terminal, feita logo depois de a execução mais rápida terminar",
+				"A data da execução e o nome da pessoa que rodou o benchmark"
+			],
+			"explanations": [
+				"Um número isolado não diz em que hardware, com que versão nem com que entrada foi obtido, então ninguém consegue refazer a medição.",
+				"O código é necessário, mas sem a máquina, as versões e o comando (entrada, opções de compilação) outra pessoa obtém números que não se comparam.",
+				"O tempo depende do hardware, do compilador ou runtime e dos parâmetros. Registrar os três permite repetir a medição nas mesmas condições ou explicar por que o número mudou.",
+				"A captura de tela mostra um resultado, não as condições em que ele foi produzido, e ainda escolhe a melhor execução.",
+				"Data e autor ajudam a rastrear, mas não descrevem as condições técnicas da medição."
+			],
+			"concept": "Um resultado de benchmark só tem valor se outra pessoa puder repeti-lo e chegar a algo comparável. Para isso registram-se a máquina (CPU, memória, sistema), as versões exatas de compiladores e runtimes e o comando completo, com entrada e opções. Sem esses dados, uma diferença entre dois números pode vir do código ou do ambiente, e não há como saber."
+		},
+		"en": {
+			"statement": "Which set of information makes a published benchmark result reproducible by another person?",
+			"alternatives": [
+				"The best time obtained and the name of the fastest language",
+				"The source code of the fastest implementation and its final time",
+				"The machine, the runtime versions and the exact command that was run",
+				"A screenshot of the terminal, taken right after the fastest run had ended",
+				"The date of the run and the name of the person who ran the benchmark"
+			],
+			"explanations": [
+				"A lone number does not say on which hardware, with which version or with which input it was obtained, so nobody can redo the measurement.",
+				"The code is necessary, but without the machine, the versions and the command (input, compiler flags) another person gets numbers that do not compare.",
+				"Time depends on the hardware, on the compiler or runtime and on the parameters. Recording all three allows the measurement to be repeated under the same conditions, or explains why the number changed.",
+				"A screenshot shows one result, not the conditions that produced it, and it also picks the best run.",
+				"Date and author help with tracing, but they do not describe the technical conditions of the measurement."
+			],
+			"concept": "A benchmark result is worth something only if another person can repeat it and reach something comparable. For that, one records the machine (CPU, memory, system), the exact versions of compilers and runtimes and the full command, with input and options. Without these data, a difference between two numbers may come from the code or from the environment, and there is no way to tell."
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-04",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "Repository benchmark contract (docs/en/benchmarks.md: hyperfine as the runner)",
+		"pt": {
+			"statement": "O que a ferramenta hyperfine faz?",
+			"alternatives": [
+				"Executa um comando várias vezes e informa média, desvio padrão e intervalo",
+				"Envia requisições HTTP de muitos usuários virtuais e informa os percentis de latência",
+				"Amostra a pilha de chamadas de um processo e mostra onde o tempo de CPU é gasto",
+				"Reescreve os laços quentes de um programa para que usem melhor o cache da CPU",
+				"Conta as instruções de um programa para calcular a sua classe de complexidade Big O"
+			],
+			"explanations": [
+				"O hyperfine mede comandos de linha de comando: faz execuções de warm-up opcionais, repete o comando e relata a média com o desvio padrão, o mínimo e o máximo, além de comparar comandos entre si.",
+				"Essa é a descrição de uma ferramenta de teste de carga, como o k6. O hyperfine mede processos locais, não serviços sob carga.",
+				"Essa é a descrição de um profiler por amostragem. O hyperfine diz quanto tempo o processo levou, não onde o tempo foi gasto.",
+				"O hyperfine não altera programas; ele apenas os executa e cronometra.",
+				"Complexidade assintótica é obtida por análise do algoritmo; o hyperfine mede tempo de relógio em uma máquina concreta."
+			],
+			"concept": "O hyperfine é uma ferramenta de benchmark para comandos de terminal. Ele cuida do que é fácil esquecer ao cronometrar à mão: execuções de warm-up, várias repetições e estatísticas (média, desvio padrão, mínimo e máximo), além de exportar os resultados em JSON ou Markdown. Como mede o processo inteiro, o número inclui a partida do runtime.",
+			"example": {
+				"kind": "code",
+				"language": "sh",
+				"content": "hyperfine --warmup 3 --runs 10 './sort-cpp 100000' 'bun run sort.ts 100000'"
+			}
+		},
+		"en": {
+			"statement": "What does the tool hyperfine do?",
+			"alternatives": [
+				"Runs a command several times and reports mean, standard deviation and range",
+				"Sends HTTP requests from many virtual users and reports the latency percentiles",
+				"Samples the call stack of a process and shows where its CPU time is spent",
+				"Rewrites the hot loops of a program so that they use the CPU cache better",
+				"Counts the instructions of a program to compute its Big O complexity class"
+			],
+			"explanations": [
+				"hyperfine measures command-line commands: it does optional warm-up runs, repeats the command and reports the mean with the standard deviation, the minimum and the maximum, and it compares commands with each other.",
+				"That describes a load testing tool, such as k6. hyperfine measures local processes, not services under load.",
+				"That describes a sampling profiler. hyperfine says how long the process took, not where the time was spent.",
+				"hyperfine does not change programs; it only runs and times them.",
+				"Asymptotic complexity comes from analysing the algorithm; hyperfine measures wall-clock time on a concrete machine."
+			],
+			"concept": "hyperfine is a benchmarking tool for terminal commands. It takes care of what is easy to forget when timing by hand: warm-up runs, several repetitions and statistics (mean, standard deviation, minimum and maximum), and it exports the results as JSON or Markdown. Since it measures the whole process, the number includes the start-up of the runtime.",
+			"example": {
+				"kind": "code",
+				"language": "sh",
+				"content": "hyperfine --warmup 3 --runs 10 './sort-cpp 100000' 'bun run sort.ts 100000'"
+			}
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-05",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Repository rule for load tests and benchmarks (compare like with like)",
+		"miniProject": "projects/performance/bun-vs-node",
+		"pt": {
+			"statement": "Dois runtimes HTTP estão sendo comparados. Qual das comparações é justa?",
+			"alternatives": [
+				"O runtime A em um notebook e o runtime B em um servidor, no mesmo endpoint, já que o código é igual",
+				"O runtime A em um endpoint de JSON e o runtime B em um de uso intenso de CPU, na mesma máquina",
+				"O runtime A com 10 usuários virtuais e o runtime B com 500, comparando a latência p95",
+				"Os dois na mesma máquina, mesmo endpoint, mesma carga, várias execuções de cada",
+				"Cada um com a carga de trabalho em que se sai melhor, pois isso mostra o seu potencial real"
+			],
+			"explanations": [
+				"Muda o hardware junto com o runtime: a diferença medida pode vir da máquina, e não há como separar as duas causas.",
+				"Muda a carga de trabalho junto com o runtime: um endpoint de E/S e um de CPU exercitam partes diferentes de cada um.",
+				"Muda o nível de carga: a latência cresce com a concorrência, então o runtime testado com 500 VUs parte em desvantagem.",
+				"Só o runtime varia; máquina, endpoint e carga são iguais, e as repetições permitem ver se a diferença é maior que a dispersão.",
+				"Escolher a carga favorável a cada lado produz dois números que não respondem à mesma pergunta e, portanto, não se comparam."
+			],
+			"concept": "Uma comparação justa muda uma coisa de cada vez. Se o objeto de estudo é o runtime, então a carga de trabalho, o tamanho dos dados, o nível de concorrência e a máquina precisam ser os mesmos nos dois lados, e cada lado é medido várias vezes. Qualquer outra diferença vira uma explicação alternativa para o resultado."
+		},
+		"en": {
+			"statement": "Two HTTP runtimes are being compared. Which of the comparisons is fair?",
+			"alternatives": [
+				"Runtime A on a laptop and runtime B on a server, on the same endpoint, since the code is the same",
+				"Runtime A on a JSON endpoint and runtime B on a CPU-bound one, on the same machine",
+				"Runtime A with 10 virtual users and runtime B with 500, comparing the p95 latency",
+				"Both on the same machine, same endpoint, same load, several runs of each",
+				"Each with the workload on which it does best, since that shows its real potential"
+			],
+			"explanations": [
+				"It changes the hardware together with the runtime: the measured difference may come from the machine, and the two causes cannot be separated.",
+				"It changes the workload together with the runtime: an I/O endpoint and a CPU endpoint exercise different parts of each one.",
+				"It changes the load level: latency grows with concurrency, so the runtime tested with 500 VUs starts at a disadvantage.",
+				"Only the runtime varies; machine, endpoint and load are equal, and the repetitions show whether the difference is larger than the spread.",
+				"Picking the favourable workload for each side yields two numbers that do not answer the same question and therefore do not compare."
+			],
+			"concept": "A fair comparison changes one thing at a time. If the object of study is the runtime, then the workload, the data size, the concurrency level and the machine must be the same on both sides, and each side is measured several times. Any other difference becomes an alternative explanation for the result."
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-06",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Repository benchmark contract (docs/en/benchmarks.md: reading the numbers)",
+		"miniProject": "projects/performance/bun-vs-node",
+		"pt": {
+			"statement": "O que se pode concluir desta tabela, medida na mesma máquina e com a mesma entrada?",
+			"alternatives": [
+				"B é 3% mais rápida que A, e o resultado pode ser publicado como ganho",
+				"A é mais rápida, porque o seu desvio padrão é menor que o de B",
+				"Nenhuma diferença foi demonstrada: os 3 ms são menores que a dispersão de ambas",
+				"B é mais rápida, porque com 10 execuções de cada a média já é um valor exato",
+				"B é mais rápida, pois a sua melhor execução certamente ficou abaixo da melhor execução de A"
+			],
+			"explanations": [
+				"A conta está certa (3 / 102 ≈ 3%), mas as execuções de cada implementação variam 6 a 7 ms entre si. Uma diferença de 3 ms entre as médias cabe dentro desse ruído.",
+				"O desvio padrão mede a variação entre as execuções, não a velocidade. Um desvio menor indica tempos mais estáveis, não menores.",
+				"A diferença entre as médias (102 − 99 = 3 ms) é menor que o desvio padrão de A (6 ms) e o de B (7 ms). Pelo critério de que uma diferença menor que o ruído não é diferença, as duas empatam nesta medição.",
+				"Dez execuções reduzem a incerteza da média, mas não a eliminam: outras dez dariam médias um pouco diferentes.",
+				"A tabela não mostra a melhor execução de nenhuma das duas, e a melhor execução é justamente o número que mais depende da sorte."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "implementação   média (ms)   desvio padrão (ms)   execuções\nA               102,0        6,0                  10\nB                99,0        7,0                  10"
+			},
+			"concept": "Toda medição de tempo tem ruído, e o desvio padrão das execuções é a régua desse ruído. Uma diferença entre duas médias só significa algo quando é claramente maior que a dispersão; caso contrário, repetir o experimento poderia inverter o resultado. Nesse caso, relata-se o empate ou mede-se mais, com mais execuções e uma máquina mais silenciosa."
+		},
+		"en": {
+			"statement": "What can be concluded from this table, measured on the same machine and with the same input?",
+			"alternatives": [
+				"B is 3% faster than A, and the result can be published as a gain",
+				"A is faster, because its standard deviation is smaller than that of B",
+				"No difference is shown: the 3 ms gap is smaller than the spread of both",
+				"B is faster, because with 10 runs of each the mean is already an exact value",
+				"B is faster, since its best run was certainly below the best run of A"
+			],
+			"explanations": [
+				"The arithmetic is right (3 / 102 ≈ 3%), but the runs of each implementation vary by 6 to 7 ms among themselves. A 3 ms difference between the means fits inside that noise.",
+				"The standard deviation measures the variation between runs, not speed. A smaller deviation means more stable times, not shorter ones.",
+				"The difference between the means (102 − 99 = 3 ms) is smaller than the standard deviation of A (6 ms) and of B (7 ms). By the rule that a difference smaller than the noise is not a difference, the two tie in this measurement.",
+				"Ten runs reduce the uncertainty of the mean but do not remove it: another ten would give slightly different means.",
+				"The table does not show the best run of either, and the best run is precisely the number that depends most on luck."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "implementation   mean (ms)   std dev (ms)   runs\nA                102.0       6.0            10\nB                 99.0       7.0            10"
+			},
+			"concept": "Every time measurement has noise, and the standard deviation of the runs is the ruler of that noise. A difference between two means is meaningful only when it is clearly larger than the spread; otherwise repeating the experiment could reverse the result. In that case one reports a tie, or measures more, with more runs and a quieter machine."
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-07",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Repository benchmark contract (docs/en/benchmarks.md: comparing the measured section)",
+		"pt": {
+			"statement": "Depois de uma otimização, a seção medida passou de uma média de 840 ms para uma média de 240 ms, com a mesma entrada e na mesma máquina. Qual é o speed-up (tempo antigo dividido pelo tempo novo)?",
+			"alternatives": [
+				"0,29×",
+				"2,5×",
+				"1,71×",
+				"600×",
+				"3,5×"
+			],
+			"explanations": [
+				"Inverte a razão: 240 / 840 ≈ 0,29 é a fração do tempo antigo que restou, não o speed-up.",
+				"Divide o tempo economizado pelo tempo novo (600 / 240). Essa conta diz quanto tempo a mais a versão antiga leva, e fica sempre 1 abaixo do speed-up.",
+				"Soma 1 à redução relativa (600 / 840 ≈ 71%). A redução percentual do tempo e o speed-up são medidas diferentes.",
+				"Usa a diferença em milissegundos (840 − 240 = 600) como se fosse um fator. O speed-up é uma razão, sem unidade.",
+				"Speed-up = 840 / 240 = 3,5. Conferindo no sentido inverso: 240 ms × 3,5 = 840 ms. O tempo caiu 71%, e a versão nova faz o mesmo trabalho 3,5 vezes mais depressa."
+			],
+			"concept": "O speed-up é a razão entre o tempo antigo e o tempo novo, para o mesmo trabalho: acima de 1 indica ganho. Ele não é a mesma coisa que a redução percentual do tempo: reduzir o tempo em 50% é um speed-up de 2×, e reduzir em 90% é um speed-up de 10×. Declarar qual das duas medidas está sendo usada evita ambiguidade."
+		},
+		"en": {
+			"statement": "After an optimisation, the measured section went from a mean of 840 ms to a mean of 240 ms, with the same input and on the same machine. What is the speed-up (old time divided by new time)?",
+			"alternatives": [
+				"0.29×",
+				"2.5×",
+				"1.71×",
+				"600×",
+				"3.5×"
+			],
+			"explanations": [
+				"It inverts the ratio: 240 / 840 ≈ 0.29 is the fraction of the old time that remains, not the speed-up.",
+				"It divides the time saved by the new time (600 / 240). That figure says how much longer the old version takes, and it is always 1 below the speed-up.",
+				"It adds 1 to the relative reduction (600 / 840 ≈ 71%). The percentage reduction of the time and the speed-up are different measures.",
+				"It uses the difference in milliseconds (840 − 240 = 600) as if it were a factor. Speed-up is a ratio, with no unit.",
+				"Speed-up = 840 / 240 = 3.5. Checking the other way round: 240 ms × 3.5 = 840 ms. The time fell by 71%, and the new version does the same work 3.5 times as fast."
+			],
+			"concept": "Speed-up is the ratio between the old time and the new time, for the same work: above 1 means a gain. It is not the same as the percentage reduction of the time: cutting the time by 50% is a speed-up of 2×, and cutting it by 90% is a speed-up of 10×. Stating which of the two measures is being used avoids ambiguity."
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-08",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Repository benchmark contract (docs/en/benchmarks.md: process and section)",
+		"pt": {
+			"statement": "Na tabela, `processo` é o processo inteiro, cronometrado de fora, e `seção` é só o algoritmo, cronometrado dentro do programa. Em n = 1 000, o que a coluna `processo` mede principalmente?",
+			"alternatives": [
+				"A partida de cada runtime, que encobre o algoritmo neste tamanho",
+				"O próprio algoritmo, então Python é 16 vezes mais lento que C++ neste algoritmo",
+				"O tempo de imprimir o resultado, que cresce com o tamanho da entrada",
+				"Apenas ruído de medição, então nenhuma das colunas serve em tamanho algum",
+				"O coletor de lixo de cada linguagem, que roda antes da seção medida"
+			],
+			"explanations": [
+				"Em n = 1 000 a seção leva 0,40 ms dos 48 ms do processo Python: os outros 47,6 ms (99%) são carregar o interpretador e os módulos. Em C++, 2,9 de 3,0 ms (97%). Em n = 10 000 000 a seção passa a ser 96% do processo Python (1200 / 1250).",
+				"48 / 3 = 16 compara tempos de partida. Para o algoritmo, a razão em n = 1 000 é a das seções: 0,40 / 0,10 = 4.",
+				"Imprimir uma linha de resultado custa quase nada, e a diferença entre processo e seção quase não muda quando n cresce dez mil vezes (47,6 ms e 50 ms em Python).",
+				"Ruído não explicaria uma diferença estável de cerca de 48 ms que se repete nos dois tamanhos. A coluna `seção` responde bem à pergunta sobre o algoritmo.",
+				"Um programa que mal começou a alocar não passa dezenas de milissegundos coletando lixo, e C++ nem tem coletor. O custo fixo é a inicialização do runtime."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "n = 1 000\nlinguagem   processo (ms)   seção (ms)\npython      48,0            0,40\ncpp          3,0            0,10\n\nn = 10 000 000\nlinguagem   processo (ms)   seção (ms)\npython      1250,0          1200,0\ncpp           33,0            30,0"
+			},
+			"concept": "Cronometrar o processo inteiro inclui carregar o runtime, importar módulos e ler a entrada: um custo quase fixo, que domina quando a entrada é pequena. Cronometrar apenas a seção de interesse, dentro do programa, isola o algoritmo. Os dois números são úteis, desde que se diga qual está sendo mostrado: o processo responde quanto tempo o usuário espera, e a seção, quanto custa o algoritmo."
+		},
+		"en": {
+			"statement": "In the table, `process` is the whole process, timed from outside, and `section` is only the algorithm, timed inside the program. At n = 1 000, what does the `process` column mostly measure?",
+			"alternatives": [
+				"The start-up of each runtime, which dwarfs the algorithm at this size",
+				"The algorithm itself, so Python is 16 times slower than C++ at this algorithm",
+				"The time to print the result, which grows with the size of the input",
+				"Measurement noise only, so neither column can be used at any size",
+				"The garbage collector of each language, which runs before the section"
+			],
+			"explanations": [
+				"At n = 1 000 the section takes 0.40 ms of the 48 ms of the Python process: the other 47.6 ms (99%) are loading the interpreter and its modules. In C++, 2.9 of 3.0 ms (97%). At n = 10 000 000 the section becomes 96% of the Python process (1200 / 1250).",
+				"48 / 3 = 16 compares start-up times. For the algorithm, the ratio at n = 1 000 is that of the sections: 0.40 / 0.10 = 4.",
+				"Printing one result line costs almost nothing, and the gap between process and section barely changes when n grows ten thousand times (47.6 ms and 50 ms in Python).",
+				"Noise would not explain a stable gap of about 48 ms that repeats at both sizes. The `section` column answers the question about the algorithm well.",
+				"A program that has barely started allocating does not spend tens of milliseconds collecting garbage, and C++ has no collector at all. The fixed cost is the initialisation of the runtime."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "n = 1 000\nlanguage   process (ms)   section (ms)\npython     48.0           0.40\ncpp         3.0           0.10\n\nn = 10 000 000\nlanguage   process (ms)   section (ms)\npython     1250.0         1200.0\ncpp          33.0           30.0"
+			},
+			"concept": "Timing the whole process includes loading the runtime, importing modules and reading the input: an almost fixed cost, which dominates when the input is small. Timing only the section of interest, inside the program, isolates the algorithm. Both numbers are useful, as long as one says which is being shown: the process answers how long the user waits, and the section, how much the algorithm costs."
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-09",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "Repository rule for load tests and benchmarks (report the spread, not only the best run)",
+		"miniProject": "projects/performance/cache-friendly-matrix",
+		"pt": {
+			"statement": "Cinco execuções de um benchmark levaram 10, 12, 11, 13 e 14 ms. Qual é o desvio padrão amostral (dividindo por n − 1)?",
+			"alternatives": [
+				"≈ 1,41 ms",
+				"≈ 1,58 ms",
+				"2,5 ms",
+				"4 ms",
+				"1,2 ms"
+			],
+			"explanations": [
+				"É o desvio padrão populacional: divide a soma dos quadrados por n = 5 (10 / 5 = 2, raiz ≈ 1,41). O enunciado pede o amostral, com n − 1.",
+				"Média = 60 / 5 = 12. Desvios: −2, 0, −1, 1, 2; quadrados: 4 + 0 + 1 + 1 + 4 = 10. Variância amostral = 10 / 4 = 2,5; raiz ≈ 1,58 ms. Conferindo a soma dos quadrados por outro caminho: 100 + 144 + 121 + 169 + 196 = 730, menos 5 × 12² = 720, dá 10.",
+				"É a variância amostral (10 / 4). Faltou tirar a raiz quadrada, e a unidade da variância seria ms², não ms.",
+				"É a amplitude (14 − 10), outra medida de dispersão, que olha só para os dois extremos.",
+				"É o desvio médio absoluto: (2 + 0 + 1 + 1 + 2) / 5. O desvio padrão usa os quadrados dos desvios."
+			],
+			"concept": "A média resume o valor típico das execuções e o desvio padrão resume o quanto elas variam ao redor dela. Com poucas execuções usa-se o desvio padrão amostral, que divide por n − 1, porque a média foi estimada a partir das mesmas medições. Relatar média ± desvio padrão (e, se possível, mínimo e máximo) permite julgar se uma diferença entre duas implementações é real."
+		},
+		"en": {
+			"statement": "Five runs of a benchmark took 10, 12, 11, 13 and 14 ms. What is the sample standard deviation (dividing by n − 1)?",
+			"alternatives": [
+				"≈ 1.41 ms",
+				"≈ 1.58 ms",
+				"2.5 ms",
+				"4 ms",
+				"1.2 ms"
+			],
+			"explanations": [
+				"That is the population standard deviation: it divides the sum of squares by n = 5 (10 / 5 = 2, root ≈ 1.41). The statement asks for the sample one, with n − 1.",
+				"Mean = 60 / 5 = 12. Deviations: −2, 0, −1, 1, 2; squares: 4 + 0 + 1 + 1 + 4 = 10. Sample variance = 10 / 4 = 2.5; root ≈ 1.58 ms. Checking the sum of squares by another route: 100 + 144 + 121 + 169 + 196 = 730, minus 5 × 12² = 720, gives 10.",
+				"That is the sample variance (10 / 4). The square root is missing, and the unit of the variance would be ms², not ms.",
+				"That is the range (14 − 10), another measure of spread, which looks only at the two extremes.",
+				"That is the mean absolute deviation: (2 + 0 + 1 + 1 + 2) / 5. The standard deviation uses the squares of the deviations."
+			],
+			"concept": "The mean summarises the typical value of the runs and the standard deviation summarises how much they vary around it. With few runs the sample standard deviation is used, dividing by n − 1, because the mean was estimated from the same measurements. Reporting mean ± standard deviation (and, if possible, minimum and maximum) lets one judge whether a difference between two implementations is real."
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-10",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "Repository benchmark contract (docs/en/benchmarks.md: the checksum field); microbenchmark pitfalls (dead-code elimination)",
+		"miniProject": "projects/performance/cache-friendly-matrix",
+		"pt": {
+			"statement": "Compilado com otimização (`-O2`), este microbenchmark da função `square` imprime 0 ms. Qual é a explicação mais provável, com a correção correspondente?",
+			"alternatives": [
+				"O relógio tem resolução grosseira demais para o laço; use um relógio em nanossegundos",
+				"O cache da CPU guarda todos os resultados de `square`; esvazie o cache antes de medir",
+				"O laço realmente leva menos de 1 ms; relate 0 ms como o custo de `square`",
+				"O compilador removeu o trabalho sem uso; acumule os resultados e imprima a soma",
+				"Faltou o warm-up; execute o laço duas vezes e cronometre só a segunda passagem"
+			],
+			"explanations": [
+				"Cem milhões de chamadas reais levariam dezenas de milissegundos, muito acima da resolução de qualquer relógio comum. O problema não é a precisão do relógio.",
+				"O cache da CPU guarda dados da memória, não resultados de funções. Não existe memoização automática de `square`.",
+				"Aceita um número impossível: 100 milhões de multiplicações não cabem em menos de 1 ms. Um resultado bom demais é sinal de que o trabalho não foi feito.",
+				"`r` nunca é lido e `square` não tem efeito colateral, então o otimizador elimina a chamada e o laço inteiro (eliminação de código morto). Somar os resultados e imprimir a soma, um checksum, torna o trabalho observável e obriga o compilador a mantê-lo.",
+				"Warm-up trata de caches frios e JIT. Aqui o código foi compilado antes de rodar, e repetir um laço que foi removido continuaria dando 0 ms."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "cpp",
+				"content": "auto start = now();\nfor (int i = 0; i < 100000000; i++) {\n    long r = square(i);   // r nunca é usado\n}\nauto end = now();\nprint_ms(end - start);    // imprime 0 ms"
+			},
+			"concept": "Um compilador otimizador pode remover qualquer cálculo cujo resultado não é observado. Em um microbenchmark isso faz o código medido desaparecer, e o tempo impressionante mede um laço vazio. A defesa é consumir o resultado: acumulá-lo em um checksum que é impresso no fim, o que também permite conferir que as variantes calculam a mesma coisa.",
+			"example": {
+				"kind": "code",
+				"language": "cpp",
+				"content": "long checksum = 0;\nauto start = now();\nfor (int i = 0; i < 100000000; i++) {\n    checksum += square(i);\n}\nauto end = now();\nprint_ms(end - start);\nprint(checksum);          // o resultado agora é observado"
+			}
+		},
+		"en": {
+			"statement": "Compiled with optimisation (`-O2`), this microbenchmark of the `square` function prints 0 ms. What is the most likely explanation, with the matching fix?",
+			"alternatives": [
+				"The timer has a resolution too coarse for the loop; use a timer in nanoseconds",
+				"The CPU cache stores all the results of `square`; flush the cache before timing",
+				"The loop really takes under 1 ms; report 0 ms as the cost of `square`",
+				"The compiler removed the unused work; accumulate the results and print the sum",
+				"The warm-up was missing; run the loop twice and time only the second pass"
+			],
+			"explanations": [
+				"A hundred million real calls would take tens of milliseconds, far above the resolution of any common timer. The problem is not the precision of the timer.",
+				"The CPU cache stores memory data, not function results. There is no automatic memoisation of `square`.",
+				"It accepts an impossible number: 100 million multiplications do not fit in under 1 ms. A result that is too good is a sign that the work was not done.",
+				"`r` is never read and `square` has no side effect, so the optimiser eliminates the call and the whole loop (dead-code elimination). Adding up the results and printing the sum, a checksum, makes the work observable and forces the compiler to keep it.",
+				"Warm-up deals with cold caches and JIT. Here the code was compiled ahead of time, and repeating a loop that was removed would still give 0 ms."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "cpp",
+				"content": "auto start = now();\nfor (int i = 0; i < 100000000; i++) {\n    long r = square(i);   // r is never used\n}\nauto end = now();\nprint_ms(end - start);    // prints 0 ms"
+			},
+			"concept": "An optimising compiler may remove any computation whose result is not observed. In a microbenchmark this makes the measured code vanish, and the impressive time measures an empty loop. The defence is to consume the result: accumulate it in a checksum that is printed at the end, which also lets one verify that the variants compute the same thing.",
+			"example": {
+				"kind": "code",
+				"language": "cpp",
+				"content": "long checksum = 0;\nauto start = now();\nfor (int i = 0; i < 100000000; i++) {\n    checksum += square(i);\n}\nauto end = now();\nprint_ms(end - start);\nprint(checksum);          // the result is now observed"
+			}
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-11",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "advanced",
+		"answer": 2,
+		"source": "Amdahl's law (deciding what to optimise from the measured shares)",
+		"pt": {
+			"statement": "Um job leva 10 s: 2 s lendo e interpretando a entrada, 7 s calculando e 1 s gravando a saída. Apenas a parte de cálculo fica 2 vezes mais rápida. Qual é o speed-up do job inteiro?",
+			"alternatives": [
+				"2×",
+				"1,4×",
+				"≈ 1,54×",
+				"≈ 3,33×",
+				"1,35×"
+			],
+			"explanations": [
+				"Aplica o ganho de uma parte ao programa inteiro. Os 3 s de leitura e gravação não mudaram, então o total não cai pela metade.",
+				"Multiplica a fração otimizada pelo fator (0,7 × 2). Essa conta não corresponde a tempo algum do job.",
+				"Novo tempo: 2 + 7/2 + 1 = 6,5 s. Speed-up = 10 / 6,5 ≈ 1,54. Conferindo pela lei de Amdahl, com fração p = 0,7 e fator s = 2: 1 / ((1 − 0,7) + 0,7 / 2) = 1 / 0,65 ≈ 1,54.",
+				"É o limite 1 / (1 − 0,7), que só seria atingido se o cálculo passasse a levar tempo zero. Com fator 2, o ganho é bem menor.",
+				"Soma 1 à metade da fração (1 + 0,7 / 2). A fórmula correta divide 1 pelo tempo relativo que resta, 0,65."
+			],
+			"concept": "A lei de Amdahl diz que o ganho total de uma otimização é limitado pela fração do tempo que ela afeta: speed-up = 1 / ((1 − p) + p / s), em que p é a fração otimizada e s, o fator de ganho nessa parte. Por isso mede-se antes de otimizar e ataca-se a maior fatia. Aqui, mesmo um cálculo infinitamente rápido deixaria os 3 s restantes, um teto de 3,33×."
+		},
+		"en": {
+			"statement": "A job takes 10 s: 2 s reading and parsing the input, 7 s computing and 1 s writing the output. Only the computing part is made 2 times faster. What is the speed-up of the whole job?",
+			"alternatives": [
+				"2×",
+				"1.4×",
+				"≈ 1.54×",
+				"≈ 3.33×",
+				"1.35×"
+			],
+			"explanations": [
+				"It applies the gain of one part to the whole program. The 3 s of reading and writing did not change, so the total does not halve.",
+				"It multiplies the optimised fraction by the factor (0.7 × 2). That figure corresponds to no time of the job.",
+				"New time: 2 + 7/2 + 1 = 6.5 s. Speed-up = 10 / 6.5 ≈ 1.54. Checking with Amdahl's law, with fraction p = 0.7 and factor s = 2: 1 / ((1 − 0.7) + 0.7 / 2) = 1 / 0.65 ≈ 1.54.",
+				"That is the limit 1 / (1 − 0.7), reached only if computing took zero time. With a factor of 2, the gain is much smaller.",
+				"It adds 1 to half of the fraction (1 + 0.7 / 2). The correct formula divides 1 by the relative time that remains, 0.65."
+			],
+			"concept": "Amdahl's law says that the total gain of an optimisation is limited by the fraction of the time it affects: speed-up = 1 / ((1 − p) + p / s), where p is the optimised fraction and s the gain factor on that part. That is why one measures before optimising and attacks the largest share. Here, even an infinitely fast computation would leave the other 3 s, a ceiling of 3.33×."
+		}
+	},
+	{
+		"id": "performance-benchmarking-methodology-12",
+		"area": "performance",
+		"topic": "benchmarking-methodology",
+		"difficulty": "advanced",
+		"answer": 4,
+		"source": "Repository benchmark contract (docs/en/benchmarks.md: checksum proving that implementations agree)",
+		"miniProject": "projects/performance/cache-friendly-matrix",
+		"pt": {
+			"statement": "Quatro variantes da mesma multiplicação de matrizes (n = 512, mesma entrada) imprimem um checksum da matriz resultante. O que se deve concluir sobre `unrolled`?",
+			"alternatives": [
+				"É a melhor variante, cerca de 26 vezes mais rápida que `naive` (812 / 31)",
+				"O seu checksum difere apenas por arredondamento de ponto flutuante, então o tempo continua válido",
+				"O seu desvio padrão pequeno prova que a medição é confiável",
+				"Ela precisa de mais execuções: com repetições suficientes o checksum converge",
+				"O seu tempo não pode ser comparado: ela não calculou o mesmo resultado das outras"
+			],
+			"explanations": [
+				"A divisão está certa (812 / 31 ≈ 26), mas compara trabalhos diferentes. Um speed-up só existe entre implementações que produzem o mesmo resultado.",
+				"Mudar a ordem das somas altera os últimos dígitos, não leva 4821,5 a 0,0. Uma diferença desse tamanho é erro de lógica ou cálculo eliminado pelo compilador.",
+				"Um desvio padrão pequeno diz que a medição é repetível, não que o programa está correto. Um programa errado pode ser muito estável.",
+				"O checksum é determinístico para a mesma entrada: repetir a execução dá 0,0 de novo. Mais execuções reduzem ruído de tempo, não corrigem um resultado errado.",
+				"As outras três variantes concordam em 4821,5 e `unrolled` imprime 0,0: ela não fez a mesma multiplicação (um erro, ou o cálculo foi eliminado). Antes de comparar tempos é preciso corrigi-la até o checksum coincidir."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "variante      média (ms)   desvio padrão (ms)   checksum\nnaive         812,0        9,0                  4821,5\ninterchange   240,0        5,0                  4821,5\nblocked        95,0        3,0                  4821,5\nunrolled       31,0        2,0                  0,0"
+			},
+			"concept": "Comparar velocidades só faz sentido entre programas que fazem o mesmo trabalho. Um checksum da saída, impresso por todas as variantes, é a prova barata de que elas concordam, e também impede que o compilador elimine um cálculo cujo resultado ninguém usa. Uma variante muito mais rápida com checksum diferente não é uma otimização: é um erro a investigar."
+		},
+		"en": {
+			"statement": "Four variants of the same matrix multiplication (n = 512, same input) print a checksum of the result matrix. What should be concluded about `unrolled`?",
+			"alternatives": [
+				"It is the best variant, about 26 times faster than `naive` (812 / 31)",
+				"Its checksum differs only because of floating-point rounding, so the timing is still valid",
+				"Its small standard deviation proves that the measurement is trustworthy",
+				"It needs more runs: with enough repetitions the checksum will converge",
+				"Its time cannot be compared: it did not compute the same result as the others"
+			],
+			"explanations": [
+				"The division is right (812 / 31 ≈ 26), but it compares different work. A speed-up exists only between implementations that produce the same result.",
+				"Changing the order of the additions alters the last digits, it does not take 4821.5 to 0.0. A difference of that size is a logic error or a computation eliminated by the compiler.",
+				"A small standard deviation says the measurement is repeatable, not that the program is correct. A wrong program can be very stable.",
+				"The checksum is deterministic for the same input: repeating the run gives 0.0 again. More runs reduce timing noise, they do not fix a wrong result.",
+				"The other three variants agree on 4821.5 and `unrolled` prints 0.0: it did not do the same multiplication (a bug, or the computation was eliminated). Before comparing times it must be fixed until the checksum matches."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "variant       mean (ms)   std dev (ms)   checksum\nnaive         812.0       9.0            4821.5\ninterchange   240.0       5.0            4821.5\nblocked        95.0       3.0            4821.5\nunrolled       31.0       2.0            0.0"
+			},
+			"concept": "Comparing speeds makes sense only between programs that do the same work. A checksum of the output, printed by every variant, is the cheap proof that they agree, and it also stops the compiler from eliminating a computation whose result nobody uses. A much faster variant with a different checksum is not an optimisation: it is a bug to investigate."
+		}
+	}
+]
