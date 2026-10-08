@@ -1,0 +1,139 @@
+# EN: From an objective to an alert, in three layers of rules.
+#     1. SLI: the share of bad requests, over a short and a long window (recording rules).
+#     2. Burn rate: that share divided by the error budget (recording rules).
+#     3. Alert: both windows burning faster than a threshold (alerting rules).
+#     A recording rule stores the result of an expression as a new time series, so the alert
+#     and every dashboard read one cheap, named series instead of repeating the expression.
+#     Names follow the Prometheus convention level:metric:operations.
+#
+#     Objectives of the lab, promised over 30 days:
+#       availability  99% of requests do not fail (no 5xx)        -> error budget 1%
+#       latency       95% of successful requests take <= 100 ms   -> error budget 5%
+#
+#     Windows: production alerts of this kind use 1 hour and 5 minutes. This lab uses 5 minutes
+#     and 1 minute, twelve times shorter, so a demonstration takes minutes. The arithmetic of
+#     the thresholds is unchanged.
+# PT: De um objetivo a um alerta, em três camadas de regras.
+#     1. SLI: a fatia de requisições ruins, em uma janela curta e uma longa (recording rules).
+#     2. Burn rate: essa fatia dividida pelo orçamento de erro (recording rules).
+#     3. Alerta: as duas janelas queimando mais rápido que um limite (alerting rules).
+#     Uma recording rule guarda o resultado de uma expressão como uma nova série temporal, então
+#     o alerta e todo dashboard leem uma série barata e com nome, em vez de repetir a expressão.
+#     Os nomes seguem a convenção do Prometheus nível:métrica:operações.
+#
+#     Objetivos do laboratório, prometidos em 30 dias:
+#       disponibilidade  99% das requisições não falham (sem 5xx)           -> orçamento de erro 1%
+#       latência         95% das requisições bem-sucedidas levam <= 100 ms  -> orçamento de erro 5%
+#
+#     Janelas: alertas deste tipo em produção usam 1 hora e 5 minutos. Este laboratório usa
+#     5 minutos e 1 minuto, doze vezes mais curtas, para que uma demonstração leve minutos. A
+#     aritmética dos limites não muda.
+groups:
+  - name: slo-indicators
+    rules:
+      # EN: Availability SLI, as the share of BAD requests: failed / all. `rate()` of a counter
+      #     is requests per second, and dividing two rates gives a ratio from 0 to 1.
+      # PT: SLI de disponibilidade, como a fatia de requisições RUINS: falhas / todas. O
+      #     `rate()` de um counter é requisições por segundo, e dividir duas taxas dá uma razão
+      #     de 0 a 1.
+      - record: job:slo_errors_per_request:ratio_rate1m
+        expr: |
+          sum by (job) (rate(http_requests_total{code=~"5.."}[1m]))
+          /
+          sum by (job) (rate(http_requests_total[1m]))
+      - record: job:slo_errors_per_request:ratio_rate5m
+        expr: |
+          sum by (job) (rate(http_requests_total{code=~"5.."}[5m]))
+          /
+          sum by (job) (rate(http_requests_total[5m]))
+
+      # EN: Latency SLI, as the share of SLOW requests. Buckets are cumulative, so the bucket
+      #     le="0.1" already counts every request that took 100 ms or less. An average would
+      #     hide the slow tail; a share of requests under a threshold does not.
+      # PT: SLI de latência, como a fatia de requisições LENTAS. Os buckets são cumulativos,
+      #     então o bucket le="0.1" já conta toda requisição que levou 100 ms ou menos. Uma
+      #     média esconderia a cauda lenta; uma fatia de requisições abaixo de um limite, não.
+      - record: job:slo_slow_per_request:ratio_rate1m
+        expr: |
+          1 - (
+            sum by (job) (rate(http_request_duration_seconds_bucket{le="0.1"}[1m]))
+            /
+            sum by (job) (rate(http_request_duration_seconds_count[1m]))
+          )
+      - record: job:slo_slow_per_request:ratio_rate5m
+        expr: |
+          1 - (
+            sum by (job) (rate(http_request_duration_seconds_bucket{le="0.1"}[5m]))
+            /
+            sum by (job) (rate(http_request_duration_seconds_count[5m]))
+          )
+
+  - name: slo-burn-rates
+    rules:
+      # EN: Burn rate = bad share / error budget. 1 means "spending exactly the budget": it
+      #     would last the 30 days. 14.4 means the budget of 30 days is gone in 720 / 14.4 = 50 hours.
+      # PT: Burn rate = fatia ruim / orçamento de erro. 1 significa "gastando exatamente o
+      #     orçamento": ele duraria os 30 dias. 14,4 significa que o orçamento de 30 dias acaba
+      #     em 720 / 14,4 = 50 horas.
+      - record: job:slo_availability_burn_rate:ratio_rate1m
+        expr: job:slo_errors_per_request:ratio_rate1m / (1 - 0.99)
+      - record: job:slo_availability_burn_rate:ratio_rate5m
+        expr: job:slo_errors_per_request:ratio_rate5m / (1 - 0.99)
+      - record: job:slo_latency_burn_rate:ratio_rate1m
+        expr: job:slo_slow_per_request:ratio_rate1m / (1 - 0.95)
+      - record: job:slo_latency_burn_rate:ratio_rate5m
+        expr: job:slo_slow_per_request:ratio_rate5m / (1 - 0.95)
+
+      # EN: Error budget left, measured over the last hour (a real one would use 30d; the lab
+      #     has only minutes of data). 1 = untouched, 0 = spent, negative = overspent.
+      # PT: Orçamento de erro restante, medido na última hora (um real usaria 30d; o
+      #     laboratório só tem minutos de dados). 1 = intacto, 0 = gasto, negativo = estourado.
+      - record: job:slo_availability_error_budget_remaining:ratio_1h
+        expr: |
+          1 - (
+            sum by (job) (increase(http_requests_total{code=~"5.."}[1h]))
+            /
+            sum by (job) (increase(http_requests_total[1h]))
+          ) / (1 - 0.99)
+
+  - name: slo-alerts
+    rules:
+      # EN: Page when BOTH windows burn faster than 14.4. The long window says that a real part
+      #     of the budget went, so one failed request does not wake anyone. The short window
+      #     says that it is still happening, so the alert resolves about a minute after the
+      #     problem ends instead of five. `for` asks the condition to hold a little longer
+      #     before firing: until then the alert is "pending".
+      # PT: Aciona quando AS DUAS janelas queimam mais rápido que 14,4. A janela longa diz que
+      #     uma parte real do orçamento se foi, então uma requisição com falha não acorda
+      #     ninguém. A janela curta diz que ainda está acontecendo, então o alerta se resolve
+      #     cerca de um minuto depois do fim do problema, e não cinco. O `for` pede que a
+      #     condição se mantenha mais um pouco antes de disparar: até lá o alerta fica "pending".
+      - alert: AvailabilityBudgetBurn
+        expr: |
+          job:slo_availability_burn_rate:ratio_rate5m > 14.4
+          and
+          job:slo_availability_burn_rate:ratio_rate1m > 14.4
+        for: 10s
+        labels:
+          severity: page
+          slo: availability
+        annotations:
+          summary: "{{ $labels.job }} is burning its availability error budget {{ $value | printf \"%.1f\" }} times too fast"
+          description: "Objective: 99% of requests succeed. A burn rate of 14.4 spends the error budget of 30 days in 50 hours."
+
+      # EN: The latency budget is larger (5%), so its threshold is a burn rate of 6: more than
+      #     30% of the successful requests slower than 100 ms.
+      # PT: O orçamento de latência é maior (5%), então o limite é um burn rate de 6: mais de
+      #     30% das requisições bem-sucedidas acima de 100 ms.
+      - alert: LatencyBudgetBurn
+        expr: |
+          job:slo_latency_burn_rate:ratio_rate5m > 6
+          and
+          job:slo_latency_burn_rate:ratio_rate1m > 6
+        for: 10s
+        labels:
+          severity: page
+          slo: latency
+        annotations:
+          summary: "{{ $labels.job }} is burning its latency error budget {{ $value | printf \"%.1f\" }} times too fast"
+          description: "Objective: 95% of successful requests take 100 ms or less."

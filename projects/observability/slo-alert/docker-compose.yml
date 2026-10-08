@@ -1,0 +1,184 @@
+# EN: A shop with an objective, Prometheus measuring it, Alertmanager delivering the alert to a
+#     local webhook, and k6 as the cause of the violation. Everything is local: the network is
+#     internal (no container reaches the internet), no port is published on the host, and the
+#     k6 script refuses any target that is not a local name. Memory limits are small because
+#     the stack shares a laptop.
+# PT: Uma loja com um objetivo, o Prometheus medindo, o Alertmanager entregando o alerta a um
+#     webhook local, e o k6 como causa da violação. Tudo é local: a rede é interna (nenhum
+#     contêiner alcança a internet), nenhuma porta é publicada no host, e o script do k6 recusa
+#     qualquer alvo que não seja um nome local. Os limites de memória são pequenos porque a
+#     pilha divide um notebook.
+name: obs-slo-alert
+
+x-ts: &ts
+  build:
+    context: .
+    dockerfile: ts/Dockerfile
+  image: sef-slo-alert-ts:local
+  networks:
+    - lab
+
+x-ts-health: &ts-health
+  test: ["CMD", "bun", "-e", "const r = await fetch('http://127.0.0.1:8080/health'); process.exit(r.ok ? 0 : 1)"]
+  interval: 2s
+  timeout: 3s
+  retries: 30
+
+x-lab-env: &lab-env
+  SHOP_URL: http://shop:8080
+  PROMETHEUS_URL: http://prometheus:9090
+  ALERTMANAGER_URL: http://alertmanager:9093
+  RECEIVER_URL: http://receiver:8080
+  PROJECT_DIR: /project
+
+# EN: A watcher (test or demo) needs the whole stack, and k6 started with it: the k6 script
+#     waits 45 seconds before the load, which gives Prometheus a healthy baseline.
+# PT: Um observador (teste ou demo) precisa da pilha inteira, e do k6 iniciado junto: o script
+#     do k6 espera 45 segundos antes da carga, o que dá ao Prometheus uma linha de base saudável.
+x-watcher-depends: &watcher-depends
+  shop:
+    condition: service_healthy
+  receiver:
+    condition: service_healthy
+  prometheus:
+    condition: service_healthy
+  alertmanager:
+    condition: service_healthy
+  load:
+    condition: service_started
+
+services:
+  shop:
+    <<: *ts
+    command: ["bun", "run", "shop"]
+    healthcheck: *ts-health
+    mem_limit: 192m
+    cpus: 1
+
+  receiver:
+    <<: *ts
+    command: ["bun", "run", "receiver"]
+    healthcheck: *ts-health
+    mem_limit: 128m
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.retention.time=2h
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - ./prometheus/rules.yaml:/etc/prometheus/rules.yaml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/ready"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    mem_limit: 256m
+    networks:
+      - lab
+    depends_on:
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:v0.34.1
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yaml
+      # EN: A single instance: no cluster port, no gossip.
+      # PT: Uma única instância: sem porta de cluster, sem gossip.
+      - --cluster.listen-address=
+    volumes:
+      - ./alertmanager/alertmanager.yaml:/etc/alertmanager/alertmanager.yaml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9093/-/ready"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    mem_limit: 128m
+    networks:
+      - lab
+
+  # EN: The cause. One run: 45 quiet seconds, 60 seconds of 30 virtual users, then it exits.
+  # PT: A causa. Uma execução: 45 segundos calmos, 60 segundos de 30 usuários virtuais, e ele sai.
+  load:
+    image: grafana/k6:2.3.0
+    command: ["run", "--quiet", "/load/overload.js"]
+    environment:
+      TARGET: http://shop:8080
+      VUS: "30"
+      START_S: "45"
+      LOAD_S: "60"
+      # EN: k6 reports anonymous usage statistics by default. Not here.
+      # PT: O k6 envia estatísticas anônimas de uso por padrão. Aqui não.
+      K6_NO_USAGE_REPORT: "true"
+    volumes:
+      - ./load:/load:ro
+    mem_limit: 256m
+    cpus: 1
+    networks:
+      - lab
+    depends_on:
+      shop:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------- tests
+  # EN: Unit tests need no network, so the container gets none.
+  # PT: Os testes unitários não precisam de rede, então o contêiner não recebe nenhuma.
+  ts-test:
+    build:
+      context: .
+      dockerfile: ts/Dockerfile
+    image: sef-slo-alert-ts:local
+    network_mode: "none"
+
+  # EN: The Prometheus rule tester, from the same pinned image that runs the rules. It checks
+  #     the configuration and the rule file, then runs the unit tests of the rules.
+  # PT: O testador de regras do Prometheus, da mesma imagem fixada que roda as regras. Ele
+  #     confere a configuração e o arquivo de regras, e depois roda os testes unitários das regras.
+  rules-test:
+    image: prom/prometheus:v3.15.0
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - promtool check config /etc/prometheus/prometheus.yaml && promtool test rules /etc/prometheus/rules.test.yaml
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+    network_mode: "none"
+
+  # EN: Proves the safety rule: with a target that is not local, k6 must exit with an error.
+  #     The container has no network anyway.
+  # PT: Prova a regra de segurança: com um alvo que não é local, o k6 precisa terminar com erro.
+  #     O contêiner não tem rede de qualquer forma.
+  load-refusal-test:
+    image: grafana/k6:2.3.0
+    environment:
+      TARGET: "https://example.com"
+      K6_NO_USAGE_REPORT: "true"
+    volumes:
+      - ./load:/load:ro
+    entrypoint: ["sh", "/load/refusal-test.sh"]
+    network_mode: "none"
+
+  e2e-test:
+    <<: *ts
+    command: ["bun", "run", "test:e2e"]
+    environment: *lab-env
+    depends_on: *watcher-depends
+
+  # EN: The demo writes results/ in the project folder, so it runs as the host user: on Linux
+  #     the mounted folder belongs to that user. The setup script exports HOST_UID and HOST_GID.
+  # PT: A demo grava results/ na pasta do projeto, então roda como o usuário do host: no Linux
+  #     a pasta montada pertence a ele. O script de setup exporta HOST_UID e HOST_GID.
+  demo:
+    <<: *ts
+    command: ["bun", "run", "demo"]
+    environment: *lab-env
+    depends_on: *watcher-depends
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+networks:
+  lab:
+    internal: true
