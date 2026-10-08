@@ -1,0 +1,49 @@
+# EN: Data sources as code: Grafana reads this file at start-up, so nobody clicks through a
+#     settings page and the lab is the same on every machine. The fixed `uid` values are what
+#     the dashboard JSON and the links between signals refer to.
+# PT: Data sources como código: o Grafana lê este arquivo na inicialização, então ninguém
+#     clica em uma tela de configuração e o laboratório é igual em toda máquina. Os valores
+#     fixos de `uid` são o que o JSON do dashboard e os links entre sinais referenciam.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      # EN: From a log line to its trace: the trace id of each line becomes a link to Tempo.
+      # PT: De uma linha de log para o seu trace: o trace id de cada linha vira um link para o Tempo.
+      derivedFields:
+        - name: trace
+          matcherType: label
+          matcherRegex: trace_id
+          url: "$${__value.raw}"
+          datasourceUid: tempo
+          urlDisplayLabel: Open trace
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
+    jsonData:
+      # EN: From a span to its logs: the button on a span runs this LogQL with the trace id.
+      # PT: De um span para os seus logs: o botão em um span roda este LogQL com o trace id.
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: -5m
+        spanEndTimeShift: 5m
+        customQuery: true
+        query: '{service_name=~".+"} | trace_id="$${__span.traceId}"'

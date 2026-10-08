@@ -1,0 +1,62 @@
+# EN: The OpenTelemetry Collector is the single door for telemetry. The services send the three
+#     signals to it over OTLP, and each pipeline below forwards one signal to the back end that
+#     stores it. A pipeline is receivers -> processors -> exporters; a component that is defined
+#     but not listed in a pipeline does nothing.
+# PT: O OpenTelemetry Collector é a única porta da telemetria. Os serviços mandam os três sinais
+#     para ele por OTLP, e cada pipeline abaixo encaminha um sinal para o back end que o guarda.
+#     Um pipeline é receivers -> processors -> exporters; um componente definido mas fora de
+#     todo pipeline não faz nada.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # EN: Refuse data before the process runs out of memory. Always the first processor.
+  # PT: Recusa dados antes de o processo ficar sem memória. Sempre o primeiro processor.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 96
+  # EN: Group items into fewer, larger requests to the back ends.
+  # PT: Agrupa os itens em menos requisições, maiores, para os back ends.
+  batch:
+    timeout: 1s
+
+exporters:
+  otlp_grpc/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  # EN: Prometheus and Loki both accept OTLP over HTTP directly. The exporter appends
+  #     /v1/metrics and /v1/logs to these base addresses.
+  # PT: O Prometheus e o Loki aceitam OTLP por HTTP diretamente. O exporter acrescenta
+  #     /v1/metrics e /v1/logs a estes endereços base.
+  otlp_http/prometheus:
+    endpoint: http://prometheus:9090/api/v1/otlp
+    tls:
+      insecure: true
+  otlp_http/loki:
+    endpoint: http://loki:3100/otlp
+    tls:
+      insecure: true
+
+service:
+  # EN: The collector's own telemetry stays off: nothing here reports anywhere.
+  # PT: A telemetria do próprio collector fica desligada: nada aqui reporta para lugar nenhum.
+  telemetry:
+    metrics:
+      level: none
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_grpc/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/loki]

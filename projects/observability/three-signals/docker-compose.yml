@@ -1,0 +1,232 @@
+# EN: Three services (gateway and orders in TypeScript, inventory in Go) send traces, metrics
+#     and logs over OTLP to one collector, which forwards each signal to its store: Tempo,
+#     Prometheus and Loki. Grafana reads the three.
+#     Everything is local. The `lab` network is internal: no container on it reaches the
+#     internet. Grafana is the only service a person opens in a browser, so it alone joins a
+#     second network to publish one port, bound to 127.0.0.1. Usage reporting is disabled in
+#     every tool. Memory limits are small because the whole stack runs on a laptop.
+# PT: Três serviços (gateway e orders em TypeScript, inventory em Go) mandam traces, métricas e
+#     logs por OTLP a um collector, que encaminha cada sinal ao seu armazenamento: Tempo,
+#     Prometheus e Loki. O Grafana lê os três.
+#     Tudo é local. A rede `lab` é interna: nenhum contêiner nela alcança a internet. O Grafana
+#     é o único serviço que uma pessoa abre no navegador, então só ele entra em uma segunda
+#     rede para publicar uma porta, presa a 127.0.0.1. O envio de estatísticas de uso está
+#     desligado em todas as ferramentas. Os limites de memória são pequenos porque a pilha
+#     inteira roda em um notebook.
+name: obs-three-signals
+
+x-ts: &ts
+  build: ./ts
+  image: sef-three-signals-ts:local
+  networks:
+    - lab
+
+x-ts-health: &ts-health
+  test: ["CMD", "bun", "-e", "const r = await fetch('http://127.0.0.1:3000/health'); process.exit(r.ok ? 0 : 1)"]
+  interval: 2s
+  timeout: 3s
+  retries: 30
+
+x-lab-env: &lab-env
+  GATEWAY_URL: http://gateway:3000
+  TEMPO_URL: http://tempo:3200
+  PROMETHEUS_URL: http://prometheus:9090
+  LOKI_URL: http://loki:3100
+  GRAFANA_URL: http://grafana:3000
+  PROJECT_DIR: /project
+
+x-stack: &stack
+  gateway:
+    condition: service_healthy
+  orders:
+    condition: service_healthy
+  inventory:
+    condition: service_healthy
+  grafana:
+    condition: service_started
+
+services:
+  # ---------------------------------------------------------------- telemetry pipeline
+  collector:
+    image: otel/opentelemetry-collector:0.162.0
+    command: ["--config=/etc/collector.yaml"]
+    volumes:
+      - ./config/collector.yaml:/etc/collector.yaml:ro
+    mem_limit: 256m
+    networks:
+      - lab
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+
+  tempo:
+    image: grafana/tempo:3.1.0
+    command: ["-target=all", "-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./config/tempo.yaml:/etc/tempo.yaml:ro
+    mem_limit: 512m
+    networks:
+      - lab
+
+  loki:
+    image: grafana/loki:3.7.8
+    command: ["-config.file=/etc/loki.yaml"]
+    volumes:
+      - ./config/loki.yaml:/etc/loki.yaml:ro
+    mem_limit: 384m
+    networks:
+      - lab
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-otlp-receiver
+      - --storage.tsdb.retention.time=2h
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus.yaml:ro
+    mem_limit: 256m
+    networks:
+      - lab
+
+  grafana:
+    image: grafana/grafana:13.2.3
+    environment:
+      # EN: A local lab with no secrets: anyone on this machine can look and explore, nobody
+      #     logs in. Never copy this to a server.
+      # PT: Um laboratório local sem segredos: qualquer pessoa nesta máquina pode olhar e
+      #     explorar, ninguém faz login. Nunca copie isto para um servidor.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      # EN: Nothing is reported and nothing is fetched from the internet.
+      # PT: Nada é reportado e nada é buscado na internet.
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_ANALYTICS_FEEDBACK_LINKS_ENABLED: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      GF_SNAPSHOTS_EXTERNAL_ENABLED: "false"
+      GF_LOG_LEVEL: warn
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    mem_limit: 512m
+    networks:
+      - lab
+      - edge
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+
+  # ---------------------------------------------------------------- the three services
+  gateway:
+    <<: *ts
+    command: ["bun", "run", "gateway"]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4318
+      ORDERS_URL: http://orders:3000
+    healthcheck: *ts-health
+    mem_limit: 192m
+    depends_on:
+      - collector
+
+  orders:
+    <<: *ts
+    command: ["bun", "run", "orders"]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4318
+      INVENTORY_URL: http://inventory:3000
+    healthcheck: *ts-health
+    mem_limit: 192m
+    depends_on:
+      - collector
+
+  inventory:
+    build: ./go
+    image: sef-three-signals-go:local
+    command: ["inventory"]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4318
+      # EN: The injected fault: lookups of this SKU take this long.
+      # PT: A falha injetada: consultas deste SKU levam este tempo.
+      SLOW_SKU: slow-widget
+      SLOW_MS: "800"
+    healthcheck:
+      test: ["CMD", "inventory", "healthcheck"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    mem_limit: 128m
+    networks:
+      - lab
+    depends_on:
+      - collector
+
+  # ---------------------------------------------------------------- tests and demo
+  # EN: Unit tests need no network, so these containers get none.
+  # PT: Os testes unitários não precisam de rede, então estes contêineres não recebem nenhuma.
+  ts-test:
+    build: ./ts
+    image: sef-three-signals-ts:local
+    network_mode: "none"
+
+  go-test:
+    build: ./go
+    image: sef-three-signals-go:local
+    network_mode: "none"
+
+  # EN: The end-to-end test sends requests through the gateway and then asks Tempo, Prometheus,
+  #     Loki and Grafana what they saw, over the compose network.
+  # PT: O teste de ponta a ponta manda requisições pelo gateway e depois pergunta ao Tempo, ao
+  #     Prometheus, ao Loki e ao Grafana o que eles viram, pela rede do compose.
+  e2e-test:
+    <<: *ts
+    command: ["bun", "run", "test:e2e"]
+    environment: *lab-env
+    depends_on: *stack
+
+  # EN: The demo writes results/ in the project folder, so it runs as the host user: on Linux
+  #     the mounted folder belongs to that user. The setup script exports HOST_UID and HOST_GID.
+  # PT: A demo grava results/ na pasta do projeto, então roda como o usuário do host: no Linux
+  #     a pasta montada pertence a ele. O script de setup exporta HOST_UID e HOST_GID.
+  demo:
+    <<: *ts
+    command: ["bun", "run", "demo"]
+    environment: *lab-env
+    depends_on: *stack
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+  # EN: Opens the trace found by the demo in Grafana, in a headless browser, and saves the
+  #     picture used in the README. Playwright package and image have the same version.
+  # PT: Abre no Grafana, em um navegador sem interface, o trace encontrado pela demo e salva a
+  #     imagem usada no README. O pacote e a imagem do Playwright têm a mesma versão.
+  screenshot:
+    build: ./screenshot
+    image: sef-three-signals-screenshot:local
+    environment:
+      GRAFANA_URL: http://grafana:3000
+      PROJECT_DIR: /project
+    depends_on:
+      grafana:
+        condition: service_started
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+    shm_size: 1gb
+    networks:
+      - lab
+    profiles:
+      - screenshot
+
+networks:
+  lab:
+    internal: true
+  edge: {}

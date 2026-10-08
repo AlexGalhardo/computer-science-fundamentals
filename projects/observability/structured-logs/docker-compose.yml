@@ -1,0 +1,180 @@
+# EN: The same three services run twice, side by side: once writing structured JSON logs and
+#     once writing free text. A request enters `api`, goes to `orders` over HTTP and reaches
+#     `worker` through a RabbitMQ queue. Every log line of both variants is shipped to one Loki.
+#     The network is internal: no container reaches the internet and no port is published on
+#     the host. The credentials are fake and exist only inside this lab.
+# PT: Os mesmos três serviços rodam duas vezes, lado a lado: uma gravando logs JSON
+#     estruturados e outra gravando texto livre. Uma requisição entra no `api`, vai para o
+#     `orders` por HTTP e chega ao `worker` por uma fila do RabbitMQ. Toda linha de log das duas
+#     variantes é enviada a um único Loki. A rede é interna: nenhum contêiner alcança a
+#     internet e nenhuma porta é publicada no host. As credenciais são falsas e existem só
+#     dentro deste laboratório.
+name: obs-structured-logs
+
+x-app: &app
+  build: ./ts
+  image: sef-structured-logs-ts:local
+  mem_limit: 128m
+  networks:
+    - lab
+
+x-health: &health
+  test: ["CMD", "bun", "-e", "const r = await fetch('http://127.0.0.1:3000/health'); process.exit(r.ok ? 0 : 1)"]
+  interval: 2s
+  timeout: 3s
+  retries: 40
+
+x-needs-broker: &needs-broker
+  broker:
+    condition: service_healthy
+  loki:
+    condition: service_started
+
+# EN: The only difference between the two variants is LOG_FORMAT. Each has its own queue, so
+#     the messages of one never reach the worker of the other.
+# PT: A única diferença entre as duas variantes é LOG_FORMAT. Cada uma tem a sua fila, então as
+#     mensagens de uma nunca chegam ao worker da outra.
+x-json-env: &json-env
+  LOG_FORMAT: json
+  QUEUE: orders.json
+  ORDERS_URL: http://orders-json:3000
+  LOKI_URL: http://loki:3100
+  BROKER_URL: amqp://lab:lab-fake-password@broker:5672
+
+x-text-env: &text-env
+  LOG_FORMAT: text
+  QUEUE: orders.text
+  ORDERS_URL: http://orders-text:3000
+  LOKI_URL: http://loki:3100
+  BROKER_URL: amqp://lab:lab-fake-password@broker:5672
+
+x-lab-env: &lab-env
+  API_JSON_URL: http://api-json:3000
+  API_TEXT_URL: http://api-text:3000
+  LOKI_URL: http://loki:3100
+  PROJECT_DIR: /project
+
+x-stack: &stack
+  api-json:
+    condition: service_healthy
+  worker-json:
+    condition: service_healthy
+  api-text:
+    condition: service_healthy
+  worker-text:
+    condition: service_healthy
+
+services:
+  broker:
+    image: rabbitmq:4.3.6-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: lab
+      RABBITMQ_DEFAULT_PASS: lab-fake-password
+    healthcheck:
+      # EN: A plain TCP check of the port the clients use. `rabbitmq-diagnostics` would run as
+      #     root and can create the Erlang cookie before the broker does, making the broker exit.
+      # PT: Uma checagem TCP simples da porta que os clientes usam. O `rabbitmq-diagnostics`
+      #     rodaria como root e pode criar o cookie do Erlang antes do broker, fazendo-o encerrar.
+      test: ["CMD", "nc", "-z", "127.0.0.1", "5672"]
+      interval: 3s
+      timeout: 10s
+      retries: 40
+    mem_limit: 384m
+    networks:
+      - lab
+
+  # EN: The Loki image has no shell, so it has no container health check: the clients poll
+  #     its /ready endpoint, and the shippers retry until it answers.
+  # PT: A imagem do Loki não tem shell, então não há health check de contêiner: os clientes
+  #     consultam o endpoint /ready, e os shippers tentam de novo até ele responder.
+  loki:
+    image: grafana/loki:3.7.8
+    command: ["-config.file=/etc/loki.yaml"]
+    volumes:
+      - ./config/loki.yaml:/etc/loki.yaml:ro
+    mem_limit: 384m
+    networks:
+      - lab
+
+  # ---------------------------------------------------------------- variant 1: JSON
+  api-json:
+    <<: *app
+    command: ["bun", "run", "api"]
+    environment: *json-env
+    healthcheck: *health
+    depends_on:
+      orders-json:
+        condition: service_healthy
+
+  orders-json:
+    <<: *app
+    command: ["bun", "run", "orders"]
+    environment: *json-env
+    healthcheck: *health
+    depends_on: *needs-broker
+
+  worker-json:
+    <<: *app
+    command: ["bun", "run", "worker"]
+    environment: *json-env
+    healthcheck: *health
+    depends_on: *needs-broker
+
+  # ---------------------------------------------------------------- variant 2: free text
+  api-text:
+    <<: *app
+    command: ["bun", "run", "api"]
+    environment: *text-env
+    healthcheck: *health
+    depends_on:
+      orders-text:
+        condition: service_healthy
+
+  orders-text:
+    <<: *app
+    command: ["bun", "run", "orders"]
+    environment: *text-env
+    healthcheck: *health
+    depends_on: *needs-broker
+
+  worker-text:
+    <<: *app
+    command: ["bun", "run", "worker"]
+    environment: *text-env
+    healthcheck: *health
+    depends_on: *needs-broker
+
+  # ---------------------------------------------------------------- tests and demo
+  # EN: Unit tests need no network, so the container gets none.
+  # PT: Os testes unitários não precisam de rede, então o contêiner não recebe nenhuma.
+  ts-test:
+    build: ./ts
+    image: sef-structured-logs-ts:local
+    network_mode: "none"
+
+  # EN: The end-to-end test sends checkouts to both variants and queries Loki over this network.
+  # PT: O teste de ponta a ponta manda checkouts às duas variantes e consulta o Loki por esta rede.
+  e2e-test:
+    <<: *app
+    command: ["bun", "run", "test:e2e"]
+    environment: *lab-env
+    depends_on: *stack
+
+  # EN: The demo writes results/ in the project folder, so it runs as the host user: on Linux
+  #     the mounted folder belongs to that user. The setup script exports HOST_UID and HOST_GID;
+  #     on Docker Desktop the default works.
+  # PT: A demo grava results/ na pasta do projeto, então roda como o usuário do host: no Linux
+  #     a pasta montada pertence a ele. O script de setup exporta HOST_UID e HOST_GID; no Docker
+  #     Desktop o padrão funciona.
+  demo:
+    <<: *app
+    command: ["bun", "run", "demo"]
+    environment: *lab-env
+    depends_on: *stack
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+networks:
+  lab:
+    internal: true

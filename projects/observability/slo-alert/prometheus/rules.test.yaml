@@ -1,0 +1,218 @@
+# EN: Unit tests of the rules, run by `promtool test rules`. Each test feeds invented samples
+#     to the rules and states the series and the alerts that must come out, at chosen moments.
+#     No service and no waiting: thirty minutes of history are simulated in milliseconds.
+#     Series notation: `a+bxn` starts at a and adds b at each interval, n times. With a 15 s
+#     interval, `0+135x121` is a counter growing 135 every 15 s, that is, 9 requests per second.
+# PT: Testes unitários das regras, rodados pelo `promtool test rules`. Cada teste entrega
+#     amostras inventadas às regras e declara as séries e os alertas que precisam sair, em
+#     momentos escolhidos. Sem serviço e sem espera: trinta minutos de histórico são simulados
+#     em milissegundos. Notação das séries: `a+bxn` começa em a e soma b a cada intervalo, n
+#     vezes. Com intervalo de 15 s, `0+135x121` é um counter que cresce 135 a cada 15 s, isto
+#     é, 9 requisições por segundo.
+# EN: Expected values are compared exactly, and floating point gives 9.999999999999991 where
+#     the arithmetic says 10, so computed values are rounded to two decimals with round().
+# PT: Os valores esperados são comparados de forma exata, e o ponto flutuante dá
+#     9.999999999999991 onde a aritmética diz 10, então os valores calculados são
+#     arredondados para duas casas com round().
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 15s
+
+tests:
+  # EN: Healthy service: 9 requests per second, none fails, all are fast.
+  # PT: Serviço saudável: 9 requisições por segundo, nenhuma falha, todas rápidas.
+  - name: healthy service burns nothing and alerts nobody
+    interval: 15s
+    input_series:
+      - series: 'http_requests_total{job="shop", code="200"}'
+        values: "0+135x121"
+      - series: 'http_requests_total{job="shop", code="503"}'
+        values: "0x121"
+      - series: 'http_request_duration_seconds_bucket{job="shop", le="0.1"}'
+        values: "0+135x121"
+      - series: 'http_request_duration_seconds_count{job="shop"}'
+        values: "0+135x121"
+    promql_expr_test:
+      - expr: job:slo_errors_per_request:ratio_rate5m
+        eval_time: 10m
+        exp_samples:
+          - labels: 'job:slo_errors_per_request:ratio_rate5m{job="shop"}'
+            value: 0
+      - expr: round(job:slo_slow_per_request:ratio_rate5m, 0.01)
+        eval_time: 10m
+        exp_samples:
+          - labels: '{job="shop"}'
+            value: 0
+      - expr: round(job:slo_availability_error_budget_remaining:ratio_1h, 0.01)
+        eval_time: 10m
+        exp_samples:
+          - labels: '{job="shop"}'
+            value: 1
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: AvailabilityBudgetBurn
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: LatencyBudgetBurn
+        exp_alerts: []
+
+  # EN: A constant 10% of failures: 9 good and 1 bad request per second. The objective is
+  #     broken (budget 1%, burn rate 0.10 / 0.01 = 10), but 10 is below the paging threshold
+  #     of 14.4: this pace deserves a ticket, not a page. The budget of the hour is overspent:
+  #     1 - 0.10 / 0.01 = -9. Latency: 7.2 of 9 per second are fast, so 20% are slow and the
+  #     burn rate is 0.20 / 0.05 = 4, below 6.
+  # PT: 10% de falhas constantes: 9 requisições boas e 1 ruim por segundo. O objetivo está
+  #     quebrado (orçamento 1%, burn rate 0,10 / 0,01 = 10), mas 10 fica abaixo do limite de
+  #     acionamento de 14,4: esse ritmo merece um chamado, não um acionamento. O orçamento da
+  #     hora está estourado: 1 - 0,10 / 0,01 = -9. Latência: 7,2 de 9 por segundo são rápidas,
+  #     então 20% são lentas e o burn rate é 0,20 / 0,05 = 4, abaixo de 6.
+  - name: a slow burn below the threshold does not page
+    interval: 15s
+    input_series:
+      - series: 'http_requests_total{job="shop", code="200"}'
+        values: "0+135x121"
+      - series: 'http_requests_total{job="shop", code="503"}'
+        values: "0+15x121"
+      - series: 'http_request_duration_seconds_bucket{job="shop", le="0.1"}'
+        values: "0+108x121"
+      - series: 'http_request_duration_seconds_count{job="shop"}'
+        values: "0+135x121"
+    promql_expr_test:
+      - expr: job:slo_errors_per_request:ratio_rate1m
+        eval_time: 10m
+        exp_samples:
+          - labels: 'job:slo_errors_per_request:ratio_rate1m{job="shop"}'
+            value: 0.1
+      - expr: round(job:slo_availability_burn_rate:ratio_rate5m, 0.01)
+        eval_time: 10m
+        exp_samples:
+          - labels: '{job="shop"}'
+            value: 10
+      - expr: round(job:slo_availability_error_budget_remaining:ratio_1h, 0.01)
+        eval_time: 10m
+        exp_samples:
+          - labels: '{job="shop"}'
+            value: -9
+      - expr: round(job:slo_slow_per_request:ratio_rate5m, 0.01)
+        eval_time: 10m
+        exp_samples:
+          - labels: '{job="shop"}'
+            value: 0.2
+      - expr: round(job:slo_latency_burn_rate:ratio_rate5m, 0.01)
+        eval_time: 10m
+        exp_samples:
+          - labels: '{job="shop"}'
+            value: 4
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: AvailabilityBudgetBurn
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: LatencyBudgetBurn
+        exp_alerts: []
+
+  # EN: An outage with a beginning and an end. 9 good requests per second all the time. From
+  #     minute 10 to minute 20, 4 more requests per second fail: 4 of 13, 30.77% of failures,
+  #     a burn rate of 30.77. After minute 20 nothing fails.
+  #       minute 9      no alert: nothing failed yet
+  #       minute 16     firing: both windows are fully inside the outage
+  #       minute 21.5   resolved, although the 5-minute window still burns above 14.4: the
+  #                     1-minute window is clean again. This is what the short window is for.
+  # PT: Uma indisponibilidade com começo e fim. 9 requisições boas por segundo o tempo todo.
+  #     Do minuto 10 ao minuto 20, mais 4 requisições por segundo falham: 4 de 13, 30,77% de
+  #     falhas, um burn rate de 30,77. Depois do minuto 20 nada falha.
+  #       minuto 9      sem alerta: nada falhou ainda
+  #       minuto 16     disparando: as duas janelas estão inteiras dentro da indisponibilidade
+  #       minuto 21,5   resolvido, embora a janela de 5 minutos ainda queime acima de 14,4: a
+  #                     janela de 1 minuto está limpa de novo. É para isso que serve a janela curta.
+  - name: an outage pages, and the short window resolves it soon after it ends
+    interval: 15s
+    input_series:
+      - series: 'http_requests_total{job="shop", code="200"}'
+        values: "0+135x121"
+      - series: 'http_requests_total{job="shop", code="503"}'
+        values: "0x40 60+60x39 2400x40"
+      - series: 'http_request_duration_seconds_bucket{job="shop", le="0.1"}'
+        values: "0+135x121"
+      - series: 'http_request_duration_seconds_count{job="shop"}'
+        values: "0+135x121"
+    promql_expr_test:
+      - expr: job:slo_errors_per_request:ratio_rate1m
+        eval_time: 16m
+        exp_samples:
+          - labels: 'job:slo_errors_per_request:ratio_rate1m{job="shop"}'
+            value: 0.3076923076923077
+      - expr: round(job:slo_availability_burn_rate:ratio_rate5m, 0.01)
+        eval_time: 16m
+        exp_samples:
+          - labels: '{job="shop"}'
+            value: 30.77
+      - expr: job:slo_availability_burn_rate:ratio_rate1m
+        eval_time: 21m30s
+        exp_samples:
+          - labels: 'job:slo_availability_burn_rate:ratio_rate1m{job="shop"}'
+            value: 0
+      - expr: round(job:slo_availability_burn_rate:ratio_rate5m > 14.4, 0.01)
+        eval_time: 21m30s
+        exp_samples:
+          - labels: '{job="shop"}'
+            value: 23.32
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: AvailabilityBudgetBurn
+        exp_alerts: []
+      - eval_time: 16m
+        alertname: AvailabilityBudgetBurn
+        exp_alerts:
+          - exp_labels:
+              job: shop
+              severity: page
+              slo: availability
+            exp_annotations:
+              summary: "shop is burning its availability error budget 30.8 times too fast"
+              description: "Objective: 99% of requests succeed. A burn rate of 14.4 spends the error budget of 30 days in 50 hours."
+      - eval_time: 21m30s
+        alertname: AvailabilityBudgetBurn
+        exp_alerts: []
+      - eval_time: 16m
+        alertname: LatencyBudgetBurn
+        exp_alerts: []
+
+  # EN: Nothing fails, but only 3 of every 9 successful requests per second are under 100 ms:
+  #     66.67% are slow, a burn rate of 0.6667 / 0.05 = 13.33, above the threshold of 6.
+  #     Availability stays silent: a service can break one objective and keep the other.
+  # PT: Nada falha, mas só 3 de cada 9 requisições bem-sucedidas por segundo ficam abaixo de
+  #     100 ms: 66,67% são lentas, um burn rate de 0,6667 / 0,05 = 13,33, acima do limite de 6.
+  #     A disponibilidade fica em silêncio: um serviço pode quebrar um objetivo e manter o outro.
+  - name: slow but successful requests page on latency only
+    interval: 15s
+    input_series:
+      - series: 'http_requests_total{job="shop", code="200"}'
+        values: "0+135x121"
+      - series: 'http_requests_total{job="shop", code="503"}'
+        values: "0x121"
+      - series: 'http_request_duration_seconds_bucket{job="shop", le="0.1"}'
+        values: "0+45x121"
+      - series: 'http_request_duration_seconds_count{job="shop"}'
+        values: "0+135x121"
+    promql_expr_test:
+      - expr: round(job:slo_latency_burn_rate:ratio_rate1m, 0.01)
+        eval_time: 10m
+        exp_samples:
+          - labels: '{job="shop"}'
+            value: 13.33
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: LatencyBudgetBurn
+        exp_alerts:
+          - exp_labels:
+              job: shop
+              severity: page
+              slo: latency
+            exp_annotations:
+              summary: "shop is burning its latency error budget 13.3 times too fast"
+              description: "Objective: 95% of successful requests take 100 ms or less."
+      - eval_time: 10m
+        alertname: AvailabilityBudgetBurn
+        exp_alerts: []
