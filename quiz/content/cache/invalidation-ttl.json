@@ -1,0 +1,649 @@
+[
+	{
+		"id": "cache-invalidation-ttl-01",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "System design notes (invalidation: expiry by time and explicit invalidation)",
+		"pt": {
+			"statement": "Uma entrada de cache é gravada com tempo de vida (TTL) de 60 s e nada a invalida explicitamente. O que esse TTL garante?",
+			"alternatives": [
+				"A entrada fica no cache por pelo menos 60 s, mesmo com falta de memória",
+				"A origem é consultada de novo a cada 60 s, mesmo que ninguém leia a chave",
+				"A entrada é removida 60 s depois da última vez em que foi lida",
+				"A entrada é atualizada assim que o dado muda na origem",
+				"O valor em cache fica desatualizado por no máximo cerca de 60 s"
+			],
+			"explanations": [
+				"O TTL é um prazo máximo, não mínimo: a entrada pode sair antes, por descarte ou por remoção explícita.",
+				"Isso confunde TTL com atualização agendada: o TTL só remove a entrada, e quem recarrega é a próxima leitura.",
+				"Isso é tempo ocioso (expiração deslizante); um TTL comum conta a partir da gravação, não da última leitura.",
+				"Isso é invalidação explícita por evento; o TTL não sabe quando a origem muda, só quanto tempo passou.",
+				"Correta: depois de 60 s a entrada some e a próxima leitura busca o dado atual, então o TTL é um teto para o atraso em relação à origem."
+			],
+			"concept": "Há duas formas de tirar um dado velho do cache: a invalidação explícita, em que o código remove ou regrava a entrada quando a origem muda, e a expiração por tempo, em que a entrada some depois do TTL. O TTL não torna o dado correto, apenas limita por quanto tempo ele pode ficar errado. Por isso ele costuma ser usado como rede de segurança mesmo quando existe invalidação explícita."
+		},
+		"en": {
+			"statement": "A cache entry is stored with a time to live (TTL) of 60 s and nothing invalidates it explicitly. What does this TTL guarantee?",
+			"alternatives": [
+				"The entry stays in the cache for at least 60 s, even when memory is short",
+				"The origin is queried again every 60 s, even if nobody reads the key",
+				"The entry is removed 60 s after the last time it was read",
+				"The entry is updated as soon as the data changes at the origin",
+				"The cached value can be out of date for at most about 60 s"
+			],
+			"explanations": [
+				"The TTL is a maximum, not a minimum: the entry can leave earlier, by eviction or by explicit removal.",
+				"That confuses a TTL with a scheduled refresh: the TTL only removes the entry, and the next read is what reloads it.",
+				"That is idle time (sliding expiration); a plain TTL counts from the write, not from the last read.",
+				"That is explicit, event-based invalidation; the TTL does not know when the origin changes, only how much time has passed.",
+				"Correct: after 60 s the entry is gone and the next read fetches the current data, so the TTL is a ceiling on how far behind the origin the cache can be."
+			],
+			"concept": "There are two ways to get old data out of a cache: explicit invalidation, where the code removes or rewrites the entry when the origin changes, and expiry by time, where the entry disappears after the TTL. The TTL does not make the data correct, it only limits for how long it can be wrong. That is why it is commonly kept as a safety net even when explicit invalidation exists."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-02",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "Redis documentation (SET: a successful SET discards the previous TTL; KEEPTTL option)",
+		"pt": {
+			"statement": "No Redis, os comandos abaixo são executados na ordem mostrada. O que o último comando devolve?",
+			"alternatives": [
+				"`290`",
+				"`300`",
+				"`-2`",
+				"`-1`",
+				"`0`"
+			],
+			"explanations": [
+				"Seria o resultado se o segundo `SET` usasse `KEEPTTL` (300 - 10); sem essa opção o TTL antigo não é mantido.",
+				"O segundo `SET` não repete o `EX 300` do primeiro: ele não reinicia a contagem, ele remove a expiração.",
+				"-2 é a resposta para uma chave que não existe; aqui a chave existe, com o valor \"b\".",
+				"Correta: um `SET` bem-sucedido sem opção de expiração descarta o TTL anterior, então a chave existe e não tem mais expiração, e `TTL` devolve -1.",
+				"O TTL não é zerado: ele deixa de existir, e a ausência de expiração é indicada por -1."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "SET cart:7 \"a\" EX 300\n(10 segundos depois)\nSET cart:7 \"b\"\nTTL cart:7"
+			},
+			"concept": "No Redis, comandos que substituem o valor inteiro de uma chave, como `SET`, apagam a expiração que ela tinha. Comandos que apenas alteram o valor existente, como `INCR` ou `LPUSH`, mantêm a expiração. Para regravar um valor sem perder o prazo, usa-se `SET chave valor KEEPTTL` ou informa-se o prazo de novo com `EX`/`PX`. Esquecer disso cria entradas de cache que nunca expiram."
+		},
+		"en": {
+			"statement": "In Redis, the commands below run in the order shown. What does the last command return?",
+			"alternatives": [
+				"`290`",
+				"`300`",
+				"`-2`",
+				"`-1`",
+				"`0`"
+			],
+			"explanations": [
+				"That would be the result if the second `SET` used `KEEPTTL` (300 - 10); without that option the old TTL is not kept.",
+				"The second `SET` does not repeat the `EX 300` of the first: it does not restart the countdown, it removes the expiry.",
+				"-2 is the reply for a key that does not exist; here the key exists, holding \"b\".",
+				"Correct: a successful `SET` with no expiration option discards the previous TTL, so the key exists with no expiry and `TTL` returns -1.",
+				"The TTL is not set to zero: it ceases to exist, and the absence of an expiry is reported as -1."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "SET cart:7 \"a\" EX 300\n(10 seconds later)\nSET cart:7 \"b\"\nTTL cart:7"
+			},
+			"concept": "In Redis, commands that replace the whole value of a key, such as `SET`, clear the expiry it had. Commands that only alter the existing value, such as `INCR` or `LPUSH`, leave the expiry untouched. To rewrite a value without losing the deadline, use `SET key value KEEPTTL` or give the time again with `EX`/`PX`. Forgetting this creates cache entries that never expire."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-03",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "Redis documentation (TTL command: return values -1 and -2)",
+		"pt": {
+			"statement": "No Redis 2.8 ou mais recente, os comandos abaixo são executados um logo após o outro em um banco vazio. O que os três comandos `TTL` devolvem, na ordem?",
+			"alternatives": [
+				"`100`, `-2`, `-1`",
+				"`100`, `-1`, `-1`",
+				"`100`, `0`, `-2`",
+				"`100`, `0`, `-1`",
+				"`100`, `-1`, `-2`"
+			],
+			"explanations": [
+				"Os dois códigos estão trocados: -1 é chave sem expiração e -2 é chave inexistente.",
+				"Esse era o comportamento até o Redis 2.6, que devolvia -1 nos dois casos; desde o 2.8 a chave inexistente devolve -2.",
+				"Chave sem expiração não devolve 0: zero indicaria um prazo prestes a acabar, e a ausência de prazo é -1.",
+				"Aqui há dois erros: sem expiração é -1, não 0, e chave inexistente é -2, não -1.",
+				"Correta: `a` tem 100 s restantes, `b` existe sem expiração (-1) e `c` não existe (-2)."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "SET a \"1\" EX 100\nSET b \"1\"\nTTL a\nTTL b\nTTL c"
+			},
+			"concept": "`TTL chave` devolve os segundos que faltam para a chave expirar (`PTTL` faz o mesmo em milissegundos). Dois valores negativos são códigos especiais: -1 significa que a chave existe e não tem expiração, e -2 significa que a chave não existe. Distinguir os dois ajuda a achar entradas de cache gravadas sem TTL por engano."
+		},
+		"en": {
+			"statement": "In Redis 2.8 or later, the commands below run one right after another on an empty database. What do the three `TTL` commands return, in order?",
+			"alternatives": [
+				"`100`, `-2`, `-1`",
+				"`100`, `-1`, `-1`",
+				"`100`, `0`, `-2`",
+				"`100`, `0`, `-1`",
+				"`100`, `-1`, `-2`"
+			],
+			"explanations": [
+				"The two codes are swapped: -1 is a key with no expiry and -2 is a missing key.",
+				"That was the behaviour up to Redis 2.6, which returned -1 in both cases; since 2.8 a missing key returns -2.",
+				"A key with no expiry does not return 0: zero would mean a deadline about to end, and the absence of a deadline is -1.",
+				"Two mistakes here: no expiry is -1, not 0, and a missing key is -2, not -1.",
+				"Correct: `a` has 100 s left, `b` exists with no expiry (-1) and `c` does not exist (-2)."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "SET a \"1\" EX 100\nSET b \"1\"\nTTL a\nTTL b\nTTL c"
+			},
+			"concept": "`TTL key` returns the seconds left before the key expires (`PTTL` does the same in milliseconds). Two negative values are special codes: -1 means the key exists and has no expiry, and -2 means the key does not exist. Telling them apart helps to find cache entries that were written without a TTL by mistake."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-04",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Redis documentation (EXPIRE: refreshing an existing expiry)",
+		"pt": {
+			"statement": "No Redis, uma chave é gravada com `SET k v EX 60` no instante t = 0 s. Em t = 20 s executa-se `EXPIRE k 100`. O que `TTL k` devolve em t = 50 s?",
+			"alternatives": [
+				"`70`",
+				"`10`",
+				"`110`",
+				"`50`",
+				"`90`"
+			],
+			"explanations": [
+				"Correta: `EXPIRE` substitui o prazo e conta a partir de t = 20, então a chave expira em t = 120 e, em t = 50, faltam 120 - 50 = 70 s. Conferindo de outro jeito: 100 s menos os 30 s passados desde o `EXPIRE` dá 70.",
+				"Isso ignora o `EXPIRE` e usa só o prazo original: 60 - 50 = 10.",
+				"Isso soma os 100 s ao fim do prazo original (60 + 100 = 160, menos 50), mas o novo prazo conta a partir do momento do `EXPIRE`.",
+				"Isso conta os 100 s a partir de t = 0 (100 - 50), como se o `EXPIRE` tivesse sido executado junto com o `SET`.",
+				"Isso soma os 100 s aos 40 s que restavam em t = 20 (140 - 50); o `EXPIRE` substitui o prazo, não acumula."
+			],
+			"concept": "`EXPIRE chave segundos` define o prazo a partir do instante em que o comando é executado. Se a chave já tinha uma expiração, ela é substituída pela nova, e o que restava do prazo antigo é descartado. O TTL restante em qualquer momento é o instante de expiração menos o instante atual."
+		},
+		"en": {
+			"statement": "In Redis, a key is written with `SET k v EX 60` at time t = 0 s. At t = 20 s, `EXPIRE k 100` runs. What does `TTL k` return at t = 50 s?",
+			"alternatives": [
+				"`70`",
+				"`10`",
+				"`110`",
+				"`50`",
+				"`90`"
+			],
+			"explanations": [
+				"Correct: `EXPIRE` replaces the deadline and counts from t = 20, so the key expires at t = 120 and, at t = 50, 120 - 50 = 70 s are left. Checking another way: 100 s minus the 30 s elapsed since the `EXPIRE` gives 70.",
+				"That ignores the `EXPIRE` and uses only the original deadline: 60 - 50 = 10.",
+				"That adds the 100 s to the end of the original deadline (60 + 100 = 160, minus 50), but the new time counts from the moment of the `EXPIRE`.",
+				"That counts the 100 s from t = 0 (100 - 50), as if the `EXPIRE` had run together with the `SET`.",
+				"That adds the 100 s to the 40 s that were left at t = 20 (140 - 50); `EXPIRE` replaces the deadline, it does not accumulate."
+			],
+			"concept": "`EXPIRE key seconds` sets the deadline counting from the moment the command runs. If the key already had an expiry, it is replaced by the new one, and what was left of the old deadline is discarded. The remaining TTL at any moment is the expiry instant minus the current instant."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-05",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "System design notes (TTL, hit rate and staleness)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Uma página de produto é guardada em cache com TTL de 30 s. A equipe aumenta o TTL para 10 minutos e não muda mais nada. Qual é o efeito esperado?",
+			"alternatives": [
+				"Taxa de acerto maior, e as alterações aparecem mais cedo que antes",
+				"Taxa de acerto maior, e as alterações demoram mais a aparecer",
+				"Taxa de acerto menor, e as alterações demoram mais a aparecer",
+				"Mesma taxa de acerto, pois o TTL só afeta o uso de memória",
+				"Taxa de acerto menor, pois as entradas são descartadas mais vezes"
+			],
+			"explanations": [
+				"O ganho na taxa de acerto está certo, mas o custo foi invertido: um TTL maior aumenta o atraso possível, não diminui.",
+				"Correta: cada entrada atende leituras por mais tempo antes de precisar da origem, e pelo mesmo motivo um dado alterado pode ficar obsoleto por até 10 minutos.",
+				"O atraso maior está certo, mas um TTL maior reduz as falhas de cache por expiração, então a taxa de acerto sobe.",
+				"O TTL define de quanto em quanto tempo a entrada expira e gera uma falha, então ele afeta diretamente a taxa de acerto.",
+				"Descarte acontece por falta de memória, não por TTL longo; com TTL maior as entradas expiram menos vezes."
+			],
+			"concept": "O TTL é um ajuste entre dois objetivos opostos. Um TTL longo aumenta a taxa de acerto e alivia a origem, mas deixa o dado obsoleto por mais tempo. Um TTL curto mantém o dado mais fresco e manda mais leituras para a origem. O valor certo depende de quanto atraso o dado tolera."
+		},
+		"en": {
+			"statement": "A product page is cached with a TTL of 30 s. The team raises the TTL to 10 minutes and changes nothing else. What is the expected effect?",
+			"alternatives": [
+				"Higher hit rate, and changes show up sooner than before",
+				"Higher hit rate, and changes take longer to show up",
+				"Lower hit rate, and changes take longer to show up",
+				"Same hit rate, since the TTL only affects memory use",
+				"Lower hit rate, since entries get evicted more often"
+			],
+			"explanations": [
+				"The gain in hit rate is right, but the cost is reversed: a longer TTL increases the possible delay, it does not reduce it.",
+				"Correct: each entry serves reads for longer before the origin is needed, and for the same reason changed data can stay stale for up to 10 minutes.",
+				"The longer delay is right, but a longer TTL reduces the misses caused by expiry, so the hit rate goes up.",
+				"The TTL sets how often the entry expires and causes a miss, so it affects the hit rate directly.",
+				"Eviction is caused by memory pressure, not by a long TTL; with a longer TTL the entries expire less often."
+			],
+			"concept": "The TTL is a dial between two opposite goals. A long TTL raises the hit rate and relieves the origin, but leaves data stale for longer. A short TTL keeps data fresher and sends more reads to the origin. The right value depends on how much delay the data tolerates."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-06",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "Redis documentation (EXPIRE: NX, XX, GT and LT options, Redis 7.0)",
+		"pt": {
+			"statement": "No Redis 7.0 ou mais recente, os comandos abaixo são executados um logo após o outro. O que o último comando devolve?",
+			"alternatives": [
+				"`50`",
+				"`300`",
+				"`200`",
+				"`100`",
+				"`-1`"
+			],
+			"explanations": [
+				"Isso supõe que o último comando sempre vence; `NX` só define a expiração quando a chave ainda não tem nenhuma.",
+				"Correta: `XX` aplica porque a chave já tem expiração (TTL vira 300); `GT` não aplica porque 200 não é maior que 300; `NX` não aplica porque a chave já tem expiração. Conferindo pelas respostas: 1, 0, 0, então vale o 300.",
+				"Isso lê `GT` ao contrário, como se aplicasse quando o prazo atual é maior que o novo; esse é o comportamento de `LT`.",
+				"Isso supõe que nenhuma opção condicional altera um prazo dado pelo `SET`; `XX` exige justamente que já exista um prazo.",
+				"Um `EXPIRE` cuja condição falha não remove a expiração: ele devolve 0 e deixa a chave como estava."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "SET job:1 \"x\" EX 100\nEXPIRE job:1 300 XX\nEXPIRE job:1 200 GT\nEXPIRE job:1 50 NX\nTTL job:1"
+			},
+			"concept": "Desde o Redis 7.0, `EXPIRE` aceita uma condição: `NX` só define o prazo se a chave não tem expiração, `XX` só se ela já tem, `GT` só se o novo prazo é maior que o atual e `LT` só se é menor. Uma chave sem expiração conta como prazo infinito para `GT` e `LT`. `GT` é útil para estender um prazo sem nunca encurtá-lo por acidente."
+		},
+		"en": {
+			"statement": "In Redis 7.0 or later, the commands below run one right after another. What does the last command return?",
+			"alternatives": [
+				"`50`",
+				"`300`",
+				"`200`",
+				"`100`",
+				"`-1`"
+			],
+			"explanations": [
+				"That assumes the last command always wins; `NX` sets the expiry only when the key has none yet.",
+				"Correct: `XX` applies because the key already has an expiry (the TTL becomes 300); `GT` does not apply because 200 is not greater than 300; `NX` does not apply because the key already has an expiry. Checking by the replies: 1, 0, 0, so 300 stands.",
+				"That reads `GT` backwards, as if it applied when the current time is greater than the new one; that is what `LT` does.",
+				"That assumes no conditional option changes a deadline given by `SET`; `XX` requires precisely that a deadline already exists.",
+				"An `EXPIRE` whose condition fails does not remove the expiry: it returns 0 and leaves the key as it was."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "SET job:1 \"x\" EX 100\nEXPIRE job:1 300 XX\nEXPIRE job:1 200 GT\nEXPIRE job:1 50 NX\nTTL job:1"
+			},
+			"concept": "Since Redis 7.0, `EXPIRE` accepts a condition: `NX` sets the time only if the key has no expiry, `XX` only if it already has one, `GT` only if the new time is greater than the current one and `LT` only if it is less. A key with no expiry counts as an infinite time for `GT` and `LT`. `GT` is useful to extend a deadline without ever shortening it by accident."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-07",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Redis documentation (EXPIRE: how Redis expires keys, passive and active)",
+		"pt": {
+			"statement": "No Redis, uma chave com TTL expira e nenhum cliente volta a lê-la. O que acontece com ela?",
+			"alternatives": [
+				"Fica na memória para sempre, pois chaves só expiram quando são lidas",
+				"É removida no milissegundo exato, por um temporizador próprio da chave",
+				"É removida apenas quando a memória atinge o limite `maxmemory`",
+				"É removida depois, por uma rotina periódica que testa chaves com TTL",
+				"Fica na memória até o próximo snapshot RDB reescrever os dados"
+			],
+			"explanations": [
+				"Essa é só a metade passiva do mecanismo; se fosse a única, chaves vencidas e nunca lidas acumulariam sem limite.",
+				"Não há um temporizador por chave: a remoção de uma chave que ninguém lê depende da amostragem e pode atrasar.",
+				"Isso confunde expiração com descarte por falta de memória, que é outro mecanismo e vale mesmo para chaves não vencidas.",
+				"Correta: além da expiração passiva na leitura, o Redis testa periodicamente uma amostra aleatória das chaves com expiração e apaga as vencidas, então a chave some, mas pode ocupar memória por algum tempo.",
+				"A expiração não depende da persistência: ela acontece em memória, com ou sem RDB configurado."
+			],
+			"concept": "O Redis expira chaves de duas formas. A forma passiva acontece quando um cliente tenta acessar uma chave vencida: ela é apagada naquele momento. A forma ativa é uma rotina periódica que testa algumas chaves ao acaso, entre as que têm expiração, e apaga as vencidas. Por isso uma chave vencida nunca é devolvida a um cliente, mas pode continuar ocupando memória por um tempo depois do prazo."
+		},
+		"en": {
+			"statement": "In Redis, a key with a TTL expires and no client ever reads it again. What happens to it?",
+			"alternatives": [
+				"It stays in memory forever, since keys only expire when they are read",
+				"It is removed at the exact millisecond, by a timer dedicated to the key",
+				"It is removed only when memory reaches the `maxmemory` limit",
+				"It is removed later, by a periodic routine that tests keys with a TTL",
+				"It stays in memory until the next RDB snapshot rewrites the data"
+			],
+			"explanations": [
+				"That is only the passive half of the mechanism; if it were the only one, expired keys that are never read would pile up without limit.",
+				"There is no timer per key: the removal of a key nobody reads depends on the sampling and can be late.",
+				"That confuses expiry with eviction under memory pressure, which is another mechanism and applies even to keys that have not expired.",
+				"Correct: besides passive expiry on access, Redis periodically tests a random sample of the keys with an expiry and deletes the expired ones, so the key goes away, but may hold memory for a while.",
+				"Expiry does not depend on persistence: it happens in memory, with or without RDB configured."
+			],
+			"concept": "Redis expires keys in two ways. The passive way happens when a client tries to access an expired key: it is deleted at that moment. The active way is a periodic routine that tests a few keys at random, among those with an expiry, and deletes the expired ones. So an expired key is never returned to a client, but it may keep using memory for some time after its deadline."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-08",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Redis documentation (GETEX); system design notes (absolute and sliding expiration)",
+		"pt": {
+			"statement": "Um cache lê com `GETEX profile:42 EX 60`, de modo que cada leitura redefine o TTL para 60 s (expiração deslizante). A chave é lida a cada 10 s e nada mais a invalida. Qual é o risco?",
+			"alternatives": [
+				"A chave expira 60 s após a criação, mesmo com as leituras constantes",
+				"Cada leitura soma 60 s, então o TTL cresce sem limite até estourar",
+				"A chave nunca expira, e um valor antigo pode ser servido indefinidamente",
+				"A chave expira em 10 s, pois o intervalo de leitura substitui o TTL",
+				"As leituras falham, pois `GETEX` é recusado em chaves que já têm TTL"
+			],
+			"explanations": [
+				"Isso descreve a expiração absoluta, contada da gravação; aqui cada leitura redefine o prazo.",
+				"`EX 60` define o prazo como 60 s a partir de agora, não soma ao que restava; o TTL nunca passa de 60.",
+				"Correta: toda leitura chega antes dos 60 s e reinicia a contagem, então o prazo nunca vence; sem invalidação explícita, o valor fica congelado enquanto a chave for popular.",
+				"O intervalo entre leituras não vira TTL; ele só determina se a próxima leitura chega antes do prazo vencer.",
+				"`GETEX` aceita chaves com ou sem expiração; ele devolve o valor e ajusta o prazo conforme a opção."
+			],
+			"concept": "Na expiração absoluta, a entrada vence um tempo fixo depois de gravada, não importa quantas vezes seja lida. Na expiração deslizante, cada acesso renova o prazo, e a entrada só vence depois de um período sem leituras. A deslizante serve bem para sessões, mas em dados que mudam na origem ela exige invalidação explícita ou um prazo máximo absoluto, senão uma entrada popular nunca é renovada."
+		},
+		"en": {
+			"statement": "A cache reads with `GETEX profile:42 EX 60`, so every read resets the TTL to 60 s (sliding expiration). The key is read every 10 s and nothing else invalidates it. What is the risk?",
+			"alternatives": [
+				"The key expires 60 s after creation, despite the constant reads",
+				"Each read adds 60 s, so the TTL grows without limit until it overflows",
+				"The key never expires, and an old value can be served indefinitely",
+				"The key expires in 10 s, since the read interval replaces the TTL",
+				"Reads fail, since `GETEX` is rejected on keys that already have a TTL"
+			],
+			"explanations": [
+				"That describes absolute expiration, counted from the write; here each read resets the deadline.",
+				"`EX 60` sets the time to 60 s from now, it does not add to what was left; the TTL never exceeds 60.",
+				"Correct: every read arrives before the 60 s end and restarts the countdown, so the deadline never comes; with no explicit invalidation, the value is frozen for as long as the key is popular.",
+				"The interval between reads does not become the TTL; it only decides whether the next read arrives before the deadline.",
+				"`GETEX` accepts keys with or without an expiry; it returns the value and adjusts the deadline according to the option."
+			],
+			"concept": "With absolute expiration, the entry expires a fixed time after it was written, no matter how often it is read. With sliding expiration, each access renews the deadline, and the entry expires only after a period with no reads. Sliding fits sessions well, but for data that changes at the origin it needs explicit invalidation or an absolute maximum lifetime, otherwise a popular entry is never refreshed."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-09",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Redis documentation (KEYS command: complexity and production warning; SCAN)",
+		"pt": {
+			"statement": "Por que não se recomenda executar `KEYS product:*` para achar as chaves a invalidar em um Redis de produção com muitos dados?",
+			"alternatives": [
+				"Ele devolve só uma amostra aproximada das chaves, e parte das entradas ficaria obsoleta",
+				"Ele percorre todas as chaves em um só comando O(N), bloqueando os outros clientes",
+				"Ele apaga as chaves encontradas como efeito colateral da listagem",
+				"Ele só roda em réplicas, e o resultado pode estar atrasado em relação ao primário",
+				"Ele redefine o TTL de cada chave visitada ao comparar com o padrão"
+			],
+			"explanations": [
+				"`KEYS` devolve todas as chaves que casam com o padrão; o problema é o custo de fazer isso de uma vez, não a precisão.",
+				"Correta: `KEYS` examina o banco inteiro, com custo proporcional ao total de chaves, e enquanto esse comando longo roda o servidor não atende outros comandos.",
+				"`KEYS` apenas lista os nomes; para apagar seria preciso outro comando, como `DEL` ou `UNLINK`.",
+				"`KEYS` roda em qualquer instância, inclusive no primário, e é justamente lá que o bloqueio causa mais dano.",
+				"`KEYS` é somente leitura: não altera valores nem expirações das chaves que examina."
+			],
+			"concept": "`KEYS padrão` tem custo O(N) sobre todas as chaves do banco e roda como um único comando, o que em um banco grande trava os demais clientes por um tempo perceptível. A documentação o reserva para depuração. Para percorrer chaves em produção usa-se `SCAN`, que avança por um cursor e devolve poucas chaves por chamada, ou evita-se a busca mantendo um conjunto com as chaves de cada grupo."
+		},
+		"en": {
+			"statement": "Why is running `KEYS product:*` to find the keys to invalidate discouraged on a production Redis with a lot of data?",
+			"alternatives": [
+				"It returns only an approximate sample of the keys, so some entries would stay stale",
+				"It walks every key in one single O(N) command, blocking the other clients",
+				"It deletes the keys it finds as a side effect of listing them",
+				"It runs only on replicas, so the result may lag behind the primary",
+				"It resets the TTL of each key it visits while matching the pattern"
+			],
+			"explanations": [
+				"`KEYS` returns all the keys that match the pattern; the problem is the cost of doing it in one go, not the accuracy.",
+				"Correct: `KEYS` examines the whole database, at a cost proportional to the total number of keys, and while this long command runs the server does not serve other commands.",
+				"`KEYS` only lists the names; deleting would take another command, such as `DEL` or `UNLINK`.",
+				"`KEYS` runs on any instance, including the primary, and that is exactly where the blocking hurts most.",
+				"`KEYS` is read-only: it changes neither the values nor the expiries of the keys it examines."
+			],
+			"concept": "`KEYS pattern` costs O(N) over all the keys of the database and runs as one single command, which on a large database stalls the other clients for a noticeable time. The documentation reserves it for debugging. To walk keys in production, use `SCAN`, which advances by a cursor and returns a few keys per call, or avoid the search by keeping a set with the keys of each group."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-10",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "System design notes (negative caching and its TTL)",
+		"pt": {
+			"statement": "Uma API guarda em cache o resultado \"usuário não encontrado\" para o id 77, com TTL de 24 h. Dois minutos depois o usuário 77 é criado, e o código de criação não mexe no cache. O que os leitores veem?",
+			"alternatives": [
+				"O novo usuário de imediato, pois uma entrada negativa nunca é servida",
+				"\"Não encontrado\" por mais 2 minutos, o tempo que a entrada já viveu",
+				"\"Não encontrado\" por até cerca de 24 h, até a entrada negativa expirar",
+				"O novo usuário de imediato, pois inserções invalidam o cache sozinhas",
+				"\"Não encontrado\" para sempre, pois entradas negativas não têm expiração"
+			],
+			"explanations": [
+				"Guardar o \"não encontrado\" serve justamente para servi-lo sem consultar o banco; ele é devolvido como qualquer entrada.",
+				"O tempo já vivido não é o que resta: restam 24 h menos 2 minutos, não 2 minutos.",
+				"Correta: a entrada negativa é um acerto de cache como qualquer outro, então é servida até expirar, cerca de 23 h 58 min depois da criação do usuário.",
+				"O cache não observa o banco; só o código da aplicação (ou um mecanismo de captura de mudanças) pode invalidar a entrada.",
+				"A entrada foi gravada com TTL de 24 h, então expira; o problema é o prazo ser longo demais para um resultado negativo."
+			],
+			"concept": "Cache negativo é guardar o resultado \"não existe\" para não repetir a consulta ao banco. Esse resultado fica errado no instante em que o item é criado, e a criação é um evento que muitas vezes não passa pelo código de invalidação. Por isso entradas negativas recebem um TTL curto, de segundos ou poucos minutos, e a criação do item deve, quando possível, apagar a entrada negativa."
+		},
+		"en": {
+			"statement": "An API caches the result \"user not found\" for id 77, with a TTL of 24 h. Two minutes later user 77 is created, and the creation code does not touch the cache. What do readers see?",
+			"alternatives": [
+				"The new user at once, since a negative entry is never served",
+				"\"Not found\" for 2 more minutes, the time the entry has already lived",
+				"\"Not found\" for up to about 24 h, until the negative entry expires",
+				"The new user at once, since inserts invalidate the cache by themselves",
+				"\"Not found\" forever, since negative entries have no expiry"
+			],
+			"explanations": [
+				"Storing the \"not found\" exists precisely to serve it without querying the database; it is returned like any entry.",
+				"The time already lived is not the time left: 24 h minus 2 minutes are left, not 2 minutes.",
+				"Correct: the negative entry is a cache hit like any other, so it is served until it expires, about 23 h 58 min after the user was created.",
+				"The cache does not watch the database; only the application code (or a change data capture mechanism) can invalidate the entry.",
+				"The entry was written with a TTL of 24 h, so it does expire; the problem is that the time is far too long for a negative result."
+			],
+			"concept": "Negative caching means storing the result \"does not exist\" to avoid repeating the database query. That result becomes wrong the instant the item is created, and creation is an event that often does not go through the invalidation code. So negative entries get a short TTL, of seconds or a few minutes, and creating the item should, when possible, delete the negative entry."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-11",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "System design notes (purge, soft purge and serving stale while revalidating)",
+		"pt": {
+			"statement": "Um cache aplica a ideia de stale-while-revalidate (base da purga suave, ou soft purge) a uma entrada que acabou de ficar obsoleta. O que ele faz na próxima requisição?",
+			"alternatives": [
+				"Segura a requisição até a origem devolver uma cópia fresca",
+				"Remove a entrada na hora e responde com erro até a renovação terminar",
+				"Serve a cópia obsoleta para sempre, enquanto a origem estiver acessível",
+				"Serve a cópia obsoleta na hora e a renova em segundo plano",
+				"Serve a cópia obsoleta apenas quando a origem está falhando"
+			],
+			"explanations": [
+				"Isso é a renovação síncrona comum: o cliente paga a latência da origem, o que essa técnica quer evitar.",
+				"Remover de imediato é a purga dura, e mesmo ela leva a uma falha de cache seguida de recarga, não a um erro.",
+				"A cópia obsoleta só é aceita por uma janela limitada e é substituída assim que a renovação termina.",
+				"Correta: o cliente recebe uma resposta rápida, ainda que um pouco antiga, e a atualização acontece fora do caminho da requisição.",
+				"Isso é servir obsoleto em caso de erro (stale-if-error), outra ideia: aqui a origem está saudável e é consultada em segundo plano."
+			],
+			"concept": "Uma purga dura remove a entrada, e a próxima requisição espera a origem. Uma purga suave apenas marca a entrada como obsoleta: ela continua sendo servida por uma janela curta enquanto uma renovação roda em segundo plano. Troca-se um pouco de atraso no dado por latência estável e menos pressão sobre a origem."
+		},
+		"en": {
+			"statement": "A cache applies the stale-while-revalidate idea (the basis of a soft purge) to an entry that has just become stale. What does it do on the next request?",
+			"alternatives": [
+				"Holds the request until the origin returns a fresh copy",
+				"Removes the entry at once and answers with an error until the refresh ends",
+				"Serves the stale copy forever, as long as the origin stays reachable",
+				"Serves the stale copy right away and refreshes it in the background",
+				"Serves the stale copy only when the origin is failing"
+			],
+			"explanations": [
+				"That is the ordinary synchronous refresh: the client pays the latency of the origin, which this technique wants to avoid.",
+				"Removing at once is a hard purge, and even that leads to a cache miss followed by a reload, not to an error.",
+				"The stale copy is accepted only for a limited window and is replaced as soon as the refresh finishes.",
+				"Correct: the client gets a fast answer, even if slightly old, and the update happens outside the request path.",
+				"That is serving stale on error (stale-if-error), a different idea: here the origin is healthy and is queried in the background."
+			],
+			"concept": "A hard purge removes the entry, and the next request waits for the origin. A soft purge only marks the entry as stale: it keeps being served for a short window while a refresh runs in the background. A little delay in the data is traded for stable latency and less pressure on the origin."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-12",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "advanced",
+		"answer": 2,
+		"source": "System design notes (invalidation of local caches, propagation of invalidation events)",
+		"pt": {
+			"statement": "Um serviço roda em 4 instâncias. Cada uma mantém um cache local, em memória, de um valor de configuração, com TTL fixo de 30 s contado da carga; ao expirar, recarrega do banco. Não há mensagens de invalidação. O valor muda no banco. Por quanto tempo, no máximo, duas instâncias podem responder valores diferentes?",
+			"alternatives": [
+				"Cerca de 120 s",
+				"Cerca de 60 s",
+				"Cerca de 30 s",
+				"Cerca de 7,5 s",
+				"Cerca de 0 s"
+			],
+			"explanations": [
+				"Isso multiplica o TTL pelo número de instâncias, mas cada cache expira por conta própria; os prazos não se encadeiam.",
+				"Isso soma os TTLs das duas instâncias, mas a que recarrega depois da mudança já está correta; só a outra precisa esperar o próprio prazo.",
+				"Correta: no pior caso a instância A carregou logo antes da mudança e fica com o valor antigo por quase 30 s, enquanto B recarrega logo depois e já tem o novo. Conferindo: toda carga feita antes da mudança vence em até 30 s depois dela, então após 30 s todas concordam.",
+				"Isso divide o TTL pelo número de instâncias, como se elas expirassem em rodízio; o pior caso depende só do TTL de uma.",
+				"Isso supõe que todas expiram no mesmo instante, mas cada uma carregou em um momento diferente."
+			],
+			"concept": "Um cache local em cada instância é rápido, mas cada cópia envelhece no próprio ritmo. Só com TTL, uma instância pode ficar até um TTL inteiro atrás do banco, e duas instâncias podem discordar por esse mesmo tempo, o que aparece como respostas que alternam conforme o balanceador escolhe a instância. Para encurtar essa janela publica-se um evento de invalidação para todas as instâncias (pub/sub, fila ou captura de mudanças do banco), mantendo o TTL como rede de segurança."
+		},
+		"en": {
+			"statement": "A service runs on 4 instances. Each keeps a local in-memory cache of a configuration value, with a fixed TTL of 30 s counted from the load; on expiry, it reloads from the database. There are no invalidation messages. The value changes in the database. For how long, at most, can two instances answer with different values?",
+			"alternatives": [
+				"About 120 s",
+				"About 60 s",
+				"About 30 s",
+				"About 7.5 s",
+				"About 0 s"
+			],
+			"explanations": [
+				"That multiplies the TTL by the number of instances, but each cache expires on its own; the deadlines do not chain.",
+				"That adds the TTLs of the two instances, but the one that reloads after the change is already right; only the other must wait for its own deadline.",
+				"Correct: in the worst case instance A loaded just before the change and keeps the old value for almost 30 s, while B reloads just after and already has the new one. Checking: every load made before the change expires within 30 s after it, so after 30 s all agree.",
+				"That divides the TTL by the number of instances, as if they expired in rotation; the worst case depends only on the TTL of one.",
+				"That assumes all of them expire at the same instant, but each one loaded at a different moment."
+			],
+			"concept": "A local cache in each instance is fast, but every copy ages at its own pace. With a TTL alone, one instance can be up to a full TTL behind the database, and two instances can disagree for that same time, which shows up as answers that alternate depending on which instance the load balancer picks. To shorten the window, an invalidation event is published to all instances (pub/sub, a queue or change data capture from the database), keeping the TTL as a safety net."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-13",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "System design notes (invalidation of derived data)",
+		"pt": {
+			"statement": "Um cache guarda `product:5` (o produto), `category:2:page:1` (uma lista que inclui o produto 5) e `search:shoes` (resultados que o incluem). O preço do produto 5 muda e o código apaga apenas `product:5`. Qual é a consequência?",
+			"alternatives": [
+				"Nada fica obsoleto, pois apagar uma chave apaga as chaves derivadas dela",
+				"A página do produto mantém o preço antigo, pois as listas ainda o guardam",
+				"As três entradas são renovadas, pois o Redis rastreia chaves com dados em comum",
+				"As listas deixam de carregar, pois apontam para uma chave que não existe mais",
+				"A lista e a busca continuam mostrando o preço antigo até expirarem"
+			],
+			"explanations": [
+				"O cache não conhece a relação entre as chaves; cada uma é um valor independente e precisa ser invalidada por quem sabe da dependência.",
+				"`product:5` foi apagada e será recarregada do banco com o preço novo; as cópias que ficaram erradas são as das listas.",
+				"O Redis não analisa o conteúdo dos valores para descobrir dados compartilhados; essa relação só existe na aplicação.",
+				"As listas guardam cópias dos dados, não ponteiros para `product:5`; elas carregam normalmente, com o preço antigo.",
+				"Correta: cada entrada guarda a própria cópia do preço, então as duas que não foram apagadas seguem com o valor antigo até o TTL delas ou até outra invalidação."
+			],
+			"concept": "Uma mesma linha do banco costuma aparecer em várias entradas de cache: o item, as listas que o contêm, resultados de busca, agregados. Invalidar corretamente exige saber todas as entradas derivadas de um dado, e essa relação não está registrada no cache. É isso que torna a invalidação um problema difícil, e é o motivo de técnicas como etiquetas de chave, prefixos versionados e TTLs curtos para listas."
+		},
+		"en": {
+			"statement": "A cache holds `product:5` (the product), `category:2:page:1` (a list that includes product 5) and `search:shoes` (results that include it). The price of product 5 changes and the code deletes only `product:5`. What is the consequence?",
+			"alternatives": [
+				"Nothing is stale, since deleting a key deletes the keys derived from it",
+				"The product page keeps the old price, since the lists still hold it",
+				"All three entries are refreshed, since Redis tracks keys that share data",
+				"The lists stop loading, since they point to a key that no longer exists",
+				"The list and the search keep showing the old price until they expire"
+			],
+			"explanations": [
+				"The cache does not know how keys relate; each one is an independent value and must be invalidated by whoever knows the dependency.",
+				"`product:5` was deleted and will be reloaded from the database with the new price; the copies left wrong are the ones in the lists.",
+				"Redis does not inspect the content of values to discover shared data; that relation exists only in the application.",
+				"The lists hold copies of the data, not pointers to `product:5`; they load normally, with the old price.",
+				"Correct: each entry holds its own copy of the price, so the two that were not deleted keep the old value until their TTL or another invalidation."
+			],
+			"concept": "One database row usually appears in several cache entries: the item, the lists that contain it, search results, aggregates. Invalidating correctly requires knowing every entry derived from a piece of data, and that relation is not recorded in the cache. This is what makes invalidation a hard problem, and the reason for techniques such as key tags, versioned prefixes and short TTLs for lists."
+		}
+	},
+	{
+		"id": "cache-invalidation-ttl-14",
+		"area": "cache",
+		"topic": "invalidation-ttl",
+		"difficulty": "advanced",
+		"answer": 0,
+		"source": "System design notes (group invalidation with a versioned key prefix)",
+		"pt": {
+			"statement": "As chaves de um catálogo são montadas como `cat:v{N}:...`, em que N é lido do contador `cat:version`. Para invalidar o catálogo inteiro, o código executa `INCR cat:version`. O que ainda precisa ser resolvido?",
+			"alternatives": [
+				"As chaves da versão antiga não são mais lidas, mas ocupam memória e precisam de TTL",
+				"As chaves da versão antiga continuam sendo lidas até um `SCAN` apagar cada uma",
+				"O contador precisa voltar a 1 depois, senão as chaves novas colidem com as antigas",
+				"O `INCR` remove o TTL de todas as chaves que têm o prefixo `cat:`",
+				"Os leitores precisam parar durante o incremento, pois `INCR` não é atômico"
+			],
+			"explanations": [
+				"Correta: depois do incremento todos montam chaves com a nova versão, então as antigas ficam órfãs; nada as apaga, e só um TTL (ou o descarte por memória) as remove.",
+				"A invalidação é imediata: os leitores passam a montar chaves com o novo N e nunca mais pedem as antigas, sem varredura alguma.",
+				"Voltar o contador reativaria as chaves antigas, com dados obsoletos; a colisão é evitada justamente por nunca reutilizar um N.",
+				"`INCR` altera apenas a chave do contador; ele não toca em outras chaves, tenham ou não o mesmo prefixo.",
+				"`INCR` é atômico no Redis; leitores concorrentes veem o valor antigo ou o novo, nunca um estado intermediário."
+			],
+			"concept": "Em vez de procurar e apagar todas as chaves de um grupo, pode-se incluir um número de versão no nome delas e guardar a versão atual em uma chave. Incrementar a versão invalida o grupo inteiro em O(1), porque ninguém mais gera os nomes antigos. O custo é que as chaves antigas continuam existindo até expirarem, e cada leitura precisa antes obter a versão atual."
+		},
+		"en": {
+			"statement": "The keys of a catalogue are built as `cat:v{N}:...`, where N is read from the counter `cat:version`. To invalidate the whole catalogue, the code runs `INCR cat:version`. What must still be taken care of?",
+			"alternatives": [
+				"Old-version keys are no longer read, but they use memory and need a TTL",
+				"Old-version keys keep being read until a `SCAN` deletes each one of them",
+				"The counter must go back to 1 afterwards, or new keys collide with old ones",
+				"The `INCR` removes the TTL of every key that has the `cat:` prefix",
+				"Readers must stop during the increment, since `INCR` is not atomic"
+			],
+			"explanations": [
+				"Correct: after the increment everyone builds keys with the new version, so the old ones are orphans; nothing deletes them, and only a TTL (or eviction under memory pressure) removes them.",
+				"The invalidation is immediate: readers start building keys with the new N and never ask for the old ones again, with no scan at all.",
+				"Moving the counter back would bring the old keys back to life, with stale data; collisions are avoided precisely by never reusing an N.",
+				"`INCR` changes only the counter key; it does not touch other keys, whether or not they share the prefix.",
+				"`INCR` is atomic in Redis; concurrent readers see the old value or the new one, never an intermediate state."
+			],
+			"concept": "Instead of finding and deleting every key of a group, a version number can be included in their names, with the current version stored in one key. Incrementing the version invalidates the whole group in O(1), because nobody generates the old names any more. The cost is that the old keys keep existing until they expire, and that every read must first obtain the current version."
+		}
+	}
+]

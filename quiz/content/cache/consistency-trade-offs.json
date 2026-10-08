@@ -1,0 +1,479 @@
+[
+	{
+		"id": "cache-consistency-trade-offs-01",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "basic",
+		"answer": 2,
+		"source": "System design notes (cache and database consistency: staleness)",
+		"pt": {
+			"statement": "Em um sistema com um cache na frente de um banco de dados, o que é uma leitura obsoleta (stale read)?",
+			"alternatives": [
+				"Uma leitura que não encontra a entrada no cache e precisa consultar o banco de dados",
+				"Uma leitura que devolve um valor gravado por uma transação que depois foi desfeita",
+				"Uma leitura que devolve um valor em cache mais antigo que o valor atual do banco",
+				"Uma leitura que falha porque a entrada em cache já passou do seu tempo de vida",
+				"Uma leitura que devolve valores diferentes quando repetida na mesma transação"
+			],
+			"explanations": [
+				"Isso é uma falha de cache (miss): a leitura vai ao banco e recebe o valor atual, apenas mais devagar.",
+				"Isso é uma leitura suja (dirty read), um fenômeno de isolamento de transações, não de cache.",
+				"Correta: o cache guarda uma cópia; se a fonte mudou e a cópia não, quem lê a cópia recebe um valor ultrapassado.",
+				"Uma entrada expirada deixa de ser servida e vira uma falha de cache; a leitura não falha nem devolve o valor antigo.",
+				"Isso é uma leitura não repetível, outro fenômeno de isolamento dentro do banco de dados."
+			],
+			"concept": "Um cache troca atualidade por velocidade: responde com uma cópia sem perguntar à fonte. Enquanto a cópia não é invalidada nem expira, uma mudança na fonte não aparece para quem lê o cache. Quando a única proteção é o tempo de vida, a janela de obsolescência é limitada por ele: com 60 s de tempo de vida, um valor pode estar até 60 s atrasado."
+		},
+		"en": {
+			"statement": "In a system with a cache in front of a database, what is a stale read?",
+			"alternatives": [
+				"A read that does not find the entry in the cache and has to query the database",
+				"A read that returns a value written by a transaction that was later rolled back",
+				"A read that returns a cached value older than the current value in the database",
+				"A read that fails because the cached entry has already passed its time to live",
+				"A read that returns different values when it is repeated in the same transaction"
+			],
+			"explanations": [
+				"That is a cache miss: the read goes to the database and gets the current value, only more slowly.",
+				"That is a dirty read, a transaction isolation phenomenon, not a caching one.",
+				"Correct: the cache holds a copy; if the source changed and the copy did not, whoever reads the copy gets an outdated value.",
+				"An expired entry is no longer served and becomes a cache miss; the read neither fails nor returns the old value.",
+				"That is a non-repeatable read, another isolation phenomenon inside the database."
+			],
+			"concept": "A cache trades freshness for speed: it answers with a copy without asking the source. While the copy is neither invalidated nor expired, a change in the source is invisible to whoever reads the cache. When the time to live is the only protection, it bounds the staleness window: with a time to live of 60 s, a value can be up to 60 s behind."
+		}
+	},
+	{
+		"id": "cache-consistency-trade-offs-02",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "System design notes (cache and database consistency: cache-aside race)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Um serviço usa cache-aside: o leitor preenche o cache em uma falha e o escritor atualiza o banco e apaga a chave. Na linha do tempo abaixo, o que o banco de dados e o cache contêm logo depois de t5, se nada mais acontecer?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "Estado inicial: banco price = 10; chave price:7 ausente do cache (acabou de expirar).\n\ntempo  Leitor R                        Escritor W\nt1     GET price:7 -> falha\nt2     SELECT price -> 10\nt3                                     UPDATE price = 12 (commit)\nt4                                     DEL price:7\nt5     SET price:7 = 10 (TTL 300 s)"
+			},
+			"alternatives": [
+				"Banco 12, cache vazio; o DEL de t4 remove o valor que R gravou no cache",
+				"Banco 12, cache 10; os leitores veem 10 até o tempo de vida acabar",
+				"Banco 12, cache 12; o SET de t5 grava o preço mais recente confirmado no banco",
+				"Banco 10, cache 10; a escrita de W é sobrescrita pelo SET feito por R",
+				"Banco 12, cache 10; o próximo GET percebe a diferença e recarrega do banco"
+			],
+			"explanations": [
+				"O DEL acontece em t4, antes do SET de t5; ele apaga uma chave que ainda não existia e não afeta o que é gravado depois.",
+				"Correta: banco: 10, depois 12 em t3. Cache: ausente, o DEL de t4 não encontra nada, e o SET de t5 grava 10. Conferindo pela última operação de cada lado: no banco é o UPDATE para 12; no cache é o SET de 10, que fica lá por até 300 s.",
+				"O SET grava o valor que R leu em t2 (10); R não relê o banco antes de gravar no cache.",
+				"Um SET no Redis não altera o PostgreSQL; o commit de W em t3 continua valendo.",
+				"Um acerto de cache não consulta o banco, então ninguém compara os dois valores; o 10 é servido até expirar ou ser apagado."
+			],
+			"concept": "Essa é a corrida clássica de cache-aside: o leitor lê o valor antigo do banco, o escritor atualiza e invalida, e só então o leitor grava no cache o valor antigo que tinha em mãos. A invalidação chegou cedo demais e não há outra a caminho. O valor obsoleto dura até o tempo de vida acabar, por isso o tempo de vida funciona como rede de segurança."
+		},
+		"en": {
+			"statement": "A service uses cache-aside: the reader fills the cache on a miss and the writer updates the database and deletes the key. In the timeline below, what do the database and the cache hold right after t5, if nothing else happens?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "Initial state: database price = 10; key price:7 absent from the cache (it has just expired).\n\ntime   Reader R                        Writer W\nt1     GET price:7 -> miss\nt2     SELECT price -> 10\nt3                                     UPDATE price = 12 (commit)\nt4                                     DEL price:7\nt5     SET price:7 = 10 (TTL 300 s)"
+			},
+			"alternatives": [
+				"Database 12, cache empty; the DEL at t4 removes the value R stored in the cache",
+				"Database 12, cache 10; readers see 10 until the time to live ends",
+				"Database 12, cache 12; the SET at t5 stores the latest price committed in the database",
+				"Database 10, cache 10; the write made by W is overwritten by the SET made by R",
+				"Database 12, cache 10; the next GET notices the difference and reloads from the database"
+			],
+			"explanations": [
+				"The DEL happens at t4, before the SET at t5; it deletes a key that did not exist yet and does not affect what is stored afterwards.",
+				"Correct: database: 10, then 12 at t3. Cache: absent, the DEL at t4 finds nothing, and the SET at t5 stores 10. Checking by the last operation on each side: in the database it is the UPDATE to 12; in the cache it is the SET of 10, which stays there for up to 300 s.",
+				"The SET stores the value R read at t2 (10); R does not read the database again before writing to the cache.",
+				"A SET in Redis does not change PostgreSQL; the commit made by W at t3 still stands.",
+				"A cache hit does not query the database, so nobody compares the two values; the 10 is served until it expires or is deleted."
+			],
+			"concept": "This is the classic cache-aside race: the reader reads the old value from the database, the writer updates and invalidates, and only then does the reader store in the cache the old value it was holding. The invalidation came too early and no other one is on its way. The stale value lasts until the time to live ends, which is why the time to live works as a safety net."
+		}
+	},
+	{
+		"id": "cache-consistency-trade-offs-03",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "System design notes (cache and database consistency: no atomic commit across stores)",
+		"pt": {
+			"statement": "Uma aplicação altera uma linha no PostgreSQL e a chave correspondente no Redis. Por que uma transação comum do banco de dados não torna essas duas alterações atômicas?",
+			"alternatives": [
+				"A transação cobre só o PostgreSQL; o Redis é outro sistema, fora do commit dela",
+				"O Redis executa comandos em uma única thread e por isso não aceita transações",
+				"O commit do PostgreSQL é assíncrono, então a linha ainda não está durável ao chamar o Redis",
+				"O Redis guarda dados em memória, e só dados em disco podem fazer parte de uma transação",
+				"Os dois sistemas têm modelos de dados diferentes, e atomicidade exige esquemas iguais"
+			],
+			"explanations": [
+				"Correta: o commit e o rollback do PostgreSQL só alcançam o que está dentro dele; o comando enviado ao Redis é uma operação separada, que pode dar certo ou falhar por conta própria.",
+				"O modelo de execução do Redis não é a causa; mesmo com transações próprias, elas não estariam ligadas ao commit do PostgreSQL.",
+				"Por padrão o commit do PostgreSQL só retorna depois de a transação estar durável; o problema é a falta de um commit comum aos dois sistemas.",
+				"Estar em memória ou em disco não define atomicidade; o que falta é um protocolo que confirme os dois sistemas juntos.",
+				"Atomicidade entre sistemas não depende do modelo de dados; depende de coordenar a confirmação, o que aqui não existe."
+			],
+			"concept": "Cache e banco de dados são dois sistemas independentes, e não há um commit único que cubra os dois. Entre uma gravação e a outra existe sempre um intervalo em que eles discordam, e uma falha nesse intervalo pode tornar a diferença duradoura. Por isso se fala em consistência eventual entre cache e banco: eles convergem depois (por invalidação ou tempo de vida), não no mesmo instante."
+		},
+		"en": {
+			"statement": "An application changes a row in PostgreSQL and the matching key in Redis. Why does an ordinary database transaction not make these two changes atomic?",
+			"alternatives": [
+				"The transaction covers only PostgreSQL; Redis is another system, outside its commit",
+				"Redis executes commands on a single thread and therefore accepts no transactions",
+				"The PostgreSQL commit is asynchronous, so the row is not yet durable when Redis is called",
+				"Redis keeps data in memory, and only data on disk can be part of a transaction",
+				"The two systems have different data models, and atomicity requires equal schemas"
+			],
+			"explanations": [
+				"Correct: the PostgreSQL commit and rollback reach only what is inside it; the command sent to Redis is a separate operation, which can succeed or fail on its own.",
+				"The execution model of Redis is not the cause; even with its own transactions, they would not be tied to the PostgreSQL commit.",
+				"By default the PostgreSQL commit returns only after the transaction is durable; the problem is the lack of a commit shared by both systems.",
+				"Being in memory or on disk does not define atomicity; what is missing is a protocol that commits both systems together.",
+				"Atomicity across systems does not depend on the data model; it depends on coordinating the commit, which does not exist here."
+			],
+			"concept": "Cache and database are two independent systems, and no single commit covers both. Between one write and the other there is always an interval in which they disagree, and a failure in that interval can make the difference last. That is why cache and database are said to be eventually consistent: they converge later (through invalidation or the time to live), not at the same instant."
+		}
+	},
+	{
+		"id": "cache-consistency-trade-offs-04",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "System design notes (cache and database consistency: order of update and invalidation)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Em cache-aside, uma escrita pode (A) atualizar o banco de dados e depois apagar a chave, ou (B) apagar a chave e depois atualizar o banco de dados. Por que a ordem A costuma ser preferida?",
+			"alternatives": [
+				"Em B, uma leitura entre os dois passos pode recolocar o valor antigo no cache",
+				"Em B, o apagamento da chave pode falhar, enquanto em A ele sempre dá certo",
+				"Em A, os dois passos se tornam atômicos, pois o banco de dados confirma primeiro",
+				"Em A, nenhum valor obsoleto pode entrar no cache, seja qual for a intercalação",
+				"Em B, a atualização do banco fica mais lenta, pois o cache está vazio durante ela"
+			],
+			"explanations": [
+				"Correta: em B a chave some enquanto o banco ainda tem o valor antigo; basta uma leitura comum nesse intervalo para encontrar a falha, ler o valor antigo e gravá-lo no cache, onde fica até expirar.",
+				"O apagamento pode falhar nas duas ordens; a ordem não muda a confiabilidade do comando.",
+				"Nenhuma ordem torna os dois passos atômicos: são dois sistemas sem commit comum.",
+				"A também tem uma corrida: um leitor que leu o banco antes do commit pode gravar o valor antigo depois do apagamento. Ela é apenas muito mais rara.",
+				"A escrita no banco não passa pelo cache; o cache vazio não a torna mais lenta."
+			],
+			"concept": "As duas ordens têm uma janela de inconsistência, mas de tamanhos diferentes. Em B (apagar, depois atualizar) a janela dura toda a escrita no banco, e uma leitura que encontre a falha nela fixa o valor antigo no cache. Em A (atualizar, depois apagar) o problema exige um leitor que tenha lido o banco antes do commit e só grave no cache depois do apagamento, o que é raro porque leituras costumam ser mais rápidas que escritas."
+		},
+		"en": {
+			"statement": "In cache-aside, a write can (A) update the database and then delete the key, or (B) delete the key and then update the database. Why is order A usually preferred?",
+			"alternatives": [
+				"In B, a read between the two steps can put the old value back in the cache",
+				"In B, the delete of the key can fail, whereas in A it always succeeds",
+				"In A, the two steps become atomic, because the database commits first",
+				"In A, no stale value can ever enter the cache, whatever the interleaving is",
+				"In B, the database update gets slower, because the cache is empty during it"
+			],
+			"explanations": [
+				"Correct: in B the key is gone while the database still has the old value; one ordinary read in that interval is enough to miss, read the old value and store it in the cache, where it stays until it expires.",
+				"The delete can fail in both orders; the order does not change the reliability of the command.",
+				"No order makes the two steps atomic: they are two systems with no common commit.",
+				"A also has a race: a reader that read the database before the commit can store the old value after the delete. It is just much rarer.",
+				"The database write does not go through the cache; an empty cache does not make it slower."
+			],
+			"concept": "Both orders have an inconsistency window, but of different sizes. In B (delete, then update) the window lasts for the whole database write, and a read that misses inside it pins the old value in the cache. In A (update, then delete) the problem needs a reader that read the database before the commit and writes to the cache only after the delete, which is rare because reads are usually faster than writes."
+		}
+	},
+	{
+		"id": "cache-consistency-trade-offs-05",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "System design notes (cache and database consistency: mitigations)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Qual destas técnicas é conhecida como apagamento duplo com atraso (delayed double delete)?",
+			"alternatives": [
+				"Apagar a chave duas vezes seguidas, para repetir um comando que possa ter se perdido",
+				"Apagar a chave, atualizar o banco, esperar um pouco e apagar a chave de novo",
+				"Guardar uma versão junto do valor e recusar a gravação que traga uma versão mais antiga",
+				"Ler o log de mudanças do banco e apagar as chaves das linhas que foram alteradas",
+				"Dar a cada chave um tempo de vida curto, para que um valor obsoleto expire sozinho"
+			],
+			"explanations": [
+				"Dois apagamentos imediatos não cobrem o leitor lento, que grava o valor antigo depois deles; o atraso é a parte essencial.",
+				"Correta: o segundo apagamento, feito depois de uma pequena espera, remove um valor antigo que um leitor concorrente possa ter recolocado no cache durante a escrita.",
+				"Isso é versionamento com comparação antes de gravar (compare-and-set), outra mitigação.",
+				"Isso é invalidação a partir do log de mudanças do banco (CDC, change data capture), outra mitigação.",
+				"Isso é o tempo de vida como rede de segurança: limita a duração do problema, mas não é o apagamento duplo."
+			],
+			"concept": "Nenhuma dessas técnicas torna cache e banco atômicos; todas reduzem a chance ou a duração de um valor obsoleto. O apagamento duplo com atraso repete a invalidação depois que leitores lentos já terminaram. Versões recusam gravações antigas, a invalidação pelo log de mudanças tira a responsabilidade da aplicação, e um tempo de vida curto limita o pior caso."
+		},
+		"en": {
+			"statement": "Which of these techniques is known as delayed double delete?",
+			"alternatives": [
+				"Delete the key twice in a row, to repeat a command that may have been lost",
+				"Delete the key, update the database, wait a little and delete the key again",
+				"Store a version with the value and reject a write that carries an older version",
+				"Read the change log of the database and delete the keys of the rows that changed",
+				"Give every key a short time to live, so that a stale value expires by itself"
+			],
+			"explanations": [
+				"Two immediate deletes do not cover the slow reader, which stores the old value after them; the delay is the essential part.",
+				"Correct: the second delete, made after a short wait, removes an old value that a concurrent reader may have put back in the cache during the write.",
+				"That is versioning with a comparison before writing (compare-and-set), another mitigation.",
+				"That is invalidation from the database change log (CDC, change data capture), another mitigation.",
+				"That is the time to live as a safety net: it limits how long the problem lasts, but it is not the double delete."
+			],
+			"concept": "None of these techniques makes cache and database atomic; all of them reduce the chance or the duration of a stale value. Delayed double delete repeats the invalidation after slow readers have finished. Versions reject old writes, invalidation from the change log takes the responsibility away from the application, and a short time to live limits the worst case."
+		}
+	},
+	{
+		"id": "cache-consistency-trade-offs-06",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "System design notes (cache and database consistency: concurrent writers)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Dois escritores usam write-through sem trava nem versão: cada um faz `UPDATE` no banco de dados e depois `SET` no cache. Qual é o estado final na linha do tempo abaixo?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "Estado inicial: banco stock = 5; cache stock:9 = 5.\n\ntempo  Escritor A                    Escritor B\nt1     UPDATE stock = 4 (commit)\nt2                                   UPDATE stock = 3 (commit)\nt3                                   SET stock:9 = 3\nt4     SET stock:9 = 4"
+			},
+			"alternatives": [
+				"Banco 3, cache 3: o Redis aplica os SETs na mesma ordem dos commits",
+				"Banco 4, cache 4: o último SET também decide o valor que fica no banco",
+				"Banco 4, cache 3: o escritor A confirmou por último, e B gravou o cache por último",
+				"Banco 3, cache 4: o cache fica com a escrita que foi confirmada primeiro",
+				"Banco 3, cache ausente: dois SETs em conflito fazem o Redis descartar a chave"
+			],
+			"explanations": [
+				"O Redis aplica os comandos na ordem em que chegam a ele (t3, depois t4), e essa ordem não tem ligação com a ordem dos commits no banco.",
+				"Um SET no cache não altera o banco; lá vale o último commit, que foi o de B.",
+				"Isso troca os papéis: quem confirmou por último no banco foi B (t2), e quem gravou o cache por último foi A (t4).",
+				"Correta: banco: 5, 4 em t1, 3 em t2, termina em 3. Cache: 5, 3 em t3, 4 em t4, termina em 4. Conferindo pela última operação: no banco é o UPDATE de B (3); no cache é o SET de A (4), que carrega a escrita mais antiga.",
+				"O Redis não detecta conflito entre SETs; o segundo simplesmente sobrescreve o primeiro."
+			],
+			"concept": "Write-through garante que, depois de uma escrita isolada, o cache tem o valor novo. Ele não garante nada sobre a ordem entre escritores concorrentes: os commits no banco e os SETs no cache podem se intercalar de formas diferentes. Aqui o cache termina com o valor mais antigo e, sem tempo de vida, continua errado até a próxima escrita. Apagar a chave em vez de gravá-la, ou gravar com versão, evita esse resultado."
+		},
+		"en": {
+			"statement": "Two writers use write-through with no lock and no version: each one runs `UPDATE` in the database and then `SET` in the cache. What is the final state in the timeline below?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "Initial state: database stock = 5; cache stock:9 = 5.\n\ntime   Writer A                      Writer B\nt1     UPDATE stock = 4 (commit)\nt2                                   UPDATE stock = 3 (commit)\nt3                                   SET stock:9 = 3\nt4     SET stock:9 = 4"
+			},
+			"alternatives": [
+				"Database 3, cache 3: Redis applies the SETs in the same order as the commits",
+				"Database 4, cache 4: the last SET also decides the value left in the database",
+				"Database 4, cache 3: writer A committed last, and writer B set the cache last",
+				"Database 3, cache 4: the cache keeps the write that was committed first",
+				"Database 3, cache absent: two conflicting SETs make Redis drop the key"
+			],
+			"explanations": [
+				"Redis applies commands in the order they reach it (t3, then t4), and that order has no link to the order of the commits in the database.",
+				"A SET in the cache does not change the database; there the last commit wins, and it was the one made by B.",
+				"That swaps the roles: the last to commit in the database was B (t2), and the last to set the cache was A (t4).",
+				"Correct: database: 5, 4 at t1, 3 at t2, ends at 3. Cache: 5, 3 at t3, 4 at t4, ends at 4. Checking by the last operation: in the database it is the UPDATE of B (3); in the cache it is the SET of A (4), which carries the older write.",
+				"Redis detects no conflict between SETs; the second one simply overwrites the first."
+			],
+			"concept": "Write-through guarantees that, after an isolated write, the cache holds the new value. It guarantees nothing about the order between concurrent writers: the commits in the database and the SETs in the cache can interleave differently. Here the cache ends with the older value and, with no time to live, stays wrong until the next write. Deleting the key instead of setting it, or setting it with a version, avoids this outcome."
+		}
+	},
+	{
+		"id": "cache-consistency-trade-offs-07",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "System design notes (cache and database consistency: read-your-own-writes)",
+		"pt": {
+			"statement": "O que promete a garantia read-your-own-writes (ler as próprias escritas)?",
+			"alternatives": [
+				"Todo usuário vê qualquer escrita assim que ela é confirmada a quem a fez",
+				"Um usuário nunca vê um valor mais antigo do que outro que ele já tenha visto",
+				"Todos os usuários acabam vendo o mesmo valor, se as escritas pararem",
+				"As escritas de um usuário são aplicadas na ordem em que ele as enviou",
+				"Um usuário que acabou de escrever vê essa escrita nas suas leituras seguintes"
+			],
+			"explanations": [
+				"Isso é consistência forte (linearizabilidade), bem mais cara: vale para todos os leitores, não só para o autor.",
+				"Isso é a garantia de leituras monotônicas, que trata de não voltar no tempo entre leituras sucessivas.",
+				"Isso é consistência eventual, que não diz nada sobre o que o autor vê logo depois de escrever.",
+				"Isso trata da ordem das escritas (escritas monotônicas), não do que as leituras devolvem.",
+				"Correta: a garantia vale para o autor da escrita; os outros usuários ainda podem ver o valor antigo por algum tempo."
+			],
+			"concept": "Com cache, o caso mais visível de inconsistência é o usuário que salva um formulário e vê o valor antigo na tela seguinte. Read-your-own-writes resolve exatamente isso, sem exigir consistência forte para todos. Formas comuns: por um curto período depois da escrita, as leituras desse usuário ignoram o cache ou vão ao banco primário."
+		},
+		"en": {
+			"statement": "What does the read-your-own-writes guarantee promise?",
+			"alternatives": [
+				"Every user sees any write as soon as it is acknowledged to whoever made it",
+				"A user never sees a value older than another one they have already seen",
+				"All users end up seeing the same value, if the writes stop",
+				"The writes of a user are applied in the order in which that user sent them",
+				"A user who has just written sees that write in their own following reads"
+			],
+			"explanations": [
+				"That is strong consistency (linearizability), far more expensive: it holds for all readers, not only the author.",
+				"That is the monotonic reads guarantee, which is about not going back in time between successive reads.",
+				"That is eventual consistency, which says nothing about what the author sees right after writing.",
+				"That is about the order of writes (monotonic writes), not about what reads return.",
+				"Correct: the guarantee holds for the author of the write; other users may still see the old value for some time."
+			],
+			"concept": "With a cache, the most visible inconsistency is the user who saves a form and sees the old value on the next screen. Read-your-own-writes solves exactly that, without requiring strong consistency for everybody. Common ways: for a short period after the write, the reads of that user bypass the cache or go to the primary database."
+		}
+	},
+	{
+		"id": "cache-consistency-trade-offs-08",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "advanced",
+		"answer": 0,
+		"source": "System design notes (cache and database consistency: write-behind, cache ahead of the database)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Um serviço usa write-behind: a cada 5 s um worker grava no banco de dados o valor em cache de cada chave pendente. Na linha do tempo abaixo, o que a leitura de t = 4 s devolve e qual valor o banco de dados tem depois de t = 5 s?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "t = 0 s  banco: points = 60 | cache points:3 = 60 | nenhuma chave pendente\nt = 1 s  serviço A (pelo cache): SET points:3 = 80, chave marcada como pendente, cliente recebe OK\nt = 3 s  script de administração (direto no banco): UPDATE points = 70 (commit)\nt = 4 s  serviço A lê points:3 pelo cache\nt = 5 s  o worker de descarga executa"
+			},
+			"alternatives": [
+				"A leitura devolve 80; o banco termina em 80, e a alteração do script é sobrescrita",
+				"A leitura devolve 70; o banco termina em 70, pois o cache acompanha o banco",
+				"A leitura devolve 80; o banco termina em 70, pois a descarga pula a linha alterada depois de t = 1 s",
+				"A leitura devolve 80; o banco termina em 90, pois a descarga aplica a diferença de +20",
+				"A leitura devolve 60; o banco termina em 80, pois o cache serve 60 até a descarga"
+			],
+			"explanations": [
+				"Correta: cache: 60, depois 80 em t = 1 s; a leitura de t = 4 s é um acerto e devolve 80. Banco: 60, 70 em t = 3 s, e a descarga de t = 5 s grava o valor em cache, 80. Conferindo: o cache não sabe do 70 e o worker grava o que tem; o 70 some sem aviso.",
+				"O cache não é avisado de mudanças feitas diretamente no banco; ele continua com 80.",
+				"O worker descrito grava o valor em cache de cada chave pendente; ele não compara com o estado atual da linha.",
+				"A descarga grava o valor absoluto que está no cache (80), não um incremento em relação ao valor antigo.",
+				"O SET de t = 1 s já alterou o cache; quem lê pelo cache vê 80 antes mesmo da descarga."
+			],
+			"concept": "Em write-behind o cache passa a ser a versão mais nova do dado, e o banco de dados fica atrás até a descarga. Isso só funciona se todas as escritas passarem pelo cache. Uma escrita feita direto no banco entre duas descargas é invisível para o cache e é sobrescrita na descarga seguinte: uma atualização perdida, sem erro para ninguém."
+		},
+		"en": {
+			"statement": "A service uses write-behind: every 5 s a worker writes to the database the cached value of each pending key. In the timeline below, what does the read at t = 4 s return and which value does the database hold after t = 5 s?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "t = 0 s  database: points = 60 | cache points:3 = 60 | no pending key\nt = 1 s  service A (through the cache): SET points:3 = 80, key marked as pending, client receives OK\nt = 3 s  admin script (directly in the database): UPDATE points = 70 (commit)\nt = 4 s  service A reads points:3 through the cache\nt = 5 s  the flush worker runs"
+			},
+			"alternatives": [
+				"The read returns 80; the database ends at 80, and the script update is overwritten",
+				"The read returns 70; the database ends at 70, since the cache follows the database",
+				"The read returns 80; the database ends at 70, since the flush skips a row changed after t = 1 s",
+				"The read returns 80; the database ends at 90, since the flush applies the +20 difference",
+				"The read returns 60; the database ends at 80, since the cache serves 60 until the flush"
+			],
+			"explanations": [
+				"Correct: cache: 60, then 80 at t = 1 s; the read at t = 4 s is a hit and returns 80. Database: 60, 70 at t = 3 s, and the flush at t = 5 s writes the cached value, 80. Checking: the cache does not know about 70 and the worker writes what it has; the 70 vanishes silently.",
+				"The cache is not told about changes made directly in the database; it still holds 80.",
+				"The worker described writes the cached value of each pending key; it does not compare it with the current state of the row.",
+				"The flush writes the absolute value that is in the cache (80), not an increment relative to the old value.",
+				"The SET at t = 1 s already changed the cache; whoever reads through the cache sees 80 even before the flush."
+			],
+			"concept": "In write-behind the cache becomes the newest version of the data, and the database stays behind until the flush. That only works if every write goes through the cache. A write made directly in the database between two flushes is invisible to the cache and is overwritten by the next flush: a lost update, with no error for anybody."
+		}
+	},
+	{
+		"id": "cache-consistency-trade-offs-09",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "System design notes (cache and database consistency: choosing by requirement)",
+		"pt": {
+			"statement": "Uma loja guarda em cache, com tempo de vida de 30 s e sem invalidação, dois valores: o contador de visualizações exibido na página de um produto e o saldo da conta consultado antes de autorizar um saque. Quais leituras devem ignorar o cache e ir ao banco de dados?",
+			"alternatives": [
+				"As do contador: ele muda com muito mais frequência e fica obsoleto mais vezes",
+				"As duas: todo valor que pode mudar precisa ser sempre lido do banco de dados",
+				"Nenhuma: um tempo de vida de 30 s deixa os dois valores atuais o bastante para decidir",
+				"As do saldo: decidir com um saldo obsoleto pode autorizar dinheiro que não existe",
+				"As do contador: um cache só pode guardar valores imutáveis, nunca contadores"
+			],
+			"explanations": [
+				"A frequência de mudança aumenta a chance de o contador estar atrasado, mas o atraso dele não causa dano; é o caso típico de dado que tolera obsolescência.",
+				"Se todo valor mutável precisasse do banco, um cache quase nunca poderia ser usado; a maioria das leituras tolera um pequeno atraso.",
+				"30 s bastam para um saldo mudar; uma decisão financeira não pode se apoiar em um valor possivelmente ultrapassado.",
+				"Correta: o que decide é o custo de errar. Um saldo com até 30 s de atraso pode liberar um saque sem fundos; um contador atrasado só mostra um número um pouco menor.",
+				"Caches guardam valores mutáveis o tempo todo, inclusive contadores; a questão é quanto atraso cada uso tolera."
+			],
+			"concept": "A pergunta certa não é \"este dado muda?\", e sim \"o que acontece se eu agir com um valor atrasado?\". Dados de exibição (contadores, listagens, recomendações) toleram alguns segundos de obsolescência e ganham muito com o cache. Dados usados para uma decisão que não pode ser desfeita (saldo, estoque na hora da compra, permissão) devem ser lidos na fonte, dentro da mesma transação que toma a decisão."
+		},
+		"en": {
+			"statement": "A shop caches two values, with a time to live of 30 s and no invalidation: the view counter shown on a product page and the account balance checked before authorising a withdrawal. Which reads should bypass the cache and go to the database?",
+			"alternatives": [
+				"The counter ones: it changes far more often and is therefore stale more often",
+				"Both: every value that can change must always be read from the database",
+				"Neither: a time to live of 30 s keeps both values current enough to base a decision on",
+				"The balance ones: deciding on a stale balance can authorise money that is not there",
+				"The counter ones: a cache can only hold immutable values, never counters"
+			],
+			"explanations": [
+				"The rate of change raises the chance of the counter being behind, but its delay does no harm; it is the typical data that tolerates staleness.",
+				"If every mutable value needed the database, a cache could almost never be used; most reads tolerate a small delay.",
+				"30 s are enough for a balance to change; a financial decision cannot rely on a possibly outdated value.",
+				"Correct: what decides is the cost of being wrong. A balance up to 30 s behind can release a withdrawal without funds; a late counter only shows a slightly smaller number.",
+				"Caches hold mutable values all the time, counters included; the question is how much delay each use tolerates."
+			],
+			"concept": "The right question is not \"does this data change?\" but \"what happens if I act on a late value?\". Display data (counters, listings, recommendations) tolerates a few seconds of staleness and gains a lot from the cache. Data used for a decision that cannot be undone (balance, stock at purchase time, permission) should be read at the source, inside the same transaction that takes the decision."
+		}
+	},
+	{
+		"id": "cache-consistency-trade-offs-10",
+		"area": "cache",
+		"topic": "consistency-trade-offs",
+		"difficulty": "advanced",
+		"answer": 4,
+		"source": "System design notes (cache and database consistency: replica lag and cache repopulation)",
+		"pt": {
+			"statement": "As escritas vão ao banco primário, e as falhas de cache são preenchidas a partir de uma réplica de leitura que está 2 s atrasada. Na linha do tempo abaixo, o que o cache contém para `user:5` em t = 3 s?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "Valor antigo de name: 'Ana'. TTL usado no SET: 600 s.\n\nt = 0.0 s  escritor: UPDATE name = 'Bia' no primário (commit)\nt = 0.1 s  escritor: DEL user:5\nt = 0.5 s  leitor: GET user:5 -> falha\nt = 0.6 s  leitor: SELECT name na réplica\nt = 0.7 s  leitor: SET user:5 = <valor lido> (TTL 600 s)\nt = 2.0 s  a réplica aplica o UPDATE"
+			},
+			"alternatives": [
+				"'Bia', pois o DEL de t = 0.1 s obriga a próxima leitura a carregar o valor novo",
+				"'Bia', pois a réplica aplica o UPDATE em t = 2 s e o cache a acompanha",
+				"Nada, pois a chave foi apagada em t = 0.1 s e nenhum SET veio depois disso",
+				"'Bia', pois o SELECT do leitor espera até a réplica receber o commit do primário",
+				"'Ana', até o tempo de vida acabar por volta de t = 600.7 s ou a chave ser apagada"
+			],
+			"explanations": [
+				"O DEL força uma recarga, mas a recarga lê a réplica atrasada, que ainda tem o valor antigo.",
+				"O cache não é avisado quando a réplica alcança o primário; a entrada gravada em t = 0.7 s não muda sozinha.",
+				"Houve um SET depois do DEL: o do leitor, em t = 0.7 s.",
+				"Uma réplica assíncrona responde com o que já aplicou; a consulta não espera a replicação terminar.",
+				"Correta: em t = 0.6 s a réplica ainda não aplicou o UPDATE (só em t = 2.0 s), então o leitor lê 'Ana' e a grava em t = 0.7 s com 600 s de tempo de vida, até t = 600.7 s. Conferindo: depois de t = 0.7 s nenhuma operação toca o cache, logo em t = 3 s ele ainda tem 'Ana'."
+			],
+			"concept": "A invalidação só ajuda se a recarga seguinte ler dados já atualizados. Com réplicas assíncronas, a chave é apagada antes de a réplica receber a mudança, e o primeiro leitor recoloca no cache o valor antigo, agora com um tempo de vida inteiro pela frente. Saídas comuns: preencher o cache a partir do primário logo após uma escrita, atrasar a invalidação além do atraso da réplica (apagamento duplo com atraso) ou invalidar a partir do log de mudanças."
+		},
+		"en": {
+			"statement": "Writes go to the primary database, and cache misses are filled from a read replica that lags 2 s behind. In the timeline below, what does the cache hold for `user:5` at t = 3 s?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "Old value of name: 'Ana'. TTL used in the SET: 600 s.\n\nt = 0.0 s  writer: UPDATE name = 'Bia' on the primary (commit)\nt = 0.1 s  writer: DEL user:5\nt = 0.5 s  reader: GET user:5 -> miss\nt = 0.6 s  reader: SELECT name on the replica\nt = 0.7 s  reader: SET user:5 = <value read> (TTL 600 s)\nt = 2.0 s  the replica applies the UPDATE"
+			},
+			"alternatives": [
+				"'Bia', because the DEL at t = 0.1 s forces the next read to load the new value",
+				"'Bia', because the replica applies the UPDATE at t = 2 s and the cache follows it",
+				"Nothing, because the key was deleted at t = 0.1 s and no SET came after that",
+				"'Bia', because the SELECT of the reader waits until the replica gets the primary commit",
+				"'Ana', until the time to live ends at about t = 600.7 s or the key is deleted"
+			],
+			"explanations": [
+				"The DEL forces a reload, but the reload reads the lagging replica, which still has the old value.",
+				"The cache is not told when the replica catches up with the primary; the entry stored at t = 0.7 s does not change by itself.",
+				"There was a SET after the DEL: the one made by the reader, at t = 0.7 s.",
+				"An asynchronous replica answers with what it has already applied; the query does not wait for replication to finish.",
+				"Correct: at t = 0.6 s the replica has not applied the UPDATE yet (only at t = 2.0 s), so the reader reads 'Ana' and stores it at t = 0.7 s with a time to live of 600 s, until t = 600.7 s. Checking: after t = 0.7 s no operation touches the cache, so at t = 3 s it still holds 'Ana'."
+			],
+			"concept": "Invalidation only helps if the following reload reads data that is already up to date. With asynchronous replicas, the key is deleted before the replica receives the change, and the first reader puts the old value back in the cache, now with a whole time to live ahead of it. Common ways out: fill the cache from the primary right after a write, delay the invalidation beyond the replica lag (delayed double delete) or invalidate from the change log."
+		}
+	}
+]

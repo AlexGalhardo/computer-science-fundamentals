@@ -1,0 +1,570 @@
+[
+	{
+		"id": "cache-eviction-policies-01",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "System design notes (eviction and expiration); Redis documentation (key eviction)",
+		"pt": {
+			"statement": "Em um cache, o que distingue o descarte (eviction) da expiração?",
+			"alternatives": [
+				"O descarte remove entradas porque o tempo delas acabou; a expiração, porque a memória encheu",
+				"O descarte é disparado pela aplicação; a expiração é disparada pelo próprio cache",
+				"O descarte apaga a entrada do banco de dados; a expiração apaga a entrada só do cache",
+				"O descarte vale para chaves com TTL; a expiração vale para chaves sem TTL",
+				"O descarte remove entradas porque a memória encheu; a expiração, porque o tempo delas acabou"
+			],
+			"explanations": [
+				"As duas causas estão trocadas: quem olha o tempo é a expiração, e quem olha a memória é o descarte.",
+				"Os dois são feitos pelo cache. A remoção pedida pela aplicação é a invalidação explícita, um terceiro mecanismo.",
+				"Nenhum dos dois toca o banco de dados: ambos removem apenas a cópia que está no cache.",
+				"A expiração é justamente o que acontece com chaves que têm TTL, e o descarte pode atingir chaves com ou sem TTL, conforme a política.",
+				"Correta: o descarte responde à falta de espaço e escolhe uma vítima pela política; a expiração responde ao relógio, pelo TTL de cada entrada."
+			],
+			"concept": "Uma entrada sai do cache por três caminhos: a aplicação a invalida, o tempo de vida (TTL) dela termina, ou o cache precisa de espaço. O último caso é o descarte: a memória é limitada, e uma política (LRU, LFU, FIFO...) decide quem sai. Uma entrada descartada ainda podia estar fresca, e uma entrada expirada sai mesmo com memória sobrando."
+		},
+		"en": {
+			"statement": "In a cache, what distinguishes eviction from expiration?",
+			"alternatives": [
+				"Eviction removes entries because their time ran out; expiration because memory is full",
+				"Eviction is triggered by the application; expiration is triggered by the cache itself",
+				"Eviction deletes the entry from the database; expiration deletes it only from the cache",
+				"Eviction applies to keys with a TTL; expiration applies to keys without a TTL",
+				"Eviction removes entries because memory is full; expiration because their time ran out"
+			],
+			"explanations": [
+				"The two causes are swapped: expiration looks at time, and eviction looks at memory.",
+				"Both are done by the cache. Removal requested by the application is explicit invalidation, a third mechanism.",
+				"Neither touches the database: both remove only the copy held in the cache.",
+				"Expiration is exactly what happens to keys that have a TTL, and eviction may hit keys with or without a TTL, depending on the policy.",
+				"Correct: eviction reacts to lack of space and picks a victim through the policy; expiration reacts to the clock, through the TTL of each entry."
+			],
+			"concept": "An entry leaves the cache in three ways: the application invalidates it, its time to live (TTL) ends, or the cache needs room. The last case is eviction: memory is limited, and a policy (LRU, LFU, FIFO...) decides who leaves. An evicted entry may still have been fresh, and an expired entry leaves even when there is memory to spare."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-02",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "System design notes (LRU, LFU, FIFO)",
+		"pt": {
+			"statement": "Qual entrada uma política LRU (least recently used) descarta quando o cache está cheio?",
+			"alternatives": [
+				"Aquela com menos acessos desde que entrou no cache",
+				"Aquela cujo último acesso é o mais antigo",
+				"Aquela que foi inserida primeiro no cache",
+				"Aquela que está mais perto de expirar",
+				"Aquela que ocupa mais memória"
+			],
+			"explanations": [
+				"Isso é LFU, que conta acessos. A LRU ignora quantas vezes a entrada foi usada e olha só quando foi a última.",
+				"Correta: a LRU ordena as entradas pelo momento do último uso e remove a que está há mais tempo sem ser usada.",
+				"Isso é FIFO, que olha a ordem de inserção e não muda quando a entrada é lida de novo.",
+				"Isso é uma política por TTL (no Redis, `volatile-ttl`), que olha o tempo restante e não o uso.",
+				"Isso é uma política por tamanho. A LRU não considera quanto espaço a entrada ocupa."
+			],
+			"concept": "A LRU aposta na localidade temporal: o que foi usado há pouco tende a ser usado de novo em breve. Por isso cada leitura ou escrita leva a entrada para a posição de \"mais recente\", e a vítima é sempre a entrada do outro extremo."
+		},
+		"en": {
+			"statement": "Which entry does an LRU (least recently used) policy evict when the cache is full?",
+			"alternatives": [
+				"The one with the fewest accesses since it was cached",
+				"The one whose last access is the oldest",
+				"The one that was inserted into the cache first",
+				"The one that is closest to expiring",
+				"The one that takes up the most memory"
+			],
+			"explanations": [
+				"That is LFU, which counts accesses. LRU ignores how many times the entry was used and looks only at when the last time was.",
+				"Correct: LRU orders entries by the moment of their last use and removes the one that has gone unused for the longest time.",
+				"That is FIFO, which looks at insertion order and does not change when the entry is read again.",
+				"That is a TTL-based policy (in Redis, `volatile-ttl`), which looks at the remaining time and not at use.",
+				"That is a size-based policy. LRU does not consider how much space the entry takes."
+			],
+			"concept": "LRU bets on temporal locality: what was used a moment ago tends to be used again soon. So every read or write moves the entry to the \"most recent\" position, and the victim is always the entry at the other end."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-03",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "System design notes (LRU, LFU, FIFO)",
+		"pt": {
+			"statement": "Um cache guarda no máximo 3 chaves, começa vazio e usa LRU: um acerto conta como uso, e em uma falha a chave é inserida, descartando a menos recentemente usada se o cache estiver cheio. Depois dos acessos abaixo, lidos da esquerda para a direita, quais chaves estão no cache?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "A  B  C  A  D  B  A  E"
+			},
+			"alternatives": [
+				"A, D e E",
+				"B, D e E",
+				"C, D e E",
+				"A, B e E",
+				"A, B e D"
+			],
+			"explanations": [
+				"Esse é o resultado em FIFO, em que os acertos em A não renovam a posição e A é descartada na chegada de D.",
+				"Aqui o segundo acerto em A foi esquecido: sem ele, A seria a menos recente na chegada de E e sairia no lugar de D.",
+				"Esse resultado vem de descartar a chave mais recentemente usada, o contrário do que a LRU faz.",
+				"Correta: A, B, C enchem o cache; A é acerto e vira a mais recente; D descarta B; B descarta C; A é acerto de novo; E descarta D, a menos recente de {D, B, A}.",
+				"Esse é o estado antes do último acesso. E não está no cache, então é inserida e descarta D."
+			],
+			"concept": "Para seguir uma LRU à mão, mantenha as chaves em ordem da menos para a mais recente. Um acerto move a chave para o fim, e uma falha com o cache cheio remove a primeira da fila. Passo a passo: [A] → [A B] → [A B C] → acerto A: [B C A] → D descarta B: [C A D] → B descarta C: [A D B] → acerto A: [D B A] → E descarta D: [B A E]."
+		},
+		"en": {
+			"statement": "A cache holds at most 3 keys, starts empty and uses LRU: a hit counts as a use, and on a miss the key is inserted, evicting the least recently used key if the cache is full. After the accesses below, read left to right, which keys are in the cache?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "A  B  C  A  D  B  A  E"
+			},
+			"alternatives": [
+				"A, D and E",
+				"B, D and E",
+				"C, D and E",
+				"A, B and E",
+				"A, B and D"
+			],
+			"explanations": [
+				"That is the FIFO result, where the hits on A do not refresh its position and A is evicted when D arrives.",
+				"Here the second hit on A was forgotten: without it, A would be the least recent when E arrives and would leave instead of D.",
+				"That result comes from evicting the most recently used key, the opposite of what LRU does.",
+				"Correct: A, B, C fill the cache; A is a hit and becomes the most recent; D evicts B; B evicts C; A is a hit again; E evicts D, the least recent of {D, B, A}.",
+				"That is the state before the last access. E is not in the cache, so it is inserted and evicts D."
+			],
+			"concept": "To trace an LRU by hand, keep the keys ordered from least to most recent. A hit moves the key to the end, and a miss with a full cache removes the first one in line. Step by step: [A] → [A B] → [A B C] → hit A: [B C A] → D evicts B: [C A D] → B evicts C: [A D B] → hit A: [D B A] → E evicts D: [B A E]."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-04",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "System design notes (LRU, LFU, FIFO)",
+		"pt": {
+			"statement": "O que uma política LFU (least frequently used) precisa registrar de cada entrada para escolher qual descartar?",
+			"alternatives": [
+				"Quantas vezes a entrada foi acessada",
+				"Quando a entrada foi acessada pela última vez",
+				"Quando a entrada foi inserida no cache",
+				"Quanto tempo falta para a entrada expirar",
+				"Quanto custou calcular o valor da entrada"
+			],
+			"explanations": [
+				"Correta: a LFU mantém um contador de acessos por entrada e descarta a de menor contagem.",
+				"Esse é o dado da LRU, que olha a recência do uso e não a frequência.",
+				"Esse é o dado da FIFO, que descarta pela ordem de chegada, sem olhar os acessos.",
+				"Esse é o dado de uma política por TTL, que descarta o que expiraria primeiro.",
+				"Isso seria uma política baseada em custo de recomputação, que a LFU não considera."
+			],
+			"concept": "A LFU aposta que o que foi muito usado continuará sendo usado. Cada acesso incrementa um contador, e a vítima é a entrada com a menor contagem. O ponto fraco é a memória longa: uma entrada que foi popular no passado mantém a contagem alta, por isso implementações reais fazem o contador decair com o tempo."
+		},
+		"en": {
+			"statement": "What does an LFU (least frequently used) policy need to record for each entry in order to choose which one to evict?",
+			"alternatives": [
+				"How many times the entry has been accessed",
+				"When the entry was accessed for the last time",
+				"When the entry was inserted into the cache",
+				"How long the entry has left before it expires",
+				"How much it cost to compute the value of the entry"
+			],
+			"explanations": [
+				"Correct: LFU keeps an access counter per entry and evicts the one with the lowest count.",
+				"That is the data LRU uses, which looks at how recent the use was and not at its frequency.",
+				"That is the data FIFO uses, which evicts in arrival order without looking at accesses.",
+				"That is the data of a TTL-based policy, which evicts what would expire first.",
+				"That would be a policy based on recomputation cost, which LFU does not consider."
+			],
+			"concept": "LFU bets that what has been used a lot will keep being used. Each access increments a counter, and the victim is the entry with the lowest count. The weak point is its long memory: an entry that was popular in the past keeps a high count, which is why real implementations make the counter decay over time."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-05",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "System design notes (LRU, LFU, FIFO)",
+		"pt": {
+			"statement": "Um cache guarda no máximo 3 chaves, começa vazio e usa FIFO: em uma falha a chave é inserida, e se o cache estiver cheio sai a chave inserida há mais tempo. Na sequência de acessos abaixo, qual chave é descartada quando D chega?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "A  B  C  A  B  D"
+			},
+			"alternatives": [
+				"A",
+				"B",
+				"C",
+				"D",
+				"Nenhuma chave"
+			],
+			"explanations": [
+				"Correta: a ordem de inserção é A, B, C. Os acertos em A e B não mudam essa ordem, então A continua sendo a mais antiga e sai.",
+				"B foi inserida depois de A. Ela só seria a vítima se A já tivesse saído.",
+				"C é a resposta em LRU (e em LFU): é a única que não foi relida. Na FIFO, a releitura de A e B não as protege.",
+				"A chave nova é sempre admitida; a política escolhe a vítima entre as chaves que já estavam no cache.",
+				"O cache já tem 3 chaves (A, B, C) e D é uma falha, então é preciso liberar um lugar."
+			],
+			"concept": "A FIFO trata o cache como uma fila: quem entrou primeiro sai primeiro. Um acerto NÃO muda a posição da chave, e essa é a diferença para a LRU. Aqui a fila é [A B C] desde o terceiro acesso; os acertos em A e B a deixam igual; D remove a cabeça da fila, A, e o cache fica [B C D]. Com LRU, a ordem de recência seria [C A B] e a vítima seria C."
+		},
+		"en": {
+			"statement": "A cache holds at most 3 keys, starts empty and uses FIFO: on a miss the key is inserted, and if the cache is full the key inserted longest ago leaves. In the access sequence below, which key is evicted when D arrives?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "A  B  C  A  B  D"
+			},
+			"alternatives": [
+				"A",
+				"B",
+				"C",
+				"D",
+				"No key at all"
+			],
+			"explanations": [
+				"Correct: the insertion order is A, B, C. The hits on A and B do not change that order, so A is still the oldest and leaves.",
+				"B was inserted after A. It would be the victim only if A had already left.",
+				"C is the answer under LRU (and LFU): it is the only one not read again. Under FIFO, rereading A and B does not protect them.",
+				"The new key is always admitted; the policy picks the victim among the keys that were already in the cache.",
+				"The cache already holds 3 keys (A, B, C) and D is a miss, so one place has to be freed."
+			],
+			"concept": "FIFO treats the cache as a queue: first in, first out. A hit does NOT change the position of the key, and that is the difference from LRU. Here the queue is [A B C] from the third access on; the hits on A and B leave it unchanged; D removes the head of the queue, A, and the cache becomes [B C D]. Under LRU the recency order would be [C A B] and the victim would be C."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-06",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "System design notes (LRU, LFU, FIFO)",
+		"pt": {
+			"statement": "Um cache guarda no máximo 3 chaves, começa vazio e usa LFU: cada acesso soma 1 ao contador da chave (a inserção já conta como o primeiro acesso), em uma falha com o cache cheio sai a chave de menor contador, e empates descartam a menos recentemente usada. Depois dos acessos abaixo, quais chaves estão no cache?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "A  A  B  C  B  D  E"
+			},
+			"alternatives": [
+				"B, D e E",
+				"C, D e E",
+				"A, B e D",
+				"A, B e E",
+				"A, B e C"
+			],
+			"explanations": [
+				"Esse é o resultado em LRU: D descartaria A (a menos recente) e E descartaria C. A LFU protege A pela contagem.",
+				"Esse é o resultado em FIFO: D descartaria A e E descartaria B, as duas primeiras inseridas.",
+				"Aqui E teria sido recusada por ter o menor contador. A chave nova sempre entra; a vítima é escolhida entre as que já estavam.",
+				"Correta: antes de D os contadores são A=2, B=2, C=1, então D descarta C. Antes de E são A=2, B=2, D=1, então E descarta D.",
+				"Aqui D e E teriam sido recusadas. Uma falha sempre insere a chave nova, mesmo com contador 1."
+			],
+			"concept": "Na LFU a vítima é a chave com menos acessos acumulados. Passo a passo: A (A=1), A (A=2), B (B=1), C (C=1), B (B=2); cache cheio com A=2, B=2, C=1. D é falha: sai C, entra D=1. E é falha: os contadores são A=2, B=2, D=1, sai D, entra E=1. Note o efeito colateral: chaves novas, com contador 1, são as primeiras candidatas a sair."
+		},
+		"en": {
+			"statement": "A cache holds at most 3 keys, starts empty and uses LFU: each access adds 1 to the counter of the key (the insertion already counts as the first access), on a miss with a full cache the key with the lowest counter leaves, and ties evict the least recently used. After the accesses below, which keys are in the cache?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "A  A  B  C  B  D  E"
+			},
+			"alternatives": [
+				"B, D and E",
+				"C, D and E",
+				"A, B and D",
+				"A, B and E",
+				"A, B and C"
+			],
+			"explanations": [
+				"That is the LRU result: D would evict A (the least recent) and E would evict C. LFU protects A through its count.",
+				"That is the FIFO result: D would evict A and E would evict B, the first two inserted.",
+				"Here E would have been refused for having the lowest counter. The new key always enters; the victim is chosen among those already there.",
+				"Correct: before D the counters are A=2, B=2, C=1, so D evicts C. Before E they are A=2, B=2, D=1, so E evicts D.",
+				"Here D and E would have been refused. A miss always inserts the new key, even with a counter of 1."
+			],
+			"concept": "Under LFU the victim is the key with the fewest accumulated accesses. Step by step: A (A=1), A (A=2), B (B=1), C (C=1), B (B=2); the cache is full with A=2, B=2, C=1. D is a miss: C leaves, D=1 enters. E is a miss: the counters are A=2, B=2, D=1, D leaves, E=1 enters. Note the side effect: new keys, with a counter of 1, are the first candidates to leave."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-07",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "System design notes (LRU implementation)",
+		"pt": {
+			"statement": "A implementação clássica de um cache LRU com `get` e `put` em O(1) combina duas estruturas. Quais, e para quê?",
+			"alternatives": [
+				"Tabela hash para achar a chave e min-heap de instantes de acesso para a ordem de recência",
+				"Tabela hash para achar a chave e vetor ordenado de instantes para achar a mais antiga",
+				"Árvore binária de busca para achar a chave e fila para a ordem de inserção",
+				"Tabela hash para achar a chave e lista duplamente encadeada para a ordem de recência",
+				"Tabela hash para achar a chave e lista simplesmente encadeada para a ordem de recência"
+			],
+			"explanations": [
+				"Atualizar a posição de um item em um heap custa O(log n) a cada acesso, então `get` deixa de ser O(1).",
+				"Mover um item em um vetor ordenado desloca os demais, O(n) por acesso.",
+				"A busca na árvore custa O(log n), e uma fila pela ordem de inserção implementa FIFO, não LRU.",
+				"Correta: a tabela leva da chave ao nó em O(1), e a lista dupla permite tirar o nó do meio e recolocá-lo na ponta em O(1).",
+				"Para tirar um nó do meio de uma lista simples é preciso achar o anterior, o que custa O(n) sem o ponteiro de volta."
+			],
+			"concept": "Uma LRU precisa de duas operações rápidas: achar uma chave e mover uma entrada para a posição de \"mais recente\". A tabela hash resolve a primeira e guarda um ponteiro para o nó da lista. A lista duplamente encadeada resolve a segunda: com os ponteiros para o anterior e o próximo, o nó é desligado e religado na ponta sem percorrer nada, e a vítima é sempre o nó da outra ponta."
+		},
+		"en": {
+			"statement": "The classic implementation of an LRU cache with O(1) `get` and `put` combines two structures. Which ones, and what for?",
+			"alternatives": [
+				"A hash map to find the key and a min-heap of access times for the recency order",
+				"A hash map to find the key and a sorted array of access times to find the oldest",
+				"A binary search tree to find the key and a queue for the insertion order",
+				"A hash map to find the key and a doubly linked list for the recency order",
+				"A hash map to find the key and a singly linked list for the recency order"
+			],
+			"explanations": [
+				"Updating the position of an item in a heap costs O(log n) on every access, so `get` stops being O(1).",
+				"Moving an item in a sorted array shifts the others, O(n) per access.",
+				"The tree lookup costs O(log n), and a queue in insertion order implements FIFO, not LRU.",
+				"Correct: the map goes from key to node in O(1), and the doubly linked list lets the node be taken from the middle and put back at the end in O(1).",
+				"Taking a node out of the middle of a singly linked list requires finding the previous one, which costs O(n) without the back pointer."
+			],
+			"concept": "An LRU needs two fast operations: finding a key, and moving an entry to the \"most recent\" position. The hash map solves the first and stores a pointer to the list node. The doubly linked list solves the second: with pointers to the previous and next nodes, the node is unlinked and relinked at the end without traversing anything, and the victim is always the node at the other end."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-08",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Redis documentation (key eviction, maxmemory-policy)",
+		"pt": {
+			"statement": "Uma instância Redis tem `maxmemory` configurado e `maxmemory-policy noeviction`. O que acontece quando o limite de memória é atingido?",
+			"alternatives": [
+				"O Redis descarta as chaves menos recentemente usadas para abrir espaço aos dados novos",
+				"Comandos que acrescentariam dados falham com erro; leituras continuam funcionando",
+				"O Redis remove chaves ao acaso até a memória ficar abaixo do limite",
+				"O Redis recusa todos os comandos, inclusive leituras, até a memória ser liberada",
+				"O Redis ignora o limite e continua crescendo até o sistema operacional encerrá-lo"
+			],
+			"explanations": [
+				"Esse é o comportamento de `allkeys-lru`. `noeviction` significa exatamente que nenhuma chave é descartada.",
+				"Correta: com `noeviction` nenhuma chave é descartada; o servidor devolve erro às escritas que precisariam de mais memória e segue atendendo leituras.",
+				"Esse é o comportamento de `allkeys-random`, outra política que descarta chaves.",
+				"Só são recusados os comandos que acrescentariam dados. Comandos que apenas leem o que já existe funcionam normalmente.",
+				"Crescer sem limite é o que acontece quando `maxmemory` é 0 (sem limite). Com um limite definido, `noeviction` barra as escritas."
+			],
+			"concept": "No Redis, `maxmemory` define o teto de memória para os dados e `maxmemory-policy` define o que fazer ao atingi-lo. `noeviction` protege os dados existentes à custa das escritas novas, o que faz sentido quando o Redis guarda dados que não podem sumir. Para um cache puro, o usual é uma política `allkeys-*`, que abre espaço descartando chaves."
+		},
+		"en": {
+			"statement": "A Redis instance has `maxmemory` set and `maxmemory-policy noeviction`. What happens when the memory limit is reached?",
+			"alternatives": [
+				"Redis evicts the least recently used keys to make room for the new data",
+				"Commands that would add data fail with an error; reads keep working",
+				"Redis removes keys at random until memory is back under the limit",
+				"Redis refuses every command, reads included, until memory is freed",
+				"Redis ignores the limit and keeps growing until the operating system kills it"
+			],
+			"explanations": [
+				"That is the behaviour of `allkeys-lru`. `noeviction` means exactly that no key is evicted.",
+				"Correct: with `noeviction` no key is evicted; the server returns an error to the writes that would need more memory and keeps serving reads.",
+				"That is the behaviour of `allkeys-random`, another policy that evicts keys.",
+				"Only the commands that would add data are refused. Commands that just read what already exists work as usual.",
+				"Growing without bound is what happens when `maxmemory` is 0 (no limit). With a limit set, `noeviction` blocks the writes."
+			],
+			"concept": "In Redis, `maxmemory` sets the memory ceiling for the data and `maxmemory-policy` sets what to do when it is reached. `noeviction` protects the existing data at the expense of new writes, which makes sense when Redis holds data that must not disappear. For a pure cache, the usual choice is an `allkeys-*` policy, which makes room by evicting keys."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-09",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Redis documentation (key eviction, maxmemory-policy)",
+		"pt": {
+			"statement": "Uma única instância Redis guarda chaves de configuração sem expiração, que nunca podem ser descartadas, e entradas de cache, todas com TTL. Quando a memória encher, devem sair primeiro as entradas de cache lidas ou escritas há mais tempo. Qual `maxmemory-policy` atende a isso?",
+			"alternatives": [
+				"`volatile-lru`",
+				"`allkeys-lru`",
+				"`volatile-ttl`",
+				"`volatile-lfu`",
+				"`noeviction`"
+			],
+			"explanations": [
+				"Correta: as políticas `volatile-*` só consideram chaves com expiração, o que preserva as de configuração, e o sufixo `lru` escolhe a menos recentemente usada.",
+				"`allkeys-lru` considera todas as chaves, então uma chave de configuração pouco lida pode ser descartada.",
+				"`volatile-ttl` também poupa as chaves sem expiração, mas escolhe a de menor TTL restante, não a usada há mais tempo.",
+				"`volatile-lfu` também poupa as chaves sem expiração, mas escolhe pela menor frequência de acesso, não pela recência.",
+				"`noeviction` não descarta nada: as chaves de configuração ficam, mas as escritas novas passam a falhar com erro."
+			],
+			"concept": "O nome de uma política do Redis tem duas partes. O prefixo diz quem pode ser vítima: `allkeys` (qualquer chave) ou `volatile` (só chaves com expiração). O sufixo diz o critério: `lru`, `lfu`, `random` ou `ttl`. Misturar cache e dados persistentes na mesma instância pede `volatile-*`, mas se nenhuma chave tiver expiração essas políticas se comportam como `noeviction`. A documentação recomenda, quando possível, duas instâncias separadas."
+		},
+		"en": {
+			"statement": "A single Redis instance holds configuration keys without expiration, which must never be evicted, and cache entries, all with a TTL. When memory fills up, the cache entries read or written longest ago should leave first. Which `maxmemory-policy` does this?",
+			"alternatives": [
+				"`volatile-lru`",
+				"`allkeys-lru`",
+				"`volatile-ttl`",
+				"`volatile-lfu`",
+				"`noeviction`"
+			],
+			"explanations": [
+				"Correct: the `volatile-*` policies only consider keys with an expiration, which preserves the configuration keys, and the `lru` suffix picks the least recently used.",
+				"`allkeys-lru` considers every key, so a rarely read configuration key may be evicted.",
+				"`volatile-ttl` also spares the keys without expiration, but it picks the shortest remaining TTL, not the one used longest ago.",
+				"`volatile-lfu` also spares the keys without expiration, but it picks by lowest access frequency, not by recency.",
+				"`noeviction` evicts nothing: the configuration keys stay, but new writes start failing with an error."
+			],
+			"concept": "The name of a Redis policy has two parts. The prefix says who may be a victim: `allkeys` (any key) or `volatile` (only keys with an expiration). The suffix says the criterion: `lru`, `lfu`, `random` or `ttl`. Mixing cache and persistent data in one instance calls for `volatile-*`, but if no key has an expiration these policies behave like `noeviction`. The documentation recommends two separate instances when possible."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-10",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Redis documentation (key eviction, approximated LRU algorithm)",
+		"pt": {
+			"statement": "No Redis, o descarte LRU é aproximado por amostragem. Qual é o efeito de aumentar `maxmemory-samples` de 5 para 10?",
+			"alternatives": [
+				"Dez chaves passam a ser descartadas por vez em lugar de cinco, liberando memória mais rápido",
+				"O Redis passa a guardar os dez últimos instantes de acesso de cada chave em vez de cinco",
+				"A escolha passa a ser a LRU exata, sem custo adicional de CPU ou de memória",
+				"O Redis passa a verificar o uso de memória a cada dez comandos em vez de a cada cinco",
+				"A escolha fica mais próxima da LRU exata, ao custo de mais CPU em cada descarte"
+			],
+			"explanations": [
+				"O parâmetro define quantas chaves são examinadas para escolher a vítima, não quantas são descartadas.",
+				"Guardar vários acessos por chave é a ideia da LRU-K. O Redis guarda pouca informação de acesso por chave, justamente para economizar memória.",
+				"Continua sendo uma amostra: a vítima é a melhor entre as chaves sorteadas, não necessariamente a menos recente de todo o conjunto.",
+				"O parâmetro não muda quando a memória é verificada, e sim quantas chaves são comparadas na hora de descartar.",
+				"Correta: o Redis sorteia algumas chaves e descarta a melhor candidata entre elas; com mais amostras a vítima se aproxima da menos recente de todas, e comparar mais chaves gasta mais CPU."
+			],
+			"concept": "Uma LRU exata exige uma estrutura que ordene todas as chaves por recência, o que custa memória por chave. O Redis prefere aproximar: quando precisa descartar, examina uma amostra aleatória de `maxmemory-samples` chaves e remove a que está há mais tempo sem acesso. O padrão é 5; a documentação indica que 10 chega bem perto da LRU verdadeira, com um pouco mais de CPU."
+		},
+		"en": {
+			"statement": "In Redis, LRU eviction is approximated by sampling. What is the effect of raising `maxmemory-samples` from 5 to 10?",
+			"alternatives": [
+				"Ten keys are evicted at a time instead of five, which frees memory faster",
+				"Redis starts storing the last ten access times of each key instead of five",
+				"The choice becomes exact LRU, with no additional cost in CPU or memory",
+				"Redis starts checking memory usage every ten commands instead of every five",
+				"The choice gets closer to exact LRU, at the cost of more CPU on each eviction"
+			],
+			"explanations": [
+				"The parameter sets how many keys are examined to choose the victim, not how many are evicted.",
+				"Storing several accesses per key is the idea of LRU-K. Redis keeps little access information per key, precisely to save memory.",
+				"It is still a sample: the victim is the best among the drawn keys, not necessarily the least recent of the whole set.",
+				"The parameter does not change when memory is checked, but how many keys are compared at eviction time.",
+				"Correct: Redis draws a few keys and evicts the best candidate among them; with more samples the victim gets closer to the least recent of all, and comparing more keys takes more CPU."
+			],
+			"concept": "An exact LRU requires a structure that orders every key by recency, which costs memory per key. Redis prefers to approximate: when it has to evict, it examines a random sample of `maxmemory-samples` keys and removes the one that has gone longest without access. The default is 5; the documentation indicates that 10 gets very close to true LRU, with a little more CPU."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-11",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "advanced",
+		"answer": 4,
+		"source": "System design notes (LRU, LFU, cache pollution)",
+		"pt": {
+			"statement": "Um cache de 100 entradas atende um site em que 20 chaves quentes já foram lidas milhares de vezes cada. Um job de relatório lê então 500 chaves frias distintas, uma vez cada, sem nenhuma leitura das chaves quentes no meio, e cada falha insere a chave no cache. Como fica o cache logo depois do job em LRU e em LFU (sem decaimento dos contadores)?",
+			"alternatives": [
+				"Em LFU só restam chaves frias; em LRU as 20 chaves quentes continuam no cache",
+				"Nas duas as 20 chaves quentes continuam, pois foram muito mais acessadas que as frias",
+				"Nas duas só restam chaves frias, pois o job inseriu mais chaves do que cabem no cache",
+				"Nas duas nada é descartado, pois só escritas da aplicação provocam descarte, e não leituras",
+				"Em LRU só restam chaves frias; em LFU as 20 chaves quentes continuam no cache"
+			],
+			"explanations": [
+				"As políticas estão trocadas: quem olha a contagem e protege as quentes é a LFU; a LRU só olha a recência.",
+				"Isso vale para a LFU. A LRU não guarda quantas vezes a chave foi acessada, só quando foi a última.",
+				"Isso vale para a LRU. Na LFU as chaves frias, com contador 1, disputam entre si as 80 posições restantes.",
+				"Uma leitura que falha insere a chave no cache, e inserir em um cache cheio obriga a descartar.",
+				"Correta: para a LRU cada chave fria é mais recente que todas as quentes, que saem após 100 inserções. Para a LFU, contador 1 perde de contadores de milhares."
+			],
+			"concept": "Uma varredura de chaves frias é o caso ruim da LRU: recência não distingue \"acabei de ser lida uma única vez\" de \"sou lida o tempo todo\", e o cache fica poluído. A LFU resiste porque compara contagens. O preço aparece no caso inverso: sem decaimento, uma chave que foi popular meses atrás nunca sai. Por isso LFUs reais, como a do Redis, reduzem os contadores com o tempo."
+		},
+		"en": {
+			"statement": "A cache of 100 entries serves a site in which 20 hot keys have already been read thousands of times each. A report job then reads 500 distinct cold keys, once each, with no read of the hot keys in between, and each miss inserts the key into the cache. What does the cache look like right after the job under LRU and under LFU (with no counter decay)?",
+			"alternatives": [
+				"Under LFU only cold keys remain; under LRU the 20 hot keys are still in the cache",
+				"Under both the 20 hot keys remain, as they had far more accesses than the cold ones",
+				"Under both only cold keys remain, as the job inserted more keys than the cache holds",
+				"Under both nothing is evicted, as only application writes trigger eviction, not reads",
+				"Under LRU only cold keys remain; under LFU the 20 hot keys are still in the cache"
+			],
+			"explanations": [
+				"The policies are swapped: LFU is the one that looks at the count and protects the hot keys; LRU looks only at recency.",
+				"That holds for LFU. LRU does not keep how many times a key was accessed, only when the last time was.",
+				"That holds for LRU. Under LFU the cold keys, with a counter of 1, compete among themselves for the remaining 80 places.",
+				"A read that misses inserts the key into the cache, and inserting into a full cache forces an eviction.",
+				"Correct: for LRU every cold key is more recent than all the hot ones, which leave after 100 insertions. For LFU, a counter of 1 loses to counters in the thousands."
+			],
+			"concept": "A scan of cold keys is the bad case for LRU: recency does not tell \"I was just read a single time\" from \"I am read all the time\", and the cache gets polluted. LFU resists because it compares counts. The price shows in the opposite case: with no decay, a key that was popular months ago never leaves. That is why real LFUs, such as the one in Redis, reduce the counters over time."
+		}
+	},
+	{
+		"id": "cache-eviction-policies-12",
+		"area": "cache",
+		"topic": "eviction-policies",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "System design notes (LRU, LFU, FIFO)",
+		"pt": {
+			"statement": "Dois caches de 3 chaves, inicialmente vazios, recebem a mesma sequência de acessos abaixo: um usa LRU (um acerto conta como uso) e o outro usa FIFO (um acerto não muda a posição). Em uma falha a chave é inserida, com descarte se o cache estiver cheio. Quantas falhas cada um tem?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "A  B  C  A  D  A  E"
+			},
+			"alternatives": [
+				"LRU: 6 falhas; FIFO: 5 falhas",
+				"LRU: 5 falhas; FIFO: 6 falhas",
+				"LRU: 5 falhas; FIFO: 5 falhas",
+				"LRU: 6 falhas; FIFO: 6 falhas",
+				"LRU: 2 falhas; FIFO: 3 falhas"
+			],
+			"explanations": [
+				"As contagens estão trocadas: quem perde A cedo demais é a FIFO, que ignora o acerto.",
+				"Correta: em LRU o acerto em A a protege, D descarta B e o segundo A é acerto (falhas: A, B, C, D, E). Em FIFO D descarta A, e o segundo A vira falha (A, B, C, D, A, E).",
+				"Isso trata o acerto em A como renovação também na FIFO. Nela A continua sendo a mais antiga e sai quando D chega.",
+				"Isso ignora o acerto em A também na LRU. Nela A vira a mais recente, e quem sai com D é B.",
+				"Esses são os números de descartes (LRU: B e C; FIFO: A, B e C), não de falhas. As três primeiras inserções também são falhas."
+			],
+			"concept": "LRU: [A] [A B] [A B C], acerto A → [B C A], D descarta B → [C A D], acerto A → [C D A], E descarta C → [D A E]: 5 falhas, 2 acertos. FIFO: [A B C], acerto A sem mudança, D descarta A → [B C D], A é falha e descarta B → [C D A], E descarta C → [D A E]: 6 falhas, 1 acerto. O estado final é o mesmo, mas a FIFO pagou uma falha a mais por descartar uma chave em uso."
+		},
+		"en": {
+			"statement": "Two caches of 3 keys, initially empty, receive the same access sequence below: one uses LRU (a hit counts as a use) and the other uses FIFO (a hit does not change the position). On a miss the key is inserted, with an eviction if the cache is full. How many misses does each one have?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "A  B  C  A  D  A  E"
+			},
+			"alternatives": [
+				"LRU: 6 misses; FIFO: 5 misses",
+				"LRU: 5 misses; FIFO: 6 misses",
+				"LRU: 5 misses; FIFO: 5 misses",
+				"LRU: 6 misses; FIFO: 6 misses",
+				"LRU: 2 misses; FIFO: 3 misses"
+			],
+			"explanations": [
+				"The counts are swapped: FIFO is the one that loses A too early, because it ignores the hit.",
+				"Correct: under LRU the hit on A protects it, D evicts B and the second A is a hit (misses: A, B, C, D, E). Under FIFO D evicts A, and the second A becomes a miss (A, B, C, D, A, E).",
+				"That treats the hit on A as a refresh under FIFO too. There A is still the oldest and leaves when D arrives.",
+				"That ignores the hit on A under LRU too. There A becomes the most recent, and B is the one that leaves with D.",
+				"Those are the numbers of evictions (LRU: B and C; FIFO: A, B and C), not of misses. The first three insertions are misses too."
+			],
+			"concept": "LRU: [A] [A B] [A B C], hit A → [B C A], D evicts B → [C A D], hit A → [C D A], E evicts C → [D A E]: 5 misses, 2 hits. FIFO: [A B C], hit A with no change, D evicts A → [B C D], A is a miss and evicts B → [C D A], E evicts C → [D A E]: 6 misses, 1 hit. The final state is the same, but FIFO paid one extra miss for evicting a key in use."
+		}
+	}
+]
