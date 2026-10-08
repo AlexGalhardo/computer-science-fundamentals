@@ -16,3 +16,7 @@ test("5 CHF times 2 is 10 CHF", () => {
 	const five = new Franc(5);
 	expect(five.times(2).equals(new Franc(10))).toBe(true);
 });
+
+test("5 CHF is not equal to $5", () => {
+	expect(new Franc(5).equals(new Dollar(5))).toBe(false);
+});
