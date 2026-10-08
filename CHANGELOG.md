@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.76.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/design-patterns/solid-before-after` (TypeScript and Java): one violating module per SOLID principle, its refactor passing the same tests, and the cost of one new requirement before and after. The design patterns area is complete.
+
+## [0.75.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/design-patterns/backend-patterns` (TypeScript): Strategy, Observer, Factory, Adapter, Decorator, Repository, Command, State and Builder, each with the design it replaces and tests, and Singleton with a test that exposes its hidden shared state.
+
+## [0.74.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: design patterns and SOLID, 100 questions in Portuguese and English, blind-reviewed with 100 of 100 agreement and 4 reviewer notes resolved (`quiz/content/design-patterns/review.md`).
+
 ## [0.73.0] - 2026-10-07
 
 ### Added

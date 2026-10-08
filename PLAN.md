@@ -714,10 +714,10 @@ Sources: Aniche (OO and SOLID), Clean Code, notes in references/notes/solid-prin
 | Repository and dependency injection | 8 |
 | Anti-patterns and when not to use a pattern | 8 |
 
-- [ ] QC-PAT.1 Coverage map committed
-- [ ] QC-PAT.2 100 questions written (PT and EN)
-- [ ] QC-PAT.3 Validation passing
-- [ ] QC-PAT.4 Blind review resolved
+- [x] QC-PAT.1 Coverage map committed
+- [x] QC-PAT.2 100 questions written (PT and EN)
+- [x] QC-PAT.3 Validation passing
+- [x] QC-PAT.4 Blind review resolved
 
 #### QC-ARCH Software architecture
 
@@ -1692,25 +1692,25 @@ Teaches: why pure code is easy to test and what properties find. Languages: TS, 
 
 Teaches: about ten patterns in situations where they pay off. Languages: TS.
 
-- [ ] **MP-PAT-1.1** Strategy, Observer, Factory, Adapter, Decorator
+- [x] **MP-PAT-1.1** Strategy, Observer, Factory, Adapter, Decorator
 	- **Accept:** each has a failing-design version, the pattern version and tests.
-- [ ] **MP-PAT-1.2** Repository, Command, State, Builder
+- [x] **MP-PAT-1.2** Repository, Command, State, Builder
 	- **Accept:** same structure as above.
-- [ ] **MP-PAT-1.3** Singleton and why to avoid it
+- [x] **MP-PAT-1.3** Singleton and why to avoid it
 	- **Accept:** a test shows the hidden shared state, and the injected version removes it.
-- [ ] **MP-PAT-1.4** Definition of done for mini-projects met.
+- [x] **MP-PAT-1.4** Definition of done for mini-projects met.
 
 #### MP-PAT-2 SOLID before and after
 
 Teaches: what each principle prevents. Languages: TS, Java.
 
-- [ ] **MP-PAT-2.1** One violating module per principle
+- [x] **MP-PAT-2.1** One violating module per principle
 	- **Accept:** tests document the current behaviour.
-- [ ] **MP-PAT-2.2** Refactor per principle
+- [x] **MP-PAT-2.2** Refactor per principle
 	- **Accept:** the same tests pass after each refactor.
-- [ ] **MP-PAT-2.3** Cost of change
+- [x] **MP-PAT-2.3** Cost of change
 	- **Accept:** the README shows, per principle, the diff needed for one new requirement before and after.
-- [ ] **MP-PAT-2.4** Definition of done for mini-projects met.
+- [x] **MP-PAT-2.4** Definition of done for mini-projects met.
 
 #### MP-ARCH-1 Clean architecture application
 
