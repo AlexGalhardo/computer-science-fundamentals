@@ -4,7 +4,7 @@ Notes that carry over between sessions. Rules live in `.claude/rules/`. This fil
 
 ## Decisions
 
-- **Remote**: `origin` uses SSH (`https://github.com/AlexGalhardo/computer-science-fundamentals.git`) because `gh` is configured for the SSH protocol on the owner's machine.
+- **Remote**: since 2026-10-08 `origin` is `https://github.com/AlexGalhardo/computer-science-fundamentals.git` (the owner's git config rewrites it to SSH). The project moved there from `AlexGalhardo/Software-Engineer-Fundamentals` with a forced push of `main`; the previous history of that repository is kept in its branch `legacy-before-2026-10`. Releases v0.1.0 to v0.80.0 were recreated there. `.claude/scripts/release.py` creates releases on `origin`.
 - **Line endings**: `.gitattributes` forces LF in the repository, CRLF only for `*.ps1`.
 - **Imported content**: lives in `references/`, lowercase kebab-case paths. See `references/README.md` for the mapping and for what was deliberately left out.
 - **Legacy projects**: `references/projects/load-stress-tests` and `references/projects/message-queues-pubsub` are the owner's older projects, kept as they were. They do not follow the rules of this repository yet (Prettier and Husky instead of Biome, open `^` version ranges, k6 scripts for the serverless API pointing at an AWS API Gateway placeholder). Their `*-ddos-attack.mjs` load generators were not imported. Treat them as raw material to be rebuilt as proper mini-projects, with local-only targets.
