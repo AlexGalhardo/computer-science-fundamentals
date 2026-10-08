@@ -42,6 +42,24 @@
 				"A shared identifier prevents ending the session of a single device and increases exposure."
 			],
 			"concept": "The session identifier is a temporary credential: whoever presents it is treated as the user. So it must have enough entropy (128 bits or more), come from a cryptographic generator and be only a key to the data kept on the server."
+		},
+		"es": {
+			"statement": "¿Qué propiedad debe tener un identificador de sesión para ser seguro?",
+			"alternatives": [
+				"Derivarse del correo del usuario, para que el servidor lo reconozca sin consultar nada",
+				"Ser un número secuencial, para que las sesiones antiguas sean fáciles de ubicar",
+				"Ser largo y generado por un generador aleatorio criptográfico, sin significado propio",
+				"Contener la fecha de inicio de sesión y el rol del usuario en Base64, para facilitar la depuración",
+				"Ser el mismo en todos los dispositivos del usuario, para mantener la sesión sincronizada"
+			],
+			"explanations": [
+				"Un valor derivado de datos públicos puede recalcularlo cualquiera.",
+				"Con una secuencia, basta sumar uno para llegar a la sesión de otra persona.",
+				"Al ser impredecible y no tener contenido, el identificador no se puede adivinar ni revela nada; los datos quedan en el servidor.",
+				"Base64 se puede leer y modificar: el identificador filtraría datos e invitaría a la manipulación.",
+				"Un identificador compartido impide cerrar la sesión de un solo dispositivo y aumenta la exposición."
+			],
+			"concept": "El identificador de sesión es una credencial temporal: a quien lo presente se lo trata como el usuario. Por eso debe tener entropía suficiente (128 bits o más), venir de un generador criptográfico y ser solo una clave para los datos guardados en el servidor."
 		}
 	},
 	{
@@ -97,6 +115,29 @@
 				"language": "http",
 				"content": "Set-Cookie: __Host-session=R4nd0mV4lu3; Path=/; HttpOnly; Secure; SameSite=Lax"
 			}
+		},
+		"es": {
+			"statement": "¿Qué hace el atributo `HttpOnly` de una cookie?",
+			"alternatives": [
+				"Impide que la cookie se envíe por conexiones sin HTTPS",
+				"Impide que la cookie se envíe en solicitudes originadas en otros sitios",
+				"Impide que el JavaScript de la página lea la cookie mediante `document.cookie`",
+				"Impide que la cookie se conserve después de cerrar el navegador",
+				"Impide que el servidor cambie el valor de la cookie una vez creada"
+			],
+			"explanations": [
+				"Ese es el papel del atributo `Secure`.",
+				"Ese es el papel del atributo `SameSite`.",
+				"La cookie sigue yendo con las solicitudes, pero es invisible para los scripts, lo que dificulta el robo del identificador mediante XSS.",
+				"La duración la definen `Expires` y `Max-Age`.",
+				"El servidor siempre puede enviar un nuevo `Set-Cookie` con otro valor."
+			],
+			"concept": "Cada atributo de cookie cubre un riesgo. `HttpOnly` saca la cookie del alcance de los scripts. `Secure` restringe el envío a HTTPS. `SameSite` restringe el envío en solicitudes entre sitios. Una cookie de sesión bien configurada usa los tres.",
+			"example": {
+				"kind": "code",
+				"language": "http",
+				"content": "Set-Cookie: __Host-session=R4nd0mV4lu3; Path=/; HttpOnly; Secure; SameSite=Lax"
+			}
 		}
 	},
 	{
@@ -142,6 +183,24 @@
 				"The same-origin policy prevents that reading, with or without `Secure`."
 			],
 			"concept": "`Secure` guarantees that the browser sends the cookie only over HTTPS. Without it, a single HTTP request, even for an image, exposes the session to whoever is on the path. The measure goes together with HSTS, which stops the browser from trying HTTP for the domain."
+		},
+		"es": {
+			"statement": "Se crea una cookie de sesión sin el atributo `Secure` en un sitio que también responde por HTTP. ¿Cuál es el riesgo?",
+			"alternatives": [
+				"La cookie puede ser leída por scripts inyectados en la página mediante XSS",
+				"La cookie puede viajar en texto claro y ser capturada en la red",
+				"La cookie puede enviarse en formularios falsificados por otros sitios",
+				"La cookie puede adivinarse, ya que pierde la aleatoriedad del identificador",
+				"La cookie puede ser leída por otros sitios abiertos en el mismo navegador"
+			],
+			"explanations": [
+				"Eso es lo que mitiga `HttpOnly`, no `Secure`.",
+				"Sin `Secure`, basta una solicitud `http://` al dominio para que el identificador salga en texto claro, por ejemplo en una red Wi-Fi abierta.",
+				"De eso se ocupan `SameSite` y el token anti-CSRF.",
+				"El valor del identificador no cambia con los atributos de la cookie.",
+				"La política de mismo origen impide esa lectura, con o sin `Secure`."
+			],
+			"concept": "`Secure` garantiza que el navegador envíe la cookie solo por HTTPS. Sin él, una sola solicitud HTTP, aunque sea para una imagen, expone la sesión a quien esté en el camino. La medida va junto con HSTS, que impide que el navegador intente HTTP para el dominio."
 		}
 	},
 	{
@@ -187,6 +246,24 @@
 				"The attacker does not need to guess any password: the victim logs in themselves."
 			],
 			"concept": "In session fixation the attacker does not steal the identifier: they choose it beforehand. If the value survives the login, the victim's authentication promotes the session the attacker already knows. The rule is to change the identifier on every privilege change: login, logout and access elevation."
+		},
+		"es": {
+			"statement": "Una aplicación crea el identificador de sesión en la primera visita y sigue usando el mismo valor después de que el usuario inicia sesión. ¿Qué ataque permite esto y cuál es la corrección?",
+			"alternatives": [
+				"CSRF; agregar un token oculto e impredecible al formulario de inicio de sesión",
+				"Enumeración de usuarios; devolver el mismo mensaje para cualquier error de inicio de sesión",
+				"XSS almacenado; codificar el identificador antes de escribirlo en la cookie",
+				"Fijación de sesión; generar un identificador nuevo al iniciar sesión e invalidar el anterior",
+				"Fuerza bruta de contraseñas; bloquear la cuenta después de algunos intentos"
+			],
+			"explanations": [
+				"El token protege contra solicitudes falsificadas, no contra la reutilización de un identificador conocido de antemano.",
+				"La enumeración tiene que ver con los mensajes de error, no con el ciclo de vida de la sesión.",
+				"El identificador no se muestra como HTML; no tiene relación con el XSS almacenado.",
+				"Quien logra plantar un identificador conocido en el navegador de la víctima obtiene una sesión autenticada cuando la víctima inicia sesión; la rotación rompe ese vínculo.",
+				"El atacante no necesita adivinar ninguna contraseña: la propia víctima inicia sesión."
+			],
+			"concept": "En la fijación de sesión el atacante no roba el identificador: lo elige de antemano. Si el valor sobrevive al inicio de sesión, la autenticación de la víctima promueve la sesión que el atacante ya conoce. La regla es cambiar el identificador en cada cambio de privilegio: inicio de sesión, cierre de sesión y elevación de acceso."
 		}
 	},
 	{
@@ -232,6 +309,24 @@
 				"Use does not change the randomness of the value; the risk is that it is still accepted."
 			],
 			"concept": "Ending a session is a server operation: removing or invalidating the record associated with the identifier. The same goes for expiry. That way an identifier captured on a shared computer, in a log or by a script stops working when the user leaves."
+		},
+		"es": {
+			"statement": "Al cerrar sesión, una aplicación solo envía un `Set-Cookie` que borra la cookie en el navegador; el registro de la sesión sigue válido en el servidor. ¿Cuál es la consecuencia?",
+			"alternatives": [
+				"Ninguna: sin la cookie en el navegador, la sesión deja de existir en todas partes",
+				"El usuario ya no puede iniciar sesión, ya que el servidor rechaza una segunda sesión",
+				"Quien copió el identificador antes del cierre de sesión todavía puede usar la sesión",
+				"El navegador vuelve a crear la cookie por sí solo en la próxima visita, a partir del cache",
+				"El identificador se vuelve predecible, ya que ya se usó una vez"
+			],
+			"explanations": [
+				"La sesión es un registro del servidor; la cookie es solo la referencia a él.",
+				"Nada impide crear sesiones nuevas; el problema es que la anterior siga válida.",
+				"El servidor todavía acepta el valor; borrar la cookie solo afecta a ese navegador. El cierre de sesión debe destruir la sesión en el servidor.",
+				"El navegador no vuelve a crear cookies borradas.",
+				"El uso no cambia la aleatoriedad del valor; el riesgo es que se siga aceptando."
+			],
+			"concept": "Terminar una sesión es una operación del servidor: eliminar o invalidar el registro asociado al identificador. Lo mismo vale para la expiración. Así, un identificador capturado en una computadora compartida, en un log o por un script deja de funcionar cuando el usuario se va."
 		}
 	},
 	{
@@ -276,6 +371,24 @@
 				"Query parameters are readable with any method."
 			],
 			"concept": "A credential should travel through as few places as possible. The URL is copied, recorded by servers and proxies, kept in the history and may go on to other sites through `Referer`. The cookie with `HttpOnly`, `Secure` and `SameSite` was made to carry the identifier without that exposure."
+		},
+		"es": {
+			"statement": "¿Por qué el identificador de sesión no debería viajar en la URL, como en `/orders?sid=...`?",
+			"alternatives": [
+				"Las URL tienen un límite de tamaño menor que el de un identificador de sesión seguro",
+				"HTTPS no cifra los parámetros de la URL, a diferencia de las cookies",
+				"Las URL terminan en historiales, logs y en el encabezado `Referer`, exponiendo el valor",
+				"El navegador rechaza solicitudes cuya URL contiene valores aleatorios largos",
+				"El servidor no puede leer los parámetros de la URL en solicitudes POST"
+			],
+			"explanations": [
+				"Un identificador de 128 bits cabe sin problema en cualquier URL.",
+				"HTTPS también cifra la ruta y los parámetros; la filtración ocurre en los extremos, no en tránsito.",
+				"Además, los usuarios copian y comparten enlaces; cada uno de esos lugares pasa a guardar una credencial válida.",
+				"No existe tal restricción en el navegador.",
+				"Los parámetros de consulta se pueden leer con cualquier método."
+			],
+			"concept": "Una credencial debe pasar por la menor cantidad de lugares posible. La URL se copia, la registran servidores y proxies, queda en el historial y puede llegar a otros sitios mediante `Referer`. La cookie con `HttpOnly`, `Secure` y `SameSite` se hizo para llevar el identificador sin esa exposición."
 		}
 	},
 	{
@@ -321,6 +434,24 @@
 				"It is the opposite: the prefix forbids `Domain`, which is what would extend the cookie to subdomains."
 			],
 			"concept": "Cookies do not follow the same notion of origin as the rest of the web: a subdomain can set a cookie for the parent domain and override the application's one. The `__Host-` prefix closes that door, since the browser only accepts the name if the cookie is secure and exclusive to the host. It is a defence against session fixation from less trusted subdomains."
+		},
+		"es": {
+			"statement": "La cookie de sesión de `app.example.com` se renombra a `__Host-session`. ¿Qué garantía agrega el prefijo `__Host-` en los navegadores que lo soportan?",
+			"alternatives": [
+				"El navegador cifra la cookie con una clave derivada del nombre del host",
+				"La cookie deja de enviarse en cualquier solicitud originada en otro sitio",
+				"La cookie solo se acepta si tiene `Secure`, `Path=/` y ningún `Domain`",
+				"La cookie se vuelve inaccesible para JavaScript, incluso sin el atributo `HttpOnly`",
+				"La cookie se comparte automáticamente con todos los subdominios del host"
+			],
+			"explanations": [
+				"El prefijo no cifra nada; impone reglas a los atributos.",
+				"Eso lo controla `SameSite`, que el prefijo no reemplaza.",
+				"Sin `Domain`, la cookie pertenece solo al host exacto; el navegador rechaza cualquier `Set-Cookie` con ese nombre que rompa las reglas, incluido uno de `other.example.com`.",
+				"Para eso sigue haciendo falta `HttpOnly`.",
+				"Es lo contrario: el prefijo prohíbe `Domain`, que es lo que extendería la cookie a los subdominios."
+			],
+			"concept": "Las cookies no siguen la misma noción de origen que el resto de la web: un subdominio puede definir una cookie para el dominio padre y sobrescribir la de la aplicación. El prefijo `__Host-` cierra esa puerta, ya que el navegador solo acepta el nombre si la cookie es segura y exclusiva del host. Es una defensa contra la fijación de sesión desde subdominios menos confiables."
 		}
 	},
 	{
@@ -366,6 +497,24 @@
 				"The server can destroy a session at any time; the timeout is only one of the triggers."
 			],
 			"concept": "The two limits cover different risks. The idle timeout shrinks the window of an abandoned device. The absolute limit shrinks the lifetime of a captured identifier, since no activity extends it beyond that. Sensitive applications use both and renew the identifier at intervals."
+		},
+		"es": {
+			"statement": "Una aplicación expira las sesiones tras 15 minutos sin actividad (tiempo de inactividad), pero no tiene un límite absoluto de duración. ¿Qué escenario deja sin cubrir este diseño?",
+			"alternatives": [
+				"Un usuario legítimo que pasa 20 minutos leyendo una página sigue conectado sin interactuar",
+				"Un identificador robado que se usa de forma continua nunca queda inactivo y sigue válido",
+				"Un identificador robado deja de funcionar en cuanto el usuario legítimo hace otra solicitud",
+				"Un usuario legítimo es desconectado cada 15 minutos, incluso navegando activamente",
+				"El servidor no puede invalidar un identificador todavía válido antes de los 15 minutos"
+			],
+			"explanations": [
+				"El tiempo de inactividad cubre exactamente ese caso: tras 15 minutos sin solicitudes, la sesión expira.",
+				"Cada solicitud del atacante renueva el reloj de inactividad; solo un límite absoluto, que obliga a autenticarse de nuevo, termina esa sesión.",
+				"Ambas partes usan el mismo identificador; la actividad de una no derriba a la otra.",
+				"Eso describiría un límite absoluto de 15 minutos, no un tiempo de inactividad.",
+				"El servidor puede destruir una sesión en cualquier momento; el tiempo límite es solo uno de los disparadores."
+			],
+			"concept": "Los dos límites cubren riesgos distintos. El tiempo de inactividad reduce la ventana de un dispositivo abandonado. El límite absoluto reduce la vida útil de un identificador capturado, ya que ninguna actividad la extiende más allá de él. Las aplicaciones sensibles usan ambos y renuevan el identificador a intervalos."
 		}
 	}
 ]

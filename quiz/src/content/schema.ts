@@ -9,7 +9,7 @@
 
 import { z } from "zod";
 
-export const LANGUAGES = ["pt", "en"] as const;
+export const LANGUAGES = ["en", "pt", "es"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 export const DIFFICULTIES = ["basic", "intermediate", "advanced"] as const;
@@ -73,6 +73,13 @@ const questionTextSchema = z.object(
 //     Uma lista como [1, 2] é rejeitada aqui, e é assim que a regra de uma correta é garantida.
 const ANSWER = `must be a single integer from 0 to ${ALTERNATIVE_COUNT - 1}`;
 
+function sameInEveryLanguage(
+	question: Record<Language, { example?: unknown; snippet?: unknown }>,
+	field: "example" | "snippet",
+): boolean {
+	return new Set(LANGUAGES.map((language) => question[language][field] === undefined)).size === 1;
+}
+
 export const questionSchema = z
 	.object({
 		id: slug,
@@ -87,23 +94,26 @@ export const questionSchema = z
 			.max(ALTERNATIVE_COUNT - 1, ANSWER),
 		source: text,
 		miniProject: text.optional(),
-		pt: questionTextSchema,
 		en: questionTextSchema,
+		pt: questionTextSchema,
+		es: questionTextSchema,
 	})
-	// EN: Both languages must say the same thing in the same shape: an example in one language
-	//     only would make the two versions of the question different.
-	// PT: Os dois idiomas precisam dizer a mesma coisa no mesmo formato: um exemplo em apenas um
-	//     idioma tornaria as duas versões da questão diferentes.
-	.refine((question) => (question.pt.example === undefined) === (question.en.example === undefined), {
+	// EN: Every language must say the same thing in the same shape: an example in one language
+	//     only would make the versions of the question different.
+	// PT: Todos os idiomas precisam dizer a mesma coisa no mesmo formato: um exemplo em apenas um
+	//     idioma tornaria as versões da questão diferentes.
+	// ES: Todos los idiomas deben decir lo mismo con la misma forma: un ejemplo en un solo
+	//     idioma haría que las versiones de la pregunta fueran distintas.
+	.refine((question) => sameInEveryLanguage(question, "example"), {
 		path: ["example"],
-		message: "must be present in both languages or in neither",
+		message: "must be present in every language or in none",
 	})
-	.refine((question) => (question.pt.snippet === undefined) === (question.en.snippet === undefined), {
+	.refine((question) => sameInEveryLanguage(question, "snippet"), {
 		path: ["snippet"],
-		message: "must be present in both languages or in neither",
+		message: "must be present in every language or in none",
 	});
 
-const localisedNameSchema = z.object({ pt: text, en: text });
+const localisedNameSchema = z.object({ en: text, pt: text, es: text });
 
 const coverageTopicSchema = z.object({
 	slug,

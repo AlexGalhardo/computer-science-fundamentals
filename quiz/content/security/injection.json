@@ -42,6 +42,24 @@
 				"When the value enters by concatenation, the database parser cannot tell what was data from what was command."
 			],
 			"concept": "Injection happens when the boundary between code and data disappears. By concatenating an external value into the query text, the application lets the database decide, from the syntax, what is a command. The fix is to keep the two apart by sending the values as parameters."
+		},
+		"es": {
+			"statement": "¿Cuál es la causa raíz de una inyección SQL?",
+			"alternatives": [
+				"La base de datos acepta conexiones sin cifrar entre la aplicación y el servidor",
+				"La aplicación guarda las contraseñas de los usuarios en texto plano en la tabla de cuentas",
+				"El servidor devuelve mensajes de error detallados cuando una consulta falla",
+				"La aplicación se conecta a la base de datos con un usuario que tiene permisos totales de administrador",
+				"Datos no confiables entran en el texto de la consulta y se interpretan como código SQL"
+			],
+			"explanations": [
+				"La falta de TLS expone el tráfico a escuchas, pero no convierte datos en código.",
+				"Las contraseñas en texto plano agravan una filtración, pero ese es un problema de almacenamiento, no el origen de la inyección.",
+				"Los errores detallados ayudan a quien la explota, pero ocultarlos no elimina la falla.",
+				"El exceso de privilegios aumenta el daño de una inyección, pero no es lo que la hace posible.",
+				"Cuando el valor entra por concatenación, el parser de la base de datos no puede distinguir qué era dato y qué era comando."
+			],
+			"concept": "La inyección ocurre cuando desaparece la frontera entre código y datos. Al concatenar un valor externo en el texto de la consulta, la aplicación deja que la base de datos decida, a partir de la sintaxis, qué es un comando. La corrección es mantener ambos separados enviando los valores como parámetros."
 		}
 	},
 	{
@@ -96,6 +114,29 @@
 				"kind": "code",
 				"language": "ts",
 				"content": "// Vulnerable: the value becomes part of the text\nawait db.query(\"SELECT id FROM users WHERE email = '\" + email + \"'\");\n\n// Fixed: the value travels as a parameter\nawait db.query(\"SELECT id FROM users WHERE email = $1\", [email]);"
+			}
+		},
+		"es": {
+			"statement": "¿Cuál es la principal defensa recomendada contra la inyección SQL?",
+			"alternatives": [
+				"Eliminar o duplicar a mano las comillas de cada valor antes de concatenar",
+				"Rechazar entradas que contengan palabras como SELECT, UNION o DROP",
+				"Usar consultas parametrizadas, con los valores separados del texto SQL",
+				"Validar los campos del formulario con JavaScript antes de enviarlos al servidor",
+				"Reemplazar los mensajes de error de la base de datos por una página de error genérica"
+			],
+			"explanations": [
+				"Escapar a mano depende de recordar cada caso (codificaciones, tipos numéricos, otros delimitadores) y suele fallar.",
+				"Las listas de bloqueo frenan texto legítimo y dejan pasar variaciones; no atacan la causa.",
+				"Con parámetros, la estructura de la consulta queda fija antes de que lleguen los valores, así que ningún valor cambia el comando.",
+				"La validación en el navegador se evita enviando la solicitud directamente al servidor.",
+				"Ocultar el error solo dificulta el diagnóstico; la consulta todavía puede manipularse."
+			],
+			"concept": "La consulta parametrizada (prepared statement) es la defensa principal porque elimina la causa: el texto SQL y los valores viajan por separado. La validación de entradas y el mínimo privilegio son capas adicionales. Las listas de bloqueo y el escape manual tratan síntomas y son frágiles.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "// Vulnerable: el valor pasa a ser parte del texto\nawait db.query(\"SELECT id FROM users WHERE email = '\" + email + \"'\");\n\n// Corregido: el valor viaja como parámetro\nawait db.query(\"SELECT id FROM users WHERE email = $1\", [email]);"
 			}
 		}
 	},
@@ -152,6 +193,29 @@
 				"content": "const sql = \"SELECT id, name FROM users WHERE email = '\" + email + \"'\";\nconst result = await db.query(sql);"
 			},
 			"concept": "Concatenating user input into SQL is the pattern that characterises injection. The quoted literal stays a literal only while the value contains no quote. With `WHERE email = $1` and the value in a parameter list, the content of the value no longer matters to the structure."
+		},
+		"es": {
+			"statement": "El valor de `email` viene del cuerpo de la solicitud. ¿Cuál es el problema de seguridad en este fragmento?",
+			"alternatives": [
+				"La consulta no tiene LIMIT, así que puede devolver demasiadas filas y agotar la memoria",
+				"El valor pasa a formar parte del texto SQL y puede cambiar la estructura de la consulta",
+				"El correo no se convirtió a minúsculas, así que la comparación puede fallar",
+				"La consulta se ejecuta fuera de una transacción, así que puede leer datos inconsistentes",
+				"El resultado no se guarda en cache, así que cada inicio de sesión sobrecarga la base de datos"
+			],
+			"explanations": [
+				"La falta de LIMIT es un asunto de rendimiento; el filtro por correo devuelve pocas filas en el uso normal.",
+				"Una comilla dentro del valor cierra el literal, y lo que sigue lo lee la base de datos como SQL.",
+				"Normalizar el correo es un asunto funcional, sin relación con la seguridad de la consulta.",
+				"Una sola lectura no necesita una transacción explícita para ser segura.",
+				"El cache es una optimización; la falla existe con o sin él."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const sql = \"SELECT id, name FROM users WHERE email = '\" + email + \"'\";\nconst result = await db.query(sql);"
+			},
+			"concept": "Concatenar la entrada del usuario en SQL es el patrón que caracteriza la inyección. El literal entre comillas sigue siendo un literal solo mientras el valor no contenga comillas. Con `WHERE email = $1` y el valor en una lista de parámetros, el contenido del valor ya no importa para la estructura."
 		}
 	},
 	{
@@ -196,6 +260,24 @@
 				"CSRF uses the victim's browser to send a legitimate request; it does not involve interpreting data as a command."
 			],
 			"concept": "Command injection is the same idea as SQL injection with another interpreter: the shell. Characters such as `;`, `|` and `&&` mean something to the shell, so data concatenated into a command line can add commands. The defence is to avoid the shell and to validate the value."
+		},
+		"es": {
+			"statement": "Un endpoint de diagnóstico recibe `host` del usuario, arma el texto `ping -c 1 ` seguido de `host` y se lo entrega a un shell. Un valor que contiene `;` hace que un segundo programa se ejecute en el servidor. ¿Cómo se llama esta clase de falla?",
+			"alternatives": [
+				"Inyección de comandos del sistema operativo",
+				"Inyección SQL",
+				"Cross-site scripting reflejado",
+				"Recorrido de directorios (path traversal)",
+				"Falsificación de solicitudes entre sitios (CSRF)"
+			],
+			"explanations": [
+				"Los datos del usuario llegan a un intérprete de comandos, que trata `;` como separador y ejecuta el resto.",
+				"No interviene ninguna base de datos ni consulta SQL; aquí el intérprete es el shell.",
+				"El XSS ejecuta script en el navegador de otra persona; aquí la ejecución ocurre en el servidor.",
+				"El path traversal manipula rutas de archivos con `../`; aquí el problema es ejecutar comandos.",
+				"El CSRF usa el navegador de la víctima para enviar una solicitud legítima; no implica interpretar datos como comando."
+			],
+			"concept": "La inyección de comandos es la misma idea que la inyección SQL con otro intérprete: el shell. Caracteres como `;`, `|` y `&&` significan algo para el shell, así que los datos concatenados en una línea de comandos pueden agregar comandos. La defensa es evitar el shell y validar el valor."
 		}
 	},
 	{
@@ -241,6 +323,24 @@
 				"The structure is defined only by the text with placeholders; the value fills a data position, whatever its content."
 			],
 			"concept": "In a parameterised query the database first parses the text with placeholders (`$1`, `?`) and fixes the command tree. Then it receives the values, which can only fill data positions. That is why the value `' OR '1'='1` is just an odd text to compare, not a condition."
+		},
+		"es": {
+			"statement": "¿Por qué una consulta parametrizada evita la inyección SQL?",
+			"alternatives": [
+				"El driver busca caracteres peligrosos en los valores y los elimina antes de enviar",
+				"Los valores viajan cifrados, así que la base de datos no puede ejecutarlos",
+				"La base de datos verifica que cada valor tenga el tipo de la columna y rechaza las diferencias",
+				"La consulta empieza a ejecutarse en una transacción de solo lectura, que bloquea los cambios",
+				"La base de datos recibe el texto y los valores por separado y nunca analiza los valores como SQL"
+			],
+			"explanations": [
+				"No hay filtrado: una comilla en el valor se conserva y se compara como un carácter cualquiera.",
+				"El cifrado del transporte (TLS) es independiente; los valores llegan legibles a la base de datos.",
+				"La verificación de tipos existe, pero un texto malicioso es un texto válido; lo que protege es no analizarlo como código.",
+				"Los parámetros funcionan igual en comandos de escritura; nada se vuelve de solo lectura.",
+				"La estructura la define solo el texto con marcadores de posición; el valor ocupa una posición de dato, sea cual sea su contenido."
+			],
+			"concept": "En una consulta parametrizada, la base de datos primero analiza el texto con marcadores de posición (`$1`, `?`) y fija el árbol del comando. Después recibe los valores, que solo pueden ocupar posiciones de dato. Por eso el valor `' OR '1'='1` es solo un texto raro para comparar, no una condición."
 		}
 	},
 	{
@@ -291,6 +391,29 @@
 				"Read-only reduces the damage, but an injection would still read data from other tables."
 			],
 			"concept": "Parameters protect values, not structural parts such as table names, column names or the `ASC`/`DESC` direction. When the structure has to vary, the user input is only a key into an allow-list, and the concatenated text comes from that list.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const SORTABLE = { price: \"price\", name: \"name\" } as const;\nconst column = SORTABLE[sort as keyof typeof SORTABLE] ?? \"name\";\nawait db.query(`SELECT id, name, price FROM products ORDER BY ${column}`);"
+			}
+		},
+		"es": {
+			"statement": "Un listado permite al usuario elegir la columna de ordenamiento (`sort=price` o `sort=name`). Los marcadores de parámetros no pueden representar nombres de columnas. ¿Qué enfoque es seguro y funciona?",
+			"alternatives": [
+				"Enviar el nombre de la columna como parámetro `$1` en `ORDER BY $1`, como cualquier otro valor",
+				"Concatenar el valor después de quitar espacios, punto y coma y guiones dobles",
+				"Concatenar el valor entre comillas dobles, ya que los identificadores entre comillas no se ejecutan",
+				"Mapear el valor recibido a una lista fija de columnas y usar el nombre de ella",
+				"Aceptar cualquier valor, siempre que la consulta use un usuario de base de datos de solo lectura"
+			],
+			"explanations": [
+				"Un parámetro siempre es un valor: `ORDER BY $1` ordena por una constante y la elección del usuario no tiene efecto.",
+				"Eso es una lista de bloqueo: las subconsultas y las expresiones no necesitan esos caracteres.",
+				"Una comilla doble dentro del valor cierra el identificador, igual que una comilla simple cierra un literal.",
+				"Con una lista de permitidos, el texto que entra en el SQL es siempre una constante escrita por el programador; la entrada solo elige cuál.",
+				"El modo de solo lectura reduce el daño, pero una inyección seguiría leyendo datos de otras tablas."
+			],
+			"concept": "Los parámetros protegen valores, no partes estructurales como nombres de tablas, nombres de columnas o la dirección `ASC`/`DESC`. Cuando la estructura tiene que variar, la entrada del usuario es solo una clave de una lista de permitidos, y el texto concatenado viene de esa lista.",
 			"example": {
 				"kind": "code",
 				"language": "ts",
@@ -350,6 +473,29 @@
 				"language": "ts",
 				"content": "// Vulnerable: a shell interprets the whole line\nBun.spawn([\"sh\", \"-c\", `ping -c 1 ${host}`]);\n\n// Fixed: no shell, one argument per position\nBun.spawn([\"ping\", \"-c\", \"1\", host]);"
 			}
+		},
+		"es": {
+			"statement": "Un servicio debe ejecutar `ping` contra un `host` indicado por el usuario. ¿Qué cambio elimina la causa de la inyección de comandos?",
+			"alternatives": [
+				"Poner `host` entre comillas dobles en la línea de comandos que se entrega al shell",
+				"Quitar el carácter `;` de `host` antes de armar la línea de comandos",
+				"Ejecutar el comando dentro de un contenedor aislado, con el proceso corriendo como root",
+				"Llamar al programa sin shell, con los argumentos en una lista, y validar `host`",
+				"Codificar `host` en Base64 antes de concatenarlo en la línea de comandos"
+			],
+			"explanations": [
+				"Entre comillas dobles el shell todavía expande `$()` y las comillas invertidas, y una comilla en el valor cierra el entrecomillado.",
+				"Eso es una lista de bloqueo: `|`, `&&`, los saltos de línea y `$()` siguen disponibles.",
+				"Un contenedor limita el alcance, pero el comando inyectado igual se ejecuta, y como root.",
+				"Sin shell nadie interpreta `;`, `|` ni `$()`: el valor llega al programa como un solo argumento. La validación además frena valores que parecen opciones, como los que empiezan con `-`.",
+				"`ping` recibiría un nombre sin sentido; la funcionalidad deja de servir y la lógica de concatenación sigue ahí."
+			],
+			"concept": "Una línea de comandos solo es peligrosa porque un shell la interpreta. Las API que reciben el ejecutable y una lista de argumentos crean el proceso directamente, y cada argumento se entrega como dato. Validar el valor contra un formato estricto (por ejemplo, un nombre de host) completa la defensa.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "// Vulnerable: un shell interpreta la línea entera\nBun.spawn([\"sh\", \"-c\", `ping -c 1 ${host}`]);\n\n// Corregido: sin shell, un argumento por posición\nBun.spawn([\"ping\", \"-c\", \"1\", host]);"
+			}
 		}
 	},
 	{
@@ -394,6 +540,24 @@
 				"Logging queries helps to investigate, but it does not change how they are built."
 			],
 			"concept": "An ORM greatly reduces the risk because its API generates parameterised queries. It does not change the rule, though: any SQL whose text contains external data is injectable. Raw SQL functions must receive placeholders and values apart, never an interpolated text."
+		},
+		"es": {
+			"statement": "Un equipo afirma: \"usamos un ORM, así que la inyección SQL no nos afecta\". ¿Qué evaluación es correcta?",
+			"alternatives": [
+				"Es correcto: un ORM impide cualquier SQL escrito a mano, así que no hay camino para la inyección",
+				"Es incorrecto: los ORM concatenan los valores internamente y son tan vulnerables como el SQL crudo",
+				"Es correcto solo para lecturas; en INSERT y UPDATE el ORM no usa parámetros",
+				"Los métodos del ORM parametrizan, pero el SQL crudo armado con interpolación sigue vulnerable",
+				"Es correcto siempre que el ORM esté configurado para registrar cada consulta que ejecuta"
+			],
+			"explanations": [
+				"Los ORM permiten SQL crudo justamente para los casos que la API no cubre; la protección depende de cómo se use.",
+				"Los constructores de consultas de los ORM maduros generan comandos parametrizados.",
+				"La parametrización del ORM se aplica por igual a lecturas y escrituras.",
+				"Casi todo ORM ofrece una vía de escape para SQL crudo; si el texto que se le pasa se arma con datos del usuario, la falla vuelve.",
+				"Registrar las consultas ayuda a investigar, pero no cambia cómo se construyen."
+			],
+			"concept": "Un ORM reduce mucho el riesgo porque su API genera consultas parametrizadas. Sin embargo, no cambia la regla: cualquier SQL cuyo texto contenga datos externos es inyectable. Las funciones de SQL crudo deben recibir los marcadores y los valores por separado, nunca un texto interpolado."
 		}
 	},
 	{
@@ -439,6 +603,24 @@
 				"The flaw does not depend on the path taken by the data, but on it being concatenated into SQL."
 			],
 			"concept": "Parameterising is a rule about each query, not about where the data comes from. An external value is still external after being stored. So every query receives its values as parameters, even when they come from another table, a file or another service."
+		},
+		"es": {
+			"statement": "En el registro, el nombre del usuario se guarda con una consulta parametrizada. Más tarde, un reporte lee ese nombre de la base de datos y lo concatena en otra consulta. ¿Qué afirmación es correcta?",
+			"alternatives": [
+				"El reporte es seguro, porque el valor ya se neutralizó al guardarse con un parámetro",
+				"El reporte es seguro, porque los datos que están dentro de la propia base de datos son confiables",
+				"El registro es el punto vulnerable, ya que debería haber rechazado nombres con comillas",
+				"El reporte es vulnerable: los datos leídos de la base también son no confiables y deben ir como parámetro",
+				"Ninguno es vulnerable, porque en el reporte el nombre no viene directamente de la solicitud"
+			],
+			"explanations": [
+				"Parametrizar no altera el valor; se guarda exactamente como se envió, comillas incluidas.",
+				"La base de datos guarda lo que enviaron los usuarios; el origen de los datos sigue siendo externo.",
+				"Los nombres con apóstrofo son legítimos; el registro hizo bien en guardarlos sin cambios.",
+				"Esta es la inyección de segundo orden: el valor llega intacto a la base y solo tiene efecto cuando otro fragmento de código lo concatena.",
+				"La falla no depende del camino que recorren los datos, sino de que se concatenen en SQL."
+			],
+			"concept": "Parametrizar es una regla sobre cada consulta, no sobre el origen de los datos. Un valor externo sigue siendo externo después de guardarse. Por eso cada consulta recibe sus valores como parámetros, incluso cuando vienen de otra tabla, de un archivo o de otro servicio."
 		}
 	},
 	{
@@ -484,6 +666,24 @@
 				"The control in the browser can be ignored by whoever sends the request directly."
 			],
 			"concept": "Validation and parameterisation solve different problems. Validation decides whether the value makes sense for the domain (length, type, format). Parameterisation guarantees that the accepted value does not change the query. Each output context has its own defence: a parameter for SQL, encoding for HTML."
+		},
+		"es": {
+			"statement": "Un campo de búsqueda por apellido debe aceptar valores legítimos con apóstrofo, como O'Brien. ¿Qué combinación maneja el campo correctamente?",
+			"alternatives": [
+				"Rechazar cualquier valor con apóstrofo, ya que ese carácter es la base de la inyección",
+				"Duplicar el apóstrofo con una función casera y luego concatenar el valor en la consulta",
+				"Validar longitud y formato, aceptar el apóstrofo y enviar el valor como parámetro",
+				"Convertir el valor a entidades HTML antes de usarlo en la consulta SQL",
+				"Bloquear el apóstrofo en el formulario con JavaScript y confiar en el valor que llegue"
+			],
+			"explanations": [
+				"Rechaza a clientes reales y no resuelve campos numéricos ni otros delimitadores: la validación no reemplaza la parametrización.",
+				"El escape manual es frágil y fácil de olvidar en algún lugar; el parámetro hace innecesario el escape.",
+				"La validación limita lo que es aceptable para el negocio; el parámetro garantiza que cualquier valor aceptado sea solo dato.",
+				"La codificación HTML sirve para la salida en páginas; en SQL solo corrompe los datos y no protege.",
+				"El control en el navegador puede ignorarlo quien envía la solicitud directamente."
+			],
+			"concept": "La validación y la parametrización resuelven problemas distintos. La validación decide si el valor tiene sentido para el dominio (longitud, tipo, formato). La parametrización garantiza que el valor aceptado no cambie la consulta. Cada contexto de salida tiene su propia defensa: un parámetro para SQL, codificación para HTML."
 		}
 	},
 	{
@@ -539,6 +739,29 @@
 				"content": "SELECT id, name FROM products WHERE name LIKE '%' || $1 || '%';"
 			},
 			"concept": "Parameterising protects the structure of the SQL, not the semantics of mini-languages inside a value, such as a LIKE pattern or a regular expression. If the search must be literal, the application escapes `%` and `_` in the value and declares the escape character. Without that no other table leaks, but the search may return everything and be costly."
+		},
+		"es": {
+			"statement": "En la consulta de abajo, `term` viene del usuario y se envía como parámetro. El usuario envía el valor `%`. ¿Qué ocurre?",
+			"alternatives": [
+				"Hay inyección SQL, porque `%` cambia la estructura de la consulta incluso dentro de un parámetro",
+				"No hay inyección, pero `%` sigue actuando como comodín de LIKE y coincide con todos los nombres",
+				"La base de datos rechaza la consulta, porque no se pueden enviar comodines en parámetros",
+				"El driver escapa el `%` automáticamente y solo coincide con nombres que contienen ese carácter",
+				"La consulta devuelve cero filas, porque LIKE nunca interpreta un parámetro"
+			],
+			"explanations": [
+				"El parámetro no cambia el árbol del comando: sigue siendo un SELECT con un solo LIKE.",
+				"La estructura de la consulta está fija, así que no es inyección; pero el patrón de LIKE es dato, y dentro de él `%` y `_` tienen significado.",
+				"Los parámetros aceptan cualquier texto, incluidos los caracteres comodín.",
+				"El driver no conoce la intención del patrón; escapar los comodines es tarea de la aplicación, con ESCAPE.",
+				"El valor del parámetro es el patrón de LIKE y se interpreta como patrón, como siempre."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "SELECT id, name FROM products WHERE name LIKE '%' || $1 || '%';"
+			},
+			"concept": "Parametrizar protege la estructura del SQL, no la semántica de los minilenguajes dentro de un valor, como un patrón de LIKE o una expresión regular. Si la búsqueda debe ser literal, la aplicación escapa `%` y `_` en el valor y declara el carácter de escape. Sin eso no se filtra ninguna otra tabla, pero la búsqueda puede devolver todo y ser costosa."
 		}
 	},
 	{
@@ -593,6 +816,29 @@
 				"content": "CREATE FUNCTION find_user(p_name text) RETURNS SETOF users AS $$\nBEGIN\n  RETURN QUERY EXECUTE\n    'SELECT * FROM users WHERE name = ''' || p_name || '''';\nEND;\n$$ LANGUAGE plpgsql;"
 			},
 			"concept": "A stored procedure is not a synonym for a parameterised query. What protects is that the value never becomes part of a text that will be parsed as SQL. This holds in every layer: application, ORM or procedure. Dynamic SQL inside the database needs its own parameters."
+		},
+		"es": {
+			"statement": "Para \"librarse de la inyección\", un equipo movió todo el SQL a stored procedures. Una de ellas es la función de abajo. ¿Qué evaluación es correcta?",
+			"alternatives": [
+				"Es segura: la base de datos siempre trata los argumentos de un stored procedure como datos",
+				"Es segura, siempre que la aplicación llame a la función con una consulta parametrizada",
+				"Es inyectable solo si la aplicación se conecta como superusuario de la base de datos",
+				"Sigue siendo inyectable: el SQL dinámico concatena `p_name` en lugar de usar `USING`",
+				"Es segura: el tipo `text` del argumento impide que el valor contenga comandos SQL"
+			],
+			"explanations": [
+				"Eso vale para el SQL estático dentro del procedimiento; con EXECUTE sobre un texto concatenado, el valor se analiza de nuevo como código.",
+				"La llamada parametrizada entrega el valor intacto a la función, y es la función la que lo concatena.",
+				"El privilegio cambia el tamaño del daño, no la existencia de la falla.",
+				"Dentro de la función el texto del comando se arma por concatenación; `USING` pasa el valor como parámetro del SQL dinámico.",
+				"`text` acepta cualquier secuencia de caracteres, comillas y comandos incluidos."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "CREATE FUNCTION find_user(p_name text) RETURNS SETOF users AS $$\nBEGIN\n  RETURN QUERY EXECUTE\n    'SELECT * FROM users WHERE name = ''' || p_name || '''';\nEND;\n$$ LANGUAGE plpgsql;"
+			},
+			"concept": "Un stored procedure no es sinónimo de consulta parametrizada. Lo que protege es que el valor nunca forme parte de un texto que se analizará como SQL. Esto vale en todas las capas: aplicación, ORM o procedimiento. El SQL dinámico dentro de la base de datos necesita sus propios parámetros."
 		}
 	}
 ]

@@ -42,6 +42,24 @@
 				"The two descriptions are swapped."
 			],
 			"concept": "SQS is a point-to-point queue with pull delivery: consumers ask for messages. SNS is publish/subscribe with push delivery: the service sends each message to all subscribed endpoints, such as queues, functions or HTTP endpoints."
+		},
+		"es": {
+			"statement": "¿Cuál es la diferencia básica entre Amazon SQS y Amazon SNS?",
+			"alternatives": [
+				"SQS es una cola que los consumidores consultan; SNS es un tópico que empuja a sus suscriptores",
+				"SQS entrega cada mensaje a todos los consumidores; SNS lo entrega solo a uno de ellos",
+				"SQS es para mensajes entre regiones; SNS es para mensajes dentro de una región",
+				"SQS guarda los mensajes en disco; SNS es el mismo servicio pero los guarda en memoria",
+				"SQS es un tópico que empuja a sus suscriptores; SNS es una cola que los consumidores consultan"
+			],
+			"explanations": [
+				"Correcta: SQS retiene los mensajes hasta que un consumidor los busca y los borra; SNS reenvía cada mensaje publicado a todas las suscripciones.",
+				"Es al revés: un mensaje de cola va a un consumidor, un mensaje de tópico va a todas las suscripciones.",
+				"Ningún servicio se define por el alcance de región; la diferencia es cola frente a publish/subscribe.",
+				"Son servicios distintos con modelos distintos, no dos modos de almacenamiento de un mismo servicio.",
+				"Las dos descripciones están intercambiadas."
+			],
+			"concept": "SQS es una cola punto a punto con entrega pull: los consumidores piden mensajes. SNS es publish/subscribe con entrega push: el servicio envía cada mensaje a todos los endpoints suscritos, como colas, funciones o endpoints HTTP."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"Correct: the message stays in the queue but is invisible; if it is not deleted in time, it becomes visible again."
 			],
 			"concept": "SQS does not remove a message when it is received. It hides it for the visibility timeout, giving one consumer exclusive time to process and delete it. If that time runs out, the message returns to the queue for another delivery."
+		},
+		"es": {
+			"statement": "Un consumidor recibe un mensaje de una cola SQS. ¿Qué hace el visibility timeout a partir de ese momento?",
+			"alternatives": [
+				"Limita cuánto tiempo puede el consumidor seguir consultando la cola",
+				"Retrasa la primera entrega del mensaje durante ese período",
+				"Define cuánto tiempo puede permanecer el mensaje en la cola en total",
+				"Borra el mensaje de la cola después de ese período",
+				"Oculta el mensaje a los demás consumidores durante ese período"
+			],
+			"explanations": [
+				"La duración de una llamada de recepción es el tiempo de espera del long polling.",
+				"Posponer la primera entrega es la configuración de retraso (`DelaySeconds`), otra funcionalidad.",
+				"La vida total de un mensaje es el período de retención, de hasta 14 días.",
+				"El timeout no borra nada; el borrado es una llamada explícita del consumidor.",
+				"Correcta: el mensaje sigue en la cola pero invisible; si no se borra a tiempo, vuelve a ser visible."
+			],
+			"concept": "SQS no quita un mensaje cuando se recibe. Lo oculta durante el visibility timeout, dando a un consumidor tiempo exclusivo para procesarlo y borrarlo. Si ese tiempo se agota, el mensaje vuelve a la cola para otra entrega."
 		}
 	},
 	{
@@ -142,6 +178,29 @@
 				"The hiding is temporary by design, so that a crashed consumer does not lose messages."
 			],
 			"concept": "In SQS the acknowledgement is the `DeleteMessage` call with the receipt handle. A consumer that forgets it processes the same messages again and again, each time the visibility timeout expires."
+		},
+		"es": {
+			"statement": "El consumidor SQS del snippet procesa todos los mensajes con éxito. ¿Qué pasa después con esos mensajes?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const { Messages } = await sqs.send(new ReceiveMessageCommand({ QueueUrl }));\nfor (const message of Messages ?? []) {\n  await sendEmail(message.Body);\n}\n// end of the handler: nothing else is called"
+			},
+			"alternatives": [
+				"Vuelven a ser visibles y se entregan una vez más",
+				"Se eliminan, porque recibir un mensaje lo borra",
+				"Se mueven a la dead-letter queue como no confirmados",
+				"Se eliminan, porque el bucle terminó sin errores",
+				"Quedan ocultos para siempre, ya que ya fueron recibidos"
+			],
+			"explanations": [
+				"Correcta: el código nunca llama a `DeleteMessage`, así que tras el visibility timeout los mensajes regresan y los e-mails se envían de nuevo.",
+				"Recibir solo oculta un mensaje durante el visibility timeout; no lo borra.",
+				"Pasar a la dead-letter queue requiere una redrive policy y varias recepciones, no un único borrado faltante.",
+				"SQS no puede observar el código del consumidor; la única señal de éxito es la llamada de borrado.",
+				"El ocultamiento es temporal por diseño, para que un consumidor que se cae no pierda mensajes."
+			],
+			"concept": "En SQS, la confirmación es la llamada a `DeleteMessage` con el receipt handle. Un consumidor que la olvida procesa los mismos mensajes una y otra vez, cada vez que expira el visibility timeout."
 		}
 	},
 	{
@@ -187,6 +246,24 @@
 				"A direct HTTP push has no durable buffer: a service that is down beyond the retry policy misses messages."
 			],
 			"concept": "SNS plus SQS is the AWS form of publish/subscribe with durable subscriptions: the topic fans out, and each subscriber's queue stores its copy. It is the same shape as a RabbitMQ fanout exchange with one queue per service."
+		},
+		"es": {
+			"statement": "En AWS, un mensaje `OrderPlaced` debe llegar a tres servicios (facturación, envíos, analítica). Cada servicio debe procesar todos los mensajes a su propio ritmo y sobrevivir a estar fuera de línea. ¿Qué disposición es la estándar?",
+			"alternatives": [
+				"Una cola SQS consultada por los tres servicios al mismo tiempo",
+				"Un tópico SNS con tres colas SQS suscritas, una cola por servicio",
+				"Tres tópicos SNS, cada uno publicado por un servicio distinto",
+				"Una cola SQS por servicio, y el productor elige una al azar",
+				"Un tópico SNS con los tres servicios suscritos por HTTP, sin colas"
+			],
+			"explanations": [
+				"En una sola cola los servicios compiten, así que cada mensaje llega solo a uno de ellos.",
+				"Correcta: SNS copia cada mensaje en las tres colas, y cada cola hace de buffer para su servicio mientras está lento o caído.",
+				"Tópicos elegidos por el publicador no dan a cada servicio todos los mensajes.",
+				"Enviar a una cola al azar entrega el mensaje a un servicio en lugar de a los tres.",
+				"Un push HTTP directo no tiene buffer durable: un servicio caído más allá de la política de reintentos pierde mensajes."
+			],
+			"concept": "SNS más SQS es la forma de AWS de publish/subscribe con suscripciones durables: el tópico distribuye (fan-out), y la cola de cada suscriptor guarda su copia. Es la misma forma que un exchange fanout de RabbitMQ con una cola por servicio."
 		}
 	},
 	{
@@ -232,6 +309,24 @@
 				"Returning immediately is short polling, and it does not deliver sooner: a waiting long poll returns as soon as a message arrives."
 			],
 			"concept": "With short polling an empty queue answers at once, so a loop makes many useless, billed requests. Long polling holds the request open for up to 20 seconds, which lowers cost and still delivers a message the moment it arrives."
+		},
+		"es": {
+			"statement": "Un consumidor SQS llama a `ReceiveMessage` en un bucle sobre una cola que está vacía la mayor parte del tiempo. ¿Por qué se prefiere aquí el long polling (`WaitTimeSeconds` de hasta 20) al short polling?",
+			"alternatives": [
+				"La llamada devuelve hasta 20 mensajes de una vez en lugar de uno solo",
+				"La llamada oculta los mensajes recibidos durante 20 segundos a los demás consumidores",
+				"La llamada mantiene los mensajes en la cola 20 segundos antes de borrarlos",
+				"La llamada espera a que llegue un mensaje, así se hacen muchas menos respuestas vacías",
+				"La llamada retorna de inmediato, así el consumidor ve antes los mensajes nuevos"
+			],
+			"explanations": [
+				"El tamaño del lote es `MaxNumberOfMessages`, limitado a 10, y no tiene relación con el tiempo de espera.",
+				"Ocultar los mensajes recibidos es el visibility timeout, otra configuración.",
+				"La retención es otra configuración, se mide en días y no la controla la llamada de recepción.",
+				"Correcta: una solicitud queda abierta hasta que llega un mensaje o termina la espera, en lugar de muchas solicitudes que no devuelven nada y aun así se cobran.",
+				"Retornar de inmediato es short polling, y no entrega antes: un long poll en espera retorna en cuanto llega un mensaje."
+			],
+			"concept": "Con short polling, una cola vacía responde de inmediato, así que un bucle hace muchas solicitudes inútiles y cobradas. El long polling mantiene la solicitud abierta hasta 20 segundos, lo que reduce el costo y aun así entrega un mensaje en el momento en que llega."
 		}
 	},
 	{
@@ -277,6 +372,24 @@
 				"Nothing is stored for later: a duplicate inside the interval is never delivered."
 			],
 			"concept": "SQS FIFO queues deduplicate on the producer side: sends that carry the same deduplication id within 5 minutes count as one message. This makes producer retries safe, but only inside that interval, and it does not replace idempotency in the consumer."
+		},
+		"es": {
+			"statement": "Un productor envía un mensaje a una cola SQS FIFO con `MessageDeduplicationId: \"order-7\"`. La respuesta se pierde, así que envía el mismo mensaje de nuevo con el mismo id 30 segundos después. ¿Qué hace SQS con el segundo envío?",
+			"alternatives": [
+				"Acepta la llamada con éxito pero no entrega una segunda copia",
+				"Reemplaza el primer mensaje por el segundo en la cola",
+				"Rechaza la llamada con un error que dice que el id ya está en uso",
+				"La acepta y entrega dos copias, en orden, al consumidor",
+				"Retiene el segundo mensaje y lo entrega después de 5 minutos"
+			],
+			"explanations": [
+				"Correcta: dentro del intervalo de deduplicación de 5 minutos, un envío con un id conocido se confirma y se descarta en silencio.",
+				"Se conserva el primer mensaje; el duplicado es el que se descarta.",
+				"Un reintento debe parecer exitoso, así que SQS responde normalmente en lugar de hacer fallar al productor.",
+				"Entregar ambos es el comportamiento de una cola estándar, que no tiene deduplicación.",
+				"No se guarda nada para después: un duplicado dentro del intervalo nunca se entrega."
+			],
+			"concept": "Las colas SQS FIFO deduplican del lado del productor: los envíos que llevan el mismo deduplication id dentro de 5 minutos cuentan como un solo mensaje. Esto hace seguros los reintentos del productor, pero solo dentro de ese intervalo, y no reemplaza la idempotencia en el consumidor."
 		}
 	}
 ]

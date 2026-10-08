@@ -42,6 +42,24 @@
 				"Asking for another delivery is a negative acknowledgement with requeue, the opposite of an ack."
 			],
 			"concept": "The acknowledgement is how a consumer takes a message off the broker's hands. Until the ack arrives, the broker keeps the message and will deliver it again if the consumer disappears."
+		},
+		"es": {
+			"statement": "Un consumidor envía una confirmación (ack) de un mensaje que recibió de una cola. ¿Qué le dice el ack al broker?",
+			"alternatives": [
+				"El mensaje fue procesado y puede quitarse de la cola",
+				"Hay que avisar al productor del mensaje que envíe el siguiente",
+				"El consumidor está ocupado y no quiere más mensajes por ahora",
+				"El mensaje es inválido y debe ir a otro consumidor",
+				"El mensaje fue recibido y debe entregarse de nuevo más tarde"
+			],
+			"explanations": [
+				"Correcta: un ack devuelve la responsabilidad: el broker ya puede olvidar el mensaje.",
+				"Los acks del consumidor no llegan al productor; productor y consumidor están desacoplados por el broker.",
+				"Limitar el flujo es tarea de la configuración de prefetch; un ack de hecho libera espacio para más.",
+				"Rechazar un mensaje se hace con nack o reject, no con ack.",
+				"Pedir otra entrega es una confirmación negativa con requeue, lo opuesto a un ack."
+			],
+			"concept": "La confirmación es la forma en que un consumidor le quita un mensaje de las manos al broker. Hasta que llega el ack, el broker conserva el mensaje y lo entregará de nuevo si el consumidor desaparece."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"Acknowledgements are protocol signals and are not stored as messages in a queue."
 			],
 			"concept": "A dead-letter queue is the place for messages that failed too many times or can never succeed. It keeps the main queue moving, and it keeps the evidence so that a person can find the cause and replay the message."
+		},
+		"es": {
+			"statement": "¿Cuál es el propósito de una dead-letter queue (DLQ)?",
+			"alternatives": [
+				"Guardar una copia de respaldo de cada mensaje procesado",
+				"Guardar mensajes programados para entregarse en un momento futuro",
+				"Guardar mensajes que no pudieron procesarse, para inspeccionarlos después",
+				"Guardar mensajes de consumidores que están temporalmente fuera de línea",
+				"Guardar las confirmaciones hasta que el productor las recoja"
+			],
+			"explanations": [
+				"Una DLQ recibe solo fallas; un archivo de éxitos sería un log de auditoría.",
+				"La entrega programada es una delay queue. Una DLQ trata de fallas, no de tiempo.",
+				"Correcta: tras los intentos permitidos, el mensaje se aparta para que deje de bloquear el flujo y pueda analizarse.",
+				"Los mensajes para un consumidor fuera de línea simplemente esperan en su cola normal.",
+				"Las confirmaciones son señales del protocolo y no se guardan como mensajes en una cola."
+			],
+			"concept": "Una dead-letter queue es el lugar para los mensajes que fallaron demasiadas veces o que nunca pueden tener éxito. Mantiene en movimiento la cola principal y conserva la evidencia para que una persona encuentre la causa y reprocese el mensaje."
 		}
 	},
 	{
@@ -132,6 +168,24 @@
 				"A duplicate delivery is a consequence of at-least-once, and it usually processes fine."
 			],
 			"concept": "A poison message fails deterministically. Combined with automatic redelivery it becomes a loop that wastes resources and can block the queue, which is why retries are limited and followed by a dead-letter queue."
+		},
+		"es": {
+			"statement": "En mensajería, ¿qué es un \"poison message\"?",
+			"alternatives": [
+				"Un mensaje que permaneció en la cola más tiempo que su time to live",
+				"Un mensaje que hace fallar al consumidor cada vez que se procesa",
+				"Un mensaje que lleva código malicioso dirigido al broker",
+				"Un mensaje más grande que el límite aceptado por el broker",
+				"Un mensaje que se entregó a dos consumidores al mismo tiempo"
+			],
+			"explanations": [
+				"Ese es un mensaje expirado; puede ser perfectamente válido, solo que tardío.",
+				"Correcta: su contenido (por ejemplo, datos mal formados) provoca una falla en cada intento, así que reintentar nunca ayuda.",
+				"El término trata de fallas de procesamiento, no de ataques de seguridad.",
+				"Un mensaje demasiado grande se rechaza al publicarlo y nunca llega a un consumidor.",
+				"Una entrega duplicada es consecuencia de at-least-once, y normalmente se procesa sin problemas."
+			],
+			"concept": "Un poison message falla de forma determinista. Combinado con la reentrega automática se convierte en un bucle que desperdicia recursos y puede bloquear la cola, por eso los reintentos se limitan y van seguidos de una dead-letter queue."
 		}
 	},
 	{
@@ -187,6 +241,29 @@
 				"A plain requeue has no delay: the message is available again at once."
 			],
 			"concept": "A negative acknowledgement with requeue is safe only for failures that may go away. For a message that always fails it creates a hot loop: the same message circulates as fast as the consumer can fail, using CPU and delaying the healthy messages."
+		},
+		"es": {
+			"statement": "El consumidor RabbitMQ del snippet lee de una cola clásica y recibe un mensaje cuyo cuerpo no es JSON válido. No hay límite de reintentos ni dead-letter exchange configurados. ¿Qué ocurre?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "channel.consume(\"orders\", (msg) => {\n  try {\n    handle(JSON.parse(msg.content.toString()));\n    channel.ack(msg);\n  } catch {\n    channel.nack(msg, false, true); // requeue = true\n  }\n});"
+			},
+			"alternatives": [
+				"El broker repara el mensaje y luego lo entrega de nuevo",
+				"El broker descarta el mensaje tras la primera falla",
+				"El mensaje se mueve a una dead-letter queue creada automáticamente",
+				"El mensaje se reentrega y vuelve a fallar, en un bucle sin fin",
+				"El mensaje espera un minuto antes de cada nuevo intento de entrega"
+			],
+			"explanations": [
+				"Un broker trata el cuerpo como bytes opacos y nunca lo modifica.",
+				"Descartar requiere requeue = false. Con requeue = true el broker conserva el mensaje.",
+				"RabbitMQ hace dead-lettering solo cuando hay un dead-letter exchange configurado y el mensaje se rechaza sin requeue.",
+				"Correcta: el requeue lo devuelve de inmediato, el consumidor lo recibe otra vez al instante, y `JSON.parse` lanza un error cada vez.",
+				"Un requeue simple no tiene retraso: el mensaje vuelve a estar disponible enseguida."
+			],
+			"concept": "Una confirmación negativa con requeue es segura solo para fallas que pueden desaparecer. Para un mensaje que siempre falla crea un bucle caliente: el mismo mensaje circula tan rápido como el consumidor puede fallar, consumiendo CPU y retrasando los mensajes sanos."
 		}
 	},
 	{
@@ -232,6 +309,24 @@
 				"4 s would be a constant wait of 1 s per retry, which is linear, not exponential."
 			],
 			"concept": "Exponential backoff doubles the wait after each failure, so a struggling dependency gets more and more time to recover. The total waited after n retries is base x (2^n - 1): with 1 s and n = 4, that is 15 s."
+		},
+		"es": {
+			"statement": "Un consumidor reintenta con backoff exponencial: la espera antes del reintento n es `1 s x 2^(n-1)`, así que el primer reintento espera 1 s. Un mensaje falla en su primer intento y en sus tres primeros reintentos. ¿Cuánto ha esperado en total cuando empieza el 4.º reintento?",
+			"alternatives": [
+				"15 segundos",
+				"10 segundos",
+				"16 segundos",
+				"8 segundos",
+				"4 segundos"
+			],
+			"explanations": [
+				"Correcta: las esperas antes de los reintentos 1 a 4 son 1, 2, 4 y 8 segundos, y 1 + 2 + 4 + 8 = 15.",
+				"10 s es 1 + 2 + 3 + 4, una espera que crece por suma en lugar de duplicarse.",
+				"16 s es 2^4, la espera que vendría antes de un 5.º reintento.",
+				"8 s es solo la última espera, la anterior al 4.º reintento, no el total.",
+				"4 s sería una espera constante de 1 s por reintento, que es lineal, no exponencial."
+			],
+			"concept": "El backoff exponencial duplica la espera tras cada falla, así una dependencia en problemas recibe cada vez más tiempo para recuperarse. El total esperado tras n reintentos es base x (2^n - 1): con 1 s y n = 4, son 15 s."
 		}
 	},
 	{
@@ -277,6 +372,24 @@
 				"Jitter does not aim at a shorter wait; it changes when each consumer retries relative to the others."
 			],
 			"concept": "Backoff alone decides how long to wait; jitter decides that not everyone waits the same. Without it, clients that failed together retry together (a thundering herd), and each wave can knock the dependency down again."
+		},
+		"es": {
+			"statement": "Una API de pagos se cae por un momento y 500 consumidores fallan en el mismo instante. Todos usan el mismo backoff exponencial sin aleatoriedad. ¿Por qué se suele agregar jitter aleatorio a la espera?",
+			"alternatives": [
+				"Para ocultar a la API el calendario de reintentos y que no pueda limitarlos",
+				"Para que el broker identifique a qué consumidor pertenece cada reintento",
+				"Para repartir los reintentos en el tiempo en lugar de enviarlos en oleadas sincronizadas",
+				"Para garantizar que los mensajes se reintenten en el orden en que fallaron",
+				"Para que el tiempo total de espera sea menor para cada uno de los consumidores"
+			],
+			"explanations": [
+				"El jitter es cooperación con la dependencia, no una forma de eludir sus límites.",
+				"El broker no usa el retraso de reintento para identificar consumidores.",
+				"Correcta: calendarios idénticos hacen que los 500 reintenten juntos a 1 s, 2 s, 4 s, golpeando con ráfagas a la API que se recupera. El jitter los desincroniza.",
+				"Las esperas aleatorias hacen el orden menos predecible, no más.",
+				"El jitter no busca una espera más corta; cambia cuándo reintenta cada consumidor respecto de los demás."
+			],
+			"concept": "El backoff por sí solo decide cuánto esperar; el jitter decide que no todos esperen lo mismo. Sin él, los clientes que fallaron juntos reintentan juntos (un thundering herd), y cada oleada puede volver a tumbar a la dependencia."
 		}
 	},
 	{
@@ -322,6 +435,24 @@
 				"Retrying Y wastes every attempt and delays its arrival at the place where a person can look at it."
 			],
 			"concept": "Retry policy starts by classifying the error. Transient errors (timeouts, a dependency restarting) deserve retries with backoff. Permanent errors (validation, unknown type) will fail identically every time and should be dead-lettered at once."
+		},
+		"es": {
+			"statement": "Un consumidor ve dos tipos de falla. Falla X: la API de inventario dio timeout. Falla Y: el mensaje no tiene el campo `orderId`, que el esquema exige. ¿Cuál es el manejo sensato de cada una?",
+			"alternatives": [
+				"X: confirmar e ignorar. Y: reencolar de inmediato hasta que funcione",
+				"X: reintentar con backoff. Y: enviar directo a la dead-letter queue",
+				"X: enviar directo a la dead-letter queue. Y: confirmar e ignorar",
+				"X: enviar directo a la dead-letter queue. Y: reintentar con backoff",
+				"X: reintentar con backoff. Y: reintentar con backoff, hasta el mismo límite"
+			],
+			"explanations": [
+				"Confirmar X pierde en silencio un pedido válido, y reencolar Y entra en bucle para siempre.",
+				"Correcta: un timeout es transitorio y puede funcionar después; un mensaje al que le falta un campo obligatorio es permanente, y ningún reintento agregará el campo.",
+				"Mandar X a la DLQ en el primer timeout es rendirse demasiado pronto, e ignorar Y oculta un bug del productor.",
+				"Esto invierte las dos: renuncia a la falla recuperable e insiste en la irrecuperable.",
+				"Reintentar Y desperdicia cada intento y retrasa su llegada al lugar donde una persona puede revisarlo."
+			],
+			"concept": "La política de reintentos empieza por clasificar el error. Los errores transitorios (timeouts, una dependencia reiniciándose) merecen reintentos con backoff. Los errores permanentes (validación, tipo desconocido) fallarán igual cada vez y deben ir a la dead-letter queue de inmediato."
 		}
 	},
 	{
@@ -367,6 +498,24 @@
 				"Correct: at 30 s the message becomes visible again, so B gets it and both process it. The work is duplicated."
 			],
 			"concept": "The visibility timeout is SQS's substitute for a connection-based lease: the message is hidden, not removed, and comes back if it is not deleted in time. It must be longer than the processing time, or be extended while the work is in progress."
+		},
+		"es": {
+			"statement": "Una cola SQS tiene un visibility timeout de 30 segundos. El consumidor A recibe un mensaje y necesita 45 segundos para procesarlo, sin extender el timeout. El consumidor B consulta la misma cola. ¿Qué puede ocurrir?",
+			"alternatives": [
+				"B recibe el mensaje a los 45 s, justo después de que A lo borró",
+				"El mensaje se borra a los 30 s, y el trabajo de A se descarta en silencio",
+				"SQS interrumpe a A a los 30 s, y el mensaje va a la DLQ",
+				"B nunca ve el mensaje, ya que A lo retiene hasta terminar de procesarlo",
+				"B recibe el mismo mensaje a los 30 s, mientras A aún trabaja en él"
+			],
+			"explanations": [
+				"Una vez que A borra el mensaje a los 45 s, deja de existir; la entrega duplicada ocurrió antes, a los 30 s.",
+				"El fin del visibility timeout hace visible otra vez el mensaje; no lo borra.",
+				"SQS no puede interrumpir a un consumidor, y un timeout expirado no manda un mensaje a la DLQ.",
+				"SQS no sabe nada del progreso de A; solo el timeout, o un borrado, oculta el mensaje.",
+				"Correcta: a los 30 s el mensaje vuelve a ser visible, así que B lo recibe y ambos lo procesan. El trabajo se duplica."
+			],
+			"concept": "El visibility timeout es el sustituto de SQS para un lease basado en conexión: el mensaje se oculta, no se quita, y regresa si no se borra a tiempo. Debe ser más largo que el tiempo de procesamiento, o extenderse mientras el trabajo está en curso."
 		}
 	},
 	{
@@ -412,6 +561,24 @@
 				"A lost connection is not a rejection, so nothing is dead-lettered by it."
 			],
 			"concept": "With manual acks, RabbitMQ treats an open channel as a lease on the delivered messages. A consumer that dies gives the lease back automatically, and the `redelivered` flag warns the next consumer that the message may have been partly processed."
+		},
+		"es": {
+			"statement": "Un consumidor RabbitMQ usa confirmaciones manuales y tiene 5 mensajes sin confirmar cuando su conexión TCP se cae. ¿Qué hace el broker con esos 5 mensajes?",
+			"alternatives": [
+				"Los mantiene reservados hasta que ese mismo consumidor se reconecte",
+				"Los descarta, ya que ya fueron enviados a un consumidor",
+				"Los reencola y los entrega de nuevo, marcados como redelivered",
+				"Los confirma por su cuenta, suponiendo que fueron procesados",
+				"Los mueve al dead-letter exchange como mensajes fallidos"
+			],
+			"explanations": [
+				"RabbitMQ no liga un mensaje a la identidad de un consumidor; cualquier consumidor de la cola puede recibirlo después.",
+				"Enviado no es confirmado. Descartar al enviar es el comportamiento del modo de confirmación automática.",
+				"Correcta: las entregas sin ack pertenecen al canal; cuando este se cierra, vuelven a la cola y salen con `redelivered = true`.",
+				"El broker nunca adivina el éxito; sin un ack debe suponer que el trabajo no se hizo.",
+				"Una conexión perdida no es un rechazo, así que no manda nada al dead-letter."
+			],
+			"concept": "Con acks manuales, RabbitMQ trata un canal abierto como un lease sobre los mensajes entregados. Un consumidor que muere devuelve el lease automáticamente, y el indicador `redelivered` advierte al siguiente consumidor que el mensaje pudo haberse procesado en parte."
 		}
 	},
 	{
@@ -457,6 +624,24 @@
 				"Correct: each receive increments the receive count. After 3 receives without a delete, the next time it would be delivered SQS moves it instead."
 			],
 			"concept": "SQS has no negative acknowledgement that means \"failed\". A failure is just a message that was received and not deleted before its visibility timeout ended. The redrive policy counts those receives and dead-letters the message once the count passes `maxReceiveCount`."
+		},
+		"es": {
+			"statement": "Una cola SQS tiene una redrive policy con `maxReceiveCount: 3` que apunta a una dead-letter queue. Un consumidor recibe cierto mensaje y falla todas las veces, sin borrarlo nunca. ¿Cuántas veces recibe el consumidor ese mensaje de la cola de origen?",
+			"alternatives": [
+				"4 veces; el traslado ocurre solo después de que el conteo supera 3 dos veces",
+				"2 veces; el conteo empieza en 1 antes de la primera recepción",
+				"Un número ilimitado; SQS solo cuenta y nunca mueve mensajes",
+				"1 vez; la primera falla lo mueve a la dead-letter queue",
+				"3 veces; después SQS lo mueve a la dead-letter queue"
+			],
+			"explanations": [
+				"El mensaje se mueve cuando el conteo superaría 3, así que no ocurre una 4.ª entrega desde la cola de origen.",
+				"El conteo empieza en 0 y la primera recepción lo deja en 1, así que se permiten tres recepciones.",
+				"Mover mensajes después de `maxReceiveCount` recepciones es exactamente lo que hace una redrive policy.",
+				"SQS no puede ver una falla; solo cuenta recepciones, y una recepción está por debajo del límite de 3.",
+				"Correcta: cada recepción incrementa el receive count. Tras 3 recepciones sin borrado, la siguiente vez que se entregaría, SQS lo mueve en su lugar."
+			],
+			"concept": "SQS no tiene una confirmación negativa que signifique \"falló\". Una falla es solo un mensaje que se recibió y no se borró antes de que terminara su visibility timeout. La redrive policy cuenta esas recepciones y manda el mensaje a la dead-letter queue cuando el conteo supera `maxReceiveCount`."
 		}
 	}
 ]

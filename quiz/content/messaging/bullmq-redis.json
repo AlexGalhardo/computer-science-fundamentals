@@ -42,6 +42,24 @@
 				"If jobs lived in process memory, a separate worker process could not see them and a restart would lose them."
 			],
 			"concept": "BullMQ turns Redis into a job queue. A `Queue` object writes jobs into Redis lists, sorted sets and hashes; a `Worker` in any process takes them and runs a processor function. Redis is the broker."
+		},
+		"es": {
+			"statement": "Se crean una `Queue` y un `Worker` de BullMQ con `connection: { host: \"redis\", port: 6379 }`. ¿Cuáles son los roles de las dos clases y dónde viven los jobs?",
+			"alternatives": [
+				"`Queue` procesa jobs, `Worker` los agrega, y los jobs se guardan en Redis",
+				"`Queue` enruta jobs a exchanges, y `Worker` vincula colas a esos exchanges",
+				"`Queue` agrega jobs, `Worker` los procesa, y los jobs se guardan en Redis",
+				"`Queue` agrega jobs, `Worker` los procesa, y los jobs quedan en un archivo local",
+				"`Queue` agrega jobs, `Worker` los procesa, y los jobs viven en la memoria de Node.js"
+			],
+			"explanations": [
+				"Los roles están invertidos: el worker es el lado consumidor.",
+				"Exchanges y bindings son conceptos de RabbitMQ; BullMQ solo tiene colas con nombre.",
+				"Correcta: BullMQ es una biblioteca, no un servidor. Productores y workers son procesos Node.js que se coordinan mediante estructuras de datos en Redis.",
+				"Ninguna de las clases escribe jobs en el disco local; con esta conexión, todo estado de un job vive en estructuras de Redis.",
+				"Si los jobs vivieran en la memoria del proceso, un proceso worker separado no podría verlos y un reinicio los perdería."
+			],
+			"concept": "BullMQ convierte Redis en una cola de jobs. Un objeto `Queue` escribe jobs en listas, sorted sets y hashes de Redis; un `Worker` en cualquier proceso los toma y ejecuta una función procesadora. Redis es el broker."
 		}
 	},
 	{
@@ -97,6 +115,29 @@
 				"Cleaning up finished jobs is the job of `removeOnComplete`."
 			],
 			"concept": "A delayed job is a message that must not be processed before a given time. BullMQ keeps it in a sorted set ordered by due time and promotes it to the waiting list when the time comes. The delay is a minimum, not an exact schedule."
+		},
+		"es": {
+			"statement": "¿Qué hace la opción `delay` con el job de BullMQ agregado en el snippet?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "await queue.add(\"send-reminder\", { userId: 7 }, { delay: 60_000 });"
+			},
+			"alternatives": [
+				"El job se repite cada 60 segundos hasta que se elimina",
+				"El job se cancela si no termina en 60 segundos",
+				"El job se reintenta 60 segundos después de cada intento fallido",
+				"El job queda disponible para los workers solo después de 60 segundos",
+				"El job se elimina de Redis 60 segundos después de completarse"
+			],
+			"explanations": [
+				"La repetición se configura con una opción repeat o un job scheduler, no con `delay`.",
+				"Un límite de tiempo de ejecución es un timeout, que `delay` no define.",
+				"La espera entre reintentos se configura con `backoff`, junto con `attempts`.",
+				"Correcta: el job espera en el conjunto de retrasados y pasa a la lista de espera cuando transcurre el retraso.",
+				"Limpiar los jobs terminados es tarea de `removeOnComplete`."
+			],
+			"concept": "Un job retrasado es un mensaje que no debe procesarse antes de cierto momento. BullMQ lo mantiene en un sorted set ordenado por hora de vencimiento y lo promueve a la lista de espera cuando llega la hora. El retraso es un mínimo, no un horario exacto."
 		}
 	},
 	{
@@ -152,6 +193,29 @@
 				"A failed job is kept in the failed set by default, so that it can be inspected or retried."
 			],
 			"concept": "In BullMQ, `attempts` counts every execution of a job, and `backoff` sets the wait between them. When the attempts are exhausted the job lands in the failed set, which plays the role of a dead-letter queue."
+		},
+		"es": {
+			"statement": "El procesador de BullMQ del snippet siempre lanza un error. ¿Cuántas veces se ejecuta el job en total y dónde termina?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const queue = new Queue(\"payments\", { connection });\nawait queue.add(\"charge\", { orderId: 7 }, {\n  attempts: 3,\n  backoff: { type: \"exponential\", delay: 1000 },\n});\n\nnew Worker(\"payments\", async () => {\n  throw new Error(\"gateway down\");\n}, { connection });"
+			},
+			"alternatives": [
+				"3 veces, y termina en el conjunto de fallidos",
+				"4 veces, y termina en el conjunto de fallidos",
+				"Se ejecuta para siempre, con un retraso creciente",
+				"1 vez, y espera un reintento manual",
+				"3 veces, y luego se borra de Redis"
+			],
+			"explanations": [
+				"Correcta: `attempts` es el número total de intentos, incluido el primero. Tras la tercera falla, el job pasa a failed.",
+				"`attempts: 3` no significa un intento más tres reintentos; son tres intentos en total.",
+				"El valor de `attempts` acota los reintentos; el backoff solo los espacia.",
+				"Los reintentos son automáticos mientras queden intentos; no hace falta ninguna acción manual para el segundo y el tercero.",
+				"Un job fallido se conserva por defecto en el conjunto de fallidos, para poder inspeccionarlo o reintentarlo."
+			],
+			"concept": "En BullMQ, `attempts` cuenta cada ejecución de un job, y `backoff` define la espera entre ellas. Cuando se agotan los intentos, el job cae en el conjunto de fallidos, que cumple el papel de una dead-letter queue."
 		}
 	},
 	{
@@ -207,6 +271,29 @@
 				"A rate in jobs per time is the `limiter` option, and concurrency is per worker, not per queue."
 			],
 			"concept": "Worker concurrency is how many jobs one worker instance processes at once. In Node.js that means concurrent asynchronous calls on one event loop, ideal for I/O. Total parallelism is the concurrency multiplied by the number of worker processes."
+		},
+		"es": {
+			"statement": "¿Qué significa `concurrency: 5` para el worker de BullMQ del snippet?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "new Worker(\"emails\", async (job) => {\n  await smtp.send(job.data);   // network I/O, about 200 ms\n}, { connection, concurrency: 5 });"
+			},
+			"alternatives": [
+				"Este worker inicia 5 threads del sistema operativo, uno por job",
+				"Este worker toma jobs en lotes de exactamente 5 y espera un lote completo",
+				"Cada job se ejecuta 5 veces para asegurar que tuvo éxito",
+				"Este worker procesa hasta 5 jobs al mismo tiempo, en un solo proceso",
+				"Como máximo se procesan 5 jobs por segundo en toda la cola"
+			],
+			"explanations": [
+				"Aquí la concurrencia es intercalado asíncrono en un solo thread; los jobs intensivos en CPU necesitarían procesadores en sandbox.",
+				"Los jobs se toman a medida que se liberan espacios; el worker no espera a llenar un lote.",
+				"Repetir una ejecución es cuestión de `attempts` tras fallas, nunca de concurrencia.",
+				"Correcta: hasta 5 llamadas al procesador están en vuelo en el mismo event loop, lo que compensa porque el trabajo es de I/O.",
+				"Una tasa de jobs por tiempo es la opción `limiter`, y la concurrencia es por worker, no por cola."
+			],
+			"concept": "La concurrencia del worker es cuántos jobs procesa a la vez una instancia de worker. En Node.js eso significa llamadas asíncronas concurrentes en un event loop, ideal para I/O. El paralelismo total es la concurrencia multiplicada por el número de procesos worker."
 		}
 	},
 	{
@@ -252,6 +339,24 @@
 				"A shutdown snapshot happens only when save points are configured; with persistence disabled nothing is written."
 			],
 			"concept": "The durability of a Redis-backed queue is a Redis configuration matter: AOF or RDB persistence so that jobs survive restarts, and `maxmemory-policy noeviction` so that Redis never evicts job keys under memory pressure."
+		},
+		"es": {
+			"statement": "Una cola de BullMQ tiene 20,000 jobs en espera. Su servidor Redis funciona con la persistencia desactivada (sin snapshots RDB y sin AOF) y se reinicia. ¿Qué pasa con los jobs en espera?",
+			"alternatives": [
+				"Se pierden, porque existían solo en la memoria de Redis",
+				"Se pierden, pero BullMQ pide a los productores que los envíen de nuevo",
+				"Se conservan, porque BullMQ escribe cada job en su propio archivo",
+				"Se conservan, porque los workers tienen una copia de cada job en espera",
+				"Se conservan, porque Redis siempre guarda sus datos al apagarse"
+			],
+			"explanations": [
+				"Correcta: BullMQ es tan durable como su Redis. Sin RDB ni AOF, un reinicio parte de un dataset vacío.",
+				"BullMQ no guarda registro de los productores y no tiene forma de pedir jobs de nuevo.",
+				"BullMQ no mantiene archivos propios; en esta configuración todo su estado está en Redis.",
+				"Los workers toman solo los jobs que están procesando; la lista de espera no se les copia.",
+				"Un snapshot al apagarse ocurre solo cuando hay save points configurados; con la persistencia desactivada no se escribe nada."
+			],
+			"concept": "La durabilidad de una cola respaldada por Redis es cuestión de configuración de Redis: persistencia AOF o RDB para que los jobs sobrevivan a reinicios, y `maxmemory-policy noeviction` para que Redis nunca expulse claves de jobs bajo presión de memoria."
 		}
 	},
 	{
@@ -297,6 +402,24 @@
 				"BullMQ cannot assume success: starting a processor proves nothing about its outcome."
 			],
 			"concept": "BullMQ uses a renewable lock as a lease on each active job. A worker that dies stops renewing, the job is declared stalled and is processed again. This makes BullMQ at-least-once, so processors with side effects must be idempotent."
+		},
+		"es": {
+			"statement": "Un worker de BullMQ toma un job, envía el e-mail, y el proceso muere antes de que el job se marque como completado. El lock del job no se renueva y expira. ¿Qué hace BullMQ con el job?",
+			"alternatives": [
+				"Mueve el job a delayed y espera a que vuelva el mismo worker",
+				"Detecta el job como stalled y lo devuelve para procesarlo de nuevo",
+				"Borra el job, ya que un job sin lock no puede recuperarse",
+				"Deja el job en la lista de activos hasta que alguien lo quite a mano",
+				"Marca el job como completado, ya que su procesador había iniciado"
+			],
+			"explanations": [
+				"Los jobs no están ligados a la identidad de un worker; cualquier worker puede tomar el job recuperado.",
+				"Correcta: un job activo cuyo lock expiró se considera stalled y vuelve a la lista de espera, así que el e-mail puede enviarse dos veces.",
+				"Los jobs stalled se recuperan, no se borran (hasta que se supera el límite `maxStalledCount`, cuando fallan).",
+				"La verificación de jobs stalled existe precisamente para que los jobs activos de workers muertos no queden atascados para siempre.",
+				"BullMQ no puede suponer éxito: iniciar un procesador no prueba nada sobre su resultado."
+			],
+			"concept": "BullMQ usa un lock renovable como lease sobre cada job activo. Un worker que muere deja de renovarlo, el job se declara stalled y se procesa de nuevo. Esto hace a BullMQ at-least-once, así que los procesadores con efectos secundarios deben ser idempotentes."
 		}
 	}
 ]

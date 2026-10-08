@@ -8,6 +8,7 @@ export const pt: Dictionary = {
 	skipToContent: "Pular para o conteúdo",
 	home: "Início",
 	language: "Idioma",
+	sourceCode: { label: "Código-fonte", title: "Código-fonte no GitHub (abre em uma nova aba)" },
 	theme: { toLight: "Mudar para o tema claro", toDark: "Mudar para o tema escuro", light: "Claro", dark: "Escuro" },
 	loading: "Carregando...",
 	homePage: {

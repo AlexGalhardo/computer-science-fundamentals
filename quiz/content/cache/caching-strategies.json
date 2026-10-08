@@ -42,6 +42,24 @@
 				"The database does not know that a miss happened; in cache-aside nothing is pushed from the database to the cache."
 			],
 			"concept": "In cache-aside the cache sits \"beside\" the database and the application talks to both. On a read it tries the cache; on a miss it reads the database, stores the value in the cache (usually with a time to live) and answers. Only data that was actually read enters the cache, hence the name lazy loading."
+		},
+		"es": {
+			"statement": "En la estrategia cache-aside (lazy loading), ¿qué pasa en una lectura cuando la clave no está en la cache?",
+			"alternatives": [
+				"La propia cache consulta la base de datos y le entrega el valor a la aplicación",
+				"La aplicación lee la base de datos y luego guarda el valor en la cache",
+				"La aplicación devuelve un error hasta que un proceso en segundo plano llene la clave",
+				"La aplicación lee la base de datos y deja la cache como estaba, vacía",
+				"La base de datos detecta el fallo y empuja el valor a la cache por sí sola"
+			],
+			"explanations": [
+				"Eso es read-through: la capa de cache carga desde la base de datos, no el código de la aplicación.",
+				"Correcta: en cache-aside la aplicación es dueña de la lógica: pregunta a la cache, ante un fallo lee la base de datos y llena la cache.",
+				"Un fallo de cache no es un error: la aplicación busca el valor en la fuente en la misma solicitud.",
+				"Sin llenar la cache, cada lectura siguiente también fallaría y la cache nunca sería útil.",
+				"La base de datos no sabe que ocurrió un fallo; en cache-aside nada se empuja de la base de datos a la cache."
+			],
+			"concept": "En cache-aside la cache está \"al lado\" de la base de datos y la aplicación habla con ambas. En una lectura prueba la cache; ante un fallo lee la base de datos, guarda el valor en la cache (normalmente con un tiempo de vida) y responde. Solo entran a la cache los datos que realmente se leyeron, de ahí el nombre lazy loading."
 		}
 	},
 	{
@@ -86,6 +104,24 @@
 				"That inverts the roles: in both strategies a read tries the cache first and the database only on a miss."
 			],
 			"concept": "Read-through and cache-aside load data at the same moment: when a read does not find the key. The difference is responsibility. In cache-aside the application code queries the database and writes to the cache; in read-through the application only asks the cache for the key, and the cache (or the caching library) calls a loader function to fetch the value from the source."
+		},
+		"es": {
+			"statement": "¿Qué distingue read-through de cache-aside?",
+			"alternatives": [
+				"Ante un fallo, la propia capa de cache carga el valor, no el código de la aplicación",
+				"Ante un fallo, el valor viene de la base de datos y se devuelve sin guardarse en cache",
+				"La cache se llena en el momento en que los datos se escriben, no cuando se leen",
+				"Las entradas se recargan en segundo plano poco antes de que termine su tiempo de vida",
+				"Las lecturas van primero a la base de datos y a la cache solo cuando la base de datos falla"
+			],
+			"explanations": [
+				"Correcta: la carga ocurre en el mismo momento (ante un fallo); lo que cambia es quién carga: la cache o una biblioteca, mediante una función de carga configurada.",
+				"En ambas estrategias el valor leído de la base de datos se guarda en la cache; sin eso no habría aciertos.",
+				"Llenar la cache en una escritura es write-through; read-through y cache-aside la llenan en una lectura.",
+				"Eso es refresh-ahead, que recarga antes de la expiración en lugar de esperar un fallo.",
+				"Eso invierte los papeles: en ambas estrategias una lectura prueba primero la cache y la base de datos solo ante un fallo."
+			],
+			"concept": "Read-through y cache-aside cargan los datos en el mismo momento: cuando una lectura no encuentra la clave. La diferencia es la responsabilidad. En cache-aside el código de la aplicación consulta la base de datos y escribe en la cache; en read-through la aplicación solo le pide la clave a la cache, y la cache (o la biblioteca de cache) llama a una función de carga para obtener el valor de la fuente."
 		}
 	},
 	{
@@ -141,6 +177,29 @@
 				"Refresh-ahead would reload the entry in the background before it expires; here loading happens only after a miss."
 			],
 			"concept": "The mark of cache-aside is seeing the three steps together in the application code: read the cache, read the database on a miss, fill the cache. In read-through the same steps exist, but they are hidden behind the call to the cache. The time to live of 300 s limits how long an old value can be served."
+		},
+		"es": {
+			"statement": "La función de abajo es parte del código de la aplicación, que tiene un cliente de cache (`cache`) y un cliente de base de datos (`db`). ¿Qué estrategia de cache implementa?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "function getUser(id):\n    value = cache.get(\"user:\" + id)\n    if value is not null:\n        return value\n    value = db.query(\"SELECT * FROM users WHERE id = ?\", id)\n    cache.set(\"user:\" + id, value, ttl = 300)\n    return value"
+			},
+			"alternatives": [
+				"Cache-aside",
+				"Read-through",
+				"Write-through",
+				"Write-around",
+				"Refresh-ahead"
+			],
+			"explanations": [
+				"Correcta: la propia aplicación consulta la cache, lee la base de datos ante un fallo y guarda el valor en la cache.",
+				"En read-through la función solo llamaría a `cache.get`; la consulta a la base de datos viviría dentro de la capa de cache.",
+				"Write-through describe el camino de escritura (cache y base de datos juntas); esta función es un camino de lectura.",
+				"Write-around también es una estrategia de escritura: escribe solo en la base de datos. Aquí no se escriben datos de negocio.",
+				"Refresh-ahead recargaría la entrada en segundo plano antes de que expire; aquí la carga ocurre solo después de un fallo."
+			],
+			"concept": "La marca de cache-aside es ver los tres pasos juntos en el código de la aplicación: leer la cache, leer la base de datos ante un fallo, llenar la cache. En read-through existen los mismos pasos, pero quedan ocultos detrás de la llamada a la cache. El tiempo de vida de 300 s limita cuánto tiempo se puede servir un valor viejo."
 		}
 	},
 	{
@@ -186,6 +245,24 @@
 				"Acknowledging before writing anywhere is asynchronous queue processing, not write-through."
 			],
 			"concept": "Write-through keeps the cache filled by the write path: every write updates the cache and the database before answering. The gain is that a read right after the write is a hit with current data. The cost is write latency, which now includes both writes, and the fact that the cache also receives data that may never be read."
+		},
+		"es": {
+			"statement": "En write-through, ¿cuándo se confirma una escritura al cliente?",
+			"alternatives": [
+				"Después de actualizar la cache; la base de datos se actualiza más tarde, en un lote en segundo plano",
+				"Después de que la cache y la base de datos se actualizaron, de forma síncrona",
+				"Después de actualizar la base de datos; la escritura no toca la cache",
+				"Después de actualizar la base de datos y borrar la clave en cache",
+				"En cuanto la escritura entra en una cola, antes de que cambie cualquiera de las dos"
+			],
+			"explanations": [
+				"Eso es write-behind: la confirmación llega antes de la escritura en la base de datos, que es asíncrona.",
+				"Correcta: la escritura retorna solo después de escribir en ambos almacenes, así una lectura siguiente encuentra el valor nuevo en la cache y el dato ya está en la base de datos.",
+				"Eso es write-around: la escritura va solo a la base de datos y la cache se llena con una lectura posterior.",
+				"Ese es el camino de escritura habitual de cache-aside (invalidar); write-through guarda el valor nuevo en la cache.",
+				"Confirmar antes de escribir en cualquier lugar es procesamiento asíncrono con cola, no write-through."
+			],
+			"concept": "Write-through mantiene la cache llena mediante el camino de escritura: cada escritura actualiza la cache y la base de datos antes de responder. La ganancia es que una lectura justo después de la escritura es un acierto con datos actuales. El costo es la latencia de escritura, que ahora incluye ambas escrituras, y que la cache también recibe datos que quizá nunca se lean."
 		}
 	},
 	{
@@ -231,6 +308,24 @@
 				"Correct: the client gets the acknowledgement as soon as the cache is written, and an asynchronous process carries the changes to the database, often in a batch."
 			],
 			"concept": "In write-behind a write touches only the cache before answering, which makes it very fast. A background process flushes the pending changes to the database at intervals, possibly grouping several into a batch. The price is durability: an already acknowledged write is lost if the cache fails before the flush."
+		},
+		"es": {
+			"statement": "¿Qué caracteriza a la estrategia write-behind (también llamada write-back)?",
+			"alternatives": [
+				"La escritura se confirma después de la base de datos; la cache se actualiza después",
+				"La escritura llega a la cache y a la base de datos antes de confirmarse",
+				"La escritura va solo a la base de datos; una lectura posterior llena la cache",
+				"La escritura va solo a la cache; la base de datos nunca vuelve a actualizarse",
+				"La escritura se confirma después de la cache; la base de datos se actualiza después"
+			],
+			"explanations": [
+				"Eso invierte el orden: en write-behind la que queda atrás es la base de datos, no la cache.",
+				"Eso es write-through, en el que ambas escrituras son síncronas.",
+				"Eso es write-around, que no escribe en la cache durante la escritura.",
+				"La base de datos sigue siendo el destino final de los datos; solo recibe los cambios con retraso.",
+				"Correcta: el cliente recibe la confirmación en cuanto se escribe la cache, y un proceso asíncrono lleva los cambios a la base de datos, a menudo en lote."
+			],
+			"concept": "En write-behind una escritura toca solo la cache antes de responder, lo que la hace muy rápida. Un proceso en segundo plano vuelca los cambios pendientes a la base de datos a intervalos, posiblemente agrupando varios en un lote. El precio es la durabilidad: una escritura ya confirmada se pierde si la cache falla antes del volcado."
 		}
 	},
 	{
@@ -276,6 +371,24 @@
 				"Read-through is a read strategy; it does not reduce the number of writes reaching the database."
 			],
 			"concept": "The choice of a write strategy follows two axes: how much write load the database can take and how much loss is tolerable. Write-behind absorbs bursts in the cache and turns many writes into a few database writes, at the price of possibly losing what was pending. View counters are the classic case: many writes and tolerance for a small loss."
+		},
+		"es": {
+			"statement": "Un sitio de videos cuenta reproducciones: miles de incrementos por segundo en cada video popular, y perder algunos segundos de conteo en una falla es aceptable. ¿Qué estrategia de escritura encaja mejor?",
+			"alternatives": [
+				"Write-through: incrementar en la cache y en la base de datos en cada reproducción",
+				"Write-around: incrementar en la base de datos y dejar que una lectura posterior vuelva a llenar la cache",
+				"Write-behind: incrementar en la cache y volcar los totales a la base de datos periódicamente",
+				"Cache-aside: incrementar en la base de datos y borrar la clave en cache en cada reproducción",
+				"Read-through: dejar que la cache cargue el contador desde la base de datos en cada reproducción"
+			],
+			"explanations": [
+				"Write-through envía cada incremento a la base de datos de forma síncrona: miles de escrituras por segundo, justo lo que se quiere evitar.",
+				"Write-around también escribe en la base de datos en cada incremento; la carga de escritura en la base de datos no baja.",
+				"Correcta: los incrementos quedan en memoria y la base de datos recibe pocas escrituras agrupadas; la posible pérdida (lo que aún no se volcó) se declaró aceptable.",
+				"Además de escribir en la base de datos en cada incremento, borrar la clave en cada escritura convierte casi toda lectura en un fallo.",
+				"Read-through es una estrategia de lectura; no reduce la cantidad de escrituras que llegan a la base de datos."
+			],
+			"concept": "La elección de una estrategia de escritura sigue dos ejes: cuánta carga de escritura soporta la base de datos y cuánta pérdida es tolerable. Write-behind absorbe ráfagas en la cache y convierte muchas escrituras en pocas escrituras a la base de datos, al precio de poder perder lo que estaba pendiente. Los contadores de reproducciones son el caso clásico: muchas escrituras y tolerancia a una pequeña pérdida."
 		}
 	},
 	{
@@ -331,6 +444,29 @@
 				"8 comes from rewriting, in each flush, every key seen so far (2 + 2 + 4); only the keys changed since the previous flush are sent."
 			],
 			"concept": "In write-behind, several updates to the same key within one flush interval are merged (coalescing): only the last value reaches the database. That is how 9 cache writes became 6 database writes. The side effect is that the intermediate values (such as stock:A = 9 and 8) never exist in the database."
+		},
+		"es": {
+			"statement": "Una cache write-behind vuelca sus cambios cada 10 s (en t = 10 s, 20 s y 30 s). Cada volcado envía a la base de datos un `UPDATE` por cada clave modificada desde el volcado anterior, con su último valor. Para la secuencia de escrituras de abajo, ¿cuántas sentencias `UPDATE` recibe la base de datos en total, hasta el volcado de t = 30 s inclusive?",
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "t = 1 s   SET stock:A = 9\nt = 3 s   SET stock:B = 4\nt = 4 s   SET stock:A = 8\nt = 9 s   SET stock:A = 7\nt = 12 s  SET stock:B = 3\nt = 15 s  SET stock:A = 6\nt = 18 s  SET stock:B = 2\nt = 27 s  SET stock:C = 5\nt = 28 s  SET stock:D = 1"
+			},
+			"alternatives": [
+				"9",
+				"4",
+				"3",
+				"6",
+				"8"
+			],
+			"explanations": [
+				"9 es la cantidad de escrituras que recibió la cache; ignora que varias escrituras a la misma clave dentro de un intervalo se vuelven una sola escritura en la base de datos.",
+				"4 es la cantidad de claves distintas; ignora que A y B cambian en dos intervalos diferentes y por eso se escriben dos veces.",
+				"3 es la cantidad de volcados; cada volcado envía un `UPDATE` por clave modificada, no una sola sentencia.",
+				"Correcta: volcado en t = 10 s: claves modificadas {A, B}, 2 escrituras. Volcado en t = 20 s: {A, B}, 2 escrituras. Volcado en t = 30 s: {C, D}, 2 escrituras. Total 2 + 2 + 2 = 6. Comprobación por clave: A aparece en 2 volcados, B en 2, C en 1 y D en 1, lo que suma 6.",
+				"8 sale de reescribir, en cada volcado, todas las claves vistas hasta entonces (2 + 2 + 4); solo se envían las claves modificadas desde el volcado anterior."
+			],
+			"concept": "En write-behind, varias actualizaciones a la misma clave dentro de un intervalo de volcado se fusionan (coalescing): solo el último valor llega a la base de datos. Así 9 escrituras en la cache se volvieron 6 escrituras en la base de datos. El efecto secundario es que los valores intermedios (como stock:A = 9 y 8) nunca existen en la base de datos."
 		}
 	},
 	{
@@ -375,6 +511,24 @@
 				"Correct: the write goes \"around\" the cache; the value enters it only on a later read that misses."
 			],
 			"concept": "Write-around writes only to the database and lets reads fill the cache. It is a good choice when written data is rarely read soon afterwards, such as log or history records, because it avoids filling the cache with data nobody will ask for. The drawback is that the first read after a write is always a miss."
+		},
+		"es": {
+			"statement": "En la estrategia write-around, ¿a dónde va una escritura?",
+			"alternatives": [
+				"Solo a la cache; la base de datos recibe el valor en un volcado posterior",
+				"A la cache y a la base de datos, de forma síncrona, antes de la confirmación",
+				"A la base de datos, que luego empuja el valor nuevo a la cache",
+				"Solo a la cache; el valor desaparece cuando la entrada expira",
+				"Solo a la base de datos; la cache recibe el valor cuando se lee después"
+			],
+			"explanations": [
+				"Eso es write-behind, en el que la cache recibe la escritura y la base de datos queda para después.",
+				"Eso es write-through, que escribe en ambas antes de responder.",
+				"La base de datos no empuja valores a la cache por sí sola; eso requeriría un mecanismo aparte, como leer el registro de cambios.",
+				"Una cache no es el almacenamiento permanente: escribir solo en ella perdería los datos al expirar o ser descartados.",
+				"Correcta: la escritura \"rodea\" la cache; el valor entra en ella solo en una lectura posterior que falla."
+			],
+			"concept": "Write-around escribe solo en la base de datos y deja que las lecturas llenen la cache. Es una buena opción cuando los datos escritos rara vez se leen poco después, como registros de log o de historial, porque evita llenar la cache con datos que nadie pedirá. La desventaja es que la primera lectura después de una escritura siempre es un fallo."
 		}
 	},
 	{
@@ -420,6 +574,24 @@
 				"Correct: if two writers set the value in the cache, the older one can arrive last and stay there; deleting is safe in any order, since the next read reloads from the database."
 			],
 			"concept": "Deleting gives the same result in any order: whichever writer deletes last, the key is absent and the next read fetches the current value from the database. Storing the new value depends on the order of arrival at the cache, which can differ from the order of the commits in the database. Deleting also avoids computing and storing a value nobody may read; the cost is a miss on the first read after the write."
+		},
+		"es": {
+			"statement": "En cache-aside, el camino de escritura habitual actualiza la base de datos y luego borra la clave de la cache, en lugar de guardar en ella el valor nuevo. ¿Cuál es la razón principal?",
+			"alternatives": [
+				"Borrar una clave es mucho más barato para Redis que sobrescribir el valor guardado en ella",
+				"El borrado corre dentro de la transacción de la base de datos y se revierte junto con ella",
+				"Redis no puede sobrescribir una clave existente sin antes quitarla de la memoria",
+				"Una clave borrada garantiza que la siguiente lectura la sirva la cache, sin fallo",
+				"Escritores concurrentes podrían escribir la cache en un orden distinto al de la base de datos"
+			],
+			"explanations": [
+				"La diferencia de costo entre borrar y sobrescribir una clave es irrelevante aquí; la razón es la corrección, no el rendimiento.",
+				"Redis no participa en la transacción de PostgreSQL; un borrado que ya se ejecutó no se deshace con un rollback.",
+				"Sobrescribir una clave existente es una operación normal y atómica en Redis.",
+				"Es lo contrario: después del borrado, la primera lectura es un fallo y paga el viaje a la base de datos.",
+				"Correcta: si dos escritores guardan el valor en la cache, el más viejo puede llegar último y quedarse ahí; borrar es seguro en cualquier orden, ya que la siguiente lectura recarga desde la base de datos."
+			],
+			"concept": "Borrar da el mismo resultado en cualquier orden: sea cual sea el escritor que borre último, la clave queda ausente y la siguiente lectura obtiene el valor actual de la base de datos. Guardar el valor nuevo depende del orden de llegada a la cache, que puede diferir del orden de los commits en la base de datos. Borrar también evita calcular y guardar un valor que tal vez nadie lea; el costo es un fallo en la primera lectura después de la escritura."
 		}
 	},
 	{
@@ -473,6 +645,28 @@
 				"Read-through is about reads: the cache loads from the database on a miss. The steps show a write."
 			],
 			"concept": "To recognise a write strategy, look at where the acknowledgement to the client sits relative to the database write. If the database is written before the acknowledgement, it is write-through (or write-around, if the cache is not written). If the acknowledgement comes first and the database is written later by a separate process, it is write-behind."
+		},
+		"es": {
+			"statement": "Los pasos de abajo describen cómo un servicio maneja un cambio de precio. ¿Qué estrategia de escritura describen?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "1. El cliente envía: el precio del producto 7 pasa a ser 50\n2. El servicio guarda product:7 = 50 en la cache\n3. El servicio agrega product:7 a una lista de claves pendientes\n4. El cliente recibe OK\n5. Cada 5 segundos, un worker escribe en la base de datos las claves pendientes"
+			},
+			"alternatives": [
+				"Write-through",
+				"Write-around",
+				"Write-behind",
+				"Cache-aside",
+				"Read-through"
+			],
+			"explanations": [
+				"En write-through la escritura en la base de datos ocurriría antes del paso 4, de forma síncrona.",
+				"En write-around la cache no se escribiría en una escritura; la escritura iría solo a la base de datos.",
+				"Correcta: el cliente recibe la confirmación (paso 4) antes de que se escriba la base de datos (paso 5), y la escritura en la base de datos es asíncrona y en lote.",
+				"En el camino de escritura de cache-aside el servicio escribiría la base de datos y borraría la clave, sin lista de pendientes.",
+				"Read-through trata de lecturas: la cache carga desde la base de datos ante un fallo. Los pasos muestran una escritura."
+			],
+			"concept": "Para reconocer una estrategia de escritura, mira dónde está la confirmación al cliente en relación con la escritura en la base de datos. Si la base de datos se escribe antes de la confirmación, es write-through (o write-around, si la cache no se escribe). Si la confirmación llega primero y la base de datos la escribe después un proceso aparte, es write-behind."
 		}
 	},
 	{
@@ -518,6 +712,24 @@
 				"Refresh-ahead decides when to reload entries that already exist; it does not say how a write reaches the database."
 			],
 			"concept": "Each write strategy combines two decisions: the database is written before or after the acknowledgement, and the cache receives the new value, is invalidated or is ignored. Write-through writes the database before acknowledging and puts the value in the cache. It is the only classic strategy that gives, at the same time, durability at acknowledgement and a hit on the following read."
+		},
+		"es": {
+			"statement": "Un servicio de pedidos tiene dos requisitos: un pedido solo puede confirmarse al cliente después de guardarse en PostgreSQL, y la lectura hecha justo después de la escritura debe ser un acierto de cache. ¿Qué estrategia cumple ambos?",
+			"alternatives": [
+				"Write-through: escribir la base de datos y la cache, y luego confirmar",
+				"Write-behind: escribir la cache, confirmar y volcar a la base de datos después",
+				"Write-around: escribir solo la base de datos y dejar que la siguiente lectura llene la cache",
+				"Cache-aside: escribir la base de datos, borrar la clave y luego confirmar",
+				"Refresh-ahead: recargar la entrada en segundo plano poco antes de que expire"
+			],
+			"explanations": [
+				"Correcta: la base de datos se escribe antes de la confirmación (durabilidad) y la cache ya tiene el valor nuevo (la lectura siguiente es un acierto).",
+				"Write-behind confirma antes de escribir la base de datos, lo que rompe el primer requisito.",
+				"Write-around cumple la durabilidad, pero la lectura justo después de la escritura encuentra la cache sin el valor: un fallo.",
+				"Cache-aside también escribe la base de datos antes de confirmar, pero borra la clave: la primera lectura después de la escritura es un fallo.",
+				"Refresh-ahead decide cuándo recargar entradas que ya existen; no dice cómo una escritura llega a la base de datos."
+			],
+			"concept": "Cada estrategia de escritura combina dos decisiones: la base de datos se escribe antes o después de la confirmación, y la cache recibe el valor nuevo, se invalida o se ignora. Write-through escribe la base de datos antes de confirmar y pone el valor en la cache. Es la única estrategia clásica que da, al mismo tiempo, durabilidad en la confirmación y un acierto en la lectura siguiente."
 		}
 	},
 	{
@@ -571,6 +783,28 @@
 				"Both writes were pending in the same queue; the crash loses both, not only the last one."
 			],
 			"concept": "In write-behind the cache is ahead of the database between two flushes. Whoever reads through the cache sees the new value; whoever reads the database directly (a report, another application) sees the value of the last flush. If the cache fails before the flush and the queue is not persisted, every write acknowledged since the last flush disappears, although the client received OK."
+		},
+		"es": {
+			"statement": "Un servicio usa write-behind con un volcado cada 10 s (en t = 10 s, 20 s, ...). La cola de cambios pendientes vive solo en la memoria del proceso de cache. En la línea de tiempo de abajo, ¿qué valor leyó el reporte y qué valor tiene la base de datos después de la falla?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "t = 0 s   base de datos: points = 100 | cache: points = 100 | nada pendiente\nt = 2 s   el cliente escribe 130 -> cache = 130, el cliente recibe OK\nt = 4 s   el reporte lee points directamente de la base de datos\nt = 6 s   el cliente escribe 150 -> cache = 150, el cliente recibe OK\nt = 7 s   el proceso de cache falla y pierde su memoria\nt = 10 s  (el volcado que habría ocurrido no sucede)"
+			},
+			"alternatives": [
+				"El reporte leyó 100; la base de datos tiene 100 después de la falla",
+				"El reporte leyó 130; la base de datos tiene 150 después de la falla",
+				"El reporte leyó 100; la base de datos tiene 150 después de la falla",
+				"El reporte leyó 130; la base de datos tiene 130 después de la falla",
+				"El reporte leyó 100; la base de datos tiene 130 después de la falla"
+			],
+			"explanations": [
+				"Correcta: no corrió ningún volcado entre t = 0 s y t = 7 s, así que la base de datos se quedó en 100 todo el tiempo. El reporte, que lee la base de datos, vio 100 en t = 4 s. Las dos escrituras confirmadas (130 y 150) estaban solo en memoria y se perdieron.",
+				"Eso trata write-behind como write-through: supone que cada escritura llega a la base de datos antes de la confirmación.",
+				"La parte del reporte es correcta, pero la cola de pendientes estaba solo en memoria: después de la falla no queda nada que volcar.",
+				"Eso supone que cada escritura se vuelca antes de la siguiente; el volcado solo corre cada 10 s.",
+				"Ambas escrituras estaban pendientes en la misma cola; la falla pierde las dos, no solo la última."
+			],
+			"concept": "En write-behind la cache va adelante de la base de datos entre dos volcados. Quien lee a través de la cache ve el valor nuevo; quien lee la base de datos directamente (un reporte, otra aplicación) ve el valor del último volcado. Si la cache falla antes del volcado y la cola no está persistida, desaparece toda escritura confirmada desde el último volcado, aunque el cliente haya recibido OK."
 		}
 	},
 	{
@@ -615,6 +849,24 @@
 				"That is cache warming (preloading) at start-up, done once, not a continuous renewal."
 			],
 			"concept": "Refresh-ahead anticipates the reload: when a frequently read entry gets close to the end of its time to live, the cache fetches the new value in the background. Reads do not pay the latency of a miss. The risk is wasting work reloading entries that would not be read again, so it usually applies only to recently accessed keys."
+		},
+		"es": {
+			"statement": "¿Qué hace una cache configurada con refresh-ahead?",
+			"alternatives": [
+				"Recarga cada entrada desde la base de datos inmediatamente después de cada escritura a esa entrada",
+				"Carga una entrada desde la base de datos solo cuando una lectura no la encuentra",
+				"Recarga en segundo plano las entradas leídas con frecuencia poco antes de que expiren",
+				"Sigue sirviendo la entrada expirada y nunca vuelve a consultar la base de datos",
+				"Carga toda la base de datos en la cache una única vez, al iniciar la aplicación"
+			],
+			"explanations": [
+				"Actualizar la cache en cada escritura es lo que hace write-through; refresh-ahead se dispara por la cercanía de la expiración.",
+				"Cargar solo ante un fallo es el lazy loading de cache-aside y read-through.",
+				"Correcta: la entrada se renueva antes de que termine su tiempo de vida, así las lecturas siguen siendo aciertos y nadie espera la recarga.",
+				"Refresh-ahead existe justamente para obtener un valor nuevo de la fuente; no abandona la base de datos.",
+				"Eso es el calentamiento de cache (precarga) al arrancar, hecho una vez, no una renovación continua."
+			],
+			"concept": "Refresh-ahead anticipa la recarga: cuando una entrada leída con frecuencia se acerca al final de su tiempo de vida, la cache obtiene el valor nuevo en segundo plano. Las lecturas no pagan la latencia de un fallo. El riesgo es desperdiciar trabajo recargando entradas que no se volverían a leer, por eso suele aplicarse solo a claves accedidas recientemente."
 		}
 	},
 	{
@@ -660,6 +912,24 @@
 				"A hit does not query the database; comparing on every read would remove the gain of the cache. The value can be stale until invalidation or the end of the time to live."
 			],
 			"concept": "Cache-aside shines when there are far more reads than writes: each entry, once loaded, answers many requests before it is invalidated or expires. The hit rate stays high and the database receives only the misses. Because the cache is optional on the read path, the application can still answer from the database if the cache is down, only more slowly."
+		},
+		"es": {
+			"statement": "Un catálogo de productos se lee miles de veces por segundo y cambia unas pocas veces al día. ¿Por qué cache-aside con un tiempo de vida encaja bien con esta carga?",
+			"alternatives": [
+				"Solo entran a la cache los datos que se leen, y cada fallo va seguido de muchos aciertos",
+				"Cada escritura también actualiza la cache, así que ninguna lectura encuentra un fallo",
+				"Las escrituras se agrupan en lotes, así que la base de datos recibe menos sentencias",
+				"La cache carga los datos por sí sola, así que la aplicación no tiene código de cache",
+				"Las entradas nunca pueden estar desactualizadas, ya que cada lectura compara la cache con la base de datos"
+			],
+			"explanations": [
+				"Correcta: con muchas lecturas por escritura, el costo de un fallo (un viaje a la base de datos) se reparte entre miles de aciertos, y los productos que nadie lee no ocupan memoria.",
+				"Eso describe write-through; en cache-aside una escritura invalida la clave y la primera lectura después es un fallo.",
+				"Eso describe write-behind, que resuelve un exceso de escrituras, un problema que esta carga no tiene.",
+				"Eso describe read-through; en cache-aside el código de consultar y llenar vive en la aplicación.",
+				"Un acierto no consulta la base de datos; comparar en cada lectura eliminaría la ganancia de la cache. El valor puede estar desactualizado hasta la invalidación o el fin del tiempo de vida."
+			],
+			"concept": "Cache-aside brilla cuando hay muchas más lecturas que escrituras: cada entrada, una vez cargada, responde muchas solicitudes antes de ser invalidada o expirar. La tasa de aciertos se mantiene alta y la base de datos recibe solo los fallos. Como la cache es opcional en el camino de lectura, la aplicación aún puede responder desde la base de datos si la cache se cae, solo que más lento."
 		}
 	},
 	{
@@ -705,6 +975,24 @@
 				"That is the risk of write-behind; in write-through the database is written synchronously."
 			],
 			"concept": "Cache-aside starts cold after a restart and keeps only what is read. Write-through leaves the cache warm right after the writes, but it keeps everything that is written, including data that will never be read. That is why write-through is usually paired with a time to live: entries nobody reads expire and free memory, and the ones that are read are rewritten by a write or reloaded on a read."
+		},
+		"es": {
+			"statement": "Un catálogo tiene 10 millones de productos, de los cuales cerca del 2% se lee en un día. Una importación nocturna reescribe todos los productos. El equipo reemplaza cache-aside por write-through (cada escritura guarda el producto en PostgreSQL y en Redis) y no define tiempo de vida para las entradas. ¿Cuál es el efecto más probable en la cache?",
+			"alternatives": [
+				"Mantiene su tamaño, ya que write-through solo actualiza claves que ya existen en la cache",
+				"Se llena de productos que nadie lee, hasta que se acaba la memoria o empieza el descarte",
+				"Se reduce, ya que cada escritura elimina la clave y solo vuelven los productos leídos",
+				"Guarda solo el 2% de productos que se leen, como hacía con cache-aside",
+				"Pierde los valores importados en una falla, ya que la base de datos se escribe después"
+			],
+			"explanations": [
+				"En la estrategia descrita cada escritura guarda el producto en Redis exista o no la clave; eso es lo que llena la cache.",
+				"Correcta: write-through guarda en la cache todo lo que se escribe. La importación pone los 10 millones de productos en Redis, aunque solo unos 200 mil (2%) se leen; sin tiempo de vida, las entradas no leídas nunca salen por sí solas.",
+				"Eliminar la clave en una escritura es el comportamiento de cache-aside, que el equipo acaba de abandonar.",
+				"Guardar solo lo que se lee es la propiedad del lazy loading; write-through llena la cache mediante escrituras, no lecturas.",
+				"Ese es el riesgo de write-behind; en write-through la base de datos se escribe de forma síncrona."
+			],
+			"concept": "Cache-aside arranca fría después de un reinicio y guarda solo lo que se lee. Write-through deja la cache caliente justo después de las escrituras, pero guarda todo lo que se escribe, incluidos datos que nunca se leerán. Por eso write-through suele combinarse con un tiempo de vida: las entradas que nadie lee expiran y liberan memoria, y las que se leen se reescriben con una escritura o se recargan con una lectura."
 		}
 	},
 	{
@@ -750,6 +1038,24 @@
 				"The Redis server does not know about a command it never received; a retry would have to come from the application, and the statement says it does not retry."
 			],
 			"concept": "Write-through makes two writes to two systems with no common transaction, so one can succeed and the other fail. Database first and cache second: a failure leaves the database correct and the cache stale, which is repaired by deleting the key or by a time to live. Cache first and database second: a failure leaves in the cache a value the database never received, and readers see data that does not exist in the source. That is why the usual order is to write the source of truth first."
+		},
+		"es": {
+			"statement": "Una función write-through ejecuta dos pasos independientes, sin compensación: (1) `UPDATE` en PostgreSQL, con commit; (2) `SET` en Redis. El paso 1 hace commit, pero Redis es inalcanzable: el `SET` nunca se aplica y la función no reintenta. La clave tenía el valor viejo, sin tiempo de vida. ¿Qué estado queda?",
+			"alternatives": [
+				"Base de datos vieja, cache vieja: el `SET` fallido hace que PostgreSQL revierta el `UPDATE` confirmado",
+				"Base de datos nueva, cache vacía: un `SET` que falla elimina la clave que estaba escribiendo",
+				"Base de datos nueva, cache vieja: las lecturas devuelven el valor viejo hasta que la clave se reescriba",
+				"Base de datos vieja, cache nueva: el valor desaparece si Redis pierde su memoria",
+				"Base de datos nueva, cache nueva: Redis repite por sí solo un `SET` fallido hasta que funcione"
+			],
+			"explanations": [
+				"Ninguna transacción cubre ambos sistemas: un error en Redis no deshace un commit ya hecho en PostgreSQL.",
+				"Un `SET` que nunca llegó a Redis no cambia nada ahí; la clave vieja sigue existiendo.",
+				"Correcta: el commit del paso 1 es definitivo y el paso 2 no ocurrió. La base de datos tiene el valor nuevo y la cache sigue con el viejo; sin tiempo de vida queda desactualizada hasta otra escritura o un borrado de la clave.",
+				"Ese es el resultado del orden opuesto (cache primero, base de datos después) cuando falla la escritura en la base de datos.",
+				"El servidor Redis no sabe de un comando que nunca recibió; un reintento tendría que venir de la aplicación, y el enunciado dice que no reintenta."
+			],
+			"concept": "Write-through hace dos escrituras en dos sistemas sin una transacción común, así que una puede funcionar y la otra fallar. Base de datos primero y cache después: una falla deja la base de datos correcta y la cache desactualizada, lo que se repara borrando la clave o con un tiempo de vida. Cache primero y base de datos después: una falla deja en la cache un valor que la base de datos nunca recibió, y los lectores ven datos que no existen en la fuente. Por eso el orden habitual es escribir primero la fuente de verdad."
 		}
 	}
 ]

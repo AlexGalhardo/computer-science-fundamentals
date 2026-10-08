@@ -49,6 +49,28 @@
 				"kind": "diagram",
 				"content": "x = a + b * c\n\nt1 = b * c\nt2 = a + t1\nx  = t2"
 			}
+		},
+		"es": {
+			"statement": "¿Qué caracteriza a una instrucción de código de tres direcciones?",
+			"alternatives": [
+				"Tiene como máximo un operador en su lado derecho y por lo tanto como máximo tres direcciones",
+				"Siempre ocupa exactamente tres bytes en la memoria de la máquina objeto",
+				"Usa exactamente tres registros de la máquina objeto, ni más ni menos",
+				"Es un nodo del árbol sintáctico que puede tener hasta tres hijos",
+				"Puede contener cualquier expresión, siempre que mencione como máximo tres variables"
+			],
+			"explanations": [
+				"La forma típica es x = y op z: dos operandos y un resultado. Las expresiones más grandes se dividen en varias instrucciones con temporales.",
+				"El código de tres direcciones es una representación intermedia, independiente del tamaño de instrucción de cualquier máquina.",
+				"Las direcciones son nombres, constantes y temporales del compilador; los registros se eligen después, durante la generación de código.",
+				"El código de tres direcciones es una secuencia lineal de instrucciones, no un árbol; linealiza el árbol sintáctico.",
+				"Limitar las variables no basta: una expresión como a + b * c tiene dos operadores y debe dividirse en dos instrucciones."
+			],
+			"concept": "En el código de tres direcciones cada instrucción tiene como máximo un operador en su lado derecho, como en x = y op z. Una expresión compuesta se descompone en una secuencia de instrucciones, y el compilador crea nombres temporales para los valores intermedios. Una dirección puede ser un nombre del programa, una constante o un temporal.",
+			"example": {
+				"kind": "diagram",
+				"content": "x = a + b * c\n\nt1 = b * c\nt2 = a + t1\nx  = t2"
+			}
 		}
 	},
 	{
@@ -100,6 +122,28 @@
 			"example": {
 				"kind": "diagram",
 				"content": "x = (a + b) * c\n\nquadruples                 triples\n   op  arg1 arg2 result       op  arg1 arg2\n0  +   a    b    t1        0  +   a    b\n1  *   t1   c    t2        1  *   (0)  c\n2  =   t2        x         2  =   x    (1)"
+			}
+		},
+		"es": {
+			"statement": "Una cuádrupla tiene los campos op, arg1, arg2 y result. Una tripla tiene solo op, arg1 y arg2. ¿Cómo se refiere una tripla al resultado calculado por otra instrucción?",
+			"alternatives": [
+				"Por el nombre de un temporal registrado en la tabla de símbolos",
+				"Por la posición (índice) de la instrucción que calcula el valor",
+				"Por el registro de máquina en el que se guardará el valor",
+				"Por una copia de toda la subexpresión dentro del campo de argumento",
+				"No se refiere: cada tripla vuelve a calcular los operandos que necesita"
+			],
+			"explanations": [
+				"Ese es el mecanismo de las cuádruplas: el campo result contiene el nombre del temporal, y las demás instrucciones usan ese nombre.",
+				"Sin campo de resultado, el valor de una tripla se identifica por el número de la propia instrucción, escrito entre paréntesis, como (0) o (3).",
+				"Los registros solo se eligen durante la generación de código; la representación intermedia no depende de ellos.",
+				"Los campos de una tripla contienen un nombre, una constante o una referencia a otra tripla, nunca una expresión entera.",
+				"El propósito mismo de la representación es reutilizar valores ya calculados, apuntando a la instrucción que los produjo."
+			],
+			"concept": "Las cuádruplas y las triplas son dos formas de almacenar código de tres direcciones. En una cuádrupla el resultado tiene un nombre explícito en el campo result. En una tripla el resultado se identifica por la posición de la instrucción, lo que ahorra temporales pero dificulta mover instrucciones: cuando una tripla cambia de lugar, cambian todas las referencias a ella. Las triplas indirectas resuelven esto con una lista aparte de punteros a las triplas, que puede reordenarse.",
+			"example": {
+				"kind": "diagram",
+				"content": "x = (a + b) * c\n\ncuádruplas                 triplas\n   op  arg1 arg2 result       op  arg1 arg2\n0  +   a    b    t1        0  +   a    b\n1  *   t1   c    t2        1  *   (0)  c\n2  =   t2        x         2  =   x    (1)"
 			}
 		}
 	},
@@ -153,6 +197,28 @@
 				"kind": "diagram",
 				"content": "if (c) x = 1; else x = 2;\ny = x + 1;\n\n    if c goto L1\n    x2 = 2\n    goto L2\nL1: x1 = 1\nL2: x3 = φ(x1, x2)\n    y1 = x3 + 1"
 			}
+		},
+		"es": {
+			"statement": "En la forma de asignación única estática (SSA), ¿cuál es el papel de una función φ?",
+			"alternatives": [
+				"Renombrar las variables para que cada nombre reciba valor en una sola asignación",
+				"Eliminar las asignaciones cuyo valor el programa nunca usa",
+				"Convertir el tipo de un operando al tipo del otro operando",
+				"Marcar el inicio de cada bloque básico que pertenece a un bucle",
+				"Seleccionar, donde se unen caminos del flujo de control, la versión de la variable que viene del camino tomado"
+			],
+			"explanations": [
+				"El renombrado (x1, x2, ...) es lo que define la forma SSA, pero se hace en las asignaciones; la función φ existe para el caso en que dos versiones llegan al mismo punto.",
+				"Eso es la eliminación de código muerto, una optimización que la forma SSA facilita, pero no es el papel de φ.",
+				"La conversión de tipos pertenece a la verificación de tipos (coerción) y no tiene nada que ver con la forma SSA.",
+				"El inicio de los bloques lo determinan los líderes; la función φ es una instrucción dentro de un bloque, no un marcador.",
+				"En x3 = φ(x1, x2), x3 recibe x1 si el control llegó por el primer camino y x2 si llegó por el segundo."
+			],
+			"concept": "En la forma SSA cada variable recibe valor en exactamente una asignación del texto del programa; para lograrlo, cada nueva asignación crea una versión nueva (x1, x2, ...). Cuando se encuentran dos caminos que llevan versiones distintas, después de un if o al inicio de un bucle, una función φ crea una versión nueva cuyo valor es una u otra según el camino por el que llegó el control. Esto hace explícito qué definición alcanza cada uso.",
+			"example": {
+				"kind": "diagram",
+				"content": "if (c) x = 1; else x = 2;\ny = x + 1;\n\n    if c goto L1\n    x2 = 2\n    goto L2\nL1: x1 = 1\nL2: x3 = φ(x1, x2)\n    y1 = x3 + 1"
+			}
 		}
 	},
 	{
@@ -164,7 +230,13 @@
 		"source": "Aho et al., Compilers (2nd edition), chapter 6 (types and type checking, type conversions)",
 		"pt": {
 			"statement": "Em x = i + 2.5, i é uma variável inteira e x é de ponto flutuante. O programador não escreveu conversão alguma, e o próprio compilador insere a conversão de i para ponto flutuante antes da soma. Como se chama uma conversão de tipo inserida implicitamente pelo compilador?",
-			"alternatives": ["Coerção", "Conversão explícita (cast)", "Inferência de tipos", "Sobrecarga", "Síntese de tipos"],
+			"alternatives": [
+				"Coerção",
+				"Conversão explícita (cast)",
+				"Inferência de tipos",
+				"Sobrecarga",
+				"Síntese de tipos"
+			],
 			"explanations": [
 				"Coerção é a conversão implícita, feita automaticamente pelo compilador segundo as regras da linguagem, em geral no sentido que não perde informação (int para float).",
 				"Um cast é a conversão que o programador escreve no código, como (float) i; aqui nada foi escrito.",
@@ -180,7 +252,13 @@
 		},
 		"en": {
 			"statement": "In x = i + 2.5, i is an integer variable and x is floating point. The programmer wrote no conversion at all, and the compiler itself inserts the conversion of i to floating point before the addition. What is a type conversion inserted implicitly by the compiler called?",
-			"alternatives": ["Coercion", "Explicit conversion (cast)", "Type inference", "Overloading", "Type synthesis"],
+			"alternatives": [
+				"Coercion",
+				"Explicit conversion (cast)",
+				"Type inference",
+				"Overloading",
+				"Type synthesis"
+			],
 			"explanations": [
 				"Coercion is the implicit conversion, done automatically by the compiler according to the rules of the language, usually in the direction that loses no information (int to float).",
 				"A cast is the conversion the programmer writes in the code, such as (float) i; here nothing was written.",
@@ -189,6 +267,28 @@
 				"Type synthesis is building the type of an expression from the types of its subexpressions; it is a form of checking, not a conversion."
 			],
 			"concept": "Type conversions can be explicit, when the programmer writes them (a cast), or implicit, when the compiler inserts them on its own: those are coercions. Many languages allow only widening coercions, which preserve information, such as integer to floating point. In the intermediate code a coercion shows up as a conversion instruction, for example t1 = (float) i.",
+			"example": {
+				"kind": "diagram",
+				"content": "x = i + 2.5\n\nt1 = (float) i\nt2 = t1 + 2.5\nx  = t2"
+			}
+		},
+		"es": {
+			"statement": "En x = i + 2.5, i es una variable entera y x es de punto flotante. El programador no escribió ninguna conversión, y el propio compilador inserta la conversión de i a punto flotante antes de la suma. ¿Cómo se llama una conversión de tipo insertada implícitamente por el compilador?",
+			"alternatives": [
+				"Coerción",
+				"Conversión explícita (cast)",
+				"Inferencia de tipos",
+				"Sobrecarga",
+				"Síntesis de tipos"
+			],
+			"explanations": [
+				"La coerción es la conversión implícita, hecha automáticamente por el compilador según las reglas del lenguaje, normalmente en la dirección que no pierde información (int a float).",
+				"Un cast es la conversión que el programador escribe en el código, como (float) i; aquí no se escribió nada.",
+				"La inferencia de tipos es descubrir el tipo de una construcción a partir de cómo se usa, sin declaración; no convierte valores.",
+				"La sobrecarga es un símbolo con significados distintos según los tipos de los operandos; selecciona una operación, no convierte un valor.",
+				"La síntesis de tipos es construir el tipo de una expresión a partir de los tipos de sus subexpresiones; es una forma de verificación, no una conversión."
+			],
+			"concept": "Las conversiones de tipo pueden ser explícitas, cuando el programador las escribe (un cast), o implícitas, cuando el compilador las inserta por su cuenta: esas son las coerciones. Muchos lenguajes solo permiten coerciones de ampliación, que preservan la información, como de entero a punto flotante. En el código intermedio una coerción aparece como una instrucción de conversión, por ejemplo t1 = (float) i.",
 			"example": {
 				"kind": "diagram",
 				"content": "x = i + 2.5\n\nt1 = (float) i\nt2 = t1 + 2.5\nx  = t2"
@@ -204,7 +304,13 @@
 		"source": "Aho et al., Compilers (2nd edition), chapter 6 (variants of syntax trees, DAGs for expressions)",
 		"pt": {
 			"statement": "Quantos nós tem o grafo acíclico dirigido (DAG) da expressão (a − b) * c + (a − b) * (c + d), contando folhas e nós internos, quando folhas iguais e subexpressões iguais são compartilhadas?",
-			"alternatives": ["13", "5", "9", "10", "12"],
+			"alternatives": [
+				"13",
+				"5",
+				"9",
+				"10",
+				"12"
+			],
 			"explanations": [
 				"13 é o tamanho da árvore sintática, com 7 folhas e 6 operadores; o DAG compartilha o que se repete.",
 				"5 conta só os nós internos do DAG; as folhas a, b, c e d também são nós.",
@@ -220,7 +326,13 @@
 		},
 		"en": {
 			"statement": "How many nodes does the directed acyclic graph (DAG) of the expression (a − b) * c + (a − b) * (c + d) have, counting leaves and interior nodes, when equal leaves and equal subexpressions are shared?",
-			"alternatives": ["13", "5", "9", "10", "12"],
+			"alternatives": [
+				"13",
+				"5",
+				"9",
+				"10",
+				"12"
+			],
 			"explanations": [
 				"13 is the size of the syntax tree, with 7 leaves and 6 operators; the DAG shares what is repeated.",
 				"5 counts only the interior nodes of the DAG; the leaves a, b, c and d are nodes too.",
@@ -233,6 +345,28 @@
 				"kind": "diagram",
 				"content": "n1: a      n2: b      n3: c      n4: d\nn5: n1 - n2\nn6: n5 * n3\nn7: n3 + n4\nn8: n5 * n7\nn9: n6 + n8\n\nn5 (a - b) and n3 (c) have two parents each"
 			}
+		},
+		"es": {
+			"statement": "¿Cuántos nodos tiene el grafo dirigido acíclico (DAG) de la expresión (a − b) * c + (a − b) * (c + d), contando hojas y nodos interiores, cuando las hojas iguales y las subexpresiones iguales se comparten?",
+			"alternatives": [
+				"13",
+				"5",
+				"9",
+				"10",
+				"12"
+			],
+			"explanations": [
+				"13 es el tamaño del árbol sintáctico, con 7 hojas y 6 operadores; el DAG comparte lo que se repite.",
+				"5 cuenta solo los nodos interiores del DAG; las hojas a, b, c y d también son nodos.",
+				"Hojas: a, b, c, d (4). Nodos interiores: a − b, (a − b) * c, c + d, (a − b) * (c + d) y la suma final (5). Total: 4 + 5 = 9.",
+				"10 comparte a − b pero mantiene dos hojas para c; en un DAG cada nombre aparece en una sola hoja.",
+				"12 quita del árbol solo el operador − repetido, pero las hojas a y b de la segunda aparición y la hoja c repetida también desaparecen."
+			],
+			"concept": "Un DAG de expresión es como el árbol sintáctico, pero un nodo puede tener más de un padre: una subexpresión que aparece varias veces se representa una sola vez. Se construye comprobando, antes de crear un nodo, si ya existe un nodo con el mismo operador y los mismos hijos. Así el DAG expone las subexpresiones comunes, que el generador de código puede calcular una sola vez.",
+			"example": {
+				"kind": "diagram",
+				"content": "n1: a      n2: b      n3: c      n4: d\nn5: n1 - n2\nn6: n5 * n3\nn7: n3 + n4\nn8: n5 * n7\nn9: n6 + n8\n\nn5 (a - b) y n3 (c) tienen dos padres cada uno"
+			}
 		}
 	},
 	{
@@ -244,7 +378,13 @@
 		"source": "Aho et al., Compilers (2nd edition), chapter 6 (translation of array references)",
 		"pt": {
 			"statement": "A matriz A tem 6 linhas e 8 colunas de inteiros de 4 bytes, armazenados por linhas (row-major), com os dois índices começando em 0. O armazenamento de A começa no endereço 1000. Qual é o endereço do elemento A[3][5]?",
-			"alternatives": ["1080", "1092", "1116", "1132", "1172"],
+			"alternatives": [
+				"1080",
+				"1092",
+				"1116",
+				"1132",
+				"1172"
+			],
 			"explanations": [
 				"1080 trata os índices como se começassem em 1: ((3 − 1) · 8 + (5 − 1)) · 4 = 80.",
 				"1092 multiplica o índice da linha pelo número de linhas (6) em vez do número de colunas: (3 · 6 + 5) · 4 = 92.",
@@ -260,7 +400,13 @@
 		},
 		"en": {
 			"statement": "The array A has 6 rows and 8 columns of 4-byte integers, stored in row-major order, with both indexes starting at 0. The storage of A begins at address 1000. What is the address of the element A[3][5]?",
-			"alternatives": ["1080", "1092", "1116", "1132", "1172"],
+			"alternatives": [
+				"1080",
+				"1092",
+				"1116",
+				"1132",
+				"1172"
+			],
 			"explanations": [
 				"1080 treats the indexes as if they started at 1: ((3 − 1) · 8 + (5 − 1)) · 4 = 80.",
 				"1092 multiplies the row index by the number of rows (6) instead of the number of columns: (3 · 6 + 5) · 4 = 92.",
@@ -273,6 +419,28 @@
 				"kind": "diagram",
 				"content": "x = A[i][j]      (a row with 8 elements of 4 bytes = 32 bytes)\n\nt1 = i * 32\nt2 = j * 4\nt3 = t1 + t2\nx  = A[t3]"
 			}
+		},
+		"es": {
+			"statement": "El arreglo A tiene 6 filas y 8 columnas de enteros de 4 bytes, almacenado en orden por filas (row-major), con ambos índices empezando en 0. El almacenamiento de A comienza en la dirección 1000. ¿Cuál es la dirección del elemento A[3][5]?",
+			"alternatives": [
+				"1080",
+				"1092",
+				"1116",
+				"1132",
+				"1172"
+			],
+			"explanations": [
+				"1080 trata los índices como si empezaran en 1: ((3 − 1) · 8 + (5 − 1)) · 4 = 80.",
+				"1092 multiplica el índice de fila por el número de filas (6) en lugar del número de columnas: (3 · 6 + 5) · 4 = 92.",
+				"Hay 3 filas completas de 8 elementos antes de la fila 3, más 5 elementos en ella: (3 · 8 + 5) · 4 = 29 · 4 = 116, y 1000 + 116 = 1116.",
+				"1132 usa almacenamiento por columnas (column-major): (5 · 6 + 3) · 4 = 132.",
+				"1172 intercambia los papeles de los índices, como si 5 fuera la fila: (5 · 8 + 3) · 4 = 172."
+			],
+			"concept": "Con almacenamiento por filas e índices que empiezan en 0, la dirección de A[i][j] es base + (i · n2 + j) · w, donde n2 es el número de columnas y w es el ancho de un elemento. El compilador genera código de tres direcciones que hace este cálculo: multiplica el índice de fila por el tamaño de una fila entera, suma el desplazamiento dentro de la fila y suma la base. El número de filas no entra en la fórmula, solo el número de columnas.",
+			"example": {
+				"kind": "diagram",
+				"content": "x = A[i][j]      (una fila con 8 elementos de 4 bytes = 32 bytes)\n\nt1 = i * 32\nt2 = j * 4\nt3 = t1 + t2\nx  = A[t3]"
+			}
 		}
 	},
 	{
@@ -284,7 +452,13 @@
 		"source": "Aho et al., Compilers (2nd edition), chapter 6 (translation of expressions into three-address code)",
 		"pt": {
 			"statement": "A atribuição x = (a + b) * (c − d) + (a + b) / e é traduzida para código de três endereços diretamente da árvore sintática: cada nó de operador da expressão recebe um temporário novo, nenhum temporário é reutilizado, subexpressões comuns NÃO são compartilhadas, e uma cópia final guarda o último temporário em x. Quantos temporários são criados?",
-			"alternatives": ["3", "4", "5", "6", "7"],
+			"alternatives": [
+				"3",
+				"4",
+				"5",
+				"6",
+				"7"
+			],
 			"explanations": [
 				"3 é o número de níveis de operadores da árvore (a + b, depois *, depois a soma final), não o número de nós de operador.",
 				"4 conta os símbolos de operador distintos (+, −, *, /); o operador + aparece em três nós, e cada nó gera um temporário.",
@@ -300,7 +474,13 @@
 		},
 		"en": {
 			"statement": "The assignment x = (a + b) * (c − d) + (a + b) / e is translated into three-address code straight from the syntax tree: each operator node of the expression gets a new temporary, no temporary is reused, common subexpressions are NOT shared, and a final copy stores the last temporary in x. How many temporaries are created?",
-			"alternatives": ["3", "4", "5", "6", "7"],
+			"alternatives": [
+				"3",
+				"4",
+				"5",
+				"6",
+				"7"
+			],
 			"explanations": [
 				"3 is the number of operator levels of the tree (a + b, then *, then the final sum), not the number of operator nodes.",
 				"4 counts the distinct operator symbols (+, −, *, /); the + operator appears in three nodes, and each node produces a temporary.",
@@ -309,6 +489,28 @@
 				"7 counts the assignment as if it needed a temporary; it only copies t6 into x."
 			],
 			"concept": "In the syntax-directed translation of expressions, each operator node of the tree produces one three-address instruction whose result goes into a new temporary. The number of temporaries is therefore the number of operator nodes. Starting from a DAG instead of the tree reduces that number, because repeated subexpressions become a single node.",
+			"example": {
+				"kind": "diagram",
+				"content": "t1 = a + b\nt2 = c - d\nt3 = t1 * t2\nt4 = a + b\nt5 = t4 / e\nt6 = t3 + t5\nx  = t6"
+			}
+		},
+		"es": {
+			"statement": "La asignación x = (a + b) * (c − d) + (a + b) / e se traduce a código de tres direcciones directamente desde el árbol sintáctico: cada nodo operador de la expresión recibe un temporal nuevo, ningún temporal se reutiliza, las subexpresiones comunes NO se comparten y una copia final guarda el último temporal en x. ¿Cuántos temporales se crean?",
+			"alternatives": [
+				"3",
+				"4",
+				"5",
+				"6",
+				"7"
+			],
+			"explanations": [
+				"3 es el número de niveles de operadores del árbol (a + b, luego *, luego la suma final), no el número de nodos operador.",
+				"4 cuenta los símbolos de operador distintos (+, −, *, /); el operador + aparece en tres nodos, y cada nodo produce un temporal.",
+				"5 sería el resultado partiendo del DAG, en el que a + b se calcula una sola vez; el enunciado dice que no hay compartición.",
+				"El árbol tiene seis nodos operador: a + b, c − d, el producto, el segundo a + b, la división y la suma final. Son seis temporales, t1 a t6, y luego x = t6.",
+				"7 cuenta la asignación como si necesitara un temporal; solo copia t6 en x."
+			],
+			"concept": "En la traducción dirigida por la sintaxis de expresiones, cada nodo operador del árbol produce una instrucción de tres direcciones cuyo resultado va a un temporal nuevo. El número de temporales es por lo tanto el número de nodos operador. Partir de un DAG en lugar del árbol reduce ese número, porque las subexpresiones repetidas se convierten en un solo nodo.",
 			"example": {
 				"kind": "diagram",
 				"content": "t1 = a + b\nt2 = c - d\nt3 = t1 * t2\nt4 = a + b\nt5 = t4 / e\nt6 = t3 + t5\nx  = t6"
@@ -364,6 +566,28 @@
 			"example": {
 				"kind": "diagram",
 				"content": "if (B1 || B2 && B3) S\n\n      if B1 goto Ltrue\n      ifFalse B2 goto Lfalse\n      ifFalse B3 goto Lfalse\nLtrue:  code of S\nLfalse: ..."
+			}
+		},
+		"es": {
+			"statement": "Un compilador traduce la condición B1 || B2 && B3 a código de saltos con evaluación de cortocircuito, con && teniendo precedencia sobre ||. La condición completa tiene una salida verdadera y una salida falsa. ¿Adónde va el control justo después de que la prueba de B2 resulta falsa?",
+			"alternatives": [
+				"A la prueba de B3, porque el operador && necesita sus dos operandos",
+				"A la salida verdadera, porque la parte || ya quedó decidida",
+				"De vuelta a la prueba de B1, para evaluar otra vez el operador ||",
+				"A la salida falsa de toda la condición, sin pasar por la prueba de B3",
+				"A una instrucción que guarda 0 en un temporal y sigue con la prueba de B3"
+			],
+			"explanations": [
+				"Con evaluación de cortocircuito, si B2 es falsa entonces B2 && B3 ya es falsa; evaluar B3 es innecesario, y el código salta por encima.",
+				"La salida verdadera es el destino cuando B1 es verdadera; a la prueba de B2 solo se llega cuando B1 ya resultó falsa.",
+				"B1 ya se evaluó y fue falsa (por eso se probó B2); el código de saltos nunca vuelve hacia atrás dentro de una condición.",
+				"B2 solo se prueba si B1 fue falsa. Con B2 falsa, B2 && B3 es falsa y falso || falso es falso: toda la condición falló, y B3 se omite.",
+				"Guardar 0 o 1 en un temporal es la representación numérica de los booleanos; en el código de saltos el valor es la posición alcanzada."
+			],
+			"concept": "En el código de saltos el valor de una expresión booleana no se guarda en una variable: se representa por el punto del programa al que llega el control. En B1 || B2, una B1 verdadera salta directamente a la salida verdadera; en B1 && B2, una B1 falsa salta directamente a la salida falsa. Los operandos cuyo valor no puede cambiar el resultado nunca se evalúan, y eso es la evaluación de cortocircuito.",
+			"example": {
+				"kind": "diagram",
+				"content": "if (B1 || B2 && B3) S\n\n      if B1 goto Ltrue\n      ifFalse B2 goto Lfalse\n      ifFalse B3 goto Lfalse\nLtrue:  código de S\nLfalse: ..."
 			}
 		}
 	},
@@ -426,6 +650,32 @@
 				"kind": "diagram",
 				"content": "if (a < b || c < d) x = 1;      (next statement at 105)\n\n100: if a < b goto 104     truelist  -> start of the body\n101: goto 102              falselist of B1 -> start of B2\n102: if c < d goto 104     truelist  -> start of the body\n103: goto 105              falselist -> after the if\n104: x = 1\n105: ..."
 			}
+		},
+		"es": {
+			"statement": "Un compilador de una sola pasada genera código de saltos para la condición a < b || c < d usando backpatching: los destinos de salto quedan en blanco (_) hasta que se conocen. Se emitieron las cuatro instrucciones de abajo, y se acaba de aplicar la regla de B1 || B2: llenó la salida falsa de B1 con la dirección donde empieza el código de B2. ¿Qué instrucciones están ahora en la truelist y en la falselist de toda la condición, esperando un destino?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "100: if a < b goto _\n101: goto _\n102: if c < d goto _\n103: goto _"
+			},
+			"alternatives": [
+				"truelist = {100}; falselist = {101, 103}",
+				"truelist = {100, 102}; falselist = {103}",
+				"truelist = {100, 102}; falselist = {101, 103}",
+				"truelist = {102}; falselist = {101, 103}",
+				"truelist = {100, 101}; falselist = {102, 103}"
+			],
+			"explanations": [
+				"Falta 102 en la truelist: si c < d es verdadera, toda la condición es verdadera. Y 101 ya recibió su destino (102), así que salió de las listas.",
+				"La condición es verdadera si a < b es verdadera (100) o si c < d es verdadera (102). Es falsa solo cuando la segunda prueba falla (103). La instrucción 101 ya se llenó con 102.",
+				"La instrucción 101 ya no espera un destino: la regla de || acaba de llenarla con 102, el inicio de B2.",
+				"Esas serían las listas de a < b && c < d, en la que es el salto verdadero de B1 (100) el que va al inicio de B2.",
+				"Las listas no se agrupan por operando: cada prueba aporta un salto verdadero (100, 102) y un salto falso (101, 103)."
+			],
+			"concept": "Con backpatching, un salto se emite antes de conocer su destino, y su dirección va a una lista: truelist para los saltos tomados cuando la condición es verdadera, falselist para los tomados cuando es falsa. Cuando aparece el destino, todos los saltos de la lista se llenan de una vez. En B1 || B2, la falselist de B1 se llena con el inicio de B2, la truelist del total es la unión de las dos truelists y la falselist del total es la de B2.",
+			"example": {
+				"kind": "diagram",
+				"content": "if (a < b || c < d) x = 1;      (siguiente sentencia en 105)\n\n100: if a < b goto 104     truelist  -> inicio del cuerpo\n101: goto 102              falselist de B1 -> inicio de B2\n102: if c < d goto 104     truelist  -> inicio del cuerpo\n103: goto 105              falselist -> después del if\n104: x = 1\n105: ..."
+			}
 		}
 	},
 	{
@@ -486,6 +736,32 @@
 			"example": {
 				"kind": "diagram",
 				"content": "1: i = 0\n2: ifFalse i < n goto 7     <- while test\n3: ifFalse x > 0 goto 5     <- if test\n4: s = s + i\n5: i = i + 1\n6: goto 2                   <- back to the test\n7: ..."
+			}
+		},
+		"es": {
+			"statement": "El fragmento i = 0; while (i < n) { if (x > 0) s = s + i; i = i + 1; } se tradujo al código de tres direcciones de abajo, donde ifFalse c goto L salta a L cuando c es falsa y la instrucción 7 es la primera después del bucle. ¿Qué destinos A, B y C hacen correcta la traducción?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "1: i = 0\n2: ifFalse i < n goto A\n3: ifFalse x > 0 goto B\n4: s = s + i\n5: i = i + 1\n6: goto C\n7: ..."
+			},
+			"alternatives": [
+				"A = 7, B = 5, C = 1",
+				"A = 7, B = 7, C = 2",
+				"A = 6, B = 5, C = 2",
+				"A = 7, B = 6, C = 2",
+				"A = 7, B = 5, C = 2"
+			],
+			"explanations": [
+				"Con C = 1 el bucle vuelve a la inicialización: i se reinicia en cada iteración y, si n > 0, el bucle nunca termina.",
+				"Con B = 7, una x > 0 falsa sale de todo el bucle; el if solo debería omitir la instrucción 4 y seguir con el incremento.",
+				"Con A = 6, la condición falsa del while cae en el goto que vuelve a la prueba en lugar de salir del bucle: nunca termina.",
+				"Con B = 6, una x > 0 falsa también omite el incremento i = i + 1, que está fuera del if; i no avanza y el bucle no termina.",
+				"A = 7: una prueba del while falsa sale del bucle. B = 5: una prueba del if falsa omite solo la instrucción 4. C = 2: el final del cuerpo vuelve a la prueba del while, no a la inicialización."
+			],
+			"concept": "Un while se convierte en tres piezas: la prueba al inicio con un salto de salida hasta justo después del bucle, el cuerpo y un salto incondicional de vuelta a la prueba. Un if sin else se convierte en una prueba que omite solo el código de la sentencia controlada. Como los dos saltos hacia adelante (A y B) se emiten antes de que existan sus destinos, un compilador de una sola pasada los llena después, mediante backpatching.",
+			"example": {
+				"kind": "diagram",
+				"content": "1: i = 0\n2: ifFalse i < n goto 7     <- prueba del while\n3: ifFalse x > 0 goto 5     <- prueba del if\n4: s = s + i\n5: i = i + 1\n6: goto 2                   <- vuelta a la prueba\n7: ..."
 			}
 		}
 	}

@@ -42,6 +42,24 @@
 				"A total that is not renewed is a quota, and the cost per request is another parameter (weighted cost). The B tokens come back over time."
 			],
 			"concept": "In a token bucket, tokens are added at rate r up to the maximum B, and each request spends one token. The capacity B sets the largest burst that passes at once, and the rate r sets how many requests per second pass on average when the client keeps pushing. Tuning the two separately is the advantage of the algorithm: tolerated burst and sustained average stop being the same number."
+		},
+		"es": {
+			"statement": "Un token bucket tiene dos parámetros: la capacidad del bucket B y la tasa de reposición r. ¿Qué limita cada uno?",
+			"alternatives": [
+				"B limita el tamaño de una ráfaga; r limita la tasa promedio a largo plazo",
+				"B limita la tasa promedio a largo plazo; r limita el tamaño de una ráfaga",
+				"B limita las solicitudes por ventana; r es la duración de cada ventana",
+				"B limita el tamaño de la cola de espera; r es la tasa de salida de esa cola",
+				"B limita el total de solicitudes del cliente; r es el costo de cada una"
+			],
+			"explanations": [
+				"Con el bucket lleno el cliente puede gastar B tokens de una vez (la ráfaga). Después solo pasa lo que la reposición permite, r por segundo, que es la tasa promedio sostenida.",
+				"Los papeles están intercambiados: el promedio sostenido lo define la velocidad con la que vuelven los tokens (r), no cuántos caben en el bucket.",
+				"Eso describe la ventana fija (límite y tamaño de ventana). El token bucket no tiene ventanas: los tokens vuelven de forma continua.",
+				"Una cola con tasa de salida constante es el leaky bucket visto como cola. El token bucket no guarda solicitudes, guarda tokens.",
+				"Un total que no se renueva es una cuota, y el costo por solicitud es otro parámetro (costo ponderado). Los B tokens vuelven con el tiempo."
+			],
+			"concept": "En un token bucket se agregan tokens a la tasa r hasta el máximo B, y cada solicitud gasta un token. La capacidad B define la mayor ráfaga que pasa de una vez, y la tasa r define cuántas solicitudes por segundo pasan en promedio cuando el cliente sigue presionando. Ajustar los dos por separado es la ventaja del algoritmo: la ráfaga tolerada y el promedio sostenido dejan de ser el mismo número."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"There are no windows in a token bucket. The permission comes back little by little, at rate r, not all at once at a boundary."
 			],
 			"concept": "The tokens of a token bucket are permissions to send. An empty bucket means the client has already used the burst it was allowed, so the next requests are refused (in an API limiter) or delayed (in a traffic shaper) until the refill produces a token. While the bucket stays empty, the client's throughput is exactly the refill rate r."
+		},
+		"es": {
+			"statement": "En un token bucket que limita una API (cada solicitud cuesta 1 token), ¿qué le pasa a una solicitud que llega en un momento en que el bucket está vacío?",
+			"alternatives": [
+				"Se admite, porque un bucket vacío tiene espacio libre para más solicitudes",
+				"Se admite, y el saldo queda negativo para descontarse de la reposición",
+				"Se rechaza, y el cliente queda bloqueado hasta que el bucket esté completamente lleno",
+				"Se rechaza (o espera) hasta que la reposición haya producido un token entero",
+				"Se rechaza, y el cliente solo vuelve a ser atendido cuando empieza la siguiente ventana"
+			],
+			"explanations": [
+				"Ese razonamiento corresponde al leaky bucket visto como medidor, donde el nivel sube con cada solicitud. En el token bucket el bucket guarda permisos: vacío significa sin permiso.",
+				"En el algoritmo clásico el saldo nunca queda negativo: sin un token entero disponible la solicitud no pasa. La deuda de tokens es una variante, no la regla.",
+				"No hace falta esperar el bucket lleno. En cuanto la reposición produce un token (1/r segundos partiendo de cero) la siguiente solicitud pasa.",
+				"Un bucket vacío significa que el cliente gastó toda su ráfaga. Desde ahí queda limitado a la tasa de reposición: una solicitud cada 1/r segundos.",
+				"No hay ventanas en un token bucket. El permiso vuelve de a poco, a la tasa r, no todo de una vez en una frontera."
+			],
+			"concept": "Los tokens de un token bucket son permisos para enviar. Un bucket vacío significa que el cliente ya usó la ráfaga permitida, así que las siguientes solicitudes se rechazan (en un limitador de API) o se retrasan (en un traffic shaper) hasta que la reposición produzca un token. Mientras el bucket siga vacío, el throughput del cliente es exactamente la tasa de reposición r."
 		}
 	},
 	{
@@ -137,6 +173,29 @@
 				"A full bucket means the client has the maximum burst available, and nothing beyond it. Tokens arriving at a full bucket overflow and are lost."
 			],
 			"concept": "The balance of a token bucket is always min(B, balance + r × time). The cap B prevents a client that was idle for an hour from saving an hour of permissions and spending them at once. That is why the largest possible burst is B, no matter how long the client stayed idle.",
+			"example": {
+				"kind": "code",
+				"language": "text",
+				"content": "B = 10, r = 1/s\nt = 0     tokens = 10\nt = 3600  tokens = min(10, 10 + 1 * 3600) = 10"
+			}
+		},
+		"es": {
+			"statement": "El bucket de un token bucket ya está lleno (B tokens) y el cliente sigue sin enviar nada. ¿Qué pasa con los tokens que la reposición produciría en ese período?",
+			"alternatives": [
+				"Se acumulan por encima de B y permiten una ráfaga mayor cuando el cliente vuelve",
+				"Se reparten entre los buckets de los demás clientes del servicio",
+				"Aumentan la tasa de reposición del cliente durante los segundos siguientes",
+				"Vacían el bucket, que vuelve a contar desde cero",
+				"Se descartan: el saldo se queda en B"
+			],
+			"explanations": [
+				"Este es el error más común: pensar que el tiempo inactivo se convierte en crédito ilimitado. El saldo tiene tope B precisamente para que la ráfaga tenga un tamaño máximo conocido.",
+				"Cada cliente (o clave) tiene su propio bucket, independiente de los demás. Los tokens no pasan de un bucket a otro.",
+				"La tasa r es un parámetro fijo de configuración. Los tokens sobrantes no cambian la tasa, simplemente se pierden.",
+				"Eso confunde el bucket con el contador de una ventana fija, que se reinicia en la frontera. En un token bucket un bucket lleno se queda lleno.",
+				"Un bucket lleno significa que el cliente tiene la ráfaga máxima disponible, y nada más allá de eso. Los tokens que llegan a un bucket lleno se desbordan y se pierden."
+			],
+			"concept": "El saldo de un token bucket es siempre min(B, saldo + r × tiempo). El tope B impide que un cliente que estuvo inactivo una hora ahorre una hora de permisos y los gaste de una vez. Por eso la mayor ráfaga posible es B, sin importar cuánto tiempo estuvo inactivo el cliente.",
 			"example": {
 				"kind": "code",
 				"language": "text",
@@ -197,6 +256,29 @@
 				"language": "ts",
 				"content": "const elapsed = now - bucket.last;\nbucket.tokens = Math.min(CAPACITY, bucket.tokens + elapsed * RATE);\nbucket.last = now;"
 			}
+		},
+		"es": {
+			"statement": "La mayoría de las implementaciones de token bucket no usan un temporizador que agregue tokens a cada instante. ¿Qué guardan por cliente para saber, cuando llega una solicitud, cuántos tokens hay?",
+			"alternatives": [
+				"El instante de cada solicitud admitida, contando las que caen en el último segundo",
+				"El saldo de tokens y el instante de la última actualización",
+				"Un contador de solicitudes que vuelve a cero al inicio de cada intervalo fijo",
+				"La cola de solicitudes en espera, liberadas de a una a intervalos regulares",
+				"Solo el saldo de tokens, que gana un token por cada solicitud recibida"
+			],
+			"explanations": [
+				"Guardar una marca de tiempo por solicitud admitida es el sliding log, cuya memoria crece con el límite. El token bucket necesita solo dos números.",
+				"Cuando llega una solicitud, se calcula saldo = min(B, saldo + r × (ahora − última actualización)) y se guarda el nuevo instante. Esta es la reposición perezosa (lazy refill).",
+				"Un contador que se reinicia en cada intervalo es la ventana fija. No representa tokens que vuelven de forma continua.",
+				"Una cola de solicitudes liberadas a ritmo constante es el leaky bucket visto como cola. El token bucket no encola solicitudes.",
+				"Sin el instante de la última actualización no hay forma de saber cuánto tiempo pasó. Y la reposición depende del tiempo transcurrido, no del número de solicitudes."
+			],
+			"concept": "La reposición perezosa reemplaza el temporizador con aritmética: como los tokens llegan a tasa constante, el saldo anterior y el tiempo transcurrido bastan para obtener el saldo actual. El estado por cliente tiene solo dos campos, el saldo y el instante de la última actualización. Esto hace que el algoritmo sea barato en memoria y fácil de mantener en un almacenamiento compartido.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const elapsed = now - bucket.last;\nbucket.tokens = Math.min(CAPACITY, bucket.tokens + elapsed * RATE);\nbucket.last = now;"
+			}
 		}
 	},
 	{
@@ -242,6 +324,24 @@
 				"A token returned at the end of the request is a concurrency limit (semaphore), which controls simultaneous requests, not the rate."
 			],
 			"concept": "In a fixed window the counter resets at marked instants, which allows two bursts back to back, one at the end of a window and another at the start of the next. In a token bucket the allowance is refilled continuously, so no instant is special. The possible burst is always bounded by the capacity B."
+		},
+		"es": {
+			"statement": "Una ventana fija de 100 solicitudes por minuto devuelve toda la cuota de una vez, en la frontera de la ventana. ¿Cómo devuelve un token bucket la cuota que un cliente gastó?",
+			"alternatives": [
+				"También toda de una vez, en el momento en que el bucket queda vacío",
+				"Toda de una vez, cuando pasó un minuto desde la primera solicitud del cliente",
+				"Gradualmente: los tokens vuelven de forma continua, a la tasa de reposición",
+				"Gradualmente: cada token vuelve exactamente un minuto después de gastarse",
+				"Solo cuando la solicitud termina: el token vuelve al final de la respuesta"
+			],
+			"explanations": [
+				"Vaciar el bucket no dispara ninguna reposición. Un bucket vacío se recupera al ritmo habitual, r tokens por segundo.",
+				"Eso describe una ventana que empieza en la primera solicitud, que sigue siendo una ventana fija. El token bucket no tiene un instante de frontera.",
+				"La reposición es continua y no depende de lo que hizo el cliente: vuelven r tokens por segundo, hasta el tope B. Así que no hay frontera en la que todo se libere otra vez.",
+				"Devolver cada permiso un intervalo después de usarlo es como se comporta el sliding log. En un token bucket los tokens vuelven a la tasa r, se hayan gastado hace mucho o recién.",
+				"Un token devuelto al final de la solicitud es un límite de concurrencia (semáforo), que controla solicitudes simultáneas, no la tasa."
+			],
+			"concept": "En una ventana fija el contador se reinicia en instantes marcados, lo que permite dos ráfagas seguidas, una al final de una ventana y otra al inicio de la siguiente. En un token bucket la cuota se repone de forma continua, así que ningún instante es especial. La ráfaga posible siempre está acotada por la capacidad B."
 		}
 	},
 	{
@@ -295,6 +395,28 @@
 				"content": "capacity B = 4 tokens, refill r = 0.5 token/s, bucket full at t = 0\n\nt = 0    3 requests\nt = 10   1 request\nt = 11   2 requests\nt = 12   1 request"
 			},
 			"concept": "To follow a token bucket over time, at each arrival add r × elapsed time to the balance, apply the cap B, and only then deduct the request. The cap matters in idle periods: here, ten idle seconds would yield 5 tokens, but only 3 fit in the bucket. Fractions of a token accumulate and count towards later requests."
+		},
+		"es": {
+			"statement": "Un crawler está limitado por el token bucket de abajo. La reposición es continua (las fracciones de token cuentan) y tiene tope en la capacidad, cada solicitud cuesta 1 token y se admite cuando hay al menos 1 token entero disponible. Todas las solicitudes de la línea de tiempo se admiten. ¿Cuántos tokens quedan justo después de la solicitud de t = 12?",
+			"alternatives": [
+				"0 tokens",
+				"0.5 token",
+				"2 tokens",
+				"3 tokens",
+				"1 token"
+			],
+			"explanations": [
+				"Este resultado ignora la reposición: 4 tokens iniciales no cubrirían 7 solicitudes. Entre t = 0 y t = 12 el bucket recibe tokens a 0.5 por segundo.",
+				"Aquí falta la reposición entre t = 11 y t = 12. En t = 11 quedan 1.5 tokens; un segundo después hay 2.0, y la solicitud deja 1.0.",
+				"2 es el saldo en t = 12 antes de descontar la última solicitud. La pregunta pide el saldo después de ella.",
+				"Este valor olvida el tope: en t = 10 la suma 1 + 0.5 × 10 = 6 supera la capacidad 4. El saldo real es 4, no 6, lo que quita 2 tokens del resultado.",
+				"t = 0: 4 − 3 = 1. t = 10: min(4, 1 + 5) = 4, menos 1 = 3. t = 11: 3 + 0.5 = 3.5, menos 2 = 1.5. t = 12: 1.5 + 0.5 = 2, menos 1 = 1. Verificando: 4 iniciales + 6 repuestos − 2 descartados por el tope − 7 gastados = 1."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "capacidad B = 4 tokens, reposición r = 0.5 token/s, bucket lleno en t = 0\n\nt = 0    3 solicitudes\nt = 10   1 solicitud\nt = 11   2 solicitudes\nt = 12   1 solicitud"
+			},
+			"concept": "Para seguir un token bucket en el tiempo, en cada llegada suma r × tiempo transcurrido al saldo, aplica el tope B y solo entonces descuenta la solicitud. El tope importa en los períodos inactivos: aquí, diez segundos inactivos darían 5 tokens, pero solo caben 3 en el bucket. Las fracciones de token se acumulan y cuentan para las solicitudes siguientes."
 		}
 	},
 	{
@@ -348,6 +470,28 @@
 				"content": "capacity B = 8 tokens, refill r = 2 tokens/s, bucket full at t = 0\n\nt = 0   5 requests\nt = 1   10 requests (burst)"
 			},
 			"concept": "The size of the burst that passes at an instant is the balance at that instant: what was left from before plus what was refilled since, capped at B. The capacity B is only the best case, when the client has been idle long enough to fill the bucket. A client that has just spent tokens has a smaller burst available."
+		},
+		"es": {
+			"statement": "Un API gateway aplica el token bucket de abajo a un cliente. La reposición es continua y tiene tope en la capacidad, cada solicitud cuesta 1 token, se admite cuando hay al menos 1 token entero disponible, y una solicitud rechazada no gasta token. ¿Cuántas de las 10 solicitudes de la ráfaga de t = 1 se admiten?",
+			"alternatives": [
+				"2",
+				"5",
+				"3",
+				"8",
+				"10"
+			],
+			"explanations": [
+				"2 cuenta solo los tokens repuestos entre t = 0 y t = 1 y olvida los 3 que sobraron del primer lote.",
+				"En t = 0 el bucket tiene 8 tokens y gasta 5, quedan 3. Hasta t = 1 vuelven 2 × 1 = 2 tokens, 5 en total (por debajo del tope 8). Pasan 5 solicitudes y se rechazan 5. Verificando: 8 + 2 = 10 tokens disponibles hasta t = 1, de los cuales ya se gastaron 5.",
+				"3 es el saldo que quedó en t = 0, sin los 2 tokens repuestos durante el segundo siguiente.",
+				"8 supone que el bucket estaba lleno otra vez en t = 1. En un segundo vuelven solo 2 tokens, no los 5 que se gastaron.",
+				"10 razona por el promedio: 15 solicitudes en poco tiempo parecen pocas. Pero lo que decide es el saldo en el instante de la ráfaga, que es 5."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "capacidad B = 8 tokens, reposición r = 2 tokens/s, bucket lleno en t = 0\n\nt = 0   5 solicitudes\nt = 1   10 solicitudes (ráfaga)"
+			},
+			"concept": "El tamaño de la ráfaga que pasa en un instante es el saldo en ese instante: lo que sobró de antes más lo repuesto desde entonces, con tope B. La capacidad B es solo el mejor caso, cuando el cliente estuvo inactivo el tiempo suficiente para llenar el bucket. Un cliente que acaba de gastar tokens tiene una ráfaga menor disponible."
 		}
 	},
 	{
@@ -393,6 +537,24 @@
 				"t = 25 waits for the bucket to fill completely (5 tokens at 0.2 per second). One whole token is enough to admit an attempt."
 			],
 			"concept": "With the bucket at a balance s below 1, the time until the next admission is (1 − s) / r. That value is what an HTTP server can announce in the Retry-After header together with the 429 response. Refused requests neither consume tokens nor delay the refill, which depends only on time."
+		},
+		"es": {
+			"statement": "Un endpoint de login usa un token bucket con capacidad B = 5 y reposición continua r = 0.2 token por segundo. Cada intento cuesta 1 token, se admite cuando hay al menos 1 token entero disponible, y un intento rechazado no gasta token. Con el bucket lleno, un cliente hace 5 intentos en t = 0 (todos admitidos) y uno más en t = 2, que se rechaza. ¿Cuál es el primer instante en que se admitirá un nuevo intento?",
+			"alternatives": [
+				"t = 5",
+				"t = 7",
+				"t = 2.2",
+				"t = 3",
+				"t = 25"
+			],
+			"explanations": [
+				"El bucket se vacía en t = 0 y recibe 0.2 token por segundo, así que el saldo es 0.2 × t. Llega a 1 token en t = 1 / 0.2 = 5. El rechazo en t = 2 (saldo 0.4) no cambia nada. Verificando: en t = 2 le faltan 0.6 token, o sea 0.6 / 0.2 = 3 s, y 2 + 3 = 5.",
+				"t = 7 cuenta los 5 segundos desde el intento rechazado, como si el rechazo reiniciara la espera. La reposición no depende de las solicitudes: está corriendo desde t = 0.",
+				"t = 2.2 lee 0.2 como el tiempo en segundos para producir un token. La tasa es 0.2 token por segundo, es decir, un token cada 5 segundos.",
+				"t = 3 supone un token por segundo después del rechazo. La tasa configurada es cinco veces menor.",
+				"t = 25 espera a que el bucket se llene por completo (5 tokens a 0.2 por segundo). Un token entero basta para admitir un intento."
+			],
+			"concept": "Con el bucket en un saldo s menor que 1, el tiempo hasta la siguiente admisión es (1 − s) / r. Ese valor es el que un servidor HTTP puede anunciar en el header Retry-After junto con la respuesta 429. Las solicitudes rechazadas no consumen tokens ni retrasan la reposición, que depende solo del tiempo."
 		}
 	},
 	{
@@ -438,6 +600,24 @@
 				"50 treats the capacity as a total that is never renewed. Tokens are refilled during the whole interval."
 			],
 			"concept": "In any interval of length T, a token bucket admits at most B + r × T requests: the initial burst plus what the refill produces. The longer the interval, the less the B term weighs, and the effective rate approaches r. That is why r is the long-term average rate and B is only the slack for bursts."
+		},
+		"es": {
+			"statement": "Un token bucket tiene capacidad B = 50 y reposición continua r = 10 tokens por segundo, y cada solicitud cuesta 1 token. Con el bucket lleno en t = 0, un cliente envía solicitudes sin parar, mucho más de lo que el límite permite, de t = 0 a t = 60 (ambos extremos incluidos). ¿Cuántas solicitudes se admiten en ese intervalo, como máximo?",
+			"alternatives": [
+				"600",
+				"650",
+				"110",
+				"3000",
+				"50"
+			],
+			"explanations": [
+				"600 cuenta solo la reposición (10 × 60) y olvida los 50 tokens que ya estaban en el bucket en t = 0.",
+				"El cliente gasta los 50 tokens iniciales y luego todo lo que se repone: 50 + 10 × 60 = 650. Como nunca deja que el bucket se llene, ningún token se descarta. Verificando por segundo: 60 en el primer segundo (50 + 10) y 10 en cada uno de los otros 59, 60 + 590 = 650 en total.",
+				"110 suma un token por segundo (50 + 60), sin usar la tasa de 10 tokens por segundo.",
+				"3000 supone que el bucket se llena de nuevo cada segundo (50 × 60). Lo que vuelve por segundo es r = 10, no B.",
+				"50 trata la capacidad como un total que nunca se renueva. Los tokens se reponen durante todo el intervalo."
+			],
+			"concept": "En cualquier intervalo de duración T, un token bucket admite como máximo B + r × T solicitudes: la ráfaga inicial más lo que produce la reposición. Cuanto más largo el intervalo, menos pesa el término B, y la tasa efectiva se acerca a r. Por eso r es la tasa promedio a largo plazo y B es solo el margen para ráfagas."
 		}
 	},
 	{
@@ -482,6 +662,24 @@
 				"0.5 s is (M − R) / B, the formula upside down. The units show the mistake: MB/s divided by MB does not give seconds."
 			],
 			"concept": "While it transmits at the maximum rate M, the host spends tokens at M and receives tokens at R, so the bucket drains at rate M − R. The maximum burst length S satisfies B + R × S = M × S, which gives S = B / (M − R). After that the bucket is empty and the output drops to the token rate R."
+		},
+		"es": {
+			"statement": "Un host regula su tráfico con un token bucket cuyos tokens valen bytes: capacidad B = 16 MB y tasa de tokens R = 2 MB/s. El enlace permite enviar como máximo a M = 10 MB/s. Con el bucket lleno, ¿durante cuánto tiempo puede el host transmitir a la tasa máxima M antes de quedar limitado a R?",
+			"alternatives": [
+				"1.6 s",
+				"8 s",
+				"2 s",
+				"1.33 s",
+				"0.5 s"
+			],
+			"explanations": [
+				"1.6 s es B / M: considera solo los tokens que ya están en el bucket y olvida los que llegan durante la ráfaga.",
+				"8 s es B / R, el tiempo para llenar un bucket vacío. La pregunta es cuánto dura la ráfaga, con el bucket vaciándose a M − R.",
+				"Durante una ráfaga de duración S salen M × S bytes, pagados con B + R × S tokens. De 16 + 2S = 10S sale S = 16 / (10 − 2) = 2 s. Verificando: en 2 s salen 20 MB, y hay 16 MB en el bucket más 4 MB repuestos.",
+				"1.33 s es B / (M + R): suma las tasas cuando actúan en sentidos opuestos. La reposición prolonga la ráfaga, así que el saldo baja a M − R.",
+				"0.5 s es (M − R) / B, la fórmula al revés. Las unidades muestran el error: MB/s dividido entre MB no da segundos."
+			],
+			"concept": "Mientras transmite a la tasa máxima M, el host gasta tokens a M y recibe tokens a R, así que el bucket se vacía a la tasa M − R. La duración máxima de la ráfaga S cumple B + R × S = M × S, lo que da S = B / (M − R). Después de eso el bucket está vacío y la salida baja a la tasa de tokens R."
 		}
 	},
 	{
@@ -535,6 +733,28 @@
 				"content": "capacity B = 100 tokens, refill r = 10 tokens/s, bucket full at t = 0\ncost: read = 1 token, export = 25 tokens\n\nt = 0   4 exports (all admitted)\nt = 2   1 export and then 30 reads"
 			},
 			"concept": "Weighted cost makes the same bucket limit work, not just the number of requests: an expensive operation spends several tokens. The admission rule becomes balance ≥ cost, with no partial payment. A practical effect is that, with a low balance, cheap operations keep passing while expensive ones wait for the refill."
+		},
+		"es": {
+			"statement": "Una API de reportes cobra tokens según el peso de la operación, como muestra la configuración de abajo. Una solicitud se admite cuando el saldo es mayor o igual que su costo, y una solicitud rechazada no gasta token. La reposición es continua y tiene tope en la capacidad. ¿Qué pasa con las solicitudes enviadas en t = 2, procesadas en el orden dado?",
+			"alternatives": [
+				"La exportación se admite y ninguna de las lecturas se admite",
+				"La exportación se rechaza y se admiten 2 de las lecturas",
+				"La exportación se rechaza y se admiten 20 de las lecturas",
+				"La exportación se rechaza y se admiten las 30 lecturas",
+				"La exportación se rechaza y ninguna de las lecturas se admite"
+			],
+			"explanations": [
+				"Esto supone un pago parcial: gastar los 20 tokens existentes en una operación que cuesta 25. Sin saldo para el costo completo la operación no pasa y no gasta nada.",
+				"2 lecturas vendrían de una reposición de 1 token por segundo. La tasa configurada es 10 por segundo, así que en 2 s vuelven 20 tokens.",
+				"En t = 0 las 4 exportaciones gastan 4 × 25 = 100 tokens, y el saldo queda en 0. En t = 2 el saldo es min(100, 0 + 10 × 2) = 20. La exportación pide 25 y se rechaza; las lecturas gastan 1 cada una, así que pasan 20 y las otras 10 se rechazan.",
+				"Admitir las 30 lecturas requeriría 30 tokens, como si el bucket se hubiera llenado otra vez. En 2 s volvieron solo 20.",
+				"Un rechazo no vacía ni bloquea el bucket. Los 20 tokens siguen ahí y sirven para operaciones más baratas."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "capacidad B = 100 tokens, reposición r = 10 tokens/s, bucket lleno en t = 0\ncosto: lectura = 1 token, exportación = 25 tokens\n\nt = 0   4 exportaciones (todas admitidas)\nt = 2   1 exportación y luego 30 lecturas"
+			},
+			"concept": "El costo ponderado hace que el mismo bucket limite trabajo, no solo número de solicitudes: una operación cara gasta varios tokens. La regla de admisión pasa a ser saldo ≥ costo, sin pago parcial. Un efecto práctico es que, con saldo bajo, las operaciones baratas siguen pasando mientras las caras esperan la reposición."
 		}
 	},
 	{
@@ -580,6 +800,24 @@
 				"2.5/s is 100 / 40, a division of the limit by the burst that means nothing here. It meets the requirement but wastes capacity."
 			],
 			"concept": "A token bucket admits at most B + r × T requests in an interval of length T. To guarantee a ceiling N in any interval T, B + r × T ≤ N is needed, not just r × T ≤ N. Every token granted to the burst is one token less for the sustained rate, and that is the trade-off when choosing B and r."
+		},
+		"es": {
+			"statement": "Una API de pagos soporta como máximo 100 solicitudes en cualquier intervalo de 10 segundos. Los clientes deben poder enviar una ráfaga de 40 solicitudes de una vez, así que el token bucket tendrá capacidad B = 40, con cada solicitud costando 1 token. Considerando el peor caso, en el que el intervalo empieza con el bucket lleno y el cliente gasta todo lo que puede, ¿cuál es la mayor tasa de reposición r que respeta el requisito?",
+			"alternatives": [
+				"10 tokens por segundo",
+				"4 tokens por segundo",
+				"14 tokens por segundo",
+				"6 tokens por segundo",
+				"2.5 tokens por segundo"
+			],
+			"explanations": [
+				"10/s es 100 / 10, la cuenta que ignora la ráfaga. Con B = 40, el peor intervalo de 10 segundos admitiría 40 + 10 × 10 = 140 solicitudes.",
+				"4/s es B / 10, que confunde la ráfaga con la tasa. El requisito se cumpliría (40 + 40 = 80), pero no es la mayor tasa posible.",
+				"14/s suma la ráfaga al presupuesto, (100 + 40) / 10, cuando hay que restarla. El peor intervalo tendría 40 + 140 = 180 solicitudes.",
+				"En el peor intervalo de 10 segundos pasan B + r × 10 solicitudes. De 40 + 10r ≤ 100 sale r ≤ 6. Verificando: 40 de la ráfaga más 6 × 10 = 60 repuestos suman exactamente 100, y con r = 7 serían 110.",
+				"2.5/s es 100 / 40, una división del límite entre la ráfaga que aquí no significa nada. Cumple el requisito pero desperdicia capacidad."
+			],
+			"concept": "Un token bucket admite como máximo B + r × T solicitudes en un intervalo de duración T. Para garantizar un tope N en cualquier intervalo T, hace falta B + r × T ≤ N, no solo r × T ≤ N. Cada token concedido a la ráfaga es un token menos para la tasa sostenida, y ese es el compromiso al elegir B y r."
 		}
 	},
 	{
@@ -645,6 +883,34 @@
 				"language": "ts",
 				"content": "b.tokens = Math.min(CAPACITY, b.tokens + elapsed * RATE);"
 			}
+		},
+		"es": {
+			"statement": "La función de abajo debería implementar un token bucket con capacidad 10 y una reposición de 2 tokens por segundo. El bucket de un cliente empieza en t = 0 con tokens = 10 y last = 0. El cliente queda inactivo hasta t = 100 y entonces envía 50 solicitudes en el mismo instante. ¿Cuántas admite este código, y cuántas admitiría un token bucket correcto?",
+			"alternatives": [
+				"Admite 10; un token bucket correcto también admitiría 10",
+				"Admite 50; un token bucket correcto también admitiría 50",
+				"Admite 10; un token bucket correcto admitiría 50",
+				"Admite 0; un token bucket correcto admitiría 10",
+				"Admite 50; un token bucket correcto admitiría 10"
+			],
+			"explanations": [
+				"Esto pasa por alto el defecto: la suma tokens + elapsed * RATE no tiene tope en la capacidad. En t = 100 el saldo calculado es 210, no 10.",
+				"Esto acepta la idea de que el tiempo inactivo se convierte en crédito ilimitado. Un token bucket correcto descarta los tokens por encima de la capacidad, y la ráfaga máxima es 10.",
+				"Los papeles están invertidos: es el código defectuoso el que deja pasar toda la ráfaga, y el bucket correcto el que la corta en 10.",
+				"La asignación b.last = now antes de la prueba no pone el saldo en cero: solo registra el instante de la reposición. El saldo ya se actualizó en la línea anterior.",
+				"Falta el tope. El código calcula 10 + 100 × 2 = 210 tokens, admite las 50 y todavía le quedan 160. El valor correcto es min(10, 210) = 10: pasan 10 y se rechazan 40."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const RATE = 2;\n\ntype Bucket = { tokens: number; last: number };\n\nfunction allow(b: Bucket, now: number): boolean {\n\tconst elapsed = now - b.last;\n\tb.tokens = b.tokens + elapsed * RATE;\n\tb.last = now;\n\tif (b.tokens >= 1) {\n\t\tb.tokens -= 1;\n\t\treturn true;\n\t}\n\treturn false;\n}"
+			},
+			"concept": "En la reposición perezosa el saldo se recalcula a partir del tiempo transcurrido, y ese cálculo necesita el tope: saldo = min(capacidad, saldo + transcurrido × tasa). Sin el min, un cliente inactivo acumula tokens sin límite y el limitador deja de limitar ráfagas. El defecto no aparece en pruebas con tráfico continuo, solo después de un período de inactividad.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "b.tokens = Math.min(CAPACITY, b.tokens + elapsed * RATE);"
+			}
 		}
 	},
 	{
@@ -690,6 +956,24 @@
 				"Both mistakes are here: ignoring the double burst at the fixed-window boundary and ignoring the token bucket refill inside the interval."
 			],
 			"concept": "Two limiters with the same average can have very different peaks. The fixed window admits up to 2 × limit around a boundary, because the counter resets all at once. The token bucket admits at most B + r × T in any interval of length T, so the peak is chosen by the capacity B, independently of the average r."
+		},
+		"es": {
+			"statement": "Se configuraron dos limitadores para el mismo promedio de 60 solicitudes por minuto. El primero es una ventana fija de 60 solicitudes por ventana de 60 segundos, con ventanas alineadas a múltiplos de 60 s y el contador reiniciado en cada frontera. El segundo es un token bucket con B = 10, reposición continua r = 1 token por segundo y un costo de 1 token por solicitud. ¿Cuál es la mayor cantidad de solicitudes que cada uno puede admitir en un intervalo de 2 segundos (ambos extremos incluidos), en el peor caso?",
+			"alternatives": [
+				"Ventana fija: 60; token bucket: 12",
+				"Ventana fija: 120; token bucket: 12",
+				"Ventana fija: 120; token bucket: 10",
+				"Ventana fija: 120; token bucket: 20",
+				"Ventana fija: 60; token bucket: 10"
+			],
+			"explanations": [
+				"60 olvida la frontera de la ventana: el cliente puede gastar todo el límite al final de una ventana y otra vez al inicio de la siguiente, dentro de los mismos 2 segundos.",
+				"Ventana fija: 60 solicitudes en t = 59 y 60 más en t = 60 (contador reiniciado) caben en [59, 61], 120 en total. Token bucket: un bucket lleno da 10 en t = 0, y la reposición permite 1 en t = 1 y 1 en t = 2, 10 + 1 × 2 = 12 en total.",
+				"10 cuenta solo la ráfaga y olvida los tokens repuestos durante los 2 segundos del intervalo, que valen 2 solicitudes más.",
+				"20 aplica el efecto de frontera de la ventana fija al token bucket, como si la ráfaga pudiera duplicarse. No hay ningún instante en que el bucket se llene de nuevo de una vez.",
+				"Aquí están los dos errores: ignorar la ráfaga doble en la frontera de la ventana fija e ignorar la reposición del token bucket dentro del intervalo."
+			],
+			"concept": "Dos limitadores con el mismo promedio pueden tener picos muy distintos. La ventana fija admite hasta 2 × límite alrededor de una frontera, porque el contador se reinicia de una vez. El token bucket admite como máximo B + r × T en cualquier intervalo de duración T, así que el pico se elige con la capacidad B, independientemente del promedio r."
 		}
 	}
 ]

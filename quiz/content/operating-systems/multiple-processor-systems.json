@@ -41,6 +41,24 @@
 				"The length of the critical region does not change with the number of CPUs. The technique fails even for regions of a few instructions."
 			],
 			"concept": "On a single CPU, all concurrency inside the kernel comes from interrupts and the context switches they cause, so turning them off creates mutual exclusion. On a multiprocessor there is real parallelism: two CPUs can execute the same kernel code at the same instant. Mutual exclusion then depends on locks built on atomic instructions, usually combined with disabling interrupts locally."
+		},
+		"es": {
+			"statement": "En un sistema con una sola CPU, el kernel puede proteger una región crítica corta deshabilitando las interrupciones. ¿Por qué esta técnica, por sí sola, no garantiza la exclusión mutua en un multiprocesador?",
+			"alternatives": [
+				"Deshabilitar las interrupciones afecta solo a la CPU que lo hizo, y las demás siguen ejecutando",
+				"En un multiprocesador las interrupciones no se pueden deshabilitar por software",
+				"Deshabilitar las interrupciones en una CPU las deshabilita en todas, y todo el sistema deja de responder",
+				"Las interrupciones de reloj de un multiprocesador son demasiado rápidas para bloquearlas a tiempo",
+				"En un multiprocesador las regiones críticas del kernel siempre son demasiado largas para eso"
+			],
+			"explanations": [
+				"En una sola CPU, sin interrupciones no hay cambio de contexto. En un multiprocesador otra CPU ejecuta realmente en paralelo, así que se necesita un lock, como un spin lock construido sobre TSL.",
+				"Cada CPU puede deshabilitar sus propias interrupciones. El problema es que eso no detiene a las otras CPU.",
+				"El efecto es local a cada CPU. Justamente por eso la técnica no basta.",
+				"La frecuencia del reloj es irrelevante. Aquí la concurrencia viene de la ejecución en paralelo, no de las interrupciones.",
+				"La longitud de la región crítica no cambia con el número de CPU. La técnica falla incluso para regiones de pocas instrucciones."
+			],
+			"concept": "En una sola CPU, toda la concurrencia dentro del kernel viene de las interrupciones y de los cambios de contexto que provocan, así que desactivarlas crea exclusión mutua. En un multiprocesador hay paralelismo real: dos CPU pueden ejecutar el mismo código del kernel en el mismo instante. La exclusión mutua depende entonces de locks construidos sobre instrucciones atómicas, normalmente combinados con la deshabilitación local de interrupciones."
 		}
 	},
 	{
@@ -85,6 +103,24 @@
 				"Blocking costs one switch out and another one back in. If the lock holder is running on another CPU and will release it soon, spinning for a moment is cheaper."
 			],
 			"concept": "Busy waiting wastes CPU cycles but avoids the cost of blocking: saving the context, picking another thread, losing the cache contents and later doing the reverse. That is why the locks of very short kernel critical regions are spin locks. Many implementations spin for a bounded time and then block if the lock is not released, to stay close to the best of both cases."
+		},
+		"es": {
+			"statement": "En un multiprocesador, un thread encuentra ya tomado el lock que necesita. Puede girar en espera activa o bloquearse y ceder la CPU. ¿En qué situación es mejor girar?",
+			"alternatives": [
+				"Cuando el thread que tiene el lock fue desalojado y no está ejecutando en ninguna CPU",
+				"Cuando el sistema tiene una sola CPU, ya que así se evita el cambio de contexto",
+				"Cuando la región crítica protegida por el lock incluye operaciones de E/S en disco",
+				"Siempre, ya que un multiprocesador tiene CPU suficientes para que la espera activa no cueste nada",
+				"Cuando se espera que el lock se libere en menos tiempo de lo que cuestan dos cambios de contexto"
+			],
+			"explanations": [
+				"Es el peor caso para girar: el lock no se liberará hasta que su dueño vuelva a ejecutar, y la espera activa solo quema el quantum.",
+				"Con una sola CPU girar no tiene sentido: quien podría liberar el lock no ejecuta mientras el thread que espera ocupa la CPU.",
+				"La E/S tarda millones de ciclos de CPU. Para esperas largas, bloquearse es claramente mejor.",
+				"Girar consume una CPU entera, que podría ejecutar otro thread. El costo solo compensa en esperas cortas.",
+				"Bloquearse cuesta un cambio para salir y otro para volver. Si el dueño del lock está ejecutando en otra CPU y lo liberará pronto, girar un momento es más barato."
+			],
+			"concept": "La espera activa desperdicia ciclos de CPU, pero evita el costo de bloquearse: guardar el contexto, elegir otro thread, perder el contenido de la cache y después hacer lo inverso. Por eso los locks de las regiones críticas muy cortas del kernel son spin locks. Muchas implementaciones giran durante un tiempo limitado y luego se bloquean si el lock no se libera, para acercarse a lo mejor de ambos casos."
 		}
 	}
 ]

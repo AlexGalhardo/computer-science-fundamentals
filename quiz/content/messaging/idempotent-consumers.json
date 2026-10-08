@@ -42,6 +42,24 @@
 				"That is reversibility. An operation may be undoable and still not idempotent."
 			],
 			"concept": "An idempotent operation can be repeated any number of times with the same final state as one application. It is the property that makes retries and redelivery safe."
+		},
+		"es": {
+			"statement": "¿Qué hace que una operación sea idempotente?",
+			"alternatives": [
+				"Aplicarla tarda el mismo tiempo en cada ejecución",
+				"Aplicarla dos veces deja el mismo estado que aplicarla una vez",
+				"Aplicarla dos veces duplica el efecto de forma predecible",
+				"Aplicarla nunca falla, sea cual sea la entrada recibida",
+				"Aplicarla puede deshacerse con una operación compensatoria"
+			],
+			"explanations": [
+				"Un tiempo de ejecución constante es una propiedad de rendimiento, sin relación con la idempotencia.",
+				"Correcta: idempotencia significa que la repetición es inofensiva: f(f(x)) = f(x).",
+				"Un efecto duplicado es lo opuesto: la operación es sensible a la repetición.",
+				"Las operaciones idempotentes pueden fallar; la propiedad trata del resultado de repetirlas.",
+				"Eso es reversibilidad. Una operación puede deshacerse y aun así no ser idempotente."
+			],
+			"concept": "Una operación idempotente puede repetirse cualquier número de veces con el mismo estado final que una sola aplicación. Es la propiedad que hace seguros los reintentos y las reentregas."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"A counter increment depends on the previous value, so each repetition changes the state."
 			],
 			"concept": "Statements that assign an absolute value are idempotent by nature. Statements that depend on the current value (increment, decrement, append) are not, and need a deduplication mechanism."
+		},
+		"es": {
+			"statement": "Un consumidor puede recibir el mismo mensaje dos veces. ¿Cuál de estas sentencias de base de datos es naturalmente idempotente, sin protección adicional?",
+			"alternatives": [
+				"`UPDATE accounts SET balance = balance - 10 WHERE id = 7`",
+				"`UPDATE orders SET status = 'PAID' WHERE id = 7`",
+				"`INSERT INTO emails_sent (order_id) VALUES (7)` sin clave única",
+				"`UPDATE products SET stock = stock - 1 WHERE id = 7`",
+				"`UPDATE orders SET retries = retries + 1 WHERE id = 7`"
+			],
+			"explanations": [
+				"Una actualización relativa: cada ejecución resta otros 10, así que un duplicado cobra dos veces.",
+				"Correcta: asigna un valor absoluto. Ejecutarla de nuevo encuentra `PAID` y deja `PAID`.",
+				"Sin clave única, el segundo insert agrega una segunda fila.",
+				"Una actualización relativa: el duplicado quita una segunda unidad del stock.",
+				"Un incremento de contador depende del valor anterior, así que cada repetición cambia el estado."
+			],
+			"concept": "Las sentencias que asignan un valor absoluto son idempotentes por naturaleza. Las que dependen del valor actual (incremento, decremento, anexado) no lo son, y necesitan un mecanismo de deduplicación."
 		}
 	},
 	{
@@ -132,6 +168,24 @@
 				"Brokers do not invent messages; a duplicate is a copy of a real message."
 			],
 			"concept": "At-least-once delivery moves the problem of duplicates to the consumer. The broker guarantees the message arrives; the consumer guarantees that arriving twice does no harm."
+		},
+		"es": {
+			"statement": "¿Por qué los consumidores de un broker con entrega at-least-once necesitan ser idempotentes?",
+			"alternatives": [
+				"Porque el broker puede entregar un mensaje que ya fue procesado",
+				"Porque el broker elimina un mensaje en cuanto lo entrega",
+				"Porque el broker entrega los mensajes más rápido de lo que se producen",
+				"Porque el broker cambia el contenido de un mensaje al reentregarlo",
+				"Porque el broker puede entregar un mensaje que nunca se produjo"
+			],
+			"explanations": [
+				"Correcta: cuando un ack se pierde o se retrasa, el broker reentrega, y el consumidor no puede impedirlo desde afuera.",
+				"Eliminar al entregar es at-most-once, que produce pérdida en lugar de duplicados.",
+				"La velocidad no tiene relación: los duplicados vienen de la incertidumbre sobre las confirmaciones.",
+				"Una reentrega lleva el mismo contenido; a lo sumo cambia un indicador como `redelivered`.",
+				"Los brokers no inventan mensajes; un duplicado es una copia de un mensaje real."
+			],
+			"concept": "La entrega at-least-once traslada el problema de los duplicados al consumidor. El broker garantiza que el mensaje llegue; el consumidor garantiza que llegar dos veces no cause daño."
 		}
 	},
 	{
@@ -187,6 +241,29 @@
 				"Correct: a crash can never leave \"marked but not applied\" or \"applied but not marked\"; atomicity ties the two."
 			],
 			"concept": "The dedupe-table pattern records the message id in the same database transaction as the business effect. The unique key rejects a second delivery, and atomicity guarantees the record and the effect never disagree."
+		},
+		"es": {
+			"statement": "Un consumidor ejecuta la transacción del snippet para cada mensaje, y omite el mensaje cuando el INSERT reporta una clave duplicada. ¿Por qué el INSERT y el UPDATE están en la MISMA transacción?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "BEGIN;\nINSERT INTO processed_messages (message_id) VALUES ('m-81');  -- PRIMARY KEY (message_id)\nUPDATE accounts SET balance = balance - 10 WHERE id = 7;\nCOMMIT;"
+			},
+			"alternatives": [
+				"Para que el broker pueda leer la tabla y deje de enviar duplicados",
+				"Para que la base de datos genere el id del mensaje en cada insert",
+				"Para que dos mensajes distintos nunca puedan actualizar la misma cuenta",
+				"Para que el UPDATE corra más rápido reutilizando el lock tomado por el INSERT",
+				"Para que la marca y el efecto se confirmen juntos o no se confirme ninguno"
+			],
+			"explanations": [
+				"El broker nunca lee la base de datos del consumidor; la deduplicación ocurre por completo en el consumidor.",
+				"El id viene del mensaje; un id generado sería distinto en cada entrega y no detectaría nada.",
+				"Los mensajes distintos deben poder actualizar la misma cuenta; solo el mismo mensaje no debe hacerlo dos veces.",
+				"La razón es la corrección, no la velocidad; las dos sentencias bloquean filas distintas.",
+				"Correcta: una caída nunca puede dejar \"marcado pero no aplicado\" ni \"aplicado pero no marcado\"; la atomicidad une ambos."
+			],
+			"concept": "El patrón de tabla de deduplicación registra el id del mensaje en la misma transacción de base de datos que el efecto de negocio. La clave única rechaza una segunda entrega, y la atomicidad garantiza que el registro y el efecto nunca discrepen."
 		}
 	},
 	{
@@ -242,6 +319,29 @@
 				"With no unique constraint the second INSERT succeeds, and there is no transaction to roll back anyway."
 			],
 			"concept": "Checking first and writing later leaves a window in which a concurrent duplicate passes the same check. The fix is to let the database decide atomically: a unique constraint on the message id, inserted in the same transaction as the effect."
+		},
+		"es": {
+			"statement": "Dos instancias del consumidor del snippet reciben el mismo mensaje casi en el mismo instante. Ambas ejecutan la línea 1 antes de que cualquiera llegue a la línea 4. ¿Cuál es el resultado?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "// la tabla `processed` NO tiene restricción de unicidad en message_id\nasync function handle(msg: Message) {\n  const seen = await db.query(\"SELECT 1 FROM processed WHERE message_id = $1\", [msg.id]); // 1\n  if (seen.rowCount > 0) return;                                                           // 2\n  await db.query(\"UPDATE stock SET qty = qty - 1 WHERE sku = $1\", [msg.sku]);              // 3\n  await db.query(\"INSERT INTO processed (message_id) VALUES ($1)\", [msg.id]);              // 4\n}"
+			},
+			"alternatives": [
+				"El stock se decrementa dos veces: ambas instancias vieron \"no procesado\"",
+				"El stock no se decrementa: las dos instancias se anulan entre sí",
+				"El stock se decrementa una vez: el segundo SELECT espera al primero",
+				"El stock se decrementa una vez: la línea 2 detiene a la instancia más lenta",
+				"El stock se decrementa una vez: el segundo INSERT falla y hace rollback"
+			],
+			"explanations": [
+				"Correcta: verificar y luego actuar sin lock ni clave única es una condición de carrera. Ambas verificaciones pasan, así que ambas aplican el efecto.",
+				"Las actualizaciones concurrentes no se anulan; cada `qty - 1` se aplica.",
+				"Un SELECT simple no espera a otro lector; nada serializa a las dos instancias.",
+				"La línea 2 solo detiene a una instancia que encontró una fila, y ninguna la encontró, porque ambas leyeron antes de cualquier insert.",
+				"Sin restricción de unicidad el segundo INSERT tiene éxito, y de todos modos no hay transacción que revertir."
+			],
+			"concept": "Verificar primero y escribir después deja una ventana en la que un duplicado concurrente pasa la misma verificación. La solución es dejar que la base de datos decida de forma atómica: una restricción de unicidad sobre el id del mensaje, insertado en la misma transacción que el efecto."
 		}
 	},
 	{
@@ -287,6 +387,24 @@
 				"Each delivery arrives at a different time, so two copies would never match."
 			],
 			"concept": "An idempotency key must identify the business event, not the delivery. It is created once, where the event is born, and travels with the message, so every duplicate carries the same value whichever path produced it."
+		},
+		"es": {
+			"statement": "Un consumidor deduplica mensajes de \"pago solicitado\" por una clave. ¿Qué valor es una clave de idempotencia correcta?",
+			"alternatives": [
+				"El offset o la posición del mensaje en el buffer local del consumidor",
+				"El delivery tag que el broker asigna a cada entrega en el canal",
+				"Un id asignado por el productor al evento de negocio, enviado en cada copia",
+				"Un UUID generado por el consumidor cuando empieza a procesar el mensaje",
+				"El timestamp en el que el consumidor recibió el mensaje"
+			],
+			"explanations": [
+				"Una posición en un buffer local cambia con cada entrega y cada reinicio.",
+				"Un delivery tag identifica una entrega; una reentrega del mismo mensaje recibe un tag nuevo.",
+				"Correcta: el mismo evento lleva el mismo id sin importar cuántas veces se publique o se entregue.",
+				"Un UUID nuevo por procesamiento es distinto en cada copia y nunca puede detectar un duplicado.",
+				"Cada entrega llega en un momento distinto, así que dos copias nunca coincidirían."
+			],
+			"concept": "Una clave de idempotencia debe identificar el evento de negocio, no la entrega. Se crea una vez, donde nace el evento, y viaja con el mensaje, de modo que cada duplicado lleva el mismo valor sin importar qué camino lo produjo."
 		}
 	},
 	{
@@ -342,6 +460,29 @@
 				"Redis and PostgreSQL share no transaction, and Redis does not undo a SET when a client dies."
 			],
 			"concept": "A dedupe mark and an effect kept in different stores cannot be made atomic. Marking first risks losing the effect; applying first risks duplicating it. Putting both in one database transaction removes the dilemma."
+		},
+		"es": {
+			"statement": "El consumidor del snippet se cae en el punto marcado, y el broker reentrega el mensaje. ¿Cuál es el estado final?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "async function handle(msg: Message) {\n  const first = await redis.set(`done:${msg.id}`, \"1\", \"NX\"); // 1: devuelve null si la clave existe\n  if (first === null) return;                                 // 2: duplicado, se omite\n  // <- el proceso se cae aquí\n  await postgres.query(\"INSERT INTO shipments (order_id) VALUES ($1)\", [msg.orderId]); // 3\n}"
+			},
+			"alternatives": [
+				"Existe un envío: la reentrega completa el insert faltante",
+				"No existe ningún envío: la reentrega se omite como duplicado",
+				"Existen dos envíos: la reentrega inserta una segunda fila",
+				"No existe ningún envío: PostgreSQL rechaza el insert tras una caída",
+				"Existe un envío: Redis revierte la clave después de la caída"
+			],
+			"explanations": [
+				"La reentrega se detiene en la línea 2, porque la clave escrita antes de la caída sigue ahí.",
+				"Correcta: la marca sobrevivió en Redis pero el efecto nunca llegó a PostgreSQL. La línea 2 ahora descarta la única oportunidad de aplicarlo.",
+				"Una segunda fila requeriría que la línea 3 corriera dos veces; ni siquiera corrió una vez.",
+				"PostgreSQL aceptaría el insert; el problema es que el código nunca llega a él.",
+				"Redis y PostgreSQL no comparten transacción, y Redis no deshace un SET cuando un cliente muere."
+			],
+			"concept": "Una marca de deduplicación y un efecto guardados en almacenes distintos no pueden hacerse atómicos. Marcar primero arriesga perder el efecto; aplicar primero arriesga duplicarlo. Poner ambos en una sola transacción de base de datos elimina el dilema."
 		}
 	},
 	{
@@ -387,6 +528,24 @@
 				"The broker does not consult the consumer's dedupe store and cannot filter on its behalf."
 			],
 			"concept": "A dedupe store with expiry protects only inside its window. The window must be longer than the longest delay with which a duplicate can arrive, including outages and replays; otherwise the id is forgotten exactly when it is needed."
+		},
+		"es": {
+			"statement": "Un consumidor guarda los ids de mensajes procesados en Redis con un TTL de 1 hora. El broker estuvo caído por mantenimiento, y un duplicado de un mensaje procesado a las 09:00 se entrega a las 11:30. ¿Qué ocurre?",
+			"alternatives": [
+				"El duplicado se omite: el TTL se reinicia en cada caída del broker",
+				"El efecto se aplica de nuevo: Redis nunca guarda claves que tienen TTL",
+				"El efecto se aplica de nuevo: el id expiró a las 10:00",
+				"El duplicado se omite: Redis conserva los ids hasta que se borran",
+				"El broker rechaza el duplicado antes de que llegue al consumidor"
+			],
+			"explanations": [
+				"Redis no sabe nada del broker; un TTL solo se reinicia cuando la clave se escribe de nuevo.",
+				"Las claves con TTL se guardan normalmente y desaparecen solo al expirar.",
+				"Correcta: 09:00 + 1 h = 10:00. A las 11:30 el almacén olvidó el id, así que el duplicado parece nuevo.",
+				"Una clave con TTL se elimina automáticamente cuando se cumple el tiempo; para eso existe el TTL.",
+				"El broker no consulta el almacén de deduplicación del consumidor y no puede filtrar en su nombre."
+			],
+			"concept": "Un almacén de deduplicación con expiración protege solo dentro de su ventana. La ventana debe ser más larga que el mayor retraso con el que puede llegar un duplicado, incluidas caídas y replays; si no, el id se olvida justo cuando se necesita."
 		}
 	}
 ]

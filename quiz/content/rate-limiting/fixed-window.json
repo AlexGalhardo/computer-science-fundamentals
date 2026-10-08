@@ -42,6 +42,24 @@
 				"That is the sliding window counter rule, which uses two counters. A fixed window looks only at the counter of the current window."
 			],
 			"concept": "A fixed window splits time into aligned intervals of size W: window k covers [k·W, (k+1)·W). Each client has one counter per window, which starts from zero at every boundary. A request is admitted when the counter of its window is below the limit. It is the simplest rate limiting algorithm."
+		},
+		"es": {
+			"statement": "¿Cómo decide un limitador de ventana fija si admite una solicitud?",
+			"alternatives": [
+				"Admite mientras el contador de la ventana alineada actual esté por debajo del límite",
+				"Admite mientras haya menos de `limit` marcas de tiempo guardadas en los últimos W segundos antes de la solicitud",
+				"Admite mientras el bucket todavía tenga un token, y los tokens se reponen a una tasa constante",
+				"Pone la solicitud en una cola que se vacía a tasa constante, y la descarta si la cola está llena",
+				"Admite mientras una suma ponderada de los conteos de la ventana actual y de la anterior esté por debajo del límite"
+			],
+			"explanations": [
+				"El tiempo se corta en ventanas de tamaño W alineadas al reloj. Cada ventana tiene un contador que empieza en cero; la solicitud entra si el contador todavía está por debajo del límite y, al entrar, suma 1.",
+				"Esa es la regla del sliding log, que guarda una marca de tiempo por solicitud admitida y siempre mira los últimos W segundos. Una ventana fija no guarda marcas de tiempo.",
+				"Esa es la regla del token bucket, que trabaja con una capacidad y una tasa de reposición en lugar de ventanas de tiempo.",
+				"Ese es el leaky bucket visto como cola: retrasa y suaviza la salida. Una ventana fija no encola nada, solo admite o rechaza.",
+				"Esa es la regla del contador de ventana deslizante, que usa dos contadores. Una ventana fija solo mira el contador de la ventana actual."
+			],
+			"concept": "Una ventana fija divide el tiempo en intervalos alineados de tamaño W: la ventana k cubre [k·W, (k+1)·W). Cada cliente tiene un contador por ventana, que empieza en cero en cada frontera. Una solicitud se admite cuando el contador de su ventana está por debajo del límite. Es el algoritmo de rate limiting más simple."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"The counter and the window it belongs to (for instance the window number, ⌊t / W⌋) are enough. When a request arrives in a window different from the stored one, the counter starts again from zero."
 			],
 			"concept": "The state of a fixed window is minimal: one counter and the window identifier, per client. On Redis the identifier usually goes in the key name (for instance `rl:client:window`) and the counter is the value. This economy is the main quality of the algorithm, and its price is the burst at the boundary between windows."
+		},
+		"es": {
+			"statement": "¿Qué estado necesita guardar, para cada cliente, un limitador de ventana fija con ventanas alineadas?",
+			"alternatives": [
+				"Una marca de tiempo por cada solicitud admitida en los últimos W segundos",
+				"Los conteos de la ventana actual y de la anterior, más el identificador de la ventana actual",
+				"La cantidad de tokens restantes y el momento de la última reposición",
+				"Una cola con las solicitudes que todavía esperan ser liberadas",
+				"Un contador y el identificador de la ventana a la que pertenece"
+			],
+			"explanations": [
+				"Guardar una marca de tiempo por solicitud admitida es lo que hace el sliding log. Una ventana fija solo necesita saber cuántas hubo, no cuándo.",
+				"Guardar también el conteo de la ventana anterior es lo que exige el contador de ventana deslizante. En una ventana fija la ventana anterior no influye en la decisión.",
+				"Los tokens y el momento de la última reposición son el estado del token bucket.",
+				"Una cola de solicitudes pendientes es el estado del leaky bucket usado como cola. Una ventana fija no retiene solicitudes.",
+				"Basta con el contador y la ventana a la que pertenece (por ejemplo el número de ventana, ⌊t / W⌋). Cuando llega una solicitud en una ventana distinta de la guardada, el contador vuelve a empezar en cero."
+			],
+			"concept": "El estado de una ventana fija es mínimo: un contador y el identificador de la ventana, por cliente. En Redis el identificador suele ir en el nombre de la clave (por ejemplo `rl:client:window`) y el contador es el valor. Esta economía es la principal cualidad del algoritmo, y su precio es la ráfaga en la frontera entre ventanas."
 		}
 	},
 	{
@@ -140,6 +176,28 @@
 				"kind": "diagram",
 				"content": "limit = 5, W = 60 s\n\n window [0,60)            window [60,120)\n|----------------xxxxx|xxxxx----------------|\n                 t=59  t=60\n                 5 admitted + 5 admitted = 10 in about 1 s"
 			}
+		},
+		"es": {
+			"statement": "Un limitador de ventana fija con ventanas alineadas permite L solicitudes por ventana de W segundos. ¿Cuál es la mayor cantidad de solicitudes que un cliente puede lograr que se admitan en un intervalo menor que W?",
+			"alternatives": [
+				"L, porque el límite vale para cualquier intervalo de W segundos",
+				"2 × L, en un intervalo que cruza la frontera entre dos ventanas",
+				"L + 1, ya que solo escapa la solicitud que cae justo en la frontera",
+				"1.5 × L, ya que la ventana anterior cuenta la mitad en promedio",
+				"No hay máximo, ya que el contador se pone en cero cuando llega a L"
+			],
+			"explanations": [
+				"Eso supone que la ventana se desliza junto con el tiempo. En una ventana fija el límite vale para cada ventana alineada, no para cualquier intervalo de W segundos.",
+				"El cliente envía L solicitudes al final de una ventana y L más justo al inicio de la siguiente. El contador vuelve a cero en la frontera, así que se admiten las 2 × L, aunque estén separadas por mucho menos que W segundos.",
+				"No escapa una sola solicitud: después de la frontera la nueva ventana acepta de nuevo el límite completo.",
+				"Ponderar la ventana anterior es propio del contador de ventana deslizante, creado precisamente para reducir este problema. Una ventana fija ignora la ventana anterior.",
+				"El contador no se pone en cero al llegar a L: se queda en L, rechazando, hasta la frontera de la ventana. Así que hay un máximo, y es 2 × L."
+			],
+			"concept": "El problema de la frontera es la falla clásica de la ventana fija. Como el contador vuelve a cero en cada frontera, un cliente puede gastar todo el límite en los últimos instantes de una ventana y otra vez en los primeros instantes de la siguiente. El resultado es hasta 2 × L solicitudes en un intervalo mucho menor que W, el doble de lo que la regla parece prometer.",
+			"example": {
+				"kind": "diagram",
+				"content": "límite = 5, W = 60 s\n\n ventana [0,60)           ventana [60,120)\n|----------------xxxxx|xxxxx----------------|\n                 t=59  t=60\n                 5 admitidas + 5 admitidas = 10 en cerca de 1 s"
+			}
 		}
 	},
 	{
@@ -184,6 +242,24 @@
 				"In a fixed window a rejection prolongs nothing: the window ends at the boundary whether or not there were rejections."
 			],
 			"concept": "Windows aligned to the clock synchronise the clients: everybody's limit is renewed at the same instant. Clients that wait for the renewal to try again all arrive together, a stampede at the boundary. Jitter on the client, windows that start at different moments per client, or algorithms with no boundary, such as the token bucket, reduce the problem."
+		},
+		"es": {
+			"statement": "Miles de clientes de una API de envío de SMS están limitados por ventanas fijas de un minuto alineadas al reloj, y todos agotaron su límite. Su código vuelve a intentar en cuanto el límite se renueva. ¿Qué patrón de carga ve el servidor?",
+			"alternatives": [
+				"Una carga uniforme, ya que la ventana de cada cliente empieza en un momento distinto",
+				"Una carga que crece despacio, ya que cada contador se vacía poco a poco",
+				"Un pico en cada frontera de minuto, ya que todos los contadores reinician juntos",
+				"Un pico una sola vez, ya que después las ventanas se separan por sí solas",
+				"Ninguna carga durante un minuto entero, ya que los rechazos prolongan el bloqueo"
+			],
+			"explanations": [
+				"Eso valdría si la ventana de cada cliente empezara en su primera solicitud. Con ventanas alineadas al reloj, la frontera es la misma para todos los clientes.",
+				"Un contador que se vacía poco a poco es el comportamiento del leaky bucket usado como medidor. En una ventana fija el contador pasa de lleno a cero en un solo instante.",
+				"Como las ventanas están alineadas al reloj, todos los contadores vuelven a cero en el mismo instante. Todos los clientes que esperaban disparan juntos, y el servidor recibe una avalancha de solicitudes en cada frontera.",
+				"Nada hace que las ventanas se separen: están definidas por el reloj, no por el comportamiento de los clientes. El pico se repite en cada frontera mientras los clientes insistan.",
+				"En una ventana fija un rechazo no prolonga nada: la ventana termina en la frontera, haya habido rechazos o no."
+			],
+			"concept": "Las ventanas alineadas al reloj sincronizan a los clientes: el límite de todos se renueva en el mismo instante. Los clientes que esperan la renovación para volver a intentar llegan todos juntos, una avalancha en la frontera. Jitter en el cliente, ventanas que empiezan en momentos distintos para cada cliente, o algoritmos sin frontera, como el token bucket, reducen el problema."
 		}
 	},
 	{
@@ -237,6 +313,28 @@
 				"content": "limit = 3, W = 10 s\nwindows: [0,10)  [10,20)  [20,30)\nrequests at t = 1, 4, 8, 9, 10, 11, 12, 19, 20"
 			},
 			"concept": "To simulate a fixed window, split the requests by window and count: in each window the first `limit` get in and the rest are rejected. An instant that falls exactly on the boundary belongs to the window that is starting, because the intervals are closed on the left and open on the right. Note that t = 8, 10, 11 and 12 are four admissions in 4 seconds, above the limit of 3 per 10 seconds: that is the boundary problem."
+		},
+		"es": {
+			"statement": "Un limitador de ventana fija usa ventanas alineadas: la ventana k cubre [k·W, (k+1)·W), y el contador empieza en cero en cada ventana. Una solicitud se admite cuando el contador de su ventana está por debajo del límite. Para el cliente de abajo, ¿qué solicitudes se rechazan?",
+			"alternatives": [
+				"t = 9, t = 10 y t = 20",
+				"t = 9, t = 10 y t = 12",
+				"Todas las solicitudes desde t = 9 en adelante",
+				"Ninguna solicitud se rechaza",
+				"Solo t = 9 y t = 19"
+			],
+			"explanations": [
+				"Este resultado pone las solicitudes de t = 10 y t = 20 en la ventana que está terminando. Por la convención, la ventana k cubre [k·W, (k+1)·W): t = 10 ya es la primera solicitud de la ventana [10,20) y t = 20 es la primera de [20,30).",
+				"Ese es el resultado de un sliding log, que mira los últimos 10 segundos antes de cada solicitud. En una ventana fija el contador vuelve a empezar en t = 10, así que t = 10, t = 11 y t = 12 entran.",
+				"Eso supone que el contador nunca vuelve a empezar. Vuelve a cero en t = 10 y en t = 20.",
+				"Eso admite mientras el contador sea menor o igual que el límite, lo que dejaría pasar 4 por ventana. La regla es contador por debajo del límite: como máximo 3 por ventana.",
+				"Ventana [0,10): se admiten t = 1, 4 y 8 (contador 3) y se rechaza t = 9. Ventana [10,20): se admiten t = 10, 11 y 12 y se rechaza t = 19. Ventana [20,30): se admite t = 20. Verificando por el total: 3 + 3 + 1 = 7 admitidas de 9, así que 2 rechazadas."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "límite = 3, W = 10 s\nventanas: [0,10)  [10,20)  [20,30)\nsolicitudes en t = 1, 4, 8, 9, 10, 11, 12, 19, 20"
+			},
+			"concept": "Para simular una ventana fija, separa las solicitudes por ventana y cuenta: en cada ventana entran las primeras `limit` y el resto se rechaza. Un instante que cae justo en la frontera pertenece a la ventana que empieza, porque los intervalos son cerrados a la izquierda y abiertos a la derecha. Observa que t = 8, 10, 11 y 12 son cuatro admisiones en 4 segundos, por encima del límite de 3 cada 10 segundos: ese es el problema de la frontera."
 		}
 	},
 	{
@@ -292,6 +390,29 @@
 				"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], ARGV[1])\nend\nreturn n"
 			},
 			"concept": "There are two forms of fixed window on Redis. With the window identifier in the key name, the windows are aligned to the clock and the same for every client. With a single key per client and `EXPIRE` only when `INCR` returns 1, the window begins at the client's first request and lasts until the TTL runs out. `INCR` and `EXPIRE` sit in the same script so that the key is never left without a TTL."
+		},
+		"es": {
+			"statement": "Un API gateway ejecuta el script de abajo en cada solicitud, con KEYS[1] = `rl:client42` (sin marca de tiempo en el nombre de la clave) y ARGV[1] = 60, y rechaza cuando el resultado está por encima del límite. ¿Cuándo empieza cada ventana de 60 segundos de este cliente?",
+			"alternatives": [
+				"En cada múltiplo de 60 segundos del reloj del servidor Redis",
+				"En cada solicitud, porque cada llamada renueva la expiración de 60 segundos",
+				"En la primera solicitud que llega después de que la clave expiró",
+				"60 segundos antes de cada solicitud, ya que la ventana se desliza con ella",
+				"En la última solicitud rechazada del cliente, que reinicia el conteo"
+			],
+			"explanations": [
+				"Ventanas alineadas al reloj necesitarían el identificador de la ventana en el nombre de la clave (por ejemplo la marca de tiempo dividida entre 60). Aquí la clave es siempre la misma y el TTL define la ventana.",
+				"`EXPIRE` solo se ejecuta cuando `n == 1`, es decir, en la solicitud que creó la clave. Las siguientes incrementan el contador sin tocar el TTL.",
+				"`INCR` sobre una clave inexistente la crea con valor 1, y solo en ese caso el script define el TTL de 60 segundos. La ventana va desde esa solicitud hasta que la clave expira; la siguiente solicitud crea la clave otra vez y abre otra ventana.",
+				"Sigue siendo una ventana fija: hay un único contador que desaparece de una sola vez cuando se agota el TTL. Nada aquí mira los 60 segundos anteriores a cada solicitud.",
+				"Un rechazo también ejecuta `INCR`, pero el resultado es mayor que 1, así que no se llama a `EXPIRE` y la ventana no reinicia."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "lua",
+				"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], ARGV[1])\nend\nreturn n"
+			},
+			"concept": "Hay dos formas de ventana fija en Redis. Con el identificador de la ventana en el nombre de la clave, las ventanas están alineadas al reloj y son las mismas para todos los clientes. Con una sola clave por cliente y `EXPIRE` solo cuando `INCR` devuelve 1, la ventana empieza en la primera solicitud del cliente y dura hasta que se agota el TTL. `INCR` y `EXPIRE` van en el mismo script para que la clave nunca quede sin TTL."
 		}
 	},
 	{
@@ -337,6 +458,24 @@
 				"That confuses the stored value with the space it takes. An integer that reaches 5000 takes the same space as one that reaches 500."
 			],
 			"concept": "The memory of a fixed window depends neither on the limit nor on the window size: it is one counter and one window identifier per active client. That is why it scales well to millions of clients and to high limits. The sliding log, in contrast, stores one timestamp per admitted request, and its memory grows in proportion to the limit."
+		},
+		"es": {
+			"statement": "Un SaaS multi-tenant limita a cada tenant con una ventana fija alineada de una hora. El límite sube de 500 a 5000 solicitudes por hora. ¿Cómo cambia la memoria que usa el limitador por tenant?",
+			"alternatives": [
+				"Crece unas diez veces, con una marca de tiempo por solicitud admitida",
+				"Sigue igual: sigue siendo un contador y un identificador de ventana",
+				"Se duplica, ya que ahora hace falta un contador para la ventana anterior",
+				"Disminuye, porque un límite mayor hace que las ventanas sean más cortas",
+				"Crece diez veces, ya que el contador necesita diez veces más bytes"
+			],
+			"explanations": [
+				"Guardar una marca de tiempo por solicitud admitida es el costo del sliding log, cuya memoria crece con el límite. Una ventana fija guarda solo la cantidad.",
+				"El estado es un contador y el identificador de la ventana, sea cual sea el límite. Cambiar el límite solo cambia el valor con el que se compara el contador: la memoria por cliente es O(1).",
+				"El contador de la ventana anterior es un requisito del contador de ventana deslizante y no depende del valor del límite. Una ventana fija nunca lo usa.",
+				"El límite y el tamaño de la ventana son parámetros independientes: la ventana sigue siendo de una hora. Y ventanas más cortas tampoco cambiarían el estado por cliente.",
+				"Eso confunde el valor guardado con el espacio que ocupa. Un entero que llega a 5000 ocupa el mismo espacio que uno que llega a 500."
+			],
+			"concept": "La memoria de una ventana fija no depende ni del límite ni del tamaño de la ventana: es un contador y un identificador de ventana por cliente activo. Por eso escala bien a millones de clientes y a límites altos. El sliding log, en cambio, guarda una marca de tiempo por solicitud admitida, y su memoria crece en proporción al límite."
 		}
 	},
 	{
@@ -382,6 +521,24 @@
 				"That assumes a fixed window spaces requests out, and it also ignores the boundary. It only counts: inside the window the whole limit may arrive at the same instant."
 			],
 			"concept": "The same average rate can be written with windows of different sizes, and the choice defines the burst that is tolerated. A long window with a high limit accepts huge bursts (up to 2 × limit at the boundary) and may overload the service. A short window with a low limit keeps the burst small, but rejects legitimate clients that send a small batch at once."
+		},
+		"es": {
+			"statement": "Una API de pagos quiere un promedio de 600 solicitudes por minuto por cliente y usa ventanas fijas alineadas. Diseño X: límite de 600 por ventana de 60 segundos. Diseño Y: límite de 10 por ventana de 1 segundo. En el peor caso, ¿cuántas solicitudes puede lograr que se admitan un cliente en un intervalo menor que un segundo?",
+			"alternatives": [
+				"X: 1200, Y: 20",
+				"X: 600, Y: 10",
+				"X: 20, Y: 20",
+				"X: 1200, Y: 1200",
+				"X: 10, Y: 10"
+			],
+			"explanations": [
+				"El peor caso cruza una frontera: todo el límite al final de una ventana y otra vez al inicio de la siguiente. X: 600 + 600 = 1200 (por ejemplo 600 en t = 59.9 y 600 en t = 60). Y: 10 + 10 = 20 (10 en t = 0.9 y 10 en t = 1). Verificando con la regla general 2 × límite: 2 × 600 = 1200 y 2 × 10 = 20.",
+				"Esos son los límites de una sola ventana. Falta la ráfaga doble: un intervalo menor que un segundo puede tomar el final de una ventana y el inicio de la siguiente.",
+				"Eso supone que la tasa promedio de 10 por segundo acota la ráfaga en ambos diseños. En el diseño X nada impide que el cliente gaste las 600 de una vez.",
+				"Eso supone que la misma tasa promedio implica la misma ráfaga. La ráfaga depende del límite por ventana, que es 600 en X y solo 10 en Y.",
+				"Eso supone que una ventana fija espacia las solicitudes, y además ignora la frontera. Solo cuenta: dentro de la ventana todo el límite puede llegar en el mismo instante."
+			],
+			"concept": "La misma tasa promedio se puede escribir con ventanas de distintos tamaños, y la elección define la ráfaga tolerada. Una ventana larga con un límite alto acepta ráfagas enormes (hasta 2 × límite en la frontera) y puede sobrecargar el servicio. Una ventana corta con un límite bajo mantiene la ráfaga pequeña, pero rechaza a clientes legítimos que envían un lote pequeño de una vez."
 		}
 	},
 	{
@@ -435,6 +592,28 @@
 				"content": "limit = 4, W = 10 s\nrequests at t = 6, 7, 8, 9, 10, 11, 12, 13, 17, 18\n\nRule A: aligned windows [0,10), [10,20), ...\nRule B: the window opens at the first request and lasts 10 s;\n        the first request after its end opens a new window"
 			},
 			"concept": "Where the boundaries fall changes the result of a fixed window. With aligned windows this client catches the boundary at t = 10 and has 8 requests admitted in 8 seconds, twice the limit. With the window opened by the first request (the `INCR` pattern with `EXPIRE` only when the result is 1), the initial burst is held to 4, but the problem still exists at the end of that window. Only the sliding algorithms remove the boundary."
+		},
+		"es": {
+			"statement": "El mismo tráfico de un cliente se evalúa con dos reglas de ventana fija, ambas con límite de 4 cada 10 segundos. Una solicitud se admite cuando el contador de la ventana está por debajo del límite, y una solicitud rechazada no abre ni extiende una ventana. ¿Cuántas de las 10 solicitudes admite cada regla?",
+			"alternatives": [
+				"A: 6, B: 8",
+				"A: 8, B: 6",
+				"A: 8, B: 8",
+				"A: 6, B: 6",
+				"A: 8, B: 4"
+			],
+			"explanations": [
+				"Los resultados están invertidos: la regla que acepta la ráfaga doble alrededor de t = 10 es la regla A, con ventanas alineadas.",
+				"Regla A: la ventana [0,10) admite t = 6, 7, 8 y 9; la ventana [10,20) admite t = 10, 11, 12 y 13 y rechaza t = 17 y 18. Total 8. Regla B: la ventana se abre en t = 6 y cubre [6,16); admite t = 6, 7, 8 y 9 y rechaza t = 10, 11, 12 y 13. En t = 17 esa ventana ya terminó, así que se abre otra, [17,27), que admite t = 17 y 18. Total 6. Verificando por los rechazos: A rechaza 2 (10 − 2 = 8) y B rechaza 4 (10 − 4 = 6).",
+				"Eso trata la regla B como si su ventana también reiniciara en t = 10. En B la ventana empezó en t = 6 y solo termina en t = 16.",
+				"Eso aplica a la regla A la ventana abierta por la primera solicitud. En A las fronteras son múltiplos de 10, y t = 10 ya cae en una ventana nueva.",
+				"Eso supone que cada solicitud renueva la ventana de B, que entonces nunca terminaría en este tráfico. La ventana de B dura 10 segundos desde la solicitud que la abrió, y las siguientes no la extienden."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "límite = 4, W = 10 s\nsolicitudes en t = 6, 7, 8, 9, 10, 11, 12, 13, 17, 18\n\nRegla A: ventanas alineadas [0,10), [10,20), ...\nRegla B: la ventana se abre en la primera solicitud y dura 10 s;\n         la primera solicitud después de su fin abre una nueva ventana"
+			},
+			"concept": "Dónde caen las fronteras cambia el resultado de una ventana fija. Con ventanas alineadas este cliente toma la frontera en t = 10 y logra 8 solicitudes admitidas en 8 segundos, el doble del límite. Con la ventana abierta por la primera solicitud (el patrón `INCR` con `EXPIRE` solo cuando el resultado es 1), la ráfaga inicial queda en 4, pero el problema sigue existiendo al final de esa ventana. Solo los algoritmos deslizantes eliminan la frontera."
 		}
 	},
 	{
@@ -480,6 +659,24 @@
 				"With aligned windows the boundaries are fixed by the clock. No request, admitted or rejected, moves a boundary."
 			],
 			"concept": "In a fixed window, counting or not counting rejected requests does not change who is admitted, because the counter is zeroed at the boundary anyway. The difference shows only in the stored value, which can be useful as a metric of the excess. In a sliding log the same choice changes everything: if rejections are recorded, an insistent client never recovers. That is why the convention must be stated for each algorithm."
+		},
+		"es": {
+			"statement": "Un limitador de ventana fija con ventanas alineadas ejecuta `INCR` primero y rechaza cuando el resultado está por encima del límite, así que las solicitudes rechazadas también aumentan el contador. Comparado con una versión que incrementa solo en las solicitudes admitidas, ¿qué cambia en el conjunto de solicitudes admitidas?",
+			"alternatives": [
+				"Nada: en ambas versiones el contador se descarta en la frontera",
+				"Un cliente que sigue enviando nunca vuelve a ser admitido, pues su contador no baja",
+				"El exceso se arrastra y se descuenta del límite de la ventana siguiente",
+				"Entran menos solicitudes en cada ventana, pues los rechazos gastan parte del límite",
+				"La ventana siguiente empieza más tarde, pues cada solicitud rechazada renueva la ventana"
+			],
+			"explanations": [
+				"Dentro de la ventana ambas versiones admiten exactamente las primeras `limit` solicitudes: un rechazo solo ocurre después de alcanzar el límite, y contar más allá no le quita el lugar a nadie. En la frontera el contador de la ventana vieja se abandona, valga `limit` o mucho más. Ejemplo con límite 3 y solicitudes en t = 1, 2, 3, 4, 5 y 11 (W = 10): en ambas versiones entran t = 1, 2, 3 y 11.",
+				"Eso ocurre en un sliding log que también registra los rechazos: los propios intentos del cliente mantienen el log lleno. En una ventana fija el contador de la nueva ventana empieza en cero, sin importar cuánto se pasó la anterior del límite.",
+				"Ningún valor pasa de una ventana a la siguiente. Cada ventana alineada tiene su propio contador, que empieza en cero.",
+				"Los rechazos solo ocurren cuando el contador ya alcanzó el límite, así que ya no queda espacio que gastar en esa ventana. Las primeras `limit` solicitudes entran en ambas versiones.",
+				"Con ventanas alineadas las fronteras las fija el reloj. Ninguna solicitud, admitida o rechazada, mueve una frontera."
+			],
+			"concept": "En una ventana fija, contar o no las solicitudes rechazadas no cambia quién se admite, porque el contador se pone en cero en la frontera de todos modos. La diferencia aparece solo en el valor guardado, que puede servir como métrica del exceso. En un sliding log la misma elección lo cambia todo: si se registran los rechazos, un cliente insistente nunca se recupera. Por eso hay que declarar la convención para cada algoritmo."
 		}
 	}
 ]

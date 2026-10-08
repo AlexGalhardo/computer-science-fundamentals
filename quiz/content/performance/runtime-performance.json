@@ -42,6 +42,24 @@
 				"The JavaScript of the application runs on one thread only. The event loop takes a ready callback, runs it to the end and only then takes the next one."
 			],
 			"concept": "Node.js and Bun run the JavaScript of the application on a single thread, coordinated by the event loop: a queue of ready callbacks, served one at a time. Waiting for the network and the disk is delegated to the operating system, which is why one thread can keep thousands of connections open. The consequence is that, while one callback is running, no other makes progress."
+		},
+		"es": {
+			"statement": "En un servidor HTTP común sobre Node.js o Bun, sin worker threads ni cluster, ¿cuántos threads ejecutan el código JavaScript de la aplicación?",
+			"alternatives": [
+				"Un thread por núcleo de CPU, creado automáticamente por el runtime",
+				"Un thread por conexión abierta, terminado cuando la conexión se cierra",
+				"Un thread por solicitud, tomado de un pool de threads del runtime",
+				"Dos threads: uno para el código síncrono y otro para el código asíncrono",
+				"Un único thread, que ejecuta callbacks uno a la vez en el event loop"
+			],
+			"explanations": [
+				"El runtime no reparte el JavaScript entre los núcleos por sí solo. Usar varios núcleos hay que pedirlo: worker threads o varios procesos (cluster).",
+				"Ese es el modelo de los servidores de un thread por conexión. En Node.js y Bun, miles de conexiones son atendidas por el mismo thread.",
+				"Ese es el modelo de pool de threads de otros servidores. El pool interno del runtime atiende algunas operaciones de I/O y del sistema, pero no ejecuta los handlers de la aplicación.",
+				"El código asíncrono no corre en otro thread de JavaScript: los callbacks y las continuaciones de `await` vuelven al mismo thread, cuando queda libre.",
+				"El JavaScript de la aplicación corre en un solo thread. El event loop toma un callback listo, lo ejecuta hasta el final y solo entonces toma el siguiente."
+			],
+			"concept": "Node.js y Bun ejecutan el JavaScript de la aplicación en un único thread, coordinado por el event loop: una cola de callbacks listos, atendidos uno a la vez. La espera por la red y el disco se delega al sistema operativo, por eso un thread puede mantener miles de conexiones abiertas. La consecuencia es que, mientras un callback se ejecuta, ningún otro avanza."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"New connections keep being accepted and served normally; that is exactly what allows high concurrency on a single thread."
 			],
 			"concept": "I/O-bound work spends almost all its time waiting for the network or the disk, and that waiting does not use the JavaScript thread. While one request waits for the database, the event loop serves others. That is why a single thread sustains hundreds of simultaneous requests of this kind, and the limit becomes the external resource, such as the database or the connection pool."
+		},
+		"es": {
+			"statement": "En un servidor Node.js, un handler espera con await una consulta a la base de datos que tarda 100 ms. ¿Qué hace el event loop durante esos 100 ms?",
+			"alternatives": [
+				"Ejecuta otros callbacks, ya que esperar I/O no ocupa el thread",
+				"Se queda detenido en el `await` hasta que llega la respuesta, sin atender a nadie más",
+				"Crea un nuevo thread de JavaScript por cada `await` pendiente",
+				"Pregunta a la base de datos en un bucle continuo, usando el 100% de la CPU, si llegó la respuesta",
+				"Rechaza nuevas conexiones hasta que la promesa pendiente se resuelva"
+			],
+			"explanations": [
+				"El `await` suspende solo ese handler y devuelve el control al event loop. La espera queda a cargo del sistema operativo, y el thread sigue atendiendo otras solicitudes hasta que llega la respuesta.",
+				"`await` no bloquea el thread; solo una llamada síncrona lo haría. El error es leer `await` como una espera bloqueante.",
+				"No se crea ningún thread de JavaScript. La continuación del handler vuelve al mismo thread cuando llega la respuesta.",
+				"El runtime no hace espera activa: le pide al sistema operativo que le avise cuando el socket tenga datos, y no gasta CPU mientras tanto.",
+				"Las nuevas conexiones se siguen aceptando y atendiendo normalmente; eso es justamente lo que permite alta concurrencia en un solo thread."
+			],
+			"concept": "El trabajo limitado por I/O pasa casi todo su tiempo esperando la red o el disco, y esa espera no usa el thread de JavaScript. Mientras una solicitud espera la base de datos, el event loop atiende otras. Por eso un solo thread sostiene cientos de solicitudes simultáneas de este tipo, y el límite pasa a ser el recurso externo, como la base de datos o el pool de conexiones."
 		}
 	},
 	{
@@ -132,6 +168,24 @@
 				"Restarting a crashed process is default PM2 behaviour, with any number of instances. Here `max` refers to the number of instances."
 			],
 			"concept": "A Node.js process uses one core for JavaScript. PM2 cluster mode starts several copies of the application, normally one per core, through the `cluster` module of Node.js: all listen on the same port and connections are shared out among them. Each copy is a complete process with its own memory, so memory use multiplies and nothing held in memory is shared between workers."
+		},
+		"es": {
+			"statement": "¿Qué hace el comando `pm2 start app.js -i max` con un servidor HTTP en Node.js?",
+			"alternatives": [
+				"Inicia un proceso con un thread por núcleo de CPU, todos sobre el mismo heap",
+				"Inicia un proceso con su límite de memoria elevado al máximo de la máquina",
+				"Inicia un proceso por núcleo de CPU, todos aceptando conexiones en el mismo puerto",
+				"Inicia un proceso por núcleo de CPU, cada uno en su propio puerto, detrás de un proxy tuyo",
+				"Inicia un proceso que se reinicia lo más rápido posible cuando se cae"
+			],
+			"explanations": [
+				"El modo cluster crea procesos, no threads. Cada worker tiene su propio heap y su propio event loop, sin memoria compartida.",
+				"La opción `-i` (instances) define el número de instancias, no la memoria. El límite de memoria para reiniciar es otra opción (`--max-memory-restart`).",
+				"`-i max` usa el modo cluster con una instancia por núcleo detectado. Los workers comparten el puerto de escucha, y las conexiones entrantes se reparten entre ellos, sin cambios en el código de la aplicación.",
+				"No hace falta configurar un puerto por proceso ni un proxy delante: el módulo `cluster` de Node.js, usado por PM2, hace que los workers compartan el mismo puerto.",
+				"Reiniciar un proceso caído es el comportamiento por defecto de PM2, con cualquier número de instancias. Aquí `max` se refiere al número de instancias."
+			],
+			"concept": "Un proceso de Node.js usa un núcleo para el JavaScript. El modo cluster de PM2 inicia varias copias de la aplicación, normalmente una por núcleo, mediante el módulo `cluster` de Node.js: todas escuchan en el mismo puerto y las conexiones se reparten entre ellas. Cada copia es un proceso completo con su propia memoria, así que el uso de memoria se multiplica y nada de lo que está en memoria se comparte entre workers."
 		}
 	},
 	{
@@ -176,6 +230,24 @@
 				"Old objects can indeed point to young ones (an old cache receiving a new entry). The collector has to record those references so as not to free a live object."
 			],
 			"concept": "The generational hypothesis says that most objects are short-lived. V8 allocates new objects in a small area, the young generation, collected often by quick minor collections; the survivors are promoted to the old generation. The old generation is collected rarely, by major collections, which are more expensive because they examine a much larger heap."
+		},
+		"es": {
+			"statement": "El recolector de basura de V8, usado por Node.js, es generacional. ¿En qué observación sobre los programas se apoya ese diseño?",
+			"alternatives": [
+				"Los objetos viejos son los que más a menudo se vuelven basura, así que se examinan primero",
+				"La mayoría de los objetos muere joven, así que recolectar con frecuencia el área de objetos nuevos es barato",
+				"Todos los objetos viven más o menos el mismo tiempo, y la edad se usa solo para ordenarlos",
+				"Los objetos grandes mueren antes que los pequeños, así que se guardan en una generación aparte",
+				"Los objetos jóvenes nunca son referenciados por objetos viejos, así que pueden ignorarse"
+			],
+			"explanations": [
+				"Es al revés: un objeto que ya sobrevivió a varias recolecciones tiende a seguir vivo. Por eso la generación vieja se examina con menos frecuencia.",
+				"Esta es la hipótesis generacional: la mayoría de los objetos (los temporales de una solicitud, por ejemplo) deja de usarse poco después de crearse. Una recolección menor (scavenge) examina solo la generación joven, que es pequeña, y encuentra mucha basura con poco trabajo.",
+				"Si todos los objetos vivieran lo mismo, separar por edad no traería ganancia. La separación compensa solo porque las duraciones de vida son muy desiguales.",
+				"Las generaciones separan por edad, no por tamaño. Los objetos grandes pueden recibir un tratamiento propio, pero esa no es la hipótesis generacional.",
+				"Los objetos viejos sí pueden apuntar a jóvenes (un cache viejo que recibe una entrada nueva). El recolector tiene que registrar esas referencias para no liberar un objeto vivo."
+			],
+			"concept": "La hipótesis generacional dice que la mayoría de los objetos vive poco. V8 asigna los objetos nuevos en un área pequeña, la generación joven, recolectada a menudo por recolecciones menores rápidas; los sobrevivientes se promueven a la generación vieja. La generación vieja se recolecta rara vez, mediante recolecciones mayores, que son más costosas porque examinan un heap mucho más grande."
 		}
 	},
 	{
@@ -239,6 +311,33 @@
 				"kind": "diagram",
 				"content": "t (ms)   0        200       400       600\n         |- hash 1 -|- hash 2 -|- hash 3 -| ping\n\n/ping arrived at t ~ 0 and was answered at t ~ 600"
 			}
+		},
+		"es": {
+			"statement": "Este servidor corre como un único proceso de Node.js, sin worker threads. Tres solicitudes a `/hash` llegan prácticamente en el mismo instante (t = 0), seguidas de inmediato por una solicitud a `/ping`. Como ningún otro callback corre mientras se ejecuta código síncrono, ¿aproximadamente cuándo se responde `/ping`?",
+			"alternatives": [
+				"Cerca de los 0 ms",
+				"Cerca de los 200 ms",
+				"Cerca de los 400 ms",
+				"Cerca de los 600 ms",
+				"Cerca de los 800 ms"
+			],
+			"explanations": [
+				"Así sería si `/ping` se atendiera en paralelo con los hashes. Con un solo thread, el callback de `/ping` espera en la cola detrás de los tres handlers que llegaron antes.",
+				"200 ms supone que los tres hashes corren al mismo tiempo, cada uno en un núcleo. JavaScript corre en un único thread, así que se ejecutan uno tras otro.",
+				"400 ms cuenta solo dos hashes por delante de `/ping`. Llegaron antes tres handlers de 200 ms.",
+				"Los handlers se ejecutan en secuencia: el primer hash de 0 a 200 ms, el segundo de 200 a 400 ms y el tercero de 400 a 600 ms. Solo entonces el event loop llega a `/ping`, que responde cerca de los 600 ms. Por la suma: 3 × 200 ms + ~0 ms = 600 ms.",
+				"800 ms cuenta `/ping` como si también costara 200 ms de CPU. El handler de `/ping` es prácticamente instantáneo; su tiempo es solo la espera."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "js",
+				"content": "app.get(\"/hash\", (req, res) => {\n  // slowHashSync: 200 ms de CPU pura, síncrono\n  res.send(slowHashSync(req.query.input));\n});\n\napp.get(\"/ping\", (req, res) => {\n  res.send(\"pong\"); // ~0 ms\n});"
+			},
+			"concept": "El trabajo síncrono limitado por CPU ocupa el único thread de JavaScript de principio a fin. Mientras corre, el event loop no atiende ninguna otra solicitud, no dispara timers ni acepta resultados de I/O. Una solicitud liviana que llega detrás de un trabajo pesado paga todo el trabajo que tiene por delante, y así un solo endpoint lento arruina la latencia de todo el servidor.",
+			"example": {
+				"kind": "diagram",
+				"content": "t (ms)   0        200       400       600\n         |- hash 1 -|- hash 2 -|- hash 3 -| ping\n\n/ping llegó en t ~ 0 y se respondió en t ~ 600"
+			}
 		}
 	},
 	{
@@ -283,6 +382,24 @@
 				"Each worker thread has its own instance of the JavaScript engine, with a separate event loop and heap. That is why a heavy computation in a worker does not block the main thread."
 			],
 			"concept": "There are two ways of using more than one core in Node.js. Worker threads run inside the same process, each with its own event loop, and serve to take a heavy computation off the main thread, with the option of sharing binary memory. `cluster` creates several processes of the whole server, isolated from each other, which share the connections of the same port: it scales request handling and isolates failures, at the cost of more memory."
+		},
+		"es": {
+			"statement": "En Node.js, ¿cuál es la diferencia entre usar `worker_threads` y usar el módulo `cluster`?",
+			"alternatives": [
+				"Los worker threads viven en el mismo proceso y pueden compartir memoria; cluster crea procesos separados",
+				"Los worker threads son procesos separados; cluster crea threads dentro de un único proceso",
+				"Ambos crean threads, pero solo los de cluster acceden directamente a los objetos JavaScript de los demás",
+				"Los worker threads aceleran solo operaciones de I/O; cluster acelera solo trabajo de CPU",
+				"Los worker threads usan el mismo event loop y el mismo heap que el thread principal; los workers de cluster no"
+			],
+			"explanations": [
+				"Cada worker thread es un thread del mismo proceso, con su propio event loop y heap, que intercambia mensajes con el principal y puede compartir memoria binaria mediante `SharedArrayBuffer`. `cluster` crea procesos hijos completos, que se comunican solo por mensajes y pueden compartir el puerto del servidor.",
+				"Esto está invertido. El que crea procesos (con `fork`) es `cluster`; `worker_threads` crea threads dentro del proceso actual.",
+				"`cluster` crea procesos, no threads. Y en ninguno de los dos modelos otra unidad accede directamente a los objetos JavaScript comunes: se copian en mensajes.",
+				"Ambos sirven para usar más núcleos en trabajo de CPU. El I/O ya es asíncrono en un thread y no necesita ninguno de los dos.",
+				"Cada worker thread tiene su propia instancia del motor de JavaScript, con event loop y heap separados. Por eso un cálculo pesado en un worker no bloquea el thread principal."
+			],
+			"concept": "Hay dos formas de usar más de un núcleo en Node.js. Los worker threads corren dentro del mismo proceso, cada uno con su propio event loop, y sirven para sacar un cálculo pesado del thread principal, con la opción de compartir memoria binaria. `cluster` crea varios procesos del servidor completo, aislados entre sí, que comparten las conexiones del mismo puerto: escala la atención de solicitudes y aísla fallas, a costa de más memoria."
 		}
 	},
 	{
@@ -328,6 +445,24 @@
 				"Each worker takes 120 + 300 = 420 MB, and 4 × 420 = 1,680 MB. Adding by parts: 4 × 120 = 480 MB of baseline and 4 × 300 = 1,200 MB of cache, 1,680 MB in total."
 			],
 			"concept": "In cluster mode, each worker is an independent process, with no memory shared with the others. Everything the application keeps in memory now exists once per worker, so usage grows with the number of instances. For the same reason, in-memory state diverges between workers: local sessions or caches are visible only to the process that created them, which is why they are usually moved to an external service such as Redis."
+		},
+		"es": {
+			"statement": "Un proceso de Node.js de una API ocupa 120 MB de base más 300 MB de un cache en memoria cargado al arrancar. La API pasa a correr en modo cluster de PM2 con 4 instancias. Dejando de lado las páginas que el sistema operativo comparte entre procesos (como el binario del runtime), ¿cuánta memoria ocupan los workers en total?",
+			"alternatives": [
+				"420 MB",
+				"780 MB",
+				"1,200 MB",
+				"1,320 MB",
+				"1,680 MB"
+			],
+			"explanations": [
+				"420 MB es el uso de un solo proceso. El error es tratar a los workers como threads que comparten un heap.",
+				"780 MB (4 × 120 + 300) supone que el cache se carga una vez y se comparte. Cada worker es un proceso y carga su propia copia.",
+				"1,200 MB (4 × 300) cuenta solo los caches y olvida los 120 MB de base de cada worker.",
+				"1,320 MB (120 + 4 × 300) supone que la base se comparte y solo se repite el cache. Cada proceso tiene su propio heap, con todo dentro.",
+				"Cada worker ocupa 120 + 300 = 420 MB, y 4 × 420 = 1,680 MB. Sumando por partes: 4 × 120 = 480 MB de base y 4 × 300 = 1,200 MB de cache, 1,680 MB en total."
+			],
+			"concept": "En modo cluster, cada worker es un proceso independiente, sin memoria compartida con los demás. Todo lo que la aplicación guarda en memoria pasa a existir una vez por worker, así que el uso crece con el número de instancias. Por la misma razón, el estado en memoria diverge entre workers: las sesiones o caches locales solo son visibles para el proceso que los creó, por eso suelen moverse a un servicio externo como Redis."
 		}
 	},
 	{
@@ -373,6 +508,24 @@
 				"4,000 is the total of CPU milliseconds available per second on the 4 cores. It still has to be divided by the 50 ms each request consumes."
 			],
 			"concept": "For CPU-bound work, throughput is the CPU time available divided by the CPU time per request. One process uses one core; N workers on N cores multiply capacity by up to N, and this is the case where cluster helps the most. The real gain stays a little below the ideal, because of connection distribution, the operating system and any shared resource, such as the database."
+		},
+		"es": {
+			"statement": "Un endpoint limitado por CPU gasta 50 ms de procesamiento síncrono por solicitud. Con un único proceso de Node.js, el throughput máximo es de 20 solicitudes por segundo. En una máquina de 4 núcleos dedicada a la API, con 4 workers de cluster, ¿cuál es el throughput máximo en el caso ideal, dejando de lado la sobrecarga?",
+			"alternatives": [
+				"20 solicitudes por segundo",
+				"80 solicitudes por segundo",
+				"200 solicitudes por segundo",
+				"320 solicitudes por segundo",
+				"4,000 solicitudes por segundo"
+			],
+			"explanations": [
+				"20 supone que los workers comparten el tiempo de un núcleo. Cada worker es un proceso que el sistema operativo puede ejecutar en un núcleo distinto, en paralelo.",
+				"Cada worker ocupa un núcleo y entrega 1,000 / 50 = 20 solicitudes por segundo; 4 workers entregan 4 × 20 = 80. Por otro camino: 4 núcleos ofrecen 4,000 ms de CPU por segundo, y 4,000 / 50 = 80.",
+				"200 es el producto 50 × 4, que multiplica milisegundos por workers y lee el resultado como si fuera una tasa.",
+				"320 aplica el factor 4 dos veces (20 × 4 × 4), como si cada worker además se volviera cuatro veces más rápido. El tiempo de CPU por solicitud sigue siendo 50 ms.",
+				"4,000 es el total de milisegundos de CPU disponibles por segundo en los 4 núcleos. Todavía falta dividirlo entre los 50 ms que consume cada solicitud."
+			],
+			"concept": "Para trabajo limitado por CPU, el throughput es el tiempo de CPU disponible dividido entre el tiempo de CPU por solicitud. Un proceso usa un núcleo; N workers en N núcleos multiplican la capacidad hasta por N, y este es el caso en que cluster más ayuda. La ganancia real queda un poco por debajo de la ideal, por la distribución de conexiones, el sistema operativo y cualquier recurso compartido, como la base de datos."
 		}
 	},
 	{
@@ -418,6 +571,24 @@
 				"500 req/s is the CPU capacity of one process (1,000 / 2), and 2,000 that of four. Those are ceilings, not the throughput: with 20 clients in a closed loop and 100 ms per request, demand does not exceed 200 req/s."
 			],
 			"concept": "Cluster multiplies CPU capacity, and it raises throughput only when the CPU is the bottleneck. For I/O-bound work, a single event loop is free most of the time, and the limit lies in the waiting time for the external resource and in the number of clients. Before adding workers, it is worth computing how much of a core the process really uses: request rate × CPU time per request."
+		},
+		"es": {
+			"statement": "Un endpoint gasta 2 ms de CPU y 98 ms esperando la base de datos, que tiene capacidad de sobra. Veinte clientes envían solicitudes en bucle cerrado: cada uno envía la siguiente apenas recibe la respuesta, sin pausa. Dejando de lado la pequeña espera en la cola del event loop, ¿cuál es el throughput aproximado con un único proceso de Node.js y luego con 4 workers de cluster en una máquina de 4 núcleos?",
+			"alternatives": [
+				"10 req/s con un proceso y 40 req/s con cuatro workers",
+				"10 req/s con un proceso y 10 req/s con cuatro workers",
+				"200 req/s con un proceso y 800 req/s con cuatro workers",
+				"200 req/s con un proceso y 200 req/s con cuatro workers",
+				"500 req/s con un proceso y 2,000 req/s con cuatro workers"
+			],
+			"explanations": [
+				"10 req/s sería el throughput si el proceso atendiera una solicitud a la vez (1,000 / 100). Durante los 98 ms de espera el event loop atiende a los demás clientes, y las 20 solicitudes avanzan juntas.",
+				"El valor por proceso repite el error de tratar la espera de I/O como bloqueante; solo la conclusión de que cluster no cambia el resultado es correcta.",
+				"El valor con un proceso es correcto, pero cluster no cuadruplica nada aquí: el proceso único usa solo 200 × 2 ms = 400 ms de CPU por segundo, el 40% de un núcleo. La CPU no es el cuello de botella.",
+				"Cada cliente completa una solicitud cada 100 ms, es decir 10 por segundo; 20 clientes dan 200 req/s. Por la relación entre concurrencia y tiempo de respuesta: 20 / 0.1 s = 200. Eso cuesta 400 ms de CPU por segundo, que un núcleo maneja con facilidad, así que más workers no aumentan el throughput.",
+				"500 req/s es la capacidad de CPU de un proceso (1,000 / 2), y 2,000 la de cuatro. Esos son techos, no el throughput: con 20 clientes en bucle cerrado y 100 ms por solicitud, la demanda no pasa de 200 req/s."
+			],
+			"concept": "Cluster multiplica la capacidad de CPU, y aumenta el throughput solo cuando la CPU es el cuello de botella. Para trabajo limitado por I/O, un único event loop está libre la mayor parte del tiempo, y el límite está en el tiempo de espera por el recurso externo y en el número de clientes. Antes de agregar workers, conviene calcular cuánto de un núcleo usa realmente el proceso: tasa de solicitudes × tiempo de CPU por solicitud."
 		}
 	},
 	{
@@ -462,6 +633,24 @@
 				"The pause applies to the whole thread, not per request. The collector does not know which request an object belongs to, and all of them share the same thread and the same heap."
 			],
 			"concept": "The garbage collector does much of its work incrementally or on helper threads, but some phases stop JavaScript completely: the stop-the-world pauses. Minor collections pause briefly; major ones, over a large old heap, can pause for much longer. Being rare, they barely change the mean or the median, and they show up in the high percentiles. A leak is recognised by a different sign: the memory in use after collections grows continuously."
+		},
+		"es": {
+			"statement": "Una API en Node.js tiene un p50 estable de 12 ms, pero su p99 llega a 180 ms en picos periódicos. Las mediciones muestran que los picos coinciden con recolecciones mayores (major GC) de una generación vieja grande, y que el uso de memoria vuelve al mismo nivel después de cada recolección. ¿Qué explicación encaja con estos datos?",
+			"alternatives": [
+				"Las recolecciones menores corren en cada solicitud y agregan el mismo retraso a todas las respuestas",
+				"El recolector corre en otro proceso y no afecta la latencia; los picos vienen de la red",
+				"Una recolección mayor pausa la ejecución de JavaScript, y solo se retrasan las solicitudes en curso en ese momento",
+				"Hay una fuga de memoria, ya que un recolector que corre periódicamente indica memoria que nunca se libera",
+				"Una recolección mayor pausa solo las solicitudes cuyos objetos se están recolectando, y las demás siguen"
+			],
+			"explanations": [
+				"Un retraso igual en todas las solicitudes también movería el p50, y este es estable. Las recolecciones menores son cortas y frecuentes; el patrón descrito es de pausas raras y largas.",
+				"El recolector forma parte del propio proceso, y parte de su trabajo exige detener el thread de JavaScript. Además, las mediciones ya vinculan los picos con las recolecciones.",
+				"Durante parte de una recolección mayor el JavaScript se detiene (una pausa stop-the-world), y toda solicitud que estaba en curso o llegó en ese intervalo espera. Como esto es raro, la mediana no se mueve y el efecto aparece solo en la cola, como el p99.",
+				"La recolección periódica es el funcionamiento normal. Una fuga es memoria que sigue alcanzable y por lo tanto no puede liberarse: el uso después de cada recolección seguiría subiendo, y el enunciado dice que vuelve al mismo nivel.",
+				"La pausa se aplica a todo el thread, no por solicitud. El recolector no sabe a qué solicitud pertenece un objeto, y todas comparten el mismo thread y el mismo heap."
+			],
+			"concept": "El recolector de basura hace gran parte de su trabajo de forma incremental o en threads auxiliares, pero algunas fases detienen el JavaScript por completo: las pausas stop-the-world. Las recolecciones menores pausan brevemente; las mayores, sobre un heap viejo grande, pueden pausar mucho más. Como son raras, casi no cambian la media ni la mediana, y aparecen en los percentiles altos. Una fuga se reconoce por otra señal: la memoria en uso después de las recolecciones crece continuamente."
 		}
 	}
 ]

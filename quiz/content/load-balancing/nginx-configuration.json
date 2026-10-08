@@ -52,6 +52,29 @@
 				"content": "upstream api {\n    server app1:3000;\n    server app2:3000;\n    server app3:3000;\n}"
 			},
 			"concept": "In NGINX, upstream declares a group of servers and gives it a name. The group alone receives no traffic: a proxy directive, such as proxy_pass, has to point at that name. For each forwarded request, NGINX picks one server of the group according to the configured balancing method."
+		},
+		"es": {
+			"statement": "En la configuración de NGINX 1.30 de código abierto de abajo, ¿qué define el bloque upstream?",
+			"alternatives": [
+				"Un servidor virtual que escucha en el puerto 3000 y acepta las conexiones de los clientes",
+				"Un grupo de servidores con nombre, al que pueden referirse directivas como proxy_pass",
+				"Una lista de nombres de host para los que esta configuración responde a solicitudes de clientes",
+				"Una zona de cache compartida por los tres servidores para guardar las respuestas del proxy",
+				"Un conjunto de reglas que comparan la ruta de la solicitud y luego eligen un servidor"
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "nginx",
+				"content": "upstream api {\n    server app1:3000;\n    server app2:3000;\n    server app3:3000;\n}"
+			},
+			"explanations": [
+				"Incorrecta. Confunde upstream con el bloque server que contiene listen: el servidor virtual es el que acepta conexiones de clientes, y el puerto 3000 aquí es el puerto de los back ends.",
+				"Correcta. El bloque le da el nombre api a un grupo de servidores; otra directiva, como proxy_pass http://api;, usa ese nombre para reenviar solicitudes al grupo.",
+				"Incorrecta. Confunde upstream con server_name: los nombres de host atendidos se declaran en el bloque server, y las líneas server dentro de upstream son direcciones de back ends.",
+				"Incorrecta. Confunde upstream con la configuración de cache (proxy_cache_path y proxy_cache): el bloque solo lista servidores y no guarda ninguna respuesta.",
+				"Incorrecta. Confunde upstream con location: location es lo que compara la ruta de la solicitud, y el grupo se usa solo después de que una location reenvía hacia él."
+			],
+			"concept": "En NGINX, upstream declara un grupo de servidores y le da un nombre. El grupo por sí solo no recibe tráfico: una directiva de proxy, como proxy_pass, tiene que apuntar a ese nombre. Para cada solicitud reenviada, NGINX elige un servidor del grupo según el método de balanceo configurado."
 		}
 	},
 	{
@@ -97,6 +120,24 @@
 				"Wrong. It confuses balancing with standby: using a server only when the others fail is the role of the backup parameter, and without it every server receives requests."
 			],
 			"concept": "The default method of an upstream group in NGINX is weighted round robin. Each server has weight 1 when the weight parameter is not given, so the requests alternate equally among them. Other methods, such as least_conn, ip_hash, hash and random, apply only when the corresponding directive is written in the block."
+		},
+		"es": {
+			"statement": "En NGINX 1.30 de código abierto, un bloque upstream lista tres servidores, sin parámetros y sin directiva de balanceo. ¿Qué método usa NGINX para distribuir las solicitudes?",
+			"alternatives": [
+				"Elección aleatoria, en la que cada solicitud va a un servidor elegido al azar",
+				"Least connections, que favorece al servidor con menos solicitudes activas",
+				"Weighted round robin, que es rotación simple cuando todos los pesos son 1",
+				"Hash de la dirección del cliente, para que cada cliente conserve el mismo servidor",
+				"El primero disponible, usando siempre el primer servidor de la lista mientras responda"
+			],
+			"explanations": [
+				"Incorrecta. Confunde el valor por defecto de NGINX con el de Caddy, cuyo reverse_proxy elige el upstream al azar; en NGINX la elección aleatoria se aplica solo con la directiva random.",
+				"Incorrecta. Confunde un método opcional con el valor por defecto: least connections se usa solo cuando la directiva least_conn aparece en el bloque.",
+				"Correcta. Sin directiva de método, NGINX usa weighted round robin; como cada servidor tiene weight=1 por defecto, el resultado es una rotación simple entre los tres.",
+				"Incorrecta. Confunde el valor por defecto con ip_hash: la afinidad por dirección del cliente hay que pedirla explícitamente con esa directiva.",
+				"Incorrecta. Confunde balanceo con reserva: usar un servidor solo cuando los otros fallan es el papel del parámetro backup, y sin él todos los servidores reciben solicitudes."
+			],
+			"concept": "El método por defecto de un grupo upstream en NGINX es weighted round robin. Cada servidor tiene peso 1 cuando no se indica el parámetro weight, así que las solicitudes se alternan por igual entre ellos. Otros métodos, como least_conn, ip_hash, hash y random, se aplican solo cuando la directiva correspondiente se escribe en el bloque."
 		}
 	},
 	{
@@ -142,6 +183,24 @@
 				"Correct. proxy_pass makes NGINX send the request to a server of the group api, receive the response and return it to the client."
 			],
 			"concept": "The proxy_pass directive turns a location into a reverse proxy: NGINX opens a connection to the destination, passes the request on and returns the response to the client. When the name used in the URL is that of an upstream group, the destination is chosen among the servers of the group by the balancing method. The client never sees the group name or the back end address."
+		},
+		"es": {
+			"statement": "Una configuración de NGINX declara un grupo de servidores con upstream api { ... }. ¿Qué directiva, escrita dentro de un bloque location, reenvía las solicitudes por HTTP a ese grupo?",
+			"alternatives": [
+				"upstream api;",
+				"listen api;",
+				"server_name api;",
+				"return 302 http://api;",
+				"proxy_pass http://api;"
+			],
+			"explanations": [
+				"Incorrecta. Confunde declarar el grupo con usarlo: upstream es un bloque del contexto http que define los servidores, no una directiva de location que reenvía solicitudes.",
+				"Incorrecta. Confunde entrada con salida: listen define la dirección y el puerto en los que el propio NGINX acepta conexiones, y pertenece al bloque server.",
+				"Incorrecta. Confunde el nombre del grupo con el nombre del sitio: server_name indica para qué nombres de host responde un bloque server.",
+				"Incorrecta. Confunde hacer de proxy con redirigir: return 302 le dice al cliente que busque otra URL por su cuenta, y el nombre api solo existe dentro de la configuración de NGINX.",
+				"Correcta. proxy_pass hace que NGINX envíe la solicitud a un servidor del grupo api, reciba la respuesta y la devuelva al cliente."
+			],
+			"concept": "La directiva proxy_pass convierte una location en un proxy inverso: NGINX abre una conexión con el destino, le pasa la solicitud y devuelve la respuesta al cliente. Cuando el nombre usado en la URL es el de un grupo upstream, el destino se elige entre los servidores del grupo mediante el método de balanceo. El cliente nunca ve el nombre del grupo ni la dirección del back end."
 		}
 	},
 	{
@@ -196,6 +255,29 @@
 				"content": "upstream api {\n    server a:3000 weight=3;\n    server b:3000;\n    server c:3000 backup;\n}"
 			},
 			"concept": "The backup parameter marks a standby server: it stays out of the normal distribution and is used only when the primary servers of the group are unavailable. The weight parameter, in turn, sets the proportion among the servers that take part in the rotation, with 1 as the default. A configuration can therefore have primaries with different weights and a standby that comes in only on failure."
+		},
+		"es": {
+			"statement": "En el grupo upstream de abajo (NGINX 1.30 de código abierto, método por defecto), ¿en qué situación recibe solicitudes el servidor c?",
+			"alternatives": [
+				"En una de cada cinco solicitudes, ya que participa en la rotación con el peso por defecto 1",
+				"Solo mientras a está indisponible, ya que c es la reserva del servidor con el mayor peso",
+				"Siempre que a y b estén ambos ocupados, cada uno con al menos una solicitud en curso",
+				"En todas las solicitudes, como copia: backup refleja en c el tráfico enviado a a y b",
+				"Solo mientras los servidores primarios a y b estén ambos indisponibles"
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "nginx",
+				"content": "upstream api {\n    server a:3000 weight=3;\n    server b:3000;\n    server c:3000 backup;\n}"
+			},
+			"explanations": [
+				"Incorrecta. Ignora el parámetro backup y trata a c como un servidor común de peso 1; la rotación 3:1 ocurre solo entre a y b.",
+				"Incorrecta. Supone que la reserva pertenece a un servidor específico: backup se aplica a todo el grupo, así que mientras b esté disponible sigue atendiendo y c queda fuera.",
+				"Incorrecta. Confunde indisponible con ocupado: NGINX no usa la reserva por carga, sino cuando los servidores primarios se consideran caídos.",
+				"Incorrecta. Confunde una reserva con el espejado de tráfico: backup no duplica ninguna solicitud, y copiar tráfico es el papel de otra directiva (mirror).",
+				"Correcta. Un servidor marcado con backup recibe solicitudes solo cuando los servidores primarios del grupo están indisponibles; en la operación normal, a y b reparten el tráfico en una proporción de 3 a 1."
+			],
+			"concept": "El parámetro backup marca un servidor de reserva: queda fuera de la distribución normal y se usa solo cuando los servidores primarios del grupo están indisponibles. El parámetro weight, por su parte, define la proporción entre los servidores que participan en la rotación, con 1 como valor por defecto. Así, una configuración puede tener primarios con pesos distintos y una reserva que entra solo ante una falla."
 		}
 	},
 	{
@@ -251,6 +333,29 @@
 				"content": "upstream api {\n    server app1:3000 max_fails=2 fail_timeout=15s;\n    server app2:3000;\n}"
 			},
 			"concept": "The passive check of NGINX uses two parameters of the server line. max_fails is the number of unsuccessful attempts that, happening within fail_timeout, make the server be considered unavailable. fail_timeout is at once that counting window and the length of the unavailability; the defaults are max_fails=1 and fail_timeout=10s."
+		},
+		"es": {
+			"statement": "En el grupo upstream de abajo (NGINX 1.30 de código abierto), ¿qué significan los parámetros max_fails=2 y fail_timeout=15s del servidor app1?",
+			"alternatives": [
+				"Cada solicitud enviada a app1 se reintenta hasta 2 veces, y cada intento puede durar hasta 15 s",
+				"Después de 2 sondas periódicas sin respuesta, enviadas cada 15 s, app1 sale del grupo",
+				"Después de 2 intentos fallidos dentro de 15 s, app1 se considera indisponible durante 15 s",
+				"Después de 2 intentos fallidos, app1 se retira para siempre, y 15 s es el timeout de conexión",
+				"app1 recibe como máximo 2 solicitudes simultáneas, y las demás esperan hasta 15 s en una cola"
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "nginx",
+				"content": "upstream api {\n    server app1:3000 max_fails=2 fail_timeout=15s;\n    server app2:3000;\n}"
+			},
+			"explanations": [
+				"Incorrecta. Confunde el conteo de fallas con una política de reintento: proxy_next_upstream decide si una solicitud se pasa a otro servidor, y los timeouts vienen de las directivas proxy_*_timeout.",
+				"Incorrecta. Confunde la verificación pasiva con la activa: NGINX de código abierto no envía sondas periódicas, cuenta las fallas de las solicitudes reales que reenvió.",
+				"Correcta. fail_timeout cumple dos papeles: es la ventana en la que se cuentan las fallas y también el tiempo que el servidor queda fuera después de alcanzar max_fails.",
+				"Incorrecta. Se equivoca en ambos papeles de fail_timeout: la exclusión es temporal, de los mismos 15 s, y el timeout de conexión lo define proxy_connect_timeout.",
+				"Incorrecta. Confunde max_fails con max_conns: limitar las conexiones simultáneas a un servidor es otro parámetro, sin relación con el conteo de fallas."
+			],
+			"concept": "La verificación pasiva de NGINX usa dos parámetros de la línea server. max_fails es el número de intentos sin éxito que, ocurriendo dentro de fail_timeout, hacen que el servidor se considere indisponible. fail_timeout es a la vez esa ventana de conteo y la duración de la indisponibilidad; los valores por defecto son max_fails=1 y fail_timeout=10s."
 		}
 	},
 	{
@@ -301,6 +406,29 @@
 				"Wrong. It confuses the failure counting of the server with request retries: fail_timeout controls how long the server stays out, and NGINX does not store requests to resend later."
 			],
 			"concept": "proxy_next_upstream defines in which cases a request is passed to the next server of the group, and the default covers connection errors and timeouts. Non-idempotent requests (POST, LOCK, PATCH) that were already sent to the back end are excluded, because the server may have executed the operation before failing. Only the non_idempotent parameter allows that retry, and it requires an application that tolerates duplicate executions.",
+			"example": {
+				"kind": "code",
+				"language": "nginx",
+				"content": "location /orders {\n    proxy_pass http://api;\n    proxy_next_upstream error timeout non_idempotent;\n}"
+			}
+		},
+		"es": {
+			"statement": "Un NGINX 1.30 de código abierto reenvía solicitudes a un grupo de dos servidores con el valor por defecto proxy_next_upstream error timeout;. Una solicitud POST se envió completa al primer servidor, que no respondió dentro de proxy_read_timeout. ¿Qué hace NGINX?",
+			"alternatives": [
+				"Envía el mismo POST al segundo servidor, ya que timeout está en la lista de la directiva",
+				"No pasa el POST al otro servidor, y el cliente recibe un error (504)",
+				"Espera al primer servidor sin límite, ya que un POST nunca debe interrumpirse",
+				"Responde 200 con el cuerpo vacío, ya que la solicitud ya había llegado al back end",
+				"Guarda el POST y lo envía de nuevo al primer servidor cuando termine el fail_timeout"
+			],
+			"explanations": [
+				"Incorrecta. Aplica a un POST la regla de las solicitudes idempotentes: aun con timeout en la lista, una solicitud no idempotente que ya fue enviada no se pasa a otro, salvo que non_idempotent esté en la directiva.",
+				"Correcta. El back end puede haber ejecutado el POST antes de trabarse, así que repetirlo podría duplicar el efecto; NGINX termina el intento y responde 504 Gateway Timeout.",
+				"Incorrecta. Ignora proxy_read_timeout: NGINX desiste cuando vence el timeout de lectura, sea cual sea el método de la solicitud.",
+				"Incorrecta. Confunde entrega con éxito: sin una respuesta del back end NGINX no puede afirmar que la operación funcionó, así que devuelve un estado de error.",
+				"Incorrecta. Confunde el conteo de fallas del servidor con los reintentos de solicitudes: fail_timeout controla cuánto tiempo queda fuera el servidor, y NGINX no guarda solicitudes para reenviarlas después."
+			],
+			"concept": "proxy_next_upstream define en qué casos una solicitud se pasa al siguiente servidor del grupo, y el valor por defecto cubre errores de conexión y timeouts. Las solicitudes no idempotentes (POST, LOCK, PATCH) que ya fueron enviadas al back end quedan excluidas, porque el servidor puede haber ejecutado la operación antes de fallar. Solo el parámetro non_idempotent permite ese reintento, y requiere una aplicación que tolere ejecuciones duplicadas.",
 			"example": {
 				"kind": "code",
 				"language": "nginx",
@@ -371,6 +499,34 @@
 				"language": "nginx",
 				"content": "location /api/ { proxy_pass http://backend/; }  # /api/users -> /users\nlocation /api/ { proxy_pass http://backend;  }  # /api/users -> /api/users\nlocation /api  { proxy_pass http://backend/; }  # /api/users -> //users"
 			}
+		},
+		"es": {
+			"statement": "Con la configuración de abajo, en la que backend es un grupo upstream, el cliente solicita /api/users. ¿Qué ruta recibe el back end?",
+			"alternatives": [
+				"/api/users",
+				"//users",
+				"/api/",
+				"/",
+				"/users"
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "nginx",
+				"content": "location /api/ {\n    proxy_pass http://backend/;\n}"
+			},
+			"explanations": [
+				"Incorrecta. Es el resultado de proxy_pass http://backend; sin la barra final: sin parte de URI, la ruta original se pasa sin cambios.",
+				"Incorrecta. Es el resultado de location /api (sin barra final) con el mismo proxy_pass: solo /api se reemplazaría por /, dejando la barra de /users.",
+				"Incorrecta. Supone que el back end recibe solo el prefijo de la location, descartando el resto de la ruta, cuando el prefijo es justamente lo que se reemplaza.",
+				"Incorrecta. Supone que la URI de proxy_pass reemplaza toda la ruta; reemplaza solo la parte que coincidió con la location, y el resto (users) se conserva.",
+				"Correcta. Como proxy_pass tiene una parte de URI (/), la parte que coincidió con la location (/api/) se reemplaza por ella: /api/users se convierte en /users."
+			],
+			"concept": "Cuando proxy_pass se escribe con una parte de URI después del nombre del destino (aunque sea una sola barra), NGINX reemplaza la parte de la solicitud que coincidió con la location por esa URI. Sin parte de URI, la ruta original se pasa tal como llegó. Por eso la presencia o ausencia de una barra final cambia la ruta que recibe la aplicación.",
+			"example": {
+				"kind": "code",
+				"language": "nginx",
+				"content": "location /api/ { proxy_pass http://backend/; }  # /api/users -> /users\nlocation /api/ { proxy_pass http://backend;  }  # /api/users -> /api/users\nlocation /api  { proxy_pass http://backend/; }  # /api/users -> //users"
+			}
 		}
 	},
 	{
@@ -415,6 +571,24 @@
 				"Wrong. It reverses the direction: the virtual server is chosen on arrival, by the Host the client sent, and proxy_set_header changes the outgoing request."
 			],
 			"concept": "When forwarding a request, NGINX rewrites the Host header with $proxy_host, the destination written in proxy_pass. An application that uses Host to choose the site, build links or redirect would then see an internal name, such as that of the upstream group. proxy_set_header Host $host; passes on the name the client really asked for."
+		},
+		"es": {
+			"statement": "Muchas configuraciones de proxy inverso en NGINX incluyen la línea proxy_set_header Host $host;. ¿Por qué es necesaria?",
+			"alternatives": [
+				"Porque, por defecto, NGINX envía como Host el nombre escrito en proxy_pass, no el del cliente",
+				"Porque, por defecto, NGINX quita el encabezado Host, y los back ends HTTP/1.1 entonces rechazan la solicitud",
+				"Porque, por defecto, NGINX envía la dirección IP del cliente como Host, y el back end necesita un nombre",
+				"Porque la directiva hace que NGINX vuelva a resolver el nombre del back end, por DNS, en cada solicitud",
+				"Porque la directiva le indica a NGINX qué servidor virtual (server_name) debe atender la solicitud"
+			],
+			"explanations": [
+				"Correcta. El valor por defecto es proxy_set_header Host $proxy_host;, es decir, el nombre y el puerto de proxy_pass (por ejemplo, el nombre del grupo upstream); $host restaura el nombre que pidió el cliente.",
+				"Incorrecta. Supone que el encabezado desaparece: NGINX siempre envía Host al back end, solo que con el valor de $proxy_host en lugar del nombre original.",
+				"Incorrecta. Confunde Host con los encabezados que llevan la dirección del cliente, como X-Forwarded-For y X-Real-IP; el Host por defecto viene de proxy_pass.",
+				"Incorrecta. Confunde un encabezado de solicitud con la resolución de nombres: proxy_set_header solo cambia lo que se envía al back end y no tiene efecto sobre el DNS.",
+				"Incorrecta. Invierte la dirección: el servidor virtual se elige a la llegada, por el Host que envió el cliente, y proxy_set_header cambia la solicitud de salida."
+			],
+			"concept": "Al reenviar una solicitud, NGINX reescribe el encabezado Host con $proxy_host, el destino escrito en proxy_pass. Una aplicación que usa Host para elegir el sitio, construir enlaces o redirigir vería entonces un nombre interno, como el del grupo upstream. proxy_set_header Host $host; transmite el nombre que el cliente realmente pidió."
 		}
 	},
 	{
@@ -460,6 +634,24 @@
 				"Correct. Both addresses start with 192.168.1, so they produce the same key and, with the group unchanged, the same server."
 			],
 			"concept": "The ip_hash directive chooses the server from the client address, so that the same client always returns to the same back end. For IPv4 the key is only the first three octets, and for IPv6 it is the whole address. A practical consequence: all the clients of one /24 network land on the same server, which can unbalance the load."
+		},
+		"es": {
+			"statement": "Un grupo upstream de NGINX 1.30 de código abierto usa la directiva ip_hash;. Los clientes 192.168.1.10 y 192.168.1.200 se conectan directamente a NGINX, la lista de servidores no cambia y todos están disponibles. ¿Llegan los dos al mismo servidor?",
+			"alternatives": [
+				"No, nunca: el hash usa la dirección completa, y direcciones distintas dan servidores distintos",
+				"Solo por casualidad: el hash usa la dirección completa, así que coinciden en alrededor de 1/N de los casos",
+				"Solo por casualidad: el hash usa solo el último octeto, el que identifica a la máquina",
+				"Sí, siempre: ip_hash envía a todos los clientes al primer servidor que esté disponible",
+				"Sí, siempre: para IPv4 la clave son los tres primeros octetos, iguales en ambos"
+			],
+			"explanations": [
+				"Incorrecta. Comete dos errores: la clave no es la dirección completa y, aunque lo fuera, claves distintas pueden caer en el mismo servidor, ya que hay pocos servidores.",
+				"Incorrecta. Sería el razonamiento correcto si la clave fuera la dirección completa, pero para IPv4 ip_hash descarta el último octeto.",
+				"Incorrecta. Invierte la regla: el último octeto es justamente la parte que se ignora, y la clave se forma con los tres primeros.",
+				"Incorrecta. Confunde ip_hash con una política de primer disponible: los clientes de redes distintas se reparten entre los servidores según el hash.",
+				"Correcta. Ambas direcciones empiezan con 192.168.1, así que producen la misma clave y, con el grupo sin cambios, el mismo servidor."
+			],
+			"concept": "La directiva ip_hash elige el servidor a partir de la dirección del cliente, para que el mismo cliente vuelva siempre al mismo back end. Para IPv4 la clave son solo los tres primeros octetos, y para IPv6 es la dirección completa. Una consecuencia práctica: todos los clientes de una misma red /24 caen en el mismo servidor, lo que puede desequilibrar la carga."
 		}
 	},
 	{
@@ -515,6 +707,29 @@
 				"content": "upstream api {\n    server app1:3000;\n    server app2:3000;\n    server app3:3000;\n}"
 			},
 			"concept": "Open source NGINX has passive checking only: it judges a server by the result of the real requests it forwards. On reaching max_fails within fail_timeout, the server is skipped for fail_timeout, and after that a client request is used to try it again. While the server stays dead this cycle repeats, with proxy_next_upstream passing the failed request on to another server."
+		},
+		"es": {
+			"statement": "Un NGINX 1.30 de código abierto usa el grupo de abajo, con los parámetros por defecto (max_fails=1, fail_timeout=10s) y el valor por defecto proxy_next_upstream error timeout;. El proceso de app2 muere y sus conexiones empiezan a ser rechazadas. ¿Cómo nota NGINX la falla, y qué ocurre 10 s después?",
+			"alternatives": [
+				"Una sonda periódica falla y app2 sale del grupo; vuelve solo cuando una sonda tiene éxito, 10 s después",
+				"Una solicitud real falla y el cliente recibe 502; app2 queda fuera hasta que NGINX se recarga",
+				"Una solicitud real falla y pasa al siguiente servidor; app2 se omite durante 10 s y luego se prueba de nuevo con una solicitud real",
+				"Una solicitud real falla y pasa al siguiente servidor; después de 10 s, una sonda en segundo plano prueba app2 antes de volver a usarlo",
+				"NGINX nota de inmediato que el puerto se cerró, sin ninguna solicitud de por medio, y luego verifica el puerto cada 10 s"
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "nginx",
+				"content": "upstream api {\n    server app1:3000;\n    server app2:3000;\n    server app3:3000;\n}"
+			},
+			"explanations": [
+				"Incorrecta. Supone verificación activa: la directiva health_check, que envía sondas periódicas, existe solo en el NGINX Plus comercial.",
+				"Incorrecta. Se equivoca dos veces: una conexión rechazada es un caso de error, así que la solicitud se pasa al siguiente servidor, y la exclusión dura fail_timeout, sin necesidad de recargar.",
+				"Correcta. La detección es pasiva: una falla de una solicitud real alcanza max_fails=1, app2 queda fuera durante fail_timeout=10s y, pasado ese tiempo, una solicitud real lo prueba de nuevo.",
+				"Incorrecta. Acierta en la detección pero inventa una sonda para el retorno: sin health_check, la solicitud de un cliente es la que vuelve a probar el servidor.",
+				"Incorrecta. Supone que NGINX monitorea el proceso o el puerto del back end: solo conoce el estado de un servidor cuando intenta usarlo."
+			],
+			"concept": "NGINX de código abierto tiene solo verificación pasiva: juzga un servidor por el resultado de las solicitudes reales que reenvía. Al alcanzar max_fails dentro de fail_timeout, el servidor se omite durante fail_timeout, y después se usa una solicitud de un cliente para probarlo de nuevo. Mientras el servidor siga muerto este ciclo se repite, con proxy_next_upstream pasando la solicitud fallida a otro servidor."
 		}
 	}
 ]

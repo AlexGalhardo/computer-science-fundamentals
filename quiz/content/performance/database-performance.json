@@ -41,6 +41,24 @@
 				"Without an index the database really has to examine every row, and parallelism only splits that work among a few processes. The index avoids the work instead of sharing it out."
 			],
 			"concept": "A B-tree index keeps the values of a column sorted in a balanced tree, and searching for a value costs O(log n) instead of O(n). Since each node holds hundreds of keys, the tree is shallow even for huge tables. Without a usable index, the database does a sequential scan: it reads every row and discards the ones that do not match."
+		},
+		"es": {
+			"statement": "En PostgreSQL, la tabla `users` tiene 10 millones de filas y un índice B-tree en la columna `email`. ¿Qué le permite hacer ese índice a la base de datos en una consulta con `WHERE email = 'ana@example.com'`?",
+			"alternatives": [
+				"Mantener toda la tabla en RAM en todo momento, para que la consulta nunca tenga que leer el disco",
+				"Guardar las filas de la tabla físicamente ordenadas por email, dentro del propio índice",
+				"Reutilizar el resultado de la última ejecución, sin consultar la tabla de nuevo",
+				"Bajar unos pocos niveles de un árbol hasta la fila, en vez de leer toda la tabla",
+				"Comparar el valor con cada fila en paralelo, usando un núcleo para cada fila"
+			],
+			"explanations": [
+				"Un índice no es un cache de datos. Lo que queda en memoria depende de los buffers de la base de datos y del sistema operativo, con o sin índice.",
+				"En PostgreSQL el índice es una estructura separada, con las claves ordenadas y punteros a las filas; la tabla (heap) queda sin ordenar. El error es imaginar un índice agrupado (clustered).",
+				"Eso describiría un cache de resultados, que PostgreSQL no tiene. El índice se consulta en cada ejecución.",
+				"Un B-tree es un árbol balanceado y ancho: con 10 millones de claves, tres o cuatro niveles bastan para llegar a la hoja, que apunta a la fila. Sin índice, la base de datos leería los 10 millones de filas (sequential scan).",
+				"Sin índice la base de datos realmente tiene que examinar cada fila, y el paralelismo solo reparte ese trabajo entre unos pocos procesos. El índice evita el trabajo en vez de repartirlo."
+			],
+			"concept": "Un índice B-tree mantiene los valores de una columna ordenados en un árbol balanceado, y buscar un valor cuesta O(log n) en vez de O(n). Como cada nodo guarda cientos de claves, el árbol es poco profundo incluso para tablas enormes. Sin un índice utilizable, la base de datos hace un sequential scan: lee cada fila y descarta las que no coinciden."
 		}
 	},
 	{
@@ -86,6 +104,24 @@
 				"Transactions work the same way on pooled connections. What is saved is the connection set-up, not some feature of the database."
 			],
 			"concept": "Establishing a database connection costs several network round trips and, in PostgreSQL, the creation of a process on the server. That cost can be larger than the query itself. The pool opens a limited number of connections, keeps them all open and lends one to each request, which returns it when done."
+		},
+		"es": {
+			"statement": "¿Por qué una API mantiene un pool de conexiones abiertas a PostgreSQL, en vez de abrir y cerrar una conexión en cada solicitud?",
+			"alternatives": [
+				"Porque una conexión del pool ejecuta varias consultas al mismo tiempo, en paralelo",
+				"Porque abrir una conexión es costoso: handshake, autenticación y un nuevo proceso en el servidor",
+				"Porque PostgreSQL acepta una sola conexión por aplicación, que tiene que compartirse",
+				"Porque el pool guarda los resultados de las consultas y responde sin consultar la base de datos",
+				"Porque las conexiones del pool prescinden de transacciones, y cada consulta se vuelve más liviana"
+			],
+			"explanations": [
+				"Una conexión de PostgreSQL ejecuta una consulta a la vez. El paralelismo de un pool viene de tener varias conexiones, no de que una conexión haga varias cosas.",
+				"Cada conexión nueva necesita el handshake TCP (y TLS, si se usa), la autenticación y la creación de un proceso dedicado en el servidor PostgreSQL. Reutilizar conexiones listas quita ese costo de cada solicitud.",
+				"PostgreSQL acepta muchas conexiones de la misma aplicación, hasta el límite `max_connections`. El pool existe para reutilizarlas, no por un límite de una conexión.",
+				"Un pool de conexiones no es un cache de resultados. Cada consulta sigue yendo a la base de datos; solo se evita el costo de conectarse.",
+				"Las transacciones funcionan igual en las conexiones del pool. Lo que se ahorra es el establecimiento de la conexión, no alguna funcionalidad de la base de datos."
+			],
+			"concept": "Establecer una conexión con la base de datos cuesta varios viajes de ida y vuelta por la red y, en PostgreSQL, la creación de un proceso en el servidor. Ese costo puede ser mayor que la propia consulta. El pool abre un número limitado de conexiones, las mantiene todas abiertas y le presta una a cada solicitud, que la devuelve al terminar."
 		}
 	},
 	{
@@ -131,6 +167,24 @@
 				"The request for a connection stays queued until one is returned. The waiting time adds to the response time: under load, latency grows even while the database answers quickly."
 			],
 			"concept": "A pool has a maximum size. When every connection is lent out, new requests wait in a queue, and that waiting time is part of the latency seen by the client. In a load test this shows as a knee: up to a point latency is stable, and beyond it latency grows fast while throughput stops rising."
+		},
+		"es": {
+			"statement": "Una API usa un pool limitado a 10 conexiones (por ejemplo, `pg.Pool` de node-postgres con su configuración por defecto). Las 10 están ocupadas y llega una solicitud más que necesita la base de datos. ¿Qué le pasa?",
+			"alternatives": [
+				"El pool abre una 11.ª conexión, y sigue abriendo más mientras haya demanda",
+				"La base de datos ejecuta la consulta en una conexión ocupada, junto con la que ya está corriendo",
+				"La solicitud se responde con el resultado guardado de una consulta anterior",
+				"La solicitud se salta la consulta y devuelve una respuesta vacía, sin registrar error",
+				"La solicitud espera en una cola por una conexión libre, y su latencia crece"
+			],
+			"explanations": [
+				"El límite del pool existe justamente para impedir eso: sin él, un pico de carga abriría conexiones hasta agotar la base de datos.",
+				"Una conexión de PostgreSQL atiende una consulta a la vez. Solo puede prestarse de nuevo después de devolverse al pool.",
+				"El pool administra conexiones, no resultados. No interviene ningún cache de respuestas.",
+				"El pool no descarta trabajo en silencio. Como mucho, si hay un timeout de espera configurado, la solicitud falla con un error explícito.",
+				"El pedido de conexión queda en cola hasta que se devuelva una. El tiempo de espera se suma al tiempo de respuesta: bajo carga, la latencia crece aunque la base de datos responda rápido."
+			],
+			"concept": "Un pool tiene un tamaño máximo. Cuando todas las conexiones están prestadas, las nuevas solicitudes esperan en una cola, y ese tiempo de espera forma parte de la latencia que ve el cliente. En una prueba de carga esto aparece como un codo: hasta cierto punto la latencia es estable, y más allá crece rápido mientras el throughput deja de subir."
 		}
 	},
 	{
@@ -175,6 +229,24 @@
 				"The `*` is expanded into the list of columns; the number of rows in the result does not change."
 			],
 			"concept": "`SELECT *` brings every column, even those the application throws away. The cost shows up in disk reads, memory, network and data conversion, and it grows with wide columns such as texts and JSON. Listing only the columns needed also keeps the query stable when someone adds a new column to the table."
+		},
+		"es": {
+			"statement": "Un endpoint de listado necesita solo el `id` y el `name` de cada producto, pero ejecuta `SELECT * FROM products`, y la tabla también tiene una columna `description` con textos largos. ¿Cuál es el costo principal de esa elección?",
+			"alternatives": [
+				"La base de datos lee y envía por la red columnas que nadie va a usar",
+				"`SELECT *` desactiva los índices de la tabla mientras corre la consulta",
+				"`SELECT *` bloquea toda la tabla contra escrituras hasta que termine la consulta",
+				"`SELECT *` obliga a la base de datos a ordenar las filas por la clave primaria",
+				"`SELECT *` devuelve cada fila una vez por cada columna de la tabla"
+			],
+			"explanations": [
+				"Cada columna se lee, se serializa, se transmite y luego la aplicación la convierte, textos largos incluidos. Pedir solo `id` y `name` reduce memoria, red y tiempo, y puede permitir que un índice responda la consulta por sí solo.",
+				"La lista de columnas no desactiva índices: se siguen usando para filtrar y ordenar. Lo que se pierde es la posibilidad de responder solo con el índice, sin visitar la tabla.",
+				"En PostgreSQL una lectura común no bloquea escrituras, con o sin `*`. La lista de columnas no tiene nada que ver con el bloqueo.",
+				"Sin `ORDER BY`, la base de datos no garantiza ni realiza ningún ordenamiento, sea cual sea la lista de columnas.",
+				"El `*` se expande a la lista de columnas; el número de filas del resultado no cambia."
+			],
+			"concept": "`SELECT *` trae todas las columnas, incluso las que la aplicación descarta. El costo aparece en lecturas de disco, memoria, red y conversión de datos, y crece con columnas anchas como textos y JSON. Listar solo las columnas necesarias también mantiene estable la consulta cuando alguien agrega una columna nueva a la tabla."
 		}
 	},
 	{
@@ -219,6 +291,24 @@
 				"In PostgreSQL the row goes to any page with free space, with no help from an index. Each index adds work to the `INSERT`, never removes it."
 			],
 			"concept": "An index speeds up reads and makes writes more expensive. Every `INSERT`, and every `UPDATE` or `DELETE` touching indexed columns, has to keep each index up to date, and each index takes disk and memory space. So indexes are created for the queries that really exist, and the ones nobody uses are removed."
+		},
+		"es": {
+			"statement": "Una tabla recibe miles de sentencias `INSERT` por segundo. ¿Cuál es el costo de crear cinco índices más en ella?",
+			"alternatives": [
+				"Toda consulta `SELECT` se vuelve más lenta, porque ahora lee los cinco índices nuevos",
+				"Ningún costo, ya que un índice se actualiza solo cuando alguna consulta lo usa",
+				"Cada `INSERT` también debe actualizar todos los índices, así que escribir se vuelve más lento",
+				"La tabla pasa a aceptar como máximo el número de filas que cabe en los índices",
+				"Cada `INSERT` se vuelve más rápido, porque los índices indican dónde escribir la fila"
+			],
+			"explanations": [
+				"El planificador elige los índices útiles para cada consulta e ignora los demás. Los índices extra casi no afectan las lecturas; su costo está en las escrituras y el espacio.",
+				"Un índice se mantiene en cada escritura, para que siempre esté correcto cuando se consulte. Un índice que nunca se usa cuesta lo mismo en cada `INSERT`.",
+				"Cada fila nueva produce una entrada en cada índice de la tabla, con sus propias lecturas y escrituras de páginas. Cinco índices más significan cinco estructuras más que actualizar por `INSERT`, además del espacio en disco.",
+				"Los índices no limitan el número de filas; crecen junto con la tabla.",
+				"En PostgreSQL la fila va a cualquier página con espacio libre, sin ayuda de un índice. Cada índice agrega trabajo al `INSERT`, nunca lo quita."
+			],
+			"concept": "Un índice acelera las lecturas y encarece las escrituras. Cada `INSERT`, y cada `UPDATE` o `DELETE` que toca columnas indexadas, tiene que mantener al día cada índice, y cada índice ocupa espacio en disco y en memoria. Por eso los índices se crean para las consultas que realmente existen, y los que nadie usa se eliminan."
 		}
 	},
 	{
@@ -273,6 +363,29 @@
 				"content": "EXPLAIN SELECT * FROM orders WHERE customer_id = 42;\n\n                       QUERY PLAN\n---------------------------------------------------------\n Seq Scan on orders  (cost=0.00..23864.00 rows=95 width=64)\n   Filter: (customer_id = 42)"
 			},
 			"concept": "`EXPLAIN` shows the plan chosen by the planner without running the query. Each node carries the estimated cost (start-up and total, in abstract units), the estimated number of rows returned and the average width in bytes. A `Seq Scan` with a `Filter` returning few rows from a large table is the classic sign of a missing index."
+		},
+		"es": {
+			"statement": "La tabla `orders` tiene 1,000,000 de filas. ¿Qué muestra este plan de PostgreSQL?",
+			"alternatives": [
+				"Se usó un índice en customer_id, y se leyeron 95 filas a través de él",
+				"La tabla tiene solo 95 filas, así que no hay nada que optimizar en esta consulta",
+				"La consulta tardó 23,864 ms, que es el total mostrado en el campo cost",
+				"Se lee y filtra cada fila; un índice en customer_id puede ayudar",
+				"La consulta se ejecutó y devolvió exactamente 95 filas de 64 columnas"
+			],
+			"explanations": [
+				"`Seq Scan` es una lectura secuencial de toda la tabla. Con un índice, el plan mostraría `Index Scan` (o `Bitmap Index Scan`) e `Index Cond` en lugar de `Filter`.",
+				"`rows=95` es la estimación de filas que devuelve el nodo después del filtro, no el tamaño de la tabla, que según el enunciado es de 1 millón de filas.",
+				"`cost` es una unidad abstracta del planificador (basada en páginas leídas y filas procesadas), no milisegundos. El tiempo real aparece solo con `EXPLAIN ANALYZE`.",
+				"El plan lee el millón de filas y aplica `customer_id = 42` a cada una, quedándose con unas 95. Con un filtro tan selectivo, un índice en `customer_id` permitiría ir directo a esas filas.",
+				"`EXPLAIN` sin `ANALYZE` no ejecuta la consulta: los números son estimaciones. Y `width=64` es el tamaño promedio estimado de la fila en bytes, no el número de columnas."
+			],
+			"concept": "`EXPLAIN` muestra el plan elegido por el planificador sin ejecutar la consulta. Cada nodo lleva el costo estimado (de arranque y total, en unidades abstractas), el número estimado de filas devueltas y el ancho promedio en bytes. Un `Seq Scan` con un `Filter` que devuelve pocas filas de una tabla grande es la señal clásica de un índice faltante.",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "EXPLAIN SELECT * FROM orders WHERE customer_id = 42;\n\n                       QUERY PLAN\n---------------------------------------------------------\n Seq Scan on orders  (cost=0.00..23864.00 rows=95 width=64)\n   Filter: (customer_id = 42)"
+			}
 		}
 	},
 	{
@@ -317,6 +430,24 @@
 				"The three columns are used in index order: equality on the first two and a range on the last. It is the best case for this index."
 			],
 			"concept": "A composite index sorts its entries by the first column, then by the second within each value of the first, and so on, like a phone book sorted by surname and then by first name. It serves well the filters that fix a prefix of the columns, starting from the left. Without the first column, the wanted rows are spread across the index; recent PostgreSQL versions soften this in some cases by skipping between the distinct values of the first column, but at a higher cost than a direct search."
+		},
+		"es": {
+			"statement": "Una tabla de PostgreSQL tiene el índice B-tree compuesto `CREATE INDEX idx_orders ON orders (tenant_id, status, created_at)`. Por la regla del prefijo más a la izquierda, ¿cuál de estos filtros es el único que NO permite bajar por el árbol directamente a un tramo contiguo del índice, y por lo tanto es el peor atendido por él?",
+			"alternatives": [
+				"WHERE tenant_id = 7",
+				"WHERE status = 'paid' AND created_at > '2026-01-01'",
+				"WHERE tenant_id = 7 AND status = 'paid'",
+				"WHERE status = 'paid' AND tenant_id = 7",
+				"WHERE tenant_id = 7 AND status = 'paid' AND created_at > '2026-01-01'"
+			],
+			"explanations": [
+				"`tenant_id` es la primera columna del índice. Todas las entradas con `tenant_id = 7` están juntas, y el árbol lleva directo a ellas.",
+				"Falta la primera columna, `tenant_id`. Las entradas con `status = 'paid'` están repartidas entre todos los tenants, así que no forman un tramo contiguo: la base de datos tendría que recorrer todo el índice, saltar entre grupos de tenants o leer la tabla.",
+				"`tenant_id` y `status` forman un prefijo del índice (sus dos primeras columnas). Las entradas que coinciden con ambos valores están en un solo tramo contiguo.",
+				"El orden de las condiciones en el `WHERE` no importa; el planificador las reorganiza. Lo que cuenta es qué columnas se filtran, y aquí son las dos primeras del índice.",
+				"Las tres columnas se usan en el orden del índice: igualdad en las dos primeras y un rango en la última. Es el mejor caso para este índice."
+			],
+			"concept": "Un índice compuesto ordena sus entradas por la primera columna, luego por la segunda dentro de cada valor de la primera, y así sucesivamente, como una guía telefónica ordenada por apellido y luego por nombre. Atiende bien los filtros que fijan un prefijo de las columnas, empezando por la izquierda. Sin la primera columna, las filas buscadas quedan repartidas por el índice; las versiones recientes de PostgreSQL lo suavizan en algunos casos saltando entre los valores distintos de la primera columna, pero con un costo mayor que una búsqueda directa."
 		}
 	},
 	{
@@ -381,6 +512,34 @@
 				"language": "sql",
 				"content": "-- 3 queries in total, for any number of posts\nSELECT id, title, author_id FROM posts ORDER BY id LIMIT 20;\nSELECT id, name FROM users WHERE id IN (/* author_id of the 20 posts */);\nSELECT post_id, body FROM comments WHERE post_id IN (/* id of the 20 posts */);"
 			}
+		},
+		"es": {
+			"statement": "La primera consulta de este fragmento devuelve exactamente 20 posts, y no hay cache ni agrupamiento (batching) de consultas. ¿Cuántas consultas a la base de datos ejecuta el fragmento en total?",
+			"alternatives": [
+				"3",
+				"21",
+				"22",
+				"40",
+				"41"
+			],
+			"explanations": [
+				"3 es el número de consultas escritas en el código. Las dos dentro del bucle se ejecutan una vez por cada post.",
+				"21 cuenta una consulta por post dentro del bucle (1 + 20), pero el bucle hace dos: una para el autor y otra para los comentarios.",
+				"22 supone que los comentarios se buscan una sola vez para todos los posts (1 + 20 + 1). La consulta de comentarios también está dentro del bucle.",
+				"40 cuenta las consultas del bucle (20 × 2) y olvida la consulta inicial que trajo la lista de posts.",
+				"1 consulta para la lista, más 2 consultas en cada una de las 20 iteraciones: 1 + 20 × 2 = 41. Comprobando por tabla: 1 en posts, 20 en users y 20 en comments, 41 en total."
+			],
+			"concept": "El problema N+1 aparece cuando el código busca una lista con 1 consulta y luego hace más consultas por cada uno de los N elementos. Cada consulta es rápida, pero cada una paga un viaje de ida y vuelta a la base de datos, y el total crece con el tamaño de la lista. La solución es buscar los datos relacionados en un número fijo de consultas: un `JOIN`, un filtro `IN` con todos los ids, o la carga anticipada (eager loading) del ORM.",
+			"example": {
+				"kind": "code",
+				"language": "sql",
+				"content": "-- 3 consultas en total, para cualquier número de posts\nSELECT id, title, author_id FROM posts ORDER BY id LIMIT 20;\nSELECT id, name FROM users WHERE id IN (/* author_id de los 20 posts */);\nSELECT post_id, body FROM comments WHERE post_id IN (/* id de los 20 posts */);"
+			},
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "const posts = await db.query(\n  \"SELECT id, title, author_id FROM posts ORDER BY id LIMIT 20\",\n);\n\nfor (const post of posts) {\n  post.author = await db.query(\n    \"SELECT name FROM users WHERE id = $1\",\n    [post.author_id],\n  );\n  post.comments = await db.query(\n    \"SELECT body FROM comments WHERE post_id = $1\",\n    [post.id],\n  );\n}"
+			}
 		}
 	},
 	{
@@ -425,6 +584,24 @@
 				"Indexes work on columns with repeated values. The same `status` column could be well served by the index in a filter on a rare value."
 			],
 			"concept": "Selectivity is the fraction of rows that a filter lets through. An index pays off when that fraction is small, because each row found may cost a random read in the table. On a low-cardinality column, a very frequent value returns so many rows that the sequential read wins, and the PostgreSQL planner decides this from the statistics of the table."
+		},
+		"es": {
+			"statement": "En PostgreSQL, la tabla `orders` tiene 10 millones de filas y un índice B-tree en la columna `status`, que tiene solo tres valores; 'delivered' aparece en el 90% de las filas. Para `SELECT * FROM orders WHERE status = 'delivered'`, ¿qué tiende a elegir el planificador, y por qué?",
+			"alternatives": [
+				"Seq Scan, ya que buscar el 90% de las filas a través del índice cuesta más que leer la tabla en orden",
+				"Index Scan, ya que un índice existente en la columna filtrada es siempre el que usa el planificador, sea cual sea su costo",
+				"Index Scan, ya que un índice con solo tres valores distintos es pequeño y por lo tanto muy selectivo",
+				"Seq Scan, ya que un índice B-tree no es capaz de indexar columnas de texto como `status`",
+				"Seq Scan, ya que un índice solo puede usarse cuando la columna tiene valores únicos"
+			],
+			"explanations": [
+				"Usar el índice para 9 millones de filas significaría visitar casi todas las páginas de la tabla, en orden aleatorio, además de leer el propio índice. Leer la tabla secuencialmente una vez es más barato, y el planificador lo sabe por las estadísticas.",
+				"El planificador compara el costo estimado de los planes posibles. Un índice existente es solo una opción, descartada cuando el filtro devuelve una gran parte de la tabla.",
+				"Pocos valores distintos significan baja selectividad, no alta: cada valor coincide con muchas filas. Y el tamaño del índice depende del número de filas, no del número de valores distintos.",
+				"Un B-tree indexa texto normalmente, ya que los textos se pueden ordenar. La razón del Seq Scan es el volumen de filas devueltas.",
+				"Los índices funcionan en columnas con valores repetidos. La misma columna `status` podría estar bien atendida por el índice en un filtro sobre un valor raro."
+			],
+			"concept": "La selectividad es la fracción de filas que deja pasar un filtro. Un índice compensa cuando esa fracción es pequeña, porque cada fila encontrada puede costar una lectura aleatoria en la tabla. En una columna de baja cardinalidad, un valor muy frecuente devuelve tantas filas que la lectura secuencial gana, y el planificador de PostgreSQL lo decide a partir de las estadísticas de la tabla."
 		}
 	},
 	{
@@ -470,6 +647,24 @@
 				"2,000 comes from a unit conversion slip: treating 50 ms as 0.005 s (10 / 0.005) instead of 0.05 s."
 			],
 			"concept": "The capacity of a pool is the number of connections divided by the time each request holds a connection. While the arrival rate stays below that value, there is always a free connection. Above it, requests pile up in the pool queue and latency rises without bound, even though each query still takes the same time in the database. Shortening the time a connection is held raises capacity as much as enlarging the pool."
+		},
+		"es": {
+			"statement": "Una API tiene un pool de 10 conexiones a la base de datos. Cada solicitud ocupa una conexión durante 50 ms, mientras corre su única consulta, y no hace nada más que sea lento. ¿Cuál es la mayor tasa de solicitudes que el pool sostiene antes de que las solicitudes empiecen a esperar una conexión?",
+			"alternatives": [
+				"10 solicitudes por segundo",
+				"20 solicitudes por segundo",
+				"200 solicitudes por segundo",
+				"500 solicitudes por segundo",
+				"2,000 solicitudes por segundo"
+			],
+			"explanations": [
+				"10 es el número de solicitudes que usan la base de datos al mismo tiempo, no por segundo. Cada conexión se reutiliza muchas veces dentro de un segundo.",
+				"20 es la capacidad de una sola conexión (1,000 ms / 50 ms). Todavía falta multiplicarla por las 10 conexiones del pool.",
+				"Una conexión atiende 1,000 / 50 = 20 solicitudes por segundo, y 10 conexiones atienden 10 × 20 = 200. Por otro camino: 10 conexiones / 0.05 s por solicitud = 200 por segundo. Por encima de eso, la cola del pool crece.",
+				"500 es el producto 10 × 50, que mezcla conexiones con milisegundos y no tiene sentido como tasa.",
+				"2,000 viene de un desliz en la conversión de unidades: tratar 50 ms como 0.005 s (10 / 0.005) en vez de 0.05 s."
+			],
+			"concept": "La capacidad de un pool es el número de conexiones dividido entre el tiempo que cada solicitud ocupa una conexión. Mientras la tasa de llegada se mantenga por debajo de ese valor, siempre hay una conexión libre. Por encima, las solicitudes se acumulan en la cola del pool y la latencia sube sin límite, aunque cada consulta siga tardando lo mismo en la base de datos. Acortar el tiempo que se ocupa una conexión aumenta la capacidad tanto como agrandar el pool."
 		}
 	},
 	{
@@ -515,6 +710,24 @@
 				"180 is the total available to the API, not the value per instance. With 8 pools of 180, a load spike would try to open 1,440 connections."
 			],
 			"concept": "The `max_connections` limit applies to the whole server, and each instance of the application has its own pool. What has to fit under the limit is the sum: pool size × number of instances, plus a reserve for other clients. Scaling the application horizontally without redoing this sum leads to refused connections, and a pool that is too large also hurts: too many active connections compete for the CPU, memory and disk of the database."
+		},
+		"es": {
+			"statement": "Un servidor PostgreSQL tiene `max_connections = 200`, y el equipo quiere 20 de ellas siempre libres para migraciones, monitoreo y administración. La API corre como 8 instancias, cada una con su propio pool, todos con el mismo tamaño máximo. ¿Cuál es el mayor tamaño de pool por instancia que nunca excede las conexiones disponibles para la API?",
+			"alternatives": [
+				"5",
+				"22",
+				"23",
+				"25",
+				"180"
+			],
+			"explanations": [
+				"5 viene de dividir 200 entre 8 y luego quitar toda la reserva a cada instancia (25 − 20). La reserva se resta una vez, del total, no de cada pool.",
+				"Quedan 200 − 20 = 180 conexiones para la API, y 180 / 8 = 22.5; como el tamaño de un pool es entero, se redondea hacia abajo: 22. Comprobando por multiplicación: 8 × 22 = 176 ≤ 180, y 8 × 23 = 184 > 180.",
+				"23 es 22.5 redondeado hacia arriba. Con 8 instancias llenas serían 184 conexiones, 4 más que las 180 disponibles.",
+				"25 es 200 / 8, sin restar las 20 conexiones reservadas: 8 instancias llenas ocuparían las 200.",
+				"180 es el total disponible para la API, no el valor por instancia. Con 8 pools de 180, un pico de carga intentaría abrir 1,440 conexiones."
+			],
+			"concept": "El límite `max_connections` se aplica a todo el servidor, y cada instancia de la aplicación tiene su propio pool. Lo que tiene que caber bajo el límite es la suma: tamaño del pool × número de instancias, más una reserva para otros clientes. Escalar la aplicación horizontalmente sin rehacer esta suma lleva a conexiones rechazadas, y un pool demasiado grande también perjudica: demasiadas conexiones activas compiten por la CPU, la memoria y el disco de la base de datos."
 		}
 	},
 	{
@@ -569,6 +782,29 @@
 				"content": "-- P\nSELECT id, payload FROM events\nORDER BY id\nLIMIT 20 OFFSET 100000;\n\n-- Q (100000 = id of the last row of the previous page)\nSELECT id, payload FROM events\nWHERE id > 100000\nORDER BY id\nLIMIT 20;"
 			},
 			"concept": "With `OFFSET`, the database has to generate every row before the page and throw it away, so the cost grows with the depth of the page. Keyset pagination keeps the last value seen and asks for the rows after it: the index leads straight to that point, and the cost stays constant on any page. In exchange, keyset pagination only moves to the next or previous page, and it needs an ordering on indexed columns with no ties."
+		},
+		"es": {
+			"statement": "La tabla `events` de PostgreSQL tiene millones de filas y un índice B-tree en `id`, sin huecos relevantes. La misma página profunda se busca de las dos formas de abajo, ambas usando el índice. ¿Aproximadamente cuántas entradas del índice tiene que recorrer cada consulta, en el orden P y luego Q?",
+			"alternatives": [
+				"Cerca de 20 en P y cerca de 20 en Q",
+				"Cerca de 5,000 en P y cerca de 20 en Q",
+				"Cerca de 20 en P y cerca de 100,020 en Q",
+				"Cerca de 100,020 en P y cerca de 20 en Q",
+				"Cerca de 100,020 en P y cerca de 100,020 en Q"
+			],
+			"explanations": [
+				"El error es pensar que `OFFSET` salta directo a la posición pedida. La base de datos no sabe dónde está la fila número 100,001 sin contar las anteriores, una por una.",
+				"5,000 es el número de páginas saltadas (100,000 / 20). La base de datos no salta por páginas: produce y descarta cada una de las 100,000 filas.",
+				"Esto está invertido: la consulta que recorre y descarta las filas anteriores es la que tiene `OFFSET` (P). La consulta Q usa el valor de `id` para bajar por el árbol hasta el punto de partida.",
+				"P recorre el índice desde el principio: 100,000 entradas descartadas más 20 devueltas, 100,020 en total (la última fila devuelta es la de la posición 100,020). Q baja por el árbol hasta el primer `id` mayor que 100000 y lee solo las 20 entradas siguientes.",
+				"El error es pensar que `WHERE id > 100000` también empieza desde el principio del índice. Una comparación sobre la columna indexada es justamente lo que un B-tree localiza en pocos niveles."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "-- P\nSELECT id, payload FROM events\nORDER BY id\nLIMIT 20 OFFSET 100000;\n\n-- Q (100000 = id de la última fila de la página anterior)\nSELECT id, payload FROM events\nWHERE id > 100000\nORDER BY id\nLIMIT 20;"
+			},
+			"concept": "Con `OFFSET`, la base de datos tiene que generar cada fila anterior a la página y descartarla, así que el costo crece con la profundidad de la página. La paginación por clave (keyset) guarda el último valor visto y pide las filas posteriores a él: el índice lleva directo a ese punto, y el costo se mantiene constante en cualquier página. A cambio, la paginación por clave solo avanza a la página siguiente o anterior, y necesita un ordenamiento sobre columnas indexadas sin empates."
 		}
 	}
 ]

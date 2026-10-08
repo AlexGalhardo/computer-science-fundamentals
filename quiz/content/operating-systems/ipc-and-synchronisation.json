@@ -41,6 +41,24 @@
 				"The name is misleading: it is not a speed contest with a terminated loser."
 			],
 			"concept": "When processes or threads share data and at least one of them writes, the interleaving of instructions can leave the data in a state no sequential execution would produce. Because the error depends on the timing of context switches, it shows up rarely and is hard to reproduce. The defence is to guarantee mutual exclusion in critical regions."
+		},
+		"es": {
+			"statement": "¿Qué caracteriza a una condición de carrera?",
+			"alternatives": [
+				"El resultado depende del orden exacto en que los procesos o threads acceden a datos compartidos",
+				"Dos procesos quedan bloqueados para siempre, cada uno esperando un recurso del otro",
+				"Un proceso de baja prioridad nunca recibe la CPU porque otros siempre pasan antes",
+				"Un proceso gasta tiempo de CPU comprobando repetidamente si puede continuar",
+				"Dos procesos compiten por terminar primero, y el más lento es terminado"
+			],
+			"explanations": [
+				"Dos o más flujos leen y escriben los mismos datos, y el valor final cambia según el momento en que el planificador pasa de uno a otro.",
+				"Eso es un deadlock. En una condición de carrera los procesos siguen ejecutando, pero producen un resultado incorrecto.",
+				"Eso es inanición, un problema de planificación, no de acceso a datos compartidos.",
+				"Eso es espera activa, una forma de esperar, no un error en el resultado.",
+				"El nombre engaña: no es una competencia de velocidad con un perdedor terminado."
+			],
+			"concept": "Cuando procesos o threads comparten datos y al menos uno de ellos escribe, el entrelazado de instrucciones puede dejar los datos en un estado que ninguna ejecución secuencial produciría. Como el error depende del momento de los cambios de contexto, aparece rara vez y es difícil de reproducir. La defensa es garantizar la exclusión mutua en las regiones críticas."
 		}
 	},
 	{
@@ -85,6 +103,24 @@
 				"That is the bounded waiting condition, which rules out starvation."
 			],
 			"concept": "A correct solution to the critical region problem meets four conditions: mutual exclusion, no assumptions about speeds or the number of CPUs, no blocking caused by a process that is outside its critical region, and no waiting forever. The order in which processes enter is not part of the requirements."
+		},
+		"es": {
+			"statement": "¿Cuál de las afirmaciones de abajo NO es una de las condiciones exigidas a una buena solución del problema de la región crítica?",
+			"alternatives": [
+				"Dos procesos no pueden estar dentro de sus regiones críticas al mismo tiempo",
+				"No se puede suponer nada sobre la velocidad de los procesos ni sobre el número de CPU",
+				"Un proceso fuera de su región crítica no puede impedir que otro entre",
+				"Los procesos deben entrar a la región crítica en un orden fijo, uno a la vez y en rotación",
+				"Ningún proceso puede tener que esperar para siempre para entrar a su región crítica"
+			],
+			"explanations": [
+				"Esa es la exclusión mutua, la primera y más básica de las condiciones.",
+				"La solución debe funcionar con cualquier entrelazado. Depender de los tiempos es de donde vienen las carreras.",
+				"Esa es la condición de progreso: quien no está usando el recurso no puede bloquear a los demás.",
+				"La rotación obligatoria no se exige y hasta es un defecto: un proceso que no quiere entrar impediría que el otro entre dos veces seguidas.",
+				"Esa es la condición de espera acotada, que descarta la inanición."
+			],
+			"concept": "Una solución correcta al problema de la región crítica cumple cuatro condiciones: exclusión mutua, ninguna suposición sobre velocidades o número de CPU, ningún bloqueo causado por un proceso que está fuera de su región crítica y ninguna espera eterna. El orden en que los procesos entran no forma parte de los requisitos."
 		}
 	},
 	{
@@ -137,6 +173,28 @@
 				"kind": "diagram",
 				"content": "Thread A              Thread B              count\nreg = count  (0)                            0\n                      reg = count  (0)      0\nreg = reg + 1                               0\ncount = reg                                 1\n                      reg = reg + 1         1\n                      count = reg           1   <- one increment lost"
 			}
+		},
+		"es": {
+			"statement": "La variable compartida count vale 0. Dos threads ejecutan una vez cada uno, sin ninguna sincronización, la instrucción count = count + 1. ¿Qué valores finales de count son posibles?",
+			"alternatives": [
+				"Solo 2",
+				"1 o 2",
+				"Solo 1",
+				"0, 1 o 2",
+				"2 o 3"
+			],
+			"explanations": [
+				"Eso valdría si el incremento fuera atómico. Se divide en leer, sumar y guardar, y entre esos pasos puede ocurrir un cambio de thread.",
+				"Si un thread termina antes de que el otro empiece, el resultado es 2. Si ambos leen 0 antes de que alguno escriba, ambos guardan 1 y se pierde un incremento.",
+				"El incremento perdido es posible, pero no obligatorio. Sin entrelazado entre los pasos el resultado es 2.",
+				"Cada thread guarda al menos el valor que leyó más uno, así que el resultado nunca vuelve a 0.",
+				"No hay forma de llegar a 3: solo hay dos incrementos, y una carrera puede perder uno de ellos, pero nunca crear uno extra."
+			],
+			"concept": "Una instrucción como count = count + 1 se convierte en tres pasos de máquina: cargar el valor en un registro, sumar y guardarlo de vuelta. Si otro thread se ejecuta entre la carga y el guardado, trabaja con un valor ya desactualizado, y una de las actualizaciones se sobrescribe. Este es el problema de la actualización perdida.",
+			"example": {
+				"kind": "diagram",
+				"content": "Thread A              Thread B              count\nreg = count  (0)                            0\n                      reg = count  (0)      0\nreg = reg + 1                               0\ncount = reg                                 1\n                      reg = reg + 1         1\n                      count = reg           1   <- un incremento perdido"
+			}
 		}
 	},
 	{
@@ -186,6 +244,29 @@
 				"After leaving, a process hands the turn to the other. If the other lingers in its non-critical part, the first cannot enter again although the region is free."
 			],
 			"concept": "Strict alternation forces the processes to take turns. It guarantees mutual exclusion but violates the condition that a process outside the critical region may not block another. When one process is much slower than the other, the faster one waits for no reason. Peterson's solution fixes this with an interest flag per process.",
+			"example": {
+				"kind": "code",
+				"language": "c",
+				"content": "/* process 0 */                 /* process 1 */\nwhile (TRUE) {                  while (TRUE) {\n\twhile (turn != 0) ;             \twhile (turn != 1) ;\n\tcritical_region();              \tcritical_region();\n\tturn = 1;                       \tturn = 0;\n\tnoncritical_region();           \tnoncritical_region();\n}                               }"
+			}
+		},
+		"es": {
+			"statement": "En la solución de alternancia estricta, una variable turn indica de quién es el turno, y cada proceso espera en un bucle hasta que turn sea igual a su propio número. ¿Cuál es el defecto de esta solución, además de la espera activa?",
+			"alternatives": [
+				"Ambos procesos pueden entrar a la región crítica al mismo tiempo",
+				"Ambos procesos pueden quedar bloqueados para siempre, cada uno esperando al otro",
+				"La solución funciona solo si las interrupciones están deshabilitadas durante la prueba",
+				"La variable turn debe protegerse con un semáforo para evitar carreras",
+				"Un proceso fuera de su región crítica puede mantener afuera al otro"
+			],
+			"explanations": [
+				"La alternancia estricta sí garantiza la exclusión mutua: turn tiene un solo valor a la vez.",
+				"No hay deadlock: turn siempre nombra a uno de los procesos, y ese proceso puede entrar.",
+				"La alternancia estricta no depende de deshabilitar interrupciones. Su defecto es de progreso, no de atomicidad.",
+				"Cada proceso cambia turn solo al salir de la región crítica, cuando el turno es suyo, así que no hay carrera sobre esa variable.",
+				"Al salir, un proceso le pasa el turno al otro. Si el otro se demora en su parte no crítica, el primero no puede volver a entrar aunque la región esté libre."
+			],
+			"concept": "La alternancia estricta obliga a los procesos a turnarse. Garantiza la exclusión mutua, pero viola la condición de que un proceso fuera de la región crítica no puede bloquear a otro. Cuando un proceso es mucho más lento que el otro, el más rápido espera sin motivo. La solución de Peterson corrige esto con un indicador de interés por proceso.",
 			"example": {
 				"kind": "code",
 				"language": "c",
@@ -245,6 +326,29 @@
 				"language": "c",
 				"content": "/* test_and_set(&lock): returns the old value and stores 1, all atomically */\n\nvoid enter_region(void) {\n\twhile (test_and_set(&lock) == 1) {\n\t\t/* the lock was taken: try again (busy waiting) */\n\t}\n}\n\nvoid leave_region(void) {\n\tlock = 0;\n}"
 			}
+		},
+		"es": {
+			"statement": "¿Por qué la instrucción TSL (test and set lock) permite un lock correcto, a diferencia de un par separado de instrucciones que lee la variable de lock y luego le escribe 1?",
+			"alternatives": [
+				"Deshabilita las interrupciones en todas las CPU mientras se ejecuta la región crítica",
+				"Pone a dormir al proceso cuando el lock ya está tomado",
+				"Se ejecuta en modo kernel, donde no existen cambios de contexto",
+				"Garantiza que los procesos entren a la región crítica en orden de llegada",
+				"Lee el valor viejo y escribe el nuevo en un único paso atómico"
+			],
+			"explanations": [
+				"TSL no deshabilita interrupciones. Hace atómica solo la operación de probar y fijar el lock.",
+				"TSL solo devuelve el valor viejo. Bloquear el proceso es tarea del sistema operativo, y TSL se usa típicamente con espera activa.",
+				"TSL es una instrucción común, usable en modo usuario. Y el kernel también está sujeto a expropiación y a concurrencia entre CPU.",
+				"TSL no mantiene cola ni orden. Un proceso puede perder la disputa varias veces seguidas.",
+				"El hardware garantiza que ninguna otra CPU ni proceso accede a la palabra de memoria entre la lectura y la escritura. Así, dos procesos nunca leen 0 al mismo tiempo."
+			],
+			"concept": "El bug de la variable de lock simple es la ventana entre probar y fijar: dos procesos pueden ver el lock libre antes de que alguno lo fije. Instrucciones como TSL y XCHG cierran esa ventana, porque hacen ambas acciones en una sola operación atómica, bloqueando el bus de memoria. Con ellas se construye exclusión mutua con espera activa (un spin lock).",
+			"example": {
+				"kind": "code",
+				"language": "c",
+				"content": "/* test_and_set(&lock): devuelve el valor viejo y guarda 1, todo de forma atómica */\n\nvoid enter_region(void) {\n\twhile (test_and_set(&lock) == 1) {\n\t\t/* el lock estaba tomado: intenta de nuevo (espera activa) */\n\t}\n}\n\nvoid leave_region(void) {\n\tlock = 0;\n}"
+			}
 		}
 	},
 	{
@@ -289,6 +393,24 @@
 				"The statement says that H blocks, so it consumes no CPU. The one making no progress is H, not M."
 			],
 			"concept": "In priority inversion, a high-priority process depends on a resource held by a low-priority one, which in turn is passed over by medium-priority processes. The practical effect is that the high-priority process ends up behind the medium ones. Priority inheritance raises the owner of the resource to the priority of the waiter until the resource is released."
+		},
+		"es": {
+			"statement": "Tres procesos tienen prioridad alta (H), media (M) y baja (L), con planificación por prioridades expropiativa. L está dentro de una región crítica protegida por un mutex. H pasa a estar listo, intenta adquirir el mismo mutex y se bloquea. Luego M, que solo usa la CPU y no necesita el mutex, pasa a estar listo. ¿Qué ocurre, y cuál es el remedio clásico?",
+			"alternatives": [
+				"H y L se esperan mutuamente para siempre: deadlock, que se trata ordenando los recursos",
+				"M se ejecuta en lugar de L, y H sigue esperando: inversión de prioridad, que se trata con herencia",
+				"H le quita el mutex a L a la fuerza: expropiación del recurso, que se trata revirtiendo a L",
+				"L termina la región crítica antes de que M se ejecute: no hay problema, ya que el mutex es atómico",
+				"H gira en espera activa y consume la CPU: inanición de M, que se trata con envejecimiento"
+			],
+			"explanations": [
+				"No hay espera circular: L no espera nada que tenga H. Si L recibe la CPU, libera el mutex y H avanza.",
+				"M tiene más prioridad que L y toma la CPU. Como L no avanza, el mutex no se libera, y H termina esperando a M. Con herencia, L recibe temporalmente la prioridad de H.",
+				"A un mutex no se le quita a la fuerza a su dueño, ya que la región crítica quedaría inconsistente. H simplemente se bloquea.",
+				"Lo atómico es bloquear y desbloquear, no toda la región crítica. L puede ser desalojado dentro de ella, y eso es lo que hace M.",
+				"El enunciado dice que H se bloquea, así que no consume CPU. El que no avanza es H, no M."
+			],
+			"concept": "En la inversión de prioridad, un proceso de alta prioridad depende de un recurso que tiene uno de baja prioridad, al que a su vez le pasan por delante procesos de prioridad media. El efecto práctico es que el proceso de alta prioridad termina detrás de los de prioridad media. La herencia de prioridad eleva al dueño del recurso a la prioridad de quien espera hasta que el recurso se libera."
 		}
 	},
 	{
@@ -333,6 +455,24 @@
 				"No operation resets a semaphore. Its value changes only through down and up."
 			],
 			"concept": "A semaphore is an integer counter with two atomic operations. down decrements the value if it is greater than zero, and otherwise puts the process to sleep. up increments the value or, if processes are sleeping on the semaphore, wakes one of them. Because testing, changing and sleeping form one indivisible action, no wakeup is ever lost."
+		},
+		"es": {
+			"statement": "Un proceso ejecuta la operación down (también llamada P o wait) sobre un semáforo cuyo valor es 0. ¿Qué ocurre?",
+			"alternatives": [
+				"El valor pasa a -1, y el proceso sigue ejecutando normalmente",
+				"La operación devuelve un código de error, y el proceso decide qué hacer",
+				"El proceso se bloquea hasta que otro proceso ejecute up sobre el semáforo",
+				"El proceso queda en un bucle probando el semáforo hasta que el valor cambie",
+				"El semáforo se reinicia a su valor inicial, y el proceso avanza"
+			],
+			"explanations": [
+				"En el modelo clásico, down nunca deja seguir al proceso cuando el valor es 0. Seguir anularía el propósito del semáforo.",
+				"Eso describe un intento no bloqueante, como trylock. Un down común espera en lugar de fallar.",
+				"Con valor 0 no hay nada que consumir. El proceso duerme en la cola del semáforo, sin usar CPU, y despierta cuando ocurre un up.",
+				"Eso es espera activa. El semáforo se creó justamente para bloquear al proceso en lugar de quemar CPU.",
+				"Ninguna operación reinicia un semáforo. Su valor cambia solo mediante down y up."
+			],
+			"concept": "Un semáforo es un contador entero con dos operaciones atómicas. down decrementa el valor si es mayor que cero y, si no, pone a dormir al proceso. up incrementa el valor o, si hay procesos durmiendo en el semáforo, despierta a uno de ellos. Como probar, cambiar y dormir forman una sola acción indivisible, nunca se pierde un despertar."
 		}
 	},
 	{
@@ -387,6 +527,29 @@
 				"language": "c",
 				"content": "void producer(void) {\n\twhile (TRUE) {\n\t\tint item = produce_item();\n\t\tdown(&mutex);   /* swapped order: should come after down(&empty) */\n\t\tdown(&empty);\n\t\tinsert_item(item);\n\t\tup(&mutex);\n\t\tup(&full);\n\t}\n}\n\nvoid consumer(void) {\n\twhile (TRUE) {\n\t\tdown(&full);\n\t\tdown(&mutex);\n\t\tint item = remove_item();\n\t\tup(&mutex);\n\t\tup(&empty);\n\t\tconsume_item(item);\n\t}\n}"
 			}
+		},
+		"es": {
+			"statement": "En la solución del productor-consumidor con semáforos, mutex empieza en 1, empty empieza en el número de posiciones del buffer y full empieza en 0. El consumidor hace down(&full), down(&mutex), quita el ítem, up(&mutex) y up(&empty). El productor debería hacer down(&empty), down(&mutex), insertar el ítem, up(&mutex) y up(&full), pero el programador intercambió las dos operaciones down y escribió down(&mutex) antes de down(&empty). ¿Qué puede ocurrir cuando el buffer está lleno?",
+			"alternatives": [
+				"Carrera: productor y consumidor acceden al buffer al mismo tiempo y corrompen los datos",
+				"Desbordamiento: el productor inserta un ítem en un buffer que ya está lleno",
+				"Inanición del productor: el consumidor empieza a vaciar el buffer más rápido de lo que se llena",
+				"Deadlock: el productor duerme en empty con mutex tomado, y el consumidor se bloquea en mutex",
+				"Nada: el orden de dos operaciones down consecutivas no cambia el comportamiento del programa"
+			],
+			"explanations": [
+				"La exclusión mutua se mantiene: nadie entra al buffer sin mutex. El defecto es de bloqueo, no de acceso simultáneo.",
+				"down(&empty) sigue impidiendo la inserción en un buffer lleno. El productor se detiene antes de insertar.",
+				"El consumidor ni siquiera puede quitar ítems, porque no obtiene mutex.",
+				"Solo el consumidor podría hacer up(&empty), pero antes necesita mutex, que tiene el productor dormido. Ninguno avanza.",
+				"El orden importa porque una de las operaciones down puede bloquear mientras el proceso ya tiene el otro semáforo."
+			],
+			"concept": "Los semáforos tienen dos usos distintos. El mutex garantiza la exclusión mutua y debe tenerse el menor tiempo posible. Los semáforos empty y full hacen sincronización, es decir, suspenden un proceso hasta que se cumple una condición. La regla es nunca dormir esperando una condición mientras se tiene el mutex que el otro lado necesita para hacer verdadera esa condición.",
+			"example": {
+				"kind": "code",
+				"language": "c",
+				"content": "void producer(void) {\n\twhile (TRUE) {\n\t\tint item = produce_item();\n\t\tdown(&mutex);   /* orden invertido: debería ir después de down(&empty) */\n\t\tdown(&empty);\n\t\tinsert_item(item);\n\t\tup(&mutex);\n\t\tup(&full);\n\t}\n}\n\nvoid consumer(void) {\n\twhile (TRUE) {\n\t\tdown(&full);\n\t\tdown(&mutex);\n\t\tint item = remove_item();\n\t\tup(&mutex);\n\t\tup(&empty);\n\t\tconsume_item(item);\n\t}\n}"
+			}
 		}
 	},
 	{
@@ -431,6 +594,24 @@
 				"Only the down operations made with the value at 0 block. The first three find a positive value and go through."
 			],
 			"concept": "A counting semaphore initialised to N lets N down operations through before it starts blocking, which is how a pool of N identical resources is controlled. Each up gives one unit back: if processes are sleeping, one of them is woken and the value stays at 0. Otherwise the value is incremented."
+		},
+		"es": {
+			"statement": "Un semáforo se inicializa en 3. Cinco procesos distintos ejecutan down sobre él, uno después de otro, y luego un sexto proceso ejecuta un único up. ¿Cuántos procesos siguen bloqueados en el semáforo?",
+			"alternatives": [
+				"0",
+				"1",
+				"2",
+				"3",
+				"5"
+			],
+			"explanations": [
+				"Un solo up despierta como máximo a un proceso. No libera a todos los que duermen.",
+				"Las tres primeras operaciones down llevan el valor de 3 a 0 y pasan. La cuarta y la quinta se bloquean. El up despierta a una de ellas, y queda 1 bloqueado.",
+				"Ese es el número de procesos bloqueados antes del up. El up despierta a uno de los dos.",
+				"Tres es el número de procesos que pasaron por down sin bloquearse, no el número de bloqueados.",
+				"Solo se bloquean las operaciones down hechas con el valor en 0. Las tres primeras encuentran un valor positivo y pasan."
+			],
+			"concept": "Un semáforo contador inicializado en N deja pasar N operaciones down antes de empezar a bloquear, que es como se controla un conjunto de N recursos idénticos. Cada up devuelve una unidad: si hay procesos durmiendo, se despierta a uno de ellos y el valor sigue en 0. Si no, el valor se incrementa."
 		}
 	},
 	{
@@ -475,6 +656,24 @@
 				"It is wait that releases the monitor's mutual exclusion, so that another process can enter and make the condition true."
 			],
 			"concept": "A monitor groups data and procedures with automatic mutual exclusion. To wait for a condition, a process executes wait on a condition variable, which blocks it and releases the monitor. Because a signal is not remembered, the wait has to come before it, and the state of the condition is kept in ordinary monitor variables, tested under mutual exclusion."
+		},
+		"es": {
+			"statement": "¿Cuál es la diferencia esencial entre hacer signal sobre una variable de condición de un monitor y hacer up sobre un semáforo?",
+			"alternatives": [
+				"Un signal sin ningún proceso esperando se pierde, mientras que un up queda guardado en el contador",
+				"Un signal despierta a todos los procesos en espera, mientras que un up despierta solo a uno",
+				"Un signal solo puede usarse dentro del kernel, mientras que un up lo pueden usar procesos de usuario",
+				"Un signal bloquea a quien lo llama hasta que ocurra un wait, mientras que un up nunca bloquea",
+				"Un signal libera la exclusión mutua del monitor, mientras que un up mantiene tomado el semáforo"
+			],
+			"explanations": [
+				"Una variable de condición no tiene memoria: es solo una cola de espera. Un semáforo acumula las operaciones up, y un down posterior pasa sin bloquearse.",
+				"Un signal despierta como máximo a un proceso. Despertar a todos es el papel de broadcast (o notifyAll).",
+				"Los monitores son una construcción del lenguaje usada en programas comunes. No hay restricción de modo de ejecución.",
+				"Un signal no espera un wait futuro. Si nadie está esperando, simplemente no tiene efecto.",
+				"Es wait el que libera la exclusión mutua del monitor, para que otro proceso pueda entrar y hacer verdadera la condición."
+			],
+			"concept": "Un monitor agrupa datos y procedimientos con exclusión mutua automática. Para esperar una condición, un proceso ejecuta wait sobre una variable de condición, lo que lo bloquea y libera el monitor. Como un signal no se recuerda, el wait tiene que venir antes, y el estado de la condición se guarda en variables comunes del monitor, probadas bajo exclusión mutua."
 		}
 	},
 	{
@@ -519,6 +718,24 @@
 				"Writers are still mutually exclusive. The problem is that they may never get their turn."
 			],
 			"concept": "In the readers and writers problem, several readers may access the data together, but a writer needs exclusive access. Always admitting readers increases concurrency but can postpone a writer without bound. The alternative is to make readers that arrive after a writer wait behind it, which trades some concurrency for fairness."
+		},
+		"es": {
+			"statement": "En una solución al problema de lectores y escritores, un lector que llega se admite de inmediato siempre que otro lector ya esté leyendo, aunque haya un escritor esperando. ¿Qué problema puede causar esta política?",
+			"alternatives": [
+				"Deadlock entre lectores, ya que cada lector espera a que el otro termine de leer",
+				"Lecturas inconsistentes, ya que un escritor puede cambiar los datos durante una lectura",
+				"Inanición de los lectores, ya que el escritor en espera bloquea a los que llegan después",
+				"Inanición de los escritores, si siguen llegando lectores nuevos sin pausa",
+				"Actualizaciones perdidas, ya que dos escritores pueden escribir al mismo tiempo"
+			],
+			"explanations": [
+				"Los lectores no se excluyen entre sí: varios leen al mismo tiempo, sin esperar.",
+				"La política sigue manteniendo afuera al escritor mientras haya lectores. La exclusión entre lector y escritor se mantiene.",
+				"Eso pasaría con la política opuesta, que le da prioridad al escritor. Aquí los lectores siempre pasan primero.",
+				"Mientras haya al menos un lector activo, el escritor no entra. Con llegadas continuas, el número de lectores nunca baja a cero.",
+				"Los escritores siguen excluyéndose mutuamente. El problema es que quizá nunca les llegue el turno."
+			],
+			"concept": "En el problema de lectores y escritores, varios lectores pueden acceder juntos a los datos, pero un escritor necesita acceso exclusivo. Admitir siempre a los lectores aumenta la concurrencia, pero puede postergar sin límite a un escritor. La alternativa es hacer que los lectores que llegan después de un escritor esperen detrás de él, lo que cambia algo de concurrencia por equidad."
 		}
 	},
 	{
@@ -563,6 +780,24 @@
 				"A blocking send waits instead of failing. Returning an error would be the behaviour of a non-blocking send."
 			],
 			"concept": "In message passing, processes communicate with the send and receive primitives, with no shared memory. With mailboxes, messages stay in a buffer until they are read. With no buffer, the first process to arrive waits for the other, and the message is copied directly. This strategy is simpler to implement but couples the pace of the two processes."
+		},
+		"es": {
+			"statement": "En un sistema de paso de mensajes sin ningún almacenamiento intermedio (rendezvous), como el usado entre los procesos de MINIX 3, ¿qué ocurre cuando un proceso ejecuta send antes de que el destino ejecute receive?",
+			"alternatives": [
+				"El emisor se bloquea hasta que el destino ejecute receive",
+				"El mensaje se guarda en un buzón, y el emisor sigue adelante",
+				"El mensaje se descarta, y le toca al emisor volver a enviarlo más tarde",
+				"El destino se interrumpe y se le obliga a tratar el mensaje de inmediato",
+				"El send devuelve un error, porque el destino todavía no está listo"
+			],
+			"explanations": [
+				"Sin buffer, el mensaje solo puede copiarse directamente de un proceso al otro, así que ambos tienen que estar en el punto de encuentro.",
+				"Ese es el modelo de buzón. Con rendezvous no hay dónde guardar el mensaje.",
+				"El rendezvous no pierde mensajes: hace esperar al emisor.",
+				"La entrega no interrumpe al destino. Ocurre cuando el destino decide ejecutar receive.",
+				"Un send bloqueante espera en lugar de fallar. Devolver un error sería el comportamiento de un send no bloqueante."
+			],
+			"concept": "En el paso de mensajes, los procesos se comunican con las primitivas send y receive, sin memoria compartida. Con buzones, los mensajes quedan en un buffer hasta que se leen. Sin buffer, el primer proceso en llegar espera al otro, y el mensaje se copia directamente. Esta estrategia es más simple de implementar, pero acopla el ritmo de los dos procesos."
 		}
 	}
 ]

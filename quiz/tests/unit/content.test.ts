@@ -75,13 +75,13 @@ describe("question schema", () => {
 	test("rejects an example in only one language", () => {
 		const question = clone();
 		delete (question.en as { example?: unknown }).example;
-		expect(errorsOf(question).join("\n")).toContain("example: must be present in both languages");
+		expect(errorsOf(question).join("\n")).toContain("example: must be present in every language");
 	});
 
 	test("rejects a snippet in only one language", () => {
 		const question = clone();
 		(question.en as { snippet?: unknown }).snippet = { kind: "code", language: "ts", content: "x" };
-		expect(errorsOf(question).join("\n")).toContain("snippet: must be present in both languages");
+		expect(errorsOf(question).join("\n")).toContain("snippet: must be present in every language");
 	});
 
 	test("rejects an answer out of range and an unknown difficulty", () => {
@@ -96,7 +96,7 @@ describe("question schema", () => {
 
 describe("coverage schema", () => {
 	test("rejects duplicate topics and a non-positive target", () => {
-		const topic = { slug: "a", name: { pt: "A", en: "A" }, source: "ch. 1", target: 0 };
+		const topic = { slug: "a", name: { pt: "A", en: "A", es: "A" }, source: "ch. 1", target: 0 };
 		const result = validateCoverage({ area: "big-o", sources: ["x"], topics: [topic, { ...topic, target: 2 }] });
 		expect(result.ok).toBe(false);
 		if (!result.ok) {

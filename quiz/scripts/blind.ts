@@ -1,6 +1,6 @@
-// EN: `bun run quiz:blind <area> [--lang en|pt]` writes `quiz/.review/<area>.blind.json`:
+// EN: `bun run quiz:blind <area> [--lang en|pt|es]` writes `quiz/.review/<area>.blind.json`:
 //     the questions of the area with the answer key and the explanations removed.
-// PT: `bun run quiz:blind <area> [--lang en|pt]` escreve `quiz/.review/<area>.blind.json`:
+// PT: `bun run quiz:blind <area> [--lang en|pt|es]` escreve `quiz/.review/<area>.blind.json`:
 //     as questões da área sem o gabarito e sem as explicações.
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -17,7 +17,7 @@ const language = (langFlag >= 0 ? args[langFlag + 1] : "en") as Language;
 const area = args.find((arg, index) => !arg.startsWith("--") && (langFlag < 0 || index !== langFlag + 1));
 
 if (area === undefined || !LANGUAGES.includes(language)) {
-	console.error("usage: bun run quiz:blind <area> [--lang en|pt]");
+	console.error("usage: bun run quiz:blind <area> [--lang en|pt|es]");
 	process.exit(2);
 }
 

@@ -49,6 +49,28 @@
 				"A phantom read involves new rows that appear in a repeated query. Here there is a single item, changed twice."
 			],
 			"concept": "A lost update happens when two transactions read the same value, each computes a new value and both write: the second write wipes out the effect of the first. It is the simplest example of interference between transactions. Locking prevents it by making sure a transaction cannot write an item that another has read and still intends to update."
+		},
+		"es": {
+			"statement": "En el ejemplo, dos transacciones suman montos al mismo saldo, sin control de concurrencia. El saldo final es 120, no 130. ¿Cómo se llama este problema?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "saldo = 100\n\nT1 (+10)                T2 (+20)\n--------                --------\nREAD saldo  -> 100\n                        READ saldo  -> 100\nWRITE saldo <- 110\n                        WRITE saldo <- 120\nCOMMIT\n                        COMMIT\n\nsaldo = 120"
+			},
+			"alternatives": [
+				"Lectura sucia (dependencia no confirmada)",
+				"Actualización perdida",
+				"Análisis inconsistente",
+				"Deadlock",
+				"Lectura fantasma"
+			],
+			"explanations": [
+				"En una lectura sucia una transacción lee un valor que otra todavía no confirmó y que después revierte. Aquí ambas leen un valor confirmado (100).",
+				"Correcta: T2 escribe 120 basándose en una lectura antigua y sobrescribe el 110 de T1. Los 10 sumados por T1 desaparecen.",
+				"El análisis inconsistente afecta a una transacción que solo lee varios ítems (por ejemplo, suma saldos) mientras otra los modifica.",
+				"En un deadlock las transacciones se detienen, esperándose mutuamente. Aquí ambas terminaron normalmente.",
+				"Una lectura fantasma involucra filas nuevas que aparecen en una consulta repetida. Aquí hay un solo ítem, modificado dos veces."
+			],
+			"concept": "Una actualización perdida ocurre cuando dos transacciones leen el mismo valor, cada una calcula un valor nuevo y ambas escriben: la segunda escritura borra el efecto de la primera. Es el ejemplo más simple de interferencia entre transacciones. El bloqueo la impide asegurando que una transacción no pueda escribir un ítem que otra leyó y todavía piensa actualizar."
 		}
 	},
 	{
@@ -101,6 +123,28 @@
 				"kind": "diagram",
 				"content": "          |  S  |  X\n    ------+-----+-----\n      S   | yes | no\n      X   | no  | no"
 			}
+		},
+		"es": {
+			"statement": "La transacción T1 tiene un bloqueo compartido (S) sobre la fila r. La transacción T2 pide un bloqueo sobre la misma fila. ¿Qué pasa?",
+			"alternatives": [
+				"Cualquier pedido de T2 se concede, ya que S no impide nada",
+				"Cualquier pedido de T2 espera hasta que T1 libere el bloqueo",
+				"Un pedido de bloqueo exclusivo (X) se concede, y un pedido de S espera",
+				"Un pedido de S se concede, y un pedido de bloqueo exclusivo (X) espera",
+				"T1 se revierte para que T2 pueda continuar"
+			],
+			"explanations": [
+				"El bloqueo S impide que otra transacción obtenga X, es decir, impide que la fila se modifique mientras T1 la lee.",
+				"Dos bloqueos S coexisten: varias transacciones pueden leer la misma fila al mismo tiempo.",
+				"Está al revés: X es el bloqueo que no coexiste con ningún otro.",
+				"Correcta: S es compatible con S e incompatible con X. Los lectores no molestan a los lectores, pero quien quiere escribir espera.",
+				"Un conflicto de bloqueo común hace esperar a la transacción que lo pide. Revertir solo es necesario en caso de deadlock."
+			],
+			"concept": "El bloqueo compartido (S) se pide para leer, y el bloqueo exclusivo (X) para modificar. La matriz de compatibilidad es simple: S con S está permitido, y cualquier combinación que involucre X no. Cuando un pedido es incompatible con un bloqueo de otra transacción, quien lo pide espera hasta que el bloqueo se libere.",
+			"example": {
+				"kind": "diagram",
+				"content": "          |  S  |  X\n    ------+-----+-----\n      S   | sí  | no\n      X   | no  | no"
+			}
 		}
 	},
 	{
@@ -145,6 +189,24 @@
 				"That is a system failure, handled by recovery. The locks vanish with the crash."
 			],
 			"concept": "Locking solves the interference problems, but creates the risk of deadlock: a cycle of transactions in which each waits for a resource of the next. The DBMS detects the cycle in a wait-for graph (or uses a timeout), picks one transaction as the victim and rolls it back, releasing its locks for the others."
+		},
+		"es": {
+			"statement": "¿Qué es un deadlock entre transacciones?",
+			"alternatives": [
+				"Transacciones que esperan los bloqueos unas de otras en un ciclo, de modo que ninguna puede avanzar",
+				"Una transacción espera mucho tiempo un bloqueo que tiene una transacción larga",
+				"Dos transacciones escriben el mismo ítem y una de las escrituras se pierde",
+				"Una transacción lee un ítem que otra todavía no confirmó",
+				"El sistema se cae mientras una transacción tiene bloqueos"
+			],
+			"explanations": [
+				"Correcta: la espera es circular. T1 espera a T2, que espera a T1, y eso nunca se resuelve por sí solo.",
+				"Una espera larga termina cuando termina la otra transacción. En un deadlock la espera nunca terminaría.",
+				"Esa es la actualización perdida, un problema que el bloqueo evita.",
+				"Esa es la lectura sucia (dependencia no confirmada).",
+				"Esa es una falla del sistema, tratada por la recuperación. Los bloqueos desaparecen con la caída."
+			],
+			"concept": "El bloqueo resuelve los problemas de interferencia, pero crea el riesgo de deadlock: un ciclo de transacciones en el que cada una espera un recurso de la siguiente. El DBMS detecta el ciclo en un grafo de espera (o usa un tiempo límite), elige una transacción como víctima y la revierte, liberando sus bloqueos para las demás."
 		}
 	},
 	{
@@ -189,6 +251,24 @@
 				"Right: it is enough that some equivalent serial order exists, whichever it is. No particular order is required."
 			],
 			"concept": "Serializability is the correctness criterion of concurrency control. The starting idea is that each transaction is correct by itself, so any serial execution is correct too. An interleaved execution is accepted if it is equivalent to some serial execution. Different serial orders may give different results, and all of them are considered correct."
+		},
+		"es": {
+			"statement": "¿Cuándo se considera serializable una ejecución intercalada de varias transacciones?",
+			"alternatives": [
+				"Cuando las transacciones se ejecutan una tras otra, sin intercalación",
+				"Cuando ninguna transacción tiene que esperar un bloqueo",
+				"Cuando todas las transacciones terminan con COMMIT",
+				"Cuando las transacciones acceden a conjuntos de datos completamente distintos",
+				"Cuando produce el mismo resultado que alguna ejecución en serie de las mismas transacciones"
+			],
+			"explanations": [
+				"Esa es una ejecución en serie. Toda ejecución en serie es serializable, pero el concepto existe justamente para aceptar intercalaciones.",
+				"La ausencia de espera no garantiza un resultado correcto. Sin ningún bloqueo nadie espera, y aun así hay actualizaciones perdidas.",
+				"Terminar con COMMIT no impide la interferencia: ambas transacciones de una actualización perdida terminan con COMMIT.",
+				"Eso es suficiente pero no necesario. Las transacciones que comparten datos también pueden intercalarse de forma serializable.",
+				"Correcta: basta con que exista algún orden en serie equivalente, sea cual sea. No se exige ningún orden en particular."
+			],
+			"concept": "La serializabilidad es el criterio de corrección del control de concurrencia. La idea de partida es que cada transacción es correcta por sí sola, así que cualquier ejecución en serie también es correcta. Una ejecución intercalada se acepta si es equivalente a alguna ejecución en serie. Órdenes en serie distintos pueden dar resultados distintos, y todos se consideran correctos."
 		}
 	},
 	{
@@ -233,6 +313,24 @@
 				"It obeys the protocol: the upgrade from S to X is an acquisition and happens in the growing phase."
 			],
 			"concept": "In two-phase locking the transaction has a growing phase, in which it only acquires locks, and a shrinking phase, in which it only releases them. After the first release it cannot acquire anything else. The associated theorem says that, if every transaction follows the protocol, every possible interleaved execution is serializable."
+		},
+		"es": {
+			"statement": "¿Cuál de las secuencias de operaciones siguientes, ejecutada por una transacción, viola el protocolo de bloqueo en dos fases?",
+			"alternatives": [
+				"lock(A), lock(B), unlock(A), unlock(B)",
+				"lock(A), lock(B), unlock(B), unlock(A)",
+				"lock(A), unlock(A), lock(B), unlock(B)",
+				"lock(A), lock(B) y liberación de ambos en el COMMIT",
+				"lock-S(A), promoción a lock-X(A), lock(B) y liberación de ambos en el COMMIT"
+			],
+			"explanations": [
+				"Cumple el protocolo: todo bloqueo se adquiere antes de la primera liberación. El orden de las liberaciones es libre.",
+				"Cumple el protocolo: primero solo adquisiciones, después solo liberaciones.",
+				"Lo viola: el bloqueo sobre B se adquiere después de liberar el bloqueo sobre A. Entre los dos momentos otra transacción puede modificar A.",
+				"Cumple el protocolo y es la forma estricta, usada en la práctica: no se libera nada antes del fin de la transacción.",
+				"Cumple el protocolo: la promoción de S a X es una adquisición y ocurre en la fase de crecimiento."
+			],
+			"concept": "En el bloqueo en dos fases la transacción tiene una fase de crecimiento, en la que solo adquiere bloqueos, y una fase de decrecimiento, en la que solo los libera. Después de la primera liberación no puede adquirir nada más. El teorema asociado dice que, si todas las transacciones siguen el protocolo, toda ejecución intercalada posible es serializable."
 		}
 	},
 	{
@@ -285,6 +383,28 @@
 				"kind": "diagram",
 				"content": "                   | dirty | nonrepeatable | phantom\n                   | read  | read          | read\n-------------------+-------+---------------+--------\nREAD UNCOMMITTED   | yes   | yes           | yes\nREAD COMMITTED     | no    | yes           | yes\nREPEATABLE READ    | no    | no            | yes\nSERIALIZABLE       | no    | no            | no\n\n(yes = the phenomenon can occur)"
 			}
+		},
+		"es": {
+			"statement": "Entre los cuatro niveles de aislamiento del estándar SQL, ¿cuál es el más bajo que ya impide la lectura sucia, es decir, leer un ítem escrito por una transacción todavía no confirmada?",
+			"alternatives": [
+				"READ UNCOMMITTED",
+				"REPEATABLE READ",
+				"SERIALIZABLE",
+				"Ninguno: la lectura sucia es posible en todos los niveles",
+				"READ COMMITTED"
+			],
+			"explanations": [
+				"Ese es el nivel más bajo y el único que permite la lectura sucia, como dice su propio nombre.",
+				"REPEATABLE READ también impide la lectura sucia, pero no es el más bajo: agrega protección contra la lectura no repetible.",
+				"SERIALIZABLE impide todos los fenómenos, pero es el nivel más alto, no el más bajo que resuelve el problema.",
+				"Tres de los cuatro niveles impiden la lectura sucia. Solo READ UNCOMMITTED la admite.",
+				"Correcta: en READ COMMITTED la transacción ve solo datos confirmados. La lectura no repetible y la lectura fantasma todavía pueden ocurrir."
+			],
+			"concept": "El estándar SQL define cuatro niveles de aislamiento según los fenómenos que admite cada uno. READ UNCOMMITTED admite los tres fenómenos, READ COMMITTED elimina la lectura sucia, REPEATABLE READ elimina además la lectura no repetible y SERIALIZABLE elimina los tres. Cuanto más bajo el nivel, mayor la concurrencia y más débil la garantía.",
+			"example": {
+				"kind": "diagram",
+				"content": "                   | lectura | lectura no  | lectura\n                   | sucia   | repetible   | fantasma\n-------------------+---------+-------------+---------\nREAD UNCOMMITTED   | sí      | sí          | sí\nREAD COMMITTED     | no      | sí          | sí\nREPEATABLE READ    | no      | no          | sí\nSERIALIZABLE       | no      | no          | no\n\n(sí = el fenómeno puede ocurrir)"
+			}
 		}
 	},
 	{
@@ -329,6 +449,24 @@
 				"That guarantee belongs to the SERIALIZABLE level. Some products also give it in REPEATABLE READ, but the standard does not require it."
 			],
 			"concept": "The nonrepeatable read and the phantom are similar but different. In the first, a row the transaction has already read is changed or removed by another. In the second, the set of rows that satisfies a condition changes because another transaction inserted a row. Protecting the rows read does not protect against rows that did not exist yet: that requires locking the condition (or the range), which the SERIALIZABLE level guarantees."
+		},
+		"es": {
+			"statement": "Una transacción en REPEATABLE READ, tal como lo define el estándar SQL, ejecuta dos veces SELECT * FROM emp WHERE salario > 5000. Entre las dos ejecuciones otra transacción inserta y confirma un empleado con salario 6000. ¿Qué permite el estándar que ocurra en la segunda ejecución?",
+			"alternatives": [
+				"Una lectura sucia: la transacción ve una fila todavía no confirmada",
+				"Una lectura no repetible: una fila ya leída aparece con valores distintos",
+				"Una lectura fantasma: aparece una fila nueva que satisface la condición",
+				"Una actualización perdida: la inserción de la otra transacción se descarta",
+				"Nada: el resultado debe ser idéntico al de la primera ejecución"
+			],
+			"explanations": [
+				"La fila nueva ya fue confirmada por la otra transacción, así que no es un dato no confirmado.",
+				"Las filas leídas la primera vez siguen iguales. Lo que cambia es el conjunto de filas, que gana un elemento.",
+				"Correcta: el estándar solo le exige a REPEATABLE READ que las filas ya leídas no cambien. Las filas nuevas que ahora satisfacen la condición son los fantasmas.",
+				"La inserción se confirmó y permanece en la base de datos. No se sobrescribió ninguna escritura.",
+				"Esa garantía pertenece al nivel SERIALIZABLE. Algunos productos también la dan en REPEATABLE READ, pero el estándar no la exige."
+			],
+			"concept": "La lectura no repetible y el fantasma se parecen pero son distintos. En la primera, una fila que la transacción ya leyó es modificada o eliminada por otra. En el segundo, el conjunto de filas que satisface una condición cambia porque otra transacción insertó una fila. Proteger las filas leídas no protege contra filas que todavía no existían: eso exige bloquear la condición (o el rango), lo que garantiza el nivel SERIALIZABLE."
 		}
 	},
 	{
@@ -381,6 +519,28 @@
 				"No arrow reaches T4. Rolling back T4 would release none of the others."
 			],
 			"concept": "The DBMS represents the waits in a directed graph, and there is a deadlock exactly when the graph has a cycle. The victim must be chosen among the transactions of the cycle, since only then is one of the disputed locks released. Transactions that merely wait for someone in the cycle start moving again when the cycle is broken."
+		},
+		"es": {
+			"statement": "En el grafo de espera del ejemplo, una flecha de Ti a Tj significa que Ti espera un bloqueo que tiene Tj. ¿Qué transacciones forman el ciclo que caracteriza el deadlock?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "T4 ---> T1 ---> T2\n        ^        |\n        |        v\n        +------ T3"
+			},
+			"alternatives": [
+				"T1, T2, T3 y T4",
+				"T1 y T4",
+				"Ninguna, ya que no hay dos transacciones que se esperen directamente entre sí",
+				"T1, T2 y T3",
+				"Solo T4"
+			],
+			"explanations": [
+				"T4 espera a T1, pero nadie espera a T4. Está detenida por el deadlock sin formar parte del ciclo.",
+				"T4 espera a T1, pero T1 no espera a T4, así que las dos no forman un ciclo.",
+				"El ciclo no necesita tener longitud dos. Aquí pasa por tres transacciones antes de volver al inicio.",
+				"Correcta: T1 espera a T2, T2 espera a T3 y T3 espera a T1. Revertir cualquiera de las tres rompe el ciclo.",
+				"Ninguna flecha llega a T4. Revertir T4 no liberaría a ninguna de las demás."
+			],
+			"concept": "El DBMS representa las esperas en un grafo dirigido, y hay deadlock exactamente cuando el grafo tiene un ciclo. La víctima debe elegirse entre las transacciones del ciclo, ya que solo así se libera uno de los bloqueos en disputa. Las transacciones que solo esperan a alguien del ciclo vuelven a avanzar cuando el ciclo se rompe."
 		}
 	},
 	{
@@ -433,6 +593,28 @@
 				"Looking at one item at a time is not enough. The order must be the same for every item, and here A and B ask for opposite orders."
 			],
 			"concept": "To test conflict serializability, build the precedence graph: there is an arrow Ti → Tj when an operation of Ti comes before a conflicting operation of Tj on the same item (at least one of them is a write). The execution is serializable if and only if the graph has no cycle. Here w1(A) before r2(A) gives T1 → T2, and w2(B) before r1(B) gives T2 → T1."
+		},
+		"es": {
+			"statement": "En la ejecución del ejemplo, r1(A) significa 'T1 lee A' y w2(B) significa 'T2 escribe B'. ¿Qué se puede decir de esta ejecución intercalada?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "r1(A) w1(A) r2(A) w2(A) r2(B) w2(B) r1(B) w1(B)\n\n-----------------------------------------------> tempo / time"
+			},
+			"alternatives": [
+				"No es serializable, ya que el grafo de precedencia tiene un ciclo entre T1 y T2",
+				"Es equivalente a la ejecución en serie T1 seguida de T2",
+				"Es equivalente a la ejecución en serie T2 seguida de T1",
+				"Es equivalente a las dos ejecuciones en serie posibles",
+				"Es serializable, ya que las operaciones sobre cada ítem no están intercaladas"
+			],
+			"explanations": [
+				"Correcta: sobre A, T1 escribe antes de que T2 lea, lo que exige T1 antes de T2. Sobre B, T2 escribe antes de que T1 lea, lo que exige T2 antes de T1. Las dos exigencias se contradicen.",
+				"Eso vale para el ítem A, pero sobre B la transacción T1 lee el valor que escribió T2, lo que es imposible si T1 hubiera ido entera primero.",
+				"Eso vale para el ítem B, pero sobre A la transacción T2 lee el valor que escribió T1, lo que es imposible si T2 hubiera ido entera primero.",
+				"No es equivalente a ninguna: cada orden en serie contradice lo que pasó con uno de los ítems.",
+				"Mirar un ítem a la vez no basta. El orden debe ser el mismo para todos los ítems, y aquí A y B piden órdenes opuestos."
+			],
+			"concept": "Para probar la serializabilidad por conflictos, se construye el grafo de precedencia: hay una flecha Ti → Tj cuando una operación de Ti viene antes de una operación en conflicto de Tj sobre el mismo ítem (al menos una de ellas es una escritura). La ejecución es serializable si y solo si el grafo no tiene ciclos. Aquí w1(A) antes de r2(A) da T1 → T2, y w2(B) antes de r1(B) da T2 → T1."
 		}
 	},
 	{
@@ -481,6 +663,28 @@
 				"SIX is a mode that a single transaction requests when it wants to read the whole table and change some rows. It is not given in place of a conflicting S."
 			],
 			"concept": "With locks at several levels (table and row), a transaction that locks a row first acquires an intent lock on the table: IS to read rows, IX to change rows. A request to lock the whole table is then decided by looking only at the locks on the table. IS and IX coexist with each other, S coexists with IS, and X coexists with none.",
+			"example": {
+				"kind": "diagram",
+				"content": "       | IS  | IX  | S   | SIX | X\n  -----+-----+-----+-----+-----+-----\n  IS   | ok  | ok  | ok  | ok  | --\n  IX   | ok  | ok  | --  | --  | --\n  S    | ok  | --  | ok  | --  | --\n  SIX  | ok  | --  | --  | --  | --\n  X    | --  | --  | --  | --  | --"
+			}
+		},
+		"es": {
+			"statement": "En un sistema con bloqueos de intención, T1 tiene un bloqueo IX (intención exclusiva) sobre la tabla emp, porque está modificando algunas de sus filas. T2 pide un bloqueo S sobre la tabla emp entera. ¿Qué pasa?",
+			"alternatives": [
+				"El pedido se concede, ya que IX es solo una intención y no bloquea nada",
+				"T2 espera: S sobre la tabla es incompatible con IX, ya que T1 puede estar modificando filas que T2 leería",
+				"El pedido se concede, ya que los bloqueos de T1 y T2 están en granularidades distintas",
+				"T1 se revierte, ya que un bloqueo de tabla tiene prioridad sobre los bloqueos de fila",
+				"T2 recibe automáticamente un bloqueo SIX en lugar del S pedido"
+			],
+			"explanations": [
+				"El bloqueo de intención existe justamente para que lo verifique quien pide un bloqueo sobre la tabla entera. Ignorarlo dejaría que T2 leyera filas en modificación.",
+				"Correcta: IX avisa que hay (o habrá) bloqueos X sobre filas de la tabla. Un S sobre la tabla promete una lectura estable de todas las filas, y los dos no pueden coexistir.",
+				"El IX está sobre la propia tabla, la misma granularidad del pedido de T2. Así se detecta el conflicto sin examinar fila por fila.",
+				"No existe tal prioridad. En un conflicto común quien pide espera.",
+				"SIX es un modo que pide una sola transacción cuando quiere leer toda la tabla y modificar algunas filas. No se da en lugar de un S en conflicto."
+			],
+			"concept": "Con bloqueos en varios niveles (tabla y fila), una transacción que bloquea una fila primero adquiere un bloqueo de intención sobre la tabla: IS para leer filas, IX para modificar filas. Un pedido de bloqueo sobre la tabla entera se decide entonces mirando solo los bloqueos sobre la tabla. IS e IX coexisten entre sí, S coexiste con IS, y X no coexiste con ninguno.",
 			"example": {
 				"kind": "diagram",
 				"content": "       | IS  | IX  | S   | SIX | X\n  -----+-----+-----+-----+-----+-----\n  IS   | ok  | ok  | ok  | ok  | --\n  IX   | ok  | ok  | --  | --  | --\n  S    | ok  | --  | ok  | --  | --\n  SIX  | ok  | --  | --  | --  | --\n  X    | --  | --  | --  | --  | --"

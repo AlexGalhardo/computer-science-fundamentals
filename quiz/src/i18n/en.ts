@@ -11,6 +11,7 @@ export const en = {
 	skipToContent: "Skip to content",
 	home: "Home",
 	language: "Language",
+	sourceCode: { label: "Source Code", title: "Source code on GitHub (opens in a new tab)" },
 	theme: { toLight: "Switch to light theme", toDark: "Switch to dark theme", light: "Light", dark: "Dark" },
 	loading: "Loading...",
 	homePage: {

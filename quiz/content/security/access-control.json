@@ -42,6 +42,24 @@
 				"The value `1002` is a valid number and the query structure was not changed."
 			],
 			"concept": "IDOR is the most common form of broken access control. The identifier in the URL, in the body or in a hidden field is only a request; the server must decide, on every request, whether that user may access that object. Being authenticated is not enough: the question is one of authorisation."
+		},
+		"es": {
+			"statement": "Un usuario con sesión iniciada cambia `/invoices/1001` por `/invoices/1002` en la barra de direcciones y ve la factura de otro cliente. ¿Cómo se llama esta falla?",
+			"alternatives": [
+				"Cross-site scripting (XSS), variante reflejada",
+				"Cross-site request forgery (CSRF)",
+				"Referencia directa insegura a objetos (IDOR)",
+				"Fijación de sesión",
+				"Inyección SQL"
+			],
+			"explanations": [
+				"No se inyectó ningún script; el usuario solo pidió otro recurso.",
+				"La solicitud la hizo el propio usuario a propósito, no la falsificó otro sitio.",
+				"La aplicación usa el identificador que viene del cliente para buscar el objeto y no verifica que pertenezca a quien lo pidió.",
+				"El usuario usa su propia sesión legítima; no se fijó nada.",
+				"El valor `1002` es un número válido y la estructura de la consulta no cambió."
+			],
+			"concept": "IDOR es la forma más común de control de acceso roto. El identificador en la URL, en el cuerpo o en un campo oculto es solo una solicitud; el servidor debe decidir, en cada solicitud, si ese usuario puede acceder a ese objeto. Estar autenticado no basta: la cuestión es de autorización."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"Filtering by IP does not distinguish what each authenticated user may do."
 			],
 			"concept": "Everything that runs on the client is under the user's control: pages, apps and hidden fields. The interface can and should hide what does not apply, for usability. The security decision, however, is taken on the server, on every request, preferably by one reused mechanism."
+		},
+		"es": {
+			"statement": "¿Dónde debe aplicarse el control de acceso para que sea efectivo?",
+			"alternatives": [
+				"En el navegador, ocultando los botones y enlaces que el usuario no puede usar",
+				"En el servidor, en cada solicitud, antes de leer o modificar el recurso",
+				"En la app móvil, que solo envía las solicitudes permitidas para el rol del usuario",
+				"En la pantalla de login, una sola vez, al definir el rol del usuario en la sesión",
+				"En el balanceador de carga, bloqueando direcciones IP de fuera del país"
+			],
+			"explanations": [
+				"Ocultar elementos mejora la interfaz, pero la solicitud puede enviarse directamente.",
+				"El servidor es el único punto que el usuario no controla; cada ruta verifica el permiso para ese recurso.",
+				"Cualquier cliente puede reemplazarse por otro programa que hable HTTP.",
+				"El login establece la identidad; el permiso depende de cada recurso solicitado después.",
+				"Filtrar por IP no distingue lo que puede hacer cada usuario autenticado."
+			],
+			"concept": "Todo lo que se ejecuta en el cliente está bajo el control del usuario: páginas, apps y campos ocultos. La interfaz puede y debe ocultar lo que no corresponde, por usabilidad. La decisión de seguridad, en cambio, se toma en el servidor, en cada solicitud, de preferencia mediante un único mecanismo reutilizado."
 		}
 	},
 	{
@@ -132,6 +168,24 @@
 				"Double approval is another control (segregation of duties)."
 			],
 			"concept": "Deny by default is choosing which way the system fails. With an allow-list, forgetting a rule blocks a legitimate use, which someone soon complains about. With a blocklist, forgetting a rule silently exposes data. That is why the central policy starts by refusing everything."
+		},
+		"es": {
+			"statement": "¿Qué significa \"denegar por defecto\" en el control de acceso?",
+			"alternatives": [
+				"Todo acceso se permite, salvo lo que una regla prohíbe explícitamente",
+				"Todo acceso de usuarios nuevos se rechaza en los primeros días de la cuenta",
+				"Todo acceso se rechaza fuera del horario laboral definido por la empresa",
+				"Todo acceso se rechaza, salvo lo que una regla permite explícitamente",
+				"Todo acceso de administradores se rechaza hasta una segunda aprobación"
+			],
+			"explanations": [
+				"Ese es el modelo de lista de bloqueo: lo que nadie recordó prohibir queda abierto.",
+				"Eso sería una regla de negocio específica, no el principio.",
+				"Una restricción horaria es una política posible, pero no es lo que significa el término.",
+				"Una ruta nueva o un caso olvidado cae en el rechazo; un error de configuración resulta en falta de acceso, no en una fuga.",
+				"La doble aprobación es otro control (segregación de funciones)."
+			],
+			"concept": "Denegar por defecto es elegir hacia qué lado falla el sistema. Con una lista de permitidos, olvidar una regla bloquea un uso legítimo, del que alguien se queja pronto. Con una lista de bloqueo, olvidar una regla expone datos en silencio. Por eso la política central empieza rechazándolo todo."
 		}
 	},
 	{
@@ -187,6 +241,29 @@
 				"content": "app.get(\"/invoices/:id\", async ({ params, session }) => {\n\tif (!session.user) return status(401);\n\tconst invoice = await db.invoices.findById(params.id);\n\tif (!invoice) return status(404);\n\treturn invoice;\n});"
 			},
 			"concept": "The ownership check compares the owner of the object with the session user, which is the only trusted identity. A robust way is to include the owner in the query itself (`WHERE id = $1 AND owner_id = $2`) or to go through a central policy function, so that no route forgets the rule."
+		},
+		"es": {
+			"statement": "El handler de abajo atiende `GET /invoices/:id`. ¿Qué le falta?",
+			"alternatives": [
+				"Verificar que `session.user` esté autenticado antes de consultar la base de datos",
+				"Convertir `params.id` a UUID para que los identificadores no sean secuenciales",
+				"Devolver la factura por POST en lugar de GET, para sacar el identificador de la URL",
+				"Cifrar el campo `id` de la respuesta para que el cliente no lo reutilice",
+				"Verificar que la factura pertenezca a `session.user` o que su rol pueda verla"
+			],
+			"explanations": [
+				"Esa verificación ya existe en la primera línea del handler.",
+				"Los identificadores difíciles de adivinar no reemplazan la verificación de propiedad.",
+				"El método HTTP no cambia quién puede leer el recurso.",
+				"El cliente puede enviar cualquier valor de todos modos; la decisión le corresponde al servidor.",
+				"El código autentica pero no autoriza: cualquier usuario con sesión recibe cualquier factura existente."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "app.get(\"/invoices/:id\", async ({ params, session }) => {\n\tif (!session.user) return status(401);\n\tconst invoice = await db.invoices.findById(params.id);\n\tif (!invoice) return status(404);\n\treturn invoice;\n});"
+			},
+			"concept": "La verificación de propiedad compara al dueño del objeto con el usuario de la sesión, que es la única identidad confiable. Una forma robusta es incluir al dueño en la propia consulta (`WHERE id = $1 AND owner_id = $2`) o pasar por una función de política central, para que ninguna ruta olvide la regla."
 		}
 	},
 	{
@@ -232,6 +309,24 @@
 				"The type of the identifier does not interfere with the ownership query."
 			],
 			"concept": "An unpredictable identifier is a useful mitigation against enumeration, but it is security through obscurity if it is the only barrier. An identifier is not a secret: it is designed to circulate. Access control remains the check, on the server, that the session user may access the object."
+		},
+		"es": {
+			"statement": "Para corregir un IDOR, un equipo reemplaza los ids secuenciales por UUIDs aleatorios y no agrega ninguna verificación en el servidor. ¿Qué evaluación es correcta?",
+			"alternatives": [
+				"No lo corrige: un id obtenido por otros medios sigue dando acceso al objeto",
+				"Lo corrige: sin poder enumerar ids, nadie llega a los objetos de otra persona",
+				"Lo corrige, siempre que los UUIDs se cambien cada 24 horas",
+				"No lo corrige: los UUIDs son tan predecibles como los números secuenciales",
+				"Lo empeora: los UUIDs impiden que el servidor verifique al dueño del objeto"
+			],
+			"explanations": [
+				"Los identificadores aparecen en enlaces compartidos, logs, historiales y respuestas de otras rutas; quien tiene uno entra directo, porque nada verifica la propiedad.",
+				"La enumeración es solo una de las formas de obtener un identificador.",
+				"Cambiar los ids periódicamente rompe enlaces legítimos y sigue sin verificar ningún permiso.",
+				"Los UUIDs aleatorios (versión 4) sí son impredecibles; el problema es tratarlos como control de acceso.",
+				"El tipo del identificador no interfiere con la consulta de propiedad."
+			],
+			"concept": "Un identificador impredecible es una mitigación útil contra la enumeración, pero es seguridad por oscuridad si es la única barrera. Un identificador no es un secreto: está hecho para circular. El control de acceso sigue siendo la verificación, en el servidor, de que el usuario de la sesión puede acceder al objeto."
 		}
 	},
 	{
@@ -277,6 +372,24 @@
 				"The user gains a capability of a higher role; the rule existed only in the interface, not in the route."
 			],
 			"concept": "There are two axes of broken access control. In the horizontal one, the user reaches data of another user of the same level (typical IDOR). In the vertical one, they reach functions of a higher role. Both have the same root: the route does not check the permission. Hiding the link is only navigation, not control."
+		},
+		"es": {
+			"statement": "El panel de un sistema muestra el enlace \"Administrar usuarios\" solo a los administradores. Un usuario común escribe `/admin/users` directamente y la página responde con la lista de usuarios. ¿Qué tipo de falla es esta?",
+			"alternatives": [
+				"Escalada horizontal de privilegios: acceso a datos de otro usuario del mismo nivel",
+				"Fijación de sesión: el usuario reutiliza un identificador definido por un tercero",
+				"Enumeración de usuarios: mensajes de error distintos revelan las cuentas existentes",
+				"Clickjacking: se induce al usuario a hacer clic en un botón invisible del panel",
+				"Escalada vertical de privilegios: una función de administrador sin verificación de rol"
+			],
+			"explanations": [
+				"Horizontal sería leer el registro de otro usuario común; aquí lo alcanzado es una función administrativa.",
+				"El usuario usa su propia sesión legítima.",
+				"La lista viene de una función administrativa expuesta, no de mensajes de error del login.",
+				"Nadie fue engañado para hacer clic: el acceso fue directo por la URL.",
+				"El usuario obtiene una capacidad de un rol superior; la regla existía solo en la interfaz, no en la ruta."
+			],
+			"concept": "Hay dos ejes del control de acceso roto. En el horizontal, el usuario llega a datos de otro usuario del mismo nivel (el IDOR típico). En el vertical, llega a funciones de un rol superior. Ambos tienen la misma raíz: la ruta no verifica el permiso. Ocultar el enlace es solo navegación, no control."
 		}
 	},
 	{
@@ -332,6 +445,29 @@
 				"content": "app.patch(\"/users/me\", async ({ body, session }) => {\n\t// body: JSON enviado pelo cliente / JSON sent by the client\n\tawait db.users.update(session.user.id, body);\n\treturn status(204);\n});"
 			},
 			"concept": "Mass assignment is authorisation at the property level: the user may edit their record, but not every field of it. Binding the request body straight to the model hands the client fields such as role, balance or owner. The defence is to validate the input with a schema that lists the allowed fields and refuses the rest."
+		},
+		"es": {
+			"statement": "La ruta de abajo permite que los usuarios editen su propio perfil. La propiedad está verificada, ya que solo modifica el registro del usuario de la sesión. Aun así, un usuario común logra convertirse en administrador. ¿Cómo, y cuál es la corrección?",
+			"alternatives": [
+				"Enviando `\"role\": \"admin\"` en el cuerpo; la ruta debe aceptar solo una lista fija de campos",
+				"Cambiando el id de la URL por el de un administrador; la ruta debe comparar el id con el de la sesión",
+				"Enviando el cuerpo como XML en lugar de JSON; la ruta debe exigir el encabezado `Content-Type` correcto",
+				"Repitiendo la solicitud muchas veces; la ruta debe limitar el número de llamadas por minuto",
+				"Inyectando SQL por el campo `name`; la ruta debe parametrizar la actualización"
+			],
+			"explanations": [
+				"Todo el objeto del cliente va a la base de datos, incluidos campos que nunca debería controlar; un esquema estricto (por ejemplo, solo `name` y `bio`) lo resuelve.",
+				"La URL no tiene id: la ruta ya usa el de la sesión, por eso la propiedad es correcta.",
+				"El formato del cuerpo no es la cuestión; el problema es qué campos se aceptan.",
+				"Limitar las llamadas no detiene una sola solicitud con un campo de más.",
+				"El fragmento no concatena SQL; la falla es de autorización por campo, no de inyección."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "app.patch(\"/users/me\", async ({ body, session }) => {\n\t// body: JSON enviado pelo cliente / JSON sent by the client\n\tawait db.users.update(session.user.id, body);\n\treturn status(204);\n});"
+			},
+			"concept": "La asignación masiva (mass assignment) es autorización a nivel de propiedad: el usuario puede editar su registro, pero no todos sus campos. Vincular el cuerpo de la solicitud directamente al modelo le entrega al cliente campos como rol, saldo o dueño. La defensa es validar la entrada con un esquema que liste los campos permitidos y rechace el resto."
 		}
 	},
 	{
@@ -377,6 +513,24 @@
 				"Neither code triggers an automatic resend."
 			],
 			"concept": "Both codes are correct for a refusal; the difference is in what they reveal. A 403 is clearer for legitimate clients and for debugging. A 404 hides the existence of the resource, which matters when the name itself is sensitive. The essential part is that the decision is taken on the server and the response is consistent, timing included."
+		},
+		"es": {
+			"statement": "Un servicio de repositorios privados responde 404, no 403, cuando un usuario autenticado pide un repositorio que existe pero al que no tiene acceso. ¿Cuál es la razón de esta elección?",
+			"alternatives": [
+				"Un 403 confirmaría que el repositorio existe; el 404 no",
+				"Un 403 solo puede usarse cuando el usuario no está autenticado",
+				"Un 404 se salta la verificación de permisos, lo que hace la ruta más rápida",
+				"Un 404 impide que el navegador guarde la respuesta en caché",
+				"Un 403 haría que el navegador reenvíe la solicitud con otras credenciales"
+			],
+			"explanations": [
+				"Responder lo mismo para \"no existe\" y \"existe, pero no es tuyo\" impide que alguien descubra nombres de recursos privados probando URLs.",
+				"Para quien no está autenticado el código es 401; 403 es justamente para quien está autenticado y no tiene permiso.",
+				"El permiso se verifica igual; solo cambia la respuesta.",
+				"El caché depende de los encabezados de caché, no de esta elección de estado.",
+				"Ninguno de los dos códigos provoca un reenvío automático."
+			],
+			"concept": "Ambos códigos son correctos para un rechazo; la diferencia está en lo que revelan. Un 403 es más claro para clientes legítimos y para depurar. Un 404 oculta la existencia del recurso, lo que importa cuando el propio nombre es sensible. Lo esencial es que la decisión se tome en el servidor y que la respuesta sea consistente, tiempos incluidos."
 		}
 	}
 ]

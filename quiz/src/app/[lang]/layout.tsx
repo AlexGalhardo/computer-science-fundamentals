@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import "../globals.css";
 import { Header } from "@/components/Header";
 import { LANGUAGES } from "@/content/schema";
-import { getDictionary, isLanguage, THEME_KEY } from "@/i18n";
+import { getDictionary, HTML_LANG, isLanguage, THEME_KEY } from "@/i18n";
 
 // EN: Static site generation: Next.js calls this at build time and writes one HTML file per
 //     language. `dynamicParams = false` makes any other value a 404 instead of a server render.
@@ -47,7 +47,7 @@ export default async function LanguageLayout({
 		//     so the server HTML and the browser HTML differ on purpose in that one attribute.
 		// PT: `suppressHydrationWarning`: o script acima adiciona `data-theme` antes de o React
 		//     rodar, então o HTML do servidor e o do navegador diferem de propósito nesse atributo.
-		<html lang={lang === "pt" ? "pt-BR" : "en"} suppressHydrationWarning>
+		<html lang={HTML_LANG[lang]} suppressHydrationWarning>
 			<head>
 				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: constant script written above, with no user input */}
 				<script dangerouslySetInnerHTML={{ __html: themeScript }} />

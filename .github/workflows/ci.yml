@@ -1,17 +1,19 @@
 # EN: Continuous integration. Every push and pull request must pass the same checks that run
 #     locally: format and lint, type check, unit tests, quiz content validation, the quiz
-#     end-to-end tests, and the tests of every mini-project whose folder changed.
+#     end-to-end tests, and the tests of every mini-project.
 # PT: Integração contínua. Todo push e pull request precisa passar nas mesmas verificações que
 #     rodam localmente: formatação e lint, checagem de tipos, testes unitários, validação do
-#     conteúdo do quiz, testes de ponta a ponta do quiz, e os testes de todo mini-projeto cuja
-#     pasta mudou.
+#     conteúdo do quiz, testes de ponta a ponta do quiz, e os testes de todo mini-projeto.
+# ES: Integración continua. Cada push y pull request debe pasar las mismas verificaciones que
+#     corren en local: formato y lint, chequeo de tipos, pruebas unitarias, validación del
+#     contenido del quiz, pruebas de punta a punta del quiz, y las pruebas de todo mini-proyecto.
 name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
-  # Manual run: with no base commit to compare, every mini-project is tested.
+  # Manual run, for example to rerun everything after a flaky failure.
   workflow_dispatch:
 
 # Least privilege: the workflow only reads the repository.
@@ -86,37 +88,40 @@ jobs:
           [ -z "$pages" ] && exit 0
           docker run --rm --network none             -v "$PWD:/work:ro"             -v "$PWD/tools/scaffold/tests/open-from-disk.mjs:/repo/quiz/open-from-disk.mjs:ro"             -w /repo/quiz sef-quiz-e2e:local node open-from-disk.mjs $pages
 
-  # Which mini-projects changed? Each one is tested by its own setup script, only when its
-  # folder changed, so a pull request pays only for what it touches.
-  changed-projects:
+  # EN: Every mini-project is tested on every run, not only the ones whose folder changed: a
+  # change in a shared file (a pinned image in docker/, the workflow, the quiz content a project
+  # links to) can break a project whose own folder did not change. Each one runs its own setup
+  # script.
+  # PT: Todo mini-projeto é testado em toda execução, não só os que tiveram a pasta alterada:
+  # uma mudança em um arquivo compartilhado (uma imagem fixada em docker/, o workflow, o
+  # conteúdo do quiz para o qual o projeto aponta) pode quebrar um projeto cuja pasta não mudou.
+  # ES: Cada mini-proyecto se prueba en cada ejecución, no solo los que cambiaron de carpeta:
+  # un cambio en un archivo compartido (una imagen fijada en docker/, el workflow, el contenido
+  # del quiz al que apunta el proyecto) puede romper un proyecto cuya carpeta no cambió.
+  list-projects:
     runs-on: ubuntu-24.04
     outputs:
       projects: ${{ steps.list.outputs.projects }}
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
       - id: list
-        env:
-          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
-          if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
-            BASE=$(git rev-list --max-parents=0 HEAD | tail -n 1)
-          fi
-          projects=$(git diff --name-only "$BASE" HEAD -- projects \
-            | awk -F/ 'NF >= 4 { print $1 "/" $2 "/" $3 }' | sort -u \
-            | while read -r dir; do [ -d "$dir" ] && echo "$dir"; done \
-            | jq -R . | jq -sc .)
+          projects=$(for dir in projects/*/*/; do
+              dir=${dir%/}
+              if [ -f "$dir/setup-unix-$(basename "$dir").sh" ]; then echo "$dir"; fi
+            done | jq -R . | jq -sc .)
+          echo "Found $(echo "$projects" | jq length) mini-projects"
           echo "projects=${projects:-[]}" >> "$GITHUB_OUTPUT"
 
   mini-projects:
-    needs: changed-projects
-    if: needs.changed-projects.outputs.projects != '[]'
+    needs: list-projects
+    if: needs.list-projects.outputs.projects != '[]'
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJson(needs.changed-projects.outputs.projects) }}
+        project: ${{ fromJson(needs.list-projects.outputs.projects) }}
     steps:
       - uses: actions/checkout@v5
       - name: Run the setup script of ${{ matrix.project }}

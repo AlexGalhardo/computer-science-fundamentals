@@ -6,7 +6,9 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 //     in the browser: the saved language wins, then the browser language, then English.
 // PT: Um site estático não tem servidor para ler o cabeçalho Accept-Language, então a escolha
 //     acontece no navegador: vale o idioma salvo, depois o idioma do navegador, depois inglês.
-const redirectScript = `(function(){var l;try{l=localStorage.getItem(${JSON.stringify(LANGUAGE_KEY)})}catch(e){}if(l!=="pt"&&l!=="en"){l=(navigator.language||"en").toLowerCase().indexOf("pt")===0?"pt":"en"}location.replace(${JSON.stringify(basePath)}+"/"+l+"/")})()`;
+// ES: Un sitio estático no tiene servidor que lea la cabecera Accept-Language, así que la
+//     elección ocurre en el navegador: gana el idioma guardado, luego el del navegador, luego inglés.
+const redirectScript = `(function(){var l;try{l=localStorage.getItem(${JSON.stringify(LANGUAGE_KEY)})}catch(e){}if(l!=="pt"&&l!=="en"&&l!=="es"){l=(navigator.language||"en").toLowerCase().slice(0,2);if(l!=="pt"&&l!=="es"){l="en"}}location.replace(${JSON.stringify(basePath)}+"/"+l+"/")})()`;
 
 export default function RootPage() {
 	return (
@@ -15,11 +17,15 @@ export default function RootPage() {
 			<script dangerouslySetInnerHTML={{ __html: redirectScript }} />
 			<h1>Computer Science Fundamentals</h1>
 			<p>
+				<a href={`${basePath}/en/`}>English</a>
+				{" · "}
 				<a href={`${basePath}/pt/`} lang="pt-BR">
 					Português
 				</a>
 				{" · "}
-				<a href={`${basePath}/en/`}>English</a>
+				<a href={`${basePath}/es/`} lang="es">
+					Español
+				</a>
 			</p>
 		</main>
 	);

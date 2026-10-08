@@ -7,6 +7,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { en } from "../../src/i18n/en";
+import { es } from "../../src/i18n/es";
 import { format } from "../../src/i18n/index";
 import { pt } from "../../src/i18n/pt";
 import { highlight } from "../../src/lib/highlight";
@@ -188,9 +189,10 @@ describe("dictionaries", () => {
 		);
 	}
 
-	test("Portuguese and English have the same keys, and no text is empty", () => {
+	test("Portuguese, Spanish and English have the same keys, and no text is empty", () => {
 		expect(keys(pt).sort()).toEqual(keys(en).sort());
-		for (const dictionary of [pt, en]) {
+		expect(keys(es).sort()).toEqual(keys(en).sort());
+		for (const dictionary of [pt, es, en]) {
 			expect(Object.values(dictionary).every((value) => value !== "")).toBe(true);
 		}
 	});

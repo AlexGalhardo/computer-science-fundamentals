@@ -6,12 +6,15 @@
 
 ## Comments
 
-Code comments are **didactic, bilingual (Portuguese and English) and written for beginners**. This is a teaching repository, so this rule overrides the usual "comment only the non-obvious" habit. Explain the concept and the reason, not the syntax. Write one bilingual block per concept, not a translation of every line.
+Code comments are **didactic, trilingual (English, Portuguese and Spanish) and written for beginners**. English stays the main language of the project and comes first. This is a teaching repository, so this rule overrides the usual "comment only the non-obvious" habit. Explain the concept and the reason, not the syntax. Write one block per concept, with the three languages in the order `EN`, `PT`, `ES`, not a translation of every line.
 
 ```ts
 // EN: Swap only when the left item is bigger, so the largest value "bubbles" to the end.
 // PT: Troca apenas quando o item da esquerda é maior, então o maior valor "borbulha" até o fim.
+// ES: Intercambia solo cuando el elemento de la izquierda es mayor, así el valor más grande "burbujea" hasta el final.
 ```
+
+Spanish was added on 2026-10-08 (owner's decision). Every place that has Portuguese has Spanish too: comments, READMEs (`README.es.md` next to `README.pt-BR.md`), `docs/es/` next to `docs/pt/`, and the `es` block of every quiz question. Spanish is neutral Latin American Spanish (`tú`, not `vos` or `vosotros`).
 
 ## Linters and formatters
 

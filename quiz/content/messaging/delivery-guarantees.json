@@ -42,6 +42,24 @@
 				"That is exactly-once, a stronger promise that neither loses nor repeats."
 			],
 			"concept": "At-most-once means the system never retries: a message arrives once or not at all. It is the cheapest guarantee and it accepts loss in exchange for never duplicating."
+		},
+		"es": {
+			"statement": "¿Qué promete la garantía de entrega at-most-once sobre cada mensaje?",
+			"alternatives": [
+				"Se entrega como máximo una vez por instancia de consumidor en ejecución",
+				"Se entrega cero veces o una vez, nunca dos",
+				"Se entrega una vez por segundo hasta que se confirma",
+				"Se entrega una vez o más, nunca cero veces",
+				"Se entrega exactamente una vez, sin pérdida y sin copia"
+			],
+			"explanations": [
+				"La garantía trata del mensaje, no de cuántas instancias del consumidor existen.",
+				"Correcta: at-most-once nunca duplica, y el precio es que un mensaje puede perderse.",
+				"Reintentar con un temporizador hasta recibir confirmación es un mecanismo de la entrega at-least-once.",
+				"Eso es at-least-once: sin pérdida, pero con posibles duplicados.",
+				"Eso es exactly-once, una promesa más fuerte que ni pierde ni repite."
+			],
+			"concept": "At-most-once significa que el sistema nunca reintenta: un mensaje llega una vez o no llega. Es la garantía más barata y acepta la pérdida a cambio de nunca duplicar."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"The guarantee says nothing about latency; a message can arrive immediately."
 			],
 			"concept": "At-least-once means no message is lost, because the broker redelivers whenever it is not sure the message was processed. The cost is duplicates, which the consumer must tolerate."
+		},
+		"es": {
+			"statement": "Un broker promete entrega at-least-once. ¿Para qué debe estar preparado el consumidor?",
+			"alternatives": [
+				"Recibir el mismo mensaje más de una vez",
+				"No recibir nunca algunos de los mensajes enviados",
+				"Recibir mensajes que ningún productor envió",
+				"Recibir todos los mensajes en un orden estrictamente aleatorio",
+				"Recibir cada mensaje solo después de un retraso fijo"
+			],
+			"explanations": [
+				"Correcta: at-least-once reintenta hasta estar seguro, así que el mismo mensaje puede llegar de nuevo.",
+				"La pérdida es la debilidad de at-most-once. At-least-once existe precisamente para evitarla.",
+				"Una garantía de entrega no crea mensajes; los duplicados son copias de mensajes reales.",
+				"El orden es una propiedad aparte; at-least-once no implica aleatoriedad.",
+				"La garantía no dice nada sobre la latencia; un mensaje puede llegar de inmediato."
+			],
+			"concept": "At-least-once significa que ningún mensaje se pierde, porque el broker reentrega cada vez que no está seguro de que el mensaje se procesó. El costo son los duplicados, que el consumidor debe tolerar."
 		}
 	},
 	{
@@ -132,6 +168,24 @@
 				"Correct: the broker may deliver twice, and the consumer makes the second delivery harmless, so the effect happens once."
 			],
 			"concept": "Delivering a message exactly once over an unreliable network cannot be guaranteed, because the sender cannot distinguish a lost message from a lost acknowledgement. What can be built is an effect that happens once: deliver at least once and deduplicate at the consumer."
+		},
+		"es": {
+			"statement": "A través de una red que puede fallar, ¿cómo se obtiene normalmente en la práctica un efecto \"exactly-once\"?",
+			"alternatives": [
+				"Una configuración del broker que prohíbe reenviar cualquier mensaje",
+				"Dos brokers que comparan sus mensajes antes de entregarlos",
+				"Un protocolo de red confiable como TCP entre los servicios",
+				"Entrega at-most-once combinada con un consumidor muy rápido",
+				"Entrega at-least-once combinada con un consumidor idempotente"
+			],
+			"explanations": [
+				"Prohibir reenvíos convierte el sistema en at-most-once: tras una falla, el mensaje simplemente se pierde.",
+				"Comparar brokers no ayuda cuando la falla está entre el efecto del consumidor y su confirmación.",
+				"TCP protege una conexión. No puede saber si la aplicación terminó de procesar antes de una caída.",
+				"At-most-once puede perder el mensaje, y la velocidad no recupera un mensaje perdido.",
+				"Correcta: el broker puede entregar dos veces, y el consumidor hace inofensiva la segunda entrega, así el efecto ocurre una vez."
+			],
+			"concept": "Entregar un mensaje exactamente una vez sobre una red no confiable no puede garantizarse, porque el emisor no puede distinguir un mensaje perdido de una confirmación perdida. Lo que sí puede construirse es un efecto que ocurre una vez: entregar al menos una vez y deduplicar en el consumidor."
 		}
 	},
 	{
@@ -187,6 +241,29 @@
 				"Correct: the ack told the broker the work was done, so nothing will redeliver it. Acknowledging first gives at-most-once."
 			],
 			"concept": "The position of the acknowledgement decides the guarantee. Acknowledging before processing means a crash loses the message (at-most-once). Acknowledging after processing means a crash repeats it (at-least-once)."
+		},
+		"es": {
+			"statement": "El consumidor del snippet se cae entre la línea 1 y la línea 2. ¿Qué pasa con ese mensaje?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "consumer.onMessage(async (msg) => {\n  await broker.ack(msg);        // 1\n  // <- el proceso se cae aquí\n  await sendEmail(msg.body);    // 2\n});"
+			},
+			"alternatives": [
+				"Se mueve a la dead-letter queue debido a la caída",
+				"Se reentrega, y el e-mail termina enviándose dos veces",
+				"Queda bloqueado en la cola hasta que un operador lo libere",
+				"Se reentrega, y el e-mail se envía después del reinicio",
+				"Se pierde: el broker lo quitó y no se envió ningún e-mail"
+			],
+			"explanations": [
+				"El dead-lettering se aplica a mensajes rechazados o expirados; uno confirmado simplemente se quita.",
+				"Un duplicado requiere que el efecto ocurra antes de una reentrega. Aquí el efecto nunca ocurrió.",
+				"Tras el ack, el broker ya no tiene el mensaje, así que no hay nada que bloquear ni liberar.",
+				"La reentrega ocurre solo para mensajes no confirmados, y este se confirmó en la línea 1.",
+				"Correcta: el ack le dijo al broker que el trabajo estaba hecho, así que nada lo reentregará. Confirmar primero da at-most-once."
+			],
+			"concept": "La posición de la confirmación decide la garantía. Confirmar antes de procesar significa que una caída pierde el mensaje (at-most-once). Confirmar después de procesar significa que una caída lo repite (at-least-once)."
 		}
 	},
 	{
@@ -242,6 +319,29 @@
 				"Correct: with no ack the broker redelivers, and the handler repeats the charge. This is at-least-once without idempotency."
 			],
 			"concept": "Acknowledging after the effect never loses a message, but a crash in the window between the effect and the ack causes a redelivery of work already done. That window cannot be closed, only made harmless with an idempotent handler."
+		},
+		"es": {
+			"statement": "El consumidor del snippet se cae entre la línea 1 y la línea 2, y luego se reinicia. `chargeCard` no tiene protección contra duplicados. ¿Cuál es el resultado?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "consumer.onMessage(async (msg) => {\n  await chargeCard(msg.body);   // 1\n  // <- el proceso se cae aquí\n  await broker.ack(msg);        // 2\n});"
+			},
+			"alternatives": [
+				"La tarjeta se cobra una vez, porque el broker vio terminar la línea 1",
+				"La tarjeta nunca se cobra, porque el mensaje fue descartado",
+				"La tarjeta nunca se cobra, porque la caída deshace la línea 1",
+				"La tarjeta se cobra una vez, y el mensaje queda atascado para siempre",
+				"La tarjeta se cobra dos veces, porque el mensaje se reentrega"
+			],
+			"explanations": [
+				"El broker no puede ver el trabajo del handler; solo sabe si llegó un ack.",
+				"Un mensaje sin ack se conserva, no se descarta; justamente por eso regresa.",
+				"Una caída no revierte un efecto externo que ya se completó, como un cobro.",
+				"El mensaje no queda atascado: un mensaje no confirmado se entrega de nuevo cuando el consumidor vuelve.",
+				"Correcta: sin ack, el broker reentrega, y el handler repite el cobro. Esto es at-least-once sin idempotencia."
+			],
+			"concept": "Confirmar después del efecto nunca pierde un mensaje, pero una caída en la ventana entre el efecto y el ack causa la reentrega de trabajo ya hecho. Esa ventana no puede cerrarse, solo hacerse inofensiva con un handler idempotente."
 		}
 	},
 	{
@@ -287,6 +387,24 @@
 				"The message may have been stored and only the confirmation lost; assuming failure hides the duplicate risk."
 			],
 			"concept": "A lost request and a lost reply look identical to the sender. A producer that wants no loss must retry on timeout, so duplicates can start at the producer, before any consumer is involved."
+		},
+		"es": {
+			"statement": "Un productor publica un mensaje y espera la confirmación del broker. La conexión da timeout y no llega ninguna confirmación. ¿Qué sabe el productor y qué se sigue?",
+			"alternatives": [
+				"No puede saber si el broker lo guardó; reenviar puede crear un duplicado",
+				"Sabe que el consumidor ya lo procesó; un reenvío sería ignorado",
+				"Sabe que el broker lo guardó; nunca es necesario reenviar",
+				"No puede saberlo, pero el broker pedirá el mensaje de nuevo si hace falta",
+				"Sabe que el broker no lo guardó; reenviar siempre es seguro"
+			],
+			"explanations": [
+				"Correcta: pudo perderse la solicitud o la respuesta. Para evitar la pérdida, el productor reenvía, y eso arriesga una segunda copia.",
+				"Un timeout no dice nada sobre los consumidores, y los brokers no ignoran un reenvío salvo que haya deduplicación configurada.",
+				"El mensaje pudo perderse en el camino; suponer éxito convierte el timeout en una pérdida silenciosa.",
+				"Los brokers no rastrean mensajes que nunca recibieron, así que no pueden pedirlos.",
+				"El mensaje pudo guardarse y perderse solo la confirmación; suponer falla oculta el riesgo de duplicado."
+			],
+			"concept": "Una solicitud perdida y una respuesta perdida se ven idénticas para el emisor. Un productor que no quiere pérdidas debe reintentar ante un timeout, así que los duplicados pueden empezar en el productor, antes de que intervenga cualquier consumidor."
 		}
 	},
 	{
@@ -332,6 +450,24 @@
 				"A durable queue comes back after the restart, but its transient messages are gone."
 			],
 			"concept": "Durability in RabbitMQ has two independent parts: the queue (durable) and each message (persistent delivery mode). Both are needed for a waiting message to survive a broker restart."
+		},
+		"es": {
+			"statement": "En RabbitMQ, un mensaje debe sobrevivir a un reinicio del broker mientras espera en una cola. ¿Qué combinación se requiere?",
+			"alternatives": [
+				"Un exchange durable Y confirmaciones automáticas",
+				"Mensajes persistentes, en cualquier tipo de cola",
+				"Una cola exclusiva Y confirmaciones manuales",
+				"Una cola durable Y mensajes publicados como persistentes",
+				"Una cola durable, con cualquier tipo de mensaje"
+			],
+			"explanations": [
+				"Un exchange durable solo preserva la entidad de enrutamiento; no guarda mensajes.",
+				"Un mensaje persistente en una cola no durable desaparece junto con la propia cola.",
+				"Una cola exclusiva se borra cuando se cierra su conexión; las confirmaciones conciernen a los consumidores, no a los reinicios.",
+				"Correcta: la definición de la cola debe sobrevivir (durable) y el contenido del mensaje debe escribirse en disco (persistente).",
+				"Una cola durable regresa tras el reinicio, pero sus mensajes transitorios desaparecen."
+			],
+			"concept": "La durabilidad en RabbitMQ tiene dos partes independientes: la cola (durable) y cada mensaje (delivery mode persistente). Ambas son necesarias para que un mensaje en espera sobreviva a un reinicio del broker."
 		}
 	},
 	{
@@ -377,6 +513,24 @@
 				"A confirm concerns one published message, not the state or the length of the queue."
 			],
 			"concept": "There are two independent acknowledgements in a broker: the publisher confirm (broker to producer: I have it) and the consumer ack (consumer to broker: I processed it). End-to-end safety needs both."
+		},
+		"es": {
+			"statement": "Un productor RabbitMQ usa publisher confirms y recibe el confirm de un mensaje enrutado a una cola durable. ¿Qué le dice ese confirm al productor?",
+			"alternatives": [
+				"El mensaje se entregará a un consumidor exactamente una vez",
+				"El mensaje se copió a cada consumidor de la cola",
+				"El broker asumió la responsabilidad del mensaje",
+				"Un consumidor recibió y procesó el mensaje",
+				"La cola está vacía y lista para aceptar más mensajes"
+			],
+			"explanations": [
+				"Un confirm no dice nada sobre cuántas veces se entregará el mensaje después.",
+				"Los consumidores de una cola compiten, y un confirm no describe entregas en absoluto.",
+				"Correcta: un confirm es la confirmación del broker al publicador; para un mensaje persistente llega después de la escritura en disco.",
+				"Los confirms son entre publicador y broker. Las confirmaciones del consumidor son un paso aparte, posterior.",
+				"Un confirm trata de un mensaje publicado, no del estado ni de la longitud de la cola."
+			],
+			"concept": "Hay dos confirmaciones independientes en un broker: el publisher confirm (del broker al productor: lo tengo) y el ack del consumidor (del consumidor al broker: lo procesé). La seguridad de extremo a extremo necesita ambas."
 		}
 	},
 	{
@@ -422,6 +576,24 @@
 				"A producer retries only on errors; an acknowledged record is considered done."
 			],
 			"concept": "The `acks` setting trades latency for durability. With `acks=1` an acknowledged write can still vanish if the leader fails before replication. With `acks=all` the leader answers only after the in-sync replicas have the record."
+		},
+		"es": {
+			"statement": "Un productor de Kafka usa `acks=1` en un tópico con factor de replicación 3. El líder confirma un registro y se cae antes de que algún follower lo copie. ¿Qué pasa con el registro?",
+			"alternatives": [
+				"Se pierde, aunque el productor recibió una confirmación",
+				"Lo conservan los consumidores, que guardan en cache cada registro que leen",
+				"Está a salvo, porque `acks=1` espera a que un follower lo copie",
+				"Se pierde, pero se notifica al productor y puede enviarlo de nuevo",
+				"Está a salvo, porque el productor reenvía cada registro confirmado"
+			],
+			"explanations": [
+				"Correcta: `acks=1` espera solo al líder. Un nuevo líder que nunca tuvo el registro continúa sin él.",
+				"Los consumidores solo leen registros confirmados y replicados; no son un respaldo del log.",
+				"El 1 cuenta al propio líder, no a un follower. Esperar a las réplicas sincronizadas es `acks=all`.",
+				"La confirmación ya llegó, así que el productor no tiene ninguna señal de que algo salió mal.",
+				"Un productor reintenta solo ante errores; un registro confirmado se considera terminado."
+			],
+			"concept": "La configuración `acks` cambia latencia por durabilidad. Con `acks=1`, una escritura confirmada aún puede desaparecer si el líder falla antes de la replicación. Con `acks=all`, el líder responde solo después de que las réplicas sincronizadas tienen el registro."
 		}
 	},
 	{
@@ -467,6 +639,24 @@
 				"A dead-letter queue of stale temperature readings would be work nobody needs."
 			],
 			"concept": "A guarantee is chosen from the cost of losing against the cost of duplicating. High-volume, quickly outdated data tolerates loss, so at-most-once is a valid design choice, not a defect."
+		},
+		"es": {
+			"statement": "Diez mil sensores envían una lectura de temperatura cada segundo a un dashboard que muestra un promedio móvil. Perder una lectura ocasional es inofensivo. ¿Qué garantía de entrega es la elección razonable?",
+			"alternatives": [
+				"Exactly-once con una tabla de deduplicación indexada por lectura",
+				"Exactly-once: una transacción alrededor de cada lectura individual",
+				"At-least-once: cada lectura se reintenta hasta que se confirma",
+				"At-most-once: sin reintentos, y una rara lectura perdida está bien",
+				"At-least-once con una dead-letter queue para las lecturas fallidas"
+			],
+			"explanations": [
+				"Una tabla de deduplicación para millones de lecturas por minuto es costo sin beneficio en este caso.",
+				"Transacciones por lectura agregan una gran sobrecarga para datos cuya pérdida se declaró inofensiva.",
+				"Reintentar cuesta throughput y estado para proteger datos que pierden su valor en un segundo.",
+				"Correcta: la siguiente lectura reemplaza a una perdida un segundo después, así que la garantía más barata cumple el requisito.",
+				"Una dead-letter queue de lecturas de temperatura obsoletas sería trabajo que nadie necesita."
+			],
+			"concept": "Una garantía se elige comparando el costo de perder con el costo de duplicar. Los datos de alto volumen que quedan obsoletos rápido toleran la pérdida, así que at-most-once es una decisión de diseño válida, no un defecto."
 		}
 	},
 	{
@@ -520,6 +710,28 @@
 				"Correct: the committed offset says \"everything before 110 is done\", although 106 to 109 never finished. Committing ahead of processing loses records."
 			],
 			"concept": "The committed offset is the only thing Kafka knows about a group's progress. Committing after processing gives at-least-once; committing before processing finishes gives at-most-once. Auto-commit commits what was returned by poll, so handing work to the background can commit records that are not done."
+		},
+		"es": {
+			"statement": "Un consumidor de Kafka pasa los registros leídos a un handler lento que corre en segundo plano y sigue llamando a `poll()`, así que el auto-commit se ejecuta como en la línea de tiempo. ¿Qué pasa con los registros 106 a 109?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "t=0.0 s  poll() devuelve los registros con offsets 100..109\nt=1.0 s  el handler terminó 100..103, aún trabaja en el 104\nt=5.0 s  el auto-commit (enable.auto.commit=true) confirma el offset 110\nt=5.2 s  el proceso consumidor se cae mientras trabaja en el 106\nt=9.0 s  arranca un nuevo consumidor del mismo grupo"
+			},
+			"alternatives": [
+				"Se leen de nuevo: el nuevo consumidor empieza en el offset 100",
+				"Se leen de nuevo: el nuevo consumidor empieza en el offset 106",
+				"El coordinador del grupo los envía a un dead-letter topic",
+				"El broker los retiene hasta que vuelva el consumidor caído",
+				"Se saltan: el nuevo consumidor empieza en el offset 110"
+			],
+			"explanations": [
+				"El offset 100 sería el punto de reinicio solo si no hubiera ocurrido ningún commit después del poll.",
+				"Eso requeriría que el commit siguiera el progreso real del handler, lo que el auto-commit periódico de offsets leídos no hace aquí.",
+				"Kafka no tiene un dead-letter topic incorporado, y el coordinador no inspecciona los resultados del procesamiento.",
+				"Las particiones de un consumidor muerto se reasignan al grupo; el broker no retiene registros para un proceso específico.",
+				"Correcta: el offset confirmado dice \"todo antes de 110 está hecho\", aunque 106 a 109 nunca terminaron. Hacer commit antes de procesar pierde registros."
+			],
+			"concept": "El offset confirmado es lo único que Kafka sabe sobre el progreso de un grupo. Hacer commit después de procesar da at-least-once; hacer commit antes de que termine el procesamiento da at-most-once. El auto-commit confirma lo que devolvió el poll, así que pasar trabajo a segundo plano puede confirmar registros que no están terminados."
 		}
 	},
 	{
@@ -565,6 +777,24 @@
 				"Kafka cannot undo an effect in a system that does not take part in its transaction."
 			],
 			"concept": "Kafka transactions make \"read offsets + write records\" atomic, so a stream processor that only talks to Kafka sees each input take effect once. Any side effect outside Kafka still has at-least-once behaviour and needs its own idempotency."
+		},
+		"es": {
+			"statement": "Un servicio lee del tópico de Kafka `orders`, envía un e-mail a través de un servidor SMTP externo y escribe en el tópico `emails-sent`, todo dentro de una transacción de Kafka (semántica exactly-once activada). La transacción aborta después de que el e-mail salió. ¿Qué es cierto?",
+			"alternatives": [
+				"Las escrituras en Kafka se revierten, pero el e-mail se envió y puede enviarse de nuevo",
+				"Las escrituras en Kafka se mantienen, ya que una transacción no puede abortar tras una llamada externa",
+				"El e-mail se envía exactamente una vez, porque la transacción cubre todo efecto secundario",
+				"El e-mail nunca se envía, porque los efectos se retienen hasta el commit",
+				"Las escrituras en Kafka se revierten, y la transacción recupera el e-mail"
+			],
+			"explanations": [
+				"Correcta: la transacción es atómica solo sobre Kafka: registros de salida y offsets consumidos. La llamada SMTP queda fuera y se repite al reprocesar.",
+				"Una transacción de Kafka puede abortar en cualquier punto antes de su commit, haga lo que haga la aplicación mientras tanto.",
+				"La semántica exactly-once de Kafka cubre el ciclo consumir-transformar-producir dentro de Kafka, no sistemas externos.",
+				"Kafka no intercepta las llamadas de red de la aplicación; el e-mail sale cuando el código lo envía.",
+				"Kafka no puede deshacer un efecto en un sistema que no participa en su transacción."
+			],
+			"concept": "Las transacciones de Kafka hacen atómico \"leer offsets + escribir registros\", así que un procesador de streams que solo habla con Kafka ve que cada entrada surte efecto una vez. Cualquier efecto secundario fuera de Kafka sigue teniendo comportamiento at-least-once y necesita su propia idempotencia."
 		}
 	}
 ]

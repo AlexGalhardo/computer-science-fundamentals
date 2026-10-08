@@ -19,6 +19,7 @@ interface FixtureQuestion {
 	answer: number;
 	en: { statement: string; concept: string };
 	pt: { statement: string; concept: string };
+	es: { statement: string; concept: string };
 }
 
 const fixture = JSON.parse(
@@ -210,6 +211,15 @@ test.describe("navigation and score (QZ-4)", () => {
 		await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
 		await context.close();
 	});
+
+	test("a Spanish browser lands on the Spanish pages", async ({ browser }) => {
+		const context = await browser.newContext({ locale: "es-AR" });
+		const page = await context.newPage();
+		await page.goto("/");
+		await expect(page).toHaveURL(/\/es\/$/);
+		await expect(page.locator("html")).toHaveAttribute("lang", "es");
+		await context.close();
+	});
 });
 
 test.describe("features (QZ-5)", () => {
@@ -289,10 +299,31 @@ test.describe("languages (QZ-6)", () => {
 		await expect(page.getByTestId("verdict")).toContainText("Incorrect");
 		await expect(page.getByTestId("explanation")).toContainText(question?.en.concept ?? "");
 
+		await page.getByTestId("lang-es").click();
+		await expect(page).toHaveURL(/\/es\/big-o\/quiz\/$/);
+		await expect(page.locator("html")).toHaveAttribute("lang", "es");
+		await expect(page.getByTestId("question-screen")).toHaveAttribute("data-question-id", id);
+		await expect(page.getByTestId("statement")).toHaveText(question?.es.statement ?? "");
+		await expect(page.getByTestId("verdict")).toContainText("Incorrecta");
+		await expect(page.getByTestId("explanation")).toContainText(question?.es.concept ?? "");
+		await page.getByTestId("lang-en").click();
+		await expect(page).toHaveURL(/\/en\/big-o\/quiz\/$/);
+
 		// EN: The choice is remembered: the address `/` now goes to English.
 		// PT: A escolha é lembrada: o endereço `/` agora vai para o inglês.
 		await page.goto("/");
 		await expect(page).toHaveURL(/\/en\/$/);
+	});
+});
+
+test.describe("header", () => {
+	test("the Source Code link opens the main repository in a new tab", async ({ page }) => {
+		await page.goto("/en/");
+		const link = page.getByTestId("source-code");
+		await expect(link).toHaveAttribute("href", "https://github.com/AlexGalhardo/computer-science-fundamentals");
+		await expect(link).toHaveAttribute("target", "_blank");
+		await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+		await expect(link).toContainText("Source Code");
 	});
 });
 
@@ -343,6 +374,7 @@ test.describe("mobile (QZ-8)", () => {
 				page.getByTestId("next"),
 				page.getByTestId("theme-toggle"),
 				page.getByTestId("lang-pt"),
+				page.getByTestId("source-code"),
 			];
 			for (const target of targets) {
 				const box = await target.boundingBox();
