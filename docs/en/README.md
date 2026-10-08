@@ -16,27 +16,27 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-600 of 3220 questions written, 16 of 78 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+1000 of 3220 questions written, 34 of 78 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
 | Big O and algorithm analysis | Theory and practice | 100/100 | done | [big-o-lab](big-o/big-o-lab.md), [master-theorem](big-o/master-theorem.md), [sorting-lower-bound](big-o/sorting-lower-bound.md) |
-| Data structures | Theory and practice | 100/100 | done | hash-map (planned), graph-algorithms (planned), b-tree-on-disk (planned), lru-bloom-trie (planned), balanced-trees (planned) |
+| Data structures | Theory and practice | 100/100 | done | [hash-map](data-structures/hash-map.md), [graph-algorithms](data-structures/graph-algorithms.md), [b-tree-on-disk](data-structures/b-tree-on-disk.md), [lru-bloom-trie](data-structures/lru-bloom-trie.md), [balanced-trees](data-structures/balanced-trees.md) |
 | Operating systems | Theory and practice | 100/100 | done | [cpu-scheduling](operating-systems/cpu-scheduling.md), [paging-tlb](operating-systems/paging-tlb.md), [memory-allocator](operating-systems/memory-allocator.md), [deadlock-mini-shell](operating-systems/deadlock-mini-shell.md) |
 | Networks | Theory and practice | 100/100 | done | [sliding-window-mini-tcp](networks/sliding-window-mini-tcp.md), [aloha-csma](networks/aloha-csma.md), [dns-subnet](networks/dns-subnet.md) |
 | Databases (theory) | Theory and practice | 100/100 | done | [mini-dbms](databases/mini-dbms.md), [normalisation-tool](databases/normalisation-tool.md) |
 | Algorithms | Theory and practice | 0/100 |  | sorting-race (planned), dynamic-programming (planned), travelling-salesman (planned), hybrid-quicksort (planned) |
-| Concurrency | Theory and practice | 0/100 |  | counter-race (planned), dining-philosophers (planned), ten-thousand-connections (planned) |
+| Concurrency | Theory and practice | 100/100 | done | [counter-race](concurrency/counter-race.md), [dining-philosophers](concurrency/dining-philosophers.md), [ten-thousand-connections](concurrency/ten-thousand-connections.md) |
 | Parallelism | Theory and practice | 0/100 |  | scaling-by-cores (planned) |
 | Transactions | Theory and practice | 100/100 | done | [isolation-levels](transactions/isolation-levels.md), [overselling-checkout](transactions/overselling-checkout.md), [orm-vs-sql](transactions/orm-vs-sql.md), [outbox-saga](transactions/outbox-saga.md) |
-| Security | Theory and practice | 0/100 |  | sql-injection-lab (planned), xss-csp-lab (planned), csrf-lab (planned), access-control-lab (planned), ssrf-lab (planned), passwords-sessions-lab (planned), jwt-lab (planned), upload-path-traversal-lab (planned) |
+| Security | Theory and practice | 100/100 | done | [sql-injection-lab](security/sql-injection-lab.md), [xss-csp-lab](security/xss-csp-lab.md), [csrf-lab](security/csrf-lab.md), [access-control-lab](security/access-control-lab.md), [ssrf-lab](security/ssrf-lab.md), [passwords-sessions-lab](security/passwords-sessions-lab.md), [jwt-lab](security/jwt-lab.md), [upload-path-traversal-lab](security/upload-path-traversal-lab.md) |
 | Compilers | Theory and practice | 0/100 |  | mini-language-parser (planned), tree-walking-interpreter (planned), bytecode-vm (planned), regex-engine (planned) |
-| State machines | Theory and practice | 0/100 |  | order-state-machine (planned) |
+| State machines | Theory and practice | 100/100 | done | [order-state-machine](state-machines/order-state-machine.md) |
 | Information theory | Theory and practice | 0/100 |  | huffman-lz77 (planned), error-detection-correction (planned) |
 | Digital logic | Theory and practice | 0/100 |  | gates-karnaugh-adders (planned), nand-alu-cpu (planned) |
 | Electronics | Theory | 0/170 |  | none |
 | Object-oriented programming | Theory and practice | 0/100 |  | oop-vs-functional (planned), code-smells (planned) |
-| Functional programming | Theory and practice | 0/100 |  | pure-functions-properties (planned) |
+| Functional programming | Theory and practice | 100/100 | done | [pure-functions-properties](functional-programming/pure-functions-properties.md) |
 | Design patterns and SOLID | Theory and practice | 0/100 |  | backend-patterns (planned), solid-before-after (planned) |
 | Software architecture | Theory and practice | 0/100 |  | clean-architecture-app (planned) |
 | Testing | Theory and practice | 0/100 |  | test-pyramid (planned), tdd-kata (planned), mutation-testing (planned), flaky-tests (planned), mini-xunit (planned) |
