@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.94.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/cache/cache-strategies` (TypeScript): cache-aside, write-through and write-behind over Redis and PostgreSQL with a consistency test for each, the cache stampede under local k6 (about 300 database queries per expiry) and its two fixes, a lock and early refresh (1 query per expiry), and a table of hit rate and latency. The cache area is complete.
+
+## [0.93.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: cache, 100 questions in Portuguese and English, blind-reviewed in both languages with no disagreement and 4 reviewer notes resolved (`quiz/content/cache/review.md`).
+
 ## [0.92.0] - 2026-10-07
 
 ### Added

@@ -873,10 +873,10 @@ Sources: Redis documentation, HTTP caching RFC, system design notes.
 | Redis data structures and persistence | 12 |
 | Consistency trade-offs | 10 |
 
-- [ ] QC-CACHE.1 Coverage map committed
-- [ ] QC-CACHE.2 100 questions written (PT and EN)
-- [ ] QC-CACHE.3 Validation passing
-- [ ] QC-CACHE.4 Blind review resolved
+- [x] QC-CACHE.1 Coverage map committed
+- [x] QC-CACHE.2 100 questions written (PT and EN)
+- [x] QC-CACHE.3 Validation passing
+- [x] QC-CACHE.4 Blind review resolved
 
 ### Wave 6
 
@@ -1907,13 +1907,13 @@ Teaches: how memory locality changes speed with the same Big O. Languages: C++, 
 
 Teaches: how caching patterns behave and how they fail. Languages: TS.
 
-- [ ] **MP-CACHE-1.1** Cache-aside, write-through and write-behind over Redis and PostgreSQL
+- [x] **MP-CACHE-1.1** Cache-aside, write-through and write-behind over Redis and PostgreSQL
 	- **Accept:** each strategy passes a consistency test that describes its guarantee.
-- [ ] **MP-CACHE-1.2** Cache stampede and its fixes: lock and early refresh
+- [x] **MP-CACHE-1.2** Cache stampede and its fixes: lock and early refresh
 	- **Accept:** under local k6, database queries per expiry drop from hundreds to 1.
-- [ ] **MP-CACHE-1.3** Hit rate and latency
+- [x] **MP-CACHE-1.3** Hit rate and latency
 	- **Accept:** table per strategy and time to live.
-- [ ] **MP-CACHE-1.4** Definition of done for mini-projects met.
+- [x] **MP-CACHE-1.4** Definition of done for mini-projects met.
 
 #### MP-RL-1 Rate limiter algorithms
 
