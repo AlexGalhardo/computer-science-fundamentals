@@ -1,0 +1,150 @@
+# EN: Shared acceptance scenarios. Every implementation (Java, TypeScript with objects,
+#     TypeScript with functions, Elixir) reads this one file and must produce these receipts.
+#     All amounts are integer cents. One instruction per line, words separated by one space:
+#       scenario <name>                      starts a scenario
+#       item <sku> <unit price> <quantity>   adds a line to the cart
+#       rule percent-coupon <code> <percent>
+#       rule fixed-coupon <code> <amount>
+#       rule bulk <sku> <minimum quantity> <percent>
+#       rule take-pay <sku> <take> <pay>
+#       tax none | tax flat <basis points>   825 basis points = 8.25%
+#       expect subtotal|tax|total <amount>
+#       expect discount <amount> <label>     one per applied rule, in order
+#       expect error <code>                  the cart must be rejected with this code
+# PT: Cenários de aceitação compartilhados. Toda implementação (Java, TypeScript com objetos,
+#     TypeScript com funções, Elixir) lê este mesmo arquivo e precisa produzir estes recibos.
+#     Todos os valores são centavos inteiros. Uma instrução por linha, palavras separadas por
+#     um espaço. "expect discount" aparece uma vez por regra aplicada, na ordem; "expect error"
+#     diz que o carrinho deve ser recusado com aquele código.
+
+scenario no rules and no tax
+item PEN 250 4
+item BOOK 4000 1
+tax none
+expect subtotal 5000
+expect tax 0
+expect total 5000
+
+scenario percent coupon
+item PEN 250 4
+item BOOK 4000 1
+rule percent-coupon WELCOME10 10
+tax none
+expect subtotal 5000
+expect discount 500 coupon WELCOME10: 10% off
+expect tax 0
+expect total 4500
+
+scenario fixed coupon larger than the cart is clamped
+item PEN 250 2
+rule fixed-coupon BIG 1000
+tax none
+expect subtotal 500
+expect discount 500 coupon BIG: 10.00 off
+expect tax 0
+expect total 0
+
+scenario bulk discount starts at the minimum quantity
+item PEN 250 10
+item BOOK 4000 1
+rule bulk PEN 10 20
+rule bulk BOOK 2 50
+tax none
+expect subtotal 6500
+expect discount 500 bulk PEN: 20% off from 10 units
+expect tax 0
+expect total 6000
+
+scenario order matters: percent then fixed
+item BOOK 4000 1
+item PEN 250 4
+rule percent-coupon WELCOME10 10
+rule fixed-coupon FIVE 500
+tax none
+expect subtotal 5000
+expect discount 500 coupon WELCOME10: 10% off
+expect discount 500 coupon FIVE: 5.00 off
+expect tax 0
+expect total 4000
+
+scenario order matters: fixed then percent
+item BOOK 4000 1
+item PEN 250 4
+rule fixed-coupon FIVE 500
+rule percent-coupon WELCOME10 10
+tax none
+expect subtotal 5000
+expect discount 500 coupon FIVE: 5.00 off
+expect discount 450 coupon WELCOME10: 10% off
+expect tax 0
+expect total 4050
+
+scenario take three and pay two
+item TEE 3000 7
+rule take-pay TEE 3 2
+tax none
+expect subtotal 21000
+expect discount 6000 TEE: take 3, pay 2
+expect tax 0
+expect total 15000
+
+scenario flat tax is charged after the discounts
+item PEN 250 4
+item BOOK 4000 1
+rule percent-coupon WELCOME10 10
+tax flat 825
+expect subtotal 5000
+expect discount 500 coupon WELCOME10: 10% off
+expect tax 371
+expect total 4871
+
+scenario flat tax rounds half a cent up
+item GUM 200 1
+tax flat 825
+expect subtotal 200
+expect tax 17
+expect total 217
+
+scenario everything together
+item PEN 250 12
+item TEE 3000 3
+item BOOK 4000 1
+rule bulk PEN 10 20
+rule take-pay TEE 3 2
+rule percent-coupon WELCOME10 10
+rule fixed-coupon FIVE 500
+tax flat 825
+expect subtotal 16000
+expect discount 600 bulk PEN: 20% off from 10 units
+expect discount 3000 TEE: take 3, pay 2
+expect discount 1240 coupon WELCOME10: 10% off
+expect discount 500 coupon FIVE: 5.00 off
+expect tax 879
+expect total 11539
+
+scenario a quantity of zero is rejected
+item PEN 250 0
+tax none
+expect error invalid-quantity
+
+scenario a negative price is rejected
+item PEN -1 1
+tax none
+expect error invalid-price
+
+scenario a percentage above 100 is rejected
+item PEN 250 1
+rule percent-coupon TOOMUCH 120
+tax none
+expect error invalid-percent
+
+scenario take-pay must pay for fewer units than it takes
+item TEE 3000 3
+rule take-pay TEE 2 2
+tax none
+expect error invalid-rule
+
+scenario a negative tax rate is rejected
+item PEN 250 1
+tax flat -5
+expect error invalid-tax
