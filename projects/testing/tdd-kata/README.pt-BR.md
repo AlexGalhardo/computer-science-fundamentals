@@ -68,33 +68,33 @@ Cada passo aponta para o seu commit. Leia o diff de cada um: nenhum é maior que
 
 | # | Passo | O que acontece | Commit |
 | --- | --- | --- | --- |
-| 1 | red | $5 vezes 2 é $10 | [`259b623`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/259b623) |
-| 2 | green | fake it: times devolve $10 | [`dae1bfe`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/dae1bfe) |
-| 3 | red | triangular com $5 vezes 3 | [`0a2e4de`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/0a2e4de) |
-| 4 | green | times multiplica o valor | [`c866e3f`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/c866e3f) |
-| 5 | red | dólares são iguais quando os valores são iguais | [`4ec4cee`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/4ec4cee) |
-| 6 | green | implementação óbvia: equals compara os valores | [`70ac685`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/70ac685) |
-| 7 | refactor | comparar valores inteiros com equals nos testes | [`9bec35b`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/9bec35b) |
-| 8 | red | 5 CHF vezes 2 é 10 CHF | [`e0fa8b7`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/e0fa8b7) |
-| 9 | green | copiar Dollar para Franc | [`66fe7b5`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/66fe7b5) |
-| 10 | refactor | subir o valor e o equals para Money | [`a378645`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/a378645) |
-| 11 | red | 5 CHF não é igual a $5 | [`fa14419`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/fa14419) |
-| 12 | green | equals também compara a moeda | [`3c7925a`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/3c7925a) |
-| 13 | refactor | subir o times para Money | [`3397f85`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/3397f85) |
-| 14 | refactor | criar dinheiro por Money.dollar e Money.franc | [`0b915fc`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/0b915fc) |
-| 15 | refactor | apagar as subclasses vazias Dollar e Franc | [`c023641`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/c023641) |
-| 16 | red | $5 + $5 é $10 | [`0059695`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/0059695) |
-| 17 | green | fake it: reduce devolve $10 | [`ef21360`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/ef21360) |
-| 18 | red | triangular com $3 + $4 | [`c9a8a65`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/c9a8a65) |
-| 19 | green | reduce devolve a soma que recebeu | [`ca46166`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/ca46166) |
-| 20 | red | 2 CHF é $1 a uma taxa de 2 | [`0b89467`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/0b89467) |
-| 21 | green | o Bank guarda as taxas e um Money se converte | [`31dc3ad`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/31dc3ad) |
-| 22 | refactor | dar nome à chave de uma taxa | [`a7ec6a5`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/a7ec6a5) |
-| 23 | red | $5 + 10 CHF é $10 | [`9910013`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/9910013) |
-| 24 | green | uma expressão Sum reduz os dois lados antes de somar | [`929814a`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/929814a) |
-| 25 | red | uma soma pode ser somada e multiplicada | [`0677281`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/0677281) |
-| 26 | green | plus e times pertencem a toda Expression | [`c03f9e6`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/c03f9e6) |
-| 27 | refactor | agrupar os testes por comportamento | [`7734db6`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/7734db6) |
+| 1 | red | $5 vezes 2 é $10 | [`350b73b`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/350b73b) |
+| 2 | green | fake it: times devolve $10 | [`4009c9b`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/4009c9b) |
+| 3 | red | triangular com $5 vezes 3 | [`37fbac3`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/37fbac3) |
+| 4 | green | times multiplica o valor | [`f659df2`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/f659df2) |
+| 5 | red | dólares são iguais quando os valores são iguais | [`09782c5`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/09782c5) |
+| 6 | green | implementação óbvia: equals compara os valores | [`c30c7dd`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/c30c7dd) |
+| 7 | refactor | comparar valores inteiros com equals nos testes | [`e03cb61`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/e03cb61) |
+| 8 | red | 5 CHF vezes 2 é 10 CHF | [`e81bdce`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/e81bdce) |
+| 9 | green | copiar Dollar para Franc | [`1c184df`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/1c184df) |
+| 10 | refactor | subir o valor e o equals para Money | [`737fdc8`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/737fdc8) |
+| 11 | red | 5 CHF não é igual a $5 | [`e236d10`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/e236d10) |
+| 12 | green | equals também compara a moeda | [`3726797`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/3726797) |
+| 13 | refactor | subir o times para Money | [`15eb25a`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/15eb25a) |
+| 14 | refactor | criar dinheiro por Money.dollar e Money.franc | [`4253425`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/4253425) |
+| 15 | refactor | apagar as subclasses vazias Dollar e Franc | [`512f11c`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/512f11c) |
+| 16 | red | $5 + $5 é $10 | [`17702bc`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/17702bc) |
+| 17 | green | fake it: reduce devolve $10 | [`5de03f7`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/5de03f7) |
+| 18 | red | triangular com $3 + $4 | [`b46ef1a`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/b46ef1a) |
+| 19 | green | reduce devolve a soma que recebeu | [`4d8f892`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/4d8f892) |
+| 20 | red | 2 CHF é $1 a uma taxa de 2 | [`214e092`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/214e092) |
+| 21 | green | o Bank guarda as taxas e um Money se converte | [`912e09e`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/912e09e) |
+| 22 | refactor | dar nome à chave de uma taxa | [`c82506d`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/c82506d) |
+| 23 | red | $5 + 10 CHF é $10 | [`a671f72`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/a671f72) |
+| 24 | green | uma expressão Sum reduz os dois lados antes de somar | [`f7eebe5`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/f7eebe5) |
+| 25 | red | uma soma pode ser somada e multiplicada | [`5cc8402`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/5cc8402) |
+| 26 | green | plus e times pertencem a toda Expression | [`c4343b1`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/c4343b1) |
+| 27 | refactor | agrupar os testes por comportamento | [`326a071`](https://github.com/AlexGalhardo/Software-Engineer-Fundamentals/commit/326a071) |
 
 A lista de tarefas ([`TODO.md`](TODO.md)) muda nos mesmos commits: uma ideia que surge no meio de um passo é anotada e fica para depois.
 
