@@ -1,0 +1,538 @@
+[
+	{
+		"id": "cache-stampede-penetration-avalanche-01",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "System design notes (cache stampede, thundering herd, dogpile)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "O que é um estouro da manada no cache (cache stampede, também chamado de thundering herd ou dogpile)?",
+			"alternatives": [
+				"Muitas requisições pedem chaves que também não existem no banco de dados",
+				"Grande parte das chaves expira no mesmo instante, ou o cache sai do ar",
+				"O cache enche e passa a descartar justamente as entradas mais lidas",
+				"Uma chave muito lida expira e muitas requisições a recalculam ao mesmo tempo",
+				"Uma escrita atualiza o banco de dados e deixa o valor antigo no cache"
+			],
+			"explanations": [
+				"Isso é penetração de cache: o dado não existe, então nada é guardado e toda requisição chega ao banco.",
+				"Isso é avalanche de cache: o problema atinge muitas chaves de uma vez, não uma única chave popular.",
+				"Isso é um problema de política de descarte e de tamanho do cache, não de expiração de uma chave popular.",
+				"Correta: todas as requisições concorrentes encontram a falha de cache e disparam o mesmo recálculo caro, multiplicando a carga na origem.",
+				"Isso é inconsistência entre cache e banco (dado obsoleto), sem relação com requisições concorrentes na expiração."
+			],
+			"concept": "Enquanto uma chave popular está no cache, milhares de leituras por segundo custam quase nada. No instante em que ela expira, todas as requisições que chegam antes de o valor ser regravado veem uma falha de cache e executam a mesma consulta cara. O dado é válido e existe no banco; o problema é a concorrência na janela de recálculo. As correções usuais são deixar só uma requisição recalcular (lock) ou renovar antes de expirar."
+		},
+		"en": {
+			"statement": "What is a cache stampede (also called thundering herd or dogpile)?",
+			"alternatives": [
+				"Many requests ask for keys that do not exist in the database either",
+				"A large share of the keys expires at the same instant, or the cache goes down",
+				"The cache fills up and starts evicting precisely the most read entries",
+				"A heavily read key expires and many requests recompute it at the same time",
+				"A write updates the database and leaves the old value in the cache"
+			],
+			"explanations": [
+				"That is cache penetration: the data does not exist, so nothing is stored and every request reaches the database.",
+				"That is a cache avalanche: the problem hits many keys at once, not one single popular key.",
+				"That is a problem of eviction policy and cache size, not of the expiry of a popular key.",
+				"Correct: all the concurrent requests find the cache miss and trigger the same expensive recomputation, multiplying the load on the origin.",
+				"That is inconsistency between cache and database (stale data), unrelated to concurrent requests at expiry."
+			],
+			"concept": "While a popular key is in the cache, thousands of reads per second cost almost nothing. The instant it expires, every request that arrives before the value is written back sees a cache miss and runs the same expensive query. The data is valid and exists in the database; the problem is the concurrency in the recomputation window. The usual fixes are to let only one request recompute (a lock) or to refresh before expiry."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-02",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "System design notes (cache stampede: cost with and without a lock)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "A chave `home:feed` expira. Nos 200 ms seguintes chegam 300 requisições para ela, e reconstruir o valor leva 2 s de trabalho no banco. Quantas consultas ao banco acontecem sem proteção alguma, e quantas com um lock por chave (`SET lock:home:feed token NX PX 5000`) em que quem perde o lock espera e relê o cache?",
+			"alternatives": [
+				"300 sem proteção e 2 com o lock",
+				"1 sem proteção e 1 com o lock",
+				"300 sem proteção e 1 com o lock",
+				"299 sem proteção e 1 com o lock",
+				"300 sem proteção e 300 com o lock"
+			],
+			"explanations": [
+				"Uma segunda consulta só aconteceria se o lock vencesse antes do fim da reconstrução; aqui ele dura 5 s e o trabalho leva 2 s.",
+				"Isso supõe que a primeira requisição regrava o cache a tempo para as demais, mas a reconstrução leva 2 s e todas chegam em 200 ms.",
+				"Correta: sem proteção, as 300 chegam em 200 ms, antes de qualquer reconstrução de 2 s terminar, então as 300 consultam o banco. Com o lock, só uma obtém `OK` no `SET ... NX`; as outras 299 esperam e leem o valor regravado: 1 consulta. O lock dura 5 s, mais que os 2 s da reconstrução.",
+				"Não há uma requisição poupada sem proteção: a primeira também encontra a falha de cache e consulta o banco, somando 300.",
+				"Isso supõe que quem espera o lock consulta o banco depois; quem espera relê o cache, já preenchido por quem tinha o lock."
+			],
+			"concept": "O custo de um estouro da manada é o número de requisições que chegam dentro da janela de recálculo, cada uma repetindo a mesma consulta. Um lock com `SET chave token NX PX ms` é atômico: apenas uma requisição consegue criá-lo, e só ela recalcula. As demais esperam um pouco e leem o cache de novo, ou recebem o valor antigo, e o custo cai para uma consulta por expiração."
+		},
+		"en": {
+			"statement": "The key `home:feed` expires. In the next 200 ms, 300 requests arrive for it, and rebuilding the value takes 2 s of database work. How many database queries happen with no protection at all, and how many with a per-key lock (`SET lock:home:feed token NX PX 5000`) where whoever loses the lock waits and rereads the cache?",
+			"alternatives": [
+				"300 with no protection and 2 with the lock",
+				"1 with no protection and 1 with the lock",
+				"300 with no protection and 1 with the lock",
+				"299 with no protection and 1 with the lock",
+				"300 with no protection and 300 with the lock"
+			],
+			"explanations": [
+				"A second query would happen only if the lock ran out before the rebuild ended; here it lasts 5 s and the work takes 2 s.",
+				"That assumes the first request writes the cache back in time for the others, but the rebuild takes 2 s and all of them arrive within 200 ms.",
+				"Correct: with no protection, the 300 arrive within 200 ms, before any 2 s rebuild finishes, so all 300 query the database. With the lock, only one gets `OK` from `SET ... NX`; the other 299 wait and read the value written back: 1 query. The lock lasts 5 s, longer than the 2 s rebuild.",
+				"No request is spared without protection: the first one also finds the cache miss and queries the database, which makes 300.",
+				"That assumes those who wait for the lock query the database afterwards; they reread the cache, already filled by the lock holder."
+			],
+			"concept": "The cost of a stampede is the number of requests that arrive inside the recomputation window, each repeating the same query. A lock taken with `SET key token NX PX ms` is atomic: only one request manages to create it, and only that one recomputes. The others wait a little and read the cache again, or get the old value, and the cost drops to one query per expiry."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-03",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "System design notes (cache penetration)",
+		"pt": {
+			"statement": "Um cliente pede sem parar `/users/-1`, `/users/99999999` e outros ids que não existem nem no cache nem no banco de dados. Toda requisição chega ao banco. Como se chama esse problema?",
+			"alternatives": [
+				"Estouro da manada (cache stampede)",
+				"Avalanche de cache (cache avalanche)",
+				"Invalidação de cache (cache invalidation)",
+				"Penetração de cache (cache penetration)",
+				"Quebra de cache (cache breakdown)"
+			],
+			"explanations": [
+				"O estouro da manada envolve uma chave que existe e é popular, recalculada por muitas requisições na expiração.",
+				"A avalanche é a expiração simultânea de muitas chaves válidas, ou a queda do cache inteiro.",
+				"Invalidação é remover ou regravar uma entrada quando o dado muda na origem; aqui nenhuma entrada chega a ser gravada.",
+				"Correta: como o dado não existe, nada é guardado depois da consulta, e cada requisição atravessa o cache e chega ao banco.",
+				"Quebra de cache é outro nome para a expiração de uma única chave quente com dado válido, não para dados inexistentes."
+			],
+			"concept": "Na penetração, as requisições pedem chaves que não existem na origem, e por isso o cache nunca tem o que guardar. Pode ser um defeito do cliente ou um ataque deliberado. As defesas são validar a entrada (recusar ids impossíveis), guardar o resultado vazio com um TTL curto e colocar um filtro de Bloom na frente, que descarta ids que com certeza não existem."
+		},
+		"en": {
+			"statement": "A client keeps requesting `/users/-1`, `/users/99999999` and other ids that exist neither in the cache nor in the database. Every request reaches the database. What is this problem called?",
+			"alternatives": [
+				"Cache stampede",
+				"Cache avalanche",
+				"Cache invalidation",
+				"Cache penetration",
+				"Cache breakdown"
+			],
+			"explanations": [
+				"A stampede involves a key that exists and is popular, recomputed by many requests when it expires.",
+				"An avalanche is the simultaneous expiry of many valid keys, or the failure of the whole cache.",
+				"Invalidation is removing or rewriting an entry when the data changes at the origin; here no entry is ever written.",
+				"Correct: since the data does not exist, nothing is stored after the query, and every request goes through the cache and reaches the database.",
+				"Cache breakdown is another name for the expiry of one single hot key with valid data, not for data that does not exist."
+			],
+			"concept": "In penetration, the requests ask for keys that do not exist at the origin, so the cache never has anything to store. It can be a client bug or a deliberate attack. The defences are validating the input (rejecting impossible ids), storing the empty result with a short TTL, and putting a Bloom filter in front, which drops ids that certainly do not exist."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-04",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Redis documentation (SET: lock pattern with NX, expiry and token); system design notes (stampede lock)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Um lock contra estouro da manada é criado com `SET lock:report <token> NX PX 5000`, em que o token é um valor aleatório único da requisição. Por que a liberação compara o token guardado antes de apagar a chave?",
+			"alternatives": [
+				"Para o lock ser liberado sozinho se o dono falhar antes de terminar",
+				"Para duas requisições dividirem o mesmo lock quando usam tokens iguais",
+				"Para um dono lento não apagar um lock que agora pertence a outra requisição",
+				"Para quem espera poder ler o valor recalculado direto na chave do lock",
+				"Para o Redis ordenar quem espera e entregar o lock à requisição mais antiga"
+			],
+			"explanations": [
+				"Quem resolve a falha do dono é a expiração (`PX 5000`), não o token: o lock some sozinho depois de 5 s.",
+				"O token existe para o contrário: ele é único por requisição, justamente para distinguir os donos.",
+				"Correta: se o lock venceu e outra requisição o obteve, um `DEL` cego do primeiro dono soltaria o lock alheio; comparar o token (de forma atômica, em um script) evita isso.",
+				"O valor recalculado é gravado na chave do cache; a chave do lock guarda só o token do dono.",
+				"O Redis não mantém fila de espera para `SET NX`: quem tentar primeiro depois da liberação obtém o lock."
+			],
+			"concept": "Um lock no Redis precisa de duas proteções. A expiração garante que ele seja liberado mesmo que o dono falhe e nunca o apague. O token garante que cada dono só libere o próprio lock: sem ele, uma requisição que demorou mais que a expiração apagaria, ao terminar, o lock que outra requisição acabou de obter. A comparação e a remoção devem acontecer juntas, em um script executado no servidor."
+		},
+		"en": {
+			"statement": "A stampede lock is created with `SET lock:report <token> NX PX 5000`, where the token is a random value unique to the request. Why does the release compare the stored token before deleting the key?",
+			"alternatives": [
+				"So the lock is released by itself if the holder crashes before finishing",
+				"So two requests can share the same lock when they use equal tokens",
+				"So a slow holder does not delete a lock that now belongs to another request",
+				"So those who wait can read the recomputed value straight from the lock key",
+				"So Redis can order those who wait and give the lock to the oldest request"
+			],
+			"explanations": [
+				"What handles a crashed holder is the expiry (`PX 5000`), not the token: the lock disappears by itself after 5 s.",
+				"The token exists for the opposite: it is unique per request, precisely to tell the holders apart.",
+				"Correct: if the lock ran out and another request acquired it, a blind `DEL` by the first holder would release someone else's lock; comparing the token (atomically, in a script) prevents that.",
+				"The recomputed value is written to the cache key; the lock key holds only the token of the holder.",
+				"Redis keeps no waiting queue for `SET NX`: whoever tries first after the release gets the lock."
+			],
+			"concept": "A lock in Redis needs two protections. The expiry guarantees it is released even if the holder crashes and never deletes it. The token guarantees that each holder releases only its own lock: without it, a request that took longer than the expiry would, on finishing, delete the lock another request has just acquired. The comparison and the removal must happen together, in a script run on the server."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-05",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "System design notes (cache avalanche and TTL jitter)",
+		"pt": {
+			"statement": "Um job aquece o cache às 03:00, gravando 200.000 chaves com o mesmo TTL de 1 h. Às 04:00 a carga no banco dispara. Qual é a forma usual de evitar essa avalanche de cache?",
+			"alternatives": [
+				"Somar um desvio aleatório (jitter) a cada TTL, espalhando as expirações",
+				"Colocar um filtro de Bloom na frente do cache para recusar chaves desconhecidas",
+				"Guardar resultados vazios com TTL curto para os ids que não existem",
+				"Aumentar o TTL de todas as chaves para 2 h, para expirarem menos vezes",
+				"Usar um lock por chave, para só uma requisição reconstruir cada entrada"
+			],
+			"explanations": [
+				"Correta: com TTLs ligeiramente diferentes, as chaves vencem ao longo de um intervalo, e a recarga se distribui no tempo em vez de cair de uma vez sobre o banco.",
+				"O filtro de Bloom combate a penetração (chaves que não existem); aqui todas as chaves existem e são válidas.",
+				"Cache de resultados vazios também é defesa contra penetração, não contra a expiração simultânea de chaves válidas.",
+				"Com um TTL igual para todas, elas continuam vencendo juntas, só que às 05:00; o pico é adiado, não espalhado.",
+				"O lock evita recálculos repetidos da mesma chave, mas aqui são 200.000 chaves diferentes, e cada uma ainda seria reconstruída no mesmo momento."
+			],
+			"concept": "A avalanche acontece quando muitas chaves ficam indisponíveis juntas: por terem sido gravadas no mesmo momento com o mesmo TTL, ou porque o servidor de cache caiu. No primeiro caso, a correção é variar os prazos com um jitter aleatório e aquecer o cache aos poucos. No segundo, entram alta disponibilidade do cache e proteção da origem, com disjuntor (circuit breaker) e limite de taxa."
+		},
+		"en": {
+			"statement": "A job warms the cache at 03:00, writing 200,000 keys with the same TTL of 1 h. At 04:00 the load on the database spikes. What is the usual way to prevent this cache avalanche?",
+			"alternatives": [
+				"Add a random offset (jitter) to each TTL, spreading out the expiries",
+				"Put a Bloom filter in front of the cache, rejecting keys that are unknown",
+				"Store empty results with a short TTL for the ids that do not exist",
+				"Raise the TTL of all the keys to 2 h, so they expire less often",
+				"Use a lock per key, so only one request rebuilds each entry"
+			],
+			"explanations": [
+				"Correct: with slightly different TTLs, the keys expire along an interval, and the reload is distributed over time instead of landing on the database all at once.",
+				"A Bloom filter fights penetration (keys that do not exist); here all the keys exist and are valid.",
+				"Caching empty results is also a defence against penetration, not against the simultaneous expiry of valid keys.",
+				"With one equal TTL for all, they still expire together, only at 05:00; the peak is postponed, not spread.",
+				"A lock avoids repeated recomputation of the same key, but here there are 200,000 different keys, and each would still be rebuilt at the same moment."
+			],
+			"concept": "An avalanche happens when many keys become unavailable together: because they were written at the same moment with the same TTL, or because the cache server went down. In the first case, the fix is to vary the deadlines with a random jitter and to warm the cache gradually. In the second, the answers are high availability for the cache and protection of the origin, with a circuit breaker and rate limiting."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-06",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "System design notes (single flight in process and distributed lock)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Um serviço roda em 8 instâncias. Cada uma usa single flight em memória (cargas concorrentes da mesma chave, dentro da instância, compartilham uma única consulta ao banco), sem lock distribuído. Uma chave popular expira no Redis e cada instância recebe 50 requisições concorrentes para ela. Quantas consultas ao banco podem acontecer, no máximo?",
+			"alternatives": [
+				"1",
+				"8",
+				"400",
+				"50",
+				"58"
+			],
+			"explanations": [
+				"Uma única consulta exigiria coordenação entre as instâncias, isto é, um lock distribuído (por exemplo no Redis), que aqui não existe.",
+				"Correta: dentro de cada instância as 50 requisições se juntam em 1 consulta, mas as instâncias não sabem umas das outras: 8 instâncias × 1 = 8. Conferindo: das 400 requisições, 392 pegam carona em uma consulta da própria instância e sobram 8.",
+				"400 (8 × 50) é o custo sem proteção nenhuma; o single flight já elimina as repetições dentro de cada instância.",
+				"50 é o número de requisições de uma instância, que o single flight reduz a 1; o que multiplica o custo é o número de instâncias.",
+				"58 soma instâncias e requisições (8 + 50), uma conta sem sentido aqui: o custo é uma consulta por instância."
+			],
+			"concept": "Single flight em memória junta as cargas concorrentes de uma mesma chave dentro de um processo: a primeira consulta a origem e as demais esperam o mesmo resultado. É barato e não depende de rede, mas só enxerga o próprio processo, então com N instâncias ainda ocorrem até N consultas por expiração. Para chegar a uma única consulta é preciso um lock compartilhado por todas as instâncias."
+		},
+		"en": {
+			"statement": "A service runs on 8 instances. Each uses in-process single flight (concurrent loads of the same key, inside the instance, share one single database query), with no distributed lock. A popular key expires in Redis and each instance receives 50 concurrent requests for it. How many database queries can happen, at most?",
+			"alternatives": [
+				"1",
+				"8",
+				"400",
+				"50",
+				"58"
+			],
+			"explanations": [
+				"One single query would need coordination between the instances, that is, a distributed lock (in Redis, for example), which does not exist here.",
+				"Correct: inside each instance the 50 requests collapse into 1 query, but the instances do not know about each other: 8 instances × 1 = 8. Checking: of the 400 requests, 392 ride on a query of their own instance and 8 remain.",
+				"400 (8 × 50) is the cost with no protection at all; single flight already removes the repetitions inside each instance.",
+				"50 is the number of requests of one instance, which single flight reduces to 1; what multiplies the cost is the number of instances.",
+				"58 adds instances and requests (8 + 50), a sum with no meaning here: the cost is one query per instance."
+			],
+			"concept": "In-process single flight merges the concurrent loads of one key inside a process: the first one queries the origin and the others wait for the same result. It is cheap and needs no network, but it sees only its own process, so with N instances there are still up to N queries per expiry. Getting down to one single query takes a lock shared by all the instances."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-07",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "System design notes (refresh-ahead and probabilistic early expiration)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Qual técnica evita o estouro da manada garantindo que uma entrada popular seja reconstruída ANTES de o TTL dela acabar?",
+			"alternatives": [
+				"Cache negativo de resultados vazios com um TTL curto",
+				"Renovação antecipada (early refresh ou refresh-ahead)",
+				"Filtro de Bloom que recusa chaves ausentes no banco de dados",
+				"Disjuntor que corta as chamadas a um banco sobrecarregado",
+				"Jitter no TTL, que espalha a expiração de chaves diferentes"
+			],
+			"explanations": [
+				"Cache negativo guarda o resultado \"não existe\" e combate a penetração; não renova entradas válidas.",
+				"Correta: a entrada é renovada em segundo plano quando o prazo está perto do fim, então sob carga ela nunca chega a expirar e nenhuma requisição encontra a falha de cache.",
+				"O filtro de Bloom barra pedidos de chaves inexistentes; ele não age sobre a expiração de uma chave que existe.",
+				"O disjuntor protege a origem depois que ela já está sobrecarregada; ele limita o dano, não evita a expiração.",
+				"O jitter impede que muitas chaves vençam juntas (avalanche), mas cada chave popular ainda expira e pode sofrer o estouro."
+			],
+			"concept": "Em vez de esperar a expiração e reagir, a renovação antecipada recalcula o valor enquanto a entrada antiga ainda é servida. Uma variante é a expiração antecipada probabilística: cada requisição pode decidir renovar antes do prazo, com uma probabilidade que cresce à medida que o fim se aproxima, de modo que quase sempre só uma requisição renova, e sem precisar de lock."
+		},
+		"en": {
+			"statement": "Which technique avoids a stampede by making sure a popular entry is rebuilt BEFORE its TTL runs out?",
+			"alternatives": [
+				"Negative caching of empty results with a short TTL",
+				"Early refresh, also known as refresh-ahead",
+				"A Bloom filter that rejects keys absent from the database",
+				"A circuit breaker that cuts calls to an overloaded database",
+				"TTL jitter, which spreads the expiry of different keys"
+			],
+			"explanations": [
+				"Negative caching stores the result \"does not exist\" and fights penetration; it does not refresh valid entries.",
+				"Correct: the entry is refreshed in the background when its deadline is near, so under load it never actually expires and no request finds the cache miss.",
+				"A Bloom filter blocks requests for keys that do not exist; it does not act on the expiry of a key that exists.",
+				"A circuit breaker protects the origin after it is already overloaded; it limits the damage, it does not avoid the expiry.",
+				"Jitter keeps many keys from expiring together (avalanche), but each popular key still expires and can suffer a stampede."
+			],
+			"concept": "Instead of waiting for the expiry and reacting, early refresh recomputes the value while the old entry is still being served. One variant is probabilistic early expiration: each request may decide to refresh before the deadline, with a probability that grows as the end approaches, so that almost always only one request refreshes, with no lock needed."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-08",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "System design notes (logical expiry and serving stale during refresh)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Uma entrada guarda `{ value, logicalExpiry }` e tem TTL físico de 10 min no Redis, enquanto `logicalExpiry` é 5 min depois da gravação. No minuto 6, duas requisições a leem; a primeira obtém o lock de renovação. O que a segunda recebe?",
+			"alternatives": [
+				"Uma falha de cache, pois a entrada expirou no minuto 5",
+				"Nada até a renovação terminar, pois precisa esperar o lock",
+				"O valor obsoleto de imediato, enquanto a primeira o renova",
+				"O valor fresco de imediato, pois a expiração lógica renova na leitura",
+				"Um erro, pois uma entrada logicamente expirada não pode ser lida"
+			],
+			"explanations": [
+				"No minuto 5 venceu apenas o prazo lógico, que é um campo dentro do valor; o Redis só remove a chave no minuto 10.",
+				"Esperar é o comportamento do lock sem valor obsoleto; a razão de guardar o prazo lógico é justamente não fazer ninguém esperar.",
+				"Correta: a chave ainda existe no Redis (o TTL físico só vence no minuto 10), então quem não obteve o lock devolve o valor antigo sem esperar e sem consultar o banco.",
+				"A renovação leva tempo e está sendo feita pela primeira requisição; a segunda não tem como receber um valor que ainda não existe.",
+				"O prazo lógico é só um dado interpretado pela aplicação: o Redis entrega o valor normalmente, e a aplicação decide servi-lo."
+			],
+			"concept": "Separar a expiração em duas resolve o dilema entre esperar e errar. O prazo lógico, guardado dentro do valor, diz quando o dado deve ser renovado. O TTL físico, mais longo, diz quando o Redis apaga a chave. Entre um e outro, a entrada está obsoleta mas disponível: uma requisição renova, protegida por um lock, e as demais continuam respondendo com o valor antigo."
+		},
+		"en": {
+			"statement": "An entry stores `{ value, logicalExpiry }` and has a physical TTL of 10 min in Redis, while `logicalExpiry` is 5 min after the write. At minute 6, two requests read it; the first one gets the refresh lock. What does the second one receive?",
+			"alternatives": [
+				"A cache miss, since the entry expired at minute 5",
+				"Nothing until the refresh ends, since it has to wait for the lock",
+				"The stale value immediately, while the first one refreshes it",
+				"The fresh value immediately, since logical expiry refreshes on read",
+				"An error, since a logically expired entry cannot be read"
+			],
+			"explanations": [
+				"At minute 5 only the logical deadline passed, which is a field inside the value; Redis removes the key only at minute 10.",
+				"Waiting is the behaviour of a lock with no stale value; the reason to store a logical deadline is precisely to make nobody wait.",
+				"Correct: the key still exists in Redis (the physical TTL ends only at minute 10), so whoever did not get the lock returns the old value without waiting and without querying the database.",
+				"The refresh takes time and is being done by the first request; the second one cannot receive a value that does not exist yet.",
+				"The logical deadline is just data interpreted by the application: Redis returns the value normally, and the application decides to serve it."
+			],
+			"concept": "Splitting the expiry in two resolves the dilemma between waiting and being wrong. The logical deadline, stored inside the value, says when the data should be refreshed. The physical TTL, which is longer, says when Redis deletes the key. Between the two, the entry is stale but available: one request refreshes, protected by a lock, and the others keep answering with the old value."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-09",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "System design notes (cache penetration: Bloom filter)",
+		"pt": {
+			"statement": "Um filtro de Bloom com todos os ids de usuário existentes fica na frente do cache. O que se pode concluir das duas respostas possíveis dele para um id?",
+			"alternatives": [
+				"\"Talvez presente\" é sempre verdade; \"ausente\" pode estar errado às vezes",
+				"As duas respostas são exatas, pois o filtro guarda cada id por inteiro",
+				"As duas respostas são só prováveis, então o banco é sempre consultado",
+				"\"Ausente\" é sempre verdade; \"talvez presente\" pode estar errado às vezes",
+				"\"Ausente\" indica id apagado; \"talvez presente\" indica id que está no cache"
+			],
+			"explanations": [
+				"É o inverso: se \"ausente\" pudesse estar errado, o filtro recusaria usuários reais, o que o tornaria inútil como proteção.",
+				"O filtro guarda apenas bits marcados por funções de hash, não os ids; é por isso que ocupa pouca memória e pode dar falsos positivos.",
+				"O \"ausente\" é certo, e é ele que dispensa a consulta ao banco para os ids inexistentes.",
+				"Correta: o filtro não tem falsos negativos, então um \"ausente\" permite recusar o pedido sem ir ao banco; ele tem alguns falsos positivos, e esses poucos pedidos seguem adiante e descobrem que o id não existe.",
+				"O filtro só responde sobre pertencer ao conjunto de ids inseridos; ele não sabe o que foi apagado nem o que está no cache."
+			],
+			"concept": "Um filtro de Bloom é uma estrutura compacta que responde se um elemento pertence a um conjunto, com erro em um só sentido: ele pode dizer \"talvez\" para algo que não está, mas nunca diz \"não\" para algo que está. Contra a penetração isso basta: a maior parte dos pedidos de ids inexistentes é barrada antes do cache e do banco, e os poucos falsos positivos custam apenas uma consulta."
+		},
+		"en": {
+			"statement": "A Bloom filter holding all the existing user ids sits in front of the cache. What can be concluded from its two possible answers for an id?",
+			"alternatives": [
+				"\"Maybe present\" is always true; \"absent\" can be wrong sometimes",
+				"Both answers are exact, since the filter stores every id in full",
+				"Both answers are only probable, so the database is always queried",
+				"\"Absent\" is always true; \"maybe present\" can be wrong sometimes",
+				"\"Absent\" means a deleted id; \"maybe present\" means an id that is cached"
+			],
+			"explanations": [
+				"It is the reverse: if \"absent\" could be wrong, the filter would reject real users, which would make it useless as a protection.",
+				"The filter stores only bits set by hash functions, not the ids; that is why it uses little memory and can give false positives.",
+				"The \"absent\" answer is certain, and it is what spares the database query for ids that do not exist.",
+				"Correct: the filter has no false negatives, so an \"absent\" allows the request to be rejected without going to the database; it has some false positives, and those few requests go on and find out the id does not exist.",
+				"The filter only answers about membership in the set of inserted ids; it knows neither what was deleted nor what is cached."
+			],
+			"concept": "A Bloom filter is a compact structure that answers whether an element belongs to a set, with error in one direction only: it may say \"maybe\" for something that is not there, but it never says \"no\" for something that is. Against penetration that is enough: most requests for ids that do not exist are stopped before the cache and the database, and the few false positives cost just one query."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-10",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "System design notes (cache avalanche: TTL jitter)",
+		"pt": {
+			"statement": "Cada chave recebe um TTL de 600 s mais um jitter aleatório uniforme de ±10% desse valor base. Em que intervalo ficam os TTLs?",
+			"alternatives": [
+				"De 590 s a 610 s",
+				"De 540 s a 660 s",
+				"De 600 s a 660 s",
+				"De 594 s a 606 s",
+				"De 540 s a 600 s"
+			],
+			"explanations": [
+				"Isso trata os 10% como 10 segundos; o jitter é uma porcentagem da base, e 10% de 600 s são 60 s.",
+				"Correta: 10% de 600 é 60, então o TTL vai de 600 - 60 = 540 s a 600 + 60 = 660 s. Conferindo pelos fatores: 0,9 × 600 = 540 e 1,1 × 600 = 660.",
+				"Isso aplica só o desvio positivo; ±10% vale para os dois lados, então o TTL também pode ficar abaixo de 600 s.",
+				"Isso usa 1% em vez de 10% (6 s de desvio); o erro é de uma casa decimal.",
+				"Isso aplica só o desvio negativo; o jitter de ±10% também pode alongar o TTL até 660 s."
+			],
+			"concept": "O jitter soma a cada TTL um valor aleatório dentro de uma faixa, para que chaves gravadas juntas não vençam juntas. Com uma base de 600 s e ±10%, 200.000 chaves gravadas no mesmo instante passam a vencer espalhadas por uma janela de 120 s, em vez de todas no mesmo segundo. A largura da faixa é um ajuste: mais larga espalha melhor a carga e torna o prazo menos previsível."
+		},
+		"en": {
+			"statement": "Each key gets a TTL of 600 s plus a uniform random jitter of ±10% of that base value. In which range do the TTLs fall?",
+			"alternatives": [
+				"From 590 s to 610 s",
+				"From 540 s to 660 s",
+				"From 600 s to 660 s",
+				"From 594 s to 606 s",
+				"From 540 s to 600 s"
+			],
+			"explanations": [
+				"That treats the 10% as 10 seconds; the jitter is a percentage of the base, and 10% of 600 s is 60 s.",
+				"Correct: 10% of 600 is 60, so the TTL goes from 600 - 60 = 540 s to 600 + 60 = 660 s. Checking by the factors: 0.9 × 600 = 540 and 1.1 × 600 = 660.",
+				"That applies only the positive offset; ±10% goes both ways, so the TTL can also fall below 600 s.",
+				"That uses 1% instead of 10% (an offset of 6 s); the mistake is one decimal place.",
+				"That applies only the negative offset; a jitter of ±10% can also stretch the TTL up to 660 s."
+			],
+			"concept": "Jitter adds to each TTL a random value inside a range, so that keys written together do not expire together. With a base of 600 s and ±10%, 200,000 keys written at the same instant now expire spread over a 120 s window, instead of all in the same second. The width of the range is a dial: wider spreads the load better and makes the deadline less predictable."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-11",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "advanced",
+		"answer": 3,
+		"source": "Redis documentation (SET: lock pattern, auto-release after the expire time); system design notes (stampede lock)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Um lock contra estouro da manada é criado com `SET lock:feed <token> NX PX 5000`, mas reconstruir o valor leva 8 s. As requisições que esperam repetem o `SET` a cada 100 ms. O que acontece?",
+			"alternatives": [
+				"O lock dura os 8 s inteiros, pois o Redis o estende enquanto o dono está ativo",
+				"A primeira reconstrução é cancelada pelo Redis aos 5 s e o resultado é descartado",
+				"As requisições que esperam falham aos 5 s, pois `NX` as recusa em definitivo",
+				"Por volta dos 5 s o lock vence e uma segunda requisição também reconstrói o valor",
+				"Nada muda: só uma reconstrução roda, pois o token barra as outras após o vencimento"
+			],
+			"explanations": [
+				"O Redis não acompanha o dono do lock; o prazo só é estendido se a própria aplicação renovar a expiração enquanto trabalha.",
+				"O Redis só remove a chave do lock; a consulta ao banco que já está em curso continua e ainda grava o resultado.",
+				"`NX` só recusa enquanto a chave existe; depois do vencimento a chave some e a tentativa seguinte é aceita.",
+				"Correta: o Redis apaga a chave do lock aos 5 s sem saber que o trabalho continua; a próxima tentativa de `SET ... NX` obtém `OK` e inicia outra reconstrução, e a cada 5 s mais uma pode começar.",
+				"O token só protege a liberação do lock; quando a chave vence não há mais nada guardado, e qualquer requisição pode criar um lock novo."
+			],
+			"concept": "A expiração do lock é um palpite sobre a duração do trabalho. Se for curta demais, o lock some no meio da reconstrução e a proteção falha em parte: em vez de uma consulta, há uma a cada intervalo de expiração. Se for longa demais, uma falha do dono deixa todos esperando. Na prática escolhe-se um prazo com folga sobre o pior tempo de reconstrução, ou renova-se o lock enquanto o trabalho avança."
+		},
+		"en": {
+			"statement": "A stampede lock is created with `SET lock:feed <token> NX PX 5000`, but rebuilding the value takes 8 s. The requests that wait retry the `SET` every 100 ms. What happens?",
+			"alternatives": [
+				"The lock lasts the full 8 s, since Redis extends it while the holder is active",
+				"The first rebuild is cancelled by Redis at 5 s and its result is discarded",
+				"The requests that wait fail at 5 s, since `NX` rejects them for good",
+				"At about 5 s the lock runs out and a second request rebuilds the value as well",
+				"Nothing changes: one rebuild runs, since the token keeps the others out after expiry"
+			],
+			"explanations": [
+				"Redis does not follow the lock holder; the time is extended only if the application itself renews the expiry while it works.",
+				"Redis only removes the lock key; the database query already in progress continues and still writes its result.",
+				"`NX` rejects only while the key exists; after the expiry the key is gone and the next attempt is accepted.",
+				"Correct: Redis deletes the lock key at 5 s without knowing the work goes on; the next `SET ... NX` attempt gets `OK` and starts another rebuild, and every 5 s one more can begin.",
+				"The token protects only the release of the lock; once the key expires nothing is stored any more, and any request can create a new lock."
+			],
+			"concept": "The expiry of a lock is a guess about how long the work takes. If it is too short, the lock disappears in the middle of the rebuild and the protection partly fails: instead of one query, there is one per expiry interval. If it is too long, a crashed holder leaves everyone waiting. In practice the time is chosen with a margin over the worst rebuild time, or the lock is renewed while the work progresses."
+		}
+	},
+	{
+		"id": "cache-stampede-penetration-avalanche-12",
+		"area": "cache",
+		"topic": "stampede-penetration-avalanche",
+		"difficulty": "advanced",
+		"answer": 2,
+		"source": "System design notes (hot keys, stampede and the limits of a longer TTL)",
+		"miniProject": "projects/cache/cache-strategies",
+		"pt": {
+			"statement": "Para acabar com o estouro da manada em uma chave quente, cuja reconstrução leva 3 s, uma equipe apenas aumenta o TTL dela de 60 s para 1 h. Qual é a falha dessa correção?",
+			"alternatives": [
+				"Um TTL maior aumenta a manada, pois mais requisições se acumulam esperando a expiração",
+				"Ela transforma o estouro em penetração, pois a chave fica ausente por mais tempo",
+				"Cada expiração ainda causa a mesma manada, só mais rara e com dado mais obsoleto",
+				"Não há falha: com TTL de 1 h a chave é reconstruída em segundo plano antes de expirar",
+				"Ela leva a manada para o cache, pois um TTL maior deixa cada leitura mais lenta"
+			],
+			"explanations": [
+				"As requisições não esperam a expiração: elas são atendidas pelo cache enquanto a chave existe; a manada é formada só pelas que chegam na janela de reconstrução.",
+				"Penetração é pedir dados que não existem na origem; aqui o dado existe, e a chave fica ausente pelos mesmos 3 s de antes.",
+				"Correta: o tamanho da manada depende de quantas requisições chegam nos 3 s de reconstrução, o que não mudou; o TTL só reduz a frequência, de uma vez por minuto para uma vez por hora, ao custo de mais atraso no dado.",
+				"O TTL não renova nada: sem renovação antecipada, a chave simplesmente expira ao fim de 1 h e as requisições encontram a falha de cache.",
+				"O TTL não altera o custo de uma leitura no cache; a carga do estouro continua caindo sobre a origem."
+			],
+			"concept": "Uma chave quente é uma chave lida com tanta frequência que qualquer falha de cache nela atinge muitas requisições ao mesmo tempo. O tamanho da manada é a taxa de requisições multiplicada pelo tempo de reconstrução, e nenhum dos dois depende do TTL. Aumentar o TTL torna o evento mais raro e o dado mais velho, mas cada ocorrência é tão grave quanto antes. A correção de verdade é impedir a concorrência (lock) ou impedir a expiração sob carga (renovação antecipada)."
+		},
+		"en": {
+			"statement": "To end the stampede on a hot key, whose rebuild takes 3 s, a team only raises its TTL from 60 s to 1 h. What is the flaw in this fix?",
+			"alternatives": [
+				"A longer TTL enlarges the herd, since more requests pile up waiting for the expiry",
+				"It turns the stampede into penetration, since the key is absent for longer",
+				"Each expiry still causes the same herd, only more rarely and with staler data",
+				"There is no flaw: with a 1 h TTL the key is rebuilt in the background before expiring",
+				"It moves the herd to the cache, since a longer TTL makes each read slower"
+			],
+			"explanations": [
+				"Requests do not wait for the expiry: they are served from the cache while the key exists; the herd is made only of those that arrive in the rebuild window.",
+				"Penetration is asking for data that does not exist at the origin; here the data exists, and the key is absent for the same 3 s as before.",
+				"Correct: the size of the herd depends on how many requests arrive in the 3 s of the rebuild, which did not change; the TTL only lowers the frequency, from once a minute to once an hour, at the cost of more delay in the data.",
+				"A TTL refreshes nothing: without early refresh, the key simply expires after 1 h and the requests find the cache miss.",
+				"The TTL does not change the cost of a cache read; the load of the stampede still lands on the origin."
+			],
+			"concept": "A hot key is a key read so often that any cache miss on it hits many requests at the same time. The size of the herd is the request rate multiplied by the rebuild time, and neither depends on the TTL. Raising the TTL makes the event rarer and the data older, but each occurrence is as severe as before. The real fix is to prevent the concurrency (a lock) or to prevent the expiry under load (early refresh)."
+		}
+	}
+]
