@@ -736,10 +736,10 @@ Sources: Otávio Lemos, Arquitetura Limpa na Prática, Sommerville (architectura
 | Domain-driven design basics | 10 |
 | Trade-offs and architecture decision records | 8 |
 
-- [ ] QC-ARCH.1 Coverage map committed
-- [ ] QC-ARCH.2 100 questions written (PT and EN)
-- [ ] QC-ARCH.3 Validation passing
-- [ ] QC-ARCH.4 Blind review resolved
+- [x] QC-ARCH.1 Coverage map committed
+- [x] QC-ARCH.2 100 questions written (PT and EN)
+- [x] QC-ARCH.3 Validation passing
+- [x] QC-ARCH.4 Blind review resolved
 
 #### QC-TEST Testing
 
@@ -1716,13 +1716,13 @@ Teaches: what each principle prevents. Languages: TS, Java.
 
 Teaches: how the dependency rule keeps business rules free of frameworks. Languages: TS.
 
-- [ ] **MP-ARCH-1.1** Note-taking application: entities, use cases, adapters, drivers
+- [x] **MP-ARCH-1.1** Note-taking application: entities, use cases, adapters, drivers
 	- **Accept:** an automated check fails if an inner layer imports an outer one.
-- [ ] **MP-ARCH-1.2** Two delivery mechanisms (HTTP and CLI) and two repositories (memory and PostgreSQL)
+- [x] **MP-ARCH-1.2** Two delivery mechanisms (HTTP and CLI) and two repositories (memory and PostgreSQL)
 	- **Accept:** use-case tests run with no database and no HTTP server.
-- [ ] **MP-ARCH-1.3** Swap experiment
+- [x] **MP-ARCH-1.3** Swap experiment
 	- **Accept:** replacing the repository changes only the composition root, shown by a diff.
-- [ ] **MP-ARCH-1.4** Definition of done for mini-projects met.
+- [x] **MP-ARCH-1.4** Definition of done for mini-projects met.
 
 #### MP-TEST-1 Full test pyramid
 

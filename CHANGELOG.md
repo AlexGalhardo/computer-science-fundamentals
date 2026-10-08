@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.71.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/software-architecture/clean-architecture-app` (TypeScript): a note-taking application in entities, use cases, adapters and drivers, with an automated check of the dependency rule, HTTP and CLI delivery, memory and PostgreSQL repositories, and a swap that changes only the composition root. The software architecture area is complete.
+
+## [0.70.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: software architecture, 100 questions in Portuguese and English, blind-reviewed in English and in Portuguese with 100 of 100 agreement and the reviewer notes resolved (`quiz/content/software-architecture/review.md`).
+
 ## [0.69.0] - 2026-10-07
 
 ### Added
