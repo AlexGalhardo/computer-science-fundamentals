@@ -33,7 +33,7 @@ The changes above were made after the reviewers answered. They change no key and
 
 ## Checks made by the authors
 
-- The questions were written by four writer agents, two topics each, and read in full by the area owner before the blind review. Every trace and computed value (eviction order, misses, remaining TTL, freshness, hit rate, average latency, number of flushed updates) was recomputed by the owner, and again by both blind reviewers.
+- The questions were written by four writer agents, two topics each. The area owner read the statement, the snippet and the alternatives of all 100 questions in English before the blind review, and sampled the Portuguese text and the explanations. Every trace and computed value (eviction order, misses, remaining TTL, freshness, hit rate, average latency, number of flushed updates) was recomputed by the owner, and again by both blind reviewers.
 - Sources consulted by the writers: RFC 9111 (sections 3.5, 4.2, 4.3.4 and 5.2), RFC 9110 (validators and conditional requests), RFC 5861, RFC 8246, and on redis.io the pages of `EXPIRE`, `TTL`, `SET`, `GETEX`, `KEYS`, `PERSIST`, `INCR`, `SADD`, `LPUSH`, `ZRANGE`, key eviction, persistence, replication, data types, HyperLogLog and transactions, plus the default values in `redis.conf`.
 - The correct alternative was written first and then moved to a seeded pseudo-random position: 20 questions per index. It is strictly the longest alternative in 5 of 100 questions.
 - No statement depends on `example`: no question of the area has one. Headers, command sessions, traces and timelines are in `snippet`.
