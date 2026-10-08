@@ -1,7 +1,7 @@
-import { Money } from "./money";
+import type { Money } from "./money";
 
 export class Bank {
-	reduce(_source: Money, _to: string): Money {
-		return Money.dollar(10);
+	reduce(source: Money, _to: string): Money {
+		return source;
 	}
 }

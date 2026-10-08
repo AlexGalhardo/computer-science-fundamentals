@@ -9,4 +9,5 @@ The list is the memory of the session: every idea that comes up while working on
 - [x] 5 CHF times 2 is 10 CHF
 - [x] duplication between Dollar and Franc
 - [x] 5 CHF is not equal to $5
-- [ ] $5 + $5 is $10
+- [x] $5 + $5 is $10
+- [ ] reduce 2 CHF to $1 with a rate of 2
