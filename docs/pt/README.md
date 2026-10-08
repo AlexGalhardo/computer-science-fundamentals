@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1770 de 3350 questões escritas, 48 de 83 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+1870 de 3350 questões escritas, 50 de 83 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -37,7 +37,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Eletrônica | Teoria | 170/170 | feita | nenhum |
 | Programação orientada a objetos | Teoria e prática | 0/100 |  | oop-vs-functional (planejado), code-smells (planejado) |
 | Programação funcional | Teoria e prática | 100/100 | feita | [pure-functions-properties](functional-programming/pure-functions-properties.md) |
-| Padrões de projeto e SOLID | Teoria e prática | 0/100 |  | backend-patterns (planejado), solid-before-after (planejado) |
+| Padrões de projeto e SOLID | Teoria e prática | 100/100 | feita | [backend-patterns](design-patterns/backend-patterns.md), [solid-before-after](design-patterns/solid-before-after.md) |
 | Arquitetura de software | Teoria e prática | 100/100 | feita | [clean-architecture-app](software-architecture/clean-architecture-app.md) |
 | Testes | Teoria e prática | 0/100 |  | test-pyramid (planejado), tdd-kata (planejado), mutation-testing (planejado), flaky-tests (planejado), mini-xunit (planejado) |
 | Protocolos | Teoria e prática | 0/100 |  | rest-graphql-jsonrpc (planejado), http-versions (planejado), http-server-raw-tcp (planejado) |
