@@ -1,4 +1,4 @@
-import type { Money } from "./money";
+import type { Expression, Money } from "./money";
 
 function rateKey(from: string, to: string): string {
 	return [from, to].join("->");
@@ -22,7 +22,7 @@ export class Bank {
 		return rate;
 	}
 
-	reduce(source: Money, to: string): Money {
+	reduce(source: Expression, to: string): Money {
 		return source.reduce(this, to);
 	}
 }

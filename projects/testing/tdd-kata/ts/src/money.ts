@@ -1,6 +1,10 @@
 import type { Bank } from "./bank";
 
-export class Money {
+export interface Expression {
+	reduce(bank: Bank, to: string): Money;
+}
+
+export class Money implements Expression {
 	readonly amount: number;
 	readonly currency: string;
 
@@ -21,8 +25,8 @@ export class Money {
 		return new Money(this.amount * multiplier, this.currency);
 	}
 
-	plus(addend: Money): Money {
-		return new Money(this.amount + addend.amount, this.currency);
+	plus(addend: Money): Expression {
+		return new Sum(this, addend);
 	}
 
 	reduce(bank: Bank, to: string): Money {
@@ -31,5 +35,20 @@ export class Money {
 
 	equals(other: Money): boolean {
 		return this.amount === other.amount && this.currency === other.currency;
+	}
+}
+
+export class Sum implements Expression {
+	readonly augend: Money;
+	readonly addend: Money;
+
+	constructor(augend: Money, addend: Money) {
+		this.augend = augend;
+		this.addend = addend;
+	}
+
+	reduce(bank: Bank, to: string): Money {
+		const amount = this.augend.reduce(bank, to).amount + this.addend.reduce(bank, to).amount;
+		return new Money(amount, to);
 	}
 }
