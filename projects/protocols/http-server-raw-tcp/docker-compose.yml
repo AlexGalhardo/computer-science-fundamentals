@@ -1,0 +1,92 @@
+# EN: An HTTP/1.1 server written on raw TCP, and two clients we did not write that check it:
+#     curl and a real browser (headless Chromium).
+#     Safety: the lab network is `internal: true`, so no container reaches the internet, and no
+#     port is published by default. Only the optional `demo` service publishes one port, bound
+#     to 127.0.0.1, so that you can open the page in your own browser.
+# PT: Um servidor HTTP/1.1 escrito sobre TCP puro, e dois clientes que não escrevemos que o
+#     conferem: o curl e um navegador de verdade (Chromium headless).
+#     Segurança: a rede do laboratório é `internal: true`, então nenhum contêiner alcança a
+#     internet, e nenhuma porta é publicada por padrão. Só o serviço opcional `demo` publica uma
+#     porta, presa a 127.0.0.1, para você abrir a página no seu próprio navegador.
+name: proto-http-server-raw-tcp
+
+x-go: &go
+  build: ./go
+  image: sef-http-server-raw-tcp-go:local
+
+services:
+  # EN: Format, vet, lint and unit tests. The tests open sockets on loopback only, so the
+  #     container gets no network at all.
+  # PT: Formatação, vet, lint e testes de unidade. Os testes abrem sockets só em loopback, então
+  #     o contêiner não recebe rede nenhuma.
+  go-test:
+    <<: *go
+    network_mode: "none"
+
+  # EN: Prints the raw bytes of four exchanges (the wire trace of the README).
+  # PT: Imprime os bytes crus de quatro trocas (o rastro de fio do README).
+  trace:
+    <<: *go
+    network_mode: "none"
+    command: ["trace"]
+
+  server:
+    <<: *go
+    command: ["server", "-addr", ":8080"]
+    # EN: The check is a real HTTP request over TCP, which is what the clients will do.
+    # PT: A checagem é uma requisição HTTP de verdade sobre TCP, que é o que os clientes farão.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      - lab
+
+  curl-check:
+    <<: *go
+    depends_on:
+      server:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts:ro
+    command: ["sh", "/scripts/curl-check.sh", "http://server:8080"]
+    networks:
+      - lab
+
+  # EN: The pinned Playwright image is used only because it ships a Chromium. No Playwright
+  #     code runs: the script starts the browser binary directly.
+  # PT: A imagem fixada do Playwright é usada só porque traz um Chromium. Nenhum código do
+  #     Playwright roda: o script inicia o binário do navegador diretamente.
+  browser-check:
+    image: mcr.microsoft.com/playwright:v1.63.0-noble
+    depends_on:
+      server:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts:ro
+    command: ["sh", "/scripts/browser-check.sh", "http://server:8080"]
+    # Chromium needs more shared memory than the 64 MB Docker gives by default.
+    shm_size: 1gb
+    networks:
+      - lab
+
+  # EN: Optional: `docker compose --profile demo up demo`, then open http://127.0.0.1:8089/ or
+  #     use curl from the host. Publishing a port needs a network that is not internal, so this
+  #     service has its own. The server never opens outgoing connections.
+  # PT: Opcional: `docker compose --profile demo up demo`, depois abra http://127.0.0.1:8089/ ou
+  #     use o curl a partir do host. Publicar uma porta exige uma rede que não seja interna,
+  #     então este serviço tem a sua. O servidor nunca abre conexões de saída.
+  demo:
+    <<: *go
+    profiles: ["demo"]
+    command: ["server", "-addr", ":8080"]
+    ports:
+      - "127.0.0.1:${DEMO_PORT:-8089}:8080"
+    networks:
+      - demo
+
+networks:
+  lab:
+    internal: true
+  demo: {}

@@ -1,0 +1,64 @@
+# EN: One Caddy, nine HTTPS ports, the same page on all of them. The last digit of the port
+#     chooses the highest HTTP version the listener offers (1 = HTTP/1.1 only, 2 = up to HTTP/2,
+#     3 = up to HTTP/3). The hundreds digit chooses the network condition, which is applied
+#     outside Caddy by entrypoint.sh (80xx clean, 81xx latency, 82xx latency and loss).
+# PT: Um Caddy, nove portas HTTPS, a mesma página em todas. O último dígito da porta escolhe a
+#     maior versão do HTTP que o listener oferece (1 = só HTTP/1.1, 2 = até HTTP/2, 3 = até
+#     HTTP/3). O dígito das centenas escolhe a condição de rede, aplicada fora do Caddy pelo
+#     entrypoint.sh (80xx limpa, 81xx latência, 82xx latência e perda).
+{
+	# EN: The admin API is not needed, and the lab CA is never installed in any trust store.
+	# PT: A API de administração não é necessária, e a CA do laboratório nunca é instalada em
+	#     nenhum repositório de confiança.
+	admin off
+	skip_install_trust
+	auto_https disable_redirects
+
+	# EN: `protocols` is what each listener advertises. Over TLS the client and the server agree
+	#     on h2 or http/1.1 with ALPN, inside the handshake. HTTP/3 is another transport (QUIC,
+	#     over UDP), so the h3 listeners also open a UDP socket on the same port number.
+	# PT: `protocols` é o que cada listener anuncia. Sobre TLS o cliente e o servidor combinam h2
+	#     ou http/1.1 com ALPN, dentro do handshake. O HTTP/3 é outro transporte (QUIC, sobre
+	#     UDP), então os listeners h3 também abrem um socket UDP no mesmo número de porta.
+	servers :8001 {
+		protocols h1
+	}
+	servers :8002 {
+		protocols h1 h2
+	}
+	servers :8003 {
+		protocols h1 h2 h3
+	}
+	servers :8101 {
+		protocols h1
+	}
+	servers :8102 {
+		protocols h1 h2
+	}
+	servers :8103 {
+		protocols h1 h2 h3
+	}
+	servers :8201 {
+		protocols h1
+	}
+	servers :8202 {
+		protocols h1 h2
+	}
+	servers :8203 {
+		protocols h1 h2 h3
+	}
+}
+
+https://{$SITE_HOST}:8001, https://{$SITE_HOST}:8002, https://{$SITE_HOST}:8003, https://{$SITE_HOST}:8101, https://{$SITE_HOST}:8102, https://{$SITE_HOST}:8103, https://{$SITE_HOST}:8201, https://{$SITE_HOST}:8202, https://{$SITE_HOST}:8203 {
+	# EN: The certificate comes from Caddy's internal certificate authority, created inside the
+	#     container. No public CA and no public domain are involved.
+	# PT: O certificado vem da autoridade certificadora interna do Caddy, criada dentro do
+	#     contêiner. Nenhuma CA pública e nenhum domínio público estão envolvidos.
+	tls internal
+
+	root * /srv
+	# EN: No caching and no compression, so every run downloads the same bytes again.
+	# PT: Sem cache e sem compressão, então toda execução baixa os mesmos bytes de novo.
+	header Cache-Control "no-store"
+	file_server
+}

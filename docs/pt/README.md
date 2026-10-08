@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1970 de 3384 questões escritas, 52 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+2070 de 3384 questões escritas, 55 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -40,7 +40,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Padrões de projeto e SOLID | Teoria e prática | 100/100 | feita | [backend-patterns](design-patterns/backend-patterns.md), [solid-before-after](design-patterns/solid-before-after.md) |
 | Arquitetura de software | Teoria e prática | 100/100 | feita | [clean-architecture-app](software-architecture/clean-architecture-app.md) |
 | Testes | Teoria e prática | 0/100 |  | test-pyramid (planejado), tdd-kata (planejado), mutation-testing (planejado), flaky-tests (planejado), mini-xunit (planejado) |
-| Protocolos | Teoria e prática | 0/100 |  | rest-graphql-jsonrpc (planejado), http-versions (planejado), http-server-raw-tcp (planejado) |
+| Protocolos | Teoria e prática | 100/100 | feita | [rest-graphql-jsonrpc](protocols/rest-graphql-jsonrpc.md), [http-versions](protocols/http-versions.md), [http-server-raw-tcp](protocols/http-server-raw-tcp.md) |
 | Mensageria | Teoria e prática | 0/100 |  | queue-comparison (planejado), idempotency-dlq (planejado), pubsub-backpressure (planejado) |
 | Balanceamento de carga | Teoria e prática | 0/100 |  | nginx-vs-caddy (planejado), l7-load-balancer (planejado) |
 | Performance | Teoria e prática | 0/100 |  | bun-vs-node (planejado), k6-scenarios (planejado), cache-friendly-matrix (planejado) |

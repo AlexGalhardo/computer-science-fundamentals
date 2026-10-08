@@ -1,0 +1,83 @@
+# EN: One Caddy serving a page with 200 small images on nine HTTPS ports (three HTTP versions
+#     times three network conditions), and one Playwright image whose Chromium loads the page.
+#     Safety: the only network is `lab`, which is `internal: true`, so no container reaches the
+#     internet, and NO port is published on the host. TLS uses Caddy's internal certificate
+#     authority, created inside the container. The load only ever targets the `caddy` service.
+# PT: Um Caddy servindo uma página com 200 imagens pequenas em nove portas HTTPS (três versões do
+#     HTTP vezes três condições de rede), e uma imagem do Playwright cujo Chromium carrega a
+#     página. Segurança: a única rede é `lab`, que é `internal: true`, então nenhum contêiner
+#     alcança a internet, e NENHUMA porta é publicada no host. O TLS usa a autoridade
+#     certificadora interna do Caddy, criada dentro do contêiner. A carga só atinge o serviço
+#     `caddy`.
+name: proto-http-versions
+
+# EN: The two shaped conditions, written once and given to both sides: the server applies them
+#     with `tc netem`, the client only prints them in the report.
+# PT: As duas condições moldadas, escritas uma vez e dadas aos dois lados: o servidor as aplica
+#     com `tc netem`, o cliente só as imprime no relatório.
+x-conditions: &conditions
+  SITE_HOST: site.http-versions.test
+  NETEM_LATENCY: "delay 50ms"
+  NETEM_LATENCY_LOSS: "delay 50ms loss 2%"
+
+x-client: &client
+  build: ./ts
+  image: sef-http-versions-ts:local
+  depends_on:
+    caddy:
+      condition: service_healthy
+  environment:
+    <<: *conditions
+    PROJECT_DIR: /project
+  # Chromium needs more shared memory than the 64 MB Docker gives by default.
+  shm_size: 1gb
+  networks:
+    - lab
+
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: caddy/Dockerfile
+    image: sef-http-versions-caddy:local
+    environment: *conditions
+    # EN: NET_ADMIN lets this one container configure its own network interface (tc netem).
+    #     It gives no access to the host network: the container still lives in its own
+    #     network namespace, on an internal network.
+    # PT: NET_ADMIN deixa este único contêiner configurar a própria interface de rede (tc
+    #     netem). Não dá acesso à rede do host: o contêiner continua no seu próprio namespace de
+    #     rede, em uma rede interna.
+    cap_add:
+      - NET_ADMIN
+    # EN: The check does what the client does: a TLS request by name. It passes only after
+    #     Caddy has issued the lab certificate.
+    # PT: A checagem faz o que o cliente faz: uma requisição TLS pelo nome. Só passa depois que
+    #     o Caddy emitiu o certificado do laboratório.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --no-check-certificate -O /dev/null https://site.http-versions.test:8001/"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      lab:
+        aliases:
+          - site.http-versions.test
+
+  ts-test:
+    <<: *client
+
+  bench:
+    <<: *client
+    command: ["bun", "run", "bench"]
+    # EN: The measurement writes results/ into the project folder, so it runs as the host user.
+    #     On Linux the mounted folder belongs to that user. The setup script exports HOST_UID
+    #     and HOST_GID.
+    # PT: A medição grava results/ na pasta do projeto, então roda como o usuário do host. No
+    #     Linux a pasta montada pertence a ele. O script de setup exporta HOST_UID e HOST_GID.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+networks:
+  lab:
+    internal: true
