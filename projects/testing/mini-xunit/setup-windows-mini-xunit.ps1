@@ -1,0 +1,41 @@
+# EN: Builds and tests the mini-xunit mini-project. The only requirement is Docker.
+#     For each language it runs the framework on its own tests, and then the demo with a test
+#     that fails on purpose. The demo MUST exit with a non-zero code: a red run that exits with
+#     0 would be the worst bug a test framework can have.
+# PT: Constrói e testa o mini-projeto mini-xunit. O único requisito é o Docker.
+#     Para cada linguagem ele roda o framework nos próprios testes, e depois a demo com um teste
+#     que falha de propósito. A demo PRECISA sair com um código diferente de zero: uma execução
+#     vermelha que sai com 0 seria o pior bug que um framework de testes pode ter.
+# "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
+$ErrorActionPreference = "Continue"
+
+Set-Location $PSScriptRoot
+
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+	Write-Error "Docker is required: https://docs.docker.com/get-docker/"
+	exit 1
+}
+
+$code = 0
+try {
+	docker compose build
+	if ($LASTEXITCODE -ne 0) { throw "build failed" }
+	foreach ($service in @("python-test", "ts-test")) {
+		docker compose run --rm $service
+		if ($LASTEXITCODE -ne 0) { throw "$service failed" }
+	}
+	foreach ($service in @("python-demo", "ts-demo")) {
+		docker compose run --rm $service
+		if ($LASTEXITCODE -eq 0) { throw "$service exited with 0, but its failing test must make it exit non-zero" }
+		Write-Output "mini-xunit: $service exited non-zero, as expected"
+	}
+	Write-Output "mini-xunit: all tests passed"
+}
+catch {
+	Write-Output "mini-xunit: $_"
+	$code = 1
+}
+finally {
+	docker compose down -v --remove-orphans
+}
+exit $code
