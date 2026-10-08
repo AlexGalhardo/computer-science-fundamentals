@@ -1,0 +1,156 @@
+{
+	"uid": "three-signals",
+	"title": "Three signals: one slow request",
+	"description": "Start at the top (metrics: is something wrong?), go to the traces (where?), end in the logs (why?).",
+	"tags": ["three-signals", "lab"],
+	"timezone": "browser",
+	"schemaVersion": 41,
+	"version": 1,
+	"editable": false,
+	"refresh": "5s",
+	"time": { "from": "now-15m", "to": "now" },
+	"templating": {
+		"list": [
+			{
+				"name": "service",
+				"label": "Service",
+				"type": "query",
+				"datasource": { "type": "prometheus", "uid": "prometheus" },
+				"query": "label_values(http_server_request_duration_seconds_count, service_name)",
+				"refresh": 2,
+				"includeAll": true,
+				"multi": true,
+				"current": { "text": "All", "value": "$__all" }
+			},
+			{
+				"name": "trace_id",
+				"label": "Trace id",
+				"description": "Paste a trace id (the x-trace-id response header, or a row of the table) to draw its waterfall.",
+				"type": "textbox",
+				"query": "",
+				"current": { "text": "", "value": "" }
+			}
+		]
+	},
+	"panels": [
+		{
+			"id": 1,
+			"type": "timeseries",
+			"title": "Rate: requests per second",
+			"description": "R of RED. Counted from the _count series of the duration histogram.",
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+			"fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+			"targets": [
+				{
+					"refId": "A",
+					"expr": "sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\"}[1m]))",
+					"legendFormat": "{{service_name}}"
+				}
+			]
+		},
+		{
+			"id": 2,
+			"type": "timeseries",
+			"title": "Errors: share of 5xx responses",
+			"description": "E of RED. Failed requests divided by all requests.",
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+			"fieldConfig": { "defaults": { "unit": "percentunit", "min": 0 }, "overrides": [] },
+			"targets": [
+				{
+					"refId": "A",
+					"expr": "sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\", http_response_status_code=~\"5..\"}[1m])) / sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\"}[1m]))",
+					"legendFormat": "{{service_name}}"
+				}
+			]
+		},
+		{
+			"id": 3,
+			"type": "timeseries",
+			"title": "Duration: 99th percentile",
+			"description": "D of RED. The metric shows THAT some requests are slow and in which service. It cannot say which requests: the SKU is not a label.",
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+			"fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+			"targets": [
+				{
+					"refId": "A",
+					"expr": "histogram_quantile(0.99, sum by (le, service_name) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\"}[1m])))",
+					"legendFormat": "{{service_name}}"
+				}
+			]
+		},
+		{
+			"id": 4,
+			"type": "table",
+			"title": "Traces with a span slower than 500 ms",
+			"description": "TraceQL. Click a trace id to open the waterfall and see which span holds the time.",
+			"datasource": { "type": "tempo", "uid": "tempo" },
+			"gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+			"targets": [
+				{
+					"refId": "A",
+					"queryType": "traceql",
+					"query": "{ name = \"warehouse.lookup\" && duration > 500ms }",
+					"limit": 20,
+					"tableType": "traces"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {},
+				"overrides": [
+					{
+						"matcher": { "id": "byName", "options": "traceID" },
+						"properties": [
+							{
+								"id": "links",
+								"value": [
+									{
+										"title": "Draw this trace below",
+										"url": "/d/three-signals?var-trace_id=${__value.raw}&${__url_time_range}"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": 6,
+			"type": "traces",
+			"title": "One trace: where the time goes",
+			"description": "The waterfall of the trace id in the variable above. Each bar is a span; a parent contains its children, so look for the lowest long bar.",
+			"datasource": { "type": "tempo", "uid": "tempo" },
+			"gridPos": { "x": 0, "y": 16, "w": 24, "h": 14 },
+			"targets": [
+				{
+					"refId": "A",
+					"queryType": "traceql",
+					"query": "${trace_id}"
+				}
+			]
+		},
+		{
+			"id": 5,
+			"type": "logs",
+			"title": "Warnings and errors",
+			"description": "LogQL. Each line carries its trace id, so a line leads to its trace and a trace leads to its lines.",
+			"datasource": { "type": "loki", "uid": "loki" },
+			"gridPos": { "x": 0, "y": 30, "w": 24, "h": 9 },
+			"options": {
+				"showTime": true,
+				"wrapLogMessage": true,
+				"enableLogDetails": true,
+				"sortOrder": "Descending"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"expr": "{service_name=~\"$service\"} | severity_text=~\"WARN|ERROR\""
+				}
+			]
+		}
+	]
+}
