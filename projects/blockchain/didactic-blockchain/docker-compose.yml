@@ -1,0 +1,108 @@
+# EN: A toy blockchain that exists only on this machine. Three nodes are three containers of the
+#     same TypeScript image on an `internal` network: they reach each other by service name, no
+#     container reaches the Internet and no port is published on the host. There are no real
+#     keys and no real coins anywhere in this project.
+# PT: Uma blockchain de brinquedo que existe só nesta máquina. Três nós são três contêineres da
+#     mesma imagem TypeScript em uma rede `internal`: eles se alcançam pelo nome do serviço,
+#     nenhum contêiner alcança a Internet e nenhuma porta é publicada no host. Não existem
+#     chaves reais nem moedas reais em lugar nenhum deste projeto.
+name: chain-didactic-blockchain
+
+x-ts: &ts
+  build: ./ts
+  image: sef-didactic-blockchain-ts:local
+
+x-node: &node
+  <<: *ts
+  command: ["bun", "run", "src/server.ts"]
+  networks:
+    - chain
+
+# EN: The benchmark writes results/ into the project folder, so it runs as the host user. On
+#     Linux the mounted folder belongs to that user, and the image's own user could not write
+#     into it. The setup script exports HOST_UID and HOST_GID.
+# PT: O benchmark grava results/ na pasta do projeto, então roda como o usuário do host. No Linux
+#     a pasta montada pertence a ele, e o usuário da imagem não conseguiria gravar nela. O script
+#     de setup exporta HOST_UID e HOST_GID.
+x-results: &results
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+  volumes:
+    - ./results:/results
+  network_mode: "none"
+
+services:
+  ts-test:
+    <<: *ts
+    # Tests need no network, so the container gets none (loopback still works).
+    network_mode: "none"
+
+  rust-test:
+    build: ./rust
+    image: sef-didactic-blockchain-rust:local
+    network_mode: "none"
+
+  # EN: The difficulty stays low (3 zero hex digits, about 4,096 attempts per block) so that
+  #     mining takes milliseconds.
+  # PT: A dificuldade fica baixa (3 dígitos hexadecimais zero, cerca de 4.096 tentativas por
+  #     bloco) para que minerar leve milissegundos.
+  node-a:
+    <<: *node
+    environment:
+      NODE_NAME: node-a
+      PEERS: http://node-b:3000,http://node-c:3000
+      DIFFICULTY: "3"
+  node-b:
+    <<: *node
+    environment:
+      NODE_NAME: node-b
+      PEERS: http://node-a:3000,http://node-c:3000
+      DIFFICULTY: "3"
+  node-c:
+    <<: *node
+    environment:
+      NODE_NAME: node-c
+      PEERS: http://node-a:3000,http://node-b:3000
+      DIFFICULTY: "3"
+
+  # EN: docker compose run --rm demo
+  #     Drives the three nodes: payment, double spend, tampering, fork and its resolution.
+  # PT: docker compose run --rm demo
+  #     Conduz os três nós: pagamento, gasto duplo, adulteração, bifurcação e sua resolução.
+  demo:
+    <<: *ts
+    command: ["bun", "run", "src/demo.ts"]
+    environment:
+      NODES: http://node-a:3000,http://node-b:3000,http://node-c:3000
+      DIFFICULTY: "3"
+    depends_on:
+      - node-a
+      - node-b
+      - node-c
+    networks:
+      - chain
+
+  # EN: docker compose run --rm rust-demo
+  # PT: docker compose run --rm rust-demo
+  rust-demo:
+    build: ./rust
+    image: sef-didactic-blockchain-rust:local
+    command: ["/app/target/release/didactic-blockchain", "demo"]
+    network_mode: "none"
+
+  bench-ts:
+    <<: [*ts, *results]
+    command: ["bun", "run", "src/bench.ts", "/results/mining-ts.json"]
+
+  bench-rust:
+    <<: *results
+    build: ./rust
+    image: sef-didactic-blockchain-rust:local
+    command: ["sh", "-c", "/app/target/release/didactic-blockchain bench /results/mining-rust.json \"$$(rustc --version)\""]
+
+  report:
+    <<: [*ts, *results]
+    command: ["bun", "run", "src/report.ts", "/results"]
+
+networks:
+  chain:
+    internal: true
