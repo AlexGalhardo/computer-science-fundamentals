@@ -7,6 +7,14 @@ export class Money {
 		this.currency = currency;
 	}
 
+	static dollar(amount: number): Money {
+		return new Dollar(amount);
+	}
+
+	static franc(amount: number): Money {
+		return new Franc(amount);
+	}
+
 	times(multiplier: number): Money {
 		return new Money(this.amount * multiplier, this.currency);
 	}
