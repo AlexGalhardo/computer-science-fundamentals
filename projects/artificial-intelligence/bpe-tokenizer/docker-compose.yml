@@ -1,0 +1,69 @@
+# EN: One test, one demo and one CLI service per language. Each language builds its own pinned
+#     image. The corpus and the expected table in ./data are mounted read-only into both, so the
+#     two implementations are checked against the same files.
+# PT: Um serviço de teste, um de demo e um de CLI por linguagem. Cada linguagem constrói a sua
+#     imagem fixada. O corpus e a tabela esperada em ./data são montados só para leitura nas
+#     duas, então as duas implementações são conferidas contra os mesmos arquivos.
+name: bpe-tokenizer
+
+x-ts: &ts
+  build: ./ts
+  image: sef-bpe-tokenizer-ts:local
+  # Nothing here needs the network, so the containers get none.
+  network_mode: "none"
+  environment:
+    DATA_DIR: /data
+    RESULTS_DIR: /results
+
+x-python: &python
+  build: ./python
+  image: sef-bpe-tokenizer-python:local
+  network_mode: "none"
+  environment:
+    DATA_DIR: /data
+    RESULTS_DIR: /results
+
+services:
+  ts-test:
+    <<: *ts
+    volumes:
+      - ./data:/data:ro
+
+  python-test:
+    <<: *python
+    volumes:
+      - ./data:/data:ro
+
+  # EN: The demos write ./results on the host, so they run as the host user: on Linux the
+  #     mounted folder belongs to that user, and another uid would get "permission denied".
+  # PT: As demos gravam ./results no host, então rodam como o usuário do host: no Linux a pasta
+  #     montada pertence a esse usuário, e outro uid receberia "permission denied".
+  ts-demo:
+    <<: *ts
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    command: ["bun", "run", "src/demo.ts"]
+    volumes:
+      - ./data:/data:ro
+      - ./results:/results
+
+  python-demo:
+    <<: *python
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    command: ["python", "demo.py"]
+    volumes:
+      - ./data:/data:ro
+      - ./results:/results
+
+  # EN: docker compose run --rm ts-cli "a sentence"   (or python-cli)
+  # PT: docker compose run --rm ts-cli "uma frase"    (ou python-cli)
+  ts-cli:
+    <<: *ts
+    entrypoint: ["bun", "run", "src/cli.ts"]
+    volumes:
+      - ./data:/data:ro
+
+  python-cli:
+    <<: *python
+    entrypoint: ["python", "cli.py"]
+    volumes:
+      - ./data:/data:ro

@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1970 de 3384 questões escritas, 52 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+2134 de 3384 questões escritas, 53 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -51,4 +51,4 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Blockchain | Teoria e prática | 0/100 |  | didactic-blockchain (planejado) |
 | Integração contínua | Teoria e prática | 0/100 |  | ci-pipeline (planejado) |
 | Engenharia de software | Teoria | 0/150 |  | nenhum |
-| Inteligência artificial e LLMs | Teoria e prática | 0/164 |  | bpe-tokenizer (planejado), neural-network-from-scratch (planejado), embeddings-vector-search (planejado), tiny-language-model (planejado), diffusion-toy (planejado), pytorch-basics (planejado), tensorflow-keras-basics (planejado), computer-vision-cnn (planejado) |
+| Inteligência artificial e LLMs | Teoria e prática | 164/164 | pendente | [bpe-tokenizer](artificial-intelligence/bpe-tokenizer.md), neural-network-from-scratch (planejado), embeddings-vector-search (planejado), tiny-language-model (planejado), diffusion-toy (planejado), pytorch-basics (planejado), tensorflow-keras-basics (planejado), computer-vision-cnn (planejado) |
