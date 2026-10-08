@@ -6,6 +6,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Guides
 
+- [Study references for every area](../../REFERENCES.md)
 - [Project decisions](decisions.md)
 - [Quiz design](quiz.md)
 - [How to write quiz questions](quiz-authoring.md)

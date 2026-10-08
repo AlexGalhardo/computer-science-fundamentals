@@ -2,6 +2,8 @@
 
 > English version: [docs/en/mini-project-catalog.md](../en/mini-project-catalog.md)
 
+> Nota (2026-10-08): a pasta `references/` citada neste documento foi removida da árvore e continua no histórico do git (`git show eef7847:references/<caminho>`). As referências de estudo estão em [REFERENCES.pt-BR.md](../../REFERENCES.pt-BR.md).
+
 Ideias acordadas no brainstorming da Fase 2, agrupadas por área. Este é o backlog que o `PLAN.md` transforma em tarefas com critérios de aceite. TypeScript é a linguagem de referência, a menos que outra apareça primeiro na lista.
 
 ## Algoritmos e Big O

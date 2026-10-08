@@ -6,6 +6,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Guias
 
+- [Referências de estudo de cada área](../../REFERENCES.pt-BR.md)
 - [Decisões do projeto](decisions.md)
 - [Desenho do quiz](quiz.md)
 - [Como escrever questões do quiz](quiz-authoring.md)

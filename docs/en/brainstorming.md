@@ -2,6 +2,8 @@
 
 > Versão em português: [docs/pt/brainstorming.md](../pt/brainstorming.md)
 
+> Note (2026-10-08): the `references/` folder mentioned in this document was removed from the tree and remains in the git history (`git show eef7847:references/<path>`). Study references are in [REFERENCES.md](../../REFERENCES.md).
+
 Record of the questions asked in the Phase 2 brainstorming, on 2026-10-07, with the chosen option and the discarded ones. The consolidated decisions are in [decisions.md](decisions.md), the quiz design in [quiz.md](quiz.md) and the backlog in [mini-project-catalog.md](mini-project-catalog.md).
 
 ## Context used

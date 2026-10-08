@@ -25,7 +25,8 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | Path | Purpose |
 | --- | --- |
 | `docs/en/`, `docs/pt/` | Documentation per area and sub-area. Both languages are mandatory and must stay equivalent |
-| `references/` | Study material and legacy projects imported from the owner's previous repositories, plus Markdown summaries of the books and lecture PDFs. Read-only source of ideas, not a mini-project |
+| `REFERENCES.md`, `REFERENCES.pt-BR.md` | Books, courses, papers, documentation and videos for every area, with verified links. Each `projects/<area>/README.md` has the longer list of its area |
+| `references/` (removed) | The `references/` folder (imported study material, legacy projects and Markdown summaries of the books and lectures) was removed from the tree on 2026-10-08 at the owner request. It is still in the git history: read a file with `git show eef7847:references/<path>`. Study references now live in `REFERENCES.md` and in `projects/<area>/README.md`. |
 | `quiz/` | The quiz app and its questions (see `docs/en/quiz.md` and `docs/en/quiz-authoring.md`) |
 | `benchmarks/` | Cross-language benchmark workloads and their static dashboard (planned, Part BD of `PLAN.md`) |
 | `tools/bench/` | Benchmark runner: `bun run bench -- --project <name>` (see `docs/en/benchmarks.md`) |
