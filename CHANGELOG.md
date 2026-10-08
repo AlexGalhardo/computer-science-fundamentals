@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.119.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/file-systems/external-sorting` (Rust and Go): run generation under a memory limit enforced by the container (a 320 MiB file sorted within 32 MiB), a k-way merge with a heap, and a table of total time by run size and merge fan-in. The file systems area is complete.
+
+## [0.118.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/file-systems/file-organisation` (C++ and Rust): fixed-length records with a header, RRN access and a free list inside the file, primary and secondary indexes with inverted lists, and run-length and Huffman compression of the data file.
+
+## [0.117.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: file systems, 100 questions in Portuguese and English, blind-reviewed in both languages with 100 of 100 agreement (`quiz/content/file-systems/review.md`).
+
 ## [0.116.0] - 2026-10-07
 
 ### Added

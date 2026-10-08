@@ -917,10 +917,10 @@ Sources: Tanenbaum (file systems), USP Data Structures II (files, indexes, B-tre
 | External sorting | 8 |
 | Compression and space reclamation | 8 |
 
-- [ ] QC-FS.1 Coverage map committed
-- [ ] QC-FS.2 100 questions written (PT and EN)
-- [ ] QC-FS.3 Validation passing
-- [ ] QC-FS.4 Blind review resolved
+- [x] QC-FS.1 Coverage map committed
+- [x] QC-FS.2 100 questions written (PT and EN)
+- [x] QC-FS.3 Validation passing
+- [x] QC-FS.4 Blind review resolved
 
 #### QC-OBS Observability
 
@@ -1935,25 +1935,25 @@ Teaches: how each algorithm treats bursts. Languages: TS, Go.
 
 Teaches: how records, free lists and indexes live inside a file. Languages: C++, Rust.
 
-- [ ] **MP-FS-1.1** Fixed-length records with header, RRN access and a free list inside the file
+- [x] **MP-FS-1.1** Fixed-length records with header, RRN access and a free list inside the file
 	- **Accept:** deleted slots are reused, checked by file size after delete and insert.
-- [ ] **MP-FS-1.2** Primary and secondary index with inverted lists
+- [x] **MP-FS-1.2** Primary and secondary index with inverted lists
 	- **Accept:** index search returns the same records as a full scan.
-- [ ] **MP-FS-1.3** Run-length and Huffman compression of the data file
+- [x] **MP-FS-1.3** Run-length and Huffman compression of the data file
 	- **Accept:** round trip is lossless and the ratio is reported.
-- [ ] **MP-FS-1.4** Definition of done for mini-projects met.
+- [x] **MP-FS-1.4** Definition of done for mini-projects met.
 
 #### MP-FS-2 External sorting
 
 Teaches: how to sort a file larger than memory. Languages: Rust, Go.
 
-- [ ] **MP-FS-2.1** Run generation with a memory limit
+- [x] **MP-FS-2.1** Run generation with a memory limit
 	- **Accept:** peak memory stays under the limit while sorting a file 10 times larger.
-- [ ] **MP-FS-2.2** K-way merge with a heap
+- [x] **MP-FS-2.2** K-way merge with a heap
 	- **Accept:** output is sorted and has the same multiset of lines as the input.
-- [ ] **MP-FS-2.3** Effect of run size and merge fan-in
+- [x] **MP-FS-2.3** Effect of run size and merge fan-in
 	- **Accept:** table of total time per configuration.
-- [ ] **MP-FS-2.4** Definition of done for mini-projects met.
+- [x] **MP-FS-2.4** Definition of done for mini-projects met.
 
 #### MP-OBS-1 Three services with traces, metrics and logs
 

@@ -17,7 +17,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-2934 de 3384 questões escritas, 79 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+3034 de 3384 questões escritas, 81 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -47,7 +47,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Performance | Teoria e prática | 100/100 | feita | [bun-vs-node](performance/bun-vs-node.md), [k6-scenarios](performance/k6-scenarios.md), [cache-friendly-matrix](performance/cache-friendly-matrix.md) |
 | Cache | Teoria e prática | 100/100 | feita | [cache-strategies](cache/cache-strategies.md) |
 | Limitação de taxa | Teoria e prática | 100/100 | feita | [rate-limiter](rate-limiting/rate-limiter.md) |
-| Sistemas de arquivos | Teoria e prática | 0/100 |  | file-organisation (planejado), external-sorting (planejado) |
+| Sistemas de arquivos | Teoria e prática | 100/100 | feita | [file-organisation](file-systems/file-organisation.md), [external-sorting](file-systems/external-sorting.md) |
 | Observabilidade | Teoria e prática | 0/100 |  | three-signals (planejado), structured-logs (planejado), slo-alert (planejado), flame-graph (planejado) |
 | Blockchain | Teoria e prática | 100/100 | feita | [didactic-blockchain](blockchain/didactic-blockchain.md) |
 | Integração contínua | Teoria e prática | 0/100 |  | ci-pipeline (planejado) |
