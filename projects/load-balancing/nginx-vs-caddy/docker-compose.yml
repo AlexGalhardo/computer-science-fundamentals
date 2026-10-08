@@ -1,0 +1,148 @@
+# EN: Two stacks that share three back ends: NGINX and Caddy in front of api-1, api-2 and api-3.
+#     Everything is local. The back ends, the tests and the load generator live on a docker
+#     network marked `internal`, which has no route to the outside world. Only the two proxies
+#     also join `edge`, so that each can publish one port on 127.0.0.1 for the demo.
+# PT: Duas pilhas que compartilham três back ends: NGINX e Caddy na frente de api-1, api-2 e
+#     api-3. Tudo é local. Os back ends, os testes e o gerador de carga ficam em uma rede docker
+#     marcada como `internal`, que não tem rota para o mundo externo. Só os dois proxies entram
+#     também em `edge`, para que cada um publique uma porta em 127.0.0.1 para a demonstração.
+name: nginx-vs-caddy
+
+networks:
+  lab:
+    internal: true
+  edge: {}
+
+x-ts: &ts
+  build: ./ts
+  image: sef-nginx-vs-caddy-ts:local
+
+# EN: The three instances run the same image and the same command. Only the name differs.
+#     The health check asks the real port for /health, the same thing a proxy would do.
+# PT: As três instâncias rodam a mesma imagem e o mesmo comando. Só o nome muda. A verificação
+#     de saúde pede /health na porta real, a mesma coisa que um proxy faria.
+x-api: &api
+  <<: *ts
+  networks: [lab]
+  command: ["bun", "run", "src/api/server.ts"]
+  healthcheck:
+    test: ["CMD", "bun", "-e", "const r = await fetch('http://127.0.0.1:3000/health'); process.exit(r.ok ? 0 : 1)"]
+    interval: 2s
+    timeout: 2s
+    retries: 15
+
+x-apis-healthy: &apis-healthy
+  api-1: { condition: service_healthy }
+  api-2: { condition: service_healthy }
+  api-3: { condition: service_healthy }
+
+x-proxies-healthy: &proxies-healthy
+  nginx: { condition: service_healthy }
+  caddy: { condition: service_healthy }
+
+services:
+  api-1:
+    <<: *api
+    environment: { INSTANCE: api-1 }
+  api-2:
+    <<: *api
+    environment: { INSTANCE: api-2 }
+  api-3:
+    <<: *api
+    environment: { INSTANCE: api-3 }
+
+  nginx:
+    image: &nginx-image nginx:1.30.5-alpine
+    networks: [lab, edge]
+    depends_on: *apis-healthy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "127.0.0.1:${NGINX_PORT:-18480}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  caddy:
+    image: &caddy-image caddy:2.11.7-alpine
+    networks: [lab, edge]
+    depends_on: *apis-healthy
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "127.0.0.1:${CADDY_PORT:-18481}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  # Type check and unit tests: pure functions, no network at all.
+  ts-test:
+    <<: *ts
+    network_mode: "none"
+    command: ["sh", "-c", "bun run typecheck && bun test tests"]
+
+  # EN: `nginx -t` resolves the upstream names, so it runs on the lab network with the
+  #     instances up. Caddy checks syntax and formatting with no network.
+  # PT: O `nginx -t` resolve os nomes dos upstreams, então roda na rede do laboratório com as
+  #     instâncias no ar. O Caddy confere sintaxe e formatação sem rede.
+  nginx-config-test:
+    image: *nginx-image
+    networks: [lab]
+    depends_on: *apis-healthy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    command: ["nginx", "-t"]
+  caddy-config-test:
+    image: *caddy-image
+    network_mode: "none"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    command:
+      - sh
+      - -c
+      - caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile && caddy fmt --diff /etc/caddy/Caddyfile
+
+  # EN: Integration tests through the two proxies: distribution of each algorithm within 5
+  #     percentage points, stickiness of ip-hash, and the failure of one instance.
+  # PT: Testes de integração através dos dois proxies: distribuição de cada algoritmo dentro de
+  #     5 pontos percentuais, fixação do ip-hash e a falha de uma instância.
+  lab-test:
+    <<: *ts
+    networks: [lab]
+    depends_on: *proxies-healthy
+    command: ["bun", "test", "integration", "--timeout", "120000"]
+
+  # EN: Proves the safety rule: with a target that is not local the lab must exit with an error
+  #     before sending anything. The network is internal anyway.
+  # PT: Prova a regra de segurança: com um alvo que não é local o laboratório precisa terminar
+  #     com erro antes de enviar qualquer coisa. A rede é interna de qualquer forma.
+  refusal-test:
+    <<: *ts
+    networks: [lab]
+    environment: { NGINX_URL: "https://example.com" }
+    command: ["sh", "scripts/refusal-test.sh"]
+
+  # EN: The experiments. Writes the tables to ./results, so it runs as the host user: on Linux
+  #     the mounted folder belongs to that user and any other uid gets "permission denied".
+  # PT: Os experimentos. Escreve as tabelas em ./results, então roda como o usuário do host: no
+  #     Linux a pasta montada pertence a esse usuário e qualquer outro uid recebe "permission
+  #     denied".
+  lab:
+    <<: *ts
+    profiles: ["lab"]
+    networks: [lab]
+    depends_on: *proxies-healthy
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      NGINX_IMAGE: *nginx-image
+      CADDY_IMAGE: *caddy-image
+      REPETITIONS: ${REPETITIONS:-3}
+      OUT_DIR: /out
+      HOME: /tmp
+    volumes:
+      - ./results:/out
+    command: ["bun", "run", "src/cli.ts", "all"]
