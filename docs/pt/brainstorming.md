@@ -2,7 +2,7 @@
 
 > English version: [docs/en/brainstorming.md](../en/brainstorming.md)
 
-> Nota (2026-10-08): a pasta `references/` citada neste documento foi removida da árvore e continua no histórico do git (`git show eef7847:references/<caminho>`). As referências de estudo estão em [REFERENCES.pt-BR.md](../../REFERENCES.pt-BR.md).
+> Nota (2026-10-08): a pasta `references/` citada neste documento foi removida do repositório e do histórico. As referências de estudo estão em [REFERENCES.pt-BR.md](../../REFERENCES.pt-BR.md).
 
 Registro das perguntas feitas no brainstorming da Fase 2, em 2026-10-07, com a opção escolhida e as descartadas. As decisões consolidadas estão em [decisions.md](decisions.md), o desenho do quiz em [quiz.md](quiz.md) e o backlog em [mini-project-catalog.md](mini-project-catalog.md).
 

@@ -2,7 +2,7 @@
 
 > Versão em português: [docs/pt/decisions.md](../pt/decisions.md)
 
-> Note (2026-10-08): the `references/` folder mentioned in this document was removed from the tree and remains in the git history (`git show eef7847:references/<path>`). Study references are in [REFERENCES.md](../../REFERENCES.md).
+> Note (2026-10-08): the `references/` folder mentioned in this document was removed from the repository and from its history. Study references are in [REFERENCES.md](../../REFERENCES.md).
 
 Decisions taken in the Phase 2 brainstorming on 2026-10-07. They are the input for `PLAN.md`. The list of mini-projects per area is in the [mini-project catalog](mini-project-catalog.md), the quiz design in [quiz.md](quiz.md), and the questions asked with the discarded options in the [brainstorming record](brainstorming.md).
 

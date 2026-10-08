@@ -21,7 +21,7 @@ Notes that carry over between sessions. Rules live in `.claude/rules/`. This fil
 - **Shell gotcha on the owner's Windows machine**: a Bash heredoc that contains an apostrophe fails to parse in the agent shell. Write such files with the file-writing tool instead.
 - **Phase 4 work unit** (owner, 2026-10-07): each worktree does one task completely, meaning one area with its quiz, its practical mini-projects and the tests that prove it works. Each complete project (a quiz area, a mini-project) gets its own commit and its own GitHub release. The main session merges, updates `CHANGELOG.md` and `PLAN.md`, tags and releases, so worktrees never touch those files.
 - **Schema validation**: Zod is the default (owner, 2026-10-07). See `.claude/rules/code-style.md`.
-- **Open questions for the owner** go to `questions-to-dev.md` at the repository root, each with the provisional decision taken, so work never stops waiting for an answer.
+- **Open questions for the owner**: ask them in the final message of the session, each with the provisional decision taken, and keep working. There is no questions file any more (the owner had it removed on 2026-10-08).
 
 ## Never import from the previous repository
 
@@ -43,5 +43,5 @@ The previous repository (`AlexGalhardo/Software-Engineering`) contains files tha
 
 - Transactions quiz: the correct alternative is the longest in about half of the questions. Rebalance the alternatives without changing the keys, then rerun the blind review.
 - For merged mini-projects the main session reran only the setup script (build and tests). Benchmark tables and demos are recorded as reported by the worktree.
-- **`references/` removed** (owner, 2026-10-08). The `references/` folder (imported study material, legacy projects and Markdown summaries of the books and lectures) was removed from the tree on 2026-10-08 at the owner request. It is still in the git history: read a file with `git show eef7847:references/<path>`. Study references now live in `REFERENCES.md` and in `projects/<area>/README.md`. The quiz areas not written yet (continuous integration, software engineering) still name summaries under `references/summaries/` as their chapter map in `PLAN.md`: read them from history. The 120 local images in `references/images/` were never tracked and stay on the owner machine, git-ignored.
+- **`references/` and `questions-to-dev.md` removed** (owner, 2026-10-08): both were deleted from the tree and purged from the git history with `git filter-repo`, then `main` and every tag were force-pushed. Commit hashes before that date changed. Do not recreate either. The quiz areas not written yet (continuous integration, software engineering) take their topics from the tables in `PLAN.md` and from `REFERENCES.md`.
 - **Study references**: `REFERENCES.md` and `REFERENCES.pt-BR.md` at the root (738 references, 671 distinct links, all verified when written on 2026-10-08), and `projects/<area>/README.md` with `README.pt-BR.md` for each of the 30 areas with mini-projects. When an area changes, update its README and the matching section of both root files.

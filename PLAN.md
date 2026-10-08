@@ -4,7 +4,7 @@ Main roadmap of the repository: 32 areas, a quiz covering all of them and 86 run
 
 The decisions behind this plan are in [docs/en/decisions.md](docs/en/decisions.md), the quiz design in [docs/en/quiz.md](docs/en/quiz.md), the backlog in [docs/en/mini-project-catalog.md](docs/en/mini-project-catalog.md) and the brainstorming record in [docs/en/brainstorming.md](docs/en/brainstorming.md).
 
-> Note (2026-10-08): the `references/` folder named in the "Sources" lines below was removed from the tree. The files are in the git history (`git show eef7847:references/<path>`), and the study references are in [REFERENCES.md](REFERENCES.md).
+> Note (2026-10-08): the `references/` folder named in the "Sources" lines below was removed from the repository and from its history at the owner request. Study references are in [REFERENCES.md](REFERENCES.md).
 
 ## Phases
 
