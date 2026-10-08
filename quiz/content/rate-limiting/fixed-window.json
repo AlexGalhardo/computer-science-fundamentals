@@ -1,0 +1,485 @@
+[
+	{
+		"id": "rate-limiting-fixed-window-01",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, fixed window definition)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Como um limitador de janela fixa (fixed window) decide se admite uma requisição?",
+			"alternatives": [
+				"Admite enquanto o contador da janela alinhada atual está abaixo do limite",
+				"Admite enquanto menos de `limite` instantes guardados caem nos últimos W segundos antes da requisição",
+				"Admite enquanto o balde ainda tem uma ficha, e as fichas são repostas a uma taxa constante",
+				"Coloca a requisição em uma fila esvaziada a uma taxa constante e a descarta se a fila estiver cheia",
+				"Admite enquanto uma soma ponderada das contagens da janela atual e da anterior está abaixo do limite"
+			],
+			"explanations": [
+				"O tempo é cortado em janelas de tamanho W alinhadas ao relógio. Cada janela tem um contador que começa em zero; a requisição entra se o contador ainda está abaixo do limite e, ao entrar, soma 1.",
+				"Essa é a regra do log deslizante (sliding log), que guarda um instante por requisição admitida e olha sempre para os últimos W segundos. A janela fixa não guarda instantes.",
+				"Essa é a regra do token bucket, que trabalha com capacidade e taxa de reposição, e não com janelas de tempo.",
+				"Essa é a leitura do leaky bucket como fila: ele atrasa e suaviza a saída. A janela fixa não enfileira nada, só admite ou rejeita.",
+				"Essa é a regra do contador de janela deslizante, que usa dois contadores. A janela fixa olha apenas para o contador da janela atual."
+			],
+			"concept": "A janela fixa divide o tempo em intervalos alinhados de tamanho W: a janela k cobre [k·W, (k+1)·W). Cada cliente tem um contador por janela, que começa em zero a cada fronteira. Uma requisição é admitida quando o contador da sua janela está abaixo do limite. É o algoritmo mais simples de rate limiting."
+		},
+		"en": {
+			"statement": "How does a fixed window rate limiter decide whether to admit a request?",
+			"alternatives": [
+				"It admits while the counter of the current aligned window is below the limit",
+				"It admits while fewer than `limit` stored timestamps fall within the last W seconds before the request",
+				"It admits while the bucket still holds a token, and tokens are refilled at a constant rate",
+				"It puts the request in a queue emptied at a constant rate, and drops it if the queue is full",
+				"It admits while a weighted sum of the current and the previous window counts is below the limit"
+			],
+			"explanations": [
+				"Time is cut into windows of size W aligned to the clock. Each window has a counter that starts from zero; the request gets in if the counter is still below the limit and, on getting in, adds 1.",
+				"That is the sliding log rule, which stores one timestamp per admitted request and always looks at the last W seconds. A fixed window stores no timestamps.",
+				"That is the token bucket rule, which works with a capacity and a refill rate rather than with time windows.",
+				"That is the leaky bucket read as a queue: it delays and smooths the output. A fixed window queues nothing, it only admits or rejects.",
+				"That is the sliding window counter rule, which uses two counters. A fixed window looks only at the counter of the current window."
+			],
+			"concept": "A fixed window splits time into aligned intervals of size W: window k covers [k·W, (k+1)·W). Each client has one counter per window, which starts from zero at every boundary. A request is admitted when the counter of its window is below the limit. It is the simplest rate limiting algorithm."
+		}
+	},
+	{
+		"id": "rate-limiting-fixed-window-02",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "basic",
+		"answer": 4,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, state per client)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Que estado um limitador de janela fixa com janelas alinhadas precisa guardar para cada cliente?",
+			"alternatives": [
+				"Um instante para cada requisição admitida nos últimos W segundos",
+				"As contagens da janela atual e da anterior, além do identificador da janela atual",
+				"O número de fichas restantes e o instante da última reposição",
+				"Uma fila com as requisições que ainda esperam para ser liberadas",
+				"Um contador e o identificador da janela a que ele pertence"
+			],
+			"explanations": [
+				"Guardar um instante por requisição admitida é o que faz o log deslizante. A janela fixa só precisa saber quantas foram, não quando.",
+				"Guardar também a contagem da janela anterior é o que o contador de janela deslizante exige. Na janela fixa, a janela anterior não influencia a decisão.",
+				"Fichas e instante da última reposição são o estado do token bucket.",
+				"Uma fila de requisições pendentes é o estado do leaky bucket usado como fila. A janela fixa não segura requisições.",
+				"Basta o contador e saber de qual janela ele é (por exemplo, o número da janela, ⌊t / W⌋). Quando a requisição chega em uma janela diferente da guardada, o contador recomeça em zero."
+			],
+			"concept": "O estado da janela fixa é mínimo: um contador e o identificador da janela, por cliente. No Redis, o identificador costuma ir no nome da chave (por exemplo, `rl:cliente:janela`) e o contador é o valor. Essa economia é a principal qualidade do algoritmo, e o preço é a rajada na fronteira entre janelas."
+		},
+		"en": {
+			"statement": "Which state does a fixed window limiter with aligned windows need to keep for each client?",
+			"alternatives": [
+				"One timestamp for each request admitted in the last W seconds",
+				"The counts of the current and of the previous window, plus the current window identifier",
+				"The number of tokens left and the time of the last refill",
+				"A queue with the requests that are still waiting to be released",
+				"One counter and the identifier of the window it belongs to"
+			],
+			"explanations": [
+				"Storing one timestamp per admitted request is what the sliding log does. A fixed window only needs to know how many there were, not when.",
+				"Also keeping the previous window's count is what the sliding window counter requires. In a fixed window the previous window has no influence on the decision.",
+				"Tokens and the time of the last refill are the state of the token bucket.",
+				"A queue of pending requests is the state of the leaky bucket used as a queue. A fixed window holds no requests back.",
+				"The counter and the window it belongs to (for instance the window number, ⌊t / W⌋) are enough. When a request arrives in a window different from the stored one, the counter starts again from zero."
+			],
+			"concept": "The state of a fixed window is minimal: one counter and the window identifier, per client. On Redis the identifier usually goes in the key name (for instance `rl:client:window`) and the counter is the value. This economy is the main quality of the algorithm, and its price is the burst at the boundary between windows."
+		}
+	},
+	{
+		"id": "rate-limiting-fixed-window-03",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, boundary burst)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um limitador de janela fixa com janelas alinhadas permite L requisições por janela de W segundos. Qual é o maior número de requisições que um cliente consegue ter admitidas em um intervalo de tempo menor que W?",
+			"alternatives": [
+				"L, porque o limite vale para qualquer intervalo de W segundos",
+				"2 × L, em um intervalo que atravessa a fronteira entre duas janelas",
+				"L + 1, pois só a requisição que cai exatamente na fronteira escapa",
+				"1,5 × L, pois a janela anterior conta pela metade, em média",
+				"Não há máximo, pois o contador é zerado sempre que chega a L"
+			],
+			"explanations": [
+				"Isso supõe que a janela desliza junto com o tempo. Na janela fixa, o limite vale para cada janela alinhada, e não para qualquer intervalo de W segundos.",
+				"O cliente envia L requisições no fim de uma janela e mais L logo no início da seguinte. O contador recomeça do zero na fronteira, então as 2 × L são admitidas, embora estejam separadas por muito menos que W segundos.",
+				"Não é só uma requisição que escapa: depois da fronteira, a janela nova aceita o limite inteiro de novo.",
+				"A ideia de ponderar a janela anterior pertence ao contador de janela deslizante, criado justamente para reduzir esse problema. A janela fixa ignora a janela anterior.",
+				"O contador não é zerado ao atingir L: ele fica em L, rejeitando, até a fronteira da janela. Por isso existe um máximo, que é 2 × L."
+			],
+			"concept": "O problema da fronteira é o defeito clássico da janela fixa. Como o contador recomeça do zero a cada fronteira, um cliente pode gastar o limite inteiro nos últimos instantes de uma janela e outra vez nos primeiros instantes da seguinte. O resultado são até 2 × L requisições em um intervalo bem menor que W, o dobro do que a regra parece prometer.",
+			"example": {
+				"kind": "diagram",
+				"content": "limite = 5, W = 60 s\n\n janela [0,60)            janela [60,120)\n|----------------xxxxx|xxxxx----------------|\n                 t=59  t=60\n                 5 admitidas + 5 admitidas = 10 em cerca de 1 s"
+			}
+		},
+		"en": {
+			"statement": "A fixed window limiter with aligned windows allows L requests per window of W seconds. What is the largest number of requests one client can have admitted within a time span shorter than W?",
+			"alternatives": [
+				"L, because the limit holds for any span of W seconds",
+				"2 × L, in a span that straddles the boundary between two windows",
+				"L + 1, since only the request falling exactly on the boundary escapes",
+				"1.5 × L, since the previous window counts by half on average",
+				"There is no maximum, since the counter is zeroed whenever it reaches L"
+			],
+			"explanations": [
+				"That assumes the window slides along with time. In a fixed window the limit holds for each aligned window, not for any span of W seconds.",
+				"The client sends L requests at the end of one window and L more right at the start of the next. The counter starts again from zero at the boundary, so all 2 × L are admitted, although they are far less than W seconds apart.",
+				"It is not just one request that escapes: after the boundary the new window accepts the whole limit again.",
+				"Weighting the previous window belongs to the sliding window counter, created precisely to reduce this problem. A fixed window ignores the previous window.",
+				"The counter is not zeroed on reaching L: it stays at L, rejecting, until the window boundary. So there is a maximum, and it is 2 × L."
+			],
+			"concept": "The boundary problem is the classic flaw of the fixed window. Because the counter starts again from zero at every boundary, a client can spend the whole limit in the last moments of one window and again in the first moments of the next. The result is up to 2 × L requests in a span much shorter than W, twice what the rule seems to promise.",
+			"example": {
+				"kind": "diagram",
+				"content": "limit = 5, W = 60 s\n\n window [0,60)            window [60,120)\n|----------------xxxxx|xxxxx----------------|\n                 t=59  t=60\n                 5 admitted + 5 admitted = 10 in about 1 s"
+			}
+		}
+	},
+	{
+		"id": "rate-limiting-fixed-window-04",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "basic",
+		"answer": 2,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, reset stampede at the boundary)",
+		"pt": {
+			"statement": "Milhares de clientes de uma API de envio de SMS são limitados por janelas fixas de um minuto alinhadas ao relógio, e todos já esgotaram o limite. O código deles tenta de novo assim que o limite é renovado. Que padrão de carga o servidor observa?",
+			"alternatives": [
+				"Uma carga suave, pois a janela de cada cliente começa em um momento diferente",
+				"Uma carga que cresce devagar, pois cada contador é esvaziado aos poucos",
+				"Um pico a cada virada de minuto, pois todos os contadores recomeçam juntos",
+				"Um pico uma única vez, pois depois as janelas se dessincronizam sozinhas",
+				"Nenhuma carga por um minuto inteiro, pois as rejeições prolongam o bloqueio"
+			],
+			"explanations": [
+				"Isso valeria se a janela de cada cliente começasse na sua primeira requisição. Com janelas alinhadas ao relógio, a fronteira é a mesma para todos os clientes.",
+				"Contador que esvazia aos poucos é o comportamento do leaky bucket usado como medidor. Na janela fixa o contador vai de cheio a zero em um único instante.",
+				"Como as janelas são alinhadas ao relógio, todos os contadores voltam a zero no mesmo instante. Todos os clientes que estavam esperando disparam juntos, e o servidor recebe uma manada de requisições a cada fronteira.",
+				"Nada dessincroniza as janelas: elas são definidas pelo relógio, não pelo comportamento dos clientes. O pico se repete a cada fronteira enquanto os clientes insistirem.",
+				"Na janela fixa, uma rejeição não prolonga nada: a janela termina na fronteira, tenha havido rejeições ou não."
+			],
+			"concept": "Janelas alinhadas ao relógio sincronizam os clientes: o limite de todos é renovado no mesmo instante. Clientes que esperam a renovação para tentar de novo chegam todos juntos, um efeito de manada (stampede) na fronteira. Atenuam o problema o jitter no cliente, janelas que começam em momentos diferentes por cliente, ou algoritmos sem fronteira, como o token bucket."
+		},
+		"en": {
+			"statement": "Thousands of clients of an SMS-sending API are limited by one-minute fixed windows aligned to the clock, and all of them have used up their limit. Their code tries again as soon as the limit is renewed. What load pattern does the server see?",
+			"alternatives": [
+				"A smooth load, since each client's window starts at a different moment",
+				"A load that grows slowly, since each counter is drained little by little",
+				"A spike at every minute boundary, since all counters restart together",
+				"A spike only once, since afterwards the windows drift apart by themselves",
+				"No load for a whole minute, since the rejections prolong the block"
+			],
+			"explanations": [
+				"That would hold if each client's window started at its first request. With windows aligned to the clock, the boundary is the same for every client.",
+				"A counter that drains little by little is the behaviour of the leaky bucket used as a meter. In a fixed window the counter goes from full to zero in a single instant.",
+				"Because the windows are aligned to the clock, all counters go back to zero at the same instant. Every client that was waiting fires together, and the server gets a stampede of requests at each boundary.",
+				"Nothing makes the windows drift: they are defined by the clock, not by the clients' behaviour. The spike repeats at every boundary for as long as the clients insist.",
+				"In a fixed window a rejection prolongs nothing: the window ends at the boundary whether or not there were rejections."
+			],
+			"concept": "Windows aligned to the clock synchronise the clients: everybody's limit is renewed at the same instant. Clients that wait for the renewal to try again all arrive together, a stampede at the boundary. Jitter on the client, windows that start at different moments per client, or algorithms with no boundary, such as the token bucket, reduce the problem."
+		}
+	},
+	{
+		"id": "rate-limiting-fixed-window-05",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, counting admitted requests in aligned windows)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um limitador de janela fixa usa janelas alinhadas: a janela k cobre [k·W, (k+1)·W), e o contador começa em zero em cada janela. Uma requisição é admitida quando o contador da sua janela está abaixo do limite. Para o cliente abaixo, quais requisições são rejeitadas?",
+			"alternatives": [
+				"t = 9, t = 10 e t = 20",
+				"t = 9, t = 10 e t = 12",
+				"Todas a partir de t = 9",
+				"Nenhuma requisição é rejeitada",
+				"Apenas t = 9 e t = 19"
+			],
+			"explanations": [
+				"Esse resultado coloca as requisições de t = 10 e t = 20 na janela que está terminando. Pela convenção, a janela k cobre [k·W, (k+1)·W): t = 10 já é a primeira requisição da janela [10,20) e t = 20 é a primeira de [20,30).",
+				"Esse é o resultado de um log deslizante, que olha para os últimos 10 segundos antes de cada requisição. Na janela fixa, o contador recomeça em t = 10, então t = 10, t = 11 e t = 12 entram.",
+				"Isso supõe que o contador nunca recomeça. Ele volta a zero em t = 10 e em t = 20.",
+				"Isso admite enquanto o contador é menor ou igual ao limite, o que deixaria passar 4 por janela. A regra é contador abaixo do limite: no máximo 3 por janela.",
+				"Janela [0,10): t = 1, 4 e 8 são admitidas (contador 3) e t = 9 é rejeitada. Janela [10,20): t = 10, 11 e 12 são admitidas e t = 19 é rejeitada. Janela [20,30): t = 20 é admitida. Conferindo pelo total: 3 + 3 + 1 = 7 admitidas de 9, logo 2 rejeitadas."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limite = 3, W = 10 s\njanelas: [0,10)  [10,20)  [20,30)\nrequisições em t = 1, 4, 8, 9, 10, 11, 12, 19, 20"
+			},
+			"concept": "Para simular a janela fixa, basta separar as requisições por janela e contar: em cada janela, as primeiras `limite` entram e as demais são rejeitadas. Um instante que cai exatamente na fronteira pertence à janela que começa, porque os intervalos são fechados à esquerda e abertos à direita. Note que t = 8, 10, 11 e 12 são quatro admissões em 4 segundos, acima do limite de 3 por 10 segundos: é o problema da fronteira."
+		},
+		"en": {
+			"statement": "A fixed window limiter uses aligned windows: window k covers [k·W, (k+1)·W), and the counter starts from zero in each window. A request is admitted when the counter of its window is below the limit. For the client below, which requests are rejected?",
+			"alternatives": [
+				"t = 9, t = 10 and t = 20",
+				"t = 9, t = 10 and t = 12",
+				"Every request from t = 9 onwards",
+				"No request is rejected",
+				"Only t = 9 and t = 19"
+			],
+			"explanations": [
+				"This result puts the requests at t = 10 and t = 20 in the window that is ending. By the convention, window k covers [k·W, (k+1)·W): t = 10 is already the first request of window [10,20) and t = 20 is the first of [20,30).",
+				"That is the result of a sliding log, which looks at the last 10 seconds before each request. In a fixed window the counter starts again at t = 10, so t = 10, t = 11 and t = 12 get in.",
+				"That assumes the counter never starts again. It goes back to zero at t = 10 and at t = 20.",
+				"That admits while the counter is lower than or equal to the limit, which would let 4 through per window. The rule is counter below the limit: at most 3 per window.",
+				"Window [0,10): t = 1, 4 and 8 are admitted (counter 3) and t = 9 is rejected. Window [10,20): t = 10, 11 and 12 are admitted and t = 19 is rejected. Window [20,30): t = 20 is admitted. Checking by the total: 3 + 3 + 1 = 7 admitted out of 9, so 2 rejected."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limit = 3, W = 10 s\nwindows: [0,10)  [10,20)  [20,30)\nrequests at t = 1, 4, 8, 9, 10, 11, 12, 19, 20"
+			},
+			"concept": "To simulate a fixed window, split the requests by window and count: in each window the first `limit` get in and the rest are rejected. An instant that falls exactly on the boundary belongs to the window that is starting, because the intervals are closed on the left and open on the right. Note that t = 8, 10, 11 and 12 are four admissions in 4 seconds, above the limit of 3 per 10 seconds: that is the boundary problem."
+		}
+	},
+	{
+		"id": "rate-limiting-fixed-window-06",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, INCR with EXPIRE on the first request)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um API gateway executa o script abaixo a cada requisição, com KEYS[1] = `rl:client42` (sem instante no nome da chave) e ARGV[1] = 60, e rejeita quando o resultado passa do limite. Quando começa cada janela de 60 segundos desse cliente?",
+			"alternatives": [
+				"Em cada múltiplo de 60 segundos do relógio do servidor Redis",
+				"A cada requisição, pois toda chamada renova a expiração de 60 segundos",
+				"Na primeira requisição que chega depois que a chave expirou",
+				"60 segundos antes de cada requisição, pois a janela desliza junto com ela",
+				"Na última requisição rejeitada do cliente, que reinicia a contagem"
+			],
+			"explanations": [
+				"Janelas alinhadas ao relógio exigiriam o identificador da janela no nome da chave (por exemplo, o instante dividido por 60). Aqui a chave é sempre a mesma e quem define a janela é o TTL.",
+				"O `EXPIRE` só é executado quando `n == 1`, ou seja, na requisição que criou a chave. As seguintes incrementam o contador sem mexer no TTL.",
+				"O `INCR` em uma chave inexistente cria a chave com valor 1, e só nesse caso o script define o TTL de 60 segundos. A janela vai dessa requisição até a chave expirar; a próxima requisição cria a chave de novo e abre outra janela.",
+				"Continua sendo uma janela fixa: há um único contador que some de uma vez quando o TTL vence. Nada aqui olha para os 60 segundos anteriores a cada requisição.",
+				"Uma rejeição também executa o `INCR`, mas o resultado é maior que 1, então o `EXPIRE` não é chamado e a janela não recomeça."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "lua",
+				"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], ARGV[1])\nend\nreturn n"
+			},
+			"concept": "Há duas formas de janela fixa no Redis. Com o identificador da janela no nome da chave, as janelas são alinhadas ao relógio e iguais para todos os clientes. Com uma chave única por cliente e `EXPIRE` apenas quando o `INCR` devolve 1, a janela começa na primeira requisição do cliente e dura até o TTL vencer. O `INCR` e o `EXPIRE` ficam no mesmo script para que a chave nunca fique sem TTL."
+		},
+		"en": {
+			"statement": "An API gateway runs the script below for each request, with KEYS[1] = `rl:client42` (no timestamp in the key name) and ARGV[1] = 60, and rejects when the result is above the limit. When does each 60-second window of this client begin?",
+			"alternatives": [
+				"At every multiple of 60 seconds on the Redis server clock",
+				"At every request, because each call renews the 60-second expiry",
+				"At the first request that arrives after the key has expired",
+				"60 seconds before each request, since the window slides along with it",
+				"At the client's latest rejected request, which restarts the count"
+			],
+			"explanations": [
+				"Windows aligned to the clock would need the window identifier in the key name (for instance the timestamp divided by 60). Here the key is always the same and the TTL defines the window.",
+				"`EXPIRE` runs only when `n == 1`, that is, on the request that created the key. The following ones increment the counter without touching the TTL.",
+				"`INCR` on a missing key creates it with value 1, and only in that case the script sets the 60-second TTL. The window runs from that request until the key expires; the next request creates the key again and opens another window.",
+				"It is still a fixed window: there is a single counter that vanishes all at once when the TTL runs out. Nothing here looks at the 60 seconds before each request.",
+				"A rejection also runs `INCR`, but the result is greater than 1, so `EXPIRE` is not called and the window does not restart."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "lua",
+				"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], ARGV[1])\nend\nreturn n"
+			},
+			"concept": "There are two forms of fixed window on Redis. With the window identifier in the key name, the windows are aligned to the clock and the same for every client. With a single key per client and `EXPIRE` only when `INCR` returns 1, the window begins at the client's first request and lasts until the TTL runs out. `INCR` and `EXPIRE` sit in the same script so that the key is never left without a TTL."
+		}
+	},
+	{
+		"id": "rate-limiting-fixed-window-07",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, memory cost of a fixed window)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um SaaS multi-tenant limita cada tenant com uma janela fixa alinhada de uma hora. O limite sobe de 500 para 5000 requisições por hora. Como muda a memória que o limitador usa por tenant?",
+			"alternatives": [
+				"Cresce cerca de dez vezes, com um instante por requisição admitida",
+				"Continua a mesma: ainda um contador e um identificador de janela",
+				"Dobra, pois passa a ser preciso um contador para a janela anterior",
+				"Diminui, pois um limite maior torna as janelas mais curtas",
+				"Cresce dez vezes, pois o contador precisa de dez vezes mais bytes"
+			],
+			"explanations": [
+				"Guardar um instante por requisição admitida é o custo do log deslizante, cuja memória cresce com o limite. A janela fixa guarda só a quantidade.",
+				"O estado é um contador e o identificador da janela, qualquer que seja o limite. Mudar o limite muda apenas o valor com que o contador é comparado: a memória por cliente é O(1).",
+				"O contador da janela anterior é exigência do contador de janela deslizante e não depende do valor do limite. A janela fixa nunca o usa.",
+				"O limite e o tamanho da janela são parâmetros independentes: a janela continua sendo de uma hora. E janelas mais curtas também não mudariam o estado por cliente.",
+				"Isso confunde o valor guardado com o espaço que ele ocupa. Um inteiro que chega a 5000 ocupa o mesmo espaço que um que chega a 500."
+			],
+			"concept": "A memória da janela fixa não depende do limite nem do tamanho da janela: é um contador e um identificador de janela por cliente ativo. Por isso ela escala bem para milhões de clientes e limites altos. O log deslizante, em contraste, guarda um instante por requisição admitida, e a sua memória cresce na proporção do limite."
+		},
+		"en": {
+			"statement": "A multi-tenant SaaS limits each tenant with an aligned fixed window of one hour. The limit is raised from 500 to 5000 requests per hour. How does the memory the limiter uses per tenant change?",
+			"alternatives": [
+				"It grows about ten times, with one timestamp per admitted request",
+				"It stays the same: still one counter and one window identifier",
+				"It doubles, since a counter for the previous window is now needed",
+				"It shrinks, because a larger limit makes the windows shorter",
+				"It grows ten times, as the counter needs ten times as many bytes"
+			],
+			"explanations": [
+				"Storing one timestamp per admitted request is the cost of the sliding log, whose memory grows with the limit. A fixed window stores only the quantity.",
+				"The state is one counter and the window identifier, whatever the limit. Changing the limit only changes the value the counter is compared with: memory per client is O(1).",
+				"The previous window's counter is a requirement of the sliding window counter and does not depend on the value of the limit. A fixed window never uses it.",
+				"The limit and the window size are independent parameters: the window is still one hour. And shorter windows would not change the state per client either.",
+				"That confuses the stored value with the space it takes. An integer that reaches 5000 takes the same space as one that reaches 500."
+			],
+			"concept": "The memory of a fixed window depends neither on the limit nor on the window size: it is one counter and one window identifier per active client. That is why it scales well to millions of clients and to high limits. The sliding log, in contrast, stores one timestamp per admitted request, and its memory grows in proportion to the limit."
+		}
+	},
+	{
+		"id": "rate-limiting-fixed-window-08",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, choosing the window size)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Uma API de pagamentos quer uma média de 600 requisições por minuto por cliente e usa janelas fixas alinhadas. Desenho X: limite de 600 por janela de 60 segundos. Desenho Y: limite de 10 por janela de 1 segundo. No pior caso, quantas requisições um cliente consegue ter admitidas em um intervalo menor que um segundo?",
+			"alternatives": [
+				"X: 1200, Y: 20",
+				"X: 600, Y: 10",
+				"X: 20, Y: 20",
+				"X: 1200, Y: 1200",
+				"X: 10, Y: 10"
+			],
+			"explanations": [
+				"O pior caso atravessa uma fronteira: o limite inteiro no fim de uma janela e de novo no início da seguinte. X: 600 + 600 = 1200 (por exemplo, 600 em t = 59,9 e 600 em t = 60). Y: 10 + 10 = 20 (10 em t = 0,9 e 10 em t = 1). Conferindo pela regra geral 2 × limite: 2 × 600 = 1200 e 2 × 10 = 20.",
+				"Esses são os limites de uma única janela. Falta a rajada dupla: um intervalo menor que um segundo pode pegar o fim de uma janela e o início da seguinte.",
+				"Isso supõe que a taxa média de 10 por segundo limita a rajada nos dois desenhos. No desenho X nada impede o cliente de gastar as 600 de uma vez só.",
+				"Isso supõe que a mesma taxa média implica a mesma rajada. A rajada depende do limite por janela, que é 600 em X e apenas 10 em Y.",
+				"Isso supõe que a janela fixa espaça as requisições e ainda ignora a fronteira. Ela só conta: dentro da janela, o limite inteiro pode chegar no mesmo instante."
+			],
+			"concept": "A mesma taxa média pode ser escrita com janelas de tamanhos diferentes, e a escolha define a rajada tolerada. Uma janela longa com limite alto aceita rajadas enormes (até 2 × limite na fronteira) e pode sobrecarregar o serviço. Uma janela curta com limite baixo mantém a rajada pequena, mas rejeita clientes legítimos que enviam um lote pequeno de uma vez."
+		},
+		"en": {
+			"statement": "A payment API wants an average of 600 requests per minute per client and uses aligned fixed windows. Design X: limit 600 per 60-second window. Design Y: limit 10 per 1-second window. In the worst case, how many requests can one client have admitted within a span shorter than one second?",
+			"alternatives": [
+				"X: 1200, Y: 20",
+				"X: 600, Y: 10",
+				"X: 20, Y: 20",
+				"X: 1200, Y: 1200",
+				"X: 10, Y: 10"
+			],
+			"explanations": [
+				"The worst case straddles a boundary: the whole limit at the end of one window and again at the start of the next. X: 600 + 600 = 1200 (for instance 600 at t = 59.9 and 600 at t = 60). Y: 10 + 10 = 20 (10 at t = 0.9 and 10 at t = 1). Checking with the general rule 2 × limit: 2 × 600 = 1200 and 2 × 10 = 20.",
+				"Those are the limits of a single window. The double burst is missing: a span shorter than one second can catch the end of one window and the start of the next.",
+				"That assumes the average rate of 10 per second bounds the burst in both designs. In design X nothing stops the client from spending all 600 at once.",
+				"That assumes the same average rate implies the same burst. The burst depends on the limit per window, which is 600 in X and only 10 in Y.",
+				"That assumes a fixed window spaces requests out, and it also ignores the boundary. It only counts: inside the window the whole limit may arrive at the same instant."
+			],
+			"concept": "The same average rate can be written with windows of different sizes, and the choice defines the burst that is tolerated. A long window with a high limit accepts huge bursts (up to 2 × limit at the boundary) and may overload the service. A short window with a low limit keeps the burst small, but rejects legitimate clients that send a small batch at once."
+		}
+	},
+	{
+		"id": "rate-limiting-fixed-window-09",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, aligned windows versus a window opened by the first request)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "O mesmo tráfego de um cliente é avaliado por duas regras de janela fixa, ambas com limite de 4 por 10 segundos. Uma requisição é admitida quando o contador da janela está abaixo do limite, e uma requisição rejeitada não abre nem prolonga janela. Quantas das 10 requisições cada regra admite?",
+			"alternatives": [
+				"A: 6, B: 8",
+				"A: 8, B: 6",
+				"A: 8, B: 8",
+				"A: 6, B: 6",
+				"A: 8, B: 4"
+			],
+			"explanations": [
+				"Os resultados estão trocados: quem aceita a rajada dupla em torno de t = 10 é a regra A, de janelas alinhadas.",
+				"Regra A: a janela [0,10) admite t = 6, 7, 8 e 9; a janela [10,20) admite t = 10, 11, 12 e 13 e rejeita t = 17 e 18. Total 8. Regra B: a janela abre em t = 6 e cobre [6,16); admite t = 6, 7, 8 e 9 e rejeita t = 10, 11, 12 e 13. Em t = 17 a janela já terminou, então abre outra, [17,27), que admite t = 17 e 18. Total 6. Conferindo pelas rejeitadas: A rejeita 2 (10 − 2 = 8) e B rejeita 4 (10 − 4 = 6).",
+				"Isso trata a regra B como se a janela dela também recomeçasse em t = 10. Em B a janela começou em t = 6 e só termina em t = 16.",
+				"Isso aplica à regra A a janela que começa na primeira requisição. Em A as fronteiras são múltiplos de 10, e t = 10 já cai em uma janela nova.",
+				"Isso supõe que cada requisição renova a janela de B, que então nunca terminaria nesse tráfego. A janela de B dura 10 segundos a partir da requisição que a abriu, e as seguintes não a prolongam."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limite = 4, W = 10 s\nrequisições em t = 6, 7, 8, 9, 10, 11, 12, 13, 17, 18\n\nRegra A: janelas alinhadas [0,10), [10,20), ...\nRegra B: a janela abre na primeira requisição e dura 10 s;\n         a primeira requisição depois do fim abre uma nova janela"
+			},
+			"concept": "A posição das fronteiras muda o resultado da janela fixa. Com janelas alinhadas, este cliente pega a fronteira em t = 10 e tem 8 requisições admitidas em 8 segundos, o dobro do limite. Com a janela aberta pela primeira requisição (o padrão `INCR` com `EXPIRE` só quando o resultado é 1), a rajada inicial fica limitada a 4, mas o problema continua existindo no fim dessa janela. Só os algoritmos deslizantes eliminam a fronteira."
+		},
+		"en": {
+			"statement": "The same client traffic is evaluated by two fixed window rules, both with limit 4 per 10 seconds. A request is admitted when the window counter is below the limit, and a rejected request neither opens nor extends a window. How many of the 10 requests does each rule admit?",
+			"alternatives": [
+				"A: 6, B: 8",
+				"A: 8, B: 6",
+				"A: 8, B: 8",
+				"A: 6, B: 6",
+				"A: 8, B: 4"
+			],
+			"explanations": [
+				"The results are swapped: the rule that accepts the double burst around t = 10 is rule A, with aligned windows.",
+				"Rule A: window [0,10) admits t = 6, 7, 8 and 9; window [10,20) admits t = 10, 11, 12 and 13 and rejects t = 17 and 18. Total 8. Rule B: the window opens at t = 6 and covers [6,16); it admits t = 6, 7, 8 and 9 and rejects t = 10, 11, 12 and 13. At t = 17 that window is over, so another one opens, [17,27), which admits t = 17 and 18. Total 6. Checking by the rejected ones: A rejects 2 (10 − 2 = 8) and B rejects 4 (10 − 4 = 6).",
+				"That treats rule B as if its window also restarted at t = 10. In B the window began at t = 6 and ends only at t = 16.",
+				"That applies the window opened by the first request to rule A. In A the boundaries are multiples of 10, and t = 10 already falls in a new window.",
+				"That assumes every request renews B's window, which would then never end in this traffic. B's window lasts 10 seconds from the request that opened it, and the following ones do not extend it."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "limit = 4, W = 10 s\nrequests at t = 6, 7, 8, 9, 10, 11, 12, 13, 17, 18\n\nRule A: aligned windows [0,10), [10,20), ...\nRule B: the window opens at the first request and lasts 10 s;\n        the first request after its end opens a new window"
+			},
+			"concept": "Where the boundaries fall changes the result of a fixed window. With aligned windows this client catches the boundary at t = 10 and has 8 requests admitted in 8 seconds, twice the limit. With the window opened by the first request (the `INCR` pattern with `EXPIRE` only when the result is 1), the initial burst is held to 4, but the problem still exists at the end of that window. Only the sliding algorithms remove the boundary."
+		}
+	},
+	{
+		"id": "rate-limiting-fixed-window-10",
+		"area": "rate-limiting",
+		"topic": "fixed-window",
+		"difficulty": "advanced",
+		"answer": 0,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, counting rejected requests)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um limitador de janela fixa com janelas alinhadas executa `INCR` primeiro e rejeita quando o resultado passa do limite, então as requisições rejeitadas também aumentam o contador. Em comparação com uma versão que só incrementa nas requisições admitidas, o que muda no conjunto de requisições admitidas?",
+			"alternatives": [
+				"Nada: o contador é descartado na fronteira nas duas versões",
+				"Um cliente que continua enviando nunca mais é admitido, pois o contador não baixa",
+				"O excesso é levado adiante e descontado do limite da janela seguinte",
+				"Menos requisições entram em cada janela, pois as rejeições gastam parte do limite",
+				"A janela seguinte começa mais tarde, pois cada rejeição renova a janela"
+			],
+			"explanations": [
+				"Dentro da janela, as duas versões admitem exatamente as primeiras `limite` requisições: uma rejeição só acontece depois que o limite já foi atingido, e contar acima dele não tira a vaga de ninguém. Na fronteira, o contador da janela antiga é abandonado, valha ele `limite` ou muito mais. Exemplo com limite 3 e requisições em t = 1, 2, 3, 4, 5 e 11 (W = 10): nas duas versões entram t = 1, 2, 3 e 11.",
+				"Isso acontece no log deslizante que registra também as rejeições: as próprias tentativas mantêm o log cheio. Na janela fixa, o contador da janela nova começa em zero, não importa quanto o anterior passou do limite.",
+				"Nenhum valor passa de uma janela para a outra. Cada janela alinhada tem o seu próprio contador, que começa em zero.",
+				"As rejeições só ocorrem quando o contador já chegou ao limite, então não há mais vaga a ser gasta naquela janela. As primeiras `limite` requisições entram nas duas versões.",
+				"Com janelas alinhadas, as fronteiras são fixadas pelo relógio. Nenhuma requisição, admitida ou rejeitada, desloca uma fronteira."
+			],
+			"concept": "Na janela fixa, contar ou não as requisições rejeitadas não altera quem é admitido, porque o contador é zerado na fronteira de qualquer forma. A diferença aparece apenas no valor guardado, que pode ser útil como métrica do excesso. No log deslizante a mesma escolha muda tudo: se as rejeições são registradas, um cliente insistente nunca se recupera. Por isso a convenção precisa ser dita em cada algoritmo."
+		},
+		"en": {
+			"statement": "A fixed window limiter with aligned windows runs `INCR` first and rejects when the result is above the limit, so rejected requests also increase the counter. Compared with a version that increments only on admitted requests, what changes in the set of admitted requests?",
+			"alternatives": [
+				"Nothing: the counter is thrown away at the boundary in both versions",
+				"A client that keeps sending is never admitted again, as its counter never drops",
+				"The excess is carried over and is deducted from the limit of the next window",
+				"Fewer requests get into each window, as rejections use up part of the limit",
+				"The next window starts later, since every rejected request renews the window"
+			],
+			"explanations": [
+				"Inside the window both versions admit exactly the first `limit` requests: a rejection only happens after the limit has been reached, and counting beyond it takes nobody's place. At the boundary the old window's counter is abandoned, whether it holds `limit` or much more. Example with limit 3 and requests at t = 1, 2, 3, 4, 5 and 11 (W = 10): in both versions t = 1, 2, 3 and 11 get in.",
+				"That happens in a sliding log that also records rejections: the client's own attempts keep the log full. In a fixed window the new window's counter starts from zero, no matter how far the previous one went past the limit.",
+				"No value passes from one window to the next. Each aligned window has its own counter, which starts from zero.",
+				"Rejections occur only when the counter has already reached the limit, so there is no room left to be used up in that window. The first `limit` requests get in under both versions.",
+				"With aligned windows the boundaries are fixed by the clock. No request, admitted or rejected, moves a boundary."
+			],
+			"concept": "In a fixed window, counting or not counting rejected requests does not change who is admitted, because the counter is zeroed at the boundary anyway. The difference shows only in the stored value, which can be useful as a metric of the excess. In a sliding log the same choice changes everything: if rejections are recorded, an insistent client never recovers. That is why the convention must be stated for each algorithm."
+		}
+	}
+]

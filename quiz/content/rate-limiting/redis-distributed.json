@@ -1,0 +1,697 @@
+[
+	{
+		"id": "rate-limiting-redis-distributed-01",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Redis documentation, INCR command (pattern: rate limiter)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Uma API roda em 3 instâncias atrás de um balanceador de carga. Cada instância guarda, na própria memória, um contador de janela fixa com limite de 100 requisições por minuto por cliente. No pior caso, quantas requisições de um mesmo cliente são admitidas dentro de uma única janela?",
+			"alternatives": [
+				"Até 100, porque o balanceador de carga compartilha os contadores",
+				"Até 33, porque o limite é repartido entre as instâncias",
+				"Até 103, porque só escapam as requisições que estavam em trânsito",
+				"Até 300, porque cada instância conta sozinha",
+				"Até 200, porque a janela fixa dobra o limite na fronteira"
+			],
+			"explanations": [
+				"O balanceador só distribui as requisições; ele não conhece nem sincroniza os contadores que estão na memória de cada processo.",
+				"Ninguém dividiu o limite: cada instância foi configurada com 100. Dividir por N é outra estratégia, que falha quando o balanceamento é desigual.",
+				"Esse raciocínio trata o problema como uma pequena corrida. Aqui não há corrida: os contadores são independentes o tempo todo.",
+				"Cada instância vê apenas as requisições que recebeu e admite 100 delas. Com 3 instâncias: 3 × 100 = 300 (conferindo: 100 + 100 + 100 = 300).",
+				"A rajada dupla acontece entre duas janelas vizinhas. A pergunta fala de uma única janela, e o problema aqui é haver três contadores."
+			],
+			"concept": "Um limitador em memória só conhece o tráfego do próprio processo. Atrás de um balanceador com N instâncias, o cliente pode receber até N × limite, porque cada instância tem um contador separado. Para o limite valer para o serviço inteiro, o contador precisa ficar em um lugar que todas as instâncias consultem."
+		},
+		"en": {
+			"statement": "An API runs on 3 instances behind a load balancer. Each instance keeps, in its own memory, a fixed-window counter with a limit of 100 requests per minute per client. In the worst case, how many requests of one client are admitted within a single window?",
+			"alternatives": [
+				"Up to 100, because the load balancer shares the counters",
+				"Up to 33, because the limit is split among the instances",
+				"Up to 103, because only the requests in flight escape",
+				"Up to 300, because each instance counts on its own",
+				"Up to 200, because a fixed window doubles at its boundary"
+			],
+			"explanations": [
+				"The load balancer only distributes requests; it neither knows nor synchronises the counters held in the memory of each process.",
+				"Nobody divided the limit: each instance was configured with 100. Dividing by N is another strategy, which fails when balancing is uneven.",
+				"This treats the problem as a small race. There is no race here: the counters are independent all the time.",
+				"Each instance sees only the requests it received and admits 100 of them. With 3 instances: 3 × 100 = 300 (checking: 100 + 100 + 100 = 300).",
+				"The double burst happens between two neighbouring windows. The question is about a single window, and the problem here is having three counters."
+			],
+			"concept": "An in-memory limiter only knows the traffic of its own process. Behind a load balancer with N instances, a client can get up to N × limit, because each instance has a separate counter. For the limit to hold for the whole service, the counter must live in a place every instance consults."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-02",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "Redis documentation, INCR command (pattern: rate limiter)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Duas instâncias de uma API usam o mesmo Redis para limitar requisições. O que garante que, somadas, elas não admitam mais do que o limite de um cliente?",
+			"alternatives": [
+				"As duas atualizam o mesmo contador, a única fonte da verdade",
+				"O Redis reparte o limite igualmente entre as instâncias conectadas",
+				"Cada instância mantém o seu contador e o Redis guarda uma cópia",
+				"O balanceador envia cada cliente sempre para a mesma instância",
+				"O Redis copia o contador local de uma instância para a outra"
+			],
+			"explanations": [
+				"Há um único contador por cliente, guardado no Redis. Toda instância incrementa e consulta esse mesmo valor, de modo que a soma do tráfego é contada em um só lugar.",
+				"O Redis não sabe quantas instâncias existem nem divide nada; ele apenas guarda a chave que as instâncias pedem.",
+				"Se a decisão continua sendo tomada com o contador local, o Redis vira só um backup e o limite volta a ser N × limite.",
+				"Afinidade de sessão é uma função do balanceador, não do Redis, e deixa de valer quando uma instância cai ou o cliente troca de conexão.",
+				"Não há sincronização entre contadores locais. O modelo é o contrário: não existe contador local, só o compartilhado."
+			],
+			"concept": "Em um limitador distribuído, o estado sai da memória das instâncias e vai para um armazenamento compartilhado. Como todas as instâncias leem e escrevem a mesma chave, o Redis passa a ser a única fonte da verdade sobre quanto cada cliente já consumiu. As instâncias ficam sem estado e podem ser criadas ou removidas sem alterar o limite."
+		},
+		"en": {
+			"statement": "Two instances of an API use the same Redis to limit requests. What guarantees that, together, they do not admit more than a client's limit?",
+			"alternatives": [
+				"Both update the same counter, the single source of truth",
+				"Redis splits the limit equally among the connected instances",
+				"Each instance keeps its own counter and Redis stores a copy",
+				"The load balancer always sends a client to the same instance",
+				"Redis copies the local counter of one instance to the other"
+			],
+			"explanations": [
+				"There is one counter per client, kept in Redis. Every instance increments and reads that same value, so the sum of the traffic is counted in one place.",
+				"Redis does not know how many instances exist and divides nothing; it only stores the key the instances ask for.",
+				"If the decision is still taken with the local counter, Redis becomes a mere backup and the limit is N × limit again.",
+				"Session affinity is a load balancer feature, not a Redis one, and it stops holding when an instance dies or the client reconnects.",
+				"There is no synchronisation between local counters. The model is the opposite: there is no local counter, only the shared one."
+			],
+			"concept": "In a distributed limiter the state leaves the memory of the instances and goes to a shared store. Since every instance reads and writes the same key, Redis becomes the single source of truth about how much each client has consumed. The instances are stateless and can be added or removed without changing the limit."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-03",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Redis documentation, INCR command (atomicity of a single command)",
+		"pt": {
+			"statement": "Duas instâncias enviam `INCR` para a mesma chave do Redis no mesmo instante. Por que nenhum dos dois incrementos se perde?",
+			"alternatives": [
+				"Porque cada conexão de cliente recebe uma cópia própria da chave",
+				"Porque o Redis executa um comando por vez, do início ao fim",
+				"Porque o `INCR` obtém uma trava que o cliente libera em seguida",
+				"Porque a biblioteca cliente repete o `INCR` até ele ser confirmado",
+				"Porque as réplicas votam para decidir o valor final do contador"
+			],
+			"explanations": [
+				"As chaves são globais no servidor. Se cada conexão tivesse uma cópia, as instâncias não compartilhariam contador nenhum.",
+				"O Redis processa os comandos em sequência: um `INCR` lê, soma e grava antes de o outro começar. Por isso o comando é atômico e o resultado é sempre o valor anterior mais 2.",
+				"Não existe trava visível ao cliente nem etapa de liberação; a atomicidade vem da execução sequencial dos comandos.",
+				"Repetir um `INCR` não evitaria a perda, e ainda poderia contar a mesma requisição duas vezes.",
+				"Não há votação por comando. As réplicas recebem as escritas do primário depois que elas já aconteceram."
+			],
+			"concept": "O Redis executa os comandos um de cada vez, sem intercalar dois comandos sobre os dados. Um `INCR` é, portanto, uma operação atômica de ler, somar e gravar. É essa propriedade que permite usar um contador compartilhado por várias instâncias sem perder atualizações."
+		},
+		"en": {
+			"statement": "Two instances send `INCR` for the same Redis key at the same instant. Why is neither increment lost?",
+			"alternatives": [
+				"Because each client connection receives its own copy of the key",
+				"Because Redis runs one command at a time, from start to finish",
+				"Because `INCR` takes a lock that the client releases afterwards",
+				"Because the client library repeats the `INCR` until it is confirmed",
+				"Because the replicas vote to decide the final value of the counter"
+			],
+			"explanations": [
+				"Keys are global on the server. If each connection had a copy, the instances would share no counter at all.",
+				"Redis processes commands in sequence: one `INCR` reads, adds and writes before the other starts. That makes the command atomic, and the result is always the previous value plus 2.",
+				"There is no lock visible to the client and no release step; atomicity comes from the sequential execution of commands.",
+				"Repeating an `INCR` would not prevent a loss, and could even count the same request twice.",
+				"There is no vote per command. Replicas receive the writes of the primary after they have already happened."
+			],
+			"concept": "Redis executes commands one at a time, never interleaving two commands over the data. An `INCR` is therefore an atomic read, add and write. This property is what allows a counter shared by several instances without lost updates."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-04",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Redis documentation, INCR command (pattern: rate limiter; behaviour when the store is unreachable)",
+		"pt": {
+			"statement": "O limitador de um gateway não consegue falar com o Redis. O que significa configurá-lo como fail-open?",
+			"alternatives": [
+				"Rejeitar todas as requisições até o Redis voltar a responder",
+				"Admitir as requisições sem contá-las enquanto o Redis está fora",
+				"Abrir conexão com uma réplica e continuar a contagem nela",
+				"Deixar de chamar o Redis por um tempo depois de erros seguidos",
+				"Segurar as requisições em uma fila até o Redis ficar acessível"
+			],
+			"explanations": [
+				"Isso é fail-closed: protege o backend, mas derruba o serviço inteiro sempre que o Redis falha.",
+				"Fail-open deixa passar: a disponibilidade é preservada, e o custo é ficar sem limite durante a falha.",
+				"Isso é failover, um mecanismo de alta disponibilidade do Redis. Fail-open descreve a decisão tomada quando não há resposta nenhuma.",
+				"Isso descreve um circuit breaker aberto. Ele evita chamadas inúteis, mas não diz se a requisição do usuário é admitida ou rejeitada.",
+				"Enfileirar é uma terceira política, de atraso. Fail-open não segura a requisição: ela segue adiante na hora."
+			],
+			"concept": "Um limitador que depende do Redis precisa de uma decisão para quando o Redis está inacessível. Fail-open admite tudo e privilegia a disponibilidade; fail-closed rejeita tudo e privilegia a proteção do backend. A escolha depende do que é pior para o serviço: ficar sem limite por um tempo ou ficar fora do ar."
+		},
+		"en": {
+			"statement": "The limiter of a gateway cannot reach Redis. What does configuring it as fail-open mean?",
+			"alternatives": [
+				"Reject every request until Redis answers again",
+				"Admit requests without counting them while Redis is down",
+				"Open a connection to a replica and keep counting there",
+				"Stop calling Redis for a while after repeated errors",
+				"Hold the requests in a queue until Redis is reachable again"
+			],
+			"explanations": [
+				"That is fail-closed: it protects the backend, but takes the whole service down whenever Redis fails.",
+				"Fail-open lets requests through: availability is preserved, at the cost of having no limit during the failure.",
+				"That is failover, a high-availability mechanism of Redis. Fail-open describes the decision taken when there is no answer at all.",
+				"That describes an open circuit breaker. It avoids useless calls, but does not say whether the user's request is admitted or rejected.",
+				"Queueing is a third policy, one of delay. Fail-open does not hold the request: it goes ahead at once."
+			],
+			"concept": "A limiter that depends on Redis needs a decision for when Redis is unreachable. Fail-open admits everything and favours availability; fail-closed rejects everything and favours protecting the backend. The choice depends on what is worse for the service: having no limit for a while or being down."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-05",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Redis documentation, scripting with Lua (KEYS and ARGV, Redis Cluster hash slots)",
+		"pt": {
+			"statement": "Por que um script Lua do Redis deve receber em `KEYS` os nomes de todas as chaves que acessa, em vez de recebê-los em `ARGV` ou montá-los dentro do script?",
+			"alternatives": [
+				"Porque o Redis converte em número tudo o que chega por `ARGV`",
+				"Porque só as chaves listadas em `KEYS` podem receber um TTL",
+				"Porque as chaves em `KEYS` ficam travadas para os outros clientes",
+				"Porque o Redis Cluster as usa para rotear o script até um nó",
+				"Porque o cache de scripts é indexado pelos nomes em `KEYS`"
+			],
+			"explanations": [
+				"Os valores de `ARGV` chegam como strings; é o script que os converte, com `tonumber`. Isso não explica a separação.",
+				"`EXPIRE` funciona com qualquer chave existente. A lista `KEYS` não muda o que pode ter TTL.",
+				"Não há trava por chave: enquanto o script roda, o servidor inteiro não executa outro comando, qualquer que seja a chave.",
+				"No Redis Cluster cada chave pertence a um hash slot, e o slot define o nó. Com as chaves declaradas, o cluster sabe para onde enviar o script, e todas precisam cair no mesmo slot (hash tags como `{user:42}` garantem isso).",
+				"O cache é indexado pelo SHA1 do texto do script. As chaves e os argumentos mudam a cada chamada sem criar novas entradas."
+			],
+			"concept": "Em `EVAL` e `EVALSHA`, os nomes de chaves vão em `KEYS` e os demais valores (limite, tamanho da janela) vão em `ARGV`. Declarar as chaves permite ao Redis Cluster calcular o hash slot e enviar o script ao nó certo. Um script só pode tocar chaves do mesmo slot, e uma hash tag entre chaves força chaves relacionadas a ficarem juntas.",
+			"example": {
+				"kind": "code",
+				"language": "text",
+				"content": "EVAL \"return redis.call('INCR', KEYS[1])\" 1 rl:{user:42}:minute"
+			}
+		},
+		"en": {
+			"statement": "Why should a Redis Lua script receive in `KEYS` the names of all the keys it accesses, instead of receiving them in `ARGV` or building them inside the script?",
+			"alternatives": [
+				"Because Redis converts to a number everything that comes in `ARGV`",
+				"Because only the keys listed in `KEYS` are allowed to get a TTL",
+				"Because the keys in `KEYS` are locked against the other clients",
+				"Because Redis Cluster uses them to route the script to a node",
+				"Because the script cache is indexed by the names given in `KEYS`"
+			],
+			"explanations": [
+				"`ARGV` values arrive as strings; it is the script that converts them, with `tonumber`. That does not explain the separation.",
+				"`EXPIRE` works on any existing key. The `KEYS` list does not change what can have a TTL.",
+				"There is no per-key lock: while the script runs, the whole server executes no other command, whatever the key.",
+				"In Redis Cluster each key belongs to a hash slot, and the slot defines the node. With the keys declared, the cluster knows where to send the script, and all of them must fall in the same slot (hash tags such as `{user:42}` ensure that).",
+				"The cache is indexed by the SHA1 of the script text. Keys and arguments change on every call without creating new entries."
+			],
+			"concept": "In `EVAL` and `EVALSHA`, key names go in `KEYS` and the other values (limit, window size) go in `ARGV`. Declaring the keys lets Redis Cluster compute the hash slot and send the script to the right node. A script may only touch keys of one slot, and a hash tag in braces forces related keys to stay together.",
+			"example": {
+				"kind": "code",
+				"language": "text",
+				"content": "EVAL \"return redis.call('INCR', KEYS[1])\" 1 rl:{user:42}:minute"
+			}
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-06",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "Redis documentation, scripting with Lua (EVAL atomicity)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um limitador faz o incremento e a definição do TTL dentro de um único script Lua no Redis. Por que esse script deve ser curto e rápido?",
+			"alternatives": [
+				"Nenhum outro comando roda no servidor até o script terminar",
+				"O Redis aborta e desfaz todo script que passa de poucas linhas",
+				"Um script longo é dividido, e outros comandos se intercalam nele",
+				"Cada linha do script custa uma ida e volta separada pela rede",
+				"Scripts longos não entram no cache e não aceitam `EVALSHA`"
+			],
+			"explanations": [
+				"A execução do script é atômica justamente porque o servidor não atende mais ninguém enquanto ela dura. Um script lento atrasa todos os clientes do Redis.",
+				"Não há limite de linhas nem desfazimento automático. O que existe é o custo de bloquear o servidor durante a execução.",
+				"É o oposto: o Redis nunca intercala outros comandos com um script em execução, e é isso que o torna atômico.",
+				"O script roda dentro do servidor. O cliente paga uma única ida e volta pela chamada inteira, por maior que seja o script.",
+				"Qualquer script carregado fica no cache, identificado pelo SHA1 do seu texto, independentemente do tamanho."
+			],
+			"concept": "O Redis garante que um script Lua executa de forma atômica: nenhum outro comando é atendido entre o início e o fim. Isso elimina a corrida entre ler, decidir e gravar, mas tem um preço: o servidor fica bloqueado durante a execução. Por isso um script de limitação faz poucas operações sobre uma ou duas chaves e retorna.",
+			"example": {
+				"kind": "code",
+				"language": "lua",
+				"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], tonumber(ARGV[1]))\nend\nreturn n"
+			}
+		},
+		"en": {
+			"statement": "A limiter does the increment and sets the TTL inside a single Lua script on Redis. Why must that script be short and fast?",
+			"alternatives": [
+				"No other command runs on the server until the script ends",
+				"Redis aborts and undoes any script longer than a few lines",
+				"A long script is split, and other commands interleave with it",
+				"Each line of the script costs a separate network round trip",
+				"Long scripts do not enter the cache and cannot use `EVALSHA`"
+			],
+			"explanations": [
+				"The script is atomic precisely because the server serves nobody else while it lasts. A slow script delays every client of that Redis.",
+				"There is no line limit and no automatic undo. What exists is the cost of blocking the server during execution.",
+				"It is the opposite: Redis never interleaves other commands with a running script, and that is what makes it atomic.",
+				"The script runs inside the server. The client pays a single round trip for the whole call, however long the script is.",
+				"Any loaded script stays in the cache, identified by the SHA1 of its text, whatever its size."
+			],
+			"concept": "Redis guarantees that a Lua script executes atomically: no other command is served between its start and its end. That removes the race between reading, deciding and writing, but it has a price: the server is blocked during execution. So a limiting script does a few operations on one or two keys and returns.",
+			"example": {
+				"kind": "code",
+				"language": "lua",
+				"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], tonumber(ARGV[1]))\nend\nreturn n"
+			}
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-07",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Redis documentation, INCR command (pattern: rate limiter, race conditions)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Duas instâncias, A e B, aplicam o limite de 10 requisições por janela com a lógica do quadro, em comandos separados. O contador `rl:c1` vale 9 e cada instância recebe uma requisição do mesmo cliente. Os comandos chegam ao Redis na ordem numerada. Qual é o resultado?",
+			"alternatives": [
+				"Só A é admitida; o contador termina em 10",
+				"Só A é admitida; o contador termina em 11",
+				"As duas são admitidas; o contador termina em 11",
+				"As duas são admitidas; o contador termina em 10",
+				"Nenhuma é admitida; o contador continua em 9"
+			],
+			"explanations": [
+				"Seria assim se B lesse depois do `INCR` de A. Mas B leu no passo 2, antes de qualquer escrita, e viu 9.",
+				"Esse resultado é o do padrão que incrementa primeiro e compara depois. Aqui a decisão é tomada com o valor lido pelo `GET`, que foi 9 para as duas.",
+				"A lê 9 e B lê 9. As duas concluem que 9 < 10 e admitem. O `INCR` de A leva o contador a 10 e o de B a 11. Conferindo de outro modo: havia 9 admitidas, somam-se 2, total 11, uma acima do limite.",
+				"Cada `INCR` é atômico e soma 1 ao valor atual, não ao valor lido antes. Nenhum incremento se perde; o erro está na decisão, não na contagem.",
+				"O Redis não detecta conflito nenhum aqui: sem `WATCH` nem script, cada comando é aceito isoladamente."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "Cada instância executa (limite = 10):\n  count = GET rl:c1\n  se count < 10: INCR rl:c1 e admite\n  senão: rejeita\n\nrl:c1 = 9\n1. A: GET rl:c1\n2. B: GET rl:c1\n3. A: compara e age\n4. B: compara e age"
+			},
+			"concept": "Ler, decidir na aplicação e depois gravar é uma corrida do tipo check-then-act: entre a leitura e a escrita de uma instância, outra instância pode ler o mesmo valor antigo. Cada comando é atômico, mas a sequência não é. A correção é fazer a leitura, a decisão e a escrita em uma única operação atômica, como um script Lua."
+		},
+		"en": {
+			"statement": "Two instances, A and B, enforce a limit of 10 requests per window with the logic in the box, as separate commands. The counter `rl:c1` holds 9 and each instance receives one request from the same client. The commands reach Redis in the numbered order. What is the result?",
+			"alternatives": [
+				"Only A is admitted; the counter ends at 10",
+				"Only A is admitted; the counter ends at 11",
+				"Both are admitted; the counter ends at 11",
+				"Both are admitted; the counter ends at 10",
+				"Neither is admitted; the counter stays at 9"
+			],
+			"explanations": [
+				"That would hold if B read after A's `INCR`. But B read at step 2, before any write, and saw 9.",
+				"That is the outcome of the pattern that increments first and compares afterwards. Here the decision uses the value read by `GET`, which was 9 for both.",
+				"A reads 9 and B reads 9. Both conclude that 9 < 10 and admit. A's `INCR` takes the counter to 10 and B's to 11. Checking another way: 9 were admitted, 2 more are added, total 11, one above the limit.",
+				"Each `INCR` is atomic and adds 1 to the current value, not to the value read earlier. No increment is lost; the error is in the decision, not in the count.",
+				"Redis detects no conflict here: without `WATCH` or a script, each command is accepted on its own."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "Each instance runs (limit = 10):\n  count = GET rl:c1\n  if count < 10: INCR rl:c1 and admit\n  else: reject\n\nrl:c1 = 9\n1. A: GET rl:c1\n2. B: GET rl:c1\n3. A: compares and acts\n4. B: compares and acts"
+			},
+			"concept": "Reading, deciding in the application and then writing is a check-then-act race: between the read and the write of one instance, another instance can read the same old value. Each command is atomic, but the sequence is not. The fix is to do the read, the decision and the write in a single atomic operation, such as a Lua script."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-08",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Redis documentation, EXPIRE command (INCR and EXPIRE as separate commands)",
+		"pt": {
+			"statement": "Um serviço de envio de SMS limita cada número a 5 mensagens por janela de 60 s com os dois comandos separados do quadro. O processo morre no ponto indicado, na primeira requisição da janela, e nenhuma outra parte do sistema define TTL para essa chave. O que acontece com esse número?",
+			"alternatives": [
+				"Nada muda: o próprio `INCR` dá à chave nova um TTL padrão",
+				"A chave é apagada: o Redis desfaz o `INCR` que ficou incompleto",
+				"O contador zera na próxima requisição, e o `INCR` devolve 1 de novo",
+				"A chave expira de todo modo quando a conexão do cliente é fechada",
+				"A chave nunca expira, e o número fica bloqueado ao atingir o limite"
+			],
+			"explanations": [
+				"`INCR` em uma chave ausente cria a chave com valor 1 e sem TTL nenhum. Não existe TTL padrão.",
+				"Não há transação nem desfazimento: o `INCR` já foi executado e confirmado quando o processo morreu.",
+				"A chave continua existindo com valor 1, então o próximo `INCR` devolve 2 e o `EXPIRE` nunca mais é enviado.",
+				"O tempo de vida de uma chave não depende da conexão que a criou; ela pertence ao servidor.",
+				"A chave ficou sem TTL (`TTL` devolve -1). O contador só cresce: depois de 5 mensagens o número é rejeitado para sempre, até alguém apagar a chave."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "n = INCR rl:sms:5550100        -> 1\n      <-- o processo morre aqui\nse n == 1: EXPIRE rl:sms:5550100 60"
+			},
+			"concept": "Quando `INCR` e `EXPIRE` são dois comandos enviados pelo cliente, uma falha entre eles deixa uma chave que conta, mas nunca expira. A janela deixa de reiniciar e o cliente fica bloqueado indefinidamente. A correção é tornar o par indivisível, com um script Lua que faz o `INCR` e, quando o resultado é 1, o `EXPIRE`.",
+			"example": {
+				"kind": "code",
+				"language": "lua",
+				"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], tonumber(ARGV[1]))\nend\nreturn n"
+			}
+		},
+		"en": {
+			"statement": "An SMS sending service limits each number to 5 messages per 60 s window with the two separate commands in the box. The process dies at the marked point, on the first request of the window, and no other part of the system sets a TTL on that key. What happens to this number?",
+			"alternatives": [
+				"Nothing changes: `INCR` itself gives the new key a default TTL",
+				"The key is deleted: Redis undoes the `INCR` left incomplete",
+				"The counter resets on the next request, and `INCR` returns 1 again",
+				"The key expires anyway when the client's connection is closed",
+				"The key never expires, and the number stays blocked at the limit"
+			],
+			"explanations": [
+				"`INCR` on a missing key creates it with value 1 and no TTL at all. There is no default TTL.",
+				"There is no transaction and no undo: the `INCR` had already been executed and confirmed when the process died.",
+				"The key still exists with value 1, so the next `INCR` returns 2 and the `EXPIRE` is never sent again.",
+				"The lifetime of a key does not depend on the connection that created it; the key belongs to the server.",
+				"The key was left without a TTL (`TTL` returns -1). The counter only grows: after 5 messages the number is rejected forever, until someone deletes the key."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "n = INCR rl:sms:5550100        -> 1\n      <-- the process dies here\nif n == 1: EXPIRE rl:sms:5550100 60"
+			},
+			"concept": "When `INCR` and `EXPIRE` are two commands sent by the client, a failure between them leaves a key that counts but never expires. The window stops restarting and the client stays blocked indefinitely. The fix is to make the pair indivisible, with a Lua script that does the `INCR` and, when the result is 1, the `EXPIRE`.",
+			"example": {
+				"kind": "code",
+				"language": "lua",
+				"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], tonumber(ARGV[1]))\nend\nreturn n"
+			}
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-09",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "Redis documentation, scripting with Lua (EVALSHA and the script cache)",
+		"pt": {
+			"statement": "Um limitador chama o seu script com `EVALSHA`. Depois de uma reinicialização do Redis, o servidor responde com o erro `NOSCRIPT`. O que isso indica e o que o cliente deve fazer?",
+			"alternatives": [
+				"A chave ainda não tem contador; o cliente a cria com `SET`",
+				"O cache de scripts foi esvaziado; o cliente recarrega o script",
+				"O script tem erro de sintaxe; o cliente corrige o código Lua",
+				"O script rodou sem gravar nada; o cliente pode ignorar a resposta",
+				"Réplicas não aceitam scripts; o cliente deve usar `MULTI`/`EXEC`"
+			],
+			"explanations": [
+				"`NOSCRIPT` fala do script, não dos dados. Uma chave ausente não gera erro: o `INCR` dentro do script simplesmente a cria.",
+				"`EVALSHA` executa um script já guardado, identificado pelo SHA1. O cache é volátil e se perde em reinicialização, failover ou `SCRIPT FLUSH`. O cliente envia o texto de novo, com `SCRIPT LOAD` ou `EVAL`, e repete a chamada.",
+				"Um erro de sintaxe apareceria ao carregar o script, com outra mensagem. Aqui o servidor nem encontrou o script.",
+				"O script não rodou. Ignorar o erro deixaria a requisição sem contagem e sem decisão de limite.",
+				"O erro não tem relação com réplicas, e trocar para `MULTI`/`EXEC` perderia a lógica condicional do script."
+			],
+			"concept": "`EVALSHA` evita reenviar o texto do script a cada chamada: o cliente manda apenas o SHA1 de um script que o servidor já tem em cache. Esse cache não é persistente, então todo cliente precisa tratar `NOSCRIPT` carregando o script outra vez. Bibliotecas costumam fazer isso de forma automática."
+		},
+		"en": {
+			"statement": "A limiter calls its script with `EVALSHA`. After a Redis restart, the server replies with the error `NOSCRIPT`. What does it indicate and what should the client do?",
+			"alternatives": [
+				"The key has no counter yet; the client creates it with `SET`",
+				"The script cache was emptied; the client loads the script again",
+				"The script has a syntax error; the client fixes the Lua code",
+				"The script ran but wrote nothing; the client can ignore the reply",
+				"Replicas do not accept scripts; the client must use `MULTI`/`EXEC`"
+			],
+			"explanations": [
+				"`NOSCRIPT` is about the script, not the data. A missing key raises no error: the `INCR` inside the script simply creates it.",
+				"`EVALSHA` runs a stored script, identified by its SHA1. The cache is volatile and is lost on restart, failover or `SCRIPT FLUSH`. The client sends the text again, with `SCRIPT LOAD` or `EVAL`, and repeats the call.",
+				"A syntax error would show up when loading the script, with another message. Here the server did not even find the script.",
+				"The script did not run. Ignoring the error would leave the request uncounted and without a limit decision.",
+				"The error has nothing to do with replicas, and switching to `MULTI`/`EXEC` would lose the conditional logic of the script."
+			],
+			"concept": "`EVALSHA` avoids resending the script text on every call: the client sends only the SHA1 of a script the server already has cached. That cache is not persistent, so every client must handle `NOSCRIPT` by loading the script again. Libraries usually do this automatically."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-10",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "intermediate",
+		"answer": 3,
+		"source": "Redis documentation, transactions (MULTI/EXEC, WATCH)",
+		"pt": {
+			"statement": "Um limitador de janela fixa quer definir o TTL apenas na primeira requisição da janela, isto é, quando o `INCR` devolve 1. Por que a transação do quadro não consegue expressar essa regra, enquanto um script Lua consegue?",
+			"alternatives": [
+				"Porque comandos de outros clientes podem rodar entre o `INCR` e o `EXPIRE`",
+				"Porque o `EXEC` desfaz o `INCR` sempre que o `EXPIRE` não era necessário",
+				"Porque o `EXPIRE` é ignorado em chave alterada na mesma transação",
+				"Porque o resultado do `INCR` só chega depois do `EXEC`, tarde demais",
+				"Porque uma transação exige `WATCH` em cada chave que ela vai escrever"
+			],
+			"explanations": [
+				"Os comandos enfileirados entre `MULTI` e `EXEC` rodam em sequência, sem nada no meio. O isolamento existe; o que falta é a lógica condicional.",
+				"O Redis não desfaz comandos de uma transação. Os dois comandos enfileirados são sempre executados.",
+				"O `EXPIRE` funciona normalmente dentro da transação. O defeito é justamente ele rodar em toda requisição, renovando o TTL sem parar.",
+				"Dentro de `MULTI`, cada comando só responde `QUEUED`; os resultados vêm todos juntos no `EXEC`. O cliente não consegue ler o valor do `INCR` para decidir se enfileira o `EXPIRE`. No script, o resultado fica em uma variável e o `if` decide.",
+				"`WATCH` é opcional: serve para abortar o `EXEC` quando a chave mudou desde a leitura, e o cliente então tenta de novo."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "MULTI\nINCR rl:c1\nEXPIRE rl:c1 60\nEXEC"
+			},
+			"concept": "`MULTI`/`EXEC` executa um grupo de comandos sem intercalação, mas um comando não pode usar o resultado de outro para decidir. `WATCH` acrescenta travamento otimista: o cliente lê, decide e o `EXEC` falha se a chave mudou, exigindo nova tentativa. Um script Lua faz leitura, decisão e escrita em uma única execução atômica, sem repetição."
+		},
+		"en": {
+			"statement": "A fixed-window limiter wants to set the TTL only on the first request of the window, that is, when `INCR` returns 1. Why can the transaction in the box not express this rule, while a Lua script can?",
+			"alternatives": [
+				"Because commands of other clients can run between the `INCR` and the `EXPIRE`",
+				"Because `EXEC` undoes the `INCR` whenever the `EXPIRE` was not needed",
+				"Because `EXPIRE` is ignored on a key changed in the same transaction",
+				"Because the `INCR` result only arrives after `EXEC`, too late to decide",
+				"Because a transaction requires `WATCH` on every key it is going to write"
+			],
+			"explanations": [
+				"Commands queued between `MULTI` and `EXEC` run in sequence, with nothing in between. Isolation is there; what is missing is conditional logic.",
+				"Redis does not undo the commands of a transaction. Both queued commands are always executed.",
+				"`EXPIRE` works normally inside the transaction. The defect is precisely that it runs on every request, renewing the TTL over and over.",
+				"Inside `MULTI`, each command only answers `QUEUED`; the results come together at `EXEC`. The client cannot read the `INCR` value to decide whether to queue the `EXPIRE`. In a script, the result is in a variable and the `if` decides.",
+				"`WATCH` is optional: it aborts the `EXEC` when the key changed since it was read, and the client then tries again."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "text",
+				"content": "MULTI\nINCR rl:c1\nEXPIRE rl:c1 60\nEXEC"
+			},
+			"concept": "`MULTI`/`EXEC` runs a group of commands without interleaving, but a command cannot use the result of another to decide. `WATCH` adds optimistic locking: the client reads, decides, and `EXEC` fails if the key changed, forcing a retry. A Lua script does the read, the decision and the write in one atomic execution, with no retry."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-11",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "intermediate",
+		"answer": 1,
+		"source": "Redis documentation, scripting with Lua (EVALSHA: one round trip per call)",
+		"pt": {
+			"statement": "Uma ida e volta entre a aplicação e o Redis leva 0,4 ms. O limitador X envia `GET`, `INCR` e `EXPIRE` como três comandos separados, esperando cada resposta (sem pipelining). O limitador Y envia um único `EVALSHA`, cujo script faz o mesmo trabalho. Quanto tempo de rede por requisição Y economiza em relação a X?",
+			"alternatives": [
+				"1,2 ms, o custo dos três comandos",
+				"0,8 ms, duas idas e voltas a menos",
+				"0,4 ms, uma ida e volta a menos",
+				"0 ms, pois cada comando do script ainda viaja sozinho",
+				"1,6 ms, contando ida e volta de dois comandos em separado"
+			],
+			"explanations": [
+				"1,2 ms é o custo total de X. Esse valor esquece que a chamada do script também custa uma ida e volta.",
+				"X paga 3 × 0,4 = 1,2 ms e Y paga 1 × 0,4 = 0,4 ms; a diferença é 0,8 ms. De outro modo: Y elimina 2 das 3 idas e voltas, 2 × 0,4 = 0,8 ms.",
+				"Isso supõe que o script junta só dois dos três comandos. Os três rodam no servidor dentro da mesma chamada.",
+				"Os comandos de um script são executados dentro do servidor, sem tráfego de rede entre eles.",
+				"Uma ida e volta já inclui o pedido e a resposta; contá-los como duas viagens dobra o resultado."
+			],
+			"concept": "Um limitador centralizado no Redis acrescenta ao menos uma ida e volta de rede a cada requisição atendida, e essa latência é o preço do estado compartilhado. Reunir os comandos em um script (ou em um pipeline) reduz o número de viagens. O script ainda tem a vantagem de ser atômico."
+		},
+		"en": {
+			"statement": "One round trip between the application and Redis takes 0.4 ms. Limiter X sends `GET`, `INCR` and `EXPIRE` as three separate commands, waiting for each reply (no pipelining). Limiter Y sends a single `EVALSHA` whose script does the same work. How much network time per request does Y save compared with X?",
+			"alternatives": [
+				"1.2 ms, the cost of the three commands",
+				"0.8 ms, two round trips fewer",
+				"0.4 ms, one round trip fewer",
+				"0 ms, as each command of the script still travels alone",
+				"1.6 ms, counting request and reply of two commands separately"
+			],
+			"explanations": [
+				"1.2 ms is the total cost of X. This value forgets that the script call also costs one round trip.",
+				"X pays 3 × 0.4 = 1.2 ms and Y pays 1 × 0.4 = 0.4 ms; the difference is 0.8 ms. Another way: Y removes 2 of the 3 round trips, 2 × 0.4 = 0.8 ms.",
+				"This assumes the script merges only two of the three commands. All three run on the server within the same call.",
+				"The commands of a script are executed inside the server, with no network traffic between them.",
+				"A round trip already includes the request and the reply; counting them as two trips doubles the result."
+			],
+			"concept": "A limiter centralised on Redis adds at least one network round trip to every request served, and that latency is the price of shared state. Grouping the commands in a script (or in a pipeline) reduces the number of trips. The script has the further advantage of being atomic."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-12",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "advanced",
+		"answer": 3,
+		"source": "Redis documentation, sorted sets (ZADD, ZREMRANGEBYSCORE, ZCARD)",
+		"pt": {
+			"statement": "O script do quadro implementa um log deslizante em um sorted set: só requisições admitidas são registradas, e `ARGV[1]` é o instante atual em milissegundos. Qual é a falha que o faz admitir mais do que o limite?",
+			"alternatives": [
+				"O `ZREMRANGEBYSCORE` remove entradas que ainda estão dentro da janela",
+				"O `PEXPIRE` a cada requisição admitida apaga o log de um cliente ativo",
+				"O `ZCARD` conta também as rejeitadas, e o cliente fica bloqueado por mais tempo",
+				"Duas requisições no mesmo milissegundo viram um só membro e contam uma vez",
+				"O script não é atômico, porque emite quatro comandos separados"
+			],
+			"explanations": [
+				"Ele remove os scores até `now - window`, isto é, os registros com idade igual ou maior que a janela. Esses já expiraram; os que restam estão em (now − W, now].",
+				"O `PEXPIRE` renova o prazo a cada admissão. A chave só some depois de uma janela inteira sem admissões, quando o log já estaria vazio de qualquer forma.",
+				"Uma requisição rejeitada sai pelo `return 0` sem passar pelo `ZADD`; o conjunto só contém admitidas. E esse erro bloquearia demais, não de menos.",
+				"O membro do `ZADD` é o próprio timestamp. Um sorted set não repete membros: a segunda requisição com o mesmo `now` apenas regrava o score, o `ZCARD` não cresce e o limite é ultrapassado. O membro precisa ser único, por exemplo o timestamp mais um identificador da requisição.",
+				"Um script Lua roda inteiro sem que outro comando se intercale, não importa quantos `redis.call` ele faça."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "lua",
+				"content": "local now = tonumber(ARGV[1])\nlocal window = tonumber(ARGV[2])\nlocal limit = tonumber(ARGV[3])\n\nredis.call('ZREMRANGEBYSCORE', KEYS[1], 0, now - window)\nif redis.call('ZCARD', KEYS[1]) < limit then\n\tredis.call('ZADD', KEYS[1], now, now)\n\tredis.call('PEXPIRE', KEYS[1], window)\n\treturn 1\nend\nreturn 0"
+			},
+			"concept": "O log deslizante no Redis usa um sorted set por cliente, com o timestamp como score: `ZREMRANGEBYSCORE` descarta o que saiu da janela, `ZCARD` conta o que restou e `ZADD` registra a requisição admitida. Como um conjunto guarda cada membro uma única vez, o membro precisa identificar a requisição de forma única. O custo de memória é de um elemento por requisição admitida na janela."
+		},
+		"en": {
+			"statement": "The script in the box implements a sliding log on a sorted set: only admitted requests are recorded, and `ARGV[1]` is the current instant in milliseconds. Which flaw makes it admit more than the limit?",
+			"alternatives": [
+				"`ZREMRANGEBYSCORE` removes entries that are still inside the window",
+				"`PEXPIRE` on every admitted request erases the log of an active client",
+				"`ZCARD` also counts rejected requests, so the client is blocked longer",
+				"Two requests in the same millisecond share one member and count once",
+				"The script is not atomic, because it issues four separate commands"
+			],
+			"explanations": [
+				"It removes scores up to `now - window`, that is, records whose age is equal to or greater than the window. Those have expired; the ones left are in (now − W, now].",
+				"`PEXPIRE` renews the deadline on each admission. The key only vanishes after a whole window with no admissions, when the log would be empty anyway.",
+				"A rejected request leaves through `return 0` without reaching `ZADD`; the set holds admitted requests only. And that error would block too much, not too little.",
+				"The `ZADD` member is the timestamp itself. A sorted set does not repeat members: the second request with the same `now` merely rewrites the score, `ZCARD` does not grow and the limit is exceeded. The member must be unique, for example the timestamp plus a request identifier.",
+				"A Lua script runs as a whole with no other command interleaved, however many `redis.call` it makes."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "lua",
+				"content": "local now = tonumber(ARGV[1])\nlocal window = tonumber(ARGV[2])\nlocal limit = tonumber(ARGV[3])\n\nredis.call('ZREMRANGEBYSCORE', KEYS[1], 0, now - window)\nif redis.call('ZCARD', KEYS[1]) < limit then\n\tredis.call('ZADD', KEYS[1], now, now)\n\tredis.call('PEXPIRE', KEYS[1], window)\n\treturn 1\nend\nreturn 0"
+			},
+			"concept": "The sliding log on Redis uses one sorted set per client, with the timestamp as score: `ZREMRANGEBYSCORE` drops what left the window, `ZCARD` counts what remains and `ZADD` records the admitted request. Since a set stores each member only once, the member must identify the request uniquely. The memory cost is one element per request admitted in the window."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-13",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "Redis documentation, replication (asynchronous replication and failover)",
+		"pt": {
+			"statement": "Um limitador usa um Redis primário com uma réplica assíncrona e admite uma requisição enquanto menos de 100 foram contadas na janela. O primário cai quando o contador de um cliente vale 100; a réplica, que só tinha recebido os incrementos até 90, é promovida. O que acontece no restante dessa janela?",
+			"alternatives": [
+				"Nenhuma a mais é admitida: o `INCR` atômico do primário garante a contagem",
+				"Até 10 a mais são admitidas: a réplica promovida guarda o contador em 90",
+				"Até 100 a mais são admitidas: a réplica começa com o contador vazio",
+				"Nenhuma a mais é admitida: a escrita só retorna depois de chegar à réplica",
+				"Todas são rejeitadas: a réplica promovida mantém as chaves somente para leitura"
+			],
+			"explanations": [
+				"A atomicidade vale dentro de um servidor. Ela não diz nada sobre quais escritas já tinham chegado à réplica na hora da falha.",
+				"O novo primário acredita que só 90 foram contadas e admite até chegar a 100: 100 − 90 = 10 requisições extras. No total da janela, 100 + 10 = 110 admitidas.",
+				"A réplica não começa vazia; ela perdeu apenas os incrementos que ainda não tinham sido replicados, de 91 a 100.",
+				"Isso descreveria replicação síncrona. No Redis, o primário responde ao cliente antes de a réplica confirmar a escrita.",
+				"Ao ser promovida, a réplica passa a aceitar escritas como qualquer primário."
+			],
+			"concept": "A replicação do Redis é assíncrona: o primário confirma a escrita ao cliente e só depois a envia às réplicas. Em um failover, os últimos incrementos podem não ter chegado à réplica promovida, e o limitador admite por um momento mais do que o limite. Em geral esse desvio pequeno e raro é aceito em troca de continuar disponível."
+		},
+		"en": {
+			"statement": "A limiter uses a Redis primary with one asynchronous replica and admits a request while fewer than 100 have been counted in the window. The primary crashes when a client's counter holds 100; the replica, which had only received the increments up to 90, is promoted. What happens during the rest of that window?",
+			"alternatives": [
+				"No extra request is admitted: the atomic `INCR` of the primary protects the count",
+				"Up to 10 more are admitted: the promoted replica holds the counter at 90",
+				"Up to 100 more are admitted: the replica starts with an empty counter",
+				"No extra request is admitted: a write only returns after reaching the replica",
+				"Every request is rejected: the promoted replica keeps its keys read-only"
+			],
+			"explanations": [
+				"Atomicity holds inside one server. It says nothing about which writes had already reached the replica at the moment of the failure.",
+				"The new primary believes only 90 were counted and admits until it reaches 100: 100 − 90 = 10 extra requests. Over the whole window, 100 + 10 = 110 admitted.",
+				"The replica does not start empty; it lost only the increments not yet replicated, from 91 to 100.",
+				"That would describe synchronous replication. In Redis the primary answers the client before the replica confirms the write.",
+				"Once promoted, the replica accepts writes like any primary."
+			],
+			"concept": "Redis replication is asynchronous: the primary confirms the write to the client and only then sends it to the replicas. On a failover, the latest increments may not have reached the promoted replica, and the limiter briefly admits more than the limit. This small and rare deviation is usually accepted in exchange for staying available."
+		}
+	},
+	{
+		"id": "rate-limiting-redis-distributed-14",
+		"area": "rate-limiting",
+		"topic": "redis-distributed",
+		"difficulty": "advanced",
+		"answer": 3,
+		"source": "Redis documentation, scripting with Lua (TIME command and the server clock)",
+		"miniProject": "projects/rate-limiting/rate-limiter",
+		"pt": {
+			"statement": "Um limitador de janela fixa (janela de 60 s, limite de 5) funciona como no quadro: cada instância usa o próprio relógio para montar o nome da chave. O relógio da instância A marca o tempo real; o da instância B está 20 s adiantado. No instante real t = 50 s, um cliente envia 12 requisições, alternando entre A e B (6 para cada). Quantas são admitidas?",
+			"alternatives": [
+				"5, porque o contador compartilhado no Redis ignora os relógios das instâncias",
+				"6, porque a requisição que encontra o contador em 5 ainda é admitida",
+				"12, porque com dois contadores nenhum deles chega ao limite",
+				"10, porque A e B contam em chaves de janelas diferentes",
+				"11, porque a janela futura usada por B ainda não tem limite"
+			],
+			"explanations": [
+				"O Redis é compartilhado, mas a chave não: o número da janela vem do relógio de cada instância, e os relógios discordam.",
+				"Isso supõe uma única chave e ainda erra a comparação: o script admite quando o resultado do `INCR` é no máximo 5, e a sexta requisição produz 6.",
+				"Há de fato dois contadores, mas cada um recebe 6 requisições e o limite de 5 vale para cada chave.",
+				"A calcula floor(50 / 60) = 0 e usa `rl:c1:0`; B vê 70 s, calcula floor(70 / 60) = 1 e usa `rl:c1:1`. Cada chave recebe 6 incrementos e admite 5: 5 + 5 = 10. De outro modo: min(6, 5) + min(6, 5) = 10, o dobro do limite.",
+				"A chave da janela 1 é criada pelo primeiro `INCR` e passa a contar normalmente; a sexta requisição de B é rejeitada."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "Em cada instância:\n  window = floor(local_clock / 60)\n  key    = \"rl:c1:\" .. window\n\nScript atômico no Redis:\n  n = INCR key          (EXPIRE quando n == 1)\n  admite se n <= 5"
+			},
+			"concept": "Um contador compartilhado só funciona se todas as instâncias concordarem sobre em qual janela estão. Relógios de máquinas diferentes divergem (clock skew), e instâncias com relógios diferentes abrem janelas diferentes para o mesmo instante. Ler a hora no próprio Redis, com `TIME` dentro do script, dá a todas as instâncias um relógio único."
+		},
+		"en": {
+			"statement": "A fixed-window limiter (60 s window, limit of 5) works as in the box: each instance uses its own clock to build the key name. The clock of instance A shows the true time; the clock of instance B is 20 s ahead. At true time t = 50 s, a client sends 12 requests, alternating between A and B (6 to each). How many are admitted?",
+			"alternatives": [
+				"5, because the counter shared on Redis ignores the instances' clocks",
+				"6, because the request that finds the counter at 5 is still admitted",
+				"12, because with two counters neither of them reaches the limit",
+				"10, because A and B count in keys of different windows",
+				"11, because the future window used by B has no limit yet"
+			],
+			"explanations": [
+				"Redis is shared, but the key is not: the window number comes from each instance's clock, and the clocks disagree.",
+				"This assumes a single key and also gets the comparison wrong: the script admits when the `INCR` result is at most 5, and the sixth request produces 6.",
+				"There are indeed two counters, but each receives 6 requests and the limit of 5 applies to each key.",
+				"A computes floor(50 / 60) = 0 and uses `rl:c1:0`; B sees 70 s, computes floor(70 / 60) = 1 and uses `rl:c1:1`. Each key gets 6 increments and admits 5: 5 + 5 = 10. Another way: min(6, 5) + min(6, 5) = 10, twice the limit.",
+				"The key of window 1 is created by the first `INCR` and counts normally from then on; B's sixth request is rejected."
+			],
+			"snippet": {
+				"kind": "diagram",
+				"content": "On each instance:\n  window = floor(local_clock / 60)\n  key    = \"rl:c1:\" .. window\n\nAtomic script on Redis:\n  n = INCR key          (EXPIRE when n == 1)\n  admit if n <= 5"
+			},
+			"concept": "A shared counter only works if every instance agrees on which window it is in. Clocks of different machines drift apart (clock skew), and instances with different clocks open different windows for the same instant. Reading the time on Redis itself, with `TIME` inside the script, gives every instance a single clock."
+		}
+	}
+]
