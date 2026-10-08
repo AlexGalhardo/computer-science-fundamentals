@@ -853,10 +853,10 @@ Sources: Legacy project load-stress-tests, k6 documentation, Dragon Book (locali
 | Runtime performance: event loop, garbage collection, cluster | 10 |
 | Capacity planning and queueing | 8 |
 
-- [ ] QC-PERF.1 Coverage map committed
-- [ ] QC-PERF.2 100 questions written (PT and EN)
-- [ ] QC-PERF.3 Validation passing
-- [ ] QC-PERF.4 Blind review resolved
+- [x] QC-PERF.1 Coverage map committed
+- [x] QC-PERF.2 100 questions written (PT and EN)
+- [x] QC-PERF.3 Validation passing
+- [x] QC-PERF.4 Blind review resolved
 
 #### QC-CACHE Cache
 
@@ -1871,37 +1871,38 @@ Teaches: what a load balancer does on every request. Languages: Go.
 
 Teaches: how runtime and process model change throughput. Languages: TS.
 
-- [ ] **MP-PERF-1.1** Same HTTP API on Bun, Node, and Node with PM2 cluster
+- [x] **MP-PERF-1.1** Same HTTP API on Bun, Node, and Node with PM2 cluster
 	- **Accept:** one test suite passes against the three.
-- [ ] **MP-PERF-1.2** Local k6 scenario with a CPU-bound and an I/O-bound endpoint
+- [x] **MP-PERF-1.2** Local k6 scenario with a CPU-bound and an I/O-bound endpoint
 	- **Accept:** the script refuses non-local targets.
-- [ ] **MP-PERF-1.3** Results
+- [x] **MP-PERF-1.3** Results
 	- **Accept:** table of requests per second, p95 latency and memory for each setup.
-- [ ] **MP-PERF-1.4** Definition of done for mini-projects met.
+- [x] **MP-PERF-1.4** Definition of done for mini-projects met.
 
 #### MP-PERF-2 Load test scenarios with k6
 
 Teaches: what load, stress, spike and soak tests each reveal. Languages: TS + k6.
 
-- [ ] **MP-PERF-2.1** Local API with a deliberate bottleneck (small connection pool)
+- [x] **MP-PERF-2.1** Local API with a deliberate bottleneck (small connection pool)
 	- **Accept:** the bottleneck is visible as a latency knee in the load test.
-- [ ] **MP-PERF-2.2** Four scenarios with thresholds
+- [x] **MP-PERF-2.2** Four scenarios with thresholds
 	- **Accept:** each scenario fails its threshold before the fix and passes after.
-- [ ] **MP-PERF-2.3** Report
+- [x] **MP-PERF-2.3** Report
 	- **Accept:** Markdown summary per scenario committed, raw output git-ignored.
-- [ ] **MP-PERF-2.4** Definition of done for mini-projects met.
+- [x] **MP-PERF-2.4** Definition of done for mini-projects met.
 
 #### MP-PERF-3 Cache-friendly matrix multiplication
 
 Teaches: how memory locality changes speed with the same Big O. Languages: C++, Rust.
 
-- [ ] **MP-PERF-3.1** Naive, loop-interchanged and blocked multiplication
+- [x] **MP-PERF-3.1** Naive, loop-interchanged and blocked multiplication
 	- **Accept:** the three give the same matrix within floating-point tolerance.
-- [ ] **MP-PERF-3.2** Benchmark by matrix size
+- [x] **MP-PERF-3.2** Benchmark by matrix size
 	- **Accept:** the blocked version is at least 2 times faster than naive at the largest size.
-- [ ] **MP-PERF-3.3** Explanation with the measured numbers
+	- Note (2026-10-08): at n = 1500 the blocked version was between 3.3 and 19.6 times faster than naive, always above 2 times but never by the same factor, on a shared machine. On this machine (96 MiB of L3 cache) blocking did not beat the plain loop interchange, which the README says.
+- [x] **MP-PERF-3.3** Explanation with the measured numbers
 	- **Accept:** the README relates the result to cache line and block size.
-- [ ] **MP-PERF-3.4** Definition of done for mini-projects met.
+- [x] **MP-PERF-3.4** Definition of done for mini-projects met.
 
 #### MP-CACHE-1 Cache strategies and stampede
 

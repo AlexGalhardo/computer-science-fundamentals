@@ -17,7 +17,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-2370 de 3384 questões escritas, 62 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+2470 de 3384 questões escritas, 65 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -44,7 +44,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Protocolos | Teoria e prática | 100/100 | feita | [rest-graphql-jsonrpc](protocols/rest-graphql-jsonrpc.md), [http-versions](protocols/http-versions.md), [http-server-raw-tcp](protocols/http-server-raw-tcp.md) |
 | Mensageria | Teoria e prática | 0/100 |  | queue-comparison (planejado), idempotency-dlq (planejado), pubsub-backpressure (planejado) |
 | Balanceamento de carga | Teoria e prática | 0/100 |  | nginx-vs-caddy (planejado), l7-load-balancer (planejado) |
-| Performance | Teoria e prática | 0/100 |  | bun-vs-node (planejado), k6-scenarios (planejado), cache-friendly-matrix (planejado) |
+| Performance | Teoria e prática | 100/100 | feita | [bun-vs-node](performance/bun-vs-node.md), [k6-scenarios](performance/k6-scenarios.md), [cache-friendly-matrix](performance/cache-friendly-matrix.md) |
 | Cache | Teoria e prática | 100/100 | feita | [cache-strategies](cache/cache-strategies.md) |
 | Limitação de taxa | Teoria e prática | 100/100 | feita | [rate-limiter](rate-limiting/rate-limiter.md) |
 | Sistemas de arquivos | Teoria e prática | 0/100 |  | file-organisation (planejado), external-sorting (planejado) |

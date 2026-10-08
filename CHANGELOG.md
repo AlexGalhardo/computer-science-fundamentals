@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.98.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/performance/cache-friendly-matrix` (C++ and Rust): naive, loop-interchanged and blocked matrix multiplication giving the same result, a benchmark by matrix size, and the measured numbers explained by cache lines and block size. The performance area is complete.
+
+## [0.97.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/performance/k6-scenarios` (TypeScript and k6): a local API with a deliberately small connection pool, load, stress, spike and soak scenarios whose thresholds fail before the fix and pass after it, and a Markdown report per scenario.
+
+## [0.96.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/performance/bun-vs-node` (TypeScript): the same HTTP API on Bun, Node and Node with a PM2 cluster behind one test suite, a local k6 scenario with a CPU-bound and an I/O-bound endpoint, and a table of requests per second, p95 latency and memory.
+
+## [0.95.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: performance, 100 questions in Portuguese and English, blind-reviewed in both languages with no disagreement and 5 reviewer notes resolved (`quiz/content/performance/review.md`).
+
 ## [0.94.0] - 2026-10-07
 
 ### Added
