@@ -38,7 +38,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Object-oriented programming | Theory and practice | 0/100 |  | oop-vs-functional (planned), code-smells (planned) |
 | Functional programming | Theory and practice | 0/100 |  | pure-functions-properties (planned) |
 | Design patterns and SOLID | Theory and practice | 0/100 |  | backend-patterns (planned), solid-before-after (planned) |
-| Software architecture | Theory and practice | 100/100 | pending | [clean-architecture-app](software-architecture/clean-architecture-app.md) |
+| Software architecture | Theory and practice | 100/100 | done | [clean-architecture-app](software-architecture/clean-architecture-app.md) |
 | Testing | Theory and practice | 0/100 |  | test-pyramid (planned), tdd-kata (planned), mutation-testing (planned), flaky-tests (planned), mini-xunit (planned) |
 | Protocols | Theory and practice | 0/100 |  | rest-graphql-jsonrpc (planned), http-versions (planned), http-server-raw-tcp (planned) |
 | Messaging | Theory and practice | 0/100 |  | queue-comparison (planned), idempotency-dlq (planned), pubsub-backpressure (planned) |
