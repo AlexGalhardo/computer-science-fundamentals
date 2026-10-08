@@ -74,7 +74,7 @@ The self-tests are test cases of the framework, about the framework. The subject
 
 ```python
 def test_failing_test_is_counted_as_failed(self) -> None:
-    WasRun("test_broken_method").run(self.result)   # the inner test fails, on purpose
+    WasRun("test_broken_method").run(self.result)  # the inner test fails, on purpose
     self.assert_equal(self.result.summary(), "1 run, 1 failed")
 ```
 

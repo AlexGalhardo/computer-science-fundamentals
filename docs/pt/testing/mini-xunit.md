@@ -74,7 +74,7 @@ Os autotestes são casos de teste do framework, sobre o framework. O objeto de c
 
 ```python
 def test_failing_test_is_counted_as_failed(self) -> None:
-    WasRun("test_broken_method").run(self.result)   # o teste de dentro falha, de propósito
+    WasRun("test_broken_method").run(self.result)  # o teste de dentro falha, de propósito
     self.assert_equal(self.result.summary(), "1 run, 1 failed")
 ```
 

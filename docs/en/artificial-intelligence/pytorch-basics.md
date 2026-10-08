@@ -49,7 +49,7 @@ A tensor created with `requires_grad=True` is watched: PyTorch records every ope
 x = torch.tensor(2.0, requires_grad=True)
 y = torch.tensor(1.0, requires_grad=True)
 z = torch.tensor(4.0, requires_grad=True)
-f = (x + y) * z      # 12
+f = (x + y) * z  # 12
 f.backward()
 # x.grad = 4, y.grad = 4, z.grad = 3
 ```
@@ -92,7 +92,7 @@ class MoonsNet(nn.Module):
     def forward(self, inputs):
         hidden = torch.tanh(self.hidden1(inputs))
         hidden = torch.tanh(self.hidden2(hidden))
-        return self.output(hidden)       # a logit, no sigmoid
+        return self.output(hidden)  # a logit, no sigmoid
 ```
 
 Assigning a layer to `self` registers it, so `model.parameters()` finds all 105 numbers by itself. The loop is written by hand, and it is the loop of MP-AI-2 with one more line:
@@ -102,11 +102,11 @@ loss_fn = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.5)
 
 for epoch in range(120):
-    logits = model(inputs)             # 1. forward
-    loss = loss_fn(logits, targets)    # 2. loss
-    optimizer.zero_grad()              # 3. clear the old gradients
-    loss.backward()                    # 4. backward
-    optimizer.step()                   # 5. update every parameter
+    logits = model(inputs)  # 1. forward
+    loss = loss_fn(logits, targets)  # 2. loss
+    optimizer.zero_grad()  # 3. clear the old gradients
+    loss.backward()  # 4. backward
+    optimizer.step()  # 5. update every parameter
 ```
 
 `BCEWithLogitsLoss` is the loss of MP-AI-2 with another name. For a logit z it computes `log(1 + e^(-z))` when the label is 1 and `log(1 + e^z)` when it is 0, which is the `log(1 + e^(-s z))` written there by hand, averaged over the batch. It receives the logit, not the probability: computing sigmoid and logarithm in one formula avoids `log(0)`. `optimizer.step()` is `w = w - lr * grad` for every parameter, and a test checks that after one step.
@@ -114,8 +114,8 @@ for epoch in range(120):
 Measuring uses two switches that are often confused:
 
 ```python
-model.eval()               # tells the layers they are not training (dropout and similar)
-with torch.no_grad():      # stops recording operations: no graph, less memory
+model.eval()  # tells the layers they are not training (dropout and similar)
+with torch.no_grad():  # stops recording operations: no graph, less memory
     predictions = model(test_inputs) > 0
 ```
 

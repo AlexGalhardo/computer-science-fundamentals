@@ -18,7 +18,7 @@ There is no NumPy and no framework. The three files have about 430 lines of plai
 
 ```python
 x, y, z = Value(2.0), Value(1.0), Value(4.0)
-f = (x + y) * z      # f.data == 12.0
+f = (x + y) * z  # f.data == 12.0
 f.backward()
 # x.grad == 4.0, y.grad == 4.0, z.grad == 3.0
 ```
@@ -80,10 +80,10 @@ The network outputs one number, the logit `z`. `sigmoid(z)` is read as the proba
 
 ```python
 for epoch in range(epochs):
-    loss = mean_loss(model, points, labels)   # 1. forward
-    model.zero_grad()                         # 2. clear the old gradients
-    loss.backward()                           # 3. backward
-    for p in model.parameters():              # 4. step against the gradient
+    loss = mean_loss(model, points, labels)  # 1. forward
+    model.zero_grad()  # 2. clear the old gradients
+    loss.backward()  # 3. backward
+    for p in model.parameters():  # 4. step against the gradient
         p.data -= learning_rate * p.grad
 ```
 

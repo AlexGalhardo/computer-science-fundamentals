@@ -49,7 +49,7 @@ Um tensor criado com `requires_grad=True` é observado: o PyTorch registra cada 
 x = torch.tensor(2.0, requires_grad=True)
 y = torch.tensor(1.0, requires_grad=True)
 z = torch.tensor(4.0, requires_grad=True)
-f = (x + y) * z      # 12
+f = (x + y) * z  # 12
 f.backward()
 # x.grad = 4, y.grad = 4, z.grad = 3
 ```
@@ -92,7 +92,7 @@ class MoonsNet(nn.Module):
     def forward(self, inputs):
         hidden = torch.tanh(self.hidden1(inputs))
         hidden = torch.tanh(self.hidden2(hidden))
-        return self.output(hidden)       # um logit, sem sigmoide
+        return self.output(hidden)  # um logit, sem sigmoide
 ```
 
 Atribuir uma camada a `self` a registra, então `model.parameters()` encontra sozinho os 105 números. O laço é escrito à mão, e é o laço do MP-AI-2 com uma linha a mais:
@@ -102,11 +102,11 @@ loss_fn = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.5)
 
 for epoch in range(120):
-    logits = model(inputs)             # 1. ida
-    loss = loss_fn(logits, targets)    # 2. perda
-    optimizer.zero_grad()              # 3. zera os gradientes antigos
-    loss.backward()                    # 4. volta
-    optimizer.step()                   # 5. atualiza cada parâmetro
+    logits = model(inputs)  # 1. ida
+    loss = loss_fn(logits, targets)  # 2. perda
+    optimizer.zero_grad()  # 3. zera os gradientes antigos
+    loss.backward()  # 4. volta
+    optimizer.step()  # 5. atualiza cada parâmetro
 ```
 
 A `BCEWithLogitsLoss` é a perda do MP-AI-2 com outro nome. Para um logit z ela calcula `log(1 + e^(-z))` quando o rótulo é 1 e `log(1 + e^z)` quando é 0, que é o `log(1 + e^(-s z))` escrito lá à mão, na média do lote. Ela recebe o logit, não a probabilidade: calcular sigmoide e logaritmo em uma fórmula só evita `log(0)`. O `optimizer.step()` é `w = w - lr * grad` para cada parâmetro, e um teste confere isso depois de um passo.
@@ -114,8 +114,8 @@ A `BCEWithLogitsLoss` é a perda do MP-AI-2 com outro nome. Para um logit z ela 
 Medir usa dois interruptores que são muito confundidos:
 
 ```python
-model.eval()               # avisa às camadas que não estão treinando (dropout e parecidas)
-with torch.no_grad():      # para de registrar as operações: sem grafo, menos memória
+model.eval()  # avisa às camadas que não estão treinando (dropout e parecidas)
+with torch.no_grad():  # para de registrar as operações: sem grafo, menos memória
     predictions = model(test_inputs) > 0
 ```
 

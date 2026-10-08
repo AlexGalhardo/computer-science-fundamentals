@@ -18,7 +18,7 @@ Não há NumPy nem framework. Os três arquivos têm cerca de 430 linhas de Pyth
 
 ```python
 x, y, z = Value(2.0), Value(1.0), Value(4.0)
-f = (x + y) * z      # f.data == 12.0
+f = (x + y) * z  # f.data == 12.0
 f.backward()
 # x.grad == 4.0, y.grad == 4.0, z.grad == 3.0
 ```
@@ -80,10 +80,10 @@ A rede devolve um número, o logit `z`. `sigmoid(z)` é lido como a probabilidad
 
 ```python
 for epoch in range(epochs):
-    loss = mean_loss(model, points, labels)   # 1. ida
-    model.zero_grad()                         # 2. zera os gradientes antigos
-    loss.backward()                           # 3. volta
-    for p in model.parameters():              # 4. passo contra o gradiente
+    loss = mean_loss(model, points, labels)  # 1. ida
+    model.zero_grad()  # 2. zera os gradientes antigos
+    loss.backward()  # 3. volta
+    for p in model.parameters():  # 4. passo contra o gradiente
         p.data -= learning_rate * p.grad
 ```
 

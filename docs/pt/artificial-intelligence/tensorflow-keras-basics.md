@@ -16,12 +16,14 @@ A rede é a do [neural-network-from-scratch](neural-network-from-scratch.md) (MP
 ## Descrevendo o modelo
 
 ```python
-model = keras.Sequential([
-    keras.Input(shape=(2,)),
-    keras.layers.Dense(8, activation="tanh"),
-    keras.layers.Dense(8, activation="tanh"),
-    keras.layers.Dense(1),
-])
+model = keras.Sequential(
+    [
+        keras.Input(shape=(2,)),
+        keras.layers.Dense(8, activation="tanh"),
+        keras.layers.Dense(8, activation="tanh"),
+        keras.layers.Dense(1),
+    ]
+)
 ```
 
 `Dense(8)` é uma camada totalmente conectada de 8 neurônios. Só o número de saídas é informado: o número de entradas vem da camada anterior, começando em `Input`. A contagem de parâmetros pode ser feita à mão:
@@ -81,7 +83,7 @@ O TensorFlow registra as operações só dentro de um bloco `tf.GradientTape`, e
 x = tf.Variable(3.0)
 with tf.GradientTape() as tape:
     y = x * x
-tape.gradient(y, x)        # 6.0, porque dy/dx = 2x
+tape.gradient(y, x)  # 6.0, porque dy/dx = 2x
 ```
 
 O exemplo do MP-AI-2, `f = (x + y) * z` em x = 2, y = 1, z = 4, pode ser feito à mão primeiro: `df/dx = z = 4`, `df/dy = z = 4`, `df/dz = x + y = 3`. A fita devolve 4, 4 e 3.
@@ -100,9 +102,9 @@ loss_fn = keras.losses.BinaryCrossentropy(from_logits=True)
 
 for epoch in range(120):
     with tf.GradientTape() as tape:
-        logits = model(inputs, training=True)                    # 1. ida
-        loss = loss_fn(targets, logits)                          # 2. perda
-    gradients = tape.gradient(loss, model.trainable_variables)   # 3 e 4. gradientes
+        logits = model(inputs, training=True)  # 1. ida
+        loss = loss_fn(targets, logits)  # 2. perda
+    gradients = tape.gradient(loss, model.trainable_variables)  # 3 e 4. gradientes
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))  # 5. atualização
 ```
 

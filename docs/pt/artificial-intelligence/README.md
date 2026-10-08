@@ -524,9 +524,9 @@ As seções 5 e 6 podem ser escritas à mão, e os primeiros mini-projetos fazem
 import torch
 
 x = torch.tensor(2.0, requires_grad=True)
-y = x**2 + 3 * x      # dy/dx = 2x + 3
+y = x**2 + 3 * x  # dy/dx = 2x + 3
 y.backward()
-print(x.grad)         # tensor(7.)
+print(x.grad)  # tensor(7.)
 ```
 
 O grafo é construído enquanto o código roda, então `if` e `for` comuns do Python podem fazer parte de um modelo. Um detalhe surpreende todo mundo uma vez: **os gradientes se acumulam**. Um segundo `backward()` soma em `.grad` em vez de substituir, e é por isso que um laço de treinamento zera os gradientes a cada passo.
@@ -541,11 +541,11 @@ loss_fn = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.5)
 
 for epoch in range(200):
-    logits = model(inputs)             # 1. ida (forward)
-    loss = loss_fn(logits, targets)    # 2. o quanto errou?
-    optimizer.zero_grad()              # 3. zera os gradientes antigos
-    loss.backward()                    # 4. retropropagação
-    optimizer.step()                   # 5. atualiza todos os parâmetros
+    logits = model(inputs)  # 1. ida (forward)
+    loss = loss_fn(logits, targets)  # 2. o quanto errou?
+    optimizer.zero_grad()  # 3. zera os gradientes antigos
+    loss.backward()  # 4. retropropagação
+    optimizer.step()  # 5. atualiza todos os parâmetros
 ```
 
 Esse modelo é a rede 2-8-1 da seção 5, com os seus 33 parâmetros. Duas chaves são fáceis de confundir. `torch.no_grad()` para de registrar operações: é usada ao medir ou usar um modelo, economiza memória e não calcula nada diferente. `model.eval()` muda o comportamento das camadas que agem de outro modo no treino, como o dropout: ela não desliga os gradientes. O código de avaliação usa as duas.
@@ -567,8 +567,8 @@ import tensorflow as tf
 
 x = tf.Variable(3.0)
 with tf.GradientTape() as tape:
-    y = x * x                 # dy/dx = 2x
-print(tape.gradient(y, x))    # 6.0
+    y = x * x  # dy/dx = 2x
+print(tape.gradient(y, x))  # 6.0
 ```
 
 As variáveis treináveis são observadas automaticamente. Uma constante não: o gradiente dela volta como `None`, a menos que se chame `tape.watch`. Uma fita serve para uma chamada de `gradient`, a menos que seja criada com `persistent=True`.
@@ -576,11 +576,13 @@ As variáveis treináveis são observadas automaticamente. Uma constante não: o
 **Keras: o laço já está escrito.** Com o Keras o modelo é descrito, configurado e treinado em três chamadas:
 
 ```python
-model = keras.Sequential([
-    keras.Input(shape=(2,)),
-    layers.Dense(8, activation="tanh"),
-    layers.Dense(1, activation="sigmoid"),
-])
+model = keras.Sequential(
+    [
+        keras.Input(shape=(2,)),
+        layers.Dense(8, activation="tanh"),
+        layers.Dense(1, activation="sigmoid"),
+    ]
+)
 model.compile(optimizer="sgd", loss="binary_crossentropy", metrics=["accuracy"])
 history = model.fit(inputs, targets, epochs=200, batch_size=32)
 loss, accuracy = model.evaluate(test_inputs, test_targets)

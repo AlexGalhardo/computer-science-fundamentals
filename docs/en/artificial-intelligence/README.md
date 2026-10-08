@@ -523,9 +523,9 @@ Sections 5 and 6 can be written by hand, and the first mini-projects do exactly 
 import torch
 
 x = torch.tensor(2.0, requires_grad=True)
-y = x**2 + 3 * x      # dy/dx = 2x + 3
+y = x**2 + 3 * x  # dy/dx = 2x + 3
 y.backward()
-print(x.grad)         # tensor(7.)
+print(x.grad)  # tensor(7.)
 ```
 
 The graph is built while the code runs, so ordinary Python `if` and `for` can be part of a model. One detail surprises everybody once: **gradients accumulate**. A second `backward()` adds to `.grad` instead of replacing it, which is why a training loop clears the gradients at every step.
@@ -540,11 +540,11 @@ loss_fn = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.5)
 
 for epoch in range(200):
-    logits = model(inputs)             # 1. forward pass
-    loss = loss_fn(logits, targets)    # 2. how wrong?
-    optimizer.zero_grad()              # 3. clear the old gradients
-    loss.backward()                    # 4. backpropagation
-    optimizer.step()                   # 5. update every parameter
+    logits = model(inputs)  # 1. forward pass
+    loss = loss_fn(logits, targets)  # 2. how wrong?
+    optimizer.zero_grad()  # 3. clear the old gradients
+    loss.backward()  # 4. backpropagation
+    optimizer.step()  # 5. update every parameter
 ```
 
 That model is the 2-8-1 network of section 5, with its 33 parameters. Two switches are easy to confuse. `torch.no_grad()` stops recording operations: it is used when measuring or using a model, saves memory and computes nothing different. `model.eval()` changes the behaviour of layers that act differently in training, such as dropout: it does not stop gradients. Evaluation code uses both.
@@ -566,8 +566,8 @@ import tensorflow as tf
 
 x = tf.Variable(3.0)
 with tf.GradientTape() as tape:
-    y = x * x                 # dy/dx = 2x
-print(tape.gradient(y, x))    # 6.0
+    y = x * x  # dy/dx = 2x
+print(tape.gradient(y, x))  # 6.0
 ```
 
 Trainable variables are watched automatically. A constant is not: its gradient comes back as `None` unless `tape.watch` is called. A tape serves one `gradient` call, unless it is created with `persistent=True`.
@@ -575,11 +575,13 @@ Trainable variables are watched automatically. A constant is not: its gradient c
 **Keras: the loop is already written.** With Keras the model is described, configured and trained in three calls:
 
 ```python
-model = keras.Sequential([
-    keras.Input(shape=(2,)),
-    layers.Dense(8, activation="tanh"),
-    layers.Dense(1, activation="sigmoid"),
-])
+model = keras.Sequential(
+    [
+        keras.Input(shape=(2,)),
+        layers.Dense(8, activation="tanh"),
+        layers.Dense(1, activation="sigmoid"),
+    ]
+)
 model.compile(optimizer="sgd", loss="binary_crossentropy", metrics=["accuracy"])
 history = model.fit(inputs, targets, epochs=200, batch_size=32)
 loss, accuracy = model.evaluate(test_inputs, test_targets)
