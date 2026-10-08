@@ -51,4 +51,4 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Blockchain | Teoria e prática | 0/100 |  | didactic-blockchain (planejado) |
 | Integração contínua | Teoria e prática | 0/100 |  | ci-pipeline (planejado) |
 | Engenharia de software | Teoria | 0/150 |  | nenhum |
-| Inteligência artificial e LLMs | Teoria e prática | 164/164 | pendente | [bpe-tokenizer](artificial-intelligence/bpe-tokenizer.md), neural-network-from-scratch (planejado), embeddings-vector-search (planejado), tiny-language-model (planejado), diffusion-toy (planejado), pytorch-basics (planejado), tensorflow-keras-basics (planejado), computer-vision-cnn (planejado) |
+| Inteligência artificial e LLMs | Teoria e prática | 164/164 | feita | [bpe-tokenizer](artificial-intelligence/bpe-tokenizer.md), neural-network-from-scratch (planejado), embeddings-vector-search (planejado), tiny-language-model (planejado), diffusion-toy (planejado), pytorch-basics (planejado), tensorflow-keras-basics (planejado), computer-vision-cnn (planejado) |
