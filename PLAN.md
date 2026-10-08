@@ -1041,10 +1041,10 @@ Sources: found by a web search of primary and well-known material (papers such a
 | TensorFlow and Keras: tensors, layers, compiling and fitting a model, graphs against eager execution | 8 |
 | Computer vision: images as tensors, convolution and pooling, CNN architectures, augmentation, transfer learning, detection and segmentation | 14 |
 
-- [ ] QC-AI.1 Coverage map committed
-- [ ] QC-AI.2 164 questions written (PT and EN)
-- [ ] QC-AI.3 Validation passing
-- [ ] QC-AI.4 Blind review resolved
+- [x] QC-AI.1 Coverage map committed
+- [x] QC-AI.2 164 questions written (PT and EN)
+- [x] QC-AI.3 Validation passing
+- [x] QC-AI.4 Blind review resolved
 
 ---
 
@@ -2020,97 +2020,97 @@ Teaches: what the pipeline of this repository does and why. Languages: YAML.
 
 Teaches: how text becomes tokens, and why a model counts tokens and not words. Languages: TS, Python.
 
-- [ ] **MP-AI-1.1** Byte-pair encoding trained on a small corpus written for the project
+- [x] **MP-AI-1.1** Byte-pair encoding trained on a small corpus written for the project
 	- **Accept:** encode then decode returns the original text for ASCII, accented and emoji input.
-- [ ] **MP-AI-1.2** Vocabulary size against number of tokens
+- [x] **MP-AI-1.2** Vocabulary size against number of tokens
 	- **Accept:** a table shows the token count of the same text falling as the number of merges grows, identical in both languages.
-- [ ] **MP-AI-1.3** CLI that shows the tokens of a sentence, with ids and boundaries
+- [x] **MP-AI-1.3** CLI that shows the tokens of a sentence, with ids and boundaries
 	- **Accept:** one command prints the tokens of a sentence, and the README shows the output.
-- [ ] **MP-AI-1.4** Definition of done for mini-projects met.
+- [x] **MP-AI-1.4** Definition of done for mini-projects met.
 
 #### MP-AI-2 Neural network from scratch
 
 Teaches: what a neuron computes and how backpropagation finds the gradients. Languages: Python.
 
-- [ ] **MP-AI-2.1** Scalar automatic differentiation: values, operations and the backward pass
+- [x] **MP-AI-2.1** Scalar automatic differentiation: values, operations and the backward pass
 	- **Accept:** every analytic gradient matches a numerical gradient within a tolerance, in a test.
-- [ ] **MP-AI-2.2** Multi-layer perceptron trained with gradient descent
+- [x] **MP-AI-2.2** Multi-layer perceptron trained with gradient descent
 	- **Accept:** with a fixed seed it learns XOR exactly and reaches at least 95% accuracy on a generated two-class dataset.
-- [ ] **MP-AI-2.3** Loss curve and decision boundary
+- [x] **MP-AI-2.3** Loss curve and decision boundary
 	- **Accept:** the demo writes the loss per epoch and a rendering of the decision boundary, committed in `results/`.
-- [ ] **MP-AI-2.4** Definition of done for mini-projects met.
+- [x] **MP-AI-2.4** Definition of done for mini-projects met.
 
 #### MP-AI-3 Embeddings and vector search
 
 Teaches: how meaning becomes a vector and how similar vectors are found. Languages: TS, Python.
 
-- [ ] **MP-AI-3.1** Word vectors built from co-occurrence counts on a corpus written for the project
+- [x] **MP-AI-3.1** Word vectors built from co-occurrence counts on a corpus written for the project
 	- **Accept:** for a list of test words, the nearest neighbours by cosine similarity fall in the expected group.
-- [ ] **MP-AI-3.2** Brute-force search and a simple index
+- [x] **MP-AI-3.2** Brute-force search and a simple index
 	- **Accept:** the index returns the same top result as brute force in at least 95% of queries, with the number of comparisons tabled.
-- [ ] **MP-AI-3.3** Retrieval demo: the question picks the most relevant passages
+- [x] **MP-AI-3.3** Retrieval demo: the question picks the most relevant passages
 	- **Accept:** one command prints the passages retrieved for a question, shown in the README.
-- [ ] **MP-AI-3.4** Definition of done for mini-projects met.
+- [x] **MP-AI-3.4** Definition of done for mini-projects met.
 
 #### MP-AI-4 Tiny language model
 
 Teaches: how a language model predicts the next token, from counting to self-attention. Languages: Python.
 
-- [ ] **MP-AI-4.1** Bigram model by counting, with sampling
+- [x] **MP-AI-4.1** Bigram model by counting, with sampling
 	- **Accept:** the probabilities of each row sum to 1 and sampling is reproducible with a fixed seed.
-- [ ] **MP-AI-4.2** Small transformer with self-attention written from scratch, trained on CPU
+- [x] **MP-AI-4.2** Small transformer with self-attention written from scratch, trained on CPU
 	- **Accept:** on held-out text its loss is lower than the loss of the bigram model, in a test with a fixed seed.
-- [ ] **MP-AI-4.3** Sampling controls: temperature, top-k and top-p
+- [x] **MP-AI-4.3** Sampling controls: temperature, top-k and top-p
 	- **Accept:** a table shows that a lower temperature gives less varied output, measured by the entropy of the samples.
-- [ ] **MP-AI-4.4** Definition of done for mini-projects met.
+- [x] **MP-AI-4.4** Definition of done for mini-projects met.
 
 #### MP-AI-5 Diffusion toy
 
 Teaches: how an image model learns to remove noise, on two-dimensional points instead of pixels. Languages: Python.
 
-- [ ] **MP-AI-5.1** Forward process: noise added step by step
+- [x] **MP-AI-5.1** Forward process: noise added step by step
 	- **Accept:** after the last step the points are statistically indistinguishable from Gaussian noise, in a test.
-- [ ] **MP-AI-5.2** Reverse process: a small network trained to predict the noise
+- [x] **MP-AI-5.2** Reverse process: a small network trained to predict the noise
 	- **Accept:** samples generated from pure noise land on the target shape, with a mean distance below a documented threshold.
-- [ ] **MP-AI-5.3** Step-by-step picture
+- [x] **MP-AI-5.3** Step-by-step picture
 	- **Accept:** the demo writes the points at several steps of the reverse process, committed in `results/`.
-- [ ] **MP-AI-5.4** Definition of done for mini-projects met.
+- [x] **MP-AI-5.4** Definition of done for mini-projects met.
 
 #### MP-AI-6 PyTorch basics
 
 Teaches: what a deep learning framework does for you, by redoing MP-AI-2 with PyTorch. Added at the owner's request on 2026-10-08. Languages: Python (PyTorch, CPU only).
 
-- [ ] **MP-AI-6.1** Tensors and automatic differentiation
+- [x] **MP-AI-6.1** Tensors and automatic differentiation
 	- **Accept:** the gradients PyTorch computes match numerical gradients, and match the hand-written backpropagation of MP-AI-2 on the same small network, within a tolerance.
-- [ ] **MP-AI-6.2** The training loop written by hand: forward, loss, backward, optimiser step
+- [x] **MP-AI-6.2** The training loop written by hand: forward, loss, backward, optimiser step
 	- **Accept:** with a fixed seed the network reaches at least 95% accuracy on the generated two-class dataset of MP-AI-2.
-- [ ] **MP-AI-6.3** From scratch against the framework
+- [x] **MP-AI-6.3** From scratch against the framework
 	- **Accept:** a table compares lines of code and training time of MP-AI-2 and of this version, with the machine recorded.
-- [ ] **MP-AI-6.4** Definition of done for mini-projects met.
+- [x] **MP-AI-6.4** Definition of done for mini-projects met.
 
 #### MP-AI-7 TensorFlow and Keras basics
 
 Teaches: the same model in another framework, and what a high-level API hides. Languages: Python (TensorFlow, CPU only).
 
-- [ ] **MP-AI-7.1** The same network and dataset with the Keras API: layers, compile, fit, evaluate
+- [x] **MP-AI-7.1** The same network and dataset with the Keras API: layers, compile, fit, evaluate
 	- **Accept:** with a fixed seed it reaches at least 95% accuracy on the same dataset.
-- [ ] **MP-AI-7.2** The same training step written with a gradient tape
+- [x] **MP-AI-7.2** The same training step written with a gradient tape
 	- **Accept:** a test shows the loss falling over the steps, and the gradient of a small expression matching its hand-computed value.
-- [ ] **MP-AI-7.3** PyTorch and TensorFlow side by side
+- [x] **MP-AI-7.3** PyTorch and TensorFlow side by side
 	- **Accept:** both READMEs have a table mapping each concept (tensor, gradient, layer, optimiser, training loop) to its PyTorch and TensorFlow form, with the measured accuracy of both.
-- [ ] **MP-AI-7.4** Definition of done for mini-projects met.
+- [x] **MP-AI-7.4** Definition of done for mini-projects met.
 
 #### MP-AI-8 Computer vision with a CNN
 
 Teaches: how a network sees: images as numbers, convolution, pooling and learned filters. Languages: Python (PyTorch, CPU only).
 
-- [ ] **MP-AI-8.1** Images as tensors and convolution by hand
+- [x] **MP-AI-8.1** Images as tensors and convolution by hand
 	- **Accept:** a hand-written convolution with an edge filter gives the same output as the framework's convolution on the same image, in a test.
-- [ ] **MP-AI-8.2** A small convolutional network that classifies shapes drawn by the project (no downloaded dataset)
+- [x] **MP-AI-8.2** A small convolutional network that classifies shapes drawn by the project (no downloaded dataset)
 	- **Accept:** with a fixed seed it reaches at least 95% accuracy on held-out images, and a plain fully connected network with a similar number of parameters does worse on shifted images.
-- [ ] **MP-AI-8.3** Data augmentation and what the network learned
+- [x] **MP-AI-8.3** Data augmentation and what the network learned
 	- **Accept:** a table shows accuracy on rotated and shifted images with and without augmentation, and the learned first-layer filters and one activation map are committed as images in `results/`.
-- [ ] **MP-AI-8.4** Definition of done for mini-projects met.
+- [x] **MP-AI-8.4** Definition of done for mini-projects met.
 
 ---
 

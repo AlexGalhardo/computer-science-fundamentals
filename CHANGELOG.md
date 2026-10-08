@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.107.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/artificial-intelligence/computer-vision-cnn` (Python, PyTorch on CPU): convolution by hand equal to the framework's, a small convolutional network that classifies shapes drawn by the project, data augmentation, and the learned filters as images. The artificial intelligence area is complete.
+
+## [0.106.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/artificial-intelligence/tensorflow-keras-basics` (Python, TensorFlow on CPU): the same model with the Keras API and with a gradient tape, and a table mapping each concept to its PyTorch and TensorFlow form.
+
+## [0.105.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/artificial-intelligence/pytorch-basics` (Python, PyTorch on CPU): tensors and automatic differentiation checked against the hand-written backpropagation, a training loop written by hand, and a comparison with the from-scratch version.
+
+## [0.104.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/artificial-intelligence/diffusion-toy` (Python): the forward and reverse processes of a diffusion model on two-dimensional points, with a small network that predicts the noise and pictures of the steps.
+
+## [0.103.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/artificial-intelligence/tiny-language-model` (Python): a bigram model by counting, a small transformer with self-attention written from scratch that beats it on held-out text, and sampling with temperature, top-k and top-p.
+
+## [0.102.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/artificial-intelligence/embeddings-vector-search` (TypeScript and Python): word vectors from co-occurrence counts, cosine similarity, brute-force search against a simple index, and a retrieval demo.
+
+## [0.101.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/artificial-intelligence/neural-network-from-scratch` (Python): scalar automatic differentiation checked against numerical gradients, and a multi-layer perceptron that learns XOR and a two-class dataset, with its loss curve and decision boundary.
+
+## [0.100.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/artificial-intelligence/bpe-tokenizer` (TypeScript and Python): byte-pair encoding trained on a small corpus, a lossless round trip for ASCII, accented and emoji text, a table of token count against vocabulary size, and a CLI that shows the tokens of a sentence.
+
+## [0.99.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: artificial intelligence and LLMs, 164 questions in Portuguese and English across 16 topics, from probability and linear algebra to transformers, diffusion, PyTorch, TensorFlow and computer vision, blind-reviewed with 164 of 164 agreement. Teaching pages and the list of sources are in `docs/en/artificial-intelligence/`.
+
 ## [0.98.0] - 2026-10-07
 
 ### Added
