@@ -16,7 +16,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-2070 of 3384 questions written, 55 of 86 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+2170 of 3384 questions written, 60 of 86 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
@@ -39,7 +39,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Functional programming | Theory and practice | 100/100 | done | [pure-functions-properties](functional-programming/pure-functions-properties.md) |
 | Design patterns and SOLID | Theory and practice | 100/100 | done | [backend-patterns](design-patterns/backend-patterns.md), [solid-before-after](design-patterns/solid-before-after.md) |
 | Software architecture | Theory and practice | 100/100 | done | [clean-architecture-app](software-architecture/clean-architecture-app.md) |
-| Testing | Theory and practice | 0/100 |  | test-pyramid (planned), tdd-kata (planned), mutation-testing (planned), flaky-tests (planned), mini-xunit (planned) |
+| Testing | Theory and practice | 100/100 | done | [test-pyramid](testing/test-pyramid.md), [tdd-kata](testing/tdd-kata.md), [mutation-testing](testing/mutation-testing.md), [flaky-tests](testing/flaky-tests.md), [mini-xunit](testing/mini-xunit.md) |
 | Protocols | Theory and practice | 100/100 | done | [rest-graphql-jsonrpc](protocols/rest-graphql-jsonrpc.md), [http-versions](protocols/http-versions.md), [http-server-raw-tcp](protocols/http-server-raw-tcp.md) |
 | Messaging | Theory and practice | 0/100 |  | queue-comparison (planned), idempotency-dlq (planned), pubsub-backpressure (planned) |
 | Load balancing | Theory and practice | 0/100 |  | nginx-vs-caddy (planned), l7-load-balancer (planned) |

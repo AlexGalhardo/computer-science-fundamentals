@@ -1,0 +1,42 @@
+# EN: `ts-test` runs the type check and every test (weak suite, strong suite, tests of the
+#     mutator). `coverage-weak` and `coverage-strong` print the coverage report of each suite and
+#     fail under 100%. `mutation` is the demo: it mutates the module, runs both suites against
+#     every mutant and writes results/mutation-report.md. Nothing needs a network.
+# PT: `ts-test` roda a checagem de tipos e todos os testes (suíte fraca, suíte forte, testes do
+#     mutador). `coverage-weak` e `coverage-strong` imprimem o relatório de cobertura de cada
+#     suíte e falham abaixo de 100%. `mutation` é a demo: muta o módulo, roda as duas suítes
+#     contra cada mutante e escreve results/mutation-report.md. Nada precisa de rede.
+name: testing-mutation-testing
+
+x-ts: &ts
+  build: ./ts
+  image: sef-mutation-testing-ts:local
+  network_mode: "none"
+
+services:
+  ts-test:
+    <<: *ts
+
+  coverage-weak:
+    <<: *ts
+    command: ["bun", "run", "coverage:weak"]
+
+  coverage-strong:
+    <<: *ts
+    command: ["bun", "run", "coverage:strong"]
+
+  # EN: This service writes results/ into the mounted project folder, so it runs as the host
+  #     user: on Linux a container user with another uid cannot write there. HOME points to
+  #     /tmp because that user has no home directory in the image.
+  # PT: Este serviço escreve results/ na pasta montada do projeto, então roda como o usuário do
+  #     host: no Linux um usuário de contêiner com outro uid não consegue escrever ali. HOME
+  #     aponta para /tmp porque esse usuário não tem diretório pessoal na imagem.
+  mutation:
+    <<: *ts
+    command: ["bun", "run", "mutation"]
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      HOME: /tmp
+      RESULTS_DIR: /results
+    volumes:
+      - ./results:/results
