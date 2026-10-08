@@ -1,0 +1,179 @@
+# EN: Four brokers and one TypeScript image. The network is internal: no container reaches the
+#     internet and no port is published on the host. All credentials are fake and exist only
+#     inside this lab; the SQS API is LocalStack, never AWS. A test service depends only on its
+#     own broker, so `docker compose run --rm test-kafka` starts Kafka and nothing else.
+# PT: Quatro brokers e uma imagem TypeScript. A rede é interna: nenhum contêiner alcança a
+#     internet e nenhuma porta é publicada no host. Todas as credenciais são falsas e existem só
+#     dentro deste laboratório; a API do SQS é o LocalStack, nunca a AWS. Um serviço de teste
+#     depende só do seu broker, então `docker compose run --rm test-kafka` sobe o Kafka e nada mais.
+name: msg-queue-comparison
+
+x-app: &app
+  build: ./ts
+  image: sef-queue-comparison-ts:local
+  networks:
+    - lab
+
+x-client-env: &client-env
+  REDIS_URL: redis://redis:6379
+  AMQP_URL: amqp://lab:lab-fake-password@rabbitmq:5672
+  KAFKA_BROKER: kafka:9092
+  SQS_ENDPOINT: http://localstack:4566
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: fake-lab-access-key
+  AWS_SECRET_ACCESS_KEY: fake-lab-secret-key
+
+services:
+  redis:
+    image: &redis-image redis:8.10.2-alpine
+    # EN: No persistence: the lab data is disposable. `noeviction` is what BullMQ requires, so
+    #     Redis refuses writes when full instead of silently dropping job keys.
+    # PT: Sem persistência: os dados do laboratório são descartáveis. `noeviction` é o que o
+    #     BullMQ exige, para o Redis recusar escritas quando cheio em vez de apagar chaves de jobs.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -h 127.0.0.1 ping | grep -q PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      - lab
+
+  rabbitmq:
+    image: &rabbitmq-image rabbitmq:4.3.6-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: lab
+      RABBITMQ_DEFAULT_PASS: lab-fake-password
+    healthcheck:
+      # EN: A plain TCP check on the port the client uses. `rabbitmq-diagnostics` would run as
+      #     root and can create the Erlang cookie before the broker does, making the broker exit.
+      # PT: Uma checagem TCP simples na porta que o cliente usa. O `rabbitmq-diagnostics` rodaria
+      #     como root e pode criar o cookie do Erlang antes do broker, fazendo o broker encerrar.
+      test: ["CMD", "nc", "-z", "127.0.0.1", "5672"]
+      interval: 3s
+      timeout: 10s
+      retries: 40
+    networks:
+      - lab
+
+  kafka:
+    image: &kafka-image apache/kafka:4.3.1
+    environment:
+      # EN: One node in KRaft mode: it is broker and controller at once, with no ZooKeeper.
+      # PT: Um nó em modo KRaft: é broker e controller ao mesmo tempo, sem ZooKeeper.
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      # EN: A small heap: this machine is shared and the lab moves a few megabytes.
+      # PT: Um heap pequeno: a máquina é compartilhada e o laboratório move poucos megabytes.
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx256m
+    healthcheck:
+      # EN: A real client request to the client port, so "healthy" means "answers the protocol".
+      # PT: Uma requisição real de cliente na porta dos clientes: "saudável" é "responde ao protocolo".
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server 127.0.0.1:9092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 15s
+      retries: 30
+    networks:
+      - lab
+
+  localstack:
+    # EN: 4.14.0 is the last LocalStack image that starts without an account token. Later images
+    #     need a real credential and a licence server on the internet, which this lab forbids.
+    # PT: 4.14.0 é a última imagem do LocalStack que inicia sem token de conta. As seguintes
+    #     exigem uma credencial real e um servidor de licença na internet, o que este laboratório proíbe.
+    image: &localstack-image localstack/localstack:4.14.0
+    environment:
+      SERVICES: sqs
+      LOCALSTACK_HOST: localstack:4566
+      DISABLE_EVENTS: "1"
+      SKIP_SSL_CERT_DOWNLOAD: "1"
+      DNS_ADDRESS: "0"
+      AWS_ACCESS_KEY_ID: fake-lab-access-key
+      AWS_SECRET_ACCESS_KEY: fake-lab-secret-key
+      AWS_DEFAULT_REGION: us-east-1
+    healthcheck:
+      # EN: A real SQS call, not only an open port.
+      # PT: Uma chamada SQS real, não apenas uma porta aberta.
+      test: ["CMD-SHELL", "awslocal sqs list-queues >/dev/null 2>&1"]
+      interval: 3s
+      timeout: 10s
+      retries: 40
+    networks:
+      - lab
+
+  # EN: Type check and unit tests. They need no broker, so the container gets no network at all.
+  # PT: Checagem de tipos e testes unitários. Não precisam de broker, então o contêiner fica sem rede.
+  ts-test:
+    build: ./ts
+    image: sef-queue-comparison-ts:local
+    network_mode: "none"
+
+  test-bullmq:
+    <<: *app
+    command: ["bun", "run", "test:integration"]
+    environment: { <<: *client-env, BROKER: bullmq }
+    depends_on:
+      redis: { condition: service_healthy }
+
+  test-rabbitmq:
+    <<: *app
+    command: ["bun", "run", "test:integration"]
+    environment: { <<: *client-env, BROKER: rabbitmq }
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  test-kafka:
+    <<: *app
+    command: ["bun", "run", "test:integration"]
+    environment: { <<: *client-env, BROKER: kafka }
+    depends_on:
+      kafka: { condition: service_healthy }
+
+  test-sqs:
+    <<: *app
+    command: ["bun", "run", "test:integration"]
+    environment: { <<: *client-env, BROKER: sqs }
+    depends_on:
+      localstack: { condition: service_healthy }
+
+  demo:
+    <<: *app
+    command: ["bun", "run", "demo"]
+    environment:
+      <<: *client-env
+      PROJECT_DIR: /project
+      BROKERS: ${BROKERS:-bullmq,rabbitmq,kafka,sqs}
+      BENCH_MESSAGES: ${BENCH_MESSAGES:-5000}
+      BENCH_RUNS: ${BENCH_RUNS:-3}
+      REDIS_IMAGE: *redis-image
+      RABBITMQ_IMAGE: *rabbitmq-image
+      KAFKA_IMAGE: *kafka-image
+      LOCALSTACK_IMAGE: *localstack-image
+    depends_on:
+      redis: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      localstack: { condition: service_healthy }
+    # EN: Run as the host user. On Linux the mounted project folder belongs to that user, and the
+    #     image's own user (uid 1000) could not write results into it. The setup script exports
+    #     HOST_UID and HOST_GID; on Docker Desktop the default works.
+    # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
+    #     imagem (uid 1000) não conseguiria gravar os resultados. O script de setup exporta
+    #     HOST_UID e HOST_GID; no Docker Desktop o padrão funciona.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+networks:
+  lab:
+    internal: true

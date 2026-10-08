@@ -16,7 +16,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-1400 de 3220 questões escritas, 44 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+1400 de 3220 questões escritas, 45 de 78 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -41,7 +41,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Arquitetura de software | Teoria e prática | 0/100 |  | clean-architecture-app (planejado) |
 | Testes | Teoria e prática | 0/100 |  | test-pyramid (planejado), tdd-kata (planejado), mutation-testing (planejado), flaky-tests (planejado), mini-xunit (planejado) |
 | Protocolos | Teoria e prática | 0/100 |  | rest-graphql-jsonrpc (planejado), http-versions (planejado), http-server-raw-tcp (planejado) |
-| Mensageria | Teoria e prática | 100/100 | feita | queue-comparison (planejado), idempotency-dlq (planejado), pubsub-backpressure (planejado) |
+| Mensageria | Teoria e prática | 100/100 | feita | [queue-comparison](messaging/queue-comparison.md), idempotency-dlq (planejado), pubsub-backpressure (planejado) |
 | Balanceamento de carga | Teoria e prática | 0/100 |  | nginx-vs-caddy (planejado), l7-load-balancer (planejado) |
 | Performance | Teoria e prática | 0/100 |  | bun-vs-node (planejado), k6-scenarios (planejado), cache-friendly-matrix (planejado) |
 | Cache | Teoria e prática | 0/100 |  | cache-strategies (planejado) |

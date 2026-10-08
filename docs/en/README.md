@@ -16,7 +16,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-1400 of 3220 questions written, 44 of 78 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+1400 of 3220 questions written, 45 of 78 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
@@ -41,7 +41,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Software architecture | Theory and practice | 0/100 |  | clean-architecture-app (planned) |
 | Testing | Theory and practice | 0/100 |  | test-pyramid (planned), tdd-kata (planned), mutation-testing (planned), flaky-tests (planned), mini-xunit (planned) |
 | Protocols | Theory and practice | 0/100 |  | rest-graphql-jsonrpc (planned), http-versions (planned), http-server-raw-tcp (planned) |
-| Messaging | Theory and practice | 100/100 | done | queue-comparison (planned), idempotency-dlq (planned), pubsub-backpressure (planned) |
+| Messaging | Theory and practice | 100/100 | done | [queue-comparison](messaging/queue-comparison.md), idempotency-dlq (planned), pubsub-backpressure (planned) |
 | Load balancing | Theory and practice | 0/100 |  | nginx-vs-caddy (planned), l7-load-balancer (planned) |
 | Performance | Theory and practice | 0/100 |  | bun-vs-node (planned), k6-scenarios (planned), cache-friendly-matrix (planned) |
 | Cache | Theory and practice | 0/100 |  | cache-strategies (planned) |

@@ -27,6 +27,14 @@ The reviewer also reported that its answers were spread evenly over the five pos
 | `messaging-ordering-partitioning-09` | Remark, not flagged: two alternatives start with "Partitions 2 and 4", which helps elimination | key kept: the two differ in the consequence (Kafka holding a record back across partitions), which is the misconception the distractor tests |
 | `messaging-bullmq-redis-03` | Remark, not flagged: the snippet used a `queue` variable whose name was not shown, while the worker listens on `payments` | question rewritten: the snippet now creates `new Queue("payments", ...)`. Key kept |
 
+## Fix found while building the mini-project
+
+| Question | Finding | Resolution |
+| --- | --- | --- |
+| `messaging-bullmq-redis-01` | Not raised by the reviewer. BullMQ 6, the version pinned in `queue-comparison`, ships an optional PostgreSQL backend, so the distractor "the jobs are stored in PostgreSQL" was no longer plainly wrong | question rewritten: the statement now shows the Redis `connection`, and the distractor became "the jobs sit in a local file". Key kept, and `bun run quiz:compare` still reports 0 disagreements |
+
+Note: `bun run quiz:compare` rewrites this file from scratch. The sections above the form checks were restored after each run.
+
 ## Form checks
 
 - Correct position: 20 questions on each index, assigned by a seeded pseudo-random shuffle (no rotation).
