@@ -1,4 +1,4 @@
-# PLAN
+# PLAN: Computer Science Fundamentals
 
 Main roadmap of the repository: 32 areas, a quiz covering all of them and 86 runnable mini-projects.
 

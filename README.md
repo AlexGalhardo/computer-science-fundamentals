@@ -1,7 +1,7 @@
 <!-- markdownlint-disable-next-line MD041 -->
 <div align="center">
 
-# Software Engineer Fundamentals
+# Computer Science Fundamentals
 
 Computer science fundamentals you can **answer, run and measure**: a bilingual
 quiz covering 32 areas, and small runnable mini-projects that show each concept
@@ -32,7 +32,7 @@ beginners.
 
 ## Introduction
 
-**Software Engineer Fundamentals** is a long-term, open source (MIT) study
+**Computer Science Fundamentals** is a long-term, open source (MIT) study
 reference. It has two parts that point at each other:
 
 - **A quiz.** Multiple choice, 5 alternatives, in Portuguese and English. After

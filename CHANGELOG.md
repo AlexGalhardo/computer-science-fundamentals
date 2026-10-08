@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The project is now called **Computer Science Fundamentals**, in the READMEs, the quiz app, `package.json` and the agent docs. The GitHub repository keeps its address.
+- Third-party skills in `.claude/skills/` are plain Markdown folders with their licences, no longer git submodules.
+- `README.md` is English only, with `README-ptbr.md` next to it, a table of what each area teaches and a roadmap for beginners.
+- The artificial intelligence area grew to 164 questions and 8 mini-projects, adding PyTorch, TensorFlow and computer vision.
+
 ## [0.80.0] - 2026-10-07
 
 ### Added

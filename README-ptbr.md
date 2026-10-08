@@ -1,7 +1,7 @@
 <!-- markdownlint-disable-next-line MD041 -->
 <div align="center">
 
-# Software Engineer Fundamentals
+# Computer Science Fundamentals
 
 Fundamentos de ciência da computação que você pode **responder, rodar e medir**:
 um quiz bilíngue cobrindo 32 áreas, e mini-projetos executáveis que mostram cada
@@ -32,7 +32,7 @@ escritas para iniciantes.
 
 ## Introdução
 
-**Software Engineer Fundamentals** é uma referência de estudo de longo prazo,
+**Computer Science Fundamentals** é uma referência de estudo de longo prazo,
 open source (MIT). Ela tem duas partes que apontam uma para a outra:
 
 - **Um quiz.** Múltipla escolha, 5 alternativas, em português e inglês. Depois

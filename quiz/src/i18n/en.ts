@@ -6,7 +6,7 @@
 //     o build falha em vez de publicar uma tela sem tradução.
 
 export const en = {
-	appName: "Computer Science Quiz",
+	appName: "Computer Science Fundamentals",
 	tagline: "Study computer science fundamentals one question at a time.",
 	skipToContent: "Skip to content",
 	home: "Home",

@@ -3,7 +3,7 @@ import type { Dictionary } from "./en";
 // EN: Typed as `Dictionary`: removing or misspelling a key here stops the build.
 // PT: Tipado como `Dictionary`: remover ou errar o nome de uma chave aqui interrompe o build.
 export const pt: Dictionary = {
-	appName: "Quiz de Ciência da Computação",
+	appName: "Computer Science Fundamentals",
 	tagline: "Estude os fundamentos da computação uma questão de cada vez.",
 	skipToContent: "Pular para o conteúdo",
 	home: "Início",

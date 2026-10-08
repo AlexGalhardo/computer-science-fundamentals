@@ -13,7 +13,7 @@ export default function RootPage() {
 		<main style={{ fontFamily: "system-ui, sans-serif", padding: "2rem" }}>
 			{/* biome-ignore lint/security/noDangerouslySetInnerHtml: constant script written above, with no user input */}
 			<script dangerouslySetInnerHTML={{ __html: redirectScript }} />
-			<h1>Computer Science Quiz</h1>
+			<h1>Computer Science Fundamentals</h1>
 			<p>
 				<a href={`${basePath}/pt/`} lang="pt-BR">
 					Português
