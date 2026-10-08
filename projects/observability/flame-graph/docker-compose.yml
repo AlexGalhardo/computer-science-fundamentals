@@ -1,0 +1,142 @@
+# EN: Two small HTTP services, one in Go and one in TypeScript, each with a hidden hot path and
+#     a fixed variant. A load generator and the profiler of each runtime find the hot path, and
+#     a benchmark measures what the fix is worth.
+#     The network is internal: no container reaches the internet, no port is published on the
+#     host, and the profiling endpoints are reachable only from inside this network. The CPU
+#     limits make the measurements comparable from run to run.
+# PT: Dois serviços HTTP pequenos, um em Go e um em TypeScript, cada um com um caminho quente
+#     escondido e uma variante corrigida. Um gerador de carga e o profiler de cada runtime
+#     encontram o caminho quente, e um benchmark mede quanto a correção vale.
+#     A rede é interna: nenhum contêiner alcança a internet, nenhuma porta é publicada no host,
+#     e os endpoints de profiling só são alcançáveis de dentro desta rede. Os limites de CPU
+#     tornam as medições comparáveis de uma execução para outra.
+name: obs-flame-graph
+
+x-go: &go
+  build: ./go
+  image: sef-flame-graph-go:local
+
+x-ts: &ts
+  build: ./ts
+  image: sef-flame-graph-ts:local
+
+# EN: The steps that write into the project folder run as the host user. On Linux the mounted
+#     folder belongs to that user, and another uid would get "permission denied". The setup
+#     script exports HOST_UID and HOST_GID; on Docker Desktop the default works.
+# PT: As etapas que gravam na pasta do projeto rodam como o usuário do host. No Linux a pasta
+#     montada pertence a ele, e outro uid receberia "permission denied". O script de setup
+#     exporta HOST_UID e HOST_GID; no Docker Desktop o padrão funciona.
+x-lab: &lab
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+  volumes:
+    - .:/project
+  cpus: 2
+  mem_limit: 256m
+
+x-lab-env: &lab-env
+  GO_URL: http://go-server:8080
+  TS_URL: http://ts-server:8080
+  PROJECT_DIR: /project
+  # `results` is committed; the setup scripts use `out`, which git ignores.
+  OUT_DIR: ${OUT_DIR:-results}
+
+x-servers: &servers
+  go-server:
+    condition: service_healthy
+  ts-server:
+    condition: service_healthy
+
+services:
+  # ---------------------------------------------------------------- the services under study
+  go-server:
+    <<: *go
+    command: ["server"]
+    healthcheck:
+      test: ["CMD", "server", "healthcheck"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      - lab
+    cpus: 1
+    mem_limit: 256m
+
+  ts-server:
+    <<: *ts
+    command: ["bun", "run", "server"]
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const r = await fetch('http://127.0.0.1:8080/health'); process.exit(r.ok ? 0 : 1)"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      - lab
+    cpus: 1
+    mem_limit: 256m
+
+  # ---------------------------------------------------------------- unit tests
+  # EN: Unit tests need no network, so these containers get none. The TypeScript tests also
+  #     check the committed profiles and pictures, mounted read-only.
+  # PT: Os testes unitários não precisam de rede, então estes contêineres não recebem nenhuma.
+  #     Os testes TypeScript também conferem os perfis e as figuras versionados, montados
+  #     somente para leitura.
+  go-test:
+    <<: *go
+    network_mode: "none"
+
+  ts-test:
+    <<: *ts
+    network_mode: "none"
+    environment:
+      RESULTS_DIR: /results
+    volumes:
+      - ./results:/results:ro
+
+  # ---------------------------------------------------------------- profile pipeline
+  # EN: `docker compose run --rm flame` runs the three steps in order, because each one waits
+  #     for the previous one to finish successfully:
+  #       capture  load each variant and download a CPU profile from the service itself
+  #       go-fold  turn the Go profiles into folded stacks with `go tool pprof`
+  #       flame    draw the four SVG flame graphs and check what they show
+  # PT: `docker compose run --rm flame` roda as três etapas em ordem, porque cada uma espera a
+  #     anterior terminar com sucesso:
+  #       capture  carrega cada variante e baixa um perfil de CPU do próprio serviço
+  #       go-fold  transforma os perfis do Go em pilhas dobradas com `go tool pprof`
+  #       flame    desenha os quatro flame graphs em SVG e confere o que eles mostram
+  capture:
+    <<: [*ts, *lab]
+    command: ["bun", "run", "capture"]
+    environment: *lab-env
+    networks:
+      - lab
+    depends_on: *servers
+
+  go-fold:
+    <<: [*go, *lab]
+    command: ["fold", "/project/profiles", "/project/${OUT_DIR:-results}"]
+    network_mode: "none"
+    depends_on:
+      capture:
+        condition: service_completed_successfully
+
+  flame:
+    <<: [*ts, *lab]
+    command: ["bun", "run", "flame"]
+    environment: *lab-env
+    network_mode: "none"
+    depends_on:
+      go-fold:
+        condition: service_completed_successfully
+
+  # ---------------------------------------------------------------- benchmark
+  bench:
+    <<: [*ts, *lab]
+    command: ["bun", "run", "bench"]
+    environment: *lab-env
+    networks:
+      - lab
+    depends_on: *servers
+
+networks:
+  lab:
+    internal: true
