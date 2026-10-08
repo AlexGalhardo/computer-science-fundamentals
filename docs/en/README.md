@@ -39,7 +39,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Functional programming | Theory and practice | 0/100 |  | pure-functions-properties (planned) |
 | Design patterns and SOLID | Theory and practice | 0/100 |  | backend-patterns (planned), solid-before-after (planned) |
 | Software architecture | Theory and practice | 0/100 |  | clean-architecture-app (planned) |
-| Testing | Theory and practice | 100/100 | pending | [test-pyramid](testing/test-pyramid.md), tdd-kata (planned), mutation-testing (planned), flaky-tests (planned), mini-xunit (planned) |
+| Testing | Theory and practice | 100/100 | done | [test-pyramid](testing/test-pyramid.md), tdd-kata (planned), mutation-testing (planned), flaky-tests (planned), mini-xunit (planned) |
 | Protocols | Theory and practice | 0/100 |  | rest-graphql-jsonrpc (planned), http-versions (planned), http-server-raw-tcp (planned) |
 | Messaging | Theory and practice | 0/100 |  | queue-comparison (planned), idempotency-dlq (planned), pubsub-backpressure (planned) |
 | Load balancing | Theory and practice | 0/100 |  | nginx-vs-caddy (planned), l7-load-balancer (planned) |
