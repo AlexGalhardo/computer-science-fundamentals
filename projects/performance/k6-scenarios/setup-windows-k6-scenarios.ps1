@@ -1,0 +1,39 @@
+# EN: Builds and tests the k6-scenarios mini-project. The only requirement is Docker.
+#     Containers and volumes are removed at the end, even when a test fails.
+#     For the four k6 scenarios and the reports, run .\load-test-windows.ps1.
+# PT: Constrói e testa o mini-projeto k6-scenarios. O único requisito é o Docker.
+#     Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
+#     Para os quatro cenários de k6 e os relatórios, rode .\load-test-windows.ps1.
+# EN: Docker writes its progress to stderr. With "Stop", Windows PowerShell 5.1 turns that into a
+#     terminating error whenever the output is redirected, so failures are checked by exit code.
+# PT: O Docker escreve o progresso em stderr. Com "Stop", o Windows PowerShell 5.1 transforma isso
+#     em erro fatal sempre que a saída é redirecionada, então as falhas são conferidas pelo código de saída.
+$ErrorActionPreference = "Continue"
+
+Set-Location $PSScriptRoot
+
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+	Write-Error "Docker is required: https://docs.docker.com/get-docker/"
+	exit 1
+}
+
+$code = 0
+try {
+	docker compose build
+	if ($LASTEXITCODE -ne 0) { throw "build failed" }
+	# Type check, unit tests and the tests against PostgreSQL.
+	docker compose run --rm ts-test
+	if ($LASTEXITCODE -ne 0) { throw "tests failed" }
+	# The load script must refuse a target that is not local, in every scenario.
+	docker compose run --rm k6-refusal-test
+	if ($LASTEXITCODE -ne 0) { throw "k6 accepted a target that is not local" }
+	Write-Output "k6-scenarios: all tests passed"
+}
+catch {
+	Write-Output "k6-scenarios: $_"
+	$code = 1
+}
+finally {
+	docker compose down -v --remove-orphans
+}
+exit $code

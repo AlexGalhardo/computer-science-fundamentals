@@ -1,0 +1,121 @@
+# EN: An API (ElysiaJS on Bun), its PostgreSQL, and k6 as the source of load. The network is
+#     internal: no container reaches the internet and no port is published on the host, so k6 can
+#     only ever hit the `api` service of this lab. The credentials are fake.
+# PT: Uma API (ElysiaJS no Bun), o seu PostgreSQL, e o k6 como fonte de carga. A rede é interna:
+#     nenhum contêiner alcança a internet e nenhuma porta é publicada no host, então o k6 só
+#     consegue atingir o serviço `api` deste laboratório. As credenciais são falsas.
+name: perf-k6-scenarios
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: ts/Dockerfile
+  image: sef-k6-scenarios-ts:local
+
+services:
+  db:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab-fake-password
+      POSTGRES_DB: lab
+    healthcheck:
+      # EN: Over TCP on purpose: during initialisation the server answers on the Unix socket
+      #     only and then restarts, and the API connects over TCP.
+      # PT: Por TCP de propósito: durante a inicialização o servidor responde só no socket Unix
+      #     e depois reinicia, e a API conecta por TCP.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U lab -d lab"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks: [lab]
+
+  # EN: POOL_SIZE is the whole difference between "before" and "after": the load-test script
+  #     starts this service with 2 connections, runs the four scenarios, and starts it again
+  #     with 20.
+  # PT: POOL_SIZE é toda a diferença entre "antes" e "depois": o script de teste de carga sobe
+  #     este serviço com 2 conexões, roda os quatro cenários, e o sobe de novo com 20.
+  api:
+    <<: *app
+    command: ["bun", "run", "start"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://lab:lab-fake-password@db:5432/lab
+      POOL_SIZE: ${POOL_SIZE:-2}
+      QUERY_MS: ${QUERY_MS:-20}
+      POOL_WAIT_MS: ${POOL_WAIT_MS:-2000}
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const r = await fetch('http://localhost:3000/health'); process.exit(r.ok ? 0 : 1)"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks: [lab]
+
+  # EN: Type check, unit tests and the tests that need the database.
+  # PT: Checagem de tipos, testes de unidade e os testes que precisam do banco.
+  ts-test:
+    <<: *app
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://lab:lab-fake-password@db:5432/lab
+    networks: [lab]
+
+  # EN: Proves the safety rule: with a target that is not local, k6 must exit with an error in
+  #     each of the four scenarios. The network is internal anyway, so even a broken rule could
+  #     not reach the internet.
+  # PT: Prova a regra de segurança: com um alvo que não é local, o k6 precisa terminar com erro em
+  #     cada um dos quatro cenários. A rede é interna de qualquer forma, então nem uma regra
+  #     quebrada alcançaria a internet.
+  k6-refusal-test:
+    image: grafana/k6:2.3.0
+    networks: [lab]
+    volumes:
+      - ./k6:/k6:ro
+    environment: { BASE_URL: "https://example.com" }
+    entrypoint: ["sh", "/k6/refusal-test.sh"]
+
+  # EN: One run is one scenario: `docker compose run --rm -e SCENARIO=stress -e VARIANT=before k6`.
+  #     k6 exits with code 99 when a threshold is crossed. The raw summaries go to k6-results/,
+  #     which is git-ignored.
+  # PT: Uma execução é um cenário: `docker compose run --rm -e SCENARIO=stress -e VARIANT=before k6`.
+  #     O k6 termina com código 99 quando um threshold é ultrapassado. Os resumos brutos vão para
+  #     k6-results/, que o git ignora.
+  k6:
+    image: grafana/k6:2.3.0
+    command: ["run", "--quiet", "--no-usage-report", "/k6/scenario.js"]
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      BASE_URL: http://api:3000
+      SCENARIO: load
+      VARIANT: before
+    volumes:
+      - ./k6:/k6:ro
+      - ./k6-results:/results
+    networks: [lab]
+
+  report:
+    <<: *app
+    network_mode: "none"
+    command: ["bun", "run", "report"]
+    environment:
+      PROJECT_DIR: /project
+      DATABASE_IMAGE: postgres:18.6-alpine
+      RUNTIME: "oven/bun:1.4.2, ElysiaJS 1.4.30, pg 8.23.1"
+      K6_IMAGE: grafana/k6:2.3.0
+      LOAD_TEST_COMMAND: ${LOAD_TEST_COMMAND:-./load-test-unix.sh}
+    # EN: Run as the host user. On Linux the mounted project folder belongs to that user, and the
+    #     image's own user (uid 1000) could not write results into it. The scripts export HOST_UID
+    #     and HOST_GID; on Docker Desktop the default works.
+    # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
+    #     imagem (uid 1000) não conseguiria gravar os resultados. Os scripts exportam HOST_UID e
+    #     HOST_GID; no Docker Desktop o padrão funciona.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+networks:
+  lab:
+    internal: true
