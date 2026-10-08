@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.84.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/protocols/http-server-raw-tcp` (Go): an HTTP server written on raw TCP, with a request parser, a router, keep-alive and chunked responses, checked with curl and a browser, and an annotated wire trace. The protocols area is complete.
+
+## [0.83.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/protocols/http-versions` (Caddy and TypeScript): a local page with 200 images served over HTTP/1.1, HTTP/2 and HTTP/3, the negotiated protocol asserted per port, load time measured with and without injected latency and loss, and a static page with the three waterfalls.
+
+## [0.82.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/protocols/rest-graphql-jsonrpc` (TypeScript): the same domain exposed through REST, GraphQL and JSON-RPC behind one behaviour test suite, the GraphQL N+1 problem (201 statements) and its fix with batching (3), and a table of latency and payload size per style.
+
+## [0.81.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: protocols, 100 questions in Portuguese and English, blind-reviewed in both languages with 100 of 100 agreement and 8 reviewer notes resolved (`quiz/content/protocols/review.md`).
+
 ### Changed
 
 - The project is now called **Computer Science Fundamentals**, in the READMEs, the quiz app, `package.json` and the agent docs. The GitHub repository keeps its address.

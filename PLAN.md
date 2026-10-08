@@ -784,10 +784,10 @@ Sources: Tanenbaum Networks (application layer), RFCs of HTTP, the GraphQL and J
 | JSON-RPC and gRPC | 10 |
 | WebSocket and server-sent events | 10 |
 
-- [ ] QC-PROTO.1 Coverage map committed
-- [ ] QC-PROTO.2 100 questions written (PT and EN)
-- [ ] QC-PROTO.3 Validation passing
-- [ ] QC-PROTO.4 Blind review resolved
+- [x] QC-PROTO.1 Coverage map committed
+- [x] QC-PROTO.2 100 questions written (PT and EN)
+- [x] QC-PROTO.3 Validation passing
+- [x] QC-PROTO.4 Blind review resolved
 
 #### QC-MSG Messaging
 
@@ -1784,37 +1784,38 @@ Teaches: how a test framework works inside. Languages: Python, TS.
 
 Teaches: what each API style costs and offers on the same domain. Languages: TS (Elysia).
 
-- [ ] **MP-PROTO-1.1** Same domain exposed through the three styles
+- [x] **MP-PROTO-1.1** Same domain exposed through the three styles
 	- **Accept:** one behaviour test suite passes against the three.
-- [ ] **MP-PROTO-1.2** N+1 problem in GraphQL and its fix with batching
+- [x] **MP-PROTO-1.2** N+1 problem in GraphQL and its fix with batching
 	- **Accept:** query count drops from more than 100 to under 5 for the same request.
-- [ ] **MP-PROTO-1.3** Latency and payload size
+- [x] **MP-PROTO-1.3** Latency and payload size
 	- **Accept:** table per style for a list, a detail and a nested read.
-- [ ] **MP-PROTO-1.4** Definition of done for mini-projects met.
+- [x] **MP-PROTO-1.4** Definition of done for mini-projects met.
 
 #### MP-PROTO-2 HTTP/1.1, HTTP/2 and HTTP/3
 
 Teaches: what multiplexing and QUIC change for a page with many resources. Languages: Caddy + TS.
 
-- [ ] **MP-PROTO-2.1** Local page with 200 small images served over the three versions
+- [x] **MP-PROTO-2.1** Local page with 200 small images served over the three versions
 	- **Accept:** the negotiated protocol is asserted in a test for each port.
-- [ ] **MP-PROTO-2.2** Measurement with and without injected latency and loss
+- [x] **MP-PROTO-2.2** Measurement with and without injected latency and loss
 	- **Accept:** table of total load time per protocol and condition.
-- [ ] **MP-PROTO-2.3** Waterfall visual
+	- Note (2026-10-08): measured on a shared machine with a small page (about 400 kB). With 50 ms of latency HTTP/1.1 took about 3.3 times as long as HTTP/2. With latency and 2% loss, HTTP/3 was not ahead of HTTP/2: the difference was smaller than the standard deviation. The README says so and explains the limits of the experiment.
+- [x] **MP-PROTO-2.3** Waterfall visual
 	- **Accept:** a static page shows the three waterfalls from committed data.
-- [ ] **MP-PROTO-2.4** Definition of done for mini-projects met.
+- [x] **MP-PROTO-2.4** Definition of done for mini-projects met.
 
 #### MP-PROTO-3 HTTP server on raw TCP
 
 Teaches: what is inside an HTTP request and response. Languages: Go.
 
-- [ ] **MP-PROTO-3.1** Request parser: request line, headers, body by content length
+- [x] **MP-PROTO-3.1** Request parser: request line, headers, body by content length
 	- **Accept:** tests cover malformed requests and oversized headers.
-- [ ] **MP-PROTO-3.2** Router, keep-alive and chunked responses
+- [x] **MP-PROTO-3.2** Router, keep-alive and chunked responses
 	- **Accept:** `curl` and a browser both get correct responses.
-- [ ] **MP-PROTO-3.3** Wire trace
+- [x] **MP-PROTO-3.3** Wire trace
 	- **Accept:** the README shows the raw bytes of one request and response, annotated.
-- [ ] **MP-PROTO-3.4** Definition of done for mini-projects met.
+- [x] **MP-PROTO-3.4** Definition of done for mini-projects met.
 
 #### MP-MSG-2 Idempotency and dead-letter queue
 
