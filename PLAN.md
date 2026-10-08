@@ -670,10 +670,10 @@ Sources: USP OOP lectures, Deitel, Aniche (OO and SOLID).
 | Coupling, cohesion and code smells | 10 |
 | OOP across languages: traits, interfaces, protocols | 6 |
 
-- [ ] QC-OOP.1 Coverage map committed
-- [ ] QC-OOP.2 100 questions written (PT and EN)
-- [ ] QC-OOP.3 Validation passing
-- [ ] QC-OOP.4 Blind review resolved
+- [x] QC-OOP.1 Coverage map committed
+- [x] QC-OOP.2 100 questions written (PT and EN)
+- [x] QC-OOP.3 Validation passing
+- [x] QC-OOP.4 Blind review resolved
 
 #### QC-FP Functional programming
 
@@ -1662,23 +1662,23 @@ Teaches: how a computer is built from one gate. Languages: Go, TS.
 
 Teaches: what changes when the same rules are written with objects or with functions. Languages: Java, Elixir, TS.
 
-- [ ] **MP-OOP-1.1** Shopping cart with discounts, taxes and coupons, object-oriented version
+- [x] **MP-OOP-1.1** Shopping cart with discounts, taxes and coupons, object-oriented version
 	- **Accept:** shared acceptance scenarios pass.
-- [ ] **MP-OOP-1.2** Functional version with immutable data
+- [x] **MP-OOP-1.2** Functional version with immutable data
 	- **Accept:** the same scenarios pass, and a test proves no input is mutated.
-- [ ] **MP-OOP-1.3** Comparison
+- [x] **MP-OOP-1.3** Comparison
 	- **Accept:** README table of lines, number of types and how a new rule is added in each.
-- [ ] **MP-OOP-1.4** Definition of done for mini-projects met.
+- [x] **MP-OOP-1.4** Definition of done for mini-projects met.
 
 #### MP-OOP-2 Executable code smell catalogue
 
 Teaches: how to recognise and remove common smells. Languages: TS, Java.
 
-- [ ] **MP-OOP-2.1** Before and after for long method, god class, feature envy, shotgun surgery, primitive obsession
+- [x] **MP-OOP-2.1** Before and after for long method, god class, feature envy, shotgun surgery, primitive obsession
 	- **Accept:** the same tests pass on both versions of each smell.
-- [ ] **MP-OOP-2.2** Polymorphism instead of a conditional chain
+- [x] **MP-OOP-2.2** Polymorphism instead of a conditional chain
 	- **Accept:** adding a new variant touches one file in the refactored version, shown by a diff in the README.
-- [ ] **MP-OOP-2.3** Definition of done for mini-projects met.
+- [x] **MP-OOP-2.3** Definition of done for mini-projects met.
 
 #### MP-FP-1 Pure functions and property-based tests
 

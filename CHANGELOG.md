@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.80.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/oop/code-smells` (TypeScript and Java): before and after for long method, god class, feature envy, shotgun surgery and primitive obsession, the same tests passing on both, and polymorphism replacing a conditional chain. The OOP area is complete.
+
+## [0.79.0] - 2026-10-07
+
+### Added
+
+- Mini-project `projects/oop/oop-vs-functional` (Java, TypeScript and Elixir): the same shopping cart rules written with objects and with pure functions over immutable data, passing the same scenarios, with a generated comparison table.
+
+## [0.78.0] - 2026-10-07
+
+### Added
+
+- Quiz area complete: object-oriented programming, 100 questions in Portuguese and English, with the Java fragments executed, blind-reviewed with 100 of 100 agreement and 2 reviewer notes resolved (`quiz/content/oop/review.md`).
+
 ## [0.77.0] - 2026-10-07
 
 ### Added
