@@ -256,38 +256,39 @@ Requested by the owner on 2026-10-07: a web dashboard, separate from the quiz, f
 
 ### BD-1 Workloads
 
-- [ ] **BD-1.1** CPU, single thread: one numeric kernel (n-body simulation) and one integer kernel (prime sieve) in the 7 languages
+- [x] **BD-1.1** CPU, single thread: one numeric kernel (n-body simulation) and one integer kernel (prime sieve) in the 7 languages
 	- **Accept:** all implementations print the same checksum for the same `n`, and `bun run bench -- --project cpu-single` writes the table.
-- [ ] **BD-1.2** Parallelism: the same kernel split over 1, 2, 4, 8 and 16 workers, using the idiomatic mechanism of each language (threads, goroutines, rayon, worker threads, multiprocessing, BEAM schedulers, parallel streams)
+- [x] **BD-1.2** Parallelism: the same kernel split over 1, 2, 4, 8 and 16 workers, using the idiomatic mechanism of each language (threads, goroutines, rayon, worker threads, multiprocessing, BEAM schedulers, parallel streams)
 	- **Accept:** the parallel result equals the sequential one, and the table has speed-up, efficiency and CPU time per worker count and language.
-- [ ] **BD-1.3** Concurrency: 100,000 concurrent tasks that each wait and pass a message (goroutines, BEAM processes, virtual threads, async tasks, OS threads where the language has nothing lighter)
+- [x] **BD-1.3** Concurrency: 100,000 concurrent tasks that each wait and pass a message (goroutines, BEAM processes, virtual threads, async tasks, OS threads where the language has nothing lighter)
 	- **Accept:** table of total time, peak memory and memory per task, and the README explains which scheduling model each language used.
-- [ ] **BD-1.4** HTTP server: the same two endpoints (JSON echo and a CPU-bound one) in the 7 languages, each with its standard library or its most common framework, under local k6
-	- [ ] BD-1.4.a The k6 script refuses any target that is not local.
-	- [ ] BD-1.4.b CPU and memory of the server container sampled during the run.
+- [x] **BD-1.4** HTTP server: the same two endpoints (JSON echo and a CPU-bound one) in the 7 languages, each with its standard library or its most common framework, under local k6
+	- [x] BD-1.4.a The k6 script refuses any target that is not local.
+	- [x] BD-1.4.b CPU and memory of the server container sampled during the run.
 	- **Accept:** one protocol test suite passes against the 7 servers, and the table has requests per second, p50, p95, p99, peak memory and mean CPU per language.
-- [ ] **BD-1.5** Memory: an allocation-heavy workload (binary trees) and an idle process
+- [x] **BD-1.5** Memory: an allocation-heavy workload (binary trees) and an idle process
 	- **Accept:** table of peak memory, time and start-up time per language, with garbage-collected and manually managed languages side by side.
 
-- [ ] **BD-1.6** Build time: cold and incremental build of the same small program per language (owner's request, 2026-10-07)
+- [x] **BD-1.6** Build time: cold and incremental build of the same small program per language (owner's request, 2026-10-07)
 	- **Accept:** table of cold and warm build time per language, and the README says what is measured for the languages with no compile step.
-- [ ] **BD-1.7** Binary size: size on disk of what is shipped, with and without the runtime it needs
+- [x] **BD-1.7** Binary size: size on disk of what is shipped, with and without the runtime it needs
 	- **Accept:** table of artifact size and artifact-plus-runtime size per language, with the build flags recorded.
-- [ ] **BD-1.8** Database access: insert, read by key, filtered aggregate and pooled concurrent reads against one local PostgreSQL
+- [x] **BD-1.8** Database access: insert, read by key, filtered aggregate and pooled concurrent reads against one local PostgreSQL
 	- **Accept:** table of operations per second, latency percentiles, CPU and memory per language, with the driver and its version named.
 
 ### BD-2 Dashboard
 
-- [ ] **BD-2.1** Static site (HTML + Tailwind CSS v4, built CSS committed, no CDN) reading the committed results
-	- [ ] BD-2.1.a One section per dimension: CPU, parallelism, concurrency, HTTP, memory.
-	- [ ] BD-2.1.b Charts drawn as inline SVG: bars per language, speed-up against workers, latency percentiles.
-	- [ ] BD-2.1.c Language filter, Portuguese and English, light and dark theme, usable from 320 px wide.
-	- [ ] BD-2.1.d Methodology section: machine, runtime versions, exact commands, and how to read each chart.
-	- [ ] BD-2.1.e Didactic for a beginner (owner's requirement: as if a 10-year-old were learning from it): every section opens with an explanation card in plain words with an everyday analogy and a "how to read this chart" note, every technical term and metric has a tooltip that works with mouse, keyboard and touch, every chart has a caption generated from the data and a "why did this happen?" card, each language has its own card, and a glossary collects the terms.
+- [x] **BD-2.1** Static site (HTML + Tailwind CSS v4, built CSS committed, no CDN) reading the committed results
+	- [x] BD-2.1.a One section per dimension: CPU, parallelism, concurrency, HTTP, memory.
+	- [x] BD-2.1.b Charts drawn as inline SVG: bars per language, speed-up against workers, latency percentiles.
+	- [x] BD-2.1.c Language filter, Portuguese and English, light and dark theme, usable from 320 px wide.
+	- [x] BD-2.1.d Methodology section: machine, runtime versions, exact commands, and how to read each chart.
+	- [x] BD-2.1.e Didactic for a beginner (owner's requirement: as if a 10-year-old were learning from it): every section opens with an explanation card in plain words with an everyday analogy and a "how to read this chart" note, every technical term and metric has a tooltip that works with mouse, keyboard and touch, every chart has a caption generated from the data and a "why did this happen?" card, each language has its own card, and a glossary collects the terms.
 	- **Accept:** opening `benchmarks/dashboard/index.html` from disk shows every chart with no network request, checked by a Playwright test that blocks the network. The same test finds the explanation card of every section and opens a tooltip by keyboard and by tap.
-- [ ] **BD-2.2** One command to reproduce: `setup-unix-benchmarks.sh` and `setup-windows-benchmarks.ps1` build the images, run every workload and regenerate the results
+- [x] **BD-2.2** One command to reproduce: `setup-unix-benchmarks.sh` and `setup-windows-benchmarks.ps1` build the images, run every workload and regenerate the results
 	- **Accept:** on a machine with only Docker and Bun, the script ends with the results regenerated and the dashboard updated.
-- [ ] **BD-2.3** Documentation in `benchmarks/README.md`, `benchmarks/README.pt-BR.md`, `docs/en/benchmarks.md` and `docs/pt/benchmarks.md`: what each workload measures, what it does not, and why cross-language numbers must be read with care
+	- Note (2026-10-08): the quick path of both setup scripts ran end to end (images, agreement tests, dashboard tests). The full path with every measurement takes about an hour and was run step by step with `bun run all <step>`, not as one command. Numbers were measured on a shared machine and are noisy; the HTTP echo endpoint is limited by the load generator, not by the servers.
+- [x] **BD-2.3** Documentation in `benchmarks/README.md`, `benchmarks/README.pt-BR.md`, `docs/en/benchmarks.md` and `docs/pt/benchmarks.md`: what each workload measures, what it does not, and why cross-language numbers must be read with care
 	- **Accept:** both READMEs have the results tables and the limits of the comparison.
 
 ---

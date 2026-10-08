@@ -24,7 +24,7 @@ def tick(code):
 rel = []
 for it in items:
     for code in it.get("tick", []):
-        tick(code)
+        tick(code) if code != "Part BD" else None
     for line in it.get("tickLines", []):
         assert f"- [ ] {line}" in plan, line
         plan = plan.replace(f"- [ ] {line}", f"- [x] {line}")

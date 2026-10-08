@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.77.0] - 2026-10-07
+
+### Added
+
+- Language benchmark dashboard in `benchmarks/`: eight workloads in the seven languages (single-thread CPU, parallelism, concurrency, HTTP server under local k6, memory, build time, binary size and database access) and a static, didactic dashboard with explanation cards, tooltips, a glossary and a methodology section, in Portuguese and English. It opens from disk with no network.
+
 ## [0.76.0] - 2026-10-07
 
 ### Added
