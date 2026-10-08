@@ -25,9 +25,9 @@ git log --reverse --format="%h %s" -- . | {
 			*) continue ;;
 		esac
 		steps=$((steps + 1))
-		if git archive "$sha:./ts" |
+		if output=$(git archive "$sha" ts |
 			docker run --rm -i --network none "$IMAGE" \
-				sh -c 'mkdir /tmp/kata && cd /tmp/kata && tar -xf - && bun test' >/dev/null 2>&1; then
+				sh -c 'mkdir /home/bun/kata && cd /home/bun/kata && tar -xf - && cd ts && bun test' 2>&1); then
 			actual=pass
 		else
 			actual=fail
@@ -36,6 +36,7 @@ git log --reverse --format="%h %s" -- . | {
 			echo "ok    $sha tests $actual  $subject"
 		else
 			echo "WRONG $sha tests $actual, expected $expected  $subject"
+			echo "$output"
 			wrong=$((wrong + 1))
 		fi
 	done

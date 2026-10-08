@@ -26,7 +26,7 @@ foreach ($line in (git log --reverse --format="%h %s" -- .)) {
 	#     so the pipe is made by cmd.exe, which passes the bytes through untouched.
 	# PT: O arquivo é binário. Um pipe do PowerShell 5.1 o recodificaria como texto e o
 	#     corromperia, então o pipe é feito pelo cmd.exe, que repassa os bytes intactos.
-	cmd /c "git archive ${sha}:./ts | docker run --rm -i --network none $image sh -c `"mkdir /tmp/kata && cd /tmp/kata && tar -xf - && bun test`" >NUL 2>&1"
+	cmd /c "git archive $sha ts | docker run --rm -i --network none $image sh -c `"mkdir /home/bun/kata && cd /home/bun/kata && tar -xf - && cd ts && bun test`" >NUL 2>&1"
 	$actual = if ($LASTEXITCODE -eq 0) { "pass" } else { "fail" }
 	if ($actual -eq $expected) {
 		Write-Output "ok    $sha tests $actual  $subject"

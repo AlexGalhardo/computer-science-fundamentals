@@ -4,6 +4,14 @@ function rateKey(from: string, to: string): string {
 	return [from, to].join("->");
 }
 
+// EN: The Bank knows the exchange rates and nothing else. Its first version, written to pass
+//     "$5 + $5 is $10", simply returned $10 (the "fake it" strategy). A second example,
+//     "$3 + $4", forced the real code (triangulation). The rates arrived only when a test
+//     needed them.
+// PT: O Bank conhece as taxas de câmbio e mais nada. A primeira versão, escrita para passar
+//     "$5 + $5 is $10", simplesmente devolvia $10 (a estratégia "fake it"). Um segundo exemplo,
+//     "$3 + $4", forçou o código de verdade (triangulação). As taxas só chegaram quando um
+//     teste precisou delas.
 export class Bank {
 	private readonly rates = new Map<string, number>();
 
