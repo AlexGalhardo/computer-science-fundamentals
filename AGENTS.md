@@ -35,7 +35,7 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | `CHANGELOG.md` | Keep a Changelog + SemVer |
 | `.claude/rules/` | Recurring rules, one topic per file |
 | `.claude/agents.md` | Session-to-session notes for agents |
-| `.claude/skills/` | Third-party skill repositories, pinned as git submodules |
+| `.claude/skills/` | Third-party skills as Markdown only, one folder per skill, with their licences (`SOURCES.md` lists the origin of each) |
 
 ## Commands
 
@@ -70,5 +70,5 @@ The detailed rules live in `.claude/rules/`. Read the ones that match the task b
 
 - Security content is defensive and educational. Labs run only locally, in Docker, with no external network access. Every vulnerable example ships with its fixed version and an automated test proving the fix. No payloads aimed at real systems, no evasion techniques, no attack tooling reusable outside the lab.
 - Load and performance tests never target third-party URLs.
-- Never run scripts from `.claude/skills/` without the owner's explicit approval.
+- `.claude/skills/` holds Markdown only. Never add scripts, hooks or installers from the source repositories of those skills.
 - Hooks are disabled for this project (`disableAllHooks` in `.claude/settings.local.json`). Do not re-enable them.
