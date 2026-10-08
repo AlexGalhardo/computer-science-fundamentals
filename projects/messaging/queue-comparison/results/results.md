@@ -11,7 +11,7 @@ Ordering: orders sent in sequence, one consumer handling one message at a time. 
 | BullMQ on Redis | yes | yes | 0 of 200 | yes | 3.0 s | flagged as redelivered |
 | RabbitMQ | yes | yes | 0 of 200 | yes | 0.0 s | flagged as redelivered |
 | Kafka | **no** | yes | 148 of 200 | yes | 6.0 s | none |
-| SQS on LocalStack | yes | yes | 0 of 200 | yes | 5.7 s | flagged as redelivered |
+| SQS on LocalStack | yes | yes | 0 of 200 | yes | 5.4 s | flagged as redelivered |
 
 ## Throughput
 
@@ -19,10 +19,10 @@ Ordering: orders sent in sequence, one consumer handling one message at a time. 
 
 | Broker | Produce, msg/s | Consume, msg/s |
 | --- | --- | --- |
-| BullMQ on Redis | 14,311 (12,464 to 15,824) | 6,175 (4,170 to 7,551) |
-| RabbitMQ | 31,186 (28,138 to 35,463) | 14,516 (11,391 to 17,047) |
-| Kafka | 52,408 (45,995 to 56,779) | 157,782 (154,176 to 161,883) |
-| SQS on LocalStack | 2,645 (2,435 to 2,890) | 1,920 (1,765 to 2,032) |
+| BullMQ on Redis | 15,572 (15,365 to 15,698) | 6,666 (5,676 to 7,850) |
+| RabbitMQ | 19,480 (9,392 to 38,195) | 16,744 (13,166 to 19,665) |
+| Kafka | 28,561 (26,429 to 29,780) | 87,057 (72,294 to 99,425) |
+| SQS on LocalStack | 2,388 (2,186 to 2,580) | 1,356 (1,128 to 1,658) |
 
 ## Environment
 

@@ -41,6 +41,8 @@ interface QueueAdapter {
 - **Kafka**: o tópico tem 3 partições e a chave é o id do cliente. A ordem só existe dentro de uma partição, então o consumidor vê os pedidos de cada cliente em ordem, e os clientes intercalados do jeito que as partições foram buscadas. Na execução versionada, 148 de 200 mensagens chegaram depois de uma mensagem enviada mais tarde. Esse é o desenho: partições compram paralelismo e abrem mão da ordem total.
 - **SQS standard**: a ordem é por melhor esforço. O LocalStack entregou em ordem; o serviço real não promete isso, então o teste registra o resultado e não confere nada. Ordem estrita exige uma fila FIFO e um `MessageGroupId`.
 
+Uma duplicata pode se passar por reordenação. Uma versão anterior deste laboratório viu os pedidos de um cliente chegarem como 0, 4, 8, 0, 4, 8, 12: a primeira requisição de produção para um tópico recém-criado recebeu "não sou o líder" para uma das três partições, o cliente repetiu a requisição inteira, e as outras partições gravaram o lote duas vezes. A correção foi um produtor idempotente (o broker descarta um número de lote que já gravou) e esperar toda partição responder antes de usar o tópico. O README conta a história completa.
+
 O experimento mantém um consumidor de propósito. Com vários consumidores em uma fila, as mensagens são processadas em paralelo e os efeitos podem acontecer fora de ordem em qualquer broker, FIFO ou não.
 
 ## Experimento 2: o consumidor cai antes de confirmar

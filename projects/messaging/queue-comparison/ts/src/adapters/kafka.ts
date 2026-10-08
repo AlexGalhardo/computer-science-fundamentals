@@ -41,17 +41,60 @@ export class KafkaAdapter implements QueueAdapter {
 	async prepare(options?: ChannelOptions): Promise<void> {
 		const admin = this.kafka.admin();
 		await admin.connect();
+		const partitions = options?.partitions ?? 1;
 		await admin.createTopics({
 			waitForLeaders: true,
-			topics: [{ topic: this.channel, numPartitions: options?.partitions ?? 1, replicationFactor: 1 }],
+			topics: [{ topic: this.channel, numPartitions: partitions, replicationFactor: 1 }],
 		});
+		// EN: "Created" is not "ready". The controller has chosen a leader for each partition,
+		//     but the broker may still be opening the partition and answers "not the leader"
+		//     for a short while. Asking each partition for its offsets is a request only a
+		//     ready leader answers, so the topic is used only after that succeeds.
+		// PT: "Criado" não é "pronto". O controller já escolheu um líder para cada partição, mas
+		//     o broker ainda pode estar abrindo a partição e responde "não sou o líder" por um
+		//     instante. Pedir os offsets de cada partição é uma requisição que só um líder
+		//     pronto responde, então o tópico só é usado depois que ela dá certo.
+		let ready = false;
+		for (let attempt = 0; attempt < 100 && !ready; attempt += 1) {
+			try {
+				ready = (await admin.fetchTopicOffsets(this.channel)).length === partitions;
+			} catch {
+				ready = false;
+			}
+			if (!ready) {
+				await Bun.sleep(100);
+			}
+		}
 		await admin.disconnect();
+		if (!ready) {
+			throw new Error(`kafka: topic ${this.channel} did not become ready`);
+		}
 	}
 
 	async createProducer(): Promise<OrderProducer> {
 		const producer = this.kafka.producer({
 			allowAutoTopicCreation: false,
 			createPartitioner: Partitioners.DefaultPartitioner,
+			// EN: One produce request carries batches for several partitions. On a topic that
+			//     was just created, the broker may answer "not the leader" for ONE of them; the
+			//     client then retries the whole request, and the partitions that had already
+			//     stored their batch store it again. That duplicate sits in the log, so every
+			//     consumer reads it, and it looks like broken ordering (0, 4, 8, 0, 4, 8, 12).
+			//     The idempotent producer numbers each batch per partition, and the broker
+			//     discards a number it has already stored. It needs one request in flight at
+			//     a time and `acks=all`.
+			// PT: Uma requisição de produção leva lotes para várias partições. Em um tópico
+			//     recém-criado, o broker pode responder "não sou o líder" para UMA delas; o
+			//     cliente então repete a requisição inteira, e as partições que já tinham
+			//     gravado o lote o gravam de novo. Essa duplicata fica no log, então todo
+			//     consumidor a lê, e ela parece uma ordem quebrada (0, 4, 8, 0, 4, 8, 12).
+			//     O produtor idempotente numera cada lote por partição, e o broker descarta um
+			//     número que já gravou. Ele exige uma requisição em andamento por vez e `acks=all`.
+			idempotent: true,
+			maxInFlightRequests: 1,
+			// EN: The guarantee holds only while the producer keeps retrying the SAME numbered batch.
+			// PT: A garantia só vale enquanto o produtor continua repetindo o MESMO lote numerado.
+			retry: { retries: Number.MAX_SAFE_INTEGER, initialRetryTime: 200 },
 		});
 		await producer.connect();
 		return {

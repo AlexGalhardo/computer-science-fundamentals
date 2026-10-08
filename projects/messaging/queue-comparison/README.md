@@ -24,7 +24,7 @@ Ordering: 200 orders sent in sequence, one consumer handling one message at a ti
 | BullMQ on Redis | yes | yes | yes | 3.0 s (lock expiry) | `attemptsStarted` above 1 |
 | RabbitMQ | yes | yes | yes | 0.0 s (connection closed) | `redelivered` flag |
 | Kafka | **no** (148 of 200 out of order) | yes | yes | 6.0 s (session timeout) | none: the offset was simply not committed |
-| SQS on LocalStack | yes (best effort, not guaranteed) | yes (not guaranteed) | yes | 5.7 s (visibility timeout) | `ApproximateReceiveCount` above 1 |
+| SQS on LocalStack | yes (best effort, not guaranteed) | yes (not guaranteed) | yes | 5.4 s (visibility timeout) | `ApproximateReceiveCount` above 1 |
 
 The same experiments are integration tests (`ts/tests/integration.test.ts`): each broker's guarantees are written in `ts/src/expected.ts` and asserted, so the table is backed by a test, not by one lucky run. For SQS standard queues the order is only observed, never asserted, because the service does not promise it.
 
@@ -34,10 +34,10 @@ The same experiments are integration tests (`ts/tests/integration.test.ts`): eac
 
 | Broker | Produce, msg/s | Consume, msg/s |
 | --- | --- | --- |
-| BullMQ on Redis | 14,311 (12,464 to 15,824) | 6,175 (4,170 to 7,551) |
-| RabbitMQ | 31,186 (28,138 to 35,463) | 14,516 (11,391 to 17,047) |
-| Kafka | 52,408 (45,995 to 56,779) | 157,782 (154,176 to 161,883) |
-| SQS on LocalStack | 2,645 (2,435 to 2,890) | 1,920 (1,765 to 2,032) |
+| BullMQ on Redis | 15,572 (15,365 to 15,698) | 6,666 (5,676 to 7,850) |
+| RabbitMQ | 19,480 (9,392 to 38,195) | 16,744 (13,166 to 19,665) |
+| Kafka | 28,561 (26,429 to 29,780) | 87,057 (72,294 to 99,425) |
+| SQS on LocalStack | 2,388 (2,186 to 2,580) | 1,356 (1,128 to 1,658) |
 
 Machine: AMD Ryzen 7 5700X3D, 16 logical cores, 15.6 GiB visible to Docker (WSL2), Bun 1.4.2. Images: `redis:8.10.2-alpine`, `rabbitmq:4.3.6-alpine`, `apache/kafka:4.3.1`, `localstack/localstack:4.14.0`. Clients: bullmq 6.3.11, amqplib 2.2.0, kafkajs 2.2.4, @aws-sdk/client-sqs 3.1147.0.
 
@@ -46,6 +46,8 @@ Read the numbers with care:
 - They compare **client plus broker on one laptop**, single node, no replication. They are not a ranking of the products.
 - The SQS row measures LocalStack, an emulator written in Python, over HTTP with at most 10 messages per call. It says nothing about the speed of the real service.
 - Kafka reads fast because a consumer fetches large batches from a sequential log and commits one offset for all of them; the queues acknowledge each message.
+- The machine was shared with other workloads during the committed run, which is why some rows have a wide spread (RabbitMQ produced between 9,392 and 38,195 msg/s). The spread is part of the result.
+- The Kafka producer is idempotent (`enable.idempotence`, one request in flight, `acks=all`), which is the safe configuration and costs some produce throughput.
 - Each adapter uses the batching its API offers (500 jobs per `addBulk`, confirms every 1,000 publishes, 500 records per Kafka request, 10 messages per SQS call), which is how each would be used in practice.
 
 ## Quiz topics it demonstrates
@@ -95,6 +97,17 @@ Starts the four brokers at once (Kafka runs with a 256 MiB heap), runs the exper
 - SQS is LocalStack. The credentials are the fake strings `fake-lab-access-key` and `fake-lab-secret-key`, and nothing reaches AWS.
 - `ts/src/config.ts` refuses to start when a broker address is not the loopback or a docker-compose service name, so the benchmark cannot be pointed at somebody else's broker.
 - LocalStack is pinned to 4.14.0, the last image that starts without an account token. Newer images need a real credential and a licence server on the internet.
+
+## A duplicate that looked like broken ordering
+
+The first version of the Kafka adapter failed the per-key ordering test about once in seven runs: a customer's orders arrived as 0, 4, 8, 0, 4, 8, 12. Kafka had not reordered anything. The first produce request to a freshly created topic carried batches for three partitions, the broker answered "not the leader" for one of them because it was still opening that partition, and the client retried the **whole** request. The partitions that had already stored their batch stored it a second time. The duplicate was in the log itself, so every consumer read it.
+
+Two changes fixed the cause, and the assertion was not relaxed:
+
+- The producer is **idempotent**: each batch is numbered per partition and the broker discards a number it already stored, so a retry cannot duplicate.
+- `prepare()` waits until every partition answers an offsets request before the topic is used. "Created" is not "ready".
+
+After the fix the Kafka integration test passed 10 runs in a row, 5 more with 16 CPU-burning containers running beside it, and 80 consecutive ordering rounds with 0 retried produce requests. RabbitMQ and BullMQ do not retry a publish on their own. The AWS SDK does retry a failed HTTP call, and a standard SQS queue has no deduplication, which is one more reason its order is observed and not asserted.
 
 ## Structure
 

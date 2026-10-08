@@ -41,6 +41,8 @@ interface QueueAdapter {
 - **Kafka**: the topic has 3 partitions and the key is the customer id. Order exists only inside a partition, so the consumer sees each customer's orders in order, and the customers interleaved in whatever way the partitions were fetched. In the committed run 148 of 200 messages arrived after a message sent later. This is the design: partitions buy parallelism and give up total order.
 - **SQS standard**: order is best effort. LocalStack happened to deliver in order; the real service does not promise it, so the test records the result and asserts nothing. Strict order needs a FIFO queue and a `MessageGroupId`.
 
+A duplicate can pass for a reordering. An earlier version of this lab saw a customer's orders arrive as 0, 4, 8, 0, 4, 8, 12: the first produce request to a just-created topic was answered "not the leader" for one of its three partitions, the client retried the whole request, and the other partitions stored their batch twice. The fix was an idempotent producer (the broker discards a batch number it already stored) and waiting for every partition to answer before using the topic. The README tells the whole story.
+
 The experiment keeps one consumer on purpose. With several consumers on a queue, messages are processed in parallel and effects can happen out of order on every broker, FIFO or not.
 
 ## Experiment 2: the consumer crashes before acknowledging
