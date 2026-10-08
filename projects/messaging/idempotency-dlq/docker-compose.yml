@@ -1,0 +1,110 @@
+# EN: A RabbitMQ broker, a PostgreSQL database and the TypeScript consumer between them, plus the
+#     Go implementation, which is in-memory and needs no service. The network is internal: no
+#     container reaches the internet and no port is published on the host. All credentials are
+#     fake and exist only inside this lab.
+# PT: Um broker RabbitMQ, um banco PostgreSQL e o consumidor TypeScript entre eles, mais a
+#     implementação em Go, que é em memória e não precisa de serviço. A rede é interna: nenhum
+#     contêiner alcança a internet e nenhuma porta é publicada no host. Todas as credenciais são
+#     falsas e existem só dentro deste laboratório.
+name: msg-idempotency-dlq
+
+x-ts: &ts
+  build: ./ts
+  image: sef-idempotency-dlq-ts:local
+
+x-lab: &lab
+  <<: *ts
+  networks:
+    - lab
+  environment:
+    DATABASE_URL: postgres://lab:lab-fake-password@db:5432/lab
+    AMQP_URL: amqp://lab:lab-fake-password@broker:5672
+    PROJECT_DIR: /project
+  depends_on:
+    db:
+      condition: service_healthy
+    broker:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab-fake-password
+      POSTGRES_DB: lab
+    # EN: The lab makes thousands of tiny commits and the database is thrown away at the end, so
+    #     a commit does not wait for the disk. Transactions stay atomic, which is what the lesson
+    #     needs. Do not copy this to a database whose data matters.
+    # PT: O laboratório faz milhares de commits minúsculos e o banco é descartado no fim, então
+    #     um commit não espera o disco. As transações continuam atômicas, que é o que a lição
+    #     precisa. Não copie isto para um banco cujos dados importam.
+    command: ["postgres", "-c", "synchronous_commit=off"]
+    healthcheck:
+      # EN: Over TCP, like the client. During initialisation the server answers on the Unix
+      #     socket only and then restarts, so a socket check would say "ready" too early.
+      # PT: Por TCP, como o cliente. Durante a inicialização o servidor só responde no socket
+      #     Unix e depois reinicia, então uma checagem pelo socket diria "pronto" cedo demais.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U lab -d lab"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    networks:
+      - lab
+
+  broker:
+    image: rabbitmq:4.3.6-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: lab
+      RABBITMQ_DEFAULT_PASS: lab-fake-password
+    healthcheck:
+      # EN: A plain TCP check on the port the client uses. `rabbitmq-diagnostics` would run as
+      #     root and can create the Erlang cookie before the broker does, making the broker exit.
+      # PT: Uma checagem TCP simples na porta que o cliente usa. O `rabbitmq-diagnostics` rodaria
+      #     como root e pode criar o cookie do Erlang antes do broker, fazendo o broker encerrar.
+      test: ["CMD", "nc", "-z", "127.0.0.1", "5672"]
+      interval: 3s
+      timeout: 10s
+      retries: 40
+    networks:
+      - lab
+
+  # EN: Type check and unit tests. They need no service, so the container gets no network.
+  # PT: Checagem de tipos e testes unitários. Não precisam de serviço, então o contêiner fica sem rede.
+  ts-test:
+    <<: *ts
+    network_mode: "none"
+
+  ts-e2e:
+    <<: *lab
+    command: ["bun", "run", "test:e2e"]
+
+  demo:
+    <<: *lab
+    command: ["bun", "run", "demo"]
+    # EN: Run as the host user. On Linux the mounted project folder belongs to that user, and the
+    #     image's own user (uid 1000) could not write results into it. The setup script exports
+    #     HOST_UID and HOST_GID; on Docker Desktop the default works.
+    # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
+    #     imagem (uid 1000) não conseguiria gravar os resultados. O script de setup exporta
+    #     HOST_UID e HOST_GID; no Docker Desktop o padrão funciona.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/project
+
+  # EN: gofmt, go vet, golangci-lint and the tests with the race detector. Standard library only.
+  # PT: gofmt, go vet, golangci-lint e os testes com o detector de corrida. Só biblioteca padrão.
+  go-test:
+    build: ./go
+    image: sef-idempotency-dlq-go:local
+    network_mode: "none"
+
+  go-demo:
+    build: ./go
+    image: sef-idempotency-dlq-go:local
+    network_mode: "none"
+    command: ["idempotency_demo"]
+
+networks:
+  lab:
+    internal: true
