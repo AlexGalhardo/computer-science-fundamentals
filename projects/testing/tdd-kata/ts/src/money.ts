@@ -1,6 +1,8 @@
 import type { Bank } from "./bank";
 
 export interface Expression {
+	plus(addend: Expression): Expression;
+	times(multiplier: number): Expression;
 	reduce(bank: Bank, to: string): Money;
 }
 
@@ -25,7 +27,7 @@ export class Money implements Expression {
 		return new Money(this.amount * multiplier, this.currency);
 	}
 
-	plus(addend: Money): Expression {
+	plus(addend: Expression): Expression {
 		return new Sum(this, addend);
 	}
 
@@ -39,12 +41,20 @@ export class Money implements Expression {
 }
 
 export class Sum implements Expression {
-	readonly augend: Money;
-	readonly addend: Money;
+	readonly augend: Expression;
+	readonly addend: Expression;
 
-	constructor(augend: Money, addend: Money) {
+	constructor(augend: Expression, addend: Expression) {
 		this.augend = augend;
 		this.addend = addend;
+	}
+
+	plus(addend: Expression): Expression {
+		return new Sum(this, addend);
+	}
+
+	times(multiplier: number): Expression {
+		return new Sum(this.augend.times(multiplier), this.addend.times(multiplier));
 	}
 
 	reduce(bank: Bank, to: string): Money {

@@ -11,4 +11,4 @@ The list is the memory of the session: every idea that comes up while working on
 - [x] 5 CHF is not equal to $5
 - [x] $5 + $5 is $10
 - [x] reduce 2 CHF to $1 with a rate of 2
-- [ ] a sum can be added to and multiplied
+- [x] a sum can be added to and multiplied
