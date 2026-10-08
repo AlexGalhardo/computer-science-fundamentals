@@ -1,0 +1,392 @@
+[
+	{
+		"id": "messaging-idempotent-consumers-01",
+		"area": "messaging",
+		"topic": "idempotent-consumers",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Enterprise Integration Patterns (Idempotent Receiver); The Optimal RabbitMQ Guide (redelivery)",
+		"miniProject": "projects/messaging/idempotency-dlq",
+		"pt": {
+			"statement": "O que torna uma operação idempotente?",
+			"alternatives": [
+				"Aplicá-la leva o mesmo tempo em todas as execuções",
+				"Aplicá-la duas vezes deixa o mesmo estado que aplicá-la uma vez",
+				"Aplicá-la duas vezes dobra o efeito de forma previsível",
+				"Aplicá-la nunca falha, seja qual for a entrada recebida",
+				"Aplicá-la pode ser desfeito por uma operação de compensação"
+			],
+			"explanations": [
+				"Tempo de execução constante é uma propriedade de desempenho, sem relação com idempotência.",
+				"Correta: idempotência significa que repetir é inofensivo: f(f(x)) = f(x).",
+				"Um efeito dobrado é o oposto: a operação é sensível à repetição.",
+				"Operações idempotentes podem falhar; a propriedade trata do resultado de repeti-las.",
+				"Isso é reversibilidade. Uma operação pode ser desfeita e ainda assim não ser idempotente."
+			],
+			"concept": "Uma operação idempotente pode ser repetida qualquer número de vezes com o mesmo estado final de uma aplicação. É a propriedade que torna seguras as retentativas e a reentrega."
+		},
+		"en": {
+			"statement": "What makes an operation idempotent?",
+			"alternatives": [
+				"Applying it takes the same time on every execution",
+				"Applying it twice leaves the same state as applying once",
+				"Applying it twice doubles the effect in a predictable way",
+				"Applying it never fails, whatever input it is given",
+				"Applying it can be undone by a compensating operation"
+			],
+			"explanations": [
+				"Constant running time is a performance property, unrelated to idempotence.",
+				"Correct: idempotence means repetition is harmless: f(f(x)) = f(x).",
+				"A doubled effect is the opposite: the operation is sensitive to repetition.",
+				"Idempotent operations can fail; the property is about the result of repeating them.",
+				"That is reversibility. An operation may be undoable and still not idempotent."
+			],
+			"concept": "An idempotent operation can be repeated any number of times with the same final state as one application. It is the property that makes retries and redelivery safe."
+		}
+	},
+	{
+		"id": "messaging-idempotent-consumers-02",
+		"area": "messaging",
+		"topic": "idempotent-consumers",
+		"difficulty": "basic",
+		"answer": 1,
+		"source": "Enterprise Integration Patterns (Idempotent Receiver); The Optimal RabbitMQ Guide (redelivery)",
+		"miniProject": "projects/messaging/idempotency-dlq",
+		"pt": {
+			"statement": "Um consumidor pode receber a mesma mensagem duas vezes. Qual destes comandos de banco é naturalmente idempotente, sem proteção extra?",
+			"alternatives": [
+				"`UPDATE accounts SET balance = balance - 10 WHERE id = 7`",
+				"`UPDATE orders SET status = 'PAID' WHERE id = 7`",
+				"`INSERT INTO emails_sent (order_id) VALUES (7)` sem chave única",
+				"`UPDATE products SET stock = stock - 1 WHERE id = 7`",
+				"`UPDATE orders SET retries = retries + 1 WHERE id = 7`"
+			],
+			"explanations": [
+				"Uma atualização relativa: cada execução subtrai mais 10, então uma duplicata cobra duas vezes.",
+				"Correta: define um valor absoluto. Rodar de novo encontra `PAID` e deixa `PAID`.",
+				"Sem chave única, o segundo insert acrescenta uma segunda linha.",
+				"Uma atualização relativa: a duplicata tira uma segunda unidade do estoque.",
+				"O incremento de um contador depende do valor anterior, então cada repetição muda o estado."
+			],
+			"concept": "Comandos que atribuem um valor absoluto são idempotentes por natureza. Comandos que dependem do valor atual (incremento, decremento, acréscimo) não são, e precisam de um mecanismo de deduplicação."
+		},
+		"en": {
+			"statement": "A consumer may receive the same message twice. Which of these database statements is naturally idempotent, with no extra protection?",
+			"alternatives": [
+				"`UPDATE accounts SET balance = balance - 10 WHERE id = 7`",
+				"`UPDATE orders SET status = 'PAID' WHERE id = 7`",
+				"`INSERT INTO emails_sent (order_id) VALUES (7)` with no unique key",
+				"`UPDATE products SET stock = stock - 1 WHERE id = 7`",
+				"`UPDATE orders SET retries = retries + 1 WHERE id = 7`"
+			],
+			"explanations": [
+				"A relative update: each execution subtracts another 10, so a duplicate charges twice.",
+				"Correct: it sets an absolute value. Running it again finds `PAID` and leaves `PAID`.",
+				"Without a unique key, the second insert adds a second row.",
+				"A relative update: the duplicate removes a second unit from the stock.",
+				"A counter increment depends on the previous value, so each repetition changes the state."
+			],
+			"concept": "Statements that assign an absolute value are idempotent by nature. Statements that depend on the current value (increment, decrement, append) are not, and need a deduplication mechanism."
+		}
+	},
+	{
+		"id": "messaging-idempotent-consumers-03",
+		"area": "messaging",
+		"topic": "idempotent-consumers",
+		"difficulty": "basic",
+		"answer": 0,
+		"source": "Enterprise Integration Patterns (Idempotent Receiver); The Optimal RabbitMQ Guide (redelivery)",
+		"miniProject": "projects/messaging/idempotency-dlq",
+		"pt": {
+			"statement": "Por que os consumidores de um broker com entrega at-least-once precisam ser idempotentes?",
+			"alternatives": [
+				"Porque o broker pode entregar uma mensagem que já foi processada",
+				"Porque o broker remove a mensagem assim que ela é entregue",
+				"Porque o broker entrega as mensagens mais rápido do que são produzidas",
+				"Porque o broker altera o conteúdo da mensagem na reentrega",
+				"Porque o broker pode entregar uma mensagem que nunca foi produzida"
+			],
+			"explanations": [
+				"Correta: quando um ack se perde ou atrasa o broker reentrega, e o consumidor não tem como impedir isso de fora.",
+				"Remover na entrega é at-most-once, que produz perda em vez de duplicatas.",
+				"Velocidade não tem relação: duplicatas vêm da incerteza sobre as confirmações.",
+				"Uma reentrega traz o mesmo conteúdo; no máximo uma flag como `redelivered` muda.",
+				"Brokers não inventam mensagens; uma duplicata é a cópia de uma mensagem real."
+			],
+			"concept": "A entrega at-least-once transfere o problema das duplicatas para o consumidor. O broker garante que a mensagem chega; o consumidor garante que chegar duas vezes não causa dano."
+		},
+		"en": {
+			"statement": "Why do the consumers of a broker with at-least-once delivery need to be idempotent?",
+			"alternatives": [
+				"Because the broker may deliver a message that was already processed",
+				"Because the broker removes a message as soon as it is delivered",
+				"Because the broker delivers the messages faster than they are produced",
+				"Because the broker changes the content of a message on redelivery",
+				"Because the broker may deliver a message that was never produced"
+			],
+			"explanations": [
+				"Correct: when an ack is lost or late the broker redelivers, and the consumer cannot prevent that from outside.",
+				"Removal on delivery is at-most-once, which produces loss rather than duplicates.",
+				"Speed is unrelated: duplicates come from uncertainty about acknowledgements.",
+				"A redelivery carries the same content; at most a flag such as `redelivered` changes.",
+				"Brokers do not invent messages; a duplicate is a copy of a real message."
+			],
+			"concept": "At-least-once delivery moves the problem of duplicates to the consumer. The broker guarantees the message arrives; the consumer guarantees that arriving twice does no harm."
+		}
+	},
+	{
+		"id": "messaging-idempotent-consumers-04",
+		"area": "messaging",
+		"topic": "idempotent-consumers",
+		"difficulty": "intermediate",
+		"answer": 4,
+		"source": "Enterprise Integration Patterns (Idempotent Receiver); The Optimal RabbitMQ Guide (redelivery)",
+		"miniProject": "projects/messaging/idempotency-dlq",
+		"pt": {
+			"statement": "Um consumidor executa a transação do trecho para cada mensagem, e pula a mensagem quando o INSERT acusa chave duplicada. Por que o INSERT e o UPDATE estão na MESMA transação?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "BEGIN;\nINSERT INTO processed_messages (message_id) VALUES ('m-81');  -- PRIMARY KEY (message_id)\nUPDATE accounts SET balance = balance - 10 WHERE id = 7;\nCOMMIT;"
+			},
+			"alternatives": [
+				"Para que o broker leia a tabela e pare de enviar duplicatas",
+				"Para que o id da mensagem seja gerado pelo banco a cada insert",
+				"Para que duas mensagens diferentes nunca atualizem a mesma conta",
+				"Para que o UPDATE rode mais rápido reutilizando o lock do INSERT",
+				"Para que a marca e o efeito sejam confirmados juntos ou nenhum deles"
+			],
+			"explanations": [
+				"O broker nunca lê o banco do consumidor; a deduplicação acontece inteira no consumidor.",
+				"O id vem da mensagem; um id gerado mudaria a cada entrega e não detectaria nada.",
+				"Mensagens diferentes devem mesmo atualizar a mesma conta; só a mesma mensagem não pode fazê-lo duas vezes.",
+				"O motivo é correção, não velocidade; os dois comandos bloqueiam linhas diferentes.",
+				"Correta: uma queda nunca deixa \"marcada mas não aplicada\" nem \"aplicada mas não marcada\"; a atomicidade amarra as duas."
+			],
+			"concept": "O padrão da tabela de deduplicação registra o id da mensagem na mesma transação de banco do efeito de negócio. A chave única rejeita uma segunda entrega, e a atomicidade garante que o registro e o efeito nunca discordem."
+		},
+		"en": {
+			"statement": "A consumer runs the transaction in the snippet for each message, and skips the message when the INSERT reports a duplicate key. Why are the INSERT and the UPDATE in the SAME transaction?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "BEGIN;\nINSERT INTO processed_messages (message_id) VALUES ('m-81');  -- PRIMARY KEY (message_id)\nUPDATE accounts SET balance = balance - 10 WHERE id = 7;\nCOMMIT;"
+			},
+			"alternatives": [
+				"So that the broker can read the table and stop sending duplicates",
+				"So that the message id is generated by the database on each insert",
+				"So that two different messages can never update the same account",
+				"So that the UPDATE runs faster by reusing the lock taken by the INSERT",
+				"So that the mark and the effect are committed together or not at all"
+			],
+			"explanations": [
+				"The broker never reads the consumer's database; deduplication happens entirely in the consumer.",
+				"The id comes from the message; a generated id would differ on every delivery and detect nothing.",
+				"Different messages are meant to update the same account; only the same message must not do it twice.",
+				"The reason is correctness, not speed; the two statements lock different rows.",
+				"Correct: a crash can never leave \"marked but not applied\" or \"applied but not marked\"; atomicity ties the two."
+			],
+			"concept": "The dedupe-table pattern records the message id in the same database transaction as the business effect. The unique key rejects a second delivery, and atomicity guarantees the record and the effect never disagree."
+		}
+	},
+	{
+		"id": "messaging-idempotent-consumers-05",
+		"area": "messaging",
+		"topic": "idempotent-consumers",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Enterprise Integration Patterns (Idempotent Receiver); The Optimal RabbitMQ Guide (redelivery)",
+		"miniProject": "projects/messaging/idempotency-dlq",
+		"pt": {
+			"statement": "Duas instâncias do consumidor do trecho recebem a mesma mensagem quase no mesmo instante. As duas executam a linha 1 antes de qualquer uma chegar à linha 4. Qual é o resultado?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "// a tabela `processed` NÃO tem restrição de unicidade em message_id\nasync function handle(msg: Message) {\n  const seen = await db.query(\"SELECT 1 FROM processed WHERE message_id = $1\", [msg.id]); // 1\n  if (seen.rowCount > 0) return;                                                           // 2\n  await db.query(\"UPDATE stock SET qty = qty - 1 WHERE sku = $1\", [msg.sku]);              // 3\n  await db.query(\"INSERT INTO processed (message_id) VALUES ($1)\", [msg.id]);              // 4\n}"
+			},
+			"alternatives": [
+				"O estoque é decrementado duas vezes: as duas viram \"não processada\"",
+				"O estoque não é decrementado: as duas instâncias se anulam",
+				"O estoque é decrementado uma vez: o segundo SELECT espera pelo primeiro",
+				"O estoque é decrementado uma vez: a linha 2 barra a instância mais lenta",
+				"O estoque é decrementado uma vez: o segundo INSERT falha e desfaz tudo"
+			],
+			"explanations": [
+				"Correta: checar e depois agir, sem lock nem chave única, é uma condição de corrida. As duas checagens passam, então as duas aplicam o efeito.",
+				"Atualizações concorrentes não se anulam; cada `qty - 1` é aplicado.",
+				"Um SELECT simples não espera por outro leitor; nada serializa as duas instâncias.",
+				"A linha 2 só barra uma instância que achou uma linha, e nenhuma achou, porque as duas leram antes de qualquer insert.",
+				"Sem restrição de unicidade o segundo INSERT tem sucesso, e nem há transação para desfazer."
+			],
+			"concept": "Checar primeiro e escrever depois deixa uma janela em que uma duplicata concorrente passa pela mesma checagem. A correção é deixar o banco decidir de forma atômica: uma restrição de unicidade no id da mensagem, inserida na mesma transação do efeito."
+		},
+		"en": {
+			"statement": "Two instances of the consumer in the snippet receive the same message at almost the same moment. Both run line 1 before either reaches line 4. What is the result?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "// table `processed` has NO unique constraint on message_id\nasync function handle(msg: Message) {\n  const seen = await db.query(\"SELECT 1 FROM processed WHERE message_id = $1\", [msg.id]); // 1\n  if (seen.rowCount > 0) return;                                                           // 2\n  await db.query(\"UPDATE stock SET qty = qty - 1 WHERE sku = $1\", [msg.sku]);              // 3\n  await db.query(\"INSERT INTO processed (message_id) VALUES ($1)\", [msg.id]);              // 4\n}"
+			},
+			"alternatives": [
+				"The stock is decremented twice: both instances saw \"not processed\"",
+				"The stock is not decremented: the two instances cancel each other",
+				"The stock is decremented once: the second SELECT waits for the first",
+				"The stock is decremented once: line 2 stops the slower instance",
+				"The stock is decremented once: the second INSERT fails and rolls back"
+			],
+			"explanations": [
+				"Correct: check-then-act without a lock or a unique key is a race. Both checks pass, so both apply the effect.",
+				"Concurrent updates do not cancel; each `qty - 1` is applied.",
+				"A plain SELECT does not wait for another reader; nothing serialises the two instances.",
+				"Line 2 only stops an instance that found a row, and neither did, because both read before any insert.",
+				"With no unique constraint the second INSERT succeeds, and there is no transaction to roll back anyway."
+			],
+			"concept": "Checking first and writing later leaves a window in which a concurrent duplicate passes the same check. The fix is to let the database decide atomically: a unique constraint on the message id, inserted in the same transaction as the effect."
+		}
+	},
+	{
+		"id": "messaging-idempotent-consumers-06",
+		"area": "messaging",
+		"topic": "idempotent-consumers",
+		"difficulty": "intermediate",
+		"answer": 2,
+		"source": "Enterprise Integration Patterns (Idempotent Receiver); The Optimal RabbitMQ Guide (redelivery)",
+		"miniProject": "projects/messaging/idempotency-dlq",
+		"pt": {
+			"statement": "Um consumidor deduplica mensagens \"pagamento solicitado\" por uma chave. Qual valor é uma chave de idempotência correta?",
+			"alternatives": [
+				"O offset ou a posição da mensagem no buffer local do consumidor",
+				"O delivery tag que o broker atribui a cada entrega no canal",
+				"Um id atribuído pelo produtor ao evento de negócio, enviado em toda cópia",
+				"Um UUID gerado pelo consumidor quando começa a tratar a mensagem",
+				"O timestamp em que o consumidor recebeu a mensagem"
+			],
+			"explanations": [
+				"Uma posição em um buffer local muda a cada entrega e a cada reinício.",
+				"Um delivery tag identifica uma entrega; a reentrega da mesma mensagem recebe um tag novo.",
+				"Correta: o mesmo evento carrega o mesmo id, não importa quantas vezes seja publicado ou entregue.",
+				"Um UUID novo a cada tratamento é diferente em cada cópia e nunca detecta uma duplicata.",
+				"Cada entrega chega em um instante diferente, então duas cópias nunca coincidiriam."
+			],
+			"concept": "Uma chave de idempotência precisa identificar o evento de negócio, não a entrega. Ela é criada uma vez, onde o evento nasce, e viaja com a mensagem, então toda duplicata traz o mesmo valor, seja qual for o caminho que a produziu."
+		},
+		"en": {
+			"statement": "A consumer deduplicates \"payment requested\" messages by a key. Which value is a correct idempotency key?",
+			"alternatives": [
+				"The offset or position of the message in the consumer's local buffer",
+				"The delivery tag that the broker assigns to each delivery on the channel",
+				"An id assigned by the producer to the business event, sent in every copy",
+				"A UUID generated by the consumer when it starts handling the message",
+				"The timestamp at which the consumer received the message"
+			],
+			"explanations": [
+				"A position in a local buffer changes with every delivery and every restart.",
+				"A delivery tag identifies one delivery; a redelivery of the same message gets a new tag.",
+				"Correct: the same event carries the same id however many times it is published or delivered.",
+				"A fresh UUID per handling is different for every copy and can never detect a duplicate.",
+				"Each delivery arrives at a different time, so two copies would never match."
+			],
+			"concept": "An idempotency key must identify the business event, not the delivery. It is created once, where the event is born, and travels with the message, so every duplicate carries the same value whichever path produced it."
+		}
+	},
+	{
+		"id": "messaging-idempotent-consumers-07",
+		"area": "messaging",
+		"topic": "idempotent-consumers",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "Enterprise Integration Patterns (Idempotent Receiver); The Optimal RabbitMQ Guide (redelivery)",
+		"miniProject": "projects/messaging/idempotency-dlq",
+		"pt": {
+			"statement": "O consumidor do trecho cai no ponto marcado, e o broker reentrega a mensagem. Qual é o estado final?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "async function handle(msg: Message) {\n  const first = await redis.set(`done:${msg.id}`, \"1\", \"NX\"); // 1: devolve null se a chave existe\n  if (first === null) return;                                 // 2: duplicata, pula\n  // <- o processo cai aqui\n  await postgres.query(\"INSERT INTO shipments (order_id) VALUES ($1)\", [msg.orderId]); // 3\n}"
+			},
+			"alternatives": [
+				"Uma remessa existe: a reentrega completa o insert que faltava",
+				"Nenhuma remessa existe: a reentrega é pulada como duplicata",
+				"Duas remessas existem: a reentrega insere uma segunda linha",
+				"Nenhuma remessa existe: o PostgreSQL recusa o insert após a queda",
+				"Uma remessa existe: o Redis desfaz a chave depois da queda"
+			],
+			"explanations": [
+				"A reentrega para na linha 2, porque a chave gravada antes da queda continua lá.",
+				"Correta: a marca sobreviveu no Redis, mas o efeito nunca chegou ao PostgreSQL. A linha 2 agora descarta a única chance de aplicá-lo.",
+				"Uma segunda linha exigiria a linha 3 rodar duas vezes; ela nem rodou uma.",
+				"O PostgreSQL aceitaria o insert; o problema é que o código nunca chega a ele.",
+				"Redis e PostgreSQL não compartilham transação, e o Redis não desfaz um SET quando um cliente morre."
+			],
+			"concept": "Uma marca de deduplicação e um efeito guardados em armazenamentos diferentes não podem ser atômicos. Marcar primeiro arrisca perder o efeito; aplicar primeiro arrisca duplicá-lo. Colocar os dois em uma transação de banco elimina o dilema."
+		},
+		"en": {
+			"statement": "The consumer in the snippet crashes at the marked point, and the broker redelivers the message. What is the final state?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "async function handle(msg: Message) {\n  const first = await redis.set(`done:${msg.id}`, \"1\", \"NX\"); // 1: returns null if the key exists\n  if (first === null) return;                                 // 2: duplicate, skip\n  // <- the process crashes here\n  await postgres.query(\"INSERT INTO shipments (order_id) VALUES ($1)\", [msg.orderId]); // 3\n}"
+			},
+			"alternatives": [
+				"One shipment exists: the redelivery completes the missing insert",
+				"No shipment exists: the redelivery is skipped as a duplicate",
+				"Two shipments exist: the redelivery inserts a second row",
+				"No shipment exists: PostgreSQL refuses the insert after a crash",
+				"One shipment exists: Redis rolls back the key after the crash"
+			],
+			"explanations": [
+				"The redelivery stops at line 2, because the key written before the crash is still there.",
+				"Correct: the mark survived in Redis but the effect never reached PostgreSQL. Line 2 now discards the only chance to apply it.",
+				"A second row would need line 3 to run twice; it has not even run once.",
+				"PostgreSQL would accept the insert; the problem is that the code never reaches it.",
+				"Redis and PostgreSQL share no transaction, and Redis does not undo a SET when a client dies."
+			],
+			"concept": "A dedupe mark and an effect kept in different stores cannot be made atomic. Marking first risks losing the effect; applying first risks duplicating it. Putting both in one database transaction removes the dilemma."
+		}
+	},
+	{
+		"id": "messaging-idempotent-consumers-08",
+		"area": "messaging",
+		"topic": "idempotent-consumers",
+		"difficulty": "advanced",
+		"answer": 2,
+		"source": "Enterprise Integration Patterns (Idempotent Receiver); The Optimal RabbitMQ Guide (redelivery)",
+		"miniProject": "projects/messaging/idempotency-dlq",
+		"pt": {
+			"statement": "Um consumidor guarda os ids de mensagens processadas no Redis com TTL de 1 hora. O broker ficou fora do ar para manutenção, e uma duplicata de uma mensagem processada às 09:00 é entregue às 11:30. O que acontece?",
+			"alternatives": [
+				"A duplicata é pulada: o TTL recomeça a cada queda do broker",
+				"O efeito é aplicado de novo: o Redis nunca guarda chaves com TTL",
+				"O efeito é aplicado de novo: o id expirou às 10:00",
+				"A duplicata é pulada: o Redis guarda os ids até serem apagados",
+				"A duplicata é rejeitada pelo broker antes de chegar ao consumidor"
+			],
+			"explanations": [
+				"O Redis não sabe do broker; um TTL só recomeça quando a chave é escrita de novo.",
+				"Chaves com TTL são guardadas normalmente e somem só na expiração.",
+				"Correta: 09:00 + 1 h = 10:00. Às 11:30 o armazenamento esqueceu o id, então a duplicata parece nova.",
+				"Uma chave com TTL é removida automaticamente quando o tempo acaba; é para isso que o TTL serve.",
+				"O broker não consulta o armazenamento de deduplicação do consumidor e não filtra por ele."
+			],
+			"concept": "Um armazenamento de deduplicação com expiração só protege dentro da sua janela. A janela precisa ser maior que o maior atraso com que uma duplicata pode chegar, incluindo quedas e replays; senão o id é esquecido justamente quando é necessário."
+		},
+		"en": {
+			"statement": "A consumer stores processed message ids in Redis with a TTL of 1 hour. The broker was down for maintenance, and a duplicate of a message processed at 09:00 is delivered at 11:30. What happens?",
+			"alternatives": [
+				"The duplicate is skipped: the TTL restarts on every broker outage",
+				"The effect is applied again: Redis never stores keys that have a TTL",
+				"The effect is applied again: the id expired at 10:00",
+				"The duplicate is skipped: Redis keeps ids until they are deleted",
+				"The duplicate is rejected by the broker before reaching the consumer"
+			],
+			"explanations": [
+				"Redis does not know about the broker; a TTL only restarts when the key is written again.",
+				"Keys with a TTL are stored normally and vanish only at expiry.",
+				"Correct: 09:00 + 1 h = 10:00. At 11:30 the store has forgotten the id, so the duplicate looks new.",
+				"A key with a TTL is removed automatically when the time is up; that is what the TTL is for.",
+				"The broker does not consult the consumer's dedupe store and cannot filter on its behalf."
+			],
+			"concept": "A dedupe store with expiry protects only inside its window. The window must be longer than the longest delay with which a duplicate can arrive, including outages and replays; otherwise the id is forgotten exactly when it is needed."
+		}
+	}
+]

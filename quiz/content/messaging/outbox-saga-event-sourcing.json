@@ -1,0 +1,190 @@
+[
+	{
+		"id": "messaging-outbox-saga-event-sourcing-01",
+		"area": "messaging",
+		"topic": "outbox-saga-event-sourcing",
+		"difficulty": "basic",
+		"answer": 3,
+		"source": "Microservices patterns (transactional outbox, saga, event sourcing); legacy project message-queues-pubsub",
+		"pt": {
+			"statement": "O que um sistema que usa event sourcing armazena como fonte da verdade?",
+			"alternatives": [
+				"Só o estado atual de cada entidade, sobrescrito a cada mudança",
+				"Um backup noturno do banco, do qual o estado é restaurado",
+				"As mensagens que ainda esperam no broker, até serem consumidas",
+				"Uma sequência de eventos somente de acréscimo, da qual se deriva o estado atual",
+				"Um cache de resultados de consultas, atualizado quando uma entidade muda"
+			],
+			"explanations": [
+				"Sobrescrever o estado atual é o modelo tradicional que o event sourcing substitui; ali o histórico se perde.",
+				"Um backup é uma cópia para recuperação; não é o modelo em que os dados são escritos.",
+				"Uma fila do broker é transporte e esvazia ao ser consumida; um event store guarda os eventos para sempre.",
+				"Correta: toda mudança é registrada como um evento, e o estado se obtém aplicando os eventos em ordem.",
+				"Um cache é dado derivado que pode ser jogado fora, o oposto de uma fonte da verdade."
+			],
+			"concept": "O event sourcing armazena o que aconteceu em vez do que é. O log de eventos é a fonte da verdade; o estado atual, e quantos modelos de leitura se quiser, são calculados reproduzindo esse log."
+		},
+		"en": {
+			"statement": "What does a system that uses event sourcing store as its source of truth?",
+			"alternatives": [
+				"Only the current state of each entity, overwritten on every change",
+				"A nightly backup of the database, from which the state is restored",
+				"The messages still waiting in the broker, until they are consumed",
+				"An append-only sequence of events, from which the current state is derived",
+				"A cache of query results, refreshed whenever an entity changes"
+			],
+			"explanations": [
+				"Overwriting the current state is the traditional model that event sourcing replaces; the history is lost there.",
+				"A backup is a copy for recovery; it is not the model in which the data is written.",
+				"A broker queue is transport and empties as it is consumed; an event store keeps the events permanently.",
+				"Correct: every change is recorded as an event, and the state is obtained by applying the events in order.",
+				"A cache is derived data that can be thrown away, the opposite of a source of truth."
+			],
+			"concept": "Event sourcing stores what happened instead of what is. The log of events is the source of truth; the current state, and any number of read models, are computed by replaying it."
+		}
+	},
+	{
+		"id": "messaging-outbox-saga-event-sourcing-02",
+		"area": "messaging",
+		"topic": "outbox-saga-event-sourcing",
+		"difficulty": "intermediate",
+		"answer": 0,
+		"source": "Microservices patterns (transactional outbox, saga, event sourcing); legacy project message-queues-pubsub",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "O relay da outbox do trecho cai entre a linha 1 e a linha 2 e é reiniciado. O que os consumidores do broker observam?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "// laço do relay de uma outbox transacional\nconst rows = await db.query(\"SELECT * FROM outbox WHERE sent = false ORDER BY id\");\nfor (const row of rows) {\n  await broker.publish(row.event);                                   // 1\n  // <- o relay cai aqui\n  await db.query(\"UPDATE outbox SET sent = true WHERE id = $1\", [row.id]); // 2\n}"
+			},
+			"alternatives": [
+				"O mesmo evento publicado duas vezes, então precisam ser idempotentes",
+				"O evento exatamente uma vez, porque a outbox é transacional",
+				"O evento faltando, porque a linha da outbox nunca foi marcada",
+				"O evento uma vez, com as demais linhas da outbox descartadas",
+				"O evento duas vezes, mas o broker remove a segunda cópia sozinho"
+			],
+			"explanations": [
+				"Correta: a linha continua com `sent = false`, então o relay reiniciado a publica de novo. Uma outbox entrega at-least-once.",
+				"A transação cobre a linha de negócio e a linha da outbox. Publicar e marcar são dois sistemas e não podem ser atômicos.",
+				"O evento foi publicado na linha 1; o que falta é só a marca, e isso causa repetição, não perda.",
+				"Nada é descartado: linhas não enviadas ficam na tabela e são publicadas na próxima passada.",
+				"Um broker não deduplica por conteúdo, a menos que um recurso específico seja configurado para isso."
+			],
+			"concept": "A outbox transacional garante que um evento nunca se perde, porque ele é confirmado junto com os dados de negócio. Ela não garante uma única publicação: o relay pode cair entre publicar e marcar, então os consumidores adiante precisam deduplicar."
+		},
+		"en": {
+			"statement": "The outbox relay in the snippet crashes between line 1 and line 2 and is restarted. What do the consumers of the broker observe?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "// relay loop of a transactional outbox\nconst rows = await db.query(\"SELECT * FROM outbox WHERE sent = false ORDER BY id\");\nfor (const row of rows) {\n  await broker.publish(row.event);                                   // 1\n  // <- the relay crashes here\n  await db.query(\"UPDATE outbox SET sent = true WHERE id = $1\", [row.id]); // 2\n}"
+			},
+			"alternatives": [
+				"The same event published twice, so they must be idempotent",
+				"The event exactly once, because the outbox is transactional",
+				"The event missing, because the outbox row was never marked",
+				"The event once, with the remaining rows of the outbox discarded",
+				"The event twice, but the broker removes the second copy by itself"
+			],
+			"explanations": [
+				"Correct: the row is still `sent = false`, so the restarted relay publishes it again. An outbox delivers at-least-once.",
+				"The transaction covers the business row and the outbox row. Publishing and marking are two systems and cannot be atomic.",
+				"The event was published on line 1; what is missing is only the mark, and that causes a repeat, not a loss.",
+				"Nothing is discarded: unsent rows stay in the table and are published on the next pass.",
+				"A broker does not deduplicate by content unless a specific feature is configured for it."
+			],
+			"concept": "The transactional outbox guarantees that an event is never lost, because it is committed together with the business data. It does not guarantee a single publication: the relay can crash between publishing and marking, so consumers downstream must deduplicate."
+		}
+	},
+	{
+		"id": "messaging-outbox-saga-event-sourcing-03",
+		"area": "messaging",
+		"topic": "outbox-saga-event-sourcing",
+		"difficulty": "advanced",
+		"answer": 2,
+		"source": "Microservices patterns (transactional outbox, saga, event sourcing); legacy project message-queues-pubsub",
+		"miniProject": "projects/transactions/outbox-saga",
+		"pt": {
+			"statement": "Em um fluxo de checkout não existe coordenador central. O serviço de pedidos publica `OrderPlaced`; o serviço de pagamento reage e publica `PaymentCompleted`; o serviço de entrega reage a esse evento. Que estilo de saga é esse, e qual é o seu custo típico?",
+			"alternatives": [
+				"Orquestração; o coordenador vira um ponto único que conhece cada passo",
+				"Coreografia; todo serviço precisa chamar os outros de forma síncrona por HTTP",
+				"Coreografia; o fluxo geral fica implícito e mais difícil de seguir e de mudar",
+				"Two-phase commit; todos os serviços seguram locks até o último votar",
+				"Orquestração; os serviços não conseguem compensar quando um passo falha"
+			],
+			"explanations": [
+				"A orquestração tem um coordenador que envia comandos e acompanha o estado; aqui não há nenhum.",
+				"A coreografia é assíncrona por natureza: os serviços reagem a eventos e não se chamam.",
+				"Correta: cada serviço só sabe a quais eventos reage, então ninguém detém o fluxo inteiro, e ele precisa ser reconstruído a partir de vários lugares.",
+				"Uma saga é a alternativa ao two-phase commit: transações locais e eventos, sem locks globais nem votação.",
+				"Não há orquestrador aqui, e os dois estilos de saga suportam compensação."
+			],
+			"concept": "Uma saga pode ser coordenada de dois modos. Na coreografia, os serviços reagem aos eventos uns dos outros: baixo acoplamento, mas o processo fica espalhado. Na orquestração, um coordenador emite comandos e guarda o estado: o fluxo fica explícito, ao custo de um componente central."
+		},
+		"en": {
+			"statement": "In a checkout flow there is no central coordinator. The order service publishes `OrderPlaced`; the payment service reacts and publishes `PaymentCompleted`; the shipping service reacts to that. Which saga style is this, and what is its typical cost?",
+			"alternatives": [
+				"Orchestration; the coordinator becomes a single point that knows every step",
+				"Choreography; every service must call the others synchronously over HTTP",
+				"Choreography; the overall flow is implicit and harder to follow and to change",
+				"Two-phase commit; all the services hold locks until the last one votes",
+				"Orchestration; the services cannot run compensations when a step fails"
+			],
+			"explanations": [
+				"Orchestration has a coordinator that sends commands and tracks state; here there is none.",
+				"Choreography is asynchronous by nature: services react to events and do not call each other.",
+				"Correct: each service only knows which events it reacts to, so nobody holds the whole flow, and it must be reconstructed from many places.",
+				"A saga is the alternative to two-phase commit: local transactions and events, with no global locks or votes.",
+				"There is no orchestrator here, and both saga styles support compensation."
+			],
+			"concept": "A saga can be coordinated in two ways. In choreography, services react to each other's events: loose coupling, but the process is spread out. In orchestration, a coordinator issues commands and holds the state: the flow is explicit, at the cost of a central component."
+		}
+	},
+	{
+		"id": "messaging-outbox-saga-event-sourcing-04",
+		"area": "messaging",
+		"topic": "outbox-saga-event-sourcing",
+		"difficulty": "advanced",
+		"answer": 1,
+		"source": "Microservices patterns (transactional outbox, saga, event sourcing); legacy project message-queues-pubsub",
+		"pt": {
+			"statement": "Uma conta com event sourcing tem 1.000.000 de eventos. Um snapshot do seu estado foi salvo logo depois do evento 999.900. Como o estado atual é carregado, e o que acontece se o snapshot se perder?",
+			"alternatives": [
+				"Carrega só o snapshot; se perdido, o estado da conta não pode ser recuperado",
+				"Carrega o snapshot e aplica os 100 eventos seguintes; se perdido, reproduz todos os eventos",
+				"Reproduz todos os eventos e compara com o snapshot; se perdido, as leituras ficam bloqueadas",
+				"Carrega o snapshot e aplica os 999.900 eventos anteriores; se perdido, nada muda",
+				"Carrega só o último evento; se o snapshot se perder, o último evento ainda tem o estado"
+			],
+			"explanations": [
+				"O snapshot sozinho não tem os últimos 100 eventos, e a sua perda é inofensiva porque os eventos continuam lá.",
+				"Correta: estado = snapshot + eventos posteriores (1.000.000 - 999.900 = 100). O snapshot é dado derivado e pode ser reconstruído a partir do log.",
+				"Reproduzir tudo a cada carga é o custo que o snapshot existe para evitar.",
+				"Os eventos anteriores já estão incorporados ao snapshot; aplicá-los de novo os contaria duas vezes.",
+				"Um evento descreve uma mudança, não o estado inteiro; o estado precisa do histórico acumulado."
+			],
+			"concept": "Um snapshot é um cache do estado em uma posição conhecida do log de eventos. Ele encurta a carga de \"reproduzir tudo\" para \"reproduzir o que veio depois\". Como os eventos continuam sendo a fonte da verdade, um snapshot sempre pode ser descartado e calculado de novo."
+		},
+		"en": {
+			"statement": "An event-sourced account has 1,000,000 events. A snapshot of its state was saved right after event 999,900. How is the current state loaded, and what happens if the snapshot is lost?",
+			"alternatives": [
+				"Load the snapshot only; if lost, the state of the account cannot be recovered",
+				"Load the snapshot and apply the 100 later events; if lost, replay all the events",
+				"Replay all the events and compare with the snapshot; if lost, reads are blocked",
+				"Load the snapshot and apply the 999,900 earlier events; if lost, nothing changes",
+				"Load the last event only; if the snapshot is lost, the last event still has the state"
+			],
+			"explanations": [
+				"The snapshot alone misses the last 100 events, and its loss is harmless because the events remain.",
+				"Correct: state = snapshot + events after it (1,000,000 - 999,900 = 100). The snapshot is derived data and can be rebuilt from the log.",
+				"Replaying everything on each load is the cost that a snapshot exists to avoid.",
+				"The earlier events are already folded into the snapshot; applying them again would count them twice.",
+				"An event describes one change, not the whole state; the state needs the accumulated history."
+			],
+			"concept": "A snapshot is a cache of the state at a known position of the event log. It shortens loading from \"replay everything\" to \"replay what came after\". Since the events remain the source of truth, a snapshot can always be discarded and computed again."
+		}
+	}
+]
