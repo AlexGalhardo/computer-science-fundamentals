@@ -16,7 +16,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 
 ## Status by area
 
-700 of 3220 questions written, 17 of 78 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
+700 of 3220 questions written, 18 of 78 mini-projects done. The roadmap is [PLAN.md](../../PLAN.md).
 
 | Area | Kind | Questions | Blind review | Mini-projects |
 | --- | --- | ---: | --- | --- |
@@ -37,7 +37,7 @@ Documentation is organised by area. Every page here has an equivalent page under
 | Electronics | Theory | 0/170 |  | none |
 | Object-oriented programming | Theory and practice | 0/100 |  | oop-vs-functional (planned), code-smells (planned) |
 | Functional programming | Theory and practice | 0/100 |  | pure-functions-properties (planned) |
-| Design patterns and SOLID | Theory and practice | 100/100 | done | [backend-patterns](design-patterns/backend-patterns.md), solid-before-after (planned) |
+| Design patterns and SOLID | Theory and practice | 100/100 | done | [backend-patterns](design-patterns/backend-patterns.md), [solid-before-after](design-patterns/solid-before-after.md) |
 | Software architecture | Theory and practice | 0/100 |  | clean-architecture-app (planned) |
 | Testing | Theory and practice | 0/100 |  | test-pyramid (planned), tdd-kata (planned), mutation-testing (planned), flaky-tests (planned), mini-xunit (planned) |
 | Protocols | Theory and practice | 0/100 |  | rest-graphql-jsonrpc (planned), http-versions (planned), http-server-raw-tcp (planned) |
