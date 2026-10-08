@@ -82,7 +82,7 @@ docker compose down -v
 
 ### The rules and their tests
 
-[`prometheus/rules.yaml`](prometheus/rules.yaml) has 9 recording rules and 2 alerting rules, in three layers:
+[`prometheus/rules.yaml`](prometheus/rules.yaml) has 9 recording rules and 2 alerting rules, in three layers inside one rule group (rules of a group run in order, so each layer reads what the layer above has just recorded):
 
 | Layer | Example | Meaning |
 | --- | --- | --- |

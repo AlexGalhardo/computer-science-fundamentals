@@ -82,7 +82,7 @@ docker compose down -v
 
 ### As regras e os testes delas
 
-[`prometheus/rules.yaml`](prometheus/rules.yaml) tem 9 recording rules e 2 alerting rules, em três camadas:
+[`prometheus/rules.yaml`](prometheus/rules.yaml) tem 9 recording rules e 2 alerting rules, em três camadas dentro de um único grupo de regras (as regras de um grupo rodam em ordem, então cada camada lê o que a camada de cima acabou de gravar):
 
 | Camada | Exemplo | Significado |
 | --- | --- | --- |
