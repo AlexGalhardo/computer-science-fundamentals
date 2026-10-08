@@ -27,3 +27,9 @@ test("$5 + $5 is $10", () => {
 	const bank = new Bank();
 	expect(bank.reduce(sum, "USD").equals(Money.dollar(10))).toBe(true);
 });
+
+test("$3 + $4 is $7", () => {
+	const sum = Money.dollar(3).plus(Money.dollar(4));
+	const bank = new Bank();
+	expect(bank.reduce(sum, "USD").equals(Money.dollar(7))).toBe(true);
+});
