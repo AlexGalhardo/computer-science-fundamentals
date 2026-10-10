@@ -54,7 +54,8 @@ public final class TableTest {
   //     primeiro, enquanto a JVM não tem threads congeladas deixadas pelo teste de deadlock.
   // ES: Las correcciones deben sobrevivir a una cena larga (60 segundos por defecto) sin
   //     congelarse, y todo filósofo debe haber comido. Los contadores son la prueba. Esta prueba se
-  //     ejecuta primero, mientras la JVM no tiene threads congelados dejados por la prueba de deadlock.
+  //     ejecuta primero, mientras la JVM no tiene threads congelados dejados por la prueba
+  //     de deadlock.
   private static void fixesRunWithEveryPhilosopherEating(Duration soak) throws Exception {
     try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
       Future<Table.Result> ordered =

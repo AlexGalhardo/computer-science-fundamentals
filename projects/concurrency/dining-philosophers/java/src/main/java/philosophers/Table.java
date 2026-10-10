@@ -81,10 +81,10 @@ public final class Table {
    *
    * <p>ES: Un deadlock necesita cuatro condiciones al mismo tiempo (Coffman): exclusión mutua (un
    * tenedor tiene un solo dueño), retener y esperar (sostener un tenedor mientras se espera el
-   * otro), sin expropiación (nadie te quita el tenedor de la mano) y espera circular (0 espera a
-   * 1, 1 espera a 2 ... 4 espera a 0). El ordenamiento de locks rompe la espera circular: todos
-   * toman primero el menor número, así que el último filósofo intenta el tenedor 0 antes que el
-   * 4 y el círculo no se cierra.
+   * otro), sin expropiación (nadie te quita el tenedor de la mano) y espera circular (0 espera a 1,
+   * 1 espera a 2 ... 4 espera a 0). El ordenamiento de locks rompe la espera circular: todos toman
+   * primero el menor número, así que el último filósofo intenta el tenedor 0 antes que el 4 y el
+   * círculo no se cierra.
    */
   static int[] forks(Strategy strategy, int i, int n) {
     int left = i;
