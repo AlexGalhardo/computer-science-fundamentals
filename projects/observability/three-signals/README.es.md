@@ -108,9 +108,9 @@ La prueba de extremo a extremo le pide a la API de Grafana el dashboard y compru
 ## Pruebas
 
 ```sh
-docker compose run --rm ts-test     # typecheck + 9 unit tests, no network
+docker compose run --rm ts-test     # typecheck + 11 unit tests, no network
 docker compose run --rm go-test     # gofmt, go vet, 5 unit tests, no network
-docker compose run --rm e2e-test    # 6 tests against Tempo, Prometheus, Loki and Grafana
+docker compose run --rm e2e-test    # 7 tests against Tempo, Prometheus, Loki and Grafana
 docker compose down -v
 ```
 
@@ -157,5 +157,6 @@ OpenTelemetry está en el stack del repositorio; los paquetes de arriba son su S
 ## Notas
 
 - La instrumentación es manual a propósito. En Bun, los hooks de auto-instrumentación de Node.js no parchean el servidor HTTP integrado, y escribir a mano `extract`, `inject` y el span es la lección.
-- Tempo tarda hasta un minuto antes de que un trace nuevo aparezca en una **búsqueda** TraceQL. Obtener un trace **por id** funciona de inmediato. La demo y las pruebas reintentan hasta que la respuesta está ahí.
+- Tempo muestra un trace nuevo en una **búsqueda** TraceQL unos 30 segundos después de que terminó. El query frontend de Tempo 3 nunca busca en los últimos 30 segundos (`query_frontend.query_end_cutoff`), para que una búsqueda no devuelva traces que todavía están llegando. Obtener un trace **por id** funciona de inmediato. La demo y las pruebas reintentan hasta que la respuesta está ahí.
+- La búsqueda de Tempo imprime un trace id **sin los ceros a la izquierda**: `0af7...` vuelve como `af7...`, con 31 dígitos. El encabezado `traceparent`, los logs y la consulta por id usan los 32 dígitos. El SDK sortea el id, así que uno de cada dieciséis traces se ve afectado, y comparar las dos formas como texto no lo encuentra. `searchTraces` en `ts/src/lab.ts` completa cada id de vuelta a 32 dígitos, y la prueba de extremo a extremo envía, en cada ejecución, una petición cuyo id empieza con ceros.
 - `rate()` necesita dos muestras de una serie, así que la demo envía una petición de calentamiento y espera antes de la carga.

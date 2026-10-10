@@ -108,9 +108,9 @@ The end-to-end test asks the Grafana API for the dashboard and checks that it is
 ## Tests
 
 ```sh
-docker compose run --rm ts-test     # typecheck + 9 unit tests, no network
+docker compose run --rm ts-test     # typecheck + 11 unit tests, no network
 docker compose run --rm go-test     # gofmt, go vet, 5 unit tests, no network
-docker compose run --rm e2e-test    # 6 tests against Tempo, Prometheus, Loki and Grafana
+docker compose run --rm e2e-test    # 7 tests against Tempo, Prometheus, Loki and Grafana
 docker compose down -v
 ```
 
@@ -157,5 +157,6 @@ OpenTelemetry is in the stack of the repository; the packages above are its SDK.
 ## Notes
 
 - Instrumentation is manual on purpose. In Bun, the Node.js auto-instrumentation hooks do not patch the built-in HTTP server, and writing `extract`, `inject` and the span by hand is the lesson.
-- Tempo takes up to a minute before a new trace shows up in a TraceQL **search**. Fetching a trace **by id** works right away. The demo and the tests retry until the answer is there.
+- Tempo shows a new trace in a TraceQL **search** about 30 seconds after it ended. The query frontend of Tempo 3 never searches the last 30 seconds (`query_frontend.query_end_cutoff`), so that a search does not return traces that are still arriving. Fetching a trace **by id** works right away. The demo and the tests retry until the answer is there.
+- Tempo's search prints a trace id **without its leading zeros**: `0af7...` comes back as `af7...`, with 31 digits. The `traceparent` header, the logs and the fetch by id use the 32 digits. The SDK draws the id at random, so one trace in sixteen is affected, and comparing the two forms as text misses it. `searchTraces` in `ts/src/lab.ts` pads every id back to 32 digits, and the end-to-end test sends one request whose id starts with zeros on every run.
 - `rate()` needs two samples of a series, so the demo sends one warm-up request and waits before the load.

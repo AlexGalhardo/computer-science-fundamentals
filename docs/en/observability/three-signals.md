@@ -74,6 +74,8 @@ ctx, span := tracer.Start(ctx, "GET /stock/{sku}", trace.WithSpanKind(trace.Span
 
 `orders` is TypeScript and `inventory` is Go. They share no code, only the header format, and the trace continues. If one service did not propagate the header, the next one would start a new trace and the request would be split in two.
 
+One detail about the id itself. It is 16 bytes, written as 32 hex digits in the header, in the logs and when a trace is fetched by id. Tempo's search API prints it without the leading zeros, so `0af7...` comes back as `af7...`. The SDK draws the id at random, which means one trace in sixteen starts with a zero, and code that compares the two forms as text does not find that trace. Pad the id to 32 digits where it enters the program (`canonicalTraceId` in `ts/src/lab.ts`) and compare only then.
+
 ## 3. Reading the trace: duration against self time
 
 ```text

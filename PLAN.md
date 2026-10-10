@@ -167,7 +167,7 @@ Requested by the owner on 2026-10-08.
 
 - [x] **F-6.1** The job `list-projects` of `.github/workflows/ci.yml` lists every mini-project, not only the ones whose folder changed.
 	- **Accept:** a CI run on `main` shows one job per mini-project, all green.
-	- Note (2026-10-10): run <https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38047794333>, 94 of 94 jobs green (86 mini-projects). The run before it found two failures that were fixed (`flame-graph`, `dining-philosophers`). In the 14 demonstration runs that followed, two tests failed for reasons that have nothing to do with the gate under demonstration: the Go test of `counter-race` (2 of 16 runs: 8 of 10 runs lost updates, the criterion asks for 9) and the Tempo search of `three-signals` (1 of 16 runs, a 300 second timeout). Both pass on rerun and stay as open items in `.claude/agents.md`.
+	- Note (2026-10-10): run <https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38047794333>, 94 of 94 jobs green (86 mini-projects). The run before it found two failures that were fixed (`flame-graph`, `dining-philosophers`). In the 14 demonstration runs that followed, two tests failed for reasons that have nothing to do with the gate under demonstration: the Go test of `counter-race` (2 of 16 runs: 8 of 10 runs lost updates, the criterion asks for 9) and the Tempo search of `three-signals` (1 of 16 runs, a 300 second timeout). Both were closed on the same day: the criterion of `counter-race` became 24 of 30 runs (owner's decision), and the `three-signals` failure was Tempo's search API printing trace ids without leading zeros (1 random id in 16), fixed in v1.0.2.
 
 ---
 

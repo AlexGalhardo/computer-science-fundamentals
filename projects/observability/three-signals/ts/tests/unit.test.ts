@@ -20,7 +20,7 @@ import {
 import { InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { gatewayApp, ordersApp } from "../src/apps";
 import { readServiceEnv } from "../src/config";
-import { flattenTrace, selfTimes, waterfall } from "../src/lab";
+import { canonicalTraceId, flattenTrace, selfTimes, waterfall } from "../src/lab";
 import { createTelemetry, DURATION_BUCKETS_SECONDS, type Telemetry } from "../src/telemetry";
 
 interface Harness {
@@ -241,6 +241,33 @@ describe("reading a trace", () => {
 		//     GET inventory 840 - 810 = 30, GET /stock 810 - 800 = 10, lookup 800.
 		expect(spans.map((row) => self.get(row.spanId))).toEqual([30, 30, 30, 10, 800]);
 		expect(waterfall(spans)).toContain("        inventory: warehouse.lookup");
+	});
+
+	test("two steps that start in the same millisecond come out in the order they ended", () => {
+		// EN: Tempo returns spans in no fixed order: here the later step is listed first.
+		// PT: O Tempo devolve os spans sem ordem fixa: aqui a etapa posterior vem listada primeiro.
+		// ES: Tempo devuelve los spans sin orden fijo: aquí el paso posterior aparece listado primero.
+		const tied = {
+			trace: {
+				resourceSpans: [
+					resource("orders", [
+						span("c", "b", "GET inventory", 10, 860),
+						span("p", "b", "orders.price", 10, 11),
+						span("b", "", "POST /orders", 10, 880),
+					]),
+				],
+			},
+		};
+		expect(flattenTrace(tied).map((row) => row.name)).toEqual(["POST /orders", "orders.price", "GET inventory"]);
+	});
+
+	test("a trace id printed without its leading zeros gets its 32 digits back", () => {
+		// EN: The search of Tempo drops the leading zeros; every other place keeps them.
+		// PT: A busca do Tempo descarta os zeros à esquerda; todos os outros lugares os mantêm.
+		// ES: La búsqueda de Tempo descarta los ceros a la izquierda; todos los demás lugares los conservan.
+		expect(canonicalTraceId("af7651916cd43dd8448eb211c80319c")).toBe("0af7651916cd43dd8448eb211c80319c");
+		expect(canonicalTraceId("123456789abcdef")).toBe("00000000000000000123456789abcdef");
+		expect(canonicalTraceId("4bf92f3577b34da6a3ce929d0e0e4736")).toBe("4bf92f3577b34da6a3ce929d0e0e4736");
 	});
 });
 

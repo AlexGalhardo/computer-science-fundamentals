@@ -108,9 +108,9 @@ O teste de ponta a ponta pede o dashboard à API do Grafana e confere que ele es
 ## Testes
 
 ```sh
-docker compose run --rm ts-test     # checagem de tipos + 9 testes unitários, sem rede
+docker compose run --rm ts-test     # checagem de tipos + 11 testes unitários, sem rede
 docker compose run --rm go-test     # gofmt, go vet, 5 testes unitários, sem rede
-docker compose run --rm e2e-test    # 6 testes contra Tempo, Prometheus, Loki e Grafana
+docker compose run --rm e2e-test    # 7 testes contra Tempo, Prometheus, Loki e Grafana
 docker compose down -v
 ```
 
@@ -157,5 +157,6 @@ O OpenTelemetry faz parte da stack do repositório; os pacotes acima são o SDK 
 ## Observações
 
 - A instrumentação é manual de propósito. No Bun, os ganchos de instrumentação automática do Node.js não alteram o servidor HTTP embutido, e escrever `extract`, `inject` e o span à mão é a lição.
-- O Tempo leva até um minuto para que um trace novo apareça em uma **busca** TraceQL. Buscar um trace **pelo id** funciona na hora. A demo e os testes repetem a consulta até a resposta chegar.
+- O Tempo mostra um trace novo em uma **busca** TraceQL cerca de 30 segundos depois de ele terminar. O query frontend do Tempo 3 nunca busca nos últimos 30 segundos (`query_frontend.query_end_cutoff`), para que uma busca não devolva traces que ainda estão chegando. Buscar um trace **pelo id** funciona na hora. A demo e os testes repetem a consulta até a resposta chegar.
+- A busca do Tempo imprime um trace id **sem os zeros à esquerda**: `0af7...` volta como `af7...`, com 31 dígitos. O cabeçalho `traceparent`, os logs e a busca pelo id usam os 32 dígitos. O SDK sorteia o id, então um trace em cada dezesseis é afetado, e comparar as duas formas como texto não o encontra. `searchTraces` em `ts/src/lab.ts` completa cada id de volta para 32 dígitos, e o teste de ponta a ponta manda, em toda execução, uma requisição cujo id começa com zeros.
 - O `rate()` precisa de duas amostras de uma série, então a demo manda uma requisição de aquecimento e espera antes da carga.

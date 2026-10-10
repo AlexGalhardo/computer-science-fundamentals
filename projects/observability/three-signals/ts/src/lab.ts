@@ -61,9 +61,15 @@ export interface Checkout {
 	durationMs: number;
 }
 
-export async function checkout(gatewayUrl: string, sku: string): Promise<Checkout> {
+/**
+ * Sends one checkout. With `traceparent`, the gateway continues that trace instead of starting
+ * one, so the caller chooses the trace id.
+ */
+export async function checkout(gatewayUrl: string, sku: string, traceparent?: string): Promise<Checkout> {
 	const started = performance.now();
-	const response = await fetch(`${gatewayUrl}/checkout?sku=${encodeURIComponent(sku)}&qty=1`);
+	const response = await fetch(`${gatewayUrl}/checkout?sku=${encodeURIComponent(sku)}&qty=1`, {
+		headers: traceparent === undefined ? {} : { traceparent },
+	});
 	await response.arrayBuffer();
 	return {
 		status: response.status,
@@ -74,11 +80,38 @@ export async function checkout(gatewayUrl: string, sku: string): Promise<Checkou
 
 // ---------------------------------------------------------------- Tempo
 
+/**
+ * Writes a trace id in its canonical form: 32 hex digits (W3C Trace Context).
+ *
+ * EN: A trace id is 16 bytes. Tempo's search API prints it as a number, without the leading
+ *     zeros: `0af7...` comes back as `af7...`, 31 digits. The `traceparent` header, the SDK, the
+ *     logs in Loki and Tempo's own fetch by id all use the 32 digits. Comparing the two forms as
+ *     text fails for one random id in sixteen, so every id read from the search is padded here,
+ *     at the boundary, and the rest of the code sees one form only.
+ * PT: Um trace id tem 16 bytes. A API de busca do Tempo o imprime como um número, sem os zeros
+ *     à esquerda: `0af7...` volta como `af7...`, com 31 dígitos. O cabeçalho `traceparent`, o
+ *     SDK, os logs no Loki e a própria busca por id do Tempo usam os 32 dígitos. Comparar as
+ *     duas formas como texto falha para um id sorteado em cada dezesseis, então todo id lido da
+ *     busca é completado aqui, na fronteira, e o resto do código vê uma forma só.
+ * ES: Un trace id tiene 16 bytes. La API de búsqueda de Tempo lo imprime como un número, sin los
+ *     ceros a la izquierda: `0af7...` vuelve como `af7...`, con 31 dígitos. El encabezado
+ *     `traceparent`, el SDK, los logs en Loki y la propia consulta por id de Tempo usan los 32
+ *     dígitos. Comparar las dos formas como texto falla para un id sorteado de cada dieciséis,
+ *     así que todo id leído de la búsqueda se completa aquí, en la frontera, y el resto del
+ *     código ve una sola forma.
+ */
+export function canonicalTraceId(traceId: string): string {
+	return traceId.padStart(32, "0");
+}
+
 const searchSchema = z.object({
 	traces: z
 		.array(
 			z.object({
-				traceID: z.string(),
+				traceID: z
+					.string()
+					.regex(/^[0-9a-f]{1,32}$/)
+					.transform(canonicalTraceId),
 				rootServiceName: z.string().optional(),
 				rootTraceName: z.string().optional(),
 				durationMs: z.number().optional(),
@@ -155,12 +188,13 @@ function attributesToRecord(attributes: z.infer<typeof attributeSchema>[]): Reco
  *     las dibuja.
  */
 export function flattenTrace(raw: unknown): SpanRow[] {
-	const rows: (SpanRow & { startNano: bigint })[] = [];
+	const rows: (SpanRow & { startNano: bigint; endNano: bigint })[] = [];
 	for (const resourceSpans of traceSchema.parse(raw).trace.resourceSpans) {
 		const service = attributesToRecord(resourceSpans.resource.attributes)["service.name"] ?? "unknown_service";
 		for (const scope of resourceSpans.scopeSpans) {
 			for (const span of scope.spans) {
 				const start = BigInt(span.startTimeUnixNano);
+				const end = BigInt(span.endTimeUnixNano);
 				rows.push({
 					service,
 					name: span.name,
@@ -168,8 +202,9 @@ export function flattenTrace(raw: unknown): SpanRow[] {
 					spanId: span.spanId,
 					parentSpanId: span.parentSpanId ?? "",
 					startNano: start,
+					endNano: end,
 					startMs: 0,
-					durationMs: Number(BigInt(span.endTimeUnixNano) - start) / 1e6,
+					durationMs: Number(end - start) / 1e6,
 					attributes: attributesToRecord(span.attributes),
 				});
 			}
@@ -184,9 +219,22 @@ export function flattenTrace(raw: unknown): SpanRow[] {
 	// ES: Recorre el árbol desde las raíces, los hijos por orden de inicio. Ordenar solo por el
 	//     inicio no basta: los relojes de procesos distintos tienen resoluciones distintas (y pueden
 	//     discrepar), así que un hijo puede parecer empezar en el mismo milisegundo que el padre, o antes.
+	// EN: Start times can also tie. The JS SDK reads the start of a span from a millisecond
+	//     clock, so two steps of one handler (`orders.price`, then `GET inventory`) often start
+	//     in the same millisecond. Tempo returns the spans in no fixed order, so a tie is broken
+	//     by the end time: the step that finished first is drawn first.
+	// PT: Os inícios também podem empatar. O SDK de JS lê o início de um span em um relógio de
+	//     milissegundos, então duas etapas de um handler (`orders.price`, depois `GET inventory`)
+	//     muitas vezes começam no mesmo milissegundo. O Tempo devolve os spans sem ordem fixa,
+	//     então o empate é decidido pelo fim: a etapa que terminou primeiro é desenhada primeiro.
+	// ES: Los inicios también pueden empatar. El SDK de JS lee el inicio de un span en un reloj de
+	//     milisegundos, así que dos pasos de un handler (`orders.price`, luego `GET inventory`)
+	//     muchas veces empiezan en el mismo milisegundo. Tempo devuelve los spans sin orden fijo,
+	//     así que el empate se decide por el final: el paso que terminó primero se dibuja primero.
 	const ids = new Set(rows.map((row) => row.spanId));
-	const byStart = (a: { startNano: bigint }, b: { startNano: bigint }): number =>
-		a.startNano < b.startNano ? -1 : a.startNano > b.startNano ? 1 : 0;
+	type Timed = { startNano: bigint; endNano: bigint };
+	const compare = (a: bigint, b: bigint): number => (a < b ? -1 : a > b ? 1 : 0);
+	const byStart = (a: Timed, b: Timed): number => compare(a.startNano, b.startNano) || compare(a.endNano, b.endNano);
 	const ordered: typeof rows = [];
 	const visit = (row: (typeof rows)[number]): void => {
 		ordered.push(row);
@@ -198,7 +246,7 @@ export function flattenTrace(raw: unknown): SpanRow[] {
 		visit(root);
 	}
 	const origin = ordered[0]?.startNano ?? 0n;
-	return ordered.map(({ startNano, ...row }) => ({ ...row, startMs: Number(startNano - origin) / 1e6 }));
+	return ordered.map(({ startNano, endNano, ...row }) => ({ ...row, startMs: Number(startNano - origin) / 1e6 }));
 }
 
 export async function fetchTrace(tempoUrl: string, traceId: string): Promise<{ raw: unknown; spans: SpanRow[] }> {

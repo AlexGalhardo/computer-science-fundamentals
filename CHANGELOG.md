@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-10
+
+### Fixed
+
+- `observability/three-signals`: the end-to-end test failed in about one run in sixteen with "timed out waiting for the slow trace in the Tempo search". Tempo's search API prints trace ids without their leading zeros, and the test compared that text with the 32-digit id of the `x-trace-id` header. `searchTraces` now pads every id to 32 digits (`canonicalTraceId`), which also fixes the demo.
+- `observability/three-signals`: `flattenTrace` breaks ties between sibling spans that start in the same millisecond by their end time, so the waterfall no longer depends on the order in which Tempo returns the spans.
+
+### Added
+
+- `observability/three-signals`: an end-to-end test that sends a request with a `traceparent` whose trace id starts with zeros and finds it through the TraceQL search on every run, and two unit tests (id padding, tie between sibling spans).
+
+### Changed
+
+- `observability/three-signals`: the READMEs and the documentation explain the leading zeros and state that Tempo 3 searches only traces older than 30 seconds (`query_frontend.query_end_cutoff`), instead of "up to a minute".
+
 ## [1.0.1] - 2026-10-10
 
 ### Changed

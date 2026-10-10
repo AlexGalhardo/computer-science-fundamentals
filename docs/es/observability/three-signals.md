@@ -74,6 +74,8 @@ ctx, span := tracer.Start(ctx, "GET /stock/{sku}", trace.WithSpanKind(trace.Span
 
 `orders` es TypeScript e `inventory` es Go. No comparten código, solo el formato del encabezado, y el trace continúa. Si un servicio no propagara el encabezado, el siguiente empezaría un trace nuevo y la petición se partiría en dos.
 
+Un detalle sobre el propio id. Tiene 16 bytes, escritos como 32 dígitos hexadecimales en el encabezado, en los logs y cuando un trace se obtiene por id. La API de búsqueda de Tempo lo imprime sin los ceros a la izquierda, así que `0af7...` vuelve como `af7...`. El SDK sortea el id, lo que significa que uno de cada dieciséis traces empieza con cero, y un código que compara las dos formas como texto no encuentra ese trace. Completa el id a 32 dígitos donde entra al programa (`canonicalTraceId` en `ts/src/lab.ts`) y compara solo entonces.
+
 ## 3. Leer el trace: duración frente a self time
 
 ```text

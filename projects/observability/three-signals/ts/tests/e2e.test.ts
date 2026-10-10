@@ -33,6 +33,26 @@ const WAIT = 300_000;
 let slowTraceId = "";
 let fastTraceId = "";
 
+// EN: A trace id is 16 bytes, written as 32 hex digits. The SDK draws it at random, so one id in
+//     sixteen starts with a zero, and ids that came from a 64-bit system start with sixteen of
+//     them. Tempo's search prints ids without the leading zeros, and a comparison that ignores
+//     this fails for exactly those traces. Waiting for a random id to start with a zero would
+//     make the test flaky, so this request carries a `traceparent` with such an id, every run.
+// PT: Um trace id tem 16 bytes, escritos como 32 dígitos hexadecimais. O SDK o sorteia, então
+//     um id em cada dezesseis começa com zero, e ids vindos de um sistema de 64 bits começam com
+//     dezesseis deles. A busca do Tempo imprime os ids sem os zeros à esquerda, e uma comparação
+//     que ignora isso falha exatamente para esses traces. Esperar que um id sorteado comece com
+//     zero deixaria o teste instável, então esta requisição leva um `traceparent` com um id
+//     assim, em toda execução.
+// ES: Un trace id tiene 16 bytes, escritos como 32 dígitos hexadecimales. El SDK lo sortea, así
+//     que un id de cada dieciséis empieza con cero, y los ids que vienen de un sistema de 64 bits
+//     empiezan con dieciséis de ellos. La búsqueda de Tempo imprime los ids sin los ceros a la
+//     izquierda, y una comparación que ignora esto falla justo para esos traces. Esperar a que un
+//     id sorteado empiece con cero volvería inestable la prueba, así que esta petición lleva un
+//     `traceparent` con un id así, en cada ejecución.
+const ZERO_PADDED_TRACE_ID = "00000000000000000123456789abcdef";
+const ZERO_PADDED_TRACEPARENT = `00-${ZERO_PADDED_TRACE_ID}-1111111111111111-01`;
+
 beforeAll(async () => {
 	await Promise.all([
 		waitReady(`${env.TEMPO_URL}/ready`, 240_000),
@@ -48,6 +68,9 @@ beforeAll(async () => {
 	expect(slow.status).toBe(200);
 	expect(slow.durationMs).toBeGreaterThanOrEqual(800);
 	slowTraceId = slow.traceId;
+	const zeroPadded = await checkout(env.GATEWAY_URL, SLOW_SKU, ZERO_PADDED_TRACEPARENT);
+	expect(zeroPadded.status).toBe(200);
+	expect(zeroPadded.traceId).toBe(ZERO_PADDED_TRACE_ID);
 }, 300_000);
 
 describe("traces (Tempo)", () => {
@@ -64,6 +87,33 @@ describe("traces (Tempo)", () => {
 			);
 			expect(found.map((trace) => trace.traceID)).not.toContain(fastTraceId);
 			expect(found.find((trace) => trace.traceID === slowTraceId)?.rootServiceName).toBe("gateway");
+		},
+		WAIT + 10_000,
+	);
+
+	test(
+		"the search finds a trace whose id starts with zeros, under its full 32 digits",
+		async () => {
+			const found = await eventually(
+				async () => {
+					const traces = await searchTraces(env.TEMPO_URL, SLOW_SPAN_QUERY);
+					return traces.find((trace) => trace.traceID === ZERO_PADDED_TRACE_ID);
+				},
+				WAIT,
+				"the trace with the zero-padded id in the Tempo search",
+			);
+			// EN: This trace has no root span in Tempo: the gateway span is the child of the span
+			//     named in the `traceparent`, which belongs to a caller that reports nowhere.
+			// PT: Este trace não tem span raiz no Tempo: o span do gateway é filho do span citado
+			//     no `traceparent`, que pertence a um chamador que não reporta a lugar nenhum.
+			// ES: Este trace no tiene span raíz en Tempo: el span del gateway es hijo del span citado
+			//     en el `traceparent`, que pertenece a un llamador que no reporta a ningún lado.
+			expect(found.rootServiceName).not.toBe("gateway");
+			// EN: The id found by the search is the one that fetches the trace and filters the logs.
+			// PT: O id encontrado pela busca é o mesmo que busca o trace e filtra os logs.
+			// ES: El id encontrado por la búsqueda es el mismo que obtiene el trace y filtra los logs.
+			const trace = await fetchTrace(env.TEMPO_URL, found.traceID);
+			expect(trace.spans.map((span) => span.name)).toContain("warehouse.lookup");
 		},
 		WAIT + 10_000,
 	);
