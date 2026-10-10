@@ -39,6 +39,6 @@ docker compose run --rm go-test
 docker compose run --rm ts-test
 
 mkdir -p out profiles
-OUT_DIR=out docker compose run --rm flame
+OUT_DIR=out PROFILE_SECONDS=15 docker compose run --rm flame
 
 echo "flame-graph: all tests passed"

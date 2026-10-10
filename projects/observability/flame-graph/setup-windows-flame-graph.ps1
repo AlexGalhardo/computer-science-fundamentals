@@ -41,6 +41,7 @@ try {
 
 	New-Item -ItemType Directory -Force out, profiles | Out-Null
 	$env:OUT_DIR = "out"
+	$env:PROFILE_SECONDS = "15"
 	docker compose run --rm flame
 	if ($LASTEXITCODE -ne 0) { throw "live profile check failed" }
 	Write-Output "flame-graph: all tests passed"
@@ -51,6 +52,7 @@ catch {
 }
 finally {
 	Remove-Item Env:OUT_DIR -ErrorAction SilentlyContinue
+	Remove-Item Env:PROFILE_SECONDS -ErrorAction SilentlyContinue
 	docker compose down -v --remove-orphans
 }
 exit $code
