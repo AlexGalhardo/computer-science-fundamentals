@@ -12,6 +12,12 @@ PT: Modelo do Python: asyncio. Uma thread roda um event loop, e cada tarefa é u
     tarefa parada são alguns objetos Python no heap. Threads do SO existem, mas a GIL só deixa
     uma rodar código Python por vez e cada uma custa uma pilha real, então o asyncio é o jeito
     de manter muitas tarefas esperando.
+ES: Modelo de Python: asyncio. Un thread ejecuta un event loop, y cada tarea es una corrutina que
+    devuelve el control al loop en cada `await`. Las tareas nunca corren al mismo tiempo, así que no
+    hace falta un candado, y una tarea lenta retrasa a todas las demás (planificación cooperativa).
+    Una tarea detenida son unos pocos objetos Python en el heap. Existen threads del SO, pero el GIL
+    deja correr solo uno a la vez código Python y cada uno cuesta un stack real, así que asyncio es
+    la forma de mantener muchas tareas esperando.
 """
 
 import asyncio
@@ -33,6 +39,8 @@ async def run(n: int) -> int:
     # EN: A task only starts when the loop gets control, so yield once to park all at the gate.
     # PT: Uma tarefa só começa quando o loop recebe o controle, então cede uma vez para que
     #     todas parem no portão.
+    # ES: Una tarea solo empieza cuando el loop recibe el control, así que cede una vez para que
+    #     todas se detengan en la compuerta.
     await asyncio.sleep(0)
     gate.set()
 

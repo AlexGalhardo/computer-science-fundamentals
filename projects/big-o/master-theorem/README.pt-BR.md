@@ -1,6 +1,6 @@
 # master-theorem
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um teorema mestre interativo. Ele ensina **como os três casos do teorema mestre decidem o custo de uma recorrência** `T(n) = a·T(n/b) + f(n)`: um classificador devolve o caso e a solução, uma função recursiva gerada confere a previsão contando chamadas reais, e uma página estática desenha a árvore de recursão para o `a`, o `b` e a `f(n)` que você escolher.
 
@@ -51,6 +51,6 @@ docker compose run --rm ts-demo bun run classify 7 2 2       # uma recorrência:
 docker compose run --rm ts-demo bun run classify 2 2 1 1     # T(n) = 2T(n/2) + n log n: não se aplica
 ```
 
-Os argumentos são `a`, `b`, `d` e um `k` opcional, para `f(n) = n^d · (log n)^k`. O comando imprime o caso, o motivo em inglês e português, a solução e a árvore de recursão para um `n` pequeno.
+Os argumentos são `a`, `b`, `d` e um `k` opcional, para `f(n) = n^d · (log n)^k`. O comando imprime o caso, o motivo em inglês, português e espanhol (uma linha `EN:`, uma `PT:` e uma `ES:`), a solução e a árvore de recursão para um `n` pequeno.
 
 Depois abra `dashboard/index.html` em um navegador, direto do disco. Escolha `a`, `b` e `f(n)`: a página mostra o caso e desenha a árvore com uma barra por nível, para você ver se quem paga a conta são as folhas, todos os níveis ou a raiz.

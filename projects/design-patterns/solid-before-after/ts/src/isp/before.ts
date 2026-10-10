@@ -9,6 +9,11 @@ import { type Product, parseCsv } from "./types";
 //     de `save` e `remove`; o catálogo CSV não consegue gravar, e mesmo assim precisa
 //     implementá-los, e faz isso lançando exceção. Passá-lo a `increasePrices` compila e falha
 //     em tempo de execução.
+// ES: ROMPE EL PRINCIPIO DE SEGREGACIÓN DE INTERFACES. Una interfaz atiende a dos tipos de
+//     cliente: los que leen y los que escriben. El informe de abajo solo lista, y aun así
+//     depende de `save` y `remove`; el catálogo CSV no puede escribir, y aun así debe
+//     implementarlos, y lo hace lanzando una excepción. Pasarlo a `increasePrices` compila y
+//     falla en tiempo de ejecución.
 export interface ProductCatalog {
 	find(id: string): Product | null;
 	list(): Product[];

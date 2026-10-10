@@ -3,6 +3,8 @@
 #     fragmentation benchmark and writes results/. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto memory-allocator e depois roda a demo, que imprime o
 #     benchmark de fragmentação e grava results/. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto memory-allocator y luego ejecuta la demo, que imprime el
+#     benchmark de fragmentación y escribe results/. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"

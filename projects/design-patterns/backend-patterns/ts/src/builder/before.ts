@@ -5,6 +5,10 @@
 //     contar vírgulas para saber o que `30, true, false` significam, dois booleanos podem ser
 //     trocados sem erro de compilação, e nada verifica regras que envolvem dois campos, como
 //     "um POST tem corpo".
+// ES: DISEÑO QUE FALLA. Un constructor con siete parámetros posicionales. El lector tiene que
+//     contar comas para saber qué significan `30, true, false`, dos booleanos se pueden
+//     intercambiar sin error de compilación, y nada verifica reglas que involucran dos campos,
+//     como "un POST tiene cuerpo".
 export class HttpRequest {
 	constructor(
 		readonly method: string,

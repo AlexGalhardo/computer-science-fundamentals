@@ -1,6 +1,6 @@
 # l7-load-balancer
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um balanceador de carga de camada 7 escrito à mão em Go, só com a biblioteca padrão, em cerca de 350 linhas de código mais os comentários. Ele mostra o que um balanceador de carga faz a cada requisição: escolher um back end (round robin ou least connections), encaminhar a requisição em outra conexão, copiar a resposta de volta, descobrir quais back ends estão vivos (verificações de saúde ativas) e decidir quando uma requisição que falhou pode ser enviada a outro back end. Um benchmark local com k6 então o compara com o NGINX na frente dos mesmos três back ends.
 

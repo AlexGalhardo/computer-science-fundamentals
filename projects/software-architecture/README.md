@@ -1,6 +1,6 @@
 # Software architecture
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Software architecture is the set of decisions that are expensive to change: how a system is split into parts, which way the dependencies point, and which quality attributes (performance, availability, ease of change) are favoured. Layered, hexagonal and clean architectures, monoliths and microservices, events and CQRS are answers to the same question: how to keep the business rules independent from the details around them.
 

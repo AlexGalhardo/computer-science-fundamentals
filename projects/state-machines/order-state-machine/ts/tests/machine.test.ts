@@ -12,6 +12,9 @@ const machine = createMachine(table);
 //     pares (estado, evento): os pares listados na tabela devem dar certo com o destino
 //     listado, e todos os outros devem ser rejeitados. Um estado ou evento novo acrescenta
 //     seus casos sozinho.
+// ES: La prueba se genera a partir de la tabla, y no se escribe caso por caso. Recorre todos los
+//     pares (estado, evento): los pares listados en la tabla deben tener éxito con el destino
+//     listado, y todos los demás deben rechazarse. Un estado o evento nuevo añade sus casos solo.
 const expected = new Map<string, OrderState>(table.transitions.map(({ from, event, to }) => [`${from}:${event}`, to]));
 const pairs = STATES.flatMap((state) => EVENTS.map((event) => ({ state, event })));
 const valid = pairs.filter(({ state, event }) => expected.has(`${state}:${event}`));
@@ -29,6 +32,7 @@ describe("every (state, event) pair, generated from machine.json", () => {
 		expect(result.ok).toBe(false);
 		// EN: A rejected event must leave the order where it was.
 		// PT: Um evento rejeitado deve deixar o pedido onde estava.
+		// ES: Un evento rechazado debe dejar el pedido donde estaba.
 		expect(machine.run([event], state)).toEqual({
 			state,
 			steps: [{ event, from: state, to: state, accepted: false }],
@@ -39,6 +43,8 @@ describe("every (state, event) pair, generated from machine.json", () => {
 	//     table visible in review: 6 valid transitions and 24 rejections.
 	// PT: 6 estados x 5 eventos = 30 pares. Fixar a divisão torna visível na revisão uma mudança
 	//     acidental da tabela: 6 transições válidas e 24 rejeições.
+	// ES: 6 estados x 5 eventos = 30 pares. Fijar la división hace visible en la revisión un
+	//     cambio accidental de la tabla: 6 transiciones válidas y 24 rechazos.
 	test("the table has 6 valid transitions and 24 rejected pairs", () => {
 		expect(pairs).toHaveLength(30);
 		expect(valid).toHaveLength(6);

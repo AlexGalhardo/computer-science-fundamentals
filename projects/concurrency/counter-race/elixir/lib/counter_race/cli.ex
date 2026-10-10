@@ -7,6 +7,8 @@ defmodule CounterRace.CLI do
   # EN: 8 workers by default. The benchmark sets WORKERS to 1, 2, 4 and 8 to show how the fix scales.
   # PT: 8 workers por padrão. O benchmark define WORKERS como 1, 2, 4 e 8 para mostrar como a
   #     correção escala.
+  # ES: 8 workers por defecto. El benchmark define WORKERS como 1, 2, 4 y 8 para mostrar cómo
+  #     escala la corrección.
   defp workers, do: max(1, String.to_integer(System.get_env("WORKERS", "8")))
   @variants %{"actor" => :actor, "get-then-set" => :get_then_set}
 
@@ -30,6 +32,7 @@ defmodule CounterRace.CLI do
 
       # EN: The checksum is the final value. For a correct counter it equals n.
       # PT: O checksum é o valor final. Em um contador correto ele é igual a n.
+      # ES: El checksum es el valor final. En un contador correcto es igual a n.
       IO.puts(
         ~s({"n":#{n},"elapsedMs":#{Float.round(ms, 3)},"memoryKb":#{peak_memory_kb()},) <>
           ~s("language":"elixir","implementation":"#{name}","checksum":"#{final}"})

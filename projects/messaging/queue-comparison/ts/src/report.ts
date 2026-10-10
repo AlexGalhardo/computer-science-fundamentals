@@ -4,6 +4,9 @@
 // PT: Transforma as medições no Markdown versionado em `results/results.md`. Um benchmark sem a
 //     máquina, as versões e o comando não pode ser reproduzido, então eles fazem parte do
 //     relatório.
+// ES: Convierte las mediciones en el Markdown versionado en `results/results.md`. Un benchmark sin
+//     la máquina, las versiones y el comando no puede reproducirse, así que forman parte del
+//     reporte.
 
 import type { OrderingResult, RedeliveryResult, Spread, ThroughputResult } from "./experiments";
 import type { BrokerName } from "./queue";

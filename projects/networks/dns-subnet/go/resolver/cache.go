@@ -41,6 +41,9 @@ func NewCache(now func() time.Time) *Cache {
 // PT: O tempo de vida é escolhido pelo dono do dado, não pelo cache. Ele diz por quanto tempo
 // a resposta pode ser reutilizada sem perguntar de novo. O conjunto expira junto com o seu
 // menor TTL, e um TTL de zero significa "não guarde".
+// ES: El tiempo de vida lo elige el dueño del dato, no la caché. Dice por cuánto tiempo la
+// respuesta puede reutilizarse sin volver a preguntar. El conjunto expira junto con su menor
+// TTL, y un TTL de cero significa "no lo guardes".
 func (c *Cache) Put(records []dnsmsg.Record) {
 	if len(records) == 0 {
 		return
@@ -77,6 +80,9 @@ func (c *Cache) Get(name string, kind dnsmsg.Type) ([]dnsmsg.Record, bool) {
 	// PT: Uma resposta em cache é repassada com o tempo que lhe resta, não com o TTL original.
 	//     Do contrário uma cadeia de caches manteria um registro antigo vivo muito além do que
 	//     o dono permitiu.
+	// ES: Una respuesta en caché se entrega con el tiempo que le queda, no con el TTL original.
+	//     De lo contrario una cadena de cachés mantendría vivo un registro viejo mucho más allá
+	//     de lo que permitió el dueño.
 	seconds := uint32((left + time.Second - 1) / time.Second)
 	records := make([]dnsmsg.Record, len(found.records))
 	for i, record := range found.records {

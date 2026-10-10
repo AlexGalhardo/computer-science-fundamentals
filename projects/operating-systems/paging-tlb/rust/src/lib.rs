@@ -9,6 +9,13 @@
 //! A versão em TypeScript usa uma classe por algoritmo. Aqui o algoritmo é um `enum` e a escolha
 //! da vítima é um `match`, que o compilador confere para casos faltando. Os contadores são
 //! inteiros sem sinal, um valor ausente é um `Option`, e o traço é emprestado, não copiado.
+//!
+//! ES: Paginación en Rust: algoritmos de reemplazo de páginas, tabla de páginas y TLB.
+//!
+//! La versión en TypeScript usa una clase por algoritmo. Aquí el algoritmo es un `enum` y la
+//! elección de la víctima es un `match`, que el compilador revisa para detectar casos faltantes.
+//! Los contadores son enteros sin signo, un valor ausente es un `Option`, y la traza se toma
+//! prestada (borrowed), no se copia.
 
 use std::collections::{HashMap, VecDeque};
 
@@ -52,6 +59,9 @@ pub struct Access {
 ///
 /// PT: Memória física: um número fixo de molduras e a regra que escolhe a vítima quando uma
 /// falta de página não encontra moldura livre.
+///
+/// ES: Memoria física: un número fijo de marcos y la regla que elige una víctima cuando un fallo
+/// de página no encuentra ningún marco libre.
 pub struct Memory<'a> {
     algorithm: Algorithm,
     capacity: usize,
@@ -141,6 +151,8 @@ impl<'a> Memory<'a> {
     //     stamp (for LRU). FIFO and optimal ignore both.
     // PT: Todo uso de uma página, acerto ou carga, liga o bit de referência (para o relógio) e
     //     renova o carimbo (para o LRU). FIFO e ótimo ignoram os dois.
+    // ES: Cada uso de una página, acierto o carga, activa el bit de referencia (para clock) y
+    //     renueva la marca (para LRU). FIFO y óptimo ignoran ambos.
     fn touch(&mut self, frame: usize) {
         self.tick += 1;
         self.referenced[frame] = true;
@@ -151,6 +163,7 @@ impl<'a> Memory<'a> {
         match self.algorithm {
             // EN: FIFO: the oldest page is the next frame in the circle, used or not.
             // PT: FIFO: a página mais antiga é a próxima moldura do círculo, usada ou não.
+            // ES: FIFO: la página más antigua es el siguiente marco del círculo, usado o no.
             Algorithm::Fifo => {
                 let frame = self.hand;
                 self.hand = (self.hand + 1) % self.capacity;
@@ -160,6 +173,8 @@ impl<'a> Memory<'a> {
             //     moves on). The first frame found with R = 0 is the victim.
             // PT: Relógio: a moldura com R = 1 ganha uma segunda chance (R é zerado e o ponteiro
             //     avança). A primeira moldura encontrada com R = 0 é a vítima.
+            // ES: Clock: un marco con R = 1 recibe una segunda oportunidad (se borra R y el
+            //     puntero avanza). El primer marco encontrado con R = 0 es la víctima.
             Algorithm::Clock => {
                 while self.referenced[self.hand] {
                     self.referenced[self.hand] = false;
@@ -171,6 +186,7 @@ impl<'a> Memory<'a> {
             }
             // EN: LRU: the frame whose last use is the oldest.
             // PT: LRU: a moldura cujo último uso é o mais antigo.
+            // ES: LRU: el marco cuyo último uso es el más antiguo.
             Algorithm::Lru => {
                 let mut oldest = 0;
                 for frame in 1..self.capacity {
@@ -184,6 +200,8 @@ impl<'a> Memory<'a> {
             //     again. It needs the future, so it only works on a recorded trace.
             // PT: Ótimo: a página cujo próximo uso está mais distante, ou que nunca mais é
             //     usada. Precisa do futuro, então só funciona sobre um traço gravado.
+            // ES: Óptimo: la página cuyo próximo uso está más lejos, o que nunca se vuelve a usar.
+            //     Necesita el futuro, así que solo funciona sobre una traza grabada.
             Algorithm::Optimal => {
                 let future = &self.trace[self.position + 1..];
                 let mut best = 0;
@@ -237,6 +255,10 @@ pub struct Counters {
 /// PT: Uma unidade de gerenciamento de memória em miniatura. O endereço virtual se divide em
 /// número de página e deslocamento. A tradução é procurada primeiro na TLB, depois na tabela
 /// de páginas, e uma página que não está na memória causa uma falta de página.
+///
+/// ES: Una unidad de gestión de memoria en miniatura. La dirección virtual se divide en número de
+/// página y desplazamiento. La traducción se busca primero en la TLB, luego en la tabla de
+/// páginas, y una página que no está en memoria causa un fallo de página.
 pub struct Mmu {
     page_size: u64,
     tlb_entries: usize,
@@ -295,6 +317,9 @@ impl Mmu {
                         // PT: A página retirada precisa sair da tabela de páginas E da TLB. Uma
                         //     entrada velha na TLB apontaria para uma moldura que agora guarda
                         //     outra página.
+                        // ES: La página expulsada debe salir de la tabla de páginas Y de la TLB.
+                        //     Una entrada obsoleta en la TLB apuntaría a un marco que ahora
+                        //     guarda otra página.
                         self.page_table.remove(&evicted);
                         self.tlb.retain(|&(entry, _)| entry != evicted);
                     }
@@ -323,6 +348,10 @@ impl Mmu {
 ///
 /// PT: Média ponderada do acerto na TLB (consulta à TLB mais um acesso à memória) e da falta
 /// (consulta à TLB, um acesso à memória por nível da tabela de páginas e depois o acesso em si).
+///
+/// ES: Promedio ponderado del acierto en la TLB (consulta a la TLB más un acceso a memoria) y del
+/// fallo (consulta a la TLB, un acceso a memoria por nivel de la tabla de páginas y luego el
+/// acceso en sí).
 pub fn effective_access_time(hit_ratio: f64, memory_ns: f64, tlb_ns: f64, levels: u32) -> f64 {
     let hit = tlb_ns + memory_ns;
     let miss = tlb_ns + f64::from(levels) * memory_ns + memory_ns;
@@ -338,6 +367,7 @@ mod tests {
 
     // EN: The expected counts are the ones documented in docs/en/operating-systems/paging-tlb.md.
     // PT: As contagens esperadas são as documentadas em docs/pt/operating-systems/paging-tlb.md.
+    // ES: Los conteos esperados son los documentados en docs/es/operating-systems/paging-tlb.md.
 
     #[test]
     fn classic_string_with_three_frames() {
@@ -377,6 +407,7 @@ mod tests {
         assert_eq!(count_faults(Algorithm::Fifo, &BELADY, 4), 10);
         // EN: LRU is a stack algorithm: more frames never means more faults.
         // PT: O LRU é um algoritmo de pilha: mais molduras nunca significam mais faltas.
+        // ES: LRU es un algoritmo de pila: más marcos nunca significan más fallos.
         for frames in 1..6 {
             assert!(
                 count_faults(Algorithm::Lru, &BELADY, frames + 1)

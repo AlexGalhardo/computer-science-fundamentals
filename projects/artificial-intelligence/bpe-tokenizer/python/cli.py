@@ -3,6 +3,9 @@ the bytes and the text of each one, and the boundaries.
 
 PT: `python cli.py [--merges N] "uma frase"` imprime os tokens de uma frase, com o id, os bytes e
 o texto de cada um, e as fronteiras.
+
+ES: `python cli.py [--merges N] "una frase"` imprime los tokens de una frase, con el id, los bytes
+y el texto de cada uno, y los límites.
 """
 
 import argparse
@@ -27,6 +30,7 @@ def describe(tokenizer: Tokenizer, text: str) -> str:
         lines.append(f"{token_id:>5}  {piece:<20}  {label}")
     # EN: The boundaries line shows where the cuts fall in the sentence.
     # PT: A linha de fronteiras mostra onde os cortes caem na frase.
+    # ES: La línea de límites muestra dónde caen los cortes en la frase.
     pieces = [token_label(tokenizer, token_id).replace("\n", "\\n") for token_id in ids]
     lines += [
         "",

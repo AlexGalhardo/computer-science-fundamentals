@@ -27,6 +27,8 @@ export interface AlgorithmPlan {
 //     because the expected numbers are written down before the measurement.
 // PT: Cada algoritmo vem com a fatia que promete. O experimento só vale alguma coisa porque os
 //     números esperados são escritos antes da medição.
+// ES: Cada algoritmo viene con la parte que promete. El experimento solo vale algo porque los
+//     números esperados se escriben antes de la medición.
 export const PLANS: Record<Algorithm, AlgorithmPlan> = {
 	"round-robin": {
 		route: "/rr",
@@ -84,6 +86,10 @@ export interface DistributionRun {
 //     198.18.0.0/15, a faixa reservada para benchmarks (RFC 2544), que nunca é um host real.
 //     Um /24 por cliente importa: o NGINX faz o hash só dos três primeiros octetos de um
 //     endereço IPv4, então clientes no mesmo /24 contariam como um só.
+// ES: El cliente simulado `n` recibe una dirección en su propia red /24, dentro de
+//     198.18.0.0/15, el rango reservado para benchmarks (RFC 2544), que nunca es un host real.
+//     Un /24 por cliente importa: NGINX hace el hash solo de los tres primeros octetos de una
+//     dirección IPv4, así que clientes en el mismo /24 contarían como uno solo.
 export function clientAddress(client: number, host = 10): string {
 	return `198.${18 + ((client >> 8) & 1)}.${client & 255}.${host}`;
 }
@@ -124,6 +130,9 @@ export async function runDistribution(
 		// PT: A rede do laboratório é confiável para os dois proxies, então este cabeçalho faz
 		//     o papel do endereço do cliente. Na internet um proxy nunca deve acreditar nele
 		//     vindo de um desconhecido.
+		// ES: La red del laboratorio es de confianza para los dos proxies, así que este encabezado
+		//     hace el papel de la dirección del cliente. En internet un proxy nunca debe creerle
+		//     a un desconocido.
 		headers:
 			algorithm === "ip-hash" ? (index) => ({ "X-Forwarded-For": clientAddress(clientOf(index)) }) : undefined,
 	});
@@ -178,6 +187,9 @@ export const VICTIM = "api-3";
 // PT: Uma execução precisa começar com as três instâncias em rotação. Depois de uma falha um
 //     proxy pode manter uma instância fora por vários segundos, então o laboratório espera até
 //     as três terem respondido.
+// ES: Una ejecución debe empezar con las tres instancias en rotación. Tras una falla un proxy puede
+//     mantener una instancia fuera durante varios segundos, así que el laboratorio espera hasta
+//     que las tres hayan respondido.
 export async function waitForFullRotation(url: string, timeoutMs = 30_000): Promise<void> {
 	const deadline = performance.now() + timeoutMs;
 	while (performance.now() < deadline) {

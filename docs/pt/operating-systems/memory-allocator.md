@@ -1,6 +1,6 @@
 # Alocador de memória
 
-> English version: [docs/en/operating-systems/memory-allocator.md](../../en/operating-systems/memory-allocator.md)
+> English version: [docs/en/operating-systems/memory-allocator.md](../../en/operating-systems/memory-allocator.md) · Versión en español: [docs/es/operating-systems/memory-allocator.md](../../es/operating-systems/memory-allocator.md)
 
 Mini-projeto: [`projects/operating-systems/memory-allocator`](../../../projects/operating-systems/memory-allocator/). Item do plano: MP-OS-3. Tópico do quiz: `operating-systems` / `memory-management`.
 

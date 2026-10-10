@@ -8,11 +8,18 @@
 #     um resumo Markdown por cenário e falha a menos que todo cenário tenha ultrapassado um
 #     threshold antes da correção e nenhum depois. Leva cerca de seis minutos.
 #     Uso: .\load-test-windows.ps1 [-PoolBefore 2] [-PoolAfter 20]
+# ES: La demostración: los cuatro escenarios de k6 (load, stress, spike, soak) contra la API con un
+#     pool de 2 conexiones, luego los mismos cuatro con un pool de 20. Después la etapa de reporte
+#     escribe un resumen Markdown por escenario y falla a menos que todo escenario haya superado un
+#     umbral antes de la corrección y ninguno después. Tarda unos seis minutos.
+#     Uso: .\load-test-windows.ps1 [-PoolBefore 2] [-PoolAfter 20]
 param([int]$PoolBefore = 2, [int]$PoolAfter = 20)
 
 # EN: Docker writes its progress to stderr, so failures are checked by exit code (see the setup script).
 # PT: O Docker escreve o progresso em stderr, então as falhas são conferidas pelo código de saída
 #     (veja o script de setup).
+# ES: Docker escribe el progreso en stderr, así que las fallas se verifican por el código de salida
+#     (ver el script de setup).
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot
@@ -29,6 +36,7 @@ try {
 		foreach ($scenario in @("load", "stress", "spike", "soak")) {
 			# EN: A fresh API process for every scenario, so the queue left by one never leaks into the next.
 			# PT: Um processo novo da API para cada cenário, então a fila deixada por um nunca vaza para o seguinte.
+			# ES: Un proceso nuevo de la API para cada escenario, así que la cola que deja uno nunca se filtra al siguiente.
 			$env:POOL_SIZE = "$($variant[1])"
 			docker compose up -d --wait --force-recreate api
 			if ($LASTEXITCODE -ne 0) { throw "the API did not start" }
@@ -37,6 +45,9 @@ try {
 			# PT: Código de saída 99 significa "um threshold foi ultrapassado", que é o resultado
 			#     esperado antes da correção. Qualquer outra falha para o script. A etapa de
 			#     relatório é quem julga os dois casos.
+			# ES: El código de salida 99 significa "se superó un umbral", que es el resultado esperado
+			#     antes de la corrección. Cualquier otra falla detiene el script. La etapa de
+			#     reporte es quien juzga los dos casos.
 			docker compose run --rm -e "SCENARIO=$scenario" -e "VARIANT=$($variant[0])" k6
 			if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 99) { throw "k6 failed with exit code $LASTEXITCODE" }
 			Write-Output "$($variant[0]) ${scenario}: k6 exit code $LASTEXITCODE"

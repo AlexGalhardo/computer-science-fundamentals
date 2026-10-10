@@ -8,6 +8,11 @@
 //     baixo para cima em O(n). A fase 2 repete n-1 vezes: troca o máximo com o último valor do
 //     heap, encolhe o heap em um e desce a nova raiz. O(n log n) para qualquer entrada e sem
 //     memória extra, ao preço de saltar pelo vetor (pouco uso de cache) e de não ser estável.
+// ES: Heapsort. El propio arreglo guarda un max-heap: los hijos del índice i son 2i+1 y 2i+2, y
+//     todo padre es >= sus hijos, así que el máximo queda en el índice 0. La fase 1 construye el heap
+//     de abajo hacia arriba en O(n). La fase 2 repite n-1 veces: intercambia el máximo con el último valor
+//     del heap, reduce el heap en uno y hace descender la nueva raíz. O(n log n) para cualquier entrada y sin
+//     memoria extra, al precio de saltar por el arreglo (poco uso de caché) y de no ser estable.
 export function heapSort(input: readonly number[]): number[] {
 	const a = [...input];
 	const n = a.length;
@@ -27,6 +32,8 @@ export function heapSort(input: readonly number[]): number[] {
 //     down one level. The path is at most the height of the heap, log2(n).
 // PT: Descida: enquanto o valor for menor que o maior filho, sobe esse filho e desce um nível.
 //     O caminho tem no máximo a altura do heap, log2(n).
+// ES: Descenso: mientras el valor sea menor que el mayor hijo, sube ese hijo y desciende un nivel.
+//     El camino tiene como máximo la altura del heap, log2(n).
 function siftDown(a: number[], start: number, size: number): void {
 	const value = a[start] as number;
 	let i = start;

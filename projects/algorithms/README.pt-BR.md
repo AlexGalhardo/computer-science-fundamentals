@@ -1,6 +1,6 @@
 # Algoritmos
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Algoritmos são os métodos passo a passo para resolver um problema: ordenar, buscar, achar o caminho mais curto, escolher a melhor combinação. Estudá-los ensina um pequeno conjunto de técnicas de projeto (divisão e conquista, escolha gulosa, programação dinâmica, backtracking) que transformam problemas que parecem impossíveis em escala em programas que terminam.
 

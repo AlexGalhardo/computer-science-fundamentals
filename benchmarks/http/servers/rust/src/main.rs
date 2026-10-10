@@ -12,6 +12,13 @@
 //     de outra. O handler preso à CPU roda nas mesmas threads: aqui ele é curto, mas um longo
 //     deveria ir para `spawn_blocking` para não segurar outras requisições.
 //     Protocolo (o mesmo nas 7 linguagens): GET /health, POST /echo, GET /primes?limit=N.
+// ES: Servidor HTTP del benchmark en Rust, con axum (el framework web más usado) sobre tokio.
+//     Rust no tiene servidor HTTP en la biblioteca estándar, así que un framework es necesario.
+//     Modelo: tareas asíncronas en un pool de threads del SO, uno por núcleo. Cada conexión es
+//     una tarea (una máquina de estados, no un stack). Un thread que se queda sin tareas roba
+//     de otro. El handler limitado por CPU corre en los mismos threads: aquí es corto, pero uno
+//     largo debería ir a `spawn_blocking` para no retener otras peticiones.
+//     Protocolo (el mismo en los 7 lenguajes): GET /health, POST /echo, GET /primes?limit=N.
 
 use axum::{
     Json, Router,
@@ -47,6 +54,7 @@ fn is_prime(k: u64) -> bool {
 
 // EN: The CPU-bound endpoint: count the primes up to limit by trial division.
 // PT: O endpoint preso à CPU: conta os primos até limit por divisão por tentativa.
+// ES: El endpoint limitado por CPU: cuenta los primos hasta limit por división de prueba.
 fn count_primes(limit: u64) -> usize {
     (2..=limit).filter(|&k| is_prime(k)).count()
 }
@@ -55,6 +63,8 @@ fn count_primes(limit: u64) -> usize {
 //     library and the HTTP stack, not a copy of bytes.
 // PT: O endpoint de eco interpreta o corpo JSON e o serializa de novo, então mede a biblioteca
 //     de JSON e a pilha HTTP, não uma cópia de bytes.
+// ES: El endpoint de eco interpreta el cuerpo JSON y lo serializa de nuevo, así que mide la biblioteca
+//     de JSON y la pila HTTP, no una copia de bytes.
 async fn echo(body: Bytes) -> (StatusCode, Json<Value>) {
     match serde_json::from_slice::<Value>(&body) {
         Ok(value) => (

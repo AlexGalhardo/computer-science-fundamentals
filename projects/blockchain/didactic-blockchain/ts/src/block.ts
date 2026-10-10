@@ -30,6 +30,9 @@ export type Block = z.infer<typeof blockSchema>;
 //     builds the same text, so both languages compute the same hashes and find the same nonces.
 // PT: Tudo do cabeçalho menos o nonce, em uma linha de texto. A implementação em Rust monta o
 //     mesmo texto, então as duas linguagens calculam os mesmos hashes e acham os mesmos nonces.
+// ES: Todo el encabezado menos el nonce, en una línea de texto. La implementación en Rust arma
+//     el mismo texto, así que los dos lenguajes calculan los mismos hashes y hallan los mismos
+//     nonces.
 function headerPrefix(header: Omit<BlockHeader, "nonce">): string {
 	return `${header.height}|${header.previousHash}|${header.merkleRoot}|${header.timestamp}|${header.difficulty}|`;
 }
@@ -40,6 +43,10 @@ function headerPrefix(header: Omit<BlockHeader, "nonce">): string {
 // PT: O hash do bloco cobre só o cabeçalho. O cabeçalho guarda o hash do bloco anterior (o elo
 //     da cadeia) e a raiz de Merkle (a impressão digital de todas as transações), então mudar
 //     qualquer transação, ou qualquer bloco anterior, muda este hash.
+// ES: El hash del bloque cubre solo el encabezado. El encabezado guarda el hash del bloque
+//     anterior (el eslabón de la cadena) y la raíz de Merkle (la huella digital de todas las
+//     transacciones), así que cambiar cualquier transacción, o cualquier bloque anterior,
+//     cambia este hash.
 export function headerHash(header: BlockHeader): string {
 	return sha256Hex(headerPrefix(header) + header.nonce);
 }
@@ -52,6 +59,10 @@ export function headerHash(header: BlockHeader): string {
 //     em 16^d serve, então cada dígito a mais multiplica o trabalho médio por 16. Redes reais
 //     comparam o hash com um alvo numérico, que pode ser ajustado por qualquer fator, não só
 //     por potências de 16.
+// ES: La dificultad es el número de dígitos hexadecimales cero exigidos al inicio del hash. Un
+//     hash entre 16^d sirve, así que cada dígito adicional multiplica el trabajo promedio por
+//     16. Las redes reales comparan el hash con un objetivo numérico, que se puede ajustar por
+//     cualquier factor, no solo por potencias de 16.
 export function meetsDifficulty(hash: string, difficulty: number): boolean {
 	for (let i = 0; i < difficulty; i++) {
 		if (hash[i] !== "0") {
@@ -74,6 +85,9 @@ export interface Mined {
 // PT: Prova de trabalho. O hash não pode ser previsto, então o único jeito de obter um com os
 //     zeros exigidos é testar nonces um após o outro. Achar custa cerca de 16^d hashes, e
 //     conferir custa um. Essa assimetria é a ideia toda.
+// ES: Prueba de trabajo. El hash no se puede predecir, así que la única forma de obtener uno
+//     con los ceros exigidos es probar nonces uno tras otro. Encontrarlo cuesta unos 16^d
+//     hashes, y comprobarlo cuesta uno. Esa asimetría es toda la idea.
 export function mine(header: Omit<BlockHeader, "nonce">): Mined {
 	const prefix = headerPrefix(header);
 	for (let nonce = 0; ; nonce++) {

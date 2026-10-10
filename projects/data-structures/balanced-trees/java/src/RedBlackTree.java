@@ -14,6 +14,13 @@ import java.util.function.Consumer;
  * nó até as folhas NIL passa pelo mesmo número de nós pretos. Juntas, elas implicam que o caminho
  * mais longo tem no máximo o dobro do mais curto, então a altura fica abaixo de 2 log2(n + 1). O
  * balanceamento é mais frouxo que o da AVL, e em troca as atualizações precisam de menos rotações.
+ *
+ * <p>ES: Un árbol binario de búsqueda en que cada nodo es rojo o negro y valen cuatro reglas. La
+ * raíz es negra. Las hojas NIL son negras. Un nodo rojo no tiene hijo rojo. Todo camino de un nodo
+ * hasta las hojas NIL pasa por el mismo número de nodos negros. Juntas, implican que el camino más
+ * largo tiene como máximo el doble del más corto, así que la altura queda por debajo de 2 log2(n +
+ * 1). El balanceo es más flojo que el del AVL, y a cambio las actualizaciones necesitan menos
+ * rotaciones.
  */
 public final class RedBlackTree implements SearchTree {
   private static final class Node {
@@ -28,6 +35,9 @@ public final class RedBlackTree implements SearchTree {
   //     node there lets the code read node.left.red without testing for null.
   // PT: Um único nó sentinela compartilhado faz o papel de todas as folhas NIL. Ele é preto, e
   //     ter um nó de verdade ali deixa o código ler node.left.red sem testar referência nula.
+  // ES: Un único nodo centinela compartido hace el papel de todas las hojas NIL. Es negro, y
+  //     tener un nodo de verdad ahí deja que el código lea node.left.red sin probar una
+  //     referencia nula.
   private final Node nil = new Node();
   private Node root = nil;
   private int size;
@@ -63,6 +73,9 @@ public final class RedBlackTree implements SearchTree {
   // PT: O nó novo entra como folha vermelha. O vermelho não altera o número de nós pretos de
   //     nenhum caminho, então a única regra que pode quebrar é "nó vermelho não tem filho
   //     vermelho", e essa tem conserto local.
+  // ES: El nodo nuevo entra como hoja roja. El rojo no altera el número de nodos negros de ningún
+  //     camino, así que la única regla que puede romperse es "un nodo rojo no tiene hijo rojo", y
+  //     esa tiene arreglo local.
   @Override
   public boolean insert(long key) {
     Node parent = nil;
@@ -110,6 +123,10 @@ public final class RedBlackTree implements SearchTree {
     //     dois filhos) e `hole` é o nó que assume essa posição. Se o nó que saiu era preto, os
     //     caminhos que passam por `hole` perderam um nó preto e a árvore precisa ser consertada a
     //     partir dali.
+    // ES: `moved` es el nodo que sale de su posición (el propio objetivo, o el sucesor cuando el
+    //     objetivo tiene dos hijos) y `hole` es el nodo que asume esa posición. Si el nodo que
+    //     salió era negro, los caminos que pasan por `hole` perdieron un nodo negro y el árbol
+    //     debe arreglarse a partir de ahí.
     Node moved = target;
     boolean movedWasRed = moved.red;
     Node hole;
@@ -199,6 +216,8 @@ public final class RedBlackTree implements SearchTree {
   //     parent here, on purpose: fixRemove may start at the sentinel and needs to climb from it.
   // PT: Faz o pai de `old` apontar para `replacement`. O sentinela também recebe um pai aqui, de
   //     propósito: o fixRemove pode começar no sentinela e precisa subir a partir dele.
+  // ES: Hace que el padre de `old` apunte a `replacement`. Aquí el centinela también recibe un
+  //     padre, a propósito: fixRemove puede empezar en el centinela y necesita subir desde él.
   private void replaceChild(Node old, Node replacement) {
     replacement.parent = old.parent;
     if (old.parent == nil) {
@@ -218,6 +237,10 @@ public final class RedBlackTree implements SearchTree {
   //     que só as cores mudam: pai e tio ficam pretos, o avô fica vermelho, e o conflito sobe
   //     dois níveis. Tio preto significa que a subárvore está torta, e uma ou duas rotações com
   //     troca de cores encerram o conserto de vez.
+  // ES: Mientras el nodo nuevo y el padre sean ambos rojos, se mira al tío. Tío rojo significa
+  //     que solo cambian los colores: padre y tío quedan negros, el abuelo queda rojo, y el
+  //     conflicto sube dos niveles. Tío negro significa que el subárbol está torcido, y una o dos
+  //     rotaciones con cambio de colores terminan el arreglo de una vez.
   private void fixInsert(Node start) {
     Node node = start;
     while (node.parent.red) {
@@ -275,6 +298,11 @@ public final class RedBlackTree implements SearchTree {
   //     dois filhos pretos abre mão do próprio preto (fica vermelho) e o problema sobe para o
   //     pai. Um irmão preto com um filho vermelho empresta esse vermelho por uma ou duas
   //     rotações, o que devolve o preto que faltava e encerra o conserto.
+  // ES: `node` carga un "negro extra" que falta en sus caminos. El hermano decide qué hacer. Un
+  //     hermano rojo primero se saca del camino con una rotación. Un hermano negro con dos hijos
+  //     negros renuncia a su propio negro (queda rojo) y el problema sube al padre. Un hermano
+  //     negro con un hijo rojo presta ese rojo con una o dos rotaciones, lo que devuelve el negro
+  //     que faltaba y termina el arreglo.
   private void fixRemove(Node start) {
     Node node = start;
     while (node != root && !node.red) {

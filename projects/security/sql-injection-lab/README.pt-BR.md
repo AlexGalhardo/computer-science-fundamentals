@@ -1,6 +1,6 @@
 # sql-injection-lab
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um laboratório defensivo e local sobre SQL injection. O mesmo pequeno app ElysiaJS (um login e uma busca de produtos em PostgreSQL) existe duas vezes: uma versão que monta o SQL concatenando strings, rotulada `vulnerable`, e uma versão corrigida com consultas parametrizadas, validação de entrada e um papel de banco com menor privilégio. Um único cenário roda contra as duas e mostra por que a concatenação de strings é explorável e por que os marcadores são a correção.
 
@@ -31,7 +31,7 @@ docker compose run --rm demo
 docker compose down -v --remove-orphans
 ```
 
-Ela imprime um passo a passo narrado, em inglês e português: o texto SQL que a versão vulnerável envia ao banco, o cenário contra o app vulnerável (login sem senha, os segredos falsos no resultado da busca), o mesmo cenário contra o app corrigido (as duas tentativas falham, o uso normal funciona), e o efeito do papel somente leitura.
+Ela imprime um passo a passo narrado, em inglês, português e espanhol (cada passo tem uma linha `EN:`, uma `PT:` e uma `ES:`): o texto SQL que a versão vulnerável envia ao banco, o cenário contra o app vulnerável (login sem senha, os segredos falsos no resultado da busca), o mesmo cenário contra o app corrigido (as duas tentativas falham, o uso normal funciona), e o efeito do papel somente leitura.
 
 ## Testes
 

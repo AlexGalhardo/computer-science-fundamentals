@@ -4,6 +4,9 @@
 // PT: VULNERÁVEL DE PROPÓSITO. Uma API de login com cinco falhas, cada uma marcada com "FLAW"
 //     abaixo. Existe só para torná-las observáveis dentro deste laboratório. Nunca copie este
 //     arquivo e nunca o importe fora deste laboratório.
+// ES: VULNERABLE A PROPÓSITO. Una API de inicio de sesión con cinco fallas, cada una marcada con "FLAW"
+//     abajo. Existe solo para hacerlas observables dentro de este laboratorio. Nunca copies este
+//     archivo y nunca lo importes fuera de este laboratorio.
 
 import { randomBytes } from "node:crypto";
 import { Elysia } from "elysia";
@@ -19,6 +22,7 @@ interface VulnerableSession {
 
 // EN: The user table of the vulnerable API: username to unsalted MD5.
 // PT: A tabela de usuários da API vulnerável: nome de usuário para MD5 sem sal.
+// ES: La tabla de usuarios de la API vulnerable: nombre de usuario a MD5 sin sal.
 export function createVulnerableUserTable(): Map<string, string> {
 	return new Map(ACCOUNTS.map((account) => [account.username, storeMd5(account.password)]));
 }
@@ -33,6 +37,8 @@ function textField(body: unknown, name: string): string {
 //     of the app, and writing it by hand would only lose that information.
 // PT: O tipo de retorno fica por conta da inferência de propósito: o Elysia codifica cada rota
 //     no tipo do app, e escrevê-lo à mão só perderia essa informação.
+// ES: El tipo de retorno se deja a la inferencia a propósito: Elysia codifica cada ruta
+//     en el tipo de la app, y escribirlo a mano solo perdería esa información.
 export function createVulnerableApp(users: Map<string, string>) {
 	const sessions = new Map<string, VulnerableSession>();
 
@@ -42,6 +48,9 @@ export function createVulnerableApp(users: Map<string, string>) {
 	// PT: FLAW 1, o cookie não tem nenhum atributo além do caminho. Sem `HttpOnly`, qualquer
 	//     script da página o lê (`document.cookie`). Sem `Secure`, ele também viaja por HTTP
 	//     puro. Sem `SameSite`, ele é anexado a requisições iniciadas por outros sites.
+	// ES: FLAW 1, la cookie no tiene ningún atributo además de la ruta. Sin `HttpOnly`, cualquier
+	//     script de la página la lee (`document.cookie`). Sin `Secure`, además viaja por HTTP
+	//     plano. Sin `SameSite`, se adjunta a solicitudes iniciadas por otros sitios.
 	function sessionCookie(id: string): string {
 		return `${VULNERABLE_COOKIE}=${id}; Path=/`;
 	}
@@ -59,6 +68,8 @@ export function createVulnerableApp(users: Map<string, string>) {
 			//     hold a cart or a language). This is not a flaw by itself.
 			// PT: Visitar o site cria uma sessão anônima, como muitas aplicações fazem (para
 			//     guardar um carrinho ou um idioma). Isto sozinho não é uma falha.
+			// ES: Visitar el sitio crea una sesión anónima, como hacen muchas aplicaciones (para
+			//     guardar un carrito o un idioma). Esto por sí solo no es una falla.
 			.get("/home", ({ request }) => {
 				const current = currentSession(request);
 				if (current !== undefined) return jsonResponse(200, { user: current.session.username });
@@ -75,6 +86,9 @@ export function createVulnerableApp(users: Map<string, string>) {
 				// PT: FLAW 2, duas respostas diferentes. "unknown_user" contra "wrong_password"
 				//     conta a qualquer um quais nomes de usuário estão cadastrados (enumeração
 				//     de usuários).
+				// ES: FLAW 2, dos respuestas distintas. "unknown_user" frente a "wrong_password"
+				//     le cuenta a cualquiera qué nombres de usuario están registrados (enumeración
+				//     de usuarios).
 				const stored = users.get(username);
 				if (stored === undefined) return jsonResponse(401, { error: "unknown_user" });
 
@@ -82,6 +96,8 @@ export function createVulnerableApp(users: Map<string, string>) {
 				//     account is evaluated exactly like the first one.
 				// PT: FLAW 3, sem limite de tentativas. A milésima senha errada para a mesma
 				//     conta é avaliada exatamente como a primeira.
+				// ES: FLAW 3, sin límite de intentos. La milésima contraseña incorrecta para la misma
+				//     cuenta se evalúa exactamente igual que la primera.
 				if (!verifyLegacyPassword(password, stored)) return jsonResponse(401, { error: "wrong_password" });
 
 				// EN: FLAW 4, session fixation. When the browser already has a session id, the
@@ -92,6 +108,10 @@ export function createVulnerableApp(users: Map<string, string>) {
 				//     servidor mantém esse mesmo id e só o marca como logado. Quem conhecia o id
 				//     antes do login (porque o plantou no navegador da vítima, ou o viu em um
 				//     computador compartilhado) agora está logado como a vítima.
+				// ES: FLAW 4, fijación de sesión. Cuando el navegador ya tiene un id de sesión, el
+				//     servidor mantiene ese mismo id y solo lo marca como con sesión iniciada. Quien conocía el id
+				//     antes del inicio de sesión (porque lo plantó en el navegador de la víctima, o lo vio en un
+				//     computador compartido) ahora tiene la sesión iniciada como la víctima.
 				const current = currentSession(request);
 				if (current !== undefined) {
 					current.session.username = username;
@@ -112,6 +132,9 @@ export function createVulnerableApp(users: Map<string, string>) {
 			// PT: FLAW 5, o logout só pede ao navegador para esquecer o cookie. A sessão
 			//     continua válida no servidor, para sempre (também não há expiração), então uma
 			//     cópia do id continua funcionando depois que o usuário "saiu".
+			// ES: FLAW 5, el cierre de sesión solo le pide al navegador que olvide la cookie. La sesión
+			//     sigue siendo válida en el servidor, para siempre (tampoco hay expiración), así que una
+			//     copia del id sigue funcionando después de que el usuario "salió".
 			.post("/logout", () =>
 				jsonResponse(200, { loggedOut: true }, { "set-cookie": `${VULNERABLE_COOKIE}=; Path=/; Max-Age=0` }),
 			)

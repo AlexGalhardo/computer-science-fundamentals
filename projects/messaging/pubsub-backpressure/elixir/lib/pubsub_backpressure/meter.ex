@@ -11,6 +11,11 @@ defmodule PubsubBackpressure.Meter do
   processados. O medidor guarda o maior valor que essa diferença atingiu, que é o número de que
   a lição trata. Os contadores ficam fora dos processos (`:counters`), então lê-los não perturba
   o pipeline medido.
+
+  ES: La diferencia entre ambos es el buffer: eventos que salieron del productor y aún no se
+  procesaron. El medidor guarda el valor más alto que alcanzó esa diferencia, que es el número del
+  que trata la lección. Los contadores viven fuera de los procesos (`:counters`), así que leerlos
+  no perturba el pipeline medido.
   """
 
   @emitted 1

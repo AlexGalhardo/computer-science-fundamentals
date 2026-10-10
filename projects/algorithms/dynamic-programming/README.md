@@ -1,6 +1,6 @@
 # dynamic-programming
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Three classic problems (0-1 knapsack, longest common subsequence and coin change), each solved three times: with plain recursion, with the same recursion plus a cache (memoisation), and with loops that fill a table (tabulation). The three versions compute the same recurrence. What changes is how often the same subproblem is solved, and a call counter makes that visible.
 

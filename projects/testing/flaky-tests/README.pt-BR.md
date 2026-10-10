@@ -1,6 +1,6 @@
 # flaky-tests
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um laboratório de testes intermitentes. Quatro testes falham parte das vezes sem nenhuma mudança no código, cada um por um dos motivos de sempre: o relógio real, a ordem de resultados concorrentes, estado compartilhado entre testes e uma chamada de rede real. Ao lado de cada um está a versão corrigida: um relógio falso, uma ordem determinística, isolamento, uma rede com stub. Cada teste intermitente é rodado 50 vezes e falha ao menos uma. Cada teste corrigido é rodado 500 vezes e nunca falha.
 
@@ -73,7 +73,7 @@ A "rede real" é o serviço `unstable-api` deste arquivo compose, em uma rede `i
 
 ## Estrutura
 
-```
+```text
 ts/src/session.ts          tempo: sessões, Clock, FakeClock
 ts/src/prices.ts           ordem: ordem de chegada contra ordem do pedido
 ts/src/invoices.ts         estado compartilhado: um registro, a fábrica dele e um singleton

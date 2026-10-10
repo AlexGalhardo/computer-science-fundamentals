@@ -1,6 +1,6 @@
 # Protocolos
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Protocolos de aplicação são os acordos que permitem a programas escritos por pessoas diferentes conversarem entre si. Esta área acompanha o HTTP desde a semântica (métodos, códigos de status, cabeçalhos, cache, cookies), passando por seus três formatos de transmissão (HTTP/1.1, HTTP/2 e HTTP/3 sobre QUIC), pelo handshake TLS por baixo e pelos estilos de API construídos em cima: REST, GraphQL, JSON-RPC, gRPC, WebSocket e server-sent events.
 

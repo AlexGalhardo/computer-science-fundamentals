@@ -15,6 +15,8 @@ constexpr Weight kInfinity = std::numeric_limits<Weight>::max();
 //     when an algorithm needs a flat list of every edge of the graph.
 // PT: `Edge` é como um vértice enxerga um de seus vizinhos. `Arc` é uma aresta dirigida
 //     completa, usada quando um algoritmo precisa de uma lista plana com todas as arestas.
+// ES: `Edge` es cómo un vértice ve a uno de sus vecinos. `Arc` es una arista dirigida
+//     completa, usada cuando un algoritmo necesita una lista plana con todas las aristas.
 struct Edge {
 	int to;
 	Weight weight;
@@ -32,6 +34,9 @@ struct Arc {
 // PT: O tipo abstrato de dados. Todo algoritmo desta biblioteca conversa só com esta interface,
 //     então roda sem mudanças em lista de adjacência ou em matriz de adjacência. O que muda é o
 //     custo de cada operação, não a resposta.
+// ES: El tipo abstracto de datos. Todo algoritmo de esta biblioteca habla solo con esta interfaz,
+//     así que corre sin cambios en lista de adyacencia o en matriz de adyacencia. Lo que cambia es
+//     el costo de cada operación, no la respuesta.
 class Graph {
 public:
 	virtual ~Graph() = default;
@@ -44,6 +49,8 @@ public:
 	//     followed from either end.
 	// PT: Uma aresta não dirigida é guardada como dois arcos, um em cada sentido, para poder
 	//     ser seguida a partir de qualquer uma das pontas.
+	// ES: Una arista no dirigida se guarda como dos arcos, uno en cada sentido, para poder
+	//     seguirse desde cualquiera de los extremos.
 	void add_edge(int a, int b, Weight weight) {
 		add_arc(a, b, weight);
 		add_arc(b, a, weight);
@@ -66,6 +73,9 @@ public:
 // PT: Lista de adjacência: uma lista de vizinhos por vértice. A memória é O(V + E) e percorrer
 //     os vizinhos de um vértice custa o grau dele, por isso ela serve bem a grafos esparsos.
 //     Testar se um arco específico existe exige percorrer uma lista.
+// ES: Lista de adyacencia: una lista de vecinos por vértice. La memoria es O(V + E) y recorrer
+//     los vecinos de un vértice cuesta su grado, por eso sirve bien para grafos dispersos.
+//     Probar si existe un arco específico exige recorrer una lista.
 class AdjacencyList final : public Graph {
 public:
 	explicit AdjacencyList(int vertices) : lists_(static_cast<std::size_t>(vertices)) {}
@@ -101,6 +111,10 @@ private:
 //     i -> j, ou uma marca de "sem arco". Testar um arco é uma leitura, O(1), mas a memória é
 //     O(V^2) mesmo com poucas arestas, e listar os vizinhos de um vértice sempre percorre uma
 //     linha inteira. Uma célula guarda um valor, então de dois arcos paralelos só o mais leve fica.
+// ES: Matriz de adyacencia: una tabla V x V en que la celda (i, j) guarda el peso del arco
+//     i -> j, o una marca de "sin arco". Probar un arco es una lectura, O(1), pero la memoria es
+//     O(V^2) aun con pocas aristas, y listar los vecinos de un vértice siempre recorre una fila
+//     entera. Una celda guarda un valor, así que de dos arcos paralelos solo queda el más liviano.
 class AdjacencyMatrix final : public Graph {
 public:
 	static constexpr int kVertexLimit = 4096;
@@ -110,6 +124,8 @@ public:
 		//     exhausting the memory of the machine.
 		// PT: 100.000 vértices pediriam 10^10 células. Recusar cedo é melhor do que esgotar a
 		//     memória da máquina.
+		// ES: 100,000 vértices pedirían 10^10 celdas. Rechazar temprano es mejor que agotar la
+		//     memoria de la máquina.
 		if (vertices > kVertexLimit) {
 			throw std::length_error("adjacency matrix: too many vertices");
 		}

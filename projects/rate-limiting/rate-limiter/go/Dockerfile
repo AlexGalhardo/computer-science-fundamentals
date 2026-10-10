@@ -6,6 +6,11 @@
 #     compartilhada com o TypeScript) e `results/` (os números do experimento em TypeScript). Os
 #     testes rodam com o detector de corridas, que é o que prova que os mutexes são necessários.
 #     O golangci-lint vem da sua própria imagem fixada, a mesma versão de `docker/go.Dockerfile`.
+# ES: El contexto de build es la carpeta del miniproyecto, porque las pruebas leen `cases/` (la
+#     tabla compartida con TypeScript) y `results/` (los números del experimento en TypeScript).
+#     Las pruebas corren con el detector de carreras, que es lo que demuestra que los mutex son
+#     necesarios. golangci-lint viene de su propia imagen fijada, la misma versión de
+#     `docker/go.Dockerfile`.
 FROM golangci/golangci-lint:v2.14.0 AS lint
 FROM golang:1.27.1-bookworm
 COPY --from=lint /usr/bin/golangci-lint /usr/local/bin/golangci-lint

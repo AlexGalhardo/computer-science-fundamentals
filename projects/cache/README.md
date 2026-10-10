@@ -1,6 +1,6 @@
 # Cache
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A cache keeps a copy of something expensive to compute or fetch, so that the next request is served faster. Caches sit at every level (browser, CDN, application, database, CPU), and they all raise the same questions: what to keep, when to throw it away, how to know it is stale, and what happens when many clients miss at once. Getting those answers wrong trades a slow system for an incorrect one.
 

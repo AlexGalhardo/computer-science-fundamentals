@@ -12,6 +12,12 @@ import { relative, sep } from "node:path";
 //       TestResult  o coletor: quantos rodaram, quais falharam e por quê
 //       TestSuite   uma lista de coisas que sabem rodar (testes ou outras suítes)
 //       asserções   métodos que lançam quando uma expectativa não é atendida
+// ES: Un framework xUnit entero en un archivo. No usa ninguna biblioteca de pruebas: solo
+//     clases, excepciones y un bucle. Cuatro ideas lo sostienen todo:
+//       TestCase    una prueba: un nombre, un método con ese nombre y un fixture alrededor
+//       TestResult  el recolector: cuántas se ejecutaron, cuáles fallaron y por qué
+//       TestSuite   una lista de cosas que saben ejecutarse (pruebas u otras suites)
+//       aserciones  métodos que lanzan cuando no se cumple una expectativa
 
 const FRAMEWORK_DIR = import.meta.dir;
 
@@ -34,6 +40,9 @@ export interface Failure {
 // PT: O local de uma falha é a primeira linha do stack trace que NÃO está dentro do framework.
 //     Uma asserção lança de dentro do `assertEqual`, neste arquivo, mas o que o leitor precisa é
 //     da linha do teste que a chamou.
+// ES: El lugar de un fallo es la primera línea del stack trace que NO está dentro del framework.
+//     Una aserción lanza desde dentro de `assertEqual`, en este archivo, pero lo que el lector
+//     necesita es la línea de la prueba que la llamó.
 export function locationOf(error: unknown): string {
 	if (!(error instanceof Error) || error.stack === undefined) {
 		return "unknown location";
@@ -75,6 +84,8 @@ export class TestResult {
 //     tests look the same from outside (the Composite pattern).
 // PT: Qualquer coisa com `run(result)` pode entrar em uma suíte. Um teste sozinho e uma suíte de
 //     mil testes têm a mesma cara por fora (o padrão Composite).
+// ES: Cualquier cosa con `run(result)` puede entrar en una suite. Una prueba sola y una suite de
+//     mil pruebas se ven iguales por fuera (el patrón Composite).
 export interface Runnable {
 	run(result: TestResult): Promise<void>;
 }
@@ -92,6 +103,8 @@ export class TestCase implements Runnable {
 	//     override them. The defaults do nothing.
 	// PT: A fixture: o `setUp` monta o que o teste precisa, o `tearDown` limpa. As subclasses os
 	//     sobrescrevem. Os padrões não fazem nada.
+	// ES: El fixture: `setUp` arma lo que la prueba necesita, `tearDown` limpia. Las subclases los
+	//     sobrescriben. Los valores por defecto no hacen nada.
 	setUp(): void | Promise<void> {}
 
 	tearDown(): void | Promise<void> {}
@@ -114,6 +127,13 @@ export class TestCase implements Runnable {
 	//         não consegue parar os testes que vêm depois
 	//     O método a chamar é procurado pelo nome em tempo de execução (Pluggable Selector): é
 	//     assim que uma classe guarda vários testes.
+	// ES: El Template Method en el corazón de xUnit: setUp, el método de prueba, tearDown, siempre en
+	//     ese orden. Dos detalles importan:
+	//       - `tearDown` va en un `finally`, así que se ejecuta incluso cuando la prueba falla
+	//       - una excepción se CAPTURA y se registra, nunca se relanza, así que una prueba que
+	//         falla no puede detener las pruebas que vienen después
+	//     El método a llamar se busca por nombre en tiempo de ejecución (Pluggable Selector): así
+	//     es como una clase guarda varias pruebas.
 	async run(result: TestResult): Promise<void> {
 		result.testStarted();
 		try {
@@ -136,6 +156,8 @@ export class TestCase implements Runnable {
 	//     arrived, because that is the first thing the reader of a red test wants to know.
 	// PT: Uma asserção é só um `if` que lança. A mensagem diz o que era esperado e o que chegou,
 	//     porque é a primeira coisa que o leitor de um teste vermelho quer saber.
+	// ES: Una aserción es solo un `if` que lanza. El mensaje dice qué se esperaba y qué llegó,
+	//     porque es lo primero que quiere saber quien lee una prueba en rojo.
 	assertEqual(actual: unknown, expected: unknown): void {
 		if (!Bun.deepEquals(actual, expected, true)) {
 			throw new AssertionFailure(`expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
@@ -171,10 +193,14 @@ export class TestCase implements Runnable {
 // PT: Descoberta dentro de uma classe: todo método cujo nome começa com "test" é um teste. A
 //     suíte cria UMA INSTÂNCIA NOVA POR MÉTODO DE TESTE, então cada teste parte de uma fixture
 //     nova e não enxerga campos alterados por outro teste.
+// ES: Descubrimiento dentro de una clase: todo método cuyo nombre empieza con "test" es una prueba.
+//     La suite crea UNA INSTANCIA NUEVA POR MÉTODO DE PRUEBA, así cada prueba parte de un fixture
+//     nuevo y no ve campos modificados por otra prueba.
 export function testMethodNames(testClass: TestClass): string[] {
 	const names = new Set<string>();
 	// EN: Walk up the inheritance chain, so test methods inherited from a parent class count too.
 	// PT: Sobe a cadeia de herança, para que métodos de teste herdados de uma classe mãe também contem.
+	// ES: Sube por la cadena de herencia, para que los métodos de prueba heredados de una clase madre también cuenten.
 	let proto: object | null = testClass.prototype;
 	while (proto !== null && proto !== Object.prototype) {
 		for (const name of Object.getOwnPropertyNames(proto)) {

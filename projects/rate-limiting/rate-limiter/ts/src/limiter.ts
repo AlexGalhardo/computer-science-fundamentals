@@ -8,6 +8,11 @@
 //     chega em t = 999 ms" e obter a mesma resposta em toda execução, sem esperar e sem
 //     instabilidade. Os tempos são milissegundos inteiros, e cada limitador faz apenas
 //     aritmética inteira, então as versões em TypeScript e em Go decidem exatamente igual.
+// ES: El contrato compartido por todos los algoritmos en memoria. El reloj es un argumento, nunca
+//     un `Date.now()` leído dentro del limitador: así una prueba puede decir "esta solicitud llega
+//     en t = 999 ms" y obtener la misma respuesta en cada ejecución, sin esperar y sin
+//     inestabilidad. Los tiempos son milisegundos enteros, y cada limitador hace solo aritmética
+//     entera, así que las versiones en TypeScript y en Go deciden exactamente igual.
 
 export interface RateLimiter {
 	/** Decides one request that arrives at `nowMs`. Calls must come with non-decreasing times. */
@@ -21,6 +26,10 @@ export interface RateLimiter {
 //     cada `windowMs`", para que o experimento de rajada compare coisas iguais. Para os dois
 //     baldes isso significa: capacidade = `limit`, e taxa de reposição (ou de vazão) = `limit`
 //     a cada `windowMs`.
+// ES: Todo algoritmo se configura con los mismos dos números, "como máximo `limit` solicitudes
+//     cada `windowMs`", para que el experimento de ráfaga compare cosas iguales. Para los dos
+//     baldes esto significa: capacidad = `limit`, y tasa de reposición (o de goteo) = `limit`
+//     cada `windowMs`.
 export interface LimiterConfig {
 	limit: number;
 	windowMs: number;

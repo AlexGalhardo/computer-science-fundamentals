@@ -9,6 +9,9 @@ use crate::disk_bst::DiskBst;
 // PT: Transforma 0, 1, 2... em chaves com cara de aleatórias. A função é uma bijeção (cada
 //     passo pode ser desfeito), então entradas diferentes dão sempre chaves diferentes e nenhuma
 //     chave se repete.
+// ES: Transforma 0, 1, 2... en claves de aspecto aleatorio. La función es una biyección (cada
+//     paso puede deshacerse), así que entradas distintas dan siempre claves distintas y ninguna
+//     clave se repite.
 pub fn scramble(mut x: u64) -> Key {
     x ^= x >> 30;
     x = x.wrapping_mul(0xbf58_476d_1ce4_e5b9);
@@ -37,6 +40,8 @@ pub struct Comparison {
 //     searches on both and records how many pages each search read.
 // PT: Monta as duas estruturas com as mesmas n chaves na mesma ordem, depois roda as mesmas
 //     buscas nas duas e registra quantas páginas cada busca leu.
+// ES: Arma las dos estructuras con las mismas n claves en el mismo orden, luego corre las mismas
+//     búsquedas en las dos y registra cuántas páginas leyó cada búsqueda.
 pub fn compare(n: u64, directory: &Path, searches: u64) -> io::Result<Comparison> {
     let tree_path = directory.join("compare-rust.btree");
     let bst_path = directory.join("compare-rust.bst");
@@ -75,6 +80,7 @@ pub fn compare(n: u64, directory: &Path, searches: u64) -> io::Result<Comparison
 
             // EN: scramble(n + s) was never inserted, so this search has to fail.
             // PT: scramble(n + s) nunca foi inserida, então esta busca tem de falhar.
+            // ES: scramble(n + s) nunca fue insertada, así que esta búsqueda tiene que fallar.
             let before = tree.page_reads();
             result.all_found &= tree.search(scramble(n + s))?.is_none();
             result.btree_max_missing = result.btree_max_missing.max(tree.page_reads() - before);

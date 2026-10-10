@@ -8,23 +8,33 @@ import { MARKER } from "../../src/lab-inputs";
 //     um faz o que um visitante faria em um navegador de verdade e depois relata o que
 //     aconteceu na página. O cenário não sabe com qual app está falando: é o teste que decide o
 //     que esperar.
+// ES: Los tres escenarios del laboratorio, escritos una vez y ejecutados contra las dos apps. Cada
+//     uno hace lo que haría un visitante en un navegador de verdad y luego informa lo que
+//     ocurrió en la página. El escenario no sabe con qué app habla: es la prueba la que decide qué
+//     esperar.
 
 export interface Observation {
 	// EN: True when the browser ran the injected code (the flag was set on the page).
 	// PT: Verdadeiro quando o navegador executou o código injetado (a marca foi ligada na página).
+	// ES: Verdadero cuando el navegador ejecutó el código inyectado (la marca se activó en la página).
 	scriptExecuted: boolean;
 	// EN: How many <script> or <img> elements exist INSIDE the places reserved for user text.
 	//     Zero means the text stayed text. More than zero means markup was injected.
 	// PT: Quantos elementos <script> ou <img> existem DENTRO dos lugares reservados para texto do
 	//     usuário. Zero significa que o texto continuou sendo texto. Mais que zero significa que
 	//     marcação foi injetada.
+	// ES: Cuántos elementos <script> o <img> existen DENTRO de los lugares reservados para el texto del
+	//     usuario. Cero significa que el texto siguió siendo texto. Más que cero significa que
+	//     se inyectó marcado.
 	injectedElements: number;
 	// EN: What a person reads on the screen in those places.
 	// PT: O que uma pessoa lê na tela nesses lugares.
+	// ES: Lo que una persona lee en pantalla en esos lugares.
 	visibleText: string;
 	cspHeader: string | null;
 	// EN: How many times the browser reported "I blocked something because of the policy".
 	// PT: Quantas vezes o navegador avisou "bloqueei algo por causa da política".
+	// ES: Cuántas veces avisó el navegador "bloqueé algo por causa de la política".
 	cspViolations: number;
 }
 
@@ -32,6 +42,8 @@ export interface Observation {
 //     events the browser fires when the policy blocks something.
 // PT: Instalado antes de qualquer script da página rodar. Ele só conta os eventos
 //     `securitypolicyviolation` que o navegador dispara quando a política bloqueia algo.
+// ES: Instalado antes de que corra cualquier script de la página. Solo cuenta los eventos
+//     `securitypolicyviolation` que el navegador dispara cuando la política bloquea algo.
 export const CSP_VIOLATION_COUNTER = `
 window.__labCspViolations = 0;
 document.addEventListener("securitypolicyviolation", () => {
@@ -56,6 +68,9 @@ async function observe(page: Page, response: Response | null): Promise<Observati
 // PT: "networkidle" espera até a página ficar meio segundo sem fazer requisições. A imagem da
 //     entrada baseada em DOM falha ao carregar nesse intervalo, então o manipulador `onerror`
 //     já teve a sua chance de rodar quando a página é observada.
+// ES: "networkidle" espera hasta que la página pase medio segundo sin hacer solicitudes. La imagen de la
+//     entrada basada en DOM falla al cargar en ese intervalo, así que el manejador `onerror`
+//     ya tuvo su oportunidad de correr cuando se observa la página.
 async function visit(page: Page, url: string): Promise<Observation> {
 	const response = await page.goto(url, { waitUntil: "networkidle" });
 	return observe(page, response);
@@ -65,6 +80,8 @@ async function visit(page: Page, url: string): Promise<Observation> {
 //     visitor would.
 // PT: Armazenado: assinar o livro de visitas pelo formulário e depois abrir o livro de novo,
 //     como qualquer visitante seguinte faria.
+// ES: Almacenado: firmar el libro de visitas por el formulario y luego abrir el libro de nuevo,
+//     como lo haría cualquier visitante siguiente.
 export async function storedScenario(
 	page: Page,
 	baseUrl: string,
@@ -81,6 +98,7 @@ export async function storedScenario(
 
 // EN: Reflected: open a link whose query string carries the input.
 // PT: Refletido: abrir um link cuja query string carrega a entrada.
+// ES: Reflejado: abrir un enlace cuya query string lleva la entrada.
 export async function reflectedScenario(page: Page, searchUrl: string, input: string): Promise<Observation> {
 	return visit(page, `${searchUrl}?q=${encodeURIComponent(input)}`);
 }
@@ -89,6 +107,8 @@ export async function reflectedScenario(page: Page, searchUrl: string, input: st
 //     the fragment.
 // PT: Baseado em DOM: abrir um link cujo fragmento (depois do #) carrega a entrada. O servidor
 //     nunca vê o fragmento.
+// ES: Basado en DOM: abrir un enlace cuyo fragmento (después del #) lleva la entrada. El servidor
+//     nunca ve el fragmento.
 export async function domScenario(page: Page, baseUrl: string, input: string): Promise<Observation> {
 	return visit(page, `${baseUrl}/welcome#${encodeURIComponent(input)}`);
 }

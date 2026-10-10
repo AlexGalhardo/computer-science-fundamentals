@@ -10,6 +10,13 @@
 //     pior caso O(n²). O limiar não muda a ordem de crescimento: ele reduz o fator constante,
 //     porque a maioria das chamadas recursivas trata trechos minúsculos em que o insertion
 //     sort, sem recursão e com laço interno curto, é mais rápido.
+// ES: Un quicksort con dos perillas: cómo se elige el pivote, y por debajo de qué tamaño un
+//     tramo se entrega al insertion sort. El quicksort solo es O(n log n) cuando el pivote
+//     divide el tramo razonablemente bien, así que la regla del pivote decide si la entrada
+//     ordenada es el mejor caso o el peor caso O(n²). El umbral no cambia el orden de
+//     crecimiento: reduce el factor constante, porque la mayoría de las llamadas recursivas
+//     tratan tramos minúsculos en los que el insertion sort, sin recursión y con un bucle
+//     interno corto, es más rápido.
 #pragma once
 
 #include <algorithm>
@@ -29,6 +36,8 @@ enum class Pivot { kFirst, kRandom, kMedianOfThree };
 //     every run and both languages see the same numbers.
 // PT: xorshift32, usado no pivô aleatório e para montar a entrada aleatória. A semente é fixa,
 //     então toda execução e as duas linguagens veem os mesmos números.
+// ES: xorshift32, usado en el pivote aleatorio y para construir la entrada aleatoria. La
+//     semilla es fija, así que cada ejecución y los dos lenguajes ven los mismos números.
 class Xorshift {
 public:
 	explicit Xorshift(std::uint32_t seed) : state_(seed == 0 ? 1 : seed) {}
@@ -48,6 +57,7 @@ namespace detail {
 
 // EN: Insertion sort on a[lo..hi]. Quadratic in general, but unbeatable on a handful of values.
 // PT: Insertion sort em a[lo..hi]. Quadrático no geral, mas imbatível em um punhado de valores.
+// ES: Insertion sort en a[lo..hi]. Cuadrático en general, pero imbatible con un puñado de valores.
 inline void insertion_sort(Values& a, std::ptrdiff_t lo, std::ptrdiff_t hi) {
 	for (std::ptrdiff_t i = lo + 1; i <= hi; ++i) {
 		const std::int32_t key = a[i];
@@ -70,6 +80,11 @@ inline void insertion_sort(Values& a, std::ptrdiff_t lo, std::ptrdiff_t hi) {
 //     caso depender da sorte e não da entrada. `median of three` lê o primeiro, o do meio e o
 //     último valor e fica com o intermediário, que é a mediana real quando o trecho já está
 //     ordenado.
+// ES: Las tres estrategias. `first` es la regla de libro y la trampa: en entrada ordenada el
+//     primer valor es el mínimo, así que un lado de cada división queda vacío. `random` hace
+//     que el peor caso dependa de la suerte y no de la entrada. `median of three` lee el
+//     primer valor, el del medio y el último y se queda con el intermedio, que es la mediana
+//     real cuando el tramo ya está ordenado.
 inline std::int32_t choose_pivot(const Values& a, std::ptrdiff_t lo, std::ptrdiff_t hi, Pivot pivot,
                                  Xorshift& random) {
 	switch (pivot) {
@@ -95,6 +110,8 @@ inline void sort_range(Values& a, std::ptrdiff_t lo, std::ptrdiff_t hi, Pivot pi
 		//     With threshold 0 this never happens and the code is a plain quicksort.
 		// PT: O passo híbrido: um trecho de no máximo `threshold` valores vai para o insertion
 		//     sort. Com limiar 0 isso nunca acontece e o código é um quicksort puro.
+		// ES: El paso híbrido: un tramo de como máximo `threshold` valores va al insertion
+		//     sort. Con umbral 0 esto nunca ocurre y el código es un quicksort puro.
 		if (hi - lo + 1 <= threshold) {
 			insertion_sort(a, lo, hi);
 			return;
@@ -103,6 +120,8 @@ inline void sort_range(Values& a, std::ptrdiff_t lo, std::ptrdiff_t hi, Pivot pi
 		// EN: Hoare partition: two indexes walk towards each other and swap misplaced pairs.
 		// PT: Partição de Hoare: dois índices andam um em direção ao outro e trocam os pares
 		//     fora do lugar.
+		// ES: Partición de Hoare: dos índices avanzan uno hacia el otro e intercambian los pares
+		//     fuera de lugar.
 		std::ptrdiff_t i = lo;
 		std::ptrdiff_t j = hi;
 		while (i <= j) {
@@ -122,6 +141,8 @@ inline void sort_range(Values& a, std::ptrdiff_t lo, std::ptrdiff_t hi, Pivot pi
 		//     terrible and the time is quadratic, the stack stays O(log n) deep.
 		// PT: Recursão no lado menor e laço no maior. Mesmo quando o pivô é péssimo e o tempo é
 		//     quadrático, a pilha fica com profundidade O(log n).
+		// ES: Recursión sobre el lado menor y bucle sobre el mayor. Incluso cuando el pivote es
+		//     pésimo y el tiempo es cuadrático, la pila queda con profundidad O(log n).
 		if (j - lo < hi - i) {
 			sort_range(a, lo, j, pivot, threshold, random);
 			lo = i;
@@ -142,6 +163,7 @@ inline void hybrid_quicksort(Values& a, Pivot pivot, std::size_t threshold) {
 
 // EN: The three input shapes, built in memory: the same n values in a different order.
 // PT: Os três formatos de entrada, montados em memória: os mesmos n valores em outra ordem.
+// ES: Las tres formas de entrada, construidas en memoria: los mismos n valores en otro orden.
 inline Values make_input(const std::string& shape, std::size_t n) {
 	Values values(n);
 	Xorshift random(20260101U);
@@ -159,6 +181,8 @@ inline Values make_input(const std::string& shape, std::size_t n) {
 
 // EN: Same order-sensitive digest as the other mini-projects: h = (h * 31 + v) mod 1,000,000,007.
 // PT: Mesmo resumo sensível à ordem dos outros mini-projetos: h = (h * 31 + v) mod 1.000.000.007.
+// ES: El mismo resumen sensible al orden de los otros mini-proyectos:
+//     h = (h * 31 + v) mod 1.000.000.007.
 inline std::string checksum(const Values& values) {
 	std::int64_t digest = 0;
 	for (const std::int32_t value : values) {

@@ -12,6 +12,9 @@
 // PT: Três formas de detectar que bits mudaram no caminho, da mais fraca à mais forte. Todas
 //     acrescentam bits redundantes calculados a partir dos dados. O receptor recalcula e
 //     compara. Nenhuma delas sabe dizer qual bit está errado: elas só detectam.
+// ES: Tres formas de detectar qué bits cambiaron en el camino, de la más débil a la más fuerte.
+//     Todas añaden bits redundantes calculados a partir de los datos. El receptor recalcula y
+//     compara. Ninguna sabe decir qué bit está mal: solo detectan.
 namespace edc {
 
 // EN: Even parity: one extra bit chosen so that the total number of 1 bits is even. It is the
@@ -20,6 +23,9 @@ namespace edc {
 // PT: Paridade par: um bit extra escolhido para que o total de bits 1 seja par. É o XOR de
 //     todos os bits de dados. Qualquer número ímpar de bits invertidos muda a paridade e é
 //     percebido. Qualquer número par a mantém e passa despercebido.
+// ES: Paridad par: un bit extra elegido para que el total de bits 1 sea par. Es el XOR de todos
+//     los bits de datos. Cualquier número impar de bits invertidos cambia la paridad y se
+//     nota. Cualquier número par la mantiene y pasa inadvertido.
 inline std::uint8_t even_parity(std::span<const std::uint8_t> data) {
 	int ones = 0;
 	for (std::uint8_t byte : data) {
@@ -38,6 +44,11 @@ inline std::uint8_t even_parity(std::span<const std::uint8_t> data) {
 //     somado de volta (soma em complemento de um). O checksum é o complemento dessa soma,
 //     de modo que dados mais checksum somem 0xFFFF. É barato, mas uma soma não enxerga a
 //     ordem: duas palavras trocadas dão o mesmo resultado.
+// ES: Checksum de Internet (RFC 1071), usado por IP, TCP y UDP. Los datos se leen como palabras
+//     de 16 bits, las palabras se suman, y todo acarreo que sale del bit 15 se suma de vuelta
+//     (suma en complemento a uno). El checksum es el complemento de esa suma, de modo que los
+//     datos más el checksum suman 0xFFFF. Es barato, pero una suma no ve el orden: dos
+//     palabras intercambiadas dan el mismo resultado.
 inline std::uint16_t internet_checksum(std::span<const std::uint8_t> data) {
 	std::uint64_t sum = 0;
 	for (std::size_t i = 0; i + 1 < data.size(); i += 2) {
@@ -67,6 +78,13 @@ inline std::uint16_t internet_checksum(std::span<const std::uint8_t> data) {
 //     0x04C11DB7 aparece com os bits invertidos de ordem, 0xEDB88320. Ela começa com todos os
 //     bits em 1 e inverte o resultado, para que bytes zero no início e no fim também mudem
 //     o CRC.
+// ES: CRC-32 como lo usan Ethernet, zip y PNG. El mensaje se trata como un polinomio largo con
+//     coeficientes 0 y 1 y se divide por un polinomio generador fijo de grado 32; el residuo
+//     es el CRC. La resta de esos polinomios es XOR, así que la división es un bucle de
+//     desplazamientos y XOR. Esta variante procesa primero el bit bajo ("reflejada"), y por
+//     eso el generador 0x04C11DB7 aparece con los bits en orden invertido, 0xEDB88320.
+//     Empieza con todos los bits en 1 e invierte el resultado, para que los bytes cero al
+//     inicio y al final también cambien el CRC.
 inline constexpr std::uint32_t kCrc32Polynomial = 0xEDB88320U;
 
 constexpr std::uint32_t crc32_step(std::uint32_t crc) {
@@ -91,6 +109,10 @@ inline std::uint32_t crc32_bitwise(std::span<const std::uint8_t> data) {
 //     uma vez para cada um dos 256 valores de byte dá uma tabela, e o CRC passa a custar uma
 //     consulta por byte em vez de oito deslocamentos. A tabela é montada em tempo de
 //     compilação.
+// ES: Los 8 pasos del bucle interno dependen solo del byte bajo del registro. Calcularlos una
+//     vez para cada uno de los 256 valores de byte da una tabla, y el CRC pasa a costar una
+//     consulta por byte en lugar de ocho desplazamientos. La tabla se arma en tiempo de
+//     compilación.
 constexpr std::array<std::uint32_t, 256> make_crc32_table() {
 	std::array<std::uint32_t, 256> table{};
 	for (std::uint32_t value = 0; value < 256; ++value) {

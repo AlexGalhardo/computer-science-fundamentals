@@ -5,6 +5,9 @@
 # PT: Constrói e testa o mini-projeto xss-csp-lab. O único requisito é o Docker.
 #     Roda os testes unitários (ts-test) e os testes de navegador (e2e, Playwright com Chromium).
 #     Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
+# ES: Construye y prueba el miniproyecto xss-csp-lab. El único requisito es Docker.
+#     Ejecuta las pruebas unitarias (ts-test) y las pruebas de navegador (e2e, Playwright con Chromium).
+#     Los contenedores y volúmenes se eliminan al final, incluso cuando una prueba falla.
 set -eu
 
 cd "$(dirname "$0")"

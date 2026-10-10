@@ -1,6 +1,6 @@
 # Mutation testing (MP-TEST-3)
 
-> Versão em português: [docs/pt/testing/mutation-testing.md](../../pt/testing/mutation-testing.md)
+> Versão em português: [docs/pt/testing/mutation-testing.md](../../pt/testing/mutation-testing.md) · Versión en español: [docs/es/testing/mutation-testing.md](../../es/testing/mutation-testing.md)
 
 Mini-project: [`projects/testing/mutation-testing`](../../../projects/testing/mutation-testing/README.md). Quiz topic: `coverage-mutation`.
 
@@ -10,7 +10,7 @@ Mini-project: [`projects/testing/mutation-testing`](../../../projects/testing/mu
 
 **Mutation testing** asks the second question directly:
 
-```
+```text
 original program ---- mutate one token ----> mutant           (a + b  becomes  a - b)
                                                 |
                                          run the test suite
@@ -21,7 +21,7 @@ original program ---- mutate one token ----> mutant           (a + b  becomes  a
            the suite noticed the bug                 the suite accepts the bug as correct
 ```
 
-```
+```text
 mutation score = killed mutants / all mutants
 ```
 

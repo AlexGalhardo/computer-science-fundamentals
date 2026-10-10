@@ -15,6 +15,9 @@ export interface RunResult {
 // PT: Uma sessão é dona de um interpretador, então tudo o que um trecho de código define
 //     (variáveis, funções) continua lá quando o próximo trecho roda. Um arquivo é uma sessão com
 //     um trecho; o REPL é uma sessão com um trecho por linha.
+// ES: Una sesión es dueña de un intérprete, así que todo lo que un fragmento de código define
+//     (variables, funciones) sigue ahí cuando corre el siguiente fragmento. Un archivo es una
+//     sesión con un fragmento; el REPL es una sesión con un fragmento por línea.
 export class Session {
 	private output: string[] = [];
 	private readonly interpreter = new Interpreter((line) => {
@@ -30,6 +33,7 @@ export class Session {
 		const { program, errors } = parse(source);
 		// EN: Nothing runs when the source has a syntax error: half a program is not a program.
 		// PT: Nada roda quando o código tem erro de sintaxe: meio programa não é um programa.
+		// ES: Nada corre cuando el código tiene un error de sintaxis: medio programa no es un programa.
 		if (errors.length > 0) {
 			return { output: [], errors: errors.map(formatProblem) };
 		}

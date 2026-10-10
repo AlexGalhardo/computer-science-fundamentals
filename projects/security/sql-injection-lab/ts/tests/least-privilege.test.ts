@@ -4,6 +4,9 @@
 // PT: Menor privilégio é a rede de proteção embaixo das consultas parametrizadas. Estes testes
 //     falam com o PostgreSQL usando o papel do app corrigido e conferem o que o próprio banco
 //     recusa. SQLSTATE 42501 significa "privilégio insuficiente".
+// ES: El mínimo privilegio es la red de protección debajo de las consultas parametrizadas. Estas pruebas
+//     hablan con PostgreSQL usando el rol de la app corregida y comprueban lo que la propia base de datos
+//     rechaza. SQLSTATE 42501 significa "privilegio insuficiente".
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import type { Pool } from "pg";
@@ -68,6 +71,9 @@ test("the read-only role cannot write", async () => {
 // PT: Defesa em profundidade: nem a consulta vulnerável, concatenada, vaza os segredos quando a
 //     conexão não tem direito de ler aquela tabela. O papel não corrige a injeção (o desvio do
 //     login continuaria funcionando), ele só limita o que uma injeção alcança.
+// ES: Defensa en profundidad: ni siquiera la consulta vulnerable, concatenada, filtra los secretos cuando
+//     la conexión no tiene derecho a leer esa tabla. El rol no corrige la inyección (el desvío del
+//     inicio de sesión seguiría funcionando), solo limita lo que una inyección alcanza.
 test("the UNION of the lab fails when the vulnerable query runs with the read-only role", async () => {
 	expect(await sqlStateOf(() => vulnerableSearchProducts(readonlyPool, UNION_SEARCH))).toBe(INSUFFICIENT_PRIVILEGE);
 });

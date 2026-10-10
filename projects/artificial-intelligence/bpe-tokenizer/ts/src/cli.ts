@@ -2,6 +2,8 @@
 //     prints the tokens of the sentence: id, bytes and text of each one, and the boundaries.
 // PT: `bun run src/cli.ts [--merges N] "uma frase"` treina o tokenizador no corpus e imprime os
 //     tokens da frase: id, bytes e texto de cada um, e as fronteiras.
+// ES: `bun run src/cli.ts [--merges N] "una frase"` entrena el tokenizador con el corpus e imprime
+//     los tokens de la frase: id, bytes y texto de cada uno, y los límites.
 
 import { DEFAULT_MERGES, decode, encode, hex, type Tokenizer, textToBytes, tokenBytes, tokenLabel, train } from "./bpe";
 import { readData } from "./data";
@@ -22,6 +24,7 @@ export function describe(tokenizer: Tokenizer, text: string): string {
 	}
 	// EN: The boundaries line shows where the cuts fall in the sentence.
 	// PT: A linha de fronteiras mostra onde os cortes caem na frase.
+	// ES: La línea de límites muestra dónde caen los cortes en la frase.
 	const pieces = ids.map((id) => tokenLabel(tokenizer, id).replaceAll("\n", "\\n"));
 	lines.push("", `boundaries: ${pieces.join("|")}`);
 	lines.push(`ids:        ${ids.join(" ")}`);

@@ -28,6 +28,12 @@ inline constexpr std::size_t kMinRun = 4;
 //     como sequência, mesmo de tamanho 1, para o decodificador nunca confundi-lo com um
 //     marcador. Registros de tamanho fixo são cheios de preenchimento, que é exatamente o tipo
 //     de dado que este método encolhe.
+// ES: Codificación run-length. Una secuencia de 4 o más bytes iguales se convierte en 3 bytes:
+//     el marcador 0xFF, el valor y la cuenta (hasta 255). Las secuencias menores se copian tal
+//     cual, porque el código sería mayor que la secuencia. Un byte de dato igual al marcador se
+//     escribe siempre como secuencia, incluso de longitud 1, para que el decodificador nunca lo
+//     confunda con un marcador. Los registros de tamaño fijo están llenos de relleno, que es
+//     exactamente el tipo de dato que este método encoge.
 inline Bytes rle_encode(const Bytes& input) {
 	Bytes output;
 	std::size_t at = 0;
@@ -78,6 +84,12 @@ inline Bytes rle_decode(const Bytes& input) {
 //     frequentes ficam perto da raiz, com códigos curtos. Os empates são decididos pelo número
 //     do nó, o que faz os programas em C++ e em Rust montarem a mesma árvore e gravarem os
 //     mesmos bytes.
+// ES: El árbol de Huffman. Las hojas 0 a 255 son los valores de byte, y los nodos internos
+//     reciben los números 256, 257 y así sucesivamente, en el orden en que se crean. Los dos
+//     nodos de menor frecuencia se unen repetidamente hasta que queda un árbol, así que los
+//     bytes frecuentes quedan cerca de la raíz, con códigos cortos. Los empates los decide el
+//     número del nodo, lo que hace que los programas en C++ y en Rust armen el mismo árbol y
+//     escriban los mismos bytes.
 struct HuffmanTree {
 	// -1 when the input is empty.
 	int root = -1;
@@ -118,6 +130,10 @@ inline HuffmanTree build_tree(const std::array<std::uint32_t, 256>& frequency) {
 // PT: O código de um byte é o caminho da raiz até a sua folha: 0 para a esquerda, 1 para a
 //     direita. Nenhum código é o começo de outro, porque os símbolos só ficam nas folhas. Um
 //     arquivo com um único byte distinto tem uma árvore de um nó, e esse byte recebe o código "0".
+// ES: El código de un byte es el camino desde la raíz hasta su hoja: 0 a la izquierda, 1 a la
+//     derecha. Ningún código es el comienzo de otro, porque los símbolos solo están en las
+//     hojas. Un archivo con un único byte distinto tiene un árbol de un nodo, y ese byte recibe
+//     el código "0".
 inline std::array<std::vector<std::uint8_t>, 256> code_table(const HuffmanTree& tree) {
 	std::array<std::vector<std::uint8_t>, 256> codes;
 	if (tree.root < 0) {
@@ -156,6 +172,11 @@ inline constexpr std::size_t kHuffmanHeader = 8 + 256 * 4;
 //     decodificador refaz a mesma árvore a partir das frequências, então a tabela de códigos
 //     não é gravada. Os 1.032 bytes de cabeçalho são o motivo de Huffman não compensar em
 //     arquivos muito pequenos.
+// ES: Formato comprimido: el tamaño original (8 bytes), las 256 frecuencias (4 bytes cada una) y
+//     después los códigos, empaquetados desde el bit más significativo de cada byte. El
+//     decodificador rehace el mismo árbol a partir de las frecuencias, así que la tabla de
+//     códigos no se escribe. Los 1.032 bytes de cabecera son la razón de que Huffman no
+//     compense en archivos muy pequeños.
 inline Bytes huffman_encode(const Bytes& input) {
 	if (input.size() > 0xFFFFFFFFu) {
 		throw std::invalid_argument("input too large for 32-bit frequencies");
@@ -209,6 +230,8 @@ inline Bytes huffman_decode(const Bytes& input) {
 	//     stored length says when to stop, since the last byte may carry padding bits.
 	// PT: A decodificação desce a árvore um bit por vez e emite um byte a cada folha. O tamanho
 	//     gravado diz quando parar, pois o último byte pode ter bits de preenchimento.
+	// ES: La decodificación desciende el árbol un bit a la vez y emite un byte en cada hoja. El
+	//     tamaño escrito dice cuándo parar, pues el último byte puede tener bits de relleno.
 	while (output.size() < length) {
 		int node = tree.root;
 		do {

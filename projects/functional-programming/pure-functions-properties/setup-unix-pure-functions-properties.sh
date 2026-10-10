@@ -3,6 +3,8 @@
 #     requirement is Docker.
 # PT: Constrói, testa e demonstra o mini-projeto pure-functions-properties. O único requisito
 #     é o Docker.
+# ES: Construye, prueba y demuestra el mini-proyecto pure-functions-properties. El único requisito
+#     es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -21,6 +23,8 @@ echo "pure-functions-properties: all tests passed"
 #     bug with its shrunk counterexample, and the sales pipeline, in both languages.
 # PT: A demo imprime o checkout impuro e o puro, a propriedade que encontra o erro plantado
 #     com o contraexemplo reduzido, e o pipeline de vendas, nas duas linguagens.
+# ES: La demo imprime el checkout impuro y el puro, la propiedad que encuentra el error sembrado
+#     con el contraejemplo reducido, y el pipeline de ventas, en los dos lenguajes.
 docker compose run --rm ts-demo
 docker compose run --rm elixir-demo
 docker compose down -v

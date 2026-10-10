@@ -1,16 +1,16 @@
 # Project decisions
 
-> Versão em português: [docs/pt/decisions.md](../pt/decisions.md)
-
+> Versão em português: [docs/pt/decisions.md](../pt/decisions.md) · Versión en español: [docs/es/decisions.md](../es/decisions.md)
+>
 > Note (2026-10-08): the `references/` folder mentioned in this document was removed from the repository and from its history. Study references are in [REFERENCES.md](../../REFERENCES.md).
 
 Decisions taken in the Phase 2 brainstorming on 2026-10-07. They are the input for `PLAN.md`. The list of mini-projects per area is in the [mini-project catalog](mini-project-catalog.md), the quiz design in [quiz.md](quiz.md), and the questions asked with the discarded options in the [brainstorming record](brainstorming.md).
 
 ## Quiz
 
-The main product of the repository is a **quiz**: one app covering every area, with 5 alternatives per question and the explanation of the concept shown next to the question after the answer. The mini-projects stay in the plan and each explanation links to the mini-project that demonstrates the concept. At least 100 questions per area, in Portuguese and English. Full design in [quiz.md](quiz.md).
+The main product of the repository is a **quiz**: one app covering every area, with 5 alternatives per question and the explanation of the concept shown next to the question after the answer. The mini-projects stay in the plan and each explanation links to the mini-project that demonstrates the concept. At least 100 questions per area, in English, Portuguese and Spanish. Full design in [quiz.md](quiz.md).
 
-The quiz app must have i18n (Portuguese and English), a light and dark theme toggle and a mobile-friendly layout, built with Next.js SSG and Tailwind CSS v4.
+The quiz app must have i18n (English, Portuguese and Spanish), a light and dark theme toggle and a mobile-friendly layout, built with Next.js SSG and Tailwind CSS v4.
 
 ## Theory and practice
 
@@ -24,8 +24,8 @@ The quiz app must have i18n (Portuguese and English), a light and dark theme tog
 | Folder layout | `projects/<area>/<mini-project>/`, with one subfolder per language (`ts/`, `go/`, `rust/`) | The same concept stays together and languages can be compared side by side |
 | Languages per mini-project | One reference implementation in TypeScript, plus the languages in which the lesson changes | Implementing everything in all 7 languages multiplies the work without teaching more |
 | Environment | Everything runs in Docker, with pinned image versions. Setup scripts require only Docker. A local toolchain is optional | Seven languages on one machine is where "works on my machine" comes from |
-| README | Two files per mini-project: `README.md` (English) and `README.pt-BR.md` (Portuguese) | Each reader gets a full document in one language |
-| Code comments | Bilingual, one block per concept, not line by line | Didactic without doubling the length of the code |
+| README | Three files per mini-project: `README.md` (English), `README.pt-BR.md` (Portuguese) and `README.es.md` (Spanish, added on 2026-10-08) | Each reader gets a full document in one language |
+| Code comments | Trilingual (`EN`, `PT`, `ES`), one block per concept, not line by line | Didactic without doubling the length of the code |
 | Dashboards | One static page per mini-project (HTML + Tailwind CSS v4 reading the results JSON). Next.js only where the concept needs a server | Simple to open and to maintain |
 
 ## Benchmarks

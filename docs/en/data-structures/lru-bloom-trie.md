@@ -1,6 +1,6 @@
 # LRU cache, Bloom filter and trie
 
-> Versão em português: [docs/pt/data-structures/lru-bloom-trie.md](../../pt/data-structures/lru-bloom-trie.md)
+> Versão em português: [docs/pt/data-structures/lru-bloom-trie.md](../../pt/data-structures/lru-bloom-trie.md) · Versión en español: [docs/es/data-structures/lru-bloom-trie.md](../../es/data-structures/lru-bloom-trie.md)
 
 Mini-project: [projects/data-structures/lru-bloom-trie](../../../projects/data-structures/lru-bloom-trie). Languages: TypeScript, Go. Quiz topics: `data-structures` / `arrays-and-lists`, `hash-tables`, `binary-trees-and-traversals`.
 
@@ -16,7 +16,7 @@ Three structures, each one the standard answer to a question that real systems a
 
 LRU means least recently used: when the cache is full, the entry that has gone longest without being read or written is evicted. Two structures are combined:
 
-```
+```text
 hash map:   key -> node                     (finds a node in O(1))
 
 list:       newest <-> ... <-> ... <-> oldest
@@ -37,7 +37,7 @@ A Bloom filter is a set that stores no keys, only an array of m bits.
 
 Bits are never cleared, so a key that was added is always reported: there are **no false negatives**. A key that was never added may find its k bits set by other keys: that is a **false positive**, and its probability after n keys is
 
-```
+```text
 p = (1 - e^(-k n / m))^k
 ```
 
@@ -60,7 +60,7 @@ Measured in the committed run (200,000 probes that were never added):
 
 A trie is a tree in which each edge is one character, so each path from the root spells a prefix.
 
-```
+```text
 (root)
   c
   └─ a

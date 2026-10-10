@@ -6,11 +6,17 @@
 #     rodada começa de um contêiner de servidor novo, então o pico de memória de uma rodada não
 #     vaza para a seguinte. Depois a etapa de relatório reescreve results/ e a tabela dos dois READMEs.
 #     Uso: .\load-test-windows.ps1 [-Rounds 3]
+# ES: La prueba de carga: k6 contra cada configuración, una a la vez, varias rondas cada una. Toda
+#     ronda parte de un contenedor de servidor nuevo, así que el pico de memoria de una ronda no
+#     se filtra a la siguiente. Después la etapa de reporte reescribe results/ y la tabla de los README.
+#     Uso: .\load-test-windows.ps1 [-Rounds 3]
 param([int]$Rounds = 3)
 
 # EN: Docker writes its progress to stderr, so failures are checked by exit code (see the setup script).
 # PT: O Docker escreve o progresso em stderr, então as falhas são conferidas pelo código de saída
 #     (veja o script de setup).
+# ES: Docker escribe el progreso en stderr, así que las fallas se verifican por el código de salida
+#     (ver el script de setup).
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot

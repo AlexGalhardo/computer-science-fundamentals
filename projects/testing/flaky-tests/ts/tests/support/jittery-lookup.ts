@@ -7,6 +7,10 @@ import type { Lookup } from "../../src/prices";
 //     variação é simulada com um atraso aleatório. O teste intermitente E o corrigido usam esta
 //     mesma consulta: a correção está no código que coleta as respostas, não em tornar a
 //     dependência previsível.
+// ES: Una consulta cuya latencia varía de 0 a 5 ms, para representar una dependencia real. La
+//     variación se simula con un retraso aleatorio. La prueba intermitente Y la corregida usan esta
+//     misma consulta: la corrección está en el código que recoge las respuestas, no en volver
+//     predecible la dependencia.
 const CENTS: Readonly<Record<string, number>> = { apple: 120, bread: 450, cheese: 990 };
 
 export const jitteryLookup: Lookup = async (productId) => {

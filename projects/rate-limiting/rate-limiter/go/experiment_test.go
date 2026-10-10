@@ -19,6 +19,8 @@ type committedSeries struct {
 // the Go implementation, fed the same traffic, must reach the same numbers.
 // PT: Conferência entre linguagens. `results/burst.json` foi gravado pelo experimento em
 // TypeScript; a implementação em Go, com o mesmo tráfego, precisa chegar aos mesmos números.
+// ES: Comprobación entre lenguajes. `results/burst.json` lo escribió el experimento en
+// TypeScript; la implementación en Go, con el mismo tráfico, debe llegar a los mismos números.
 func TestExperimentMatchesTheTypeScriptResults(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "results", "burst.json"))
 	if err != nil {

@@ -6,6 +6,10 @@
 //     Lê o `results.json`, escrito pelo runner de benchmark, e deriva o assunto deste
 //     mini-projeto: speed-up, eficiência e a fração serial de que a lei de Amdahl precisa para
 //     explicar cada medição. Escreve `scaling.md` e `scaling.json` ao lado da entrada.
+// ES: `bun run report/scaling.ts [resultsDir]`
+//     Lee `results.json`, escrito por el runner de benchmark, y deriva el tema de este
+//     mini-proyecto: speed-up, eficiencia y la fracción serial que la ley de Amdahl necesita para
+//     explicar cada medición. Escribe `scaling.md` y `scaling.json` junto a la entrada.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -76,6 +80,9 @@ export interface ScalingReport {
 // PT: Speed-up é quantas vezes a execução paralela é mais rápida que o programa sequencial.
 //     A base é a implementação sequencial, e não a paralela com um trabalhador: esse é o
 //     speed-up absoluto, o ganho que o usuário de fato percebe.
+// ES: Speed-up es cuántas veces más rápida es la ejecución paralela que el programa secuencial.
+//     La base es la implementación secuencial, y no la paralela con un trabajador: ese es el
+//     speed-up absoluto, la ganancia que el usuario realmente percibe.
 export function speedup(sequentialMs: number, parallelMs: number): number {
 	return sequentialMs / parallelMs;
 }
@@ -84,6 +91,8 @@ export function speedup(sequentialMs: number, parallelMs: number): number {
 //     gain, 0.5 means half of the hardware was wasted.
 // PT: Eficiência é o speed-up por trabalhador: 1 significa que cada trabalhador entregou um
 //     trabalhador inteiro de ganho, 0,5 significa que metade do hardware foi desperdiçada.
+// ES: Eficiencia es el speed-up por trabajador: 1 significa que cada trabajador entregó un
+//     trabajador entero de ganancia, 0,5 significa que la mitad del hardware se desperdició.
 export function efficiency(speedupValue: number, workers: number): number {
 	return speedupValue / workers;
 }
@@ -92,6 +101,8 @@ export function efficiency(speedupValue: number, workers: number): number {
 //     sequential time, so the speed-up is the inverse of that sum.
 // PT: Lei de Amdahl: com fração serial s, o tempo em N trabalhadores é s + (1 - s) / N do
 //     tempo sequencial, então o speed-up é o inverso dessa soma.
+// ES: Ley de Amdahl: con fracción serial s, el tiempo en N trabajadores es s + (1 - s) / N del
+//     tiempo secuencial, así que el speed-up es el inverso de esa suma.
 export function amdahl(serialFraction: number, workers: number): number {
 	return 1 / (serialFraction + (1 - serialFraction) / workers);
 }
@@ -105,6 +116,11 @@ export function amdahl(serialFraction: number, workers: number): number {
 //     vem s = (1/S - 1/N) / (1 - 1/N). Se ela fica constante quando N cresce, a perda é código
 //     realmente serial. Se cresce com N, a perda é sobrecarga (desbalanceamento, contenção,
 //     núcleos compartilhados).
+// ES: La métrica de Karp-Flatt invierte la ley de Amdahl para una medición: ¿qué fracción serial
+//     explicaría este speed-up con esta cantidad de trabajadores? De 1/S = s + (1 - s)/N
+//     sale s = (1/S - 1/N) / (1 - 1/N). Si se mantiene constante cuando N crece, la pérdida es
+//     código realmente serial. Si crece con N, la pérdida es sobrecarga (desbalance, contención,
+//     núcleos compartidos).
 export function karpFlatt(speedupValue: number, workers: number): number {
 	if (workers <= 1) {
 		throw new Error("the serial fraction is undefined for one worker");
@@ -119,6 +135,10 @@ export function karpFlatt(speedupValue: number, workers: number): number {
 //     y = s * x, com y = 1/S - 1/N e x = 1 - 1/N. Os mínimos quadrados para uma reta assim têm
 //     forma fechada: s = soma(x * y) / soma(x * x). Um número resume todas as quantidades de
 //     trabalhadores.
+// ES: El ajuste. La ley de Amdahl es una recta que pasa por el origen cuando se escribe como
+//     y = s * x, con y = 1/S - 1/N y x = 1 - 1/N. Los mínimos cuadrados para una recta así tienen
+//     forma cerrada: s = suma(x * y) / suma(x * x). Un número resume todas las cantidades de
+//     trabajadores.
 export function fitSerialFraction(points: { workers: number; speedup: number }[]): number {
 	let numerator = 0;
 	let denominator = 0;
@@ -141,6 +161,8 @@ export function fitSerialFraction(points: { workers: number; speedup: number }[]
 //     plain Bun container with no packages installed, hence the hand-written check.
 // PT: A entrada é um arquivo em disco, então o formato é conferido antes do uso. Este script
 //     roda em um contêiner Bun sem pacotes instalados, daí a verificação escrita à mão.
+// ES: La entrada es un archivo en disco, así que el formato se comprueba antes de usarlo. Este
+//     script corre en un contenedor Bun sin paquetes instalados, de ahí la verificación escrita a mano.
 export function parseReport(value: unknown): BenchReport {
 	if (typeof value !== "object" || value === null || !("rows" in value) || !Array.isArray(value.rows)) {
 		throw new Error("results.json: expected an object with a list of rows");
@@ -172,6 +194,10 @@ function splitImplementation(implementation: string): { workload: string; mode: 
 //     sequenciais. Toda linha de uma carga, em toda linguagem, escalonamento e quantidade de
 //     trabalhadores, precisa ter impresso o mesmo checksum. Um valor diferente interrompe o
 //     relatório.
+// ES: Criterio de aceptación del mini-proyecto: los resultados paralelos son exactamente iguales
+//     a los secuenciales. Toda fila de una carga, en todo lenguaje, planificación y cantidad de
+//     trabajadores, debe haber impreso el mismo checksum. Un valor distinto interrumpe el
+//     reporte.
 export function checksumsByWorkload(rows: BenchRow[]): Record<string, string> {
 	const checksums: Record<string, string> = {};
 	for (const row of rows) {
@@ -208,6 +234,9 @@ export function buildScaling(report: BenchReport): ScalingReport {
 			// PT: O programa sequencial ignora a quantidade de trabalhadores, então a grade o
 			//     mediu uma vez por variante. Essas linhas repetidas viram uma única base, pela
 			//     média.
+			// ES: El programa secuencial ignora la cantidad de trabajadores, así que la cuadrícula lo
+			//     midió una vez por variante. Esas filas repetidas se vuelven una única base, por
+			//     la media.
 			const sequential = rows.filter((row) => splitImplementation(row.implementation).mode === "seq");
 			if (sequential.length === 0) {
 				throw new Error(`${language} ${workload}: no sequential row to use as the baseline`);
@@ -222,6 +251,11 @@ export function buildScaling(report: BenchReport): ScalingReport {
 			//     mais rápida. Então a execução mais rápida é a melhor estimativa do custo do
 			//     programa quando ninguém o atrapalha, e o speed-up é calculado entre as execuções
 			//     mais rápidas. A média e o desvio ficam ao lado, porque mostram o ruído da medição.
+			// ES: Otros programas en la máquina solo pueden hacer una ejecución más lenta, nunca
+			//     más rápida. Así que la ejecución más rápida es la mejor estimación del costo del
+			//     programa cuando nadie lo estorba, y el speed-up se calcula entre las ejecuciones
+			//     más rápidas. La media y la desviación quedan al lado, porque muestran el ruido de
+			//     la medición.
 			const baselineBestMs = Math.min(...sequential.map((row) => row.minMs ?? row.meanMs));
 			const schedules = [...new Set(rows.map((row) => splitImplementation(row.implementation).mode))]
 				.filter((mode) => mode !== "seq")
@@ -238,6 +272,8 @@ export function buildScaling(report: BenchReport): ScalingReport {
 						//     the two relative errors combined.
 						// PT: O speed-up é a razão de dois tempos com ruído, então o seu erro
 						//     relativo é a combinação dos dois erros relativos.
+						// ES: El speed-up es la razón de dos tiempos con ruido, así que su error
+						//     relativo es la combinación de los dos errores relativos.
 						const relativeError = Math.hypot(baselineStddevMs / baselineMs, row.stddevMs / row.meanMs);
 						return {
 							workers,

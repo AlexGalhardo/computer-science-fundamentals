@@ -1,5 +1,6 @@
 // EN: End-to-end tests against a real RabbitMQ started by docker-compose.
 // PT: Testes de ponta a ponta contra um RabbitMQ real iniciado pelo docker-compose.
+// ES: Pruebas de extremo a extremo contra un RabbitMQ real iniciado por docker-compose.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { ChannelModel } from "amqplib";

@@ -18,12 +18,17 @@ namespace trees {
 // PT: A sequência fixa repetida pelo visualizador. Ela começa com chaves ordenadas, que é o que
 //     quebra a árvore sem balanceamento, e depois mistura chaves que disparam rotações simples,
 //     rotações duplas e trocas de cor.
+// ES: La secuencia fija que repite el visualizador. Empieza con claves ordenadas, que es lo que
+//     rompe el árbol sin balanceo, y luego mezcla claves que disparan rotaciones simples,
+//     rotaciones dobles y cambios de color.
 inline const std::vector<Key> kSequence = {10, 20, 30, 40, 50, 60, 55, 25, 22, 5, 7, 45};
 
 // EN: One frame is one picture of the tree: what just happened, how many rotations so far, and
 //     the whole tree as JSON.
 // PT: Um quadro é uma foto da árvore: o que acabou de acontecer, quantas rotações até ali, e a
 //     árvore inteira em JSON.
+// ES: Un cuadro es una foto del árbol: lo que acaba de pasar, cuántas rotaciones hasta ahí, y el
+//     árbol entero en JSON.
 struct Frame {
 	std::string label;
 	std::uint64_t rotations;
@@ -40,6 +45,7 @@ inline std::vector<std::unique_ptr<SearchTree>> all_trees() {
 
 // EN: Inserts the sequence and takes a frame every time the tree reports a change.
 // PT: Insere a sequência e tira um quadro toda vez que a árvore avisa de uma mudança.
+// ES: Inserta la secuencia y toma un cuadro cada vez que el árbol avisa de un cambio.
 inline std::vector<Frame> record(SearchTree& tree, const std::vector<Key>& sequence) {
 	std::vector<Frame> frames;
 	frames.push_back(Frame{"empty tree", 0, tree.to_json()});
@@ -57,6 +63,8 @@ inline std::vector<Frame> record(SearchTree& tree, const std::vector<Key>& seque
 //     page opened straight from disk cannot fetch a JSON file.
 // PT: O arquivo de dados do visualizador. É um script que define uma variável global, porque
 //     uma página aberta direto do disco não consegue buscar um arquivo JSON.
+// ES: El archivo de datos del visualizador. Es un script que define una variable global, porque
+//     una página abierta directo desde el disco no puede pedir un archivo JSON.
 inline std::string steps_script() {
 	std::string out = "window.TREE_STEPS = {\"sequence\":[";
 	for (std::size_t i = 0; i < kSequence.size(); ++i) {

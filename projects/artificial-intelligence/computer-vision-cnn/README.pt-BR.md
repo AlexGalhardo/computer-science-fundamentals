@@ -1,6 +1,6 @@
 # computer-vision-cnn
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Ensina **como uma rede enxerga: imagens como números, convolução, pooling e filtros aprendidos**. Uma convolução é escrita à mão com laços e conferida contra o PyTorch, número por número. Depois uma rede convolucional pequena (CNN) aprende a classificar quatro formas que o próprio projeto desenha (círculo, quadrado, triângulo, cruz), é comparada com uma rede totalmente conectada do mesmo tamanho em formas que mudaram de lugar, é treinada de novo com aumento de dados, e tem os seus filtros aprendidos e mapas de ativação gravados como figuras.
 

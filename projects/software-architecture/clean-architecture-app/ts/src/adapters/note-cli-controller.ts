@@ -6,6 +6,10 @@
 //     HTTP: a entrada é uma lista de palavras no lugar de um corpo JSON, e a saída são linhas de
 //     texto e um código de saída no lugar de um status e um documento JSON. Nada em
 //     `use-cases/` ou `entities/` mudou para abrir espaço para o terminal.
+// ES: Un segundo mecanismo de entrega sobre los MISMOS casos de uso. Compáralo con el controller
+//     HTTP: la entrada es una lista de palabras en lugar de un cuerpo JSON, y la salida son
+//     líneas de texto y un código de salida en lugar de un estado y un documento JSON. Nada en
+//     `use-cases/` ni en `entities/` cambió para hacer lugar a la terminal.
 
 import { z } from "zod";
 import type { NoteUseCases } from "../use-cases";
@@ -15,6 +19,8 @@ import type { ApplicationError, NoteData } from "../use-cases/note-data";
 //     terminal is done by the driver, so this class is tested by comparing arrays of text.
 // PT: O controller devolve o que deve ser impresso, não imprime. Escrever no terminal de
 //     verdade é trabalho do driver, então esta classe é testada comparando arrays de texto.
+// ES: El controller devuelve lo que debe imprimirse, no imprime. Escribir en la terminal de
+//     verdad es trabajo del driver, así que esta clase se prueba comparando arrays de texto.
 export interface CliResult {
 	exitCode: number;
 	stdout: string[];
@@ -32,6 +38,8 @@ const removeSchema = z.tuple([text.min(1)]);
 //     no decision about notes, only about how a note looks in a terminal.
 // PT: O presenter: formata os dados de saída de um caso de uso para um tipo de tela. Não guarda
 //     nenhuma decisão sobre notas, só sobre como uma nota aparece em um terminal.
+// ES: El presenter: formatea los datos de salida de un caso de uso para un tipo de pantalla. No
+//     guarda ninguna decisión sobre notas, solo sobre cómo se ve una nota en una terminal.
 export function presentNote(note: NoteData): string {
 	const body = note.body.length > 0 ? `  ${note.body}` : "";
 	return `${note.id}  ${note.updatedAt}  ${note.title}${body}`;

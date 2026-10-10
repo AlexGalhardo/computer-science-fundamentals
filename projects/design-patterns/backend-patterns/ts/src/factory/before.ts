@@ -7,6 +7,9 @@ import { EmailNotifier, PushNotifier, SmsNotifier } from "./notifiers";
 //     classe criar. Quando o canal push foi acrescentado, `welcome` foi atualizada e
 //     `orderShipped` foi esquecida: nada liga as duas cópias, então o erro compila e vai para
 //     produção.
+// ES: DISEÑO QUE FALLA. Toda función que necesita un notificador repite la decisión de qué
+//     clase crear. Cuando se añadió el canal push, `welcome` se actualizó y `orderShipped` se
+//     olvidó: nada une las dos copias, así que el error compila y llega a producción.
 export function welcome(channel: string, to: string): string {
 	if (channel === "email") {
 		return new EmailNotifier().notify(to, "Welcome!");

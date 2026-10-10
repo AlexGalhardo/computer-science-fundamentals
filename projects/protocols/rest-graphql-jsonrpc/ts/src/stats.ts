@@ -2,6 +2,8 @@
 //     so they are tested without a server or a database.
 // PT: Pequenas funções de estatística e de Markdown para o relatório do benchmark. São funções
 //     puras, então são testadas sem servidor nem banco de dados.
+// ES: Pequeñas funciones de estadística y de Markdown para el reporte del benchmark. Son funciones
+//     puras, así que se prueban sin servidor ni base de datos.
 
 export function mean(values: readonly number[]): number {
 	return values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -19,6 +21,8 @@ export function stddev(values: readonly number[]): number {
 //     list. p95 describes the slow tail that a mean hides.
 // PT: Percentil pelo método do posto mais próximo: ordenar e pegar o valor na posição p% da
 //     lista. O p95 descreve a cauda lenta que a média esconde.
+// ES: Percentil por el método del rango más cercano: ordenar y tomar el valor en la posición p% de la
+//     lista. El p95 describe la cola lenta que el promedio esconde.
 export function percentile(values: readonly number[], p: number): number {
 	if (values.length === 0) {
 		return 0;

@@ -3,6 +3,9 @@ results/results-python.md and results/table-python.json.
 
 PT: `python demo.py` roda os três experimentos, imprime as tabelas e grava
 results/results-python.md e results/table-python.json.
+
+ES: `python demo.py` ejecuta los tres experimentos, imprime las tablas y escribe
+results/results-python.md y results/table-python.json.
 """
 
 import json
@@ -32,6 +35,10 @@ def one_decimal(value: float) -> str:
     PT: Uma casa decimal, com metades sempre arredondadas para cima. JavaScript e Python
     arredondam uma metade exata como 94.25 em direções diferentes, e os dois arquivos de
     resultados devem mostrar os mesmos números.
+
+    ES: Un decimal, con las mitades siempre redondeadas hacia arriba. JavaScript y Python redondean
+    una mitad exacta como 94.25 en direcciones distintas, y los dos archivos de resultados deben
+    mostrar los mismos números.
     """
     return f"{math.floor(value * 10 + 0.5) / 10:.1f}"
 

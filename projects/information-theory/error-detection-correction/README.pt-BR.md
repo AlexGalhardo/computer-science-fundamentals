@@ -1,6 +1,6 @@
 # error-detection-correction
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Como a redundância detecta e conserta bits invertidos? Este mini-projeto implementa, em C++, três códigos **detectores** (bit de paridade, checksum da Internet, CRC-32) e três códigos **corretores** (repetição tripla, Hamming(7,4) e Hamming estendido (8,4)), e um **simulador de ruído** que envia blocos por um canal binário simétrico e conta quantos blocos danificados cada esquema detectou, corrigiu ou deixou passar.
 

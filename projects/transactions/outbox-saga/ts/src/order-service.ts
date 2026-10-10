@@ -2,6 +2,8 @@
 //     the outbox relay, all in one process.
 // PT: Ponto de entrada do serviço de pedidos: API HTTP (ElysiaJS), o consumidor dos eventos de
 //     pagamento e o relay do outbox, tudo em um processo.
+// ES: Punto de entrada del servicio de pedidos: API HTTP (ElysiaJS), el consumidor de los eventos de
+//     pago y el relay del outbox, todo en un proceso.
 
 import { Elysia } from "elysia";
 import { z } from "zod";
@@ -25,6 +27,8 @@ startRelay(pool, broker.publish, config.RELAY_INTERVAL_MS);
 //     run the lines that would come next. Docker restarts the container (`restart: on-failure`).
 // PT: Uma queda de verdade, não uma exceção: o processo termina na hora, sem limpeza e sem chance
 //     de rodar as linhas que viriam depois. O Docker reinicia o contêiner (`restart: on-failure`).
+// ES: Una caída de verdad, no una excepción: el proceso termina al instante, sin limpieza y sin
+//     oportunidad de ejecutar las líneas que vendrían después. Docker reinicia el contenedor (`restart: on-failure`).
 function crash(): void {
 	console.error("order-service: simulated crash after the database commit");
 	process.exit(1);

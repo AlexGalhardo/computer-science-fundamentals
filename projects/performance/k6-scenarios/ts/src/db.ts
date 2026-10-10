@@ -12,6 +12,13 @@
 //     devolve. Quando todas estão emprestadas, a próxima requisição não falha: ela espera em uma
 //     fila dentro do pool. Essa espera é invisível para o banco (cada consulta continua rápida) e
 //     para a CPU (ela está ociosa), e é exatamente o que um teste de carga torna visível.
+// ES: El lado de base de datos de la API: un pequeño catálogo de productos falsos y una consulta por
+//     solicitud. Todo lo interesante aquí trata del POOL DE CONEXIONES. Abrir una conexión con
+//     PostgreSQL es caro (handshake TCP, autenticación y un nuevo proceso en el servidor), así que la
+//     aplicación mantiene algunas abiertas y las presta. Una solicitud toma una, ejecuta la consulta y
+//     la devuelve. Cuando todas están prestadas, la siguiente solicitud no falla: espera en una cola
+//     dentro del pool. Esa espera es invisible para la base de datos (cada consulta sigue siendo
+//     rápida) y para la CPU (está ociosa), y es exactamente lo que una prueba de carga hace visible.
 
 import { Pool, type PoolClient } from "pg";
 
@@ -48,6 +55,9 @@ export function createPool(options: PoolOptions): Pool {
 		// PT: Sem um limite, uma requisição esperaria para sempre e a fila cresceria sem parar.
 		//     Desistir depois de um tempo e responder 503 se chama load shedding: um "agora não"
 		//     rápido e honesto é melhor que uma resposta que chega depois que o cliente já foi embora.
+		// ES: Sin un límite, una solicitud esperaría para siempre y la cola crecería sin parar.
+		//     Desistir después de un tiempo y responder 503 se llama load shedding: un "ahora no"
+		//     rápido y honesto es mejor que una respuesta que llega cuando el cliente ya se fue.
 		connectionTimeoutMillis: options.waitMs,
 	});
 }
@@ -76,6 +86,8 @@ async function borrow(pool: Pool, waitMs: number): Promise<PoolClient> {
 		//     database is down, wrong password) is a different problem and is passed on untouched.
 		// PT: O node-postgres informa o limite de espera com esta mensagem. Qualquer outra falha (o
 		//     banco caiu, senha errada) é um problema diferente e segue adiante sem alteração.
+		// ES: node-postgres informa el límite de espera con este mensaje. Cualquier otra falla (la
+		//     base de datos cayó, contraseña incorrecta) es un problema distinto y sigue adelante sin cambios.
 		if (error instanceof Error && error.message.includes("timeout exceeded when trying to connect")) {
 			throw new PoolTimeoutError(waitMs);
 		}
@@ -106,6 +118,8 @@ export async function findProduct(
 		//     never released is a leak: the pool shrinks by one for ever.
 		// PT: Sempre devolva a conexão, mesmo quando a consulta lança erro. Uma conexão que nunca é
 		//     devolvida é um vazamento: o pool encolhe em uma para sempre.
+		// ES: Devuelve siempre la conexión, incluso cuando la consulta lanza un error. Una conexión que
+		//     nunca se devuelve es una fuga: el pool se reduce en una para siempre.
 		client.release();
 	}
 }

@@ -11,6 +11,13 @@ Cada `Value` guarda um número (`data`), a inclinação do resultado final em re
 (`grad`) e os valores a partir dos quais foi construído. Fazer contas com objetos `Value` constrói
 um grafo, e `backward()` percorre esse grafo do resultado até as entradas aplicando a regra da
 cadeia. Esse percurso é a retropropagação.
+
+ES: Diferenciación automática escalar: un número que recuerda cómo se calculó.
+
+Cada `Value` guarda un número (`data`), la pendiente del resultado final respecto a él (`grad`) y
+los valores a partir de los cuales se construyó. Hacer cuentas con objetos `Value` construye un
+grafo, y `backward()` recorre ese grafo desde el resultado hasta las entradas aplicando la regla de
+la cadena. Ese recorrido es la retropropagación.
 """
 
 from __future__ import annotations
@@ -22,7 +29,12 @@ Number = int | float
 
 
 class Value:
-    """EN: One node of the computation graph. PT: Um nó do grafo de computação."""
+    """EN: One node of the computation graph.
+
+    PT: Um nó do grafo de computação.
+
+    ES: Un nodo del grafo de cómputo.
+    """
 
     __slots__ = ("_backward", "_parents", "data", "grad", "op")
 
@@ -37,6 +49,8 @@ class Value:
         # PT: Cada operação guarda aqui uma pequena função que conhece a sua inclinação local
         #     e repassa o gradiente às suas entradas. Uma folha (uma entrada ou um peso) não
         #     tem nada a repassar.
+        # ES: Cada operación guarda aquí una pequeña función que conoce su pendiente local y pasa
+        #     el gradiente a sus entradas. Una hoja (una entrada o un peso) no tiene nada que pasar.
         self._backward: Callable[[], None] = _nothing
 
     def __repr__(self) -> str:
@@ -48,6 +62,9 @@ class Value:
     # PT: Soma. d(a + b)/da = 1 e d(a + b)/db = 1, então o gradiente do resultado passa
     #     inalterado para as duas entradas. O `+=` importa: um valor usado em dois lugares
     #     recebe gradiente dos dois, e as duas contribuições se somam.
+    # ES: Suma. d(a + b)/da = 1 y d(a + b)/db = 1, así que el gradiente del resultado pasa sin
+    #     cambios a las dos entradas. El `+=` importa: un valor usado en dos lugares recibe
+    #     gradiente de los dos, y las dos contribuciones se suman.
     def __add__(self, other: Value | Number) -> Value:
         other = _wrap(other)
         out = Value(self.data + other.data, (self, other), "+")
@@ -63,6 +80,8 @@ class Value:
     #     gradient of the result multiplied by the OTHER input.
     # PT: Multiplicação. d(a * b)/da = b e d(a * b)/db = a: cada entrada recebe o gradiente
     #     do resultado multiplicado pela OUTRA entrada.
+    # ES: Multiplicación. d(a * b)/da = b y d(a * b)/db = a: cada entrada recibe el gradiente del
+    #     resultado multiplicado por la OTRA entrada.
     def __mul__(self, other: Value | Number) -> Value:
         other = _wrap(other)
         out = Value(self.data * other.data, (self, other), "*")
@@ -78,6 +97,8 @@ class Value:
     #     are built from it.
     # PT: Potência com expoente constante. d(a^n)/da = n * a^(n-1). A divisão e a raiz
     #     quadrada são construídas a partir dela.
+    # ES: Potencia con exponente constante. d(a^n)/da = n * a^(n-1). La división y la raíz
+    #     cuadrada se construyen a partir de ella.
     def __pow__(self, exponent: Number) -> Value:
         out = Value(self.data**exponent, (self,), f"**{exponent}")
 
@@ -92,6 +113,8 @@ class Value:
     # PT: As funções de ativação. A tanh espreme qualquer número em (-1, 1), e a sua
     #     inclinação é 1 - tanh^2: quase 0 quando a saída está perto de -1 ou 1 (o neurônio
     #     está "saturado").
+    # ES: Las funciones de activación. La tanh aprieta cualquier número en (-1, 1), y su pendiente
+    #     es 1 - tanh^2: casi 0 cuando la salida está cerca de -1 o 1 (la neurona está "saturada").
     def tanh(self) -> Value:
         result = math.tanh(self.data)
         out = Value(result, (self,), "tanh")
@@ -108,6 +131,9 @@ class Value:
     # PT: A ReLU mantém os números positivos e transforma os negativos em 0. A inclinação é 1
     #     no lado positivo e 0 no negativo, então nenhum gradiente passa por um neurônio cuja
     #     saída foi 0.
+    # ES: La ReLU conserva los números positivos y convierte los negativos en 0. La pendiente es 1
+    #     en el lado positivo y 0 en el negativo, así que ningún gradiente pasa por una neurona
+    #     cuya salida fue 0.
     def relu(self) -> Value:
         out = Value(max(0.0, self.data), (self,), "relu")
 
@@ -121,6 +147,8 @@ class Value:
     #     Its slope is s * (1 - s).
     # PT: A sigmoide espreme um número em (0, 1), então a saída pode ser lida como uma
     #     probabilidade. A inclinação é s * (1 - s).
+    # ES: La sigmoide aprieta un número en (0, 1), así que la salida se puede leer como una
+    #     probabilidad. La pendiente es s * (1 - s).
     def sigmoid(self) -> Value:
         result = 1.0 / (1.0 + math.exp(-self.data))
         out = Value(result, (self,), "sigmoid")
@@ -154,6 +182,8 @@ class Value:
     #     own: a - b is a + (-1 * b), and a / b is a * b^-1.
     # PT: Todo o resto é escrito com as operações acima, então não precisa de inclinação
     #     própria: a - b é a + (-1 * b), e a / b é a * b^-1.
+    # ES: Todo lo demás se escribe con las operaciones de arriba, así que no necesita pendiente
+    #     propia: a - b es a + (-1 * b), y a / b es a * b^-1.
     def __neg__(self) -> Value:
         return self * -1.0
 
@@ -188,6 +218,13 @@ class Value:
         quais foi construído). Percorrer essa ordem de trás para a frente garante que um nó só
         repassa o seu gradiente depois de tê-lo recebido por inteiro. O percurso começa com
         d(self)/d(self) = 1.
+
+        ES: Retropropagación: rellena el `grad` de todo valor del que este depende.
+
+        Los nodos se colocan primero en orden topológico (cada nodo después de los nodos a partir
+        de los cuales se construyó). Recorrer ese orden de atrás hacia adelante garantiza que un
+        nodo solo pasa su gradiente después de haberlo recibido por completo. El recorrido empieza
+        con d(self)/d(self) = 1.
         """
         order: list[Value] = []
         seen: set[int] = set()
@@ -195,6 +232,8 @@ class Value:
         #     deeper than Python's recursion limit.
         # PT: Uma pilha explícita em vez de recursão: o grafo de um lote inteiro de treino é
         #     mais fundo que o limite de recursão do Python.
+        # ES: Una pila explícita en lugar de recursión: el grafo de un lote entero de entrenamiento
+        #     es más profundo que el límite de recursión de Python.
         stack: list[tuple[Value, bool]] = [(self, False)]
         while stack:
             node, expanded = stack.pop()

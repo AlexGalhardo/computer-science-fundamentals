@@ -1,5 +1,6 @@
 # EN: Builds and tests the error-detection-correction mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto error-detection-correction. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto error-detection-correction. El único requisito es Docker.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 

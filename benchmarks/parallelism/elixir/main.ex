@@ -10,6 +10,12 @@
 #     para equilibrar a carga. O `Task.async_stream` cria um processo por pedaço e mantém no
 #     máximo `workers` deles vivos por vez, então `workers` núcleos ficam ocupados. Processos
 #     não compartilham memória: cada um devolve sua contagem como mensagem.
+# ES: Carga de paralelismo en Elixir: cuenta los primos por debajo de n, rango cortado en 256
+#     pedazos. Modelo de la BEAM: procesos livianos sobre threads planificadores. La VM levanta un
+#     planificador por núcleo, cada uno con su cola de ejecución, y mueve procesos entre las colas
+#     para equilibrar la carga. `Task.async_stream` crea un proceso por pedazo y mantiene como
+#     máximo `workers` de ellos vivos a la vez, así que `workers` núcleos quedan ocupados. Los procesos
+#     no comparten memoria: cada uno devuelve su conteo como mensaje.
 defmodule Main do
   @chunks 256
 
@@ -24,6 +30,7 @@ defmodule Main do
 
   # EN: Chunk c covers [c*n/256, (c+1)*n/256).
   # PT: O pedaço c cobre [c*n/256, (c+1)*n/256).
+  # ES: El pedazo c cubre [c*n/256, (c+1)*n/256).
   defp count_chunk(chunk, n) do
     count_range(div(chunk * n, @chunks), div((chunk + 1) * n, @chunks), 0)
   end

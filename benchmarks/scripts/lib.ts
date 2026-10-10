@@ -2,6 +2,8 @@
 //     live, how their images are named and how to run a program inside one of them.
 // PT: Funções compartilhadas pelos scripts e testes da suíte de benchmark: onde ficam as
 //     cargas de trabalho, como as imagens são nomeadas e como rodar um programa dentro delas.
+// ES: Funciones compartidas por los scripts y pruebas de la suite de benchmark: dónde están las
+//     cargas de trabajo, cómo se nombran las imágenes y cómo ejecutar un programa dentro de ellas.
 
 import { readFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -42,6 +44,8 @@ export function readConfig(workload: string): BenchConfig {
 //     is reused by `bun run bench` and by the tests.
 // PT: Mesmo nome que o runner dá a uma imagem construída de um Dockerfile, então uma imagem
 //     construída aqui é reaproveitada pelo `bun run bench` e pelos testes.
+// ES: Mismo nombre que el runner le da a una imagen construida desde un Dockerfile, así una imagen
+//     construida aquí la reutilizan `bun run bench` y las pruebas.
 export function imageTag(project: string, language: string): string {
 	return `sef-bench-${project}-${language}:local`;
 }
@@ -84,6 +88,8 @@ export interface ContractLine {
 //     is the last non-empty line of the output.
 // PT: Roda um programa do jeito que o runner roda (sem rede) e lê a linha do contrato, que é a
 //     última linha não vazia da saída.
+// ES: Ejecuta un programa como lo ejecuta el runner (sin red) y lee la línea del contrato, que es
+//     la última línea no vacía de la salida.
 export function runProgram(image: string, command: string): ContractLine {
 	const output = mustRun(["docker", "run", "--rm", "--network", "none", "--entrypoint", "sh", image, "-c", command]);
 	const line = output
@@ -108,6 +114,8 @@ export interface Spread {
 //     how much the measurement moves from run to run.
 // PT: Média, desvio padrão amostral e intervalo de algumas repetições. Um número sozinho
 //     esconde o quanto a medição varia de uma execução para outra.
+// ES: Promedio, desviación estándar muestral y rango de algunas repeticiones. Un número solo
+//     esconde cuánto varía la medición de una ejecución a otra.
 export function spread(values: number[]): Spread {
 	const mean = values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1);
 	const variance =
@@ -118,6 +126,8 @@ export function spread(values: number[]): Spread {
 // EN: Same fields the shared runner records, so every results file describes the machine alike.
 // PT: Os mesmos campos que o runner compartilhado registra, para que todo arquivo de resultados
 //     descreva a máquina do mesmo jeito.
+// ES: Los mismos campos que registra el runner compartido, para que todo archivo de resultados
+//     describa la máquina de la misma forma.
 export function machineInfo(): Record<string, string> {
 	const format = "{{.OperatingSystem}}|{{.KernelVersion}}|{{.NCPU}}|{{.MemTotal}}|{{.ServerVersion}}";
 	const info = mustRun(["docker", "info", "--format", format]).trim().split("|");

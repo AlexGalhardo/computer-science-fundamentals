@@ -1,5 +1,7 @@
 // EN: What both versions of the shop must do. `createShop` receives the price of each product.
 // PT: O que as duas versões da loja precisam fazer. `createShop` recebe o preço de cada produto.
+// ES: Lo que ambas versiones de la tienda deben hacer. `createShop` recibe el precio de cada
+//     producto.
 
 export interface Shop {
 	restock(sku: string, quantity: number): void;

@@ -1,5 +1,6 @@
 # EN: Builds and tests the aloha-csma mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto aloha-csma. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto aloha-csma. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

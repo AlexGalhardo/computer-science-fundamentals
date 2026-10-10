@@ -1,6 +1,6 @@
 # Deadlock detection and a mini shell
 
-> Versão em português: [docs/pt/operating-systems/deadlock-mini-shell.md](../../pt/operating-systems/deadlock-mini-shell.md)
+> Versão em português: [docs/pt/operating-systems/deadlock-mini-shell.md](../../pt/operating-systems/deadlock-mini-shell.md) · Versión en español: [docs/es/operating-systems/deadlock-mini-shell.md](../../es/operating-systems/deadlock-mini-shell.md)
 
 Mini-project: [`projects/operating-systems/deadlock-mini-shell`](../../../projects/operating-systems/deadlock-mini-shell/). Plan item: MP-OS-4. Quiz topics: `operating-systems` / `deadlocks`, `introduction-and-system-calls` and `processes-and-threads`.
 
@@ -76,7 +76,7 @@ The full output of the demo is in [`results/results.md`](../../../projects/opera
 
 `msh` reads a line, parses it into a pipeline and runs it.
 
-```
+```text
 sort < in.txt | uniq | wc -l > out.txt
 
   in.txt --> [ sort ] --pipe--> [ uniq ] --pipe--> [ wc -l ] --> out.txt

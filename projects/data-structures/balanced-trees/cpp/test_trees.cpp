@@ -48,6 +48,10 @@ void basics(SearchTree& tree) {
 // PT: Teste de propriedade. Inserções, remoções e buscas aleatórias rodam na árvore e em um
 //     std::set, e depois de cada operação a resposta é comparada e a invariante da árvore é
 //     conferida: ordem nas três, balanceamento na AVL, cores e alturas negras na rubro-negra.
+// ES: Prueba de propiedad. Inserciones, eliminaciones y búsquedas aleatorias corren en el árbol y
+//     en un std::set, y después de cada operación se compara la respuesta y se revisa la
+//     invariante del árbol: orden en los tres, balanceo en el AVL, colores y alturas negras en
+//     el rojo-negro.
 void property(SearchTree& tree, std::uint64_t seed) {
 	const std::string name = tree.name() + ", seed " + std::to_string(seed);
 	std::set<Key> reference;
@@ -84,6 +88,10 @@ void property(SearchTree& tree, std::uint64_t seed) {
 //     transformam a árvore sem balanceamento em uma lista de 100.000 nós de altura. As mesmas
 //     chaves na mesma ordem deixam as duas árvores balanceadas abaixo de 40 níveis, porque elas
 //     fazem rotações.
+// ES: La lección del mini-proyecto en números. 100,000 claves insertadas en orden creciente
+//     convierten el árbol sin balanceo en una lista de 100,000 nodos de altura. Las mismas
+//     claves en el mismo orden dejan los dos árboles balanceados por debajo de 40 niveles,
+//     porque hacen rotaciones.
 void sorted_insertion() {
 	const Key n = 100000;
 	for (const auto& tree : all_trees()) {
@@ -115,6 +123,8 @@ void sorted_insertion() {
 //     equals the rotation counter, no rotation is missing from the replay.
 // PT: O visualizador mostra um quadro por mudança. Se o número de quadros rotulados "rotate" é
 //     igual ao contador de rotações, nenhuma rotação ficou fora da reprodução.
+// ES: El visualizador muestra un cuadro por cambio. Si el número de cuadros rotulados "rotate" es
+//     igual al contador de rotaciones, ninguna rotación quedó fuera de la reproducción.
 void visualiser_steps() {
 	for (const auto& tree : all_trees()) {
 		const std::vector<Frame> frames = record(*tree, kSequence);

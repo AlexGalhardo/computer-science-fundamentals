@@ -5,6 +5,8 @@ import { BloomFilter } from "../src/bloom-filter";
 //     about 0.8% to about 15%, so the formula is checked in very different regimes.
 // PT: Cada configuração é (bits, funções de espalhamento, chaves adicionadas). A taxa teórica
 //     vai de cerca de 0,8% a cerca de 15%, então a fórmula é conferida em regimes bem diferentes.
+// ES: Cada configuración es (bits, funciones de dispersión, claves agregadas). La tasa teórica
+//     va de cerca de 0.8% a cerca de 15%, así que la fórmula se verifica en regímenes muy distintos.
 const configurations: [number, number, number][] = [
 	[200_000, 7, 20_000],
 	[100_000, 3, 10_000],
@@ -21,6 +23,7 @@ for (const [sizeInBits, hashCount, keys] of configurations) {
 		}
 		// EN: Every key that was added has to be reported as present, with no exception.
 		// PT: Toda chave que foi adicionada precisa ser dada como presente, sem exceção.
+		// ES: Toda clave que fue agregada debe darse como presente, sin excepción.
 		let falseNegatives = 0;
 		for (let i = 0; i < keys; i++) {
 			if (!filter.mightContain(`member-${i}`)) falseNegatives++;
@@ -29,6 +32,8 @@ for (const [sizeInBits, hashCount, keys] of configurations) {
 
 		// EN: None of the probe keys was added, so every "probably yes" is a false positive.
 		// PT: Nenhuma das chaves de sondagem foi adicionada, então todo "provavelmente sim" é um
+		//     falso positivo.
+		// ES: Ninguna de las claves de sondeo fue agregada, así que todo "probablemente sí" es un
 		//     falso positivo.
 		let falsePositives = 0;
 		for (let i = 0; i < PROBES; i++) {

@@ -1,6 +1,6 @@
 # Resolvedor DNS e calculadora de sub-redes
 
-> English version: [docs/en/networks/dns-subnet.md](../../en/networks/dns-subnet.md)
+> English version: [docs/en/networks/dns-subnet.md](../../en/networks/dns-subnet.md) · Versión en español: [docs/es/networks/dns-subnet.md](../../es/networks/dns-subnet.md)
 
 Mini-projeto: [`projects/networks/dns-subnet`](../../../projects/networks/dns-subnet/README.pt-BR.md). Linguagens: Go e TypeScript. Tópicos do quiz: `networks` / `application-layer` e `networks` / `network-layer`.
 
@@ -22,7 +22,7 @@ Nenhum servidor tem a resposta inteira, e nenhum deles pergunta a outro. Um serv
 
 O resolvedor começa sabendo uma coisa só: o endereço do servidor raiz. Ele faz a mesma pergunta em cada nível e segue as indicações. Este é o traço versionado ([results/resolution.txt](../../../projects/networks/dns-subnet/results/resolution.txt)):
 
-```
+```text
 1. www.example.test. A
   ask 10.253.53.2     (zone .)  www.example.test. A -> referral: test. is served by ns.test.
   ask 10.253.53.3     (zone test.)  www.example.test. A -> referral: example.test. is served by ns1.example.test.
@@ -34,7 +34,7 @@ O resolvedor começa sabendo uma coisa só: o endereço do servidor raiz. Ele fa
 
 Todo registro leva um TTL escolhido pelo seu dono: por quantos segundos a resposta pode ser reutilizada. O cache em `go/resolver/cache.go` guarda cada conjunto de registros até o seu menor TTL acabar e repassa os registros com o tempo que lhes resta.
 
-```
+```text
 2. www.example.test. A
   cache                        www.example.test. A -> answer: www.example.test. 3 A 192.0.2.10
   queries sent: 0
@@ -87,7 +87,7 @@ Um endereço IPv4 é um número de 32 bits. Um prefixo `/n` diz que os primeiros
 
 Exemplo resolvido, `192.168.10.77/26`:
 
-```
+```text
 endereço   11000000.10101000.00001010.01 001101   192.168.10.77
 máscara    11111111.11111111.11111111.11 000000   255.255.255.192
 rede       11000000.10101000.00001010.01 000000   192.168.10.64

@@ -10,6 +10,11 @@ PT: Modelo do Python: processos, não threads. Na build padrão do CPython a tra
     aceleram trabalho de CPU. O `multiprocessing.Pool` sobe um interpretador por worker, cada
     um com sua GIL e sua memória, e envia a eles números de pedaço por pipes. O preço é tempo
     de inicialização e memória por processo, ambos visíveis nos resultados.
+ES: Modelo de Python: procesos, no threads. En la build estándar de CPython el candado global del
+    intérprete (GIL) deja que solo un thread ejecute bytecode de Python a la vez, así que los
+    threads no aceleran el trabajo de CPU. `multiprocessing.Pool` levanta un intérprete por worker,
+    cada uno con su GIL y su memoria, y les envía números de pedazo por pipes. El precio es tiempo
+    de inicialización y memoria por proceso, ambos visibles en los resultados.
 """
 
 import json
@@ -40,6 +45,7 @@ def is_prime(k: int) -> bool:
 def count_chunk(n: int, chunk: int) -> int:
     # EN: Chunk c covers [c*n/256, (c+1)*n/256).
     # PT: O pedaço c cobre [c*n/256, (c+1)*n/256).
+    # ES: El pedazo c cubre [c*n/256, (c+1)*n/256).
     count = 0
     for k in range(chunk * n // CHUNKS, (chunk + 1) * n // CHUNKS):
         if is_prime(k):
@@ -54,16 +60,22 @@ def count_primes(n: int, workers: int) -> int:
     # PT: O "spawn" sobe cada worker como filho direto rodando um interpretador novo. O padrão
     #     no Linux ("forkserver") os cria sob um processo auxiliar, e aí o tempo de CPU dos
     #     workers não seria contado como tempo deste programa.
+    # ES: "spawn" levanta cada worker como hijo directo ejecutando un intérprete nuevo. El valor
+    #     predeterminado en Linux ("forkserver") los crea bajo un proceso auxiliar, y entonces el
+    #     tiempo de CPU de los workers no se contaría como tiempo de este programa.
     pool = get_context("spawn").Pool(workers)
     try:
         # EN: imap_unordered hands out one chunk at a time to whichever process is free.
         # PT: O imap_unordered entrega um pedaço por vez ao processo que estiver livre.
+        # ES: imap_unordered entrega un pedazo a la vez al proceso que esté libre.
         total = sum(pool.imap_unordered(partial(count_chunk, n), range(CHUNKS)))
     finally:
         # EN: close and join let the workers exit by themselves, so the OS adds their CPU time
         #     and memory to this process's totals.
         # PT: close e join deixam os workers saírem sozinhos, então o SO soma o tempo de CPU e
         #     a memória deles aos totais deste processo.
+        # ES: close y join dejan que los workers salgan solos, así el SO suma su tiempo de CPU y
+        #     su memoria a los totales de este proceso.
         pool.close()
         pool.join()
     return total
@@ -82,6 +94,8 @@ def main() -> None:
     #     It is still an underestimate of the whole pool: hyperfine's figure has the same limit.
     # PT: O trabalho aconteceu nos filhos, então o pico é o pai mais o maior filho. Ainda é uma
     #     subestimativa do pool inteiro: o número do hyperfine tem o mesmo limite.
+    # ES: El trabajo ocurrió en los hijos, así que el pico es el padre más el mayor hijo. Sigue
+    #     siendo una subestimación del pool completo: el número de hyperfine tiene el mismo límite.
     own = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     children = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
     print(

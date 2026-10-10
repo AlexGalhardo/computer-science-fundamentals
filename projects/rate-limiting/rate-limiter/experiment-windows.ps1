@@ -2,6 +2,8 @@
 #     charts). The container has no network and nothing is sent anywhere: it is a simulation.
 # PT: Roda o experimento de rajada e regrava results/ (burst.json, burst.md e os dois gráficos
 #     SVG). O contêiner não tem rede e nada é enviado a lugar nenhum: é uma simulação.
+# ES: Ejecuta el experimento de ráfaga y reescribe results/ (burst.json, burst.md y los gráficos
+#     SVG). El contenedor no tiene red y no se envía nada a ningún lado: es una simulación.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 

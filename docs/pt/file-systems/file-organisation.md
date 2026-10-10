@@ -1,6 +1,6 @@
 # Organização de arquivos e índices
 
-> English version: [docs/en/file-systems/file-organisation.md](../../en/file-systems/file-organisation.md)
+> English version: [docs/en/file-systems/file-organisation.md](../../en/file-systems/file-organisation.md) · Versión en español: [docs/es/file-systems/file-organisation.md](../../es/file-systems/file-organisation.md)
 
 Mini-projeto: [projects/file-systems/file-organisation](../../../projects/file-systems/file-organisation). Linguagens: C++, Rust. Tópicos do quiz: `file-systems` / `record-organisation`, `indexes`, `compression-and-space-reclamation`.
 
@@ -12,7 +12,7 @@ Este mini-projeto monta as respostas clássicas uma sobre a outra: registros de 
 
 ## O arquivo de dados
 
-```
+```text
 byte 0                     32             96             160
      +----------------------+--------------+--------------+-----
      | cabeçalho (32 bytes) | slot, RRN 0  | slot, RRN 1  | ...
@@ -44,7 +44,7 @@ Como todo slot tem 64 bytes, o slot de número relativo (RRN) n começa no **byt
 
 Remover um registro não move nada. O slot é marcado com `*`, a cabeça antiga da lista de livres é gravada dentro dele, e o cabeçalho passa a apontar para esse slot. A lista é uma pilha que mora no próprio espaço que ela administra:
 
-```
+```text
 remove RRN 3, depois 7, depois 2:  cabeçalho.free_head = 2
                                    slot 2: * próximo 7
                                    slot 7: * próximo 3
@@ -64,7 +64,7 @@ O índice fica na memória enquanto os arquivos estão abertos e é gravado em `
 
 Um índice secundário responde buscas por um campo que se repete, aqui a cidade e o ano. Ele tem duas partes:
 
-```
+```text
 tabela de chaves (city.sec)      arquivo de listas (city.lst)
 NATAL   -> 1                     0: id 30, próximo -1
 RECIFE  -> 2                     1: id 20, próximo -1

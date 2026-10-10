@@ -1,6 +1,6 @@
 # hash-map
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A hash map written from scratch, twice: with **separate chaining** (a linked list per bucket) and with **open addressing** (linear probing inside one array). It teaches how collisions are resolved, why deletion in open addressing needs tombstones, and why the load factor decides the speed of a lookup.
 

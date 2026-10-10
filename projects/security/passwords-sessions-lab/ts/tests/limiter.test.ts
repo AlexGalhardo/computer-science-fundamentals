@@ -1,6 +1,8 @@
 // EN: The attempt limiter alone, without HTTP, with a clock the test controls. No test sleeps.
 // PT: O limitador de tentativas sozinho, sem HTTP, com um relógio que o teste controla. Nenhum
 //     teste dorme.
+// ES: El limitador de intentos por separado, sin HTTP, con un reloj que controla la prueba. Ninguna
+//     prueba duerme.
 
 import { describe, expect, test } from "bun:test";
 import { AttemptLimiter, type LimiterRule } from "../src/fixed/fixed-attempt-limiter";
@@ -65,6 +67,7 @@ describe("AttemptLimiter", () => {
 		for (const key of ["key-1-fake", "key-2-fake", "key-3-fake", "key-4-fake"]) limiter.recordFailure(key);
 		// EN: key-1 and key-2, the oldest unlocked ones, were dropped to make room.
 		// PT: key-1 e key-2, as mais antigas sem bloqueio, foram descartadas para abrir espaço.
+		// ES: key-1 y key-2, las más antiguas sin bloqueo, se descartaron para abrir espacio.
 		expect(limiter.retryAfterMs("alice-fake")).toBe(120_000);
 		for (let i = 0; i < 2; i++) limiter.recordFailure("key-4-fake");
 		expect(limiter.retryAfterMs("key-4-fake")).toBe(120_000);

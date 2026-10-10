@@ -8,6 +8,11 @@
 //     thread: registra um timer e volta para o loop, que fica livre para atender outras
 //     conexões. Dez mil requisições esperando são dez mil pequenos objetos promise, não dez
 //     mil threads.
+// ES: Las rutas del servidor TypeScript, como una función de Request a Response. Bun ejecuta
+//     esta función en un único thread, el event loop. `await Bun.sleep(ms)` no bloquea ese
+//     thread: registra un timer y vuelve al loop, que queda libre para atender otras
+//     conexiones. Diez mil solicitudes esperando son diez mil pequeños objetos promise, no diez
+//     mil threads.
 
 export const MAX_DELAY_MS = 60_000;
 const MAX_ECHO_BYTES = 1 << 20;
@@ -45,6 +50,7 @@ async function route(request: Request): Promise<Response> {
 			}
 			// EN: The query string is external input, so it is checked before use.
 			// PT: A query string é entrada externa, então é conferida antes do uso.
+			// ES: La query string es entrada externa, así que se verifica antes de usarla.
 			const text = url.searchParams.get("ms") ?? "";
 			const ms = Number(text);
 			if (!/^\d+$/.test(text) || ms > MAX_DELAY_MS) {

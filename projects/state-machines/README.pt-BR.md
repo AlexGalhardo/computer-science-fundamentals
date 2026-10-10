@@ -1,6 +1,6 @@
 # Máquinas de estado
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Uma máquina de estados descreve o comportamento como um conjunto finito de estados e as transições entre eles. É ao mesmo tempo um modelo teórico (autômatos, linguagens regulares, máquinas de Turing e os limites da computação) e uma ferramenta prática de projeto: protocolos, parsers, interfaces e fluxos de negócio ficam mais fáceis de entender, e situações inválidas ficam impossíveis de representar, quando os estados são explícitos.
 

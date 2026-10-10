@@ -1,6 +1,6 @@
 # Passwords and sessions lab: storage, attempt limiting and session cookies (MP-SEC-6)
 
-> Versão em português: [docs/pt/security/passwords-sessions-lab.md](../../pt/security/passwords-sessions-lab.md)
+> Versão em português: [docs/pt/security/passwords-sessions-lab.md](../../pt/security/passwords-sessions-lab.md) · Versión en español: [docs/es/security/passwords-sessions-lab.md](../../es/security/passwords-sessions-lab.md)
 
 Mini-project: [`projects/security/passwords-sessions-lab`](../../../projects/security/passwords-sessions-lab/README.md). Quiz topics: `authentication`, `sessions-cookies`.
 
@@ -43,7 +43,7 @@ The rate is the server's cost per login and, read from the other side, the numbe
 
 ## The flaw
 
-```
+```text
 somebody else                       server (vulnerable)                     alice-fake
 GET /home  ---------------------->  new session X, anonymous
         (X ends up in alice-fake's browser)

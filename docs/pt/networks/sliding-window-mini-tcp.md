@@ -1,6 +1,6 @@
 # Janela deslizante e um mini TCP
 
-> English version: [docs/en/networks/sliding-window-mini-tcp.md](../../en/networks/sliding-window-mini-tcp.md)
+> English version: [docs/en/networks/sliding-window-mini-tcp.md](../../en/networks/sliding-window-mini-tcp.md) · Versión en español: [docs/es/networks/sliding-window-mini-tcp.md](../../es/networks/sliding-window-mini-tcp.md)
 
 Mini-projeto: [`projects/networks/sliding-window-mini-tcp`](../../../projects/networks/sliding-window-mini-tcp/README.pt-BR.md). Linguagens: Go e Elixir. Tópicos do quiz: `networks` / `data-link-layer` e `networks` / `transport-layer`.
 

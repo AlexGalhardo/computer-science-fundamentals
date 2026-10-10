@@ -2,6 +2,8 @@
 //     measured: which protocol carried each resource and when each one started and ended.
 // PT: Conduz um Chromium de verdade (Playwright) contra o laboratório e lê o que o próprio
 //     navegador mediu: qual protocolo carregou cada recurso e quando cada um começou e terminou.
+// ES: Conduce un Chromium de verdad (Playwright) contra el laboratorio y lee lo que el propio
+//     navegador midió: qué protocolo transportó cada recurso y cuándo empezó y terminó cada uno.
 
 import { createHash, type X509Certificate } from "node:crypto";
 import { connect } from "node:tls";
@@ -20,6 +22,12 @@ import { type Condition, quicOrigins } from "./targets";
 //     exatamente UMA chave pública: a que este servidor do laboratório apresenta. O valor que o
 //     Chromium espera é o SHA-256 do SubjectPublicKeyInfo do certificado, em Base64. Esta função
 //     conecta uma vez, lê o certificado que o servidor envia e calcula esse hash.
+// ES: El certificado del laboratorio está firmado por la CA interna de Caddy, en la que ningún
+//     navegador confía. En lugar de desactivar la verificación de certificados, se instruye al
+//     navegador para que acepte exactamente UNA clave pública: la que presenta este servidor
+//     del laboratorio. El valor que espera Chromium es el SHA-256 del SubjectPublicKeyInfo del
+//     certificado, en Base64. Esta función se conecta una vez, lee el certificado que envía el
+//     servidor y calcula ese hash.
 export function spkiHashOf(certificate: X509Certificate): string {
 	const spki = certificate.publicKey.export({ type: "spki", format: "der" });
 	return createHash("sha256").update(spki).digest("base64");
@@ -57,6 +65,11 @@ export interface LaunchOptions {
 //     - `--origin-to-force-quic-on` faz o navegador falar QUIC com as portas h3 desde a primeira
 //       requisição. Sem ela um navegador começa com TCP e só passa para HTTP/3 depois que o
 //       servidor o anuncia em um cabeçalho `Alt-Svc`, então a primeira carga não seria HTTP/3.
+// ES: Dos flags de Chromium, ambos restringidos al laboratorio:
+//     - `--ignore-certificate-errors-spki-list` acepta el certificado del laboratorio (ver arriba).
+//     - `--origin-to-force-quic-on` hace que el navegador hable QUIC con los puertos h3 desde la
+//       primera petición. Sin él, un navegador empieza con TCP y solo pasa a HTTP/3 después de que
+//       el servidor se lo anuncia en una cabecera `Alt-Svc`, así que la primera carga no sería HTTP/3.
 export function launchBrowser(options: LaunchOptions, forceQuic = true): Promise<Browser> {
 	const args = [`--ignore-certificate-errors-spki-list=${options.keyHash}`];
 	if (forceQuic) {
@@ -95,6 +108,12 @@ export type PageLoad = z.infer<typeof pageLoadSchema>;
 //     a aba, para que o tempo de criá-la não seja contado. Os números vêm das próprias APIs
 //     Navigation Timing e Resource Timing do navegador, em milissegundos desde o início da
 //     navegação.
+// ES: Una carga de página en frío. Un contexto nuevo del navegador es como una ventana privada
+//     nueva: caché vacía y ninguna conexión abierta, así que la conexión (TCP + TLS, o QUIC) se
+//     abre de nuevo y su costo forma parte del tiempo de carga. La página en blanco abierta
+//     antes solo inicia la pestaña, para que el tiempo de crearla no se cuente. Los números
+//     vienen de las propias APIs Navigation Timing y Resource Timing del navegador, en
+//     milisegundos desde que empezó la navegación.
 export async function loadPage(browser: Browser, origin: string): Promise<PageLoad> {
 	const context = await browser.newContext();
 	try {

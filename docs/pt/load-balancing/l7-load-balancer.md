@@ -1,6 +1,6 @@
 # Balanceador de carga de camada 7 escrito à mão
 
-> English version: [docs/en/load-balancing/l7-load-balancer.md](../../en/load-balancing/l7-load-balancer.md)
+> English version: [docs/en/load-balancing/l7-load-balancer.md](../../en/load-balancing/l7-load-balancer.md) · Versión en español: [docs/es/load-balancing/l7-load-balancer.md](../../es/load-balancing/l7-load-balancer.md)
 
 Mini-projeto: [projects/load-balancing/l7-load-balancer](../../../projects/load-balancing/l7-load-balancer/README.pt-BR.md) (MP-LB-2). Linguagem: Go.
 
@@ -8,7 +8,7 @@ Mini-projeto: [projects/load-balancing/l7-load-balancer](../../../projects/load-
 
 NGINX e Caddy escondem o trabalho atrás de uma linha de configuração. Escrever o balanceador à mão mostra que o trabalho é curto de descrever e cheio de decisões:
 
-```
+```text
 cliente ──TCP 1──> balanceador ──TCP 2──> back end
                       │
                       ├─ 1. escolher um back end          strategy.go
@@ -26,7 +26,7 @@ O **round robin** é um contador: a requisição número `n` vai para o back end
 
 O **least connections** guarda, por back end, o número de requisições enviadas e ainda não terminadas, e escolhe o menor. Com requisições de mesma duração ele se comporta como o round robin. Com um back end quatro vezes mais lento ele dá a esse back end cerca de um nono das requisições em vez de um terço, porque cada back end termina requisições a uma taxa de (requisições em andamento) / (tempo por requisição):
 
-```
+```text
 rápido: 10 em andamento / 20 ms = 500 requisições/s   (duas vezes)
 lento:  10 em andamento / 80 ms = 125 requisições/s
 fatia do lento = 125 / 1125 = 1/9

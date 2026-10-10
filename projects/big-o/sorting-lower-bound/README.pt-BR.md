@@ -1,6 +1,6 @@
 # sorting-lower-bound
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Ensina **por que nenhuma ordenação por comparação supera Ω(n lg n) e como as ordenações por contagem escapam disso**. Um gerador constrói a árvore de decisão de um algoritmo de ordenação de verdade, contadores de comparações medem merge sort, heapsort e quicksort contra lg(n!), e counting sort e radix sort ordenam as mesmas entradas sem uma única comparação entre elementos.
 

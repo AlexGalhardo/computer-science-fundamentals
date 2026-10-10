@@ -1,6 +1,6 @@
 # Máquina virtual de bytecode
 
-> English version: [docs/en/compilers/bytecode-vm.md](../../en/compilers/bytecode-vm.md)
+> English version: [docs/en/compilers/bytecode-vm.md](../../en/compilers/bytecode-vm.md) · Versión en español: [docs/es/compilers/bytecode-vm.md](../../es/compilers/bytecode-vm.md)
 
 Mini-projeto MP-COMP-3, em [`projects/compilers/bytecode-vm`](../../../projects/compilers/bytecode-vm). Ensina por que bytecode roda mais rápido do que percorrer uma árvore. A linguagem é a do [MP-COMP-1](mini-language-parser.md), e o comportamento a reproduzir é o do [MP-COMP-2](tree-walking-interpreter.md).
 

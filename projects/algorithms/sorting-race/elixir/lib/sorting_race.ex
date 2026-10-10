@@ -11,6 +11,12 @@ defmodule SortingRace do
   existe "trocar as posições i e j" nem acesso por índice em tempo constante. Cada algoritmo
   mantém sua ideia e sua ordem de crescimento, mas é reescrito com recursão e casamento de
   padrões, e o heapsort troca o heap em vetor por um heap em forma de árvore.
+
+  ES: Los seis algoritmos de ordenación de la carrera, en Elixir. Este es el lenguaje en el que la
+  lección más cambia. Los datos son inmutables y la secuencia natural es una lista enlazada, así que
+  no existe "intercambiar las posiciones i y j" ni acceso por índice en tiempo constante. Cada
+  algoritmo mantiene su idea y su orden de crecimiento, pero se reescribe con recursión y
+  coincidencia de patrones, y el heapsort cambia el heap en arreglo por un heap en forma de árbol.
   """
 
   import Bitwise
@@ -33,6 +39,8 @@ defmodule SortingRace do
   #     it at the end. Passes repeat until one of them changes nothing.
   # PT: Bubble sort. Uma passada percorre a lista carregando o maior valor visto até então e o
   #     deixa no fim. As passadas se repetem até que uma delas não mude nada.
+  # ES: Bubble sort. Una pasada recorre la lista llevando el mayor valor visto hasta entonces y lo
+  #     deja al final. Las pasadas se repiten hasta que una de ellas no cambie nada.
   @spec bubble_sort([integer()]) :: [integer()]
   def bubble_sort(list) do
     case bubble_pass(list, [], false) do
@@ -53,6 +61,9 @@ defmodule SortingRace do
   # PT: Insertion sort. A parte ordenada fica em ordem decrescente, então a cabeça é o maior
   #     valor: uma entrada já crescente é inserida com uma comparação por valor, como na versão
   #     em vetor. O resultado é invertido uma vez no fim.
+  # ES: Insertion sort. La parte ordenada queda en orden decreciente, así que la cabeza es el mayor
+  #     valor: una entrada ya creciente se inserta con una comparación por valor, como en la versión
+  #     con arreglo. El resultado se invierte una vez al final.
   @spec insertion_sort([integer()]) :: [integer()]
   def insertion_sort(list) do
     list |> Enum.reduce([], &insert_descending/2) |> Enum.reverse()
@@ -67,6 +78,8 @@ defmodule SortingRace do
   #     O(n log n) total because merging already costs O(n) per level.
   # PT: Merge sort. Dividir uma lista custa O(n) em vez de O(1), o que não muda o total
   #     O(n log n) porque intercalar já custa O(n) por nível.
+  # ES: Merge sort. Dividir una lista cuesta O(n) en lugar de O(1), lo que no cambia el total
+  #     O(n log n) porque mezclar ya cuesta O(n) por nivel.
   @spec merge_sort([integer()]) :: [integer()]
   def merge_sort(list), do: merge_sort(list, length(list))
 
@@ -80,6 +93,7 @@ defmodule SortingRace do
 
   # EN: `<=` takes the left value on a tie, which keeps the sort stable.
   # PT: `<=` pega o valor da esquerda no empate, o que mantém a ordenação estável.
+  # ES: `<=` toma el valor de la izquierda en el empate, lo que mantiene la ordenación estable.
   defp merge([a | left], [b | _] = right, acc) when a <= b, do: merge(left, right, [a | acc])
   defp merge(left, [b | right], acc), do: merge(left, right, [b | acc])
   defp merge(left, [], acc), do: Enum.reverse(acc, left)
@@ -88,6 +102,8 @@ defmodule SortingRace do
   #     and larger than the pivot. The pivot is the median of the first, middle and last values.
   # PT: Quicksort. Sem trocas, a partição monta três listas novas: menores, iguais e maiores que
   #     o pivô. O pivô é a mediana entre o primeiro, o do meio e o último valor.
+  # ES: Quicksort. Sin intercambios, la partición arma tres listas nuevas: menores, iguales y mayores
+  #     que el pivote. El pivote es la mediana entre el primer valor, el del medio y el último.
   @spec quick_sort([integer()]) :: [integer()]
   def quick_sort(list), do: quick_sort(list, length(list), [])
 
@@ -95,6 +111,8 @@ defmodule SortingRace do
   #     concatenating lists (`++`), which would copy the left side at every level.
   # PT: `tail` é o que vem depois deste trecho na resposta final. Passá-lo adiante evita
   #     concatenar listas (`++`), o que copiaria o lado esquerdo em cada nível.
+  # ES: `tail` es lo que viene después de este tramo en la respuesta final. Pasarlo hacia adelante
+  #     evita concatenar listas (`++`), lo que copiaría el lado izquierdo en cada nivel.
   defp quick_sort([], _size, tail), do: tail
   defp quick_sort([value], _size, tail), do: [value | tail]
 
@@ -124,6 +142,10 @@ defmodule SortingRace do
   #     não permitem de forma barata. Um heap esquerdista é uma árvore com a mesma regra de
   #     ordem de heap (cada nó <= seus filhos) cuja única operação é "juntar dois heaps", em
   #     O(log n). Inserir é juntar com um heap de um nó, remover o mínimo é juntar suas duas subárvores.
+  # ES: Heapsort. Un heap binario en arreglo necesita sobrescribir posiciones, lo que los datos
+  #     inmutables no permiten de forma barata. Un heap izquierdista es un árbol con la misma regla
+  #     de orden de heap (cada nodo <= sus hijos) cuya única operación es "juntar dos heaps", en
+  #     O(log n). Insertar es juntar con un heap de un nodo, quitar el mínimo es juntar sus dos subárboles.
   @spec heap_sort([integer()]) :: [integer()]
   def heap_sort(list) do
     list
@@ -148,6 +170,8 @@ defmodule SortingRace do
   #     what bounds a merge to O(log n) steps.
   # PT: O "rank" é o comprimento do caminho mais à direita. Manter o caminho mais curto à direita
   #     é o que limita uma junção a O(log n) passos.
+  # ES: El "rank" es la longitud del camino más a la derecha. Mantener el camino más corto a la
+  #     derecha es lo que limita una unión a O(log n) pasos.
   defp heap_node(value, a, b) do
     if rank(a) >= rank(b), do: {rank(b) + 1, value, a, b}, else: {rank(a) + 1, value, b, a}
   end
@@ -159,6 +183,8 @@ defmodule SortingRace do
   #     keeps the arrival order inside each group, so each of the four passes is stable.
   # PT: Radix sort LSD na base 256, válido para inteiros de 0 a 2^31 - 1. O `Enum.group_by`
   #     mantém a ordem de chegada dentro de cada grupo, então cada uma das quatro passadas é estável.
+  # ES: Radix sort LSD en base 256, válido para enteros de 0 a 2^31 - 1. El `Enum.group_by`
+  #     mantiene el orden de llegada dentro de cada grupo, así que cada una de las cuatro pasadas es estable.
   @spec radix_sort([non_neg_integer()]) :: [non_neg_integer()]
   def radix_sort(list) do
     Enum.reduce([0, 8, 16, 24], list, fn shift, values ->
@@ -169,6 +195,7 @@ defmodule SortingRace do
 
   # EN: Same order-sensitive digest in every language: h = (h * 31 + v) mod 1,000,000,007.
   # PT: Mesmo resumo sensível à ordem em toda linguagem: h = (h * 31 + v) mod 1.000.000.007.
+  # ES: El mismo resumen sensible al orden en todo lenguaje: h = (h * 31 + v) mod 1.000.000.007.
   @spec checksum([integer()]) :: String.t()
   def checksum(values) do
     values

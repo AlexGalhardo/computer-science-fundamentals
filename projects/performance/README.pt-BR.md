@@ -1,6 +1,6 @@
 # Performance
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Engenharia de desempenho é medir antes de mudar: definir o que significa rápido (percentis de latência, vazão), produzir uma carga realista, descobrir para onde vai o tempo com um profiler e só então otimizar. Ela liga várias camadas, dos caches de CPU e da localidade de memória ao comportamento do runtime, às consultas ao banco e à capacidade de um serviço inteiro, e depende de um método sólido de benchmark para não se enganar.
 

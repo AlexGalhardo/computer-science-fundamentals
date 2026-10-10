@@ -8,6 +8,10 @@
  * <p>PT: {@code java Demo heights} imprime uma tabela Markdown com a altura e as rotações das três
  * árvores depois da inserção ordenada e da aleatória de 1.000 a 100.000 chaves. {@code java Demo
  * steps} imprime o arquivo de dados do visualizador de rotações.
+ *
+ * <p>ES: {@code java Demo heights} imprime una tabla Markdown con la altura y las rotaciones de los
+ * tres árboles después de la inserción ordenada y de la aleatoria de 1,000 a 100,000 claves. {@code
+ * java Demo steps} imprime el archivo de datos del visualizador de rotaciones.
  */
 public final class Demo {
   private Demo() {}
@@ -25,6 +29,8 @@ public final class Demo {
           //     trees and for the C++ program.
           // PT: A ordem aleatória é uma permutação pseudoaleatória fixa, a mesma para as três
           //     árvores e para o programa em C++.
+          // ES: El orden aleatorio es una permutación pseudoaleatoria fija, la misma para los tres
+          //     árboles y para el programa en C++.
           long state = 88172645463325252L;
           long[] keys = new long[n];
           for (int i = 0; i < n; i++) {

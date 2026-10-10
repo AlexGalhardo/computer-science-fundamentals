@@ -10,6 +10,11 @@ import { expect, test } from "bun:test";
 //     documentação, e a requisição precisa falhar. Se algum dia este teste deixar uma requisição
 //     passar, o laboratório não está mais isolado e nada mais nele deve ser executado.
 //     Fora do Docker (por exemplo `bun test` na máquina de quem desenvolve) a checagem não se aplica.
+// ES: La red del laboratorio es `internal: true`, así que ningún contenedor alcanza internet. Esta
+//     prueba lo demuestra desde dentro: `example.com` es el dominio reservado por IANA para
+//     documentación, y la solicitud debe fallar. Si algún día esta prueba deja pasar una solicitud,
+//     el laboratorio ya no está aislado y nada más en él debe ejecutarse.
+//     Fuera de Docker (por ejemplo `bun test` en la máquina de quien desarrolla) la comprobación no aplica.
 test.skipIf(process.env.LAB_NETWORK !== "internal")("the container has no access to the outside world", async () => {
 	let reached = false;
 	try {

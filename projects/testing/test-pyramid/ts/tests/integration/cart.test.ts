@@ -11,6 +11,10 @@ import { CartRepository, migrate } from "../../src/cart-repository";
 //     Nada é trocado por um dublê, porque o que importa são as emendas: o SQL faz o que o
 //     TypeScript espera, o handler transforma um corpo nas linhas certas. Cada teste recebe um
 //     banco em memória novo, então nenhum teste enxerga o que outro gravou.
+// ES: NIVEL DE INTEGRACIÓN. El handler HTTP, el repositorio y un SQLite de verdad se ejecutan juntos.
+//     Nada se cambia por un doble, porque lo que importa son las uniones: el SQL hace lo que
+//     TypeScript espera, el handler transforma un cuerpo en las filas correctas. Cada prueba recibe una
+//     base de datos en memoria nueva, así que ninguna prueba ve lo que otra grabó.
 let repository: CartRepository;
 let app: Handler;
 
@@ -44,6 +48,7 @@ describe("CartRepository with SQLite", () => {
 
 	// EN: This is the test that catches the seeded "integration" bug: the upsert must add.
 	// PT: Este é o teste que pega o bug semeado "integration": o upsert precisa somar.
+	// ES: Esta es la prueba que atrapa el bug sembrado "integration": el upsert debe sumar.
 	test("adding the same product again sums the quantities", () => {
 		repository.add("mouse", 1);
 		repository.add("mouse", 2);

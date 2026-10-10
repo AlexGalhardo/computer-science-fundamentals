@@ -6,6 +6,10 @@
 //     resolvedor exato e com as duas heurísticas, e imprime quão longe cada heurística fica do
 //     ótimo. É isso que uma heurística entrega em troca: responde em microssegundos, e em
 //     contrapartida a resposta é "perto", não "a melhor".
+// ES: `bun run ts/src/demo.ts` resuelve 64 instancias aleatorias de 5 a 12 ciudades con el
+//     solucionador exacto y con las dos heurísticas, e imprime cuán lejos del óptimo queda cada
+//     heurística. Eso es lo que entrega una heurística a cambio: responde en microsegundos, y en
+//     contrapartida la respuesta es "cerca", no "la mejor".
 
 import { heldKarp } from "./held-karp";
 import { nearestNeighbour, twoOpt } from "./heuristics";

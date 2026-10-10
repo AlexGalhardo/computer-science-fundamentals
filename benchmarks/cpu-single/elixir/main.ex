@@ -6,6 +6,10 @@
 #     memória). Os dados na BEAM são imutáveis: um corpo não pode ser alterado no lugar, então
 #     cada passo de tempo constrói novas tuplas. Isso custa alocação, e é o preço do modelo que
 #     torna seguro rodar processos da BEAM lado a lado.
+# ES: Carga de CPU en un thread en Elixir: `nbody` (punto flotante) y `sieve` (enteros y
+#     memoria). Los datos en la BEAM son inmutables: un cuerpo no se puede modificar en su lugar,
+#     así que cada paso de tiempo construye nuevas tuplas. Eso cuesta asignación, y es el precio
+#     del modelo que hace seguro correr procesos de la BEAM lado a lado.
 defmodule Main do
   @solar_mass 4.0 * :math.pi() * :math.pi()
   @days_per_year 365.24
@@ -13,6 +17,7 @@ defmodule Main do
 
   # EN: Sun, Jupiter, Saturn, Uranus and Neptune as {x, y, z, vx, vy, vz, mass}.
   # PT: Sol, Júpiter, Saturno, Urano e Netuno como {x, y, z, vx, vy, vz, massa}.
+  # ES: Sol, Júpiter, Saturno, Urano y Neptuno como {x, y, z, vx, vy, vz, masa}.
   defp make_bodies do
     [
       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0},
@@ -51,6 +56,10 @@ defmodule Main do
   #     produzindo uma cabeça e uma cauda atualizadas, e a recursão continua na cauda. A ordem
   #     das operações de ponto flutuante é a mesma dos laços aninhados das outras linguagens, e
   #     é isso que mantém o checksum idêntico.
+  # ES: Un paso de tiempo sin mutación. La cabeza de la lista interactúa con cada cuerpo posterior,
+  #     produciendo una cabeza y una cola actualizadas, y la recursión continúa en la cola. El orden
+  #     de las operaciones de punto flotante es el mismo de los bucles anidados de los otros
+  #     lenguajes, y eso es lo que mantiene el checksum idéntico.
   defp update_velocities([]), do: []
 
   defp update_velocities([body | rest]) do
@@ -111,6 +120,9 @@ defmodule Main do
   # PT: A BEAM não tem array mutável na linguagem. O `:atomics` é a saída padrão: um array fixo
   #     de inteiros que pode ser alterado no lugar (os índices começam em 1). Cada acesso é uma
   #     chamada de função, então isso é mais lento que um array nas outras linguagens.
+  # ES: La BEAM no tiene un arreglo mutable en el lenguaje. `:atomics` es la salida estándar: un
+  #     arreglo fijo de enteros que se puede modificar en su lugar (los índices empiezan en 1). Cada
+  #     acceso es una llamada a función, así que esto es más lento que un arreglo en los otros lenguajes.
   defp sieve(n) do
     composite = :atomics.new(n + 1, signed: false)
     cross_out(composite, 2, n)
@@ -144,6 +156,7 @@ defmodule Main do
 
   # EN: VmHWM in /proc/self/status is the peak resident memory of the whole VM, in kibibytes.
   # PT: VmHWM em /proc/self/status é o pico de memória residente da VM inteira, em kibibytes.
+  # ES: VmHWM en /proc/self/status es el pico de memoria residente de toda la VM, en kibibytes.
   defp peak_memory_kb do
     case Regex.run(~r/VmHWM:\s+(\d+)/, File.read!("/proc/self/status")) do
       [_, kb] -> String.to_integer(kb)

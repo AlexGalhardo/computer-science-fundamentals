@@ -1,6 +1,6 @@
 # Interpretador de árvore
 
-> English version: [docs/en/compilers/tree-walking-interpreter.md](../../en/compilers/tree-walking-interpreter.md)
+> English version: [docs/en/compilers/tree-walking-interpreter.md](../../en/compilers/tree-walking-interpreter.md) · Versión en español: [docs/es/compilers/tree-walking-interpreter.md](../../es/compilers/tree-walking-interpreter.md)
 
 Mini-projeto MP-COMP-2, em [`projects/compilers/tree-walking-interpreter`](../../../projects/compilers/tree-walking-interpreter). Ensina como uma árvore sintática é executada: ambientes, escopos e closures. A linguagem é a definida no [MP-COMP-1](mini-language-parser.md).
 

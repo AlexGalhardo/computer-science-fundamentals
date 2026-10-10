@@ -6,6 +6,10 @@
 #     código não as baixa de novo e as versões são exatamente as versionadas.
 #     O contexto de build é a pasta do mini-projeto, porque os testes e o relatório importam os
 #     perfis de carga de k6/.
+# ES: Las dependencias se instalan desde el lockfile en una capa propia, así que editar el código no
+#     las vuelve a descargar y las versiones son exactamente las versionadas.
+#     El contexto de build es la carpeta del miniproyecto, porque las pruebas y el reporte importan
+#     los perfiles de carga de k6/.
 FROM oven/bun:1.4.2
 WORKDIR /app/ts
 COPY --chown=bun:bun ts/package.json ts/bun.lock ./

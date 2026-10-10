@@ -5,6 +5,10 @@
 //     Quando uma página que não está carregada é referenciada (uma falta de página) e não há
 //     moldura livre, uma página carregada precisa sair. Os algoritmos diferem apenas em como
 //     escolhem essa vítima.
+// ES: Algoritmos de reemplazo de páginas. La memoria física tiene un número fijo de marcos.
+//     Cuando se referencia una página que no está cargada (un fallo de página) y no hay ningún
+//     marco libre, una página cargada debe salir. Los algoritmos difieren solo en cómo eligen a
+//     esa víctima.
 
 export const ALGORITHMS = ["fifo", "clock", "lru", "optimal"] as const;
 export type Algorithm = (typeof ALGORITHMS)[number];
@@ -67,6 +71,10 @@ abstract class Base implements Replacer {
 //     em ordem e substituídas na mesma ordem, "a mais antiga" é simplesmente a próxima moldura em
 //     um círculo. O FIFO ignora como a página está sendo usada, então pode descartar uma página
 //     usada o tempo todo.
+// ES: FIFO elimina la página que lleva más tiempo en memoria. Como los marcos se llenan en orden
+//     y se reemplazan en el mismo orden, "la más antigua" es simplemente el siguiente marco en un
+//     círculo. FIFO ignora cómo se está usando la página, así que puede expulsar una página que
+//     se usa todo el tiempo.
 class Fifo extends Base {
 	private next = 0;
 
@@ -86,6 +94,11 @@ class Fifo extends Base {
 //     chance (R é zerado e o ponteiro avança), e a primeira moldura encontrada com R = 0 é a
 //     vítima. Uma página só sobrevive a uma volta completa do ponteiro se tiver sido usada de
 //     novo nesse intervalo.
+// ES: Clock (segunda oportunidad) es FIFO con un bit extra por marco, el bit de referencia R, que
+//     se activa en cada uso. El puntero recorre el círculo: un marco con R = 1 recibe una segunda
+//     oportunidad (se borra R y el puntero avanza), y el primer marco encontrado con R = 0 es la
+//     víctima. Una página sobrevive a una vuelta completa del puntero solo si se volvió a usar en
+//     ese intervalo.
 class Clock extends Base {
 	private hand = 0;
 	private readonly referenced: boolean[] = [];
@@ -117,6 +130,10 @@ class Clock extends Base {
 //     prevê o futuro próximo. Aqui cada acesso carimba a moldura com um contador, e a vítima é o
 //     menor carimbo. Hardware real não pode pagar um carimbo por acesso, e por isso existem o
 //     relógio e o envelhecimento como aproximações.
+// ES: LRU elimina la página cuyo último uso es el más antiguo, apostando a que el pasado reciente
+//     predice el futuro cercano. Aquí cada acceso marca el marco con un contador y la víctima es
+//     la marca más pequeña. El hardware real no puede pagar una marca por acceso, por eso existen
+//     clock y el envejecimiento (aging) como aproximaciones.
 class Lru extends Base {
 	private tick = 0;
 	private readonly lastUse: number[] = [];
@@ -148,6 +165,10 @@ class Lru extends Base {
 //     nunca mais é usada). Nenhum outro algoritmo consegue menos faltas. Ele não pode ser
 //     construído em um sistema real, porque ninguém conhece o futuro, mas com um traço gravado
 //     ele dá o limite inferior contra o qual os algoritmos reais são medidos.
+// ES: El algoritmo óptimo elimina la página cuyo próximo uso está más lejos en el futuro (o que
+//     nunca se vuelve a usar). Ningún otro algoritmo puede tener menos fallos. No se puede
+//     construir en un sistema real, porque nadie conoce el futuro, pero con una traza grabada da
+//     la cota inferior contra la que se miden los algoritmos reales.
 class Optimal extends Base {
 	private position = 0;
 

@@ -5,6 +5,10 @@
 //     então uma requisição a um host externo tem que falhar de dentro deste contêiner.
 //     `example.com` é o domínio reservado pela IANA para documentação, e a requisição nunca sai
 //     da máquina.
+// ES: El laboratorio no puede alcanzar nada fuera de sí mismo. La red de compose es `internal: true`,
+//     así que una solicitud a un host externo tiene que fallar desde dentro de este contenedor.
+//     `example.com` es el dominio reservado por IANA para documentación, y la solicitud nunca sale
+//     de la máquina.
 
 import { expect, test } from "bun:test";
 

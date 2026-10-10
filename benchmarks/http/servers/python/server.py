@@ -14,6 +14,13 @@ PT: O servidor da biblioteca padrão (http.server) é para desenvolvimento, ent�
     ainda deixa só uma thread rodar código Python por vez: este servidor nunca usa mais que
     cerca de um núcleo. Em produção sobem-se vários processos worker.
     Protocolo (o mesmo nas 7 linguagens): GET /health, POST /echo, GET /primes?limit=N.
+ES: El servidor de la biblioteca estándar (http.server) es para desarrollo, así que entra en su
+    lugar el framework más usado. Modelo: un proceso, un thread, un event loop asyncio (el valor
+    predeterminado de uvicorn, un worker). Los handlers `async def` corren en el loop. Un handler
+    `def` común, como /primes, lo envía FastAPI a un pool de threads para no congelar el loop, pero
+    el GIL igual deja correr solo un thread de código Python a la vez: este servidor nunca usa más
+    que cerca de un núcleo. En producción se levantan varios procesos worker.
+    Protocolo (el mismo en los 7 lenguajes): GET /health, POST /echo, GET /primes?limit=N.
 """
 
 import json
@@ -44,6 +51,7 @@ def is_prime(k: int) -> bool:
 def count_primes(limit: int) -> int:
     # EN: The CPU-bound endpoint: count the primes up to limit by trial division.
     # PT: O endpoint preso à CPU: conta os primos até limit por divisão por tentativa.
+    # ES: El endpoint limitado por CPU: cuenta los primos hasta limit por división de prueba.
     return sum(1 for k in range(2, limit + 1) if is_prime(k))
 
 
@@ -58,6 +66,8 @@ async def echo(request: Request) -> JSONResponse:
     #     HTTP stack, not a copy of bytes.
     # PT: O corpo é interpretado e serializado de novo, então isto mede a biblioteca de JSON e
     #     a pilha HTTP, não uma cópia de bytes.
+    # ES: El cuerpo se interpreta y se serializa de nuevo, así que esto mide la biblioteca de JSON y
+    #     la pila HTTP, no una copia de bytes.
     try:
         value = json.loads(await request.body())
     except ValueError:

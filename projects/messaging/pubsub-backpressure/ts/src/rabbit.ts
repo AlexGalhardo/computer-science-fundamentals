@@ -7,6 +7,8 @@
 //
 // PT: Os experimentos com RabbitMQ. O número de FILAS decide se os assinantes dividem as
 //     mensagens ou se cada um recebe uma cópia (veja o desenho acima).
+// ES: Los experimentos con RabbitMQ. El número de COLAS decide si los suscriptores se reparten los
+//     mensajes o si cada uno recibe una copia (ver el dibujo de arriba).
 
 import { resolve } from "node:path";
 import { type Channel, type ChannelModel, connect } from "amqplib";
@@ -15,6 +17,7 @@ import { z } from "zod";
 const envSchema = z.object({
 	// EN: Lab credentials, obviously fake, valid only inside docker-compose.
 	// PT: Credenciais de laboratório, claramente falsas, válidas só dentro do docker-compose.
+	// ES: Credenciales de laboratorio, claramente falsas, válidas solo dentro de docker-compose.
 	AMQP_URL: z.url().default("amqp://lab:lab-fake-password@broker:5672"),
 	PROJECT_DIR: z
 		.string()
@@ -58,6 +61,8 @@ async function until(done: () => boolean, timeoutMs: number, what: string): Prom
 	}
 	// EN: A short extra wait, so a wrong extra delivery would be seen instead of missed.
 	// PT: Uma pequena espera extra, para uma entrega indevida a mais ser vista em vez de perdida.
+	// ES: Una pequeña espera extra, para que una entrega indebida de más se vea en lugar de pasar
+	//     desapercibida.
 	await Bun.sleep(200);
 }
 
@@ -98,6 +103,8 @@ function ids(messages: number): string[] {
 // PT: Fila de trabalho (consumidores concorrentes): UMA fila, vários workers. O RabbitMQ entrega
 //     cada mensagem a um worker, em rodízio, então o trabalho é dividido e nada é processado
 //     duas vezes.
+// ES: Cola de trabajo (consumidores concurrentes): UNA cola, varios workers. RabbitMQ entrega cada
+//     mensaje a un worker, por turnos, así que el trabajo se divide y nada se procesa dos veces.
 export async function workQueue(connection: ChannelModel, messages: number, workers: number): Promise<DeliveryResult> {
 	const queue = freshName("tasks");
 	const setup = await connection.createConfirmChannel();
@@ -113,6 +120,7 @@ export async function workQueue(connection: ChannelModel, messages: number, work
 	for (const id of ids(messages)) {
 		// EN: The default exchange routes to the queue whose name is the routing key.
 		// PT: A exchange padrão roteia para a fila cujo nome é a routing key.
+		// ES: El exchange por defecto enruta a la cola cuyo nombre es la routing key.
 		setup.sendToQueue(queue, Buffer.from(id));
 	}
 	await setup.waitForConfirms();
@@ -135,6 +143,10 @@ export async function workQueue(connection: ChannelModel, messages: number, work
 //     cada mensagem para toda fila ligada, então cada assinante recebe todas. `groupSize` coloca
 //     várias instâncias na fila de cada assinante: as instâncias de um serviço competem,
 //     enquanto os serviços continuam recebendo uma cópia cada.
+// ES: Fan-out (publish/subscribe): un exchange fanout y UNA COLA POR SUSCRIPTOR. El exchange copia
+//     cada mensaje en toda cola enlazada, así que cada suscriptor recibe todos. `groupSize` pone
+//     varias instancias en la cola de cada suscriptor: las instancias de un servicio compiten,
+//     mientras que los servicios siguen recibiendo una copia cada uno.
 export async function fanOut(
 	connection: ChannelModel,
 	messages: number,
@@ -160,6 +172,7 @@ export async function fanOut(
 	for (const id of ids(messages)) {
 		// EN: The producer names only the exchange. It does not know how many queues exist.
 		// PT: O produtor cita só a exchange. Ele não sabe quantas filas existem.
+		// ES: El productor nombra solo el exchange. No sabe cuántas colas existen.
 		setup.publish(exchange, "", Buffer.from(id));
 	}
 	await setup.waitForConfirms();
@@ -195,6 +208,11 @@ export interface PrefetchResult {
 //     acúmulo inteiro para o processo consumidor de uma vez: o problema de memória se muda do
 //     broker para o consumidor, e outros consumidores encontram a fila vazia. Com limite, o
 //     broker para naquela quantidade de mensagens sem ack e espera as confirmações.
+// ES: Backpressure entre RabbitMQ y un consumidor lento. La cola empieza con un backlog y el
+//     consumidor procesa un mensaje cada 2 ms. Sin límite de prefetch el broker empuja todo el
+//     backlog al proceso consumidor de una vez: el problema de memoria se traslada del broker al
+//     consumidor, y otros consumidores encuentran la cola vacía. Con límite, el broker se detiene
+//     en esa cantidad de mensajes sin ack y espera las confirmaciones.
 export async function prefetchExperiment(
 	connection: ChannelModel,
 	prefetch: number,
@@ -219,6 +237,7 @@ export async function prefetchExperiment(
 	let processed = 0;
 	// EN: The handler works on one message at a time: each one waits for the previous to finish.
 	// PT: O handler trabalha em uma mensagem por vez: cada uma espera a anterior terminar.
+	// ES: El handler trabaja con un mensaje a la vez: cada uno espera a que termine el anterior.
 	let chain: Promise<void> = Promise.resolve();
 	await channel.consume(queue, (message) => {
 		if (message === null) {

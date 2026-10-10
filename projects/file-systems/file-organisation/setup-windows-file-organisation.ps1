@@ -1,5 +1,6 @@
 # EN: Builds and tests the file-organisation mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto file-organisation. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto file-organisation. El único requisito es Docker.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 

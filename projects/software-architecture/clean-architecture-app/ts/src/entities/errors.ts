@@ -4,6 +4,9 @@
 // PT: Os erros do domínio são dados simples com um `kind`. A entidade diz O QUE está errado na
 //     linguagem do negócio. Ela não diz qual status HTTP ou qual código de saída isso vira:
 //     isso pertence ao mecanismo de entrega, duas camadas para fora.
+// ES: Los errores del dominio son datos simples con un `kind`. La entidad dice QUÉ está mal en el
+//     lenguaje del negocio. No dice qué estado HTTP o qué código de salida se deriva de eso:
+//     eso pertenece al mecanismo de entrega, dos capas hacia afuera.
 export type DomainError =
 	| { readonly kind: "invalid-title"; readonly message: string }
 	| { readonly kind: "invalid-body"; readonly message: string }

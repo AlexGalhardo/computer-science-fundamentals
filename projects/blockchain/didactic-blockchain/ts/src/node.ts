@@ -29,6 +29,9 @@ export type ChainResult = { adopted: true; replaced: number } | { adopted: false
 // PT: Um participante da rede: sua cópia da cadeia, o conjunto UTXO que resulta dela e a fila de
 //     transações válidas esperando um bloco. Ele não tem código de rede, então as regras podem
 //     ser testadas em memória; o `server.ts` coloca HTTP em volta dele.
+// ES: Un participante de la red: su copia de la cadena, el conjunto UTXO que resulta de ella y
+//     la cola de transacciones válidas que esperan un bloque. No tiene código de red, así que
+//     las reglas se pueden probar en memoria; `server.ts` pone HTTP alrededor de él.
 export class ChainNode {
 	private blocks: Block[] = [GENESIS];
 	private unspent: Utxo = new Map();
@@ -66,6 +69,10 @@ export class ChainNode {
 	// PT: O conjunto UTXO como este nó o vê para transações NOVAS: o que a cadeia deixou sem
 	//     gastar, menos o que as transações pendentes já gastam. Esta é a regra do "primeiro
 	//     visto": uma segunda transação que gasta a mesma saída não a encontra e é rejeitada.
+	// ES: El conjunto UTXO como este nodo lo ve para transacciones NUEVAS: lo que la cadena dejó
+	//     sin gastar, menos lo que las transacciones pendientes ya gastan. Esta es la regla del
+	//     "primero visto": una segunda transacción que gasta la misma salida no la encuentra y
+	//     se rechaza.
 	private utxoAfterPending(): Utxo {
 		const view: Utxo = new Map(this.unspent);
 		for (const tx of this.pending.values()) {
@@ -93,6 +100,9 @@ export class ChainNode {
 	// PT: Reúne as transações pendentes, acrescenta a transação de criação de moeda que paga a
 	//     recompensa mais as taxas ao minerador, acha a prova de trabalho e estende a própria
 	//     cadeia.
+	// ES: Reúne las transacciones pendientes, añade la transacción de creación de moneda que
+	//     paga la recompensa más las comisiones al minero, halla la prueba de trabajo y extiende
+	//     la propia cadena.
 	mine(minerPublicKey: string): Block {
 		const included: Transaction[] = [];
 		const view: Utxo = new Map(this.unspent);
@@ -134,6 +144,10 @@ export class ChainNode {
 			//     um empate o nó continua no bloco que viu primeiro. Um bloco mais à frente
 			//     indica que pode existir uma cadeia mais longa, então quem chama pede a cadeia
 			//     inteira a quem enviou.
+			// ES: Un bloque a nuestra altura o por debajo, como máximo, empata con nuestra cadena,
+			//     y en un empate el nodo se queda con el bloque que vio primero. Un bloque más
+			//     adelante indica que puede existir una cadena más larga, así que quien llama
+			//     pide la cadena completa a quien lo envió.
 			return block.header.height > this.tip.header.height ? { status: "need-chain" } : { status: "ignored" };
 		}
 		const next: Utxo = new Map(this.unspent);
@@ -157,6 +171,11 @@ export class ChainNode {
 	//     aceitável uma cadeia inválida. Todo bloco aqui tem a mesma dificuldade, então "mais
 	//     longa" e "com mais trabalho acumulado" são a mesma coisa; com dificuldade variável um
 	//     nó precisa somar o trabalho em vez de contar blocos.
+	// ES: La regla de la cadena más larga. Una candidata reemplaza la cadena propia solo si es
+	//     estrictamente más larga Y válida desde el bloque génesis: la longitud nunca vuelve
+	//     aceptable una cadena inválida. Todos los bloques aquí tienen la misma dificultad, así
+	//     que "más larga" y "con más trabajo acumulado" son lo mismo; con dificultad variable un
+	//     nodo debe sumar el trabajo en vez de contar bloques.
 	considerChain(candidate: readonly Block[]): ChainResult {
 		if (candidate.length <= this.blocks.length) {
 			return { adopted: false, reason: "candidate chain is not longer than the current one" };
@@ -172,6 +191,9 @@ export class ChainNode {
 		// PT: As transações que só estavam confirmadas no ramo abandonado não se perdem: voltam
 		//     para a fila e podem entrar em um bloco futuro, a menos que a nova cadeia já tenha
 		//     gasto as entradas delas.
+		// ES: Las transacciones que solo estaban confirmadas en la rama abandonada no se pierden:
+		//     vuelven a la cola y pueden entrar en un bloque futuro, a menos que la nueva cadena
+		//     ya haya gastado sus entradas.
 		const orphaned = abandoned.flatMap((block) => block.transactions.filter((tx) => tx.coinbase === null));
 		const waiting = this.mempool;
 		this.blocks = [...candidate];

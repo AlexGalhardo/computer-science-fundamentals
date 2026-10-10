@@ -8,6 +8,10 @@ import { Cart } from "../cart";
 //     expectativa errada, então o framework precisa imprimir o nome, a mensagem e o arquivo com
 //     a linha, e o processo precisa sair com um código diferente de zero. Ela nunca faz parte da
 //     pasta de autotestes.
+// ES: FALLA A PROPÓSITO. Esta carpeta es la demo de una ejecución roja: una prueba tiene una
+//     expectativa errónea, así que el framework debe imprimir el nombre, el mensaje y el archivo con
+//     la línea, y el proceso debe salir con un código distinto de cero. Nunca forma parte de la
+//     carpeta de autopruebas.
 export class CartTest extends TestCase {
 	private cart = new Cart();
 

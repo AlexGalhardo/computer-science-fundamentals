@@ -1,6 +1,6 @@
 # SSRF lab (MP-SEC-5)
 
-> Versão em português: [docs/pt/security/ssrf-lab.md](../../pt/security/ssrf-lab.md)
+> Versão em português: [docs/pt/security/ssrf-lab.md](../../pt/security/ssrf-lab.md) · Versión en español: [docs/es/security/ssrf-lab.md](../../es/security/ssrf-lab.md)
 
 Mini-project: [`projects/security/ssrf-lab`](../../../projects/security/ssrf-lab/README.md). Quiz topics: `ssrf-path-traversal-upload`, `owasp-threat-modelling`.
 
@@ -68,7 +68,7 @@ One scenario function asks both apps for the same four previews: a public articl
 | --- | --- |
 | MP-SEC-5.1 vulnerable feature and fake internal service on internal networks; a test reaches the internal service through the feature | `tests/scenario.test.ts`, vulnerable block: the direct URL and the redirect both answer `200` with the fake token in the preview, and the internal counter grew by 2. `tests/network-isolation.test.ts`: a request to `http://example.com` fails from inside the container. `docker-compose.yml` publishes no port and both networks are `internal: true` |
 | MP-SEC-5.2 the fix blocks the same test, including through a redirect, and normal use works | `tests/scenario.test.ts`, fixed block: both attempts answer `403` (`host-not-allowed`), the internal counter did not move, the public article and the public redirect still answer `200`. Third block: with the internal name wrongly on the allow-list, both attempts answer `403` (`address-not-allowed`) and the counter still does not move. `tests/address-classifier.test.ts`: table of IPv4 and IPv6 addresses. `tests/fixed-safe-fetch.test.ts`: scheme, credentials, allow-list, loopback literals, stub resolver answering internal addresses, pinned connection, redirect limit, size limit, timeout, Zod validation |
-| MP-SEC-5.3 definition of done | Setup scripts, demo, both READMEs with "Why the flaw happens", "How to prevent it" and "What does not work as a fix", and this page in both languages |
+| MP-SEC-5.3 definition of done | Setup scripts, demo, the three READMEs with "Why the flaw happens", "How to prevent it" and "What does not work as a fix", and this page in the three languages |
 
 ## Run
 

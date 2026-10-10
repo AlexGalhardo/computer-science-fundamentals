@@ -8,6 +8,11 @@
 //     e nunca é roteada na internet real. Além de um artigo normal, ele tem as rotas que um site
 //     remoto fora do seu controle poderia ter: redirecionamentos, um corpo enorme e uma resposta
 //     lenta. Cada uma existe para mostrar por que uma linha da correção está lá.
+// ES: El sitio "público" falso del laboratorio. Hace el papel de internet: vive en la red
+//     `lab-public`, cuya subred (203.0.113.0/24) es un rango de documentación que no es privado
+//     y nunca se enruta en la internet real. Además de un artículo normal, tiene las rutas que un sitio
+//     remoto fuera de tu control podría tener: redirecciones, un cuerpo enorme y una respuesta
+//     lenta. Cada una existe para mostrar por qué una línea de la corrección está ahí.
 
 import { loadConfig, loadPort } from "../config";
 
@@ -30,6 +35,8 @@ function redirect(location: string): Response {
 //     counting the bytes while reading can stop it.
 // PT: Um mebibyte enviado como fluxo, então não há `Content-Length` para avisar o cliente: só
 //     contar os bytes durante a leitura consegue interromper.
+// ES: Un mebibyte enviado como flujo, así que no hay `Content-Length` que avise al cliente: solo
+//     contar los bytes durante la lectura logra interrumpirlo.
 function bigBody(): Response {
 	const encoder = new TextEncoder();
 	const stream = new ReadableStream<Uint8Array>({
@@ -59,6 +66,8 @@ const server = Bun.serve({
 			//     reach the internal service; it only tells the caller to go there.
 			// PT: Uma página pública que responde "vá para este endereço interno". O site em si não
 			//     alcança o serviço interno; ele só manda quem chamou ir até lá.
+			// ES: Una página pública que responde "ve a esta dirección interna". El sitio en sí no
+			//     alcanza el servicio interno; solo manda a quien llamó a ir hasta allá.
 			case "/redirect-to-internal":
 				return redirect(`${config.INTERNAL_ADMIN_ORIGIN}/secret`);
 			case "/redirect-loop":

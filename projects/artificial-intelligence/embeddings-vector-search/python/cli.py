@@ -3,6 +3,9 @@ three passages most similar to the question, with their cosine scores.
 
 PT: `python cli.py "sua pergunta"` constrói os vetores de palavras a partir do corpus e imprime as
 três passagens mais parecidas com a pergunta, com as suas notas de cosseno.
+
+ES: `python cli.py "tu pregunta"` construye los vectores de palabras a partir del corpus e imprime
+los tres pasajes más parecidos a la pregunta, con sus puntuaciones de coseno.
 """
 
 import json
@@ -20,6 +23,8 @@ def describe(model: Model, question: str, top: int = DEFAULT_TOP) -> str:
         f"words used: {' '.join(embedding.known) or '(none)'}",
         # EN: A word the corpus never showed has no vector, so it cannot help the search.
         # PT: Uma palavra que o corpus nunca mostrou não tem vetor, então não ajuda na busca.
+        # ES: Una palabra que el corpus nunca mostró no tiene vector, así que no ayuda en la
+        #     búsqueda.
         f"not in the vocabulary: {' '.join(embedding.unknown) or '(none)'}",
         f"compared with {len(model.passages)} passages by brute force",
         "",

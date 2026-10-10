@@ -8,6 +8,11 @@
 //     nunca toca nos objetos de outra, então o único jeito de usar mais núcleos é subir Workers,
 //     cada um com seu heap e seu event loop, e trocar mensagens. A thread principal entrega um
 //     número de pedaço a cada worker e manda o próximo quando a resposta chega.
+// ES: Carga de paralelismo en TypeScript sobre Bun: cuenta los primos por debajo de n, rango cortado
+//     en 256 pedazos. Modelo de JavaScript: un thread por "isolate". El código de un thread
+//     nunca toca los objetos de otro, así que la única forma de usar más núcleos es levantar Workers,
+//     cada uno con su heap y su event loop, e intercambiar mensajes. El thread principal entrega un
+//     número de pedazo a cada worker y envía el siguiente cuando llega la respuesta.
 
 import { readFileSync } from "node:fs";
 
@@ -43,6 +48,7 @@ function countPrimes(n: number, workers: number): Promise<number> {
 
 // EN: VmHWM covers the whole process, and the workers are threads of this process.
 // PT: O VmHWM cobre o processo inteiro, e os workers são threads deste processo.
+// ES: VmHWM cubre el proceso completo, y los workers son threads de este proceso.
 function peakMemoryKb(): number {
 	const match = /VmHWM:\s+(\d+)/.exec(readFileSync("/proc/self/status", "utf8"));
 	return match?.[1] === undefined ? 0 : Number(match[1]);
@@ -53,6 +59,7 @@ const n = Number(size);
 
 // EN: Starting the workers is inside the timed section, like thread creation elsewhere.
 // PT: Subir os workers fica dentro do trecho cronometrado, como a criação de threads nas outras.
+// ES: Levantar los workers queda dentro del tramo cronometrado, como la creación de threads en los otros.
 const start = performance.now();
 const total = await countPrimes(n, Number(workerCount));
 const elapsedMs = performance.now() - start;

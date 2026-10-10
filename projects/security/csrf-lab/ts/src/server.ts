@@ -13,6 +13,10 @@ import { createVulnerableApp } from "./vulnerable/vulnerable-app";
 //     diferentes, e cada nome de contêiner é um nome de host diferente, o que para o navegador
 //     é um site diferente. LAB_DEFENCES vale apenas para o papel `fixed` e existe para os
 //     contêineres de "uma defesa por vez". O padrão são as duas defesas.
+// ES: Una imagen, varios roles. docker-compose levanta el mismo código como contenedores
+//     distintos, y cada nombre de contenedor es un nombre de host distinto, lo que para el navegador
+//     es un sitio distinto. LAB_DEFENCES vale solo para el rol `fixed` y existe para los
+//     contenedores de "una defensa a la vez". El valor por defecto son las dos defensas.
 const envSchema = z.object({
 	ROLE: z.enum(["vulnerable", "fixed", "other-origin"]),
 	LAB_DEFENCES: z.enum(["token+samesite", "token", "samesite"]).default("token+samesite"),

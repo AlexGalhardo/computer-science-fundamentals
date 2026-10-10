@@ -36,6 +36,9 @@ type Channel struct {
 // PT: Toda decisão aleatória vem de um gerador semeado pela configuração, nunca do relógio.
 // Uma simulação que pode ser repetida exatamente é o que torna depurável um erro de protocolo:
 // a mesma semente reproduz a mesma perda de quadro no mesmo tick.
+// ES: Toda decisión aleatoria viene de un generador sembrado por la configuración, nunca del reloj.
+// Una simulación que puede repetirse exactamente es lo que hace depurable un error de protocolo:
+// la misma semilla reproduce la misma pérdida de trama en el mismo tick.
 func New(cfg Config) *Channel {
 	return &Channel{cfg: cfg, rng: rand.New(rand.NewPCG(cfg.Seed, cfg.Seed^0x9e3779b97f4a7c15))}
 }
@@ -49,6 +52,9 @@ func New(cfg Config) *Channel {
 // PT: O canal não carrega os bytes, apenas decide o destino do pacote: nenhuma chegada é uma
 // perda, duas chegadas são uma duplicata, e uma cópia com atraso extra pode chegar depois de
 // pacotes enviados mais tarde, o que é reordenação.
+// ES: El canal no carga los bytes, solo decide el destino del paquete: ninguna llegada es una
+// pérdida, dos llegadas son un duplicado, y una copia con retraso extra puede llegar después de
+// paquetes enviados más tarde, lo que es reordenamiento.
 func (c *Channel) Send(now int) []int {
 	c.Stats.Sent++
 	if c.rng.Float64() < c.cfg.Loss {

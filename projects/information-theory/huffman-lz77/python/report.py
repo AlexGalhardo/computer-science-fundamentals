@@ -12,6 +12,8 @@ MASK = (1 << 64) - 1
 #     Python produced the same bytes without committing the bytes themselves.
 # PT: FNV-1a, um hash curto e não criptográfico. É só uma impressão digital para provar que Rust
 #     e Python produziram os mesmos bytes sem versionar os próprios bytes.
+# ES: FNV-1a, un hash corto y no criptográfico. Es solo una huella digital para probar que Rust
+#     y Python produjeron los mismos bytes sin versionar los bytes mismos.
 def fnv1a64(data: bytes) -> int:
     value = 0xCBF2_9CE4_8422_2325
     for byte in data:
@@ -22,6 +24,8 @@ def fnv1a64(data: bytes) -> int:
 # EN: Ratio = compressed size / original size. Below 1 the file shrank, above 1 it grew.
 # PT: Taxa = tamanho comprimido / tamanho original. Abaixo de 1 o arquivo encolheu, acima de 1
 #     ele cresceu.
+# ES: Razón = tamaño comprimido / tamaño original. Por debajo de 1 el archivo se redujo, por
+#     encima de 1 creció.
 def cell(compressed: int, original: int) -> str:
     return f"{compressed} ({compressed / original:.3f})"
 
@@ -36,6 +40,7 @@ def markdown() -> str:
         packed = lz77.encode(data)
         # EN: Huffman applied to the LZ77 output, the idea behind DEFLATE.
         # PT: Huffman aplicado à saída do LZ77, a ideia por trás do DEFLATE.
+        # ES: Huffman aplicado a la salida de LZ77, la idea detrás de DEFLATE.
         both = huffman.encode(packed)
         size = len(data)
         lines.append(

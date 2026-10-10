@@ -4,6 +4,10 @@ the same function and seed as the demo, and every test that needs it receives th
 PT: Fixtures compartilhadas. O modelo é treinado UMA vez para toda a execução dos testes (escopo
 de sessão), com a mesma função e semente da demo, e todo teste que precisa dele recebe o mesmo
 objeto.
+
+ES: Fixtures compartidas. El modelo se entrena UNA vez para toda la ejecución de las pruebas
+(alcance de sesión), con la misma función y semilla de la demo, y toda prueba que lo necesita
+recibe el mismo objeto.
 """
 
 import pytest

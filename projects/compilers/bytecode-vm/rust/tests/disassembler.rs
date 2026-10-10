@@ -12,6 +12,11 @@ use bytecode_vm::disassemble_source;
 //     compilador que altere o código gerado aparece aqui como uma diferença legível. Para aceitar
 //     uma mudança intencional, gere o arquivo de novo com
 //     `bytecode-vm disasm <nome>.mini > <nome>.txt`.
+// ES: Pruebas de snapshot. Cada `tests/snapshots/<nombre>.mini` tiene un `<nombre>.txt` con el
+//     listado de bytecode que debe generar, revisado por una persona y versionado. Cualquier
+//     cambio en el compilador que altere el código generado aparece aquí como una diferencia
+//     legible. Para aceptar un cambio intencional, genera el archivo de nuevo con
+//     `bytecode-vm disasm <nombre>.mini > <nombre>.txt`.
 fn check(name: &str) {
     let folder = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")

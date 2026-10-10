@@ -7,6 +7,11 @@
 //     banco) e o que convém aos casos de uso. Um controller tem três passos e nenhuma regra de
 //     negócio: transformar a requisição na entrada de um caso de uso, chamá-lo, transformar o
 //     resultado em uma resposta.
+// ES: TERCERA CAPA: adaptadores de interfaz. Un adaptador traduce entre dos formatos: el que
+//     conviene al exterior (una petición HTTP, una línea escrita en la terminal, una fila de la
+//     base de datos) y el que conviene a los casos de uso. Un controller tiene tres pasos y
+//     ninguna regla de negocio: convertir la petición en la entrada de un caso de uso, llamarlo,
+//     convertir el resultado en una respuesta.
 
 import { z } from "zod";
 import type { NoteUseCases } from "../use-cases";
@@ -18,6 +23,9 @@ import type { ApplicationError } from "../use-cases/note-data";
 // PT: Estes dois tipos são toda a "web" que este controller conhece. São declarados aqui, não
 //     importados do Elysia, então o controller é testado com objetos simples e sobrevive a uma
 //     troca de framework web. O driver em `drivers/elysia-server.ts` converte de e para eles.
+// ES: Estos dos tipos son toda la "web" que este controller conoce. Se declaran aquí, no se
+//     importan de Elysia, así que el controller se prueba con objetos simples y sobrevive a un
+//     cambio de framework web. El driver en `drivers/elysia-server.ts` convierte desde y hacia ellos.
 export interface HttpRequest {
 	params: Record<string, string | undefined>;
 	body: unknown;
@@ -35,6 +43,10 @@ export interface HttpResponse {
 //     existe um título, ele é texto. Se um título de 81 caracteres é aceitável é uma regra de
 //     negócio, e quem responde é a entidade. Os limites de tamanho abaixo só barram cedo os
 //     payloads absurdos.
+// ES: Dos validaciones, dos lugares. Aquí, en la frontera, Zod verifica el FORMATO de lo que
+//     llegó: existe un título, es texto. Si un título de 81 caracteres es aceptable es una regla
+//     de negocio, y quien responde es la entidad. Los límites de tamaño de abajo solo frenan
+//     temprano los payloads absurdos.
 const idSchema = z.string().min(1).max(100);
 const createSchema = z.object({
 	title: z.string().max(10_000),
@@ -51,6 +63,8 @@ const updateSchema = z
 //     that this is a 409 is a decision of this delivery mechanism only.
 // PT: O vocabulário do HTTP mora no adaptador. O caso de uso respondeu "duplicate-title";
 //     que isso é um 409 é uma decisão apenas deste mecanismo de entrega.
+// ES: El vocabulario de HTTP vive en el adaptador. El caso de uso respondió "duplicate-title";
+//     que eso sea un 409 es una decisión solo de este mecanismo de entrega.
 const STATUS_OF_ERROR: Record<ApplicationError["kind"], number> = {
 	"invalid-title": 400,
 	"invalid-body": 400,

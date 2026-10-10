@@ -4,6 +4,9 @@
 # PT: O Gradle em uma imagem fixada confere o formato com o Spotless (google-java-format) durante
 #     o build da imagem, que é a única etapa que precisa de rede. O código é compilado com javac
 #     e todo aviso de lint é erro. Os testes depois rodam sem rede.
+# ES: Gradle en una imagen fijada revisa el formato con Spotless (google-java-format) durante
+#     el build de la imagen, que es el único paso que necesita red. El código se compila con javac
+#     y todo aviso de lint es un error. Las pruebas después corren sin red.
 FROM gradle:9.8.0-jdk25
 WORKDIR /app
 COPY . .

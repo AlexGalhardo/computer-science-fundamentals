@@ -1,6 +1,8 @@
 """EN: The training loop written by hand with PyTorch: forward, loss, clear, backward, step.
 
 PT: O laço de treinamento escrito à mão com PyTorch: ida, perda, limpeza, volta, passo.
+
+ES: El bucle de entrenamiento escrito a mano con PyTorch: ida, pérdida, limpieza, vuelta, paso.
 """
 
 from dataclasses import dataclass
@@ -26,6 +28,9 @@ def prepare(seed: int) -> None:
     #     iniciais aleatórios, então a mesma semente dá a mesma rede. O número de threads é
     #     limitado porque uma rede tão pequena não ganha nada com mais núcleos, e a máquina é
     #     compartilhada.
+    # ES: Dos fuentes de variación se fijan antes que nada. La semilla decide los pesos iniciales
+    #     aleatorios, así que la misma semilla da la misma red. El número de hilos se limita porque
+    #     una red tan pequeña no gana nada con más núcleos, y la máquina es compartida.
     torch.set_num_threads(THREADS)
     torch.manual_seed(seed)
 
@@ -39,6 +44,9 @@ def as_tensors(
     # PT: O conjunto de dados vira dois tensores: as entradas, formato (N, 2), e os alvos,
     #     formato (N, 1), como floats 0.0 e 1.0. Os alvos recebem o mesmo formato da saída da
     #     rede, uma coluna, para que a perda os compare posição por posição.
+    # ES: El conjunto de datos se vuelve dos tensores: las entradas, forma (N, 2), y los objetivos,
+    #     forma (N, 1), como floats 0.0 y 1.0. Los objetivos reciben la misma forma que la salida
+    #     de la red, una columna, para que la pérdida los compare posición por posición.
     inputs = torch.tensor(points, dtype=dtype)
     targets = torch.tensor(labels, dtype=dtype).reshape(-1, 1)
     return inputs, targets
@@ -54,6 +62,8 @@ def fit(
     """EN: Full-batch gradient descent. Returns the loss of every epoch.
 
     PT: Descida do gradiente com o lote inteiro. Devolve a perda de cada época.
+
+    ES: Descenso de gradiente con el lote entero. Devuelve la pérdida de cada época.
     """
     # EN: `BCEWithLogitsLoss` is the loss of MP-AI-2 under another name. For a logit z and a
     #     label y it computes -[y log(sigmoid(z)) + (1 - y) log(1 - sigmoid(z))], which is
@@ -65,6 +75,11 @@ def fit(
     #     log(1 + e^(-z)) quando y = 1 e log(1 + e^z) quando y = 0: o mesmo log(1 + e^(-s z))
     #     escrito lá à mão, na média do lote. Ela recebe o logit e não a probabilidade porque
     #     juntar sigmoide e logaritmo em uma fórmula só evita log(0).
+    # ES: `BCEWithLogitsLoss` es la pérdida de MP-AI-2 con otro nombre. Para un logit z y una
+    #     etiqueta y calcula -[y log(sigmoid(z)) + (1 - y) log(1 - sigmoid(z))], que es
+    #     log(1 + e^(-z)) cuando y = 1 y log(1 + e^z) cuando y = 0: el mismo log(1 + e^(-s z))
+    #     escrito allí a mano, promediado sobre el lote. Recibe el logit y no la probabilidad
+    #     porque juntar sigmoide y logaritmo en una sola fórmula evita log(0).
     loss_fn = nn.BCEWithLogitsLoss()
     # EN: The optimiser receives the parameters once and from then on applies the update
     #     rule to all of them. Plain SGD is `w = w - lr * grad`, the loop written by hand in
@@ -72,6 +87,9 @@ def fit(
     # PT: O otimizador recebe os parâmetros uma vez e daí em diante aplica a regra de
     #     atualização a todos eles. O SGD puro é `w = w - lr * grad`, o laço escrito à mão no
     #     MP-AI-2. Todos os pontos são usados a cada passo (lote inteiro), como lá.
+    # ES: El optimizador recibe los parámetros una vez y de ahí en adelante aplica la regla de
+    #     actualización a todos ellos. El SGD puro es `w = w - lr * grad`, el bucle escrito a mano
+    #     en MP-AI-2. Todos los puntos se usan en cada paso (lote entero), como allí.
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     model.train()
     history: list[float] = []
@@ -83,6 +101,9 @@ def fit(
         #     rede para de aprender. Sem o `zero_grad` os gradientes de todas as épocas
         #     passadas se acumulariam em `.grad`, porque o `backward` soma em vez de
         #     substituir.
+        # ES: Los cinco pasos. El framework no oculta nada aquí: quita cualquier línea y la red
+        #     deja de aprender. Sin `zero_grad` los gradientes de todas las épocas pasadas se
+        #     acumularían en `.grad`, porque `backward` suma en lugar de reemplazar.
         logits = model(inputs)  # 1. forward / ida
         loss = loss_fn(logits, targets)  # 2. loss / perda
         optimizer.zero_grad()  # 3. clear the old gradients / zera os gradientes antigos
@@ -101,10 +122,15 @@ def accuracy(model: nn.Module, inputs: torch.Tensor, targets: torch.Tensor) -> f
     #     não estão treinando (importa para camadas como dropout, e esta rede não tem nenhuma,
     #     mas o hábito é certo). `torch.no_grad()` para de registrar as operações: nenhum grafo
     #     é construído, o que economiza memória e tempo, e os números são os mesmos.
+    # ES: Dos interruptores para medir, muy confundidos. `model.eval()` avisa a las capas de que no
+    #     están entrenando (importa para capas como dropout, y esta red no tiene ninguna, pero el
+    #     hábito es correcto). `torch.no_grad()` deja de registrar las operaciones: no se construye
+    #     ningún grafo, lo que ahorra memoria y tiempo, y los números son los mismos.
     model.eval()
     with torch.no_grad():
         # EN: sigmoid(z) > 0.5 exactly when z > 0, so the sign of the logit is the answer.
         # PT: sigmoid(z) > 0,5 exatamente quando z > 0, então o sinal do logit é a resposta.
+        # ES: sigmoid(z) > 0,5 exactamente cuando z > 0, así que el signo del logit es la respuesta.
         predictions = model(inputs) > 0.0
     hits = (predictions == (targets > 0.5)).sum().item()
     return hits / len(targets)
@@ -112,7 +138,12 @@ def accuracy(model: nn.Module, inputs: torch.Tensor, targets: torch.Tensor) -> f
 
 @dataclass
 class Run:
-    """EN: A trained model with its loss per epoch. PT: Um modelo treinado e a perda por época."""
+    """EN: A trained model with its loss per epoch.
+
+    PT: Um modelo treinado e a perda por época.
+
+    ES: Un modelo entrenado y la pérdida por época.
+    """
 
     model: nn.Module
     losses: list[float]
@@ -124,6 +155,10 @@ def train_moons(seed: int = SEED, epochs: int = EPOCHS, default_start: bool = Fa
 
     PT: A execução do critério de aceite: semente 7, a regra inicial do MP-AI-2, 120 épocas com
     taxa de aprendizado 0,5. `default_start=True` mantém os pesos com que o `nn.Linear` começa.
+
+    ES: La ejecución del criterio de aceptación: semilla 7, la regla inicial de MP-AI-2, 120 épocas
+    con tasa de aprendizaje 0,5. `default_start=True` conserva los pesos con que empieza
+    `nn.Linear`.
     """
     prepare(seed)
     model = MoonsNet()

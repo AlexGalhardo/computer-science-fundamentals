@@ -10,6 +10,9 @@ import { TokenBucket } from "./token-bucket";
 // PT: Um objeto limitador guarda o estado de UM cliente. Um serviço real mantém um mapa da
 //     chave do cliente (chave de API, id do usuário, endereço IP) para o seu limitador e
 //     remove as entradas ociosas.
+// ES: Un objeto limitador guarda el estado de UN cliente. Un servicio real mantiene un mapa de la
+//     clave del cliente (clave de API, id de usuario, dirección IP) a su limitador y elimina las
+//     entradas inactivas.
 export function createLimiter(algorithm: Algorithm, config: LimiterConfig): RateLimiter {
 	switch (algorithm) {
 		case "fixed-window":

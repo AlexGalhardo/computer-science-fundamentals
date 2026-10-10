@@ -6,6 +6,11 @@
 //     servidor com o módulo `cluster` do Node, todas aceitando conexões na mesma porta. A escolha
 //     usual é um worker por núcleo que o serviço pode usar: mais workers que núcleos só adicionam
 //     trocas de contexto, porque trabalho CPU-bound não roda mais rápido que os núcleos disponíveis.
+// ES: Archivo de procesos de PM2. `exec_mode: "cluster"` hace que PM2 inicie `instances` copias del
+//     servidor con el módulo `cluster` de Node, todas aceptando conexiones en el mismo puerto. La
+//     elección habitual es un worker por núcleo que el servicio puede usar: más workers que núcleos
+//     solo agregan cambios de contexto, porque el trabajo CPU-bound no corre más rápido que los
+//     núcleos disponibles.
 module.exports = {
 	apps: [
 		{

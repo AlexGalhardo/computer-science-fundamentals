@@ -15,6 +15,14 @@
 // de 10", as duas gravam 10, e 11 requisições passam. Por isso cada limitador segura um
 // sync.Mutex em volta da sua decisão. É o mesmo bug de "verificar e depois agir" que o
 // script do Redis corrige entre duas máquinas, aqui entre duas threads de um processo.
+//
+// ES: Los mismos algoritmos que la versión en TypeScript, con una cosa que cambia la lección.
+// JavaScript ejecuta un callback a la vez, así que `count += 1` nunca se interrumpe. En Go
+// muchas goroutines llaman a Allow en el mismo instante en varios núcleos, y "leer el
+// contador, comparar, escribirlo de vuelta" es una carrera: dos goroutines leen 9, las dos
+// ven "por debajo de 10", las dos escriben 10, y pasan 11 solicitudes. Por eso cada limitador
+// sostiene un sync.Mutex alrededor de su decisión. Es el mismo bug de "verificar y luego
+// actuar" que el script de Redis corrige entre dos máquinas, aquí entre dos hilos de un proceso.
 package ratelimiter
 
 import "fmt"
@@ -26,6 +34,9 @@ import "fmt"
 //
 // PT: O relógio é um argumento, em milissegundos inteiros, então os testes são
 // determinísticos. As chamadas devem vir com tempos não decrescentes.
+//
+// ES: El reloj es un argumento, en milisegundos enteros, así que las pruebas son
+// determinísticas. Las llamadas deben venir con tiempos no decrecientes.
 type Limiter interface {
 	Allow(nowMs int64) bool
 }

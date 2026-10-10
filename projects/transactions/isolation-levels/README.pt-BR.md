@@ -1,6 +1,6 @@
 # isolation-levels
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Qual anomalia cada nível de isolamento permite? Este mini-projeto responde por experimento. Um harness de duas sessões conduz duas transações contra um PostgreSQL local em uma ordem fixa e registrada, reproduz cinco anomalias (leitura suja, leitura não repetível, fantasma, atualização perdida, write skew) em cada um dos quatro níveis de isolamento e escreve a matriz de resultados abaixo.
 

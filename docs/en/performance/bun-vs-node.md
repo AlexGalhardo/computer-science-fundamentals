@@ -1,6 +1,6 @@
 # Bun against Node (MP-PERF-1)
 
-> Versão em português: [docs/pt/performance/bun-vs-node.md](../../pt/performance/bun-vs-node.md)
+> Versão em português: [docs/pt/performance/bun-vs-node.md](../../pt/performance/bun-vs-node.md) · Versión en español: [docs/es/performance/bun-vs-node.md](../../es/performance/bun-vs-node.md)
 
 Mini-project: [`projects/performance/bun-vs-node`](../../../projects/performance/bun-vs-node/README.md). Quiz topics: `runtime-performance`, `latency-throughput-percentiles`, `benchmarking-methodology`, `k6-fundamentals`, `capacity-planning-queueing`.
 
@@ -23,7 +23,7 @@ Every container has the same CPU limit (4 CPUs), so `bun` against `node` compare
 
 ## CPU-bound and I/O-bound
 
-```
+```text
 CPU-bound request (GET /cpu)           I/O-bound request (GET /io)
 
 event loop: [count primes........]     event loop: [start timer][free.........][answer]

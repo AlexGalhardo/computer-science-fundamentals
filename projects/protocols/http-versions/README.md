@@ -1,6 +1,6 @@
 # http-versions
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 One page with **200 small images**, served by the same Caddy over **HTTP/1.1, HTTP/2 and HTTP/3**, and loaded by a real Chromium. The mini-project teaches what multiplexing and QUIC change for a page with many resources: how the protocol is negotiated, why HTTP/1.1 suffers as soon as the network has latency, what one connection carrying every request looks like, and what packet loss does to each version.
 

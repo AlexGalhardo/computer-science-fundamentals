@@ -1,6 +1,6 @@
 # Programação orientada a objetos
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A programação orientada a objetos organiza um programa como objetos que guardam seu próprio estado e expõem comportamento por meio de uma interface. Encapsulamento, polimorfismo, herança e composição são ferramentas para controlar como uma mudança em uma parte se espalha para as outras. A maior parte do código de negócio é escrita assim, então saber onde as ideias ajudam, e onde produzem acoplamento e code smells, importa todos os dias.
 

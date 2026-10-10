@@ -5,6 +5,9 @@
 //
 // PT: `demo` imprime o relatório em texto. `demo -markdown` o imprime como o arquivo Markdown
 // que é versionado em results/results.md.
+//
+// ES: `demo` imprime el informe como texto. `demo -markdown` lo imprime como el archivo Markdown
+// que está versionado en results/results.md.
 package main
 
 import (

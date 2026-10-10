@@ -7,6 +7,9 @@ import { type Decision, STRATEGIES, type Strategy } from "./redis-limiter";
 // PT: A face HTTP do limitador, como uma função pura de uma requisição para uma resposta, para
 //     ser testada sem abrir porta. `GET /hit?strategy=fixed-window&key=alice` gasta uma
 //     requisição do cliente `alice`.
+// ES: La cara HTTP del limitador, como una función pura de una solicitud a una respuesta, para
+//     poder probarla sin abrir un puerto. `GET /hit?strategy=fixed-window&key=alice` gasta una
+//     solicitud del cliente `alice`.
 
 export interface AppDependencies {
 	instance: string;
@@ -18,6 +21,8 @@ export interface AppDependencies {
 //     small alphabet and a bounded size: it becomes part of a Redis key name.
 // PT: A query string é digitada por quem chama, então é validada na porta. A chave tem um
 //     alfabeto pequeno e tamanho limitado: ela vira parte do nome de uma chave do Redis.
+// ES: La query string la escribe quien llama, así que se valida en la puerta. La clave tiene un
+//     alfabeto pequeño y un tamaño limitado: pasa a ser parte del nombre de una clave de Redis.
 const querySchema = z.object({
 	strategy: z.enum(STRATEGIES),
 	key: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),
@@ -58,6 +63,11 @@ export function createApp(dependencies: AppDependencies): (request: Request) => 
 		//     (também poderia ser uma data HTTP), então a espera é arredondada para cima: mandar
 		//     o cliente voltar cedo demais só produziria outro 429. Um 429 não pode ser guardado
 		//     por um cache, ou o próximo cliente receberia uma recusa velha.
+		// ES: 429 Too Many Requests (RFC 6585) dice que ESTE cliente envió demasiado; un 503 diría
+		//     que el propio servidor está sobrecargado. `Retry-After` lleva segundos enteros (también
+		//     podría ser una fecha HTTP), así que la espera se redondea hacia arriba: mandar al
+		//     cliente a volver demasiado pronto solo produciría otro 429. Un 429 no puede guardarse
+		//     en una caché, o el siguiente cliente recibiría un rechazo viejo.
 		const retryAfterSeconds = Math.max(1, Math.ceil(decision.retryAfterMs / 1000));
 		return json(429, body, { "retry-after": String(retryAfterSeconds), "cache-control": "no-store" });
 	};

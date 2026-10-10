@@ -25,6 +25,8 @@ type Policy struct {
 // dependency in trouble gets more and more time to recover.
 // PT: Backoff exponencial: base, 2 x base, 4 x base, ... Cada falha dobra a espera, então uma
 // dependência com problemas ganha cada vez mais tempo para se recuperar.
+// ES: Backoff exponencial: base, 2 x base, 4 x base, ... Cada fallo duplica la espera, así que una
+// dependencia con problemas tiene cada vez más tiempo para recuperarse.
 func Backoff(attempt int, base time.Duration) time.Duration {
 	if attempt < 1 {
 		attempt = 1
@@ -48,6 +50,9 @@ type Delivery struct {
 // confirmação volta. Um handler que falha é repetido depois de uma espera crescente. Uma
 // mensagem que usou todas as tentativas é posta de lado na dead-letter queue em vez de ficar em
 // laço para sempre.
+// ES: Se comporta como los de verdad en los tres puntos que importan aquí. Una entrega sin
+// confirmación vuelve. Un handler que falla se reintenta tras una espera creciente. Un mensaje que
+// usó todos sus intentos se aparta en la dead-letter queue en lugar de dar vueltas para siempre.
 type Broker struct {
 	policy Policy
 	// Sleep is how the broker waits before a retry. Tests replace it to avoid real waits.
@@ -82,6 +87,8 @@ func NewBroker(policy Policy) *Broker {
 // mutex because several workers ask it at the same time.
 // PT: O gerador tem semente, então "falha aleatoriamente" é reproduzível, e é protegido por um
 // mutex porque vários workers o consultam ao mesmo tempo.
+// ES: El generador tiene semilla, así que "falla aleatoriamente" es reproducible, y está protegido
+// por un mutex porque varios workers lo consultan al mismo tiempo.
 func SeededLoss(rate float64, seed uint64) func() bool {
 	var mu sync.Mutex
 	random := rand.New(rand.NewPCG(seed, seed))
@@ -133,6 +140,8 @@ func (b *Broker) consume(delivery Delivery, handle func(Message) error) {
 			// taking the place of healthy messages.
 			// PT: Sem tentativas: a mensagem vai para a dead-letter queue e para de ocupar o
 			// lugar das mensagens saudáveis.
+			// ES: Sin intentos: el mensaje va a la dead-letter queue y deja de ocupar el
+			// lugar de los mensajes sanos.
 			b.mu.Lock()
 			b.dead = append(b.dead, delivery)
 			b.mu.Unlock()
@@ -147,6 +156,8 @@ func (b *Broker) consume(delivery Delivery, handle func(Message) error) {
 		// worker while it waits.
 		// PT: A espera acontece fora do worker, então uma mensagem com falha não prende um
 		// worker enquanto espera.
+		// ES: La espera ocurre fuera del worker, así que un mensaje con fallo no retiene a un
+		// worker mientras espera.
 		go func() {
 			b.Sleep(wait)
 			b.work <- Delivery{Message: delivery.Message, Attempt: delivery.Attempt + 1}
@@ -158,6 +169,8 @@ func (b *Broker) consume(delivery Delivery, handle func(Message) error) {
 		// delivers the same message again. This is where duplicates are born.
 		// PT: O efeito foi feito, mas o broker nunca ouviu a confirmação, então entrega a
 		// mesma mensagem de novo. É aqui que as duplicatas nascem.
+		// ES: El efecto se hizo, pero el broker nunca oyó la confirmación, así que entrega el
+		// mismo mensaje de nuevo. Aquí es donde nacen los duplicados.
 		b.enqueue(delivery)
 		return
 	}
@@ -229,6 +242,7 @@ func RunDuplicates(store Store, messages int, workers int, seed uint64) Result {
 		message := Message{ID: ids[index], Amount: 100}
 		// EN: Twice, like a producer that retries after a lost confirmation.
 		// PT: Duas vezes, como um produtor que repete depois de perder a confirmação.
+		// ES: Dos veces, como un productor que reintenta tras perder la confirmación.
 		broker.Publish(message)
 		broker.Publish(message)
 	}

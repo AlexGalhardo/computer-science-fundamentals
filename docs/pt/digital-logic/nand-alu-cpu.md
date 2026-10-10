@@ -1,6 +1,6 @@
 # Uma ALU só de NANDs e uma CPU de 4 bits
 
-> English version: [docs/en/digital-logic/nand-alu-cpu.md](../../en/digital-logic/nand-alu-cpu.md)
+> English version: [docs/en/digital-logic/nand-alu-cpu.md](../../en/digital-logic/nand-alu-cpu.md) · Versión en español: [docs/es/digital-logic/nand-alu-cpu.md](../../es/digital-logic/nand-alu-cpu.md)
 
 Mini-projeto MP-DL-2, em [`projects/digital-logic/nand-alu-cpu`](../../../projects/digital-logic/nand-alu-cpu). Ele ensina como um computador é construído a partir de uma única porta. O código tem uma só primitiva, `nand(a, b)`, e todo o resto é ligação de fios: cada camada abaixo é escrita apenas com a camada anterior.
 

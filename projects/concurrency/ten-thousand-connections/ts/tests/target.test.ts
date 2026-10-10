@@ -17,6 +17,7 @@ test("loopback and docker-compose service names are local", () => {
 
 // EN: Each of these is a way a non-local host could slip past a careless check.
 // PT: Cada um destes é um jeito de um host não local passar por uma verificação descuidada.
+// ES: Cada uno de estos es una forma en que un host no local podría colarse por una verificación descuidada.
 test("everything else is refused", () => {
 	for (const target of [
 		"https://example.com",

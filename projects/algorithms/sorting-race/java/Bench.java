@@ -13,6 +13,10 @@ import java.util.function.UnaryOperator;
 //     linha JSON no contrato de benchmark. Só a ordenação é cronometrada. A chamada única é
 //     medida a frio, com o JIT ainda aquecendo, porque é isso que recebe quem usa um programa
 //     de linha de comando.
+// ES: `java Bench <algoritmo> <variante> <n>` lee `data/<variante>-<n>.txt`, ordena e imprime una
+//     línea JSON en el contrato de benchmark. Solo se cronometra la ordenación. La llamada única
+//     se mide en frío, con el JIT todavía calentando, porque eso es lo que recibe quien usa un
+//     programa de línea de comandos.
 public final class Bench {
   private static final List<String> VARIANTS = List.of("random", "sorted", "reversed");
   private static final String USAGE = "usage: Bench <algorithm> <random|sorted|reversed> <n>";
@@ -21,6 +25,7 @@ public final class Bench {
 
   // EN: The file is external input: a line that is not an integer from 0 to 2^31 - 1 is an error.
   // PT: O arquivo é entrada externa: uma linha que não é um inteiro de 0 a 2^31 - 1 é um erro.
+  // ES: El archivo es entrada externa: una línea que no es un entero de 0 a 2^31 - 1 es un error.
   static int[] readValues(Path path, int expected) throws IOException {
     List<String> lines = Files.readAllLines(path);
     if (lines.size() != expected) {
@@ -43,6 +48,8 @@ public final class Bench {
 
   // EN: VmHWM ("high water mark") in /proc/self/status is the peak resident memory in kibibytes.
   // PT: VmHWM ("marca d'água") em /proc/self/status é o pico de memória residente em kibibytes.
+  // ES: VmHWM ("marca de agua") en /proc/self/status es el pico de memoria residente en
+  //     kibibytes.
   static long peakMemoryKb() throws IOException {
     for (String line : Files.readAllLines(Path.of("/proc/self/status"))) {
       if (line.startsWith("VmHWM:")) {
@@ -68,6 +75,10 @@ public final class Bench {
     // PT: Até 5 execuções enquanto o total fica abaixo de 300 ms, e a mais rápida é informada: o
     //     mínimo é a medida menos perturbada por outros programas na máquina. Em Java as
     //     execuções seguintes também são mais rápidas porque o JIT já compilou os laços quentes.
+    // ES: Hasta 5 ejecuciones mientras el total se mantiene por debajo de 300 ms, y se informa la
+    //     más rápida: el mínimo es la medida menos perturbada por otros programas en la máquina.
+    //     En Java las ejecuciones siguientes también son más rápidas porque el JIT ya compiló los
+    //     bucles calientes.
     int[] sorted = values;
     double elapsedMs = Double.POSITIVE_INFINITY;
     double spentMs = 0;

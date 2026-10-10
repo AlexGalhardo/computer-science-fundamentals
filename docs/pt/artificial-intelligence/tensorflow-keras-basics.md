@@ -1,6 +1,6 @@
 # Fundamentos de TensorFlow e Keras
 
-> English version: [docs/en/artificial-intelligence/tensorflow-keras-basics.md](../../en/artificial-intelligence/tensorflow-keras-basics.md)
+> English version: [docs/en/artificial-intelligence/tensorflow-keras-basics.md](../../en/artificial-intelligence/tensorflow-keras-basics.md) · Versión en español: [docs/es/artificial-intelligence/tensorflow-keras-basics.md](../../es/artificial-intelligence/tensorflow-keras-basics.md)
 
 Mini-projeto MP-AI-7, em [`projects/artificial-intelligence/tensorflow-keras-basics`](../../../projects/artificial-intelligence/tensorflow-keras-basics). Ensina o mesmo modelo em outro framework, e o que uma API de alto nível esconde. A base está na seção [15](README.md#15-tensorflow-e-keras) da página da área, e o lado PyTorch de cada comparação está em [pytorch-basics](pytorch-basics.md) (MP-AI-6).
 

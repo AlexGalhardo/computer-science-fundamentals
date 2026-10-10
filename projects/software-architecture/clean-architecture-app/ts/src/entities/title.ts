@@ -11,6 +11,11 @@ export const TITLE_MAX_LENGTH = 80;
 //     título, e ele nunca muda depois de criado. O construtor é privado, então o único jeito de
 //     obter um `Title` é `Title.create`, que valida. Uma função que recebe um `Title` sabe,
 //     portanto, que ele é válido sem conferir de novo: o estado inválido não pode ser construído.
+// ES: Un objeto de valor: no tiene identidad, dos títulos con el mismo texto son el mismo
+//     título, y nunca cambia después de creado. El constructor es privado, así que la única
+//     manera de obtener un `Title` es `Title.create`, que valida. Una función que recibe un
+//     `Title` sabe, por tanto, que es válido sin verificar de nuevo: el estado inválido no puede
+//     construirse.
 export class Title {
 	private constructor(readonly value: string) {}
 

@@ -16,6 +16,11 @@ import java.util.concurrent.CompletableFuture;
  * threads colocam mensagens em uma fila bloqueante, que faz o papel de canal, e a dona as trata uma
  * por vez. A fila é limitada: quando enche, {@code put} faz os remetentes esperarem, então eles não
  * conseguem atropelar a dona (backpressure).
+ *
+ * <p>ES: Un thread es dueño del número, en una variable local que nadie más alcanza. Los otros
+ * threads colocan mensajes en una cola bloqueante, que hace el papel de canal, y el dueño los
+ * atiende uno por uno. La cola es limitada: cuando se llena, {@code put} hace esperar a los
+ * remitentes, así que no pueden atropellar al dueño (backpressure).
  */
 public final class QueueCounter implements Counter {
   private sealed interface Message permits Inc, Get, Stop {}

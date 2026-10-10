@@ -8,6 +8,10 @@ import { defineConfig } from "@playwright/test";
 //     paralelismo: duas cargas de página ao mesmo tempo disputariam o mesmo enlace moldado.
 //     O navegador é iniciado pelos próprios testes, porque as flags dele dependem do certificado
 //     que o servidor do laboratório apresenta.
+// ES: Las pruebas corren dentro de docker-compose contra el servicio `caddy`. Un worker y nada
+//     de paralelismo: dos cargas de página a la vez competirían por el mismo enlace modelado.
+//     El navegador lo inician las propias pruebas, porque sus flags dependen del certificado
+//     que presenta el servidor del laboratorio.
 export default defineConfig({
 	testDir: "tests",
 	testMatch: "**/*.spec.ts",

@@ -8,6 +8,10 @@ PT: Mesmos algoritmos e mesmas decisões da referência em TypeScript em `ts/src
     é explicado em detalhe. O que muda aqui é o custo de cada passo: o CPython interpreta cada
     comparação e cada acesso por índice, então o fator constante é dezenas de vezes maior que
     em uma linguagem compilada, enquanto a ordem de crescimento continua a mesma.
+ES: Mismos algoritmos y mismas decisiones que la referencia en TypeScript en `ts/src/`, donde
+    cada uno se explica en detalle. Lo que cambia aquí es el costo de cada paso: CPython
+    interpreta cada comparación y cada acceso por índice, así que el factor constante es decenas
+    de veces mayor que en un lenguaje compilado, mientras que el orden de crecimiento sigue igual.
 """
 
 from collections.abc import Callable
@@ -18,6 +22,7 @@ SortFunction = Callable[[list[int]], list[int]]
 def bubble_sort(values: list[int]) -> list[int]:
     # EN: Swap out-of-order neighbours. Stop when a pass makes no swap.
     # PT: Troca vizinhos fora de ordem. Para quando uma passada não faz trocas.
+    # ES: Intercambia vecinos desordenados. Se detiene cuando una pasada no hace intercambios.
     a = list(values)
     for end in range(len(a) - 1, 0, -1):
         swapped = False
@@ -33,6 +38,7 @@ def bubble_sort(values: list[int]) -> list[int]:
 def insertion_sort(values: list[int]) -> list[int]:
     # EN: Insert each value into the sorted prefix, shifting the larger values right.
     # PT: Insere cada valor no prefixo ordenado, deslocando os maiores para a direita.
+    # ES: Inserta cada valor en el prefijo ordenado, desplazando los mayores hacia la derecha.
     a = list(values)
     for i in range(1, len(a)):
         key = a[i]
@@ -47,6 +53,7 @@ def insertion_sort(values: list[int]) -> list[int]:
 def merge_sort(values: list[int]) -> list[int]:
     # EN: Split in half, sort each half, merge. One buffer is reused by every merge.
     # PT: Divide ao meio, ordena cada metade, intercala. Um buffer é reusado em toda intercalação.
+    # ES: Divide a la mitad, ordena cada mitad, mezcla. Un búfer se reutiliza en cada mezcla.
     a = list(values)
     buffer = [0] * len(a)
 
@@ -60,6 +67,8 @@ def merge_sort(values: list[int]) -> list[int]:
         while i < mid and j < hi:
             # EN: `<=` takes the left value on a tie, which keeps the sort stable.
             # PT: `<=` pega o valor da esquerda no empate, o que mantém a ordenação estável.
+            # ES: `<=` toma el valor de la izquierda en el empate, lo que mantiene la ordenación
+            #     estable.
             if a[i] <= a[j]:
                 buffer[k] = a[i]
                 i += 1
@@ -86,6 +95,9 @@ def quick_sort(values: list[int]) -> list[int]:
     #     on the larger one keeps the stack at O(log n), far from Python's recursion limit.
     # PT: Partição de Hoare em torno da mediana de três. Fazer a recursão no lado menor e o laço
     #     no maior mantém a pilha em O(log n), longe do limite de recursão do Python.
+    # ES: Partición de Hoare alrededor de la mediana de tres. Hacer la recursión sobre el lado menor
+    #     y el bucle sobre el mayor mantiene la pila en O(log n), lejos del límite de recursión
+    #     de Python.
     a = list(values)
 
     def sort_range(lo: int, hi: int) -> None:
@@ -116,6 +128,7 @@ def quick_sort(values: list[int]) -> list[int]:
 def heap_sort(values: list[int]) -> list[int]:
     # EN: Build a max-heap inside the list, then move the maximum to the end n - 1 times.
     # PT: Constrói um max-heap dentro da lista e move o máximo para o fim n - 1 vezes.
+    # ES: Construye un max-heap dentro de la lista y mueve el máximo al final n - 1 veces.
     a = list(values)
     n = len(a)
 
@@ -147,6 +160,8 @@ def radix_sort(values: list[int]) -> list[int]:
     #     Valid for integers from 0 to 2^31 - 1.
     # PT: Radix sort LSD na base 256: quatro passadas estáveis de contagem, uma por byte da
     #     chave. Válido para inteiros de 0 a 2^31 - 1.
+    # ES: Radix sort LSD en base 256: cuatro pasadas estables de conteo, una por byte de la
+    #     clave. Válido para enteros de 0 a 2^31 - 1.
     source = list(values)
     target = [0] * len(source)
     for shift in range(0, 32, 8):

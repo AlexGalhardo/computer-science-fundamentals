@@ -22,6 +22,9 @@ type lruNode[K comparable, V any] struct {
 // PT: Duas estruturas trabalham juntas para Get e Put serem O(1): um mapa de espalhamento
 // responde "onde está o nó desta chave?", e uma lista duplamente encadeada, ordenada por uso,
 // responde "qual é a entrada mais antiga?".
+// ES: Dos estructuras trabajan juntas para que Get y Put sean O(1): un mapa de dispersión
+// responde "¿dónde está el nodo de esta clave?", y una lista doblemente enlazada, ordenada por
+// uso, responde "¿cuál es la entrada más antigua?".
 type LRU[K comparable, V any] struct {
 	capacity int
 	nodes    map[K]*lruNode[K, V]
@@ -32,6 +35,10 @@ type LRU[K comparable, V any] struct {
 	// PT: O sentinela é um nó sem dado que fecha a lista em um anel. A entrada mais recente é
 	// sentinel.next e a mais antiga é sentinel.previous. Como todo nó de verdade sempre tem
 	// dois vizinhos, ligar e desligar não precisam de teste de "é o primeiro?" nem de "é o
+	// último?".
+	// ES: El centinela es un nodo sin dato que cierra la lista en un anillo. La entrada más reciente
+	// es sentinel.next y la más antigua es sentinel.previous. Como todo nodo de verdad siempre tiene
+	// dos vecinos, enlazar y desenlazar no necesitan una prueba de "¿es el primero?" ni de "¿es el
 	// último?".
 	sentinel *lruNode[K, V]
 }
@@ -58,6 +65,9 @@ func (c *LRU[K, V]) Len() int { return len(c.nodes) }
 // PT: Ler conta como uso, então o nó vai para a frente. É por isso que a lista precisa ser
 // duplamente encadeada: desligar um nó alcançado pelo mapa exige o anterior dele, e só um
 // ponteiro previous entrega isso em O(1).
+// ES: Leer cuenta como uso, así que el nodo pasa al frente. Por eso la lista debe ser
+// doblemente enlazada: desenlazar un nodo alcanzado por el mapa exige su anterior, y solo un
+// puntero previous entrega eso en O(1).
 func (c *LRU[K, V]) Get(key K) (V, bool) {
 	node, found := c.nodes[key]
 	if !found {

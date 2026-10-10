@@ -9,6 +9,12 @@ PT: Testes das redes, da comparação e do aumento de dados (MP-AI-8.2 e MP-AI-8
 Os três modelos são treinados uma vez, pela mesma função e sementes da demo, e cada teste lê esse
 único experimento. Os limites têm folga abaixo dos números medidos, então uma pequena diferença
 de ponto flutuante em outra máquina não os quebra.
+
+ES: Pruebas de las redes, de la comparación y del aumento de datos (MP-AI-8.2 y MP-AI-8.3).
+
+Los tres modelos se entrenan una vez, con la misma función y semillas de la demo, y cada prueba
+lee ese único experimento. Los límites tienen holgura por debajo de los números medidos, así que
+una pequeña diferencia de punto flotante en otra máquina no los rompe.
 """
 
 import struct
@@ -63,6 +69,8 @@ def test_parameter_counts_are_similar() -> None:
     #     result on shifted images cannot be blamed on its size.
     # PT: A rede totalmente conectada é a que tem um pouco MAIS de parâmetros, então o seu
     #     resultado pior nas imagens deslocadas não pode ser culpa do tamanho.
+    # ES: La red totalmente conectada es la que tiene un poco MÁS de parámetros, así que su peor
+    #     resultado en las imágenes desplazadas no puede ser culpa del tamaño.
     assert mlp_parameters >= cnn_parameters
 
 
@@ -78,6 +86,8 @@ def test_fully_connected_network_does_worse_on_shifted_images(experiment: Experi
     # EN: Both networks learned the centred shapes, so the gap below is about the shift only.
     # PT: As duas redes aprenderam as formas centradas, então a diferença abaixo é só do
     #     deslocamento.
+    # ES: Las dos redes aprendieron las formas centradas, así que la diferencia de abajo es solo del
+    #     desplazamiento.
     assert mlp_scores["clean"] >= 0.95
     assert cnn_scores["shifted"] >= 0.80
     assert mlp_scores["shifted"] <= 0.50
@@ -139,6 +149,7 @@ def test_results_table_has_accuracy_with_and_without_augmentation(
 def test_filters_and_activation_map_are_written_as_images(results: Path) -> None:
     # EN: 8 filters of 3 x 3, each enlarged 32 times, in a row with 4-pixel gaps.
     # PT: 8 filtros de 3 x 3, cada um ampliado 32 vezes, em uma linha com espaços de 4 pixels.
+    # ES: 8 filtros de 3 x 3, cada uno ampliado 32 veces, en una fila con espacios de 4 píxeles.
     assert png_size(results / "filters.png") == (4 + 8 * (96 + 4), 96 + 8)
     assert png_size(results / "activation-map.png") == (SIZE * 12, SIZE * 12)
     assert png_size(results / "activation-maps.png") == (4 + 8 * (100 + 4), 100 + 8)
@@ -164,6 +175,7 @@ def test_first_layer_maps_have_one_map_per_filter(experiment: Experiment) -> Non
 def test_the_experiment_is_reproducible(experiment: Experiment) -> None:
     # EN: Training the first model again with the same seeds must give the same weights.
     # PT: Treinar o primeiro modelo de novo com as mesmas sementes tem que dar os mesmos pesos.
+    # ES: Entrenar de nuevo el primer modelo con las mismas semillas tiene que dar los mismos pesos.
     torch.manual_seed(SEED)
     model = SmallCNN()
     images, labels = make_dataset(TRAIN_IMAGES, TRAIN_SEED)

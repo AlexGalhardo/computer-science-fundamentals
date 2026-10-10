@@ -3,6 +3,7 @@ defmodule Mix.Tasks.Order do
   @moduledoc """
   EN: `mix order pay ship deliver` walks one order; `mix order demo` runs the demo.
   PT: `mix order pay ship deliver` conduz um pedido; `mix order demo` roda a demonstração.
+  ES: `mix order pay ship deliver` recorre un pedido; `mix order demo` ejecuta la demostración.
   """
 
   use Mix.Task

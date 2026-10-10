@@ -6,6 +6,8 @@ describe("observer: before", () => {
 	// EN: The flaw: the list of reactions is part of the order. Nothing outside can add one.
 	// PT: O defeito: a lista de reações faz parte do pedido. Nada de fora consegue acrescentar
 	//     uma reação.
+	// ES: El defecto: la lista de reacciones es parte del pedido. Nada desde fuera puede añadir
+	//     una reacción.
 	test("the reactions are fixed inside pay", () => {
 		const order = new CoupledOrder("o-1", "ana@example.test");
 		order.pay();

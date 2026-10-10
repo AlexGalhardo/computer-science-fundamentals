@@ -21,6 +21,9 @@ type scenario struct {
 //     trace.
 // PT: Cada cenário é o texto exato que um cliente colocaria no fio. "Connection: close" na
 //     última requisição de um cenário faz o servidor fechar a conexão, o que encerra o rastro.
+// ES: Cada escenario es el texto exacto que un cliente pondría en la red. "Connection: close"
+//     en la última petición de un escenario hace que el servidor cierre la conexión, lo que
+//     termina la traza.
 
 var scenarios = []scenario{
 	{

@@ -4,6 +4,9 @@
 // PT: Os eventos que os dois serviços trocam. Um evento é um fato no passado ("um pedido foi
 //     criado"), não um comando. Todo evento carrega um `id` único: é esse id que deixa um
 //     consumidor reconhecer uma mensagem que já processou.
+// ES: Los eventos que intercambian los dos servicios. Un evento es un hecho en pasado ("se creó un
+//     pedido"), no un comando. Todo evento lleva un `id` único: ese id permite que un
+//     consumidor reconozca un mensaje que ya procesó.
 
 import { z } from "zod";
 
@@ -12,6 +15,7 @@ export type EventType = (typeof EVENT_TYPES)[number];
 
 // EN: A message from the broker is external input like any HTTP body, so it has a schema.
 // PT: Uma mensagem do broker é entrada externa como qualquer corpo HTTP, então tem um schema.
+// ES: Un mensaje del broker es entrada externa como cualquier cuerpo HTTP, así que tiene un schema.
 export const eventSchema = z.object({
 	id: z.uuid(),
 	type: z.enum(EVENT_TYPES),

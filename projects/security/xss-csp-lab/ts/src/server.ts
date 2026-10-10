@@ -4,6 +4,9 @@
 // PT: Ponto de entrada dos contêineres `vulnerable` e `fixed`. Este é o único arquivo autorizado
 //     a importar o app vulnerável, e ele só o serve dentro da rede Docker interna do
 //     laboratório: o arquivo compose não publica nenhuma porta no host.
+// ES: Punto de entrada de los contenedores `vulnerable` y `fixed`. Este es el único archivo autorizado
+//     a importar la app vulnerable, y solo la sirve dentro de la red Docker interna del
+//     laboratorio: el archivo compose no publica ningún puerto en el host.
 
 import { loadConfig } from "./config";
 import { createFixedApp } from "./fixed/fixed-app";

@@ -96,6 +96,9 @@ func (z *Zone) find(name string, kind dnsmsg.Type) []dnsmsg.Record {
 // PT: Uma zona entrega parte da sua árvore a outros servidores publicando registros NS em um
 // nome abaixo da sua origem. Daquele ponto para baixo este servidor não sabe mais nada: tudo o
 // que ele pode fazer é apontar para os servidores que sabem.
+// ES: Una zona entrega parte de su árbol a otros servidores publicando registros NS en un nombre
+// debajo de su origen. Desde ese punto hacia abajo este servidor ya no sabe nada: todo lo que
+// puede hacer es apuntar a los servidores que sí saben.
 func (z *Zone) delegation(name string) []dnsmsg.Record {
 	var cut []dnsmsg.Record
 	for current := name; current != z.Origin; {
@@ -126,6 +129,9 @@ func (z *Zone) Answer(question dnsmsg.Question) dnsmsg.Message {
 	// PT: Uma indicação não é uma resposta. O servidor não tem autoridade sobre o nome, então a
 	//     flag AA fica desligada, os registros NS vão na seção authority e os endereços desses
 	//     servidores (o glue) vão na seção additional.
+	// ES: Una referencia no es una respuesta. El servidor no tiene autoridad sobre el nombre, así
+	//     que la bandera AA queda apagada, los registros NS van en la sección authority y las
+	//     direcciones de esos servidores (el glue) van en la sección additional.
 	if ns := z.delegation(name); len(ns) > 0 {
 		reply.Authority = ns
 		for _, server := range ns {
@@ -143,6 +149,8 @@ func (z *Zone) Answer(question dnsmsg.Question) dnsmsg.Message {
 	//     when it also knows the canonical name, the record that was really wanted.
 	// PT: Um apelido responde a qualquer pergunta sobre o nome: o servidor devolve o CNAME e,
 	//     quando também conhece o nome canônico, o registro que realmente se queria.
+	// ES: Un alias responde a cualquier pregunta sobre el nombre: el servidor devuelve el CNAME y,
+	//     cuando también conoce el nombre canónico, el registro que realmente se quería.
 	if alias := z.find(name, dnsmsg.TypeCNAME); len(alias) > 0 {
 		reply.Answer = append(reply.Answer, alias...)
 		reply.Answer = append(reply.Answer, z.find(alias[0].Target, question.Type)...)

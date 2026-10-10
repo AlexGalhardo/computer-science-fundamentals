@@ -4,6 +4,9 @@
 # PT: Cliente de banco em C++ do benchmark. A libpq vem da versão do Debian da imagem base
 #     fixada (trixie), o que fixa a linha de versão dela. A versão exata é impressa no build e
 #     registrada nos resultados pelo coletor.
+# ES: Cliente de base de datos en C++ del benchmark. libpq viene de la versión de Debian de la
+#     imagen base fijada (trixie), lo que fija su línea de versión. La versión exacta se imprime
+#     en el build y la registra el recolector en los resultados.
 FROM gcc:16.2.0-trixie
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends libpq-dev \

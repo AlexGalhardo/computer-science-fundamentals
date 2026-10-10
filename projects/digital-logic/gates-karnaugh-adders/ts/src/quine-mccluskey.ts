@@ -6,6 +6,10 @@
 //     deixa de ser prático com 5 ou 6 variáveis; o método tabular segue os mesmos dois passos
 //     para qualquer quantidade: (1) achar todos os implicantes primos, (2) escolher o conjunto
 //     mais barato de implicantes primos que cobre todos os mintermos.
+// ES: Quine-McCluskey hace con una tabla lo que el mapa de Karnaugh hace con los ojos. El mapa
+//     deja de ser práctico con 5 o 6 variables; el método tabular sigue los mismos dos pasos
+//     para cualquier cantidad: (1) encontrar todos los implicantes primos, (2) elegir el
+//     conjunto más barato de implicantes primos que cubre todos los minterms.
 
 // EN: An implicant is a product term, that is, a group of cells of the map. `mask` marks the
 //     variables that were eliminated (the dashes of the tabular method) and `value` holds the
@@ -14,6 +18,10 @@
 // PT: Um implicante é um termo produto, isto é, um grupo de células do mapa. `mask` marca as
 //     variáveis eliminadas (os traços do método tabular) e `value` guarda o valor das outras.
 //     Com 4 variáveis, value 0b0000 e mask 0b1010 significam -0-0: B'·D', os quatro cantos.
+// ES: Un implicante es un término producto, es decir, un grupo de celdas del mapa. `mask` marca
+//     las variables eliminadas (los guiones del método tabular) y `value` guarda el valor de
+//     las otras. Con 4 variables, value 0b0000 y mask 0b1010 significan -0-0: B'·D', las
+//     cuatro esquinas.
 export interface Implicant {
 	value: number;
 	mask: number;
@@ -61,6 +69,10 @@ function compareImplicants(a: Implicant, b: Implicant): number {
 //     essa variável: X·Y + X·Y' = X. No mapa, isso é juntar dois grupos vizinhos do mesmo
 //     tamanho. A fusão se repete até nada mais se fundir. Um termo que nunca se fundiu não
 //     pode crescer: é um implicante primo.
+// ES: Paso 1. Dos términos que difieren en exactamente una variable se fusionan en un término
+//     sin esa variable: X·Y + X·Y' = X. En el mapa, esto es juntar dos grupos vecinos del mismo
+//     tamaño. La fusión se repite hasta que ya nada se fusiona. Un término que nunca se
+//     fusionó no puede crecer: es un implicante primo.
 export function findPrimeImplicants(terms: readonly number[]): Implicant[] {
 	let current = new Map<string, Implicant>();
 	for (const term of terms) {
@@ -110,6 +122,13 @@ export function findPrimeImplicants(terms: readonly number[]): Implicant[] {
 //     tenta-se cada implicante primo que o cobre e guarda-se a cobertura completa mais barata
 //     (menos termos, depois menos literais). Os termos irrelevantes (don't care) participam do
 //     passo 1, para aumentar os grupos, mas não entram na lista de mintermos a cobrir.
+// ES: Paso 2. Un implicante primo es esencial cuando algún minterm está cubierto por él y por
+//     ningún otro, así que toda solución debe contenerlo. Lo que sobra después de los
+//     esenciales se resuelve con una búsqueda exacta: se toma el minterm descubierto con menos
+//     candidatos, se prueba cada implicante primo que lo cubre y se guarda la cobertura
+//     completa más barata (menos términos, luego menos literales). Los términos irrelevantes
+//     (don't care) participan en el paso 1, para agrandar los grupos, pero no entran en la
+//     lista de minterms que hay que cubrir.
 export function minimise(
 	variableCount: number,
 	minterms: readonly number[],
@@ -137,6 +156,8 @@ export function minimise(
 	//     cover can never hold `limit * variableCount` literals or more.
 	// PT: Um número que ordena as coberturas primeiro pela quantidade de termos e depois pela de
 	//     literais: uma cobertura nunca chega a ter `limit * variableCount` literais.
+	// ES: Un número que ordena las coberturas primero por la cantidad de términos y luego por la
+	//     de literales: una cobertura nunca llega a tener `limit * variableCount` literales.
 	const cost = (cover: readonly Implicant[]): number =>
 		cover.length * limit * (variableCount + 1) +
 		cover.reduce((sum, item) => sum + literalCount(item, variableCount), 0);
@@ -182,6 +203,9 @@ export function minimise(
 //     can be parsed again and compared with the original function, row by row.
 // PT: Escreve uma cobertura de volta como soma de produtos na sintaxe que o parser lê, de modo
 //     que o resultado possa ser analisado de novo e comparado com a função original, linha a linha.
+// ES: Escribe una cobertura de vuelta como suma de productos en la sintaxis que lee el parser,
+//     de modo que el resultado pueda analizarse de nuevo y compararse con la función original,
+//     fila por fila.
 export function toExpression(cover: readonly Implicant[], variables: readonly string[]): string {
 	if (cover.length === 0) {
 		return "0";
@@ -196,6 +220,7 @@ export function toExpression(cover: readonly Implicant[], variables: readonly st
 		});
 		// EN: A group that covers the whole map eliminated every variable: the function is 1.
 		// PT: Um grupo que cobre o mapa inteiro eliminou todas as variáveis: a função é 1.
+		// ES: Un grupo que cubre todo el mapa eliminó todas las variables: la función es 1.
 		return literals.length === 0 ? "1" : literals.join("·");
 	});
 	return terms.join(" + ");

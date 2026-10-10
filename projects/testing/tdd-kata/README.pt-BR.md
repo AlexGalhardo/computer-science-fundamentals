@@ -1,6 +1,6 @@
 # tdd-kata
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 O kata do dinheiro em várias moedas, feito com desenvolvimento guiado por testes, em que a entrega é o **histórico do git**: 27 commits que alternam um teste que falha (red), a menor mudança que o faz passar (green) e uma limpeza com todos os testes passando (refactor). O código final tem cerca de 90 linhas. O que vale estudar é a ordem em que elas foram escritas.
 
@@ -110,7 +110,7 @@ A lista de tarefas ([`TODO.md`](TODO.md)) muda nos mesmos commits: uma ideia que
 
 ## Estrutura
 
-```
+```text
 ts/src/money.ts            Money, Sum e a interface Expression
 ts/src/bank.ts             taxas de câmbio e reduce
 ts/tests/money.test.ts     os testes do kata

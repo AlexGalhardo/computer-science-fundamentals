@@ -1,6 +1,6 @@
 # regex-engine
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um motor de expressões regulares construído do jeito dos livros-texto, em Go. Ensina **como uma expressão regular vira um autômato**: o padrão é analisado em uma árvore, a árvore vira um autômato não determinístico (construção de Thompson), e este vira um determinístico (construção de subconjuntos). Um casador ingênuo por backtracking está incluído apenas para mostrar o que os autômatos evitam.
 

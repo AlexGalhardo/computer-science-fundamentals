@@ -3,6 +3,10 @@ training function. What the tests check is therefore exactly what the demo repor
 
 PT: O único experimento que os testes e a demo compartilham: mesmo corpus, mesma semente, mesma
 função de treino. O que os testes conferem é, portanto, exatamente o que a demo relata.
+
+ES: El único experimento que las pruebas y la demo comparten: mismo corpus, misma semilla, misma
+función de entrenamiento. Lo que comprueban las pruebas es, por lo tanto, exactamente lo que
+informa la demo.
 """
 
 from dataclasses import dataclass
@@ -58,6 +62,8 @@ def run_experiment() -> Experiment:
     heldout_ids = encode(corpus.heldout_text, corpus.vocabulary)
     # EN: Both models learn from the training text only. The held-out text is used to measure.
     # PT: Os dois modelos aprendem só com o texto de treino. O texto reservado serve para medir.
+    # ES: Los dos modelos aprenden solo con el texto de entrenamiento. El texto reservado sirve
+    #     para medir.
     bigram = bigram_probabilities(bigram_counts(train_ids, vocab_size))
     config = Config(vocab_size=vocab_size)
     params, history = train(
@@ -79,6 +85,7 @@ def run_experiment() -> Experiment:
         history=history,
         # EN: The loss of a model that knows nothing and gives 1/V to every token.
         # PT: A perda de um modelo que não sabe nada e dá 1/V a cada token.
+        # ES: La pérdida de un modelo que no sabe nada y da 1/V a cada token.
         uniform_loss=float(np.log(vocab_size)),
         bigram_train_loss=bigram_loss(bigram, train_ids),
         bigram_heldout_loss=bigram_loss(bigram, heldout_ids),
@@ -93,6 +100,10 @@ def run_experiment() -> Experiment:
 # PT: (contexto, o caractere que a gramática exige em seguida, um caractere errado tentador).
 #     Em todos os casos o último caractere do contexto é o mesmo para a resposta certa e para a
 #     errada, então um modelo que vê só esse caractere não consegue distinguir as duas.
+# ES: (contexto, el carácter que la gramática exige a continuación, un carácter incorrecto
+#     tentador). En todos los casos el último carácter del contexto es el mismo para la respuesta
+#     correcta y para la incorrecta, así que un modelo que ve solo ese carácter no puede
+#     distinguir las dos.
 PROBES = (
     ("ana has a cat. ", "s", "h"),
     ("leo has a cat. ", "h", "s"),
@@ -122,6 +133,9 @@ def probe_rows(experiment: Experiment) -> list[ProbeRow]:
 
     PT: Para cada sonda, a probabilidade que cada modelo dá ao próximo caractere certo e ao
     errado. Transforma "a atenção usa o contexto" em números.
+
+    ES: Para cada sonda, la probabilidad que cada modelo da al siguiente carácter correcto y al
+    incorrecto. Convierte "la atención usa el contexto" en números.
     """
     vocabulary = experiment.corpus.vocabulary
     rows = []
@@ -167,6 +181,13 @@ def sampling_rows(experiment: Experiment) -> list[SamplingRow]:
 
     Toda configuração usa a mesma semente, então a única coisa que muda de uma linha da tabela
     para a outra é a regra de amostragem.
+
+    ES: Escribe SAMPLE_COUNT líneas con cada configuración de muestreo y mide dos cosas: la
+    entropía media de las distribuciones de las que se sortearon los caracteres, y cuánto varía el
+    resultado (cuántas líneas distintas). También cuenta las líneas que obedecen la gramática.
+
+    Toda configuración usa la misma semilla, así que lo único que cambia de una fila de la tabla
+    a otra es la regla de muestreo.
     """
     vocabulary = experiment.corpus.vocabulary
     rows = []
@@ -202,6 +223,8 @@ class AttentionExample:
     #     clue (the "s" of the plural subject).
     # PT: A posição que pergunta (a última letra do verbo) e a posição que guarda a pista (o
     #     "s" do sujeito no plural).
+    # ES: La posición que pregunta (la última letra del verbo) y la posición que guarda la pista (la
+    #     "s" del sujeto en plural).
     query_position: int
     clue_position: int
     weights: np.ndarray
@@ -219,6 +242,12 @@ def attention_example(experiment: Experiment) -> AttentionExample:
     Em "the sad cups see" o modelo, parado no último "e", precisa decidir se o verbo leva um
     "s". A única pista é o "s" que termina o sujeito, alguns caracteres atrás. A cabeça
     mostrada é a que, a partir desse "e", põe mais peso nesse "s".
+
+    ES: Los pesos de atención de una cabeza en una frase reservada del tipo "concordancia".
+
+    En "the sad cups see" el modelo, parado en la última "e", tiene que decidir si el verbo lleva
+    una "s". La única pista es la "s" que termina el sujeto, unos caracteres atrás. La cabeza
+    mostrada es la que, desde esa "e", pone más peso en esa "s".
     """
     line, positions = next(
         (line, positions)
@@ -228,6 +257,7 @@ def attention_example(experiment: Experiment) -> AttentionExample:
     text = "\n" + line
     # EN: +1 because of the line break placed before the line.
     # PT: +1 por causa da quebra de linha colocada antes da linha.
+    # ES: +1 por el salto de línea colocado antes de la línea.
     clue_position, query_position = positions[0] + 1, positions[1] + 1
     ids = encode(text, experiment.corpus.vocabulary)
     _, cache = forward(experiment.params, experiment.config, ids[None, :])

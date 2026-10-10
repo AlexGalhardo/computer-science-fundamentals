@@ -15,6 +15,8 @@ function roundTrip(variableCount: number, minterms: number[], dontCares: number[
 //     every run and a failure can be reproduced.
 // PT: Um gerador determinístico pequeno (mulberry32), para que as funções aleatórias sejam as
 //     mesmas em toda execução e uma falha possa ser reproduzida.
+// ES: Un generador determinista pequeño (mulberry32), para que las funciones aleatorias sean las
+//     mismas en cada ejecución y un fallo pueda reproducirse.
 function randomSource(seed: number): () => number {
 	let state = seed;
 	return () => {
@@ -29,6 +31,8 @@ function randomSource(seed: number): () => number {
 //     for every input. "Every input" is taken literally: all 2^n rows are compared.
 // PT: Critério de aceite MP-DL-1.2: a expressão minimizada é equivalente à original para toda
 //     entrada. "Toda entrada" é levado ao pé da letra: as 2^n linhas são comparadas.
+// ES: Criterio de aceptación MP-DL-1.2: la expresión minimizada es equivalente a la original
+//     para toda entrada. "Toda entrada" se toma al pie de la letra: se comparan las 2^n filas.
 describe("equivalence of the minimised expression", () => {
 	test("all 256 functions of 3 variables", () => {
 		for (let code = 0; code < 256; code++) {

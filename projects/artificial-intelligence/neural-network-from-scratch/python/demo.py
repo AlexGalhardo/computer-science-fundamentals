@@ -3,6 +3,9 @@ the decision boundary to results/.
 
 PT: `python demo.py` treina as duas redes e grava a perda por época, a curva de perda e a
 fronteira de decisão em results/.
+
+ES: `python demo.py` entrena las dos redes y escribe la pérdida por época, la curva de pérdida y la
+frontera de decisión en results/.
 """
 
 import os
@@ -28,6 +31,8 @@ def worked_example() -> list[str]:
     """EN: The example of the docs, f = (x + y) * z, computed by the engine.
 
     PT: O exemplo da documentação, f = (x + y) * z, calculado pelo motor.
+
+    ES: El ejemplo de la documentación, f = (x + y) * z, calculado por el motor.
     """
     x, y, z = Value(2.0), Value(1.0), Value(4.0)
     f = (x + y) * z

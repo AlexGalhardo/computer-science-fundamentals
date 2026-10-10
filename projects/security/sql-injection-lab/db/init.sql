@@ -3,6 +3,9 @@
 -- PT: Carga inicial do laboratório de SQL injection. O PostgreSQL roda este arquivo uma vez,
 --     quando o contêiner sobe com o diretório de dados vazio. Todo nome, senha e "cartão" abaixo
 --     é claramente falso.
+-- ES: Carga inicial del laboratorio de SQL injection. PostgreSQL ejecuta este archivo una vez,
+--     cuando el contenedor arranca con el directorio de datos vacío. Todo nombre, contraseña y "tarjeta"
+--     de abajo es claramente falso.
 
 CREATE TABLE users (
 	id integer PRIMARY KEY,
@@ -20,6 +23,8 @@ CREATE TABLE products (
 --     injected query can reach when the application connects with too many privileges.
 -- PT: A tabela "escondida". Nenhuma rota da aplicação a lê. Ela existe para mostrar o que uma
 --     consulta injetada alcança quando a aplicação conecta com privilégios demais.
+-- ES: La tabla "escondida". Ninguna ruta de la aplicación la lee. Existe para mostrar lo que una
+--     consulta inyectada alcanza cuando la aplicación se conecta con demasiados privilegios.
 CREATE TABLE secrets (
 	id integer PRIMARY KEY,
 	label text NOT NULL,
@@ -30,6 +35,8 @@ CREATE TABLE secrets (
 --     stored: that needs a slow, salted algorithm (see the passwords-sessions-lab).
 -- PT: Um SHA-256 simples mantém este laboratório focado em injeção. NÃO é assim que senhas devem
 --     ser guardadas: isso pede um algoritmo lento e com sal (veja o passwords-sessions-lab).
+-- ES: Un SHA-256 simple mantiene este laboratorio enfocado en la inyección. NO es así como deben
+--     guardarse las contraseñas: eso pide un algoritmo lento y con sal (ve el passwords-sessions-lab).
 INSERT INTO users (id, username, password_hash) VALUES
 	(1, 'admin-fake', encode(sha256('lab-fake-admin-password'::bytea), 'hex')),
 	(2, 'alice-fake', encode(sha256('lab-fake-password'::bytea), 'hex')),
@@ -51,5 +58,8 @@ INSERT INTO secrets (id, label, secret_value) VALUES
 -- PT: Menor privilégio. A aplicação corrigida conecta com este papel. Ele só consegue ler as duas
 --     tabelas que as rotas usam: não escreve nada e não enxerga `secrets`. Se um bug de consulta
 --     escapar um dia, é isto que limita o estrago.
+-- ES: Mínimo privilegio. La aplicación corregida se conecta con este rol. Solo puede leer las dos
+--     tablas que usan las rutas: no escribe nada y no ve `secrets`. Si algún día se escapa un error de
+--     consulta, esto es lo que limita el daño.
 CREATE ROLE lab_readonly LOGIN PASSWORD 'lab-fake-readonly-password';
 GRANT SELECT ON users, products TO lab_readonly;

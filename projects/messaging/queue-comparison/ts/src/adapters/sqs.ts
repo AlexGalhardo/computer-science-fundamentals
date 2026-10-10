@@ -6,6 +6,10 @@
 //     endpoint é o contêiner local e as credenciais são falsas. O SQS é pull: o consumidor
 //     consulta por HTTP. Uma mensagem recebida fica escondida pelo visibility timeout, não é
 //     removida; o consumidor precisa apagá-la, e esse delete é a confirmação.
+// ES: Amazon SQS, emulado por LocalStack dentro de docker-compose. Nada aquí llega a AWS: el
+//     endpoint es el contenedor local y las credenciales son falsas. SQS es pull: el consumidor
+//     consulta por HTTP. Un mensaje recibido queda oculto durante el visibility timeout, no se
+//     elimina; el consumidor debe borrarlo, y ese delete es la confirmación.
 
 import {
 	CreateQueueCommand,
@@ -51,6 +55,8 @@ export class SqsAdapter implements QueueAdapter {
 			//     queue URL returned by the service.
 			// PT: Sempre fala com o endpoint local configurado, nunca com um host tirado de uma
 			//     URL de fila devolvida pelo serviço.
+			// ES: Siempre habla con el endpoint local configurado, nunca con un host tomado de
+			//     una URL de cola devuelta por el servicio.
 			useQueueUrlAsEndpoint: false,
 		});
 	}
@@ -69,6 +75,7 @@ export class SqsAdapter implements QueueAdapter {
 	async prepare(_options?: ChannelOptions): Promise<void> {
 		// EN: A standard queue: at-least-once delivery and best-effort ordering.
 		// PT: Uma fila standard: entrega at-least-once e ordem por melhor esforço.
+		// ES: Una cola estándar: entrega at-least-once y orden de mejor esfuerzo.
 		const created = await this.client.send(
 			new CreateQueueCommand({
 				QueueName: this.channel,
@@ -97,6 +104,8 @@ export class SqsAdapter implements QueueAdapter {
 				//     one after the other, so a later wave never overtakes an earlier one.
 				// PT: Cada onda envia até 8 lotes de 10 ao mesmo tempo. As ondas vão uma depois
 				//     da outra, então uma onda posterior nunca ultrapassa uma anterior.
+				// ES: Cada oleada envía hasta 8 lotes de 10 al mismo tiempo. Las oleadas se envían
+				//     una tras otra, así que una oleada posterior nunca adelanta a una anterior.
 				for (const wave of chunk(chunk(orders, API_BATCH), PARALLEL_SENDS)) {
 					await Promise.all(wave.map(sendBatch));
 				}
@@ -119,6 +128,7 @@ export class SqsAdapter implements QueueAdapter {
 				} catch (error) {
 					// EN: Not deleted: it becomes visible again after the visibility timeout.
 					// PT: Não é apagada: volta a ficar visível depois do visibility timeout.
+					// ES: No se borra: vuelve a ser visible después del visibility timeout.
 					console.error("sqs consumer: handler failed, the message will reappear", error);
 				}
 			}
@@ -142,6 +152,8 @@ export class SqsAdapter implements QueueAdapter {
 					//     returning empty at once.
 					// PT: Long polling: a chamada espera até 1 s por uma mensagem em vez de
 					//     voltar vazia na hora.
+					// ES: Long polling: la llamada espera hasta 1 s por un mensaje en lugar de
+					//     volver vacía al instante.
 					const received = await this.client.send(
 						new ReceiveMessageCommand({
 							QueueUrl: queueUrl,

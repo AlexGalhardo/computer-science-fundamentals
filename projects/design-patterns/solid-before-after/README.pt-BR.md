@@ -1,6 +1,6 @@
 # solid-before-after
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um módulo pequeno por princípio SOLID, duas vezes: uma versão que quebra o princípio (`before`) e a sua refatoração (`after`). Os **mesmos testes** rodam contra as duas, então fica provado que a refatoração mantém o comportamento. Ensina **o que cada princípio evita**, medido pelo diff que um requisito novo exige em cada versão.
 

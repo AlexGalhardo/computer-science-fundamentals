@@ -1,5 +1,6 @@
 // EN: Entry point of the API container: validate the environment, create the table, listen.
 // PT: Ponto de entrada do contêiner da API: validar o ambiente, criar a tabela, escutar.
+// ES: Punto de entrada del contenedor de la API: validar el entorno, crear la tabla, escuchar.
 
 import { createApp } from "./app";
 import { loadConfig } from "./config";

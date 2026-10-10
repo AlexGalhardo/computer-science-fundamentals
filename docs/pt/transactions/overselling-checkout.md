@@ -1,12 +1,12 @@
 # Venda além do estoque no checkout (MP-TX-2)
 
-> English version: [docs/en/transactions/overselling-checkout.md](../../en/transactions/overselling-checkout.md)
+> English version: [docs/en/transactions/overselling-checkout.md](../../en/transactions/overselling-checkout.md) · Versión en español: [docs/es/transactions/overselling-checkout.md](../../es/transactions/overselling-checkout.md)
 
 Mini-projeto: [`projects/transactions/overselling-checkout`](../../../projects/transactions/overselling-checkout/README.pt-BR.md). Tópicos do quiz: `locking`, `isolation-levels-anomalies`, `acid-properties`, `mvcc`.
 
 ## O bug
 
-```
+```text
 comprador A: SELECT stock  -> 10
 comprador B: SELECT stock  -> 10      (A ainda não gravou)
 comprador A: UPDATE stock = 9, INSERT pedido

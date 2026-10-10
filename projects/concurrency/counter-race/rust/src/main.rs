@@ -9,6 +9,8 @@ use counter_race::{VARIANTS, new_counter, run};
 // EN: 8 workers by default. The benchmark sets WORKERS to 1, 2, 4 and 8 to show how each fix scales.
 // PT: 8 workers por padrão. O benchmark define WORKERS como 1, 2, 4 e 8 para mostrar como cada
 //     correção escala.
+// ES: 8 workers por defecto. El benchmark define WORKERS como 1, 2, 4 y 8 para mostrar cómo
+//     escala cada corrección.
 fn workers() -> usize {
     std::env::var("WORKERS")
         .ok()
@@ -70,6 +72,7 @@ fn main() -> ExitCode {
     };
     // EN: The checksum is the final value. For a correct counter it equals n.
     // PT: O checksum é o valor final. Em um contador correto ele é igual a n.
+    // ES: El checksum es el valor final. En un contador correcto es igual a n.
     println!(
         "{{\"n\":{n},\"elapsedMs\":{ms:.3},\"memoryKb\":{},\"language\":\"rust\",\"implementation\":\"{variant}\",\"checksum\":\"{total}\"}}",
         peak_memory_kb()

@@ -1,6 +1,6 @@
 # Benchmark das linguagens
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 As mesmas oito cargas de trabalho nas sete linguagens do repositório (C++, Rust, Go, Java, TypeScript no Bun, Elixir e Python), medidas no Docker em imagens fixadas, com um dashboard estático que explica cada gráfico em palavras simples.
 
@@ -38,7 +38,7 @@ Etapas isoladas, a partir de `benchmarks/`:
 
 ## Estrutura
 
-```
+```text
 benchmarks/
 ├── docker/            um Dockerfile por linguagem, compartilhado pelas cargas do runner
 ├── cpu-single/        n-body e crivo de primos, uma thread

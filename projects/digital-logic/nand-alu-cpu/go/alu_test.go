@@ -28,6 +28,8 @@ func flag(condition bool) Bit {
 // and no gates. The ALU made of NANDs is compared with it.
 // PT: O modelo de referência: o que cada operação precisa produzir, escrito com aritmética
 // comum e sem portas. A ALU feita de NANDs é comparada com ele.
+// ES: El modelo de referencia: lo que cada operación debe producir, escrito con aritmética
+// común y sin compuertas. La ALU hecha de NAND se compara con él.
 func reference(x, y, operation int) aluResult {
 	var want aluResult
 	switch operation {
@@ -61,6 +63,8 @@ func runALU(x, y, operation int) aluResult {
 // 16 x 16 x 4 = 1,024 cases, result and the four flags.
 // PT: Critério de aceite MP-DL-2.2: teste exaustivo sobre todas as entradas de 4 bits e
 // operações, 16 x 16 x 4 = 1.024 casos, resultado e as quatro flags.
+// ES: Criterio de aceptación MP-DL-2.2: prueba exhaustiva sobre todas las entradas de 4 bits y
+// operaciones, 16 x 16 x 4 = 1.024 casos, resultado y las cuatro flags.
 func TestALUForAll1024Combinations(t *testing.T) {
 	checked := 0
 	for _, operation := range []int{OpAdd, OpSub, OpAnd, OpOr} {

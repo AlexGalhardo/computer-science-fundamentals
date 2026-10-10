@@ -65,6 +65,7 @@ func run() error {
 	// EN: The balancer answers this one path itself. Everything else goes to a back end.
 	// PT: O balanceador responde este único caminho por conta própria. Todo o resto vai para
 	// um back end.
+	// ES: El balanceador responde por sí mismo solo esta ruta. Todo lo demás va a un back end.
 	mux.HandleFunc("GET /lb/status", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"strategy": strategy.Name(), "backends": pool.Snapshot()})
@@ -77,6 +78,7 @@ func run() error {
 		// EN: Graceful shutdown: stop accepting, let the requests in progress finish.
 		// PT: Desligamento gracioso: para de aceitar e deixa as requisições em andamento
 		// terminarem.
+		// ES: Apagado ordenado: deja de aceptar y deja que terminen las solicitudes en curso.
 		shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		_ = server.Shutdown(shutdown)

@@ -7,6 +7,9 @@ import { requireLocalTarget } from "./target";
 // PT: Todo endereço com que o laboratório fala vem do ambiente, tem um padrão local e passa por
 //     `requireLocalTarget` antes da primeira requisição. Um valor que não é local para o
 //     programa aqui, sem nada enviado.
+// ES: Toda dirección con la que habla el laboratorio viene del entorno, tiene un valor por defecto
+//     local y pasa por `requireLocalTarget` antes de la primera solicitud. Un valor que no es local
+//     detiene el programa aquí, sin enviar nada.
 
 const localUrl = z.string().transform((value, context) => {
 	try {

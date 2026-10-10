@@ -8,6 +8,11 @@ defmodule SlidingWindowMiniTcp.Arq do
   uma função pura: a transferência inteira é um estado imutável que cada tick transforma no
   estado seguinte. Não há processos nem relógios, então uma execução pode ser repetida
   exatamente.
+
+  ES: Stop-and-wait, go-back-N y repetición selectiva sobre el canal simulado, escritos como
+  una función pura: la transferencia entera es un estado inmutable que cada tick transforma en
+  el estado siguiente. No hay procesos ni relojes, así que una ejecución puede repetirse
+  exactamente.
   """
 
   import Bitwise
@@ -26,6 +31,11 @@ defmodule SlidingWindowMiniTcp.Arq do
     PT: Um protocolo de janela deslizante é descrito pelas suas duas janelas. O stop-and-wait
     tem janela de envio 1. O go-back-N deixa o transmissor avançar enquanto o receptor aceita
     apenas o próximo quadro em ordem. A retransmissão seletiva dá uma janela também ao receptor.
+
+    ES: Un protocolo de ventana deslizante se describe por sus dos ventanas. El stop-and-wait
+    tiene ventana de envío 1. El go-back-N deja que el transmisor avance mientras el receptor
+    acepta solo la siguiente trama en orden. La repetición selectiva le da una ventana también
+    al receptor.
     """
     @enforce_keys [:name, :send_window, :recv_window]
     defstruct [:name, :send_window, :recv_window]
@@ -81,6 +91,11 @@ defmodule SlidingWindowMiniTcp.Arq do
   PT: Maior janela de envio segura para um número de sequência de `bits` bits. Um receptor que
   só aceita em ordem permite 2^n - 1. Um receptor que guarda quadros precisa que a janela
   antiga e a nova não se sobreponham, então o limite é metade do espaço de sequência, 2^(n-1).
+
+  ES: Mayor ventana de envío segura para un número de secuencia de `bits` bits. Un receptor que
+  solo acepta en orden permite 2^n - 1. Un receptor que guarda tramas necesita que la ventana
+  antigua y la nueva no se superpongan, así que el límite es la mitad del espacio de secuencia,
+  2^(n-1).
   """
   @spec max_window(pos_integer(), :in_order | :selective) :: pos_integer()
   def max_window(bits, :in_order), do: (1 <<< bits) - 1
@@ -92,6 +107,9 @@ defmodule SlidingWindowMiniTcp.Arq do
 
   PT: Envia `data` em quadros de `payload_size` bytes por um enlace descrito por `link` (as
   opções de `Channel.new/1`) e devolve o que o receptor entregou e quanto custou.
+
+  ES: Envía `data` en tramas de `payload_size` bytes por un enlace descrito por `link` (las
+  opciones de `Channel.new/1`) y devuelve lo que el receptor entregó y cuánto costó.
   """
   @spec transfer(binary(), pos_integer(), Protocol.t(), keyword()) ::
           {:ok, map()} | {:error, String.t()}
@@ -115,10 +133,13 @@ defmodule SlidingWindowMiniTcp.Arq do
         #     frames whose acknowledgement is still on its way.
         # PT: O tempo limite precisa superar uma ida e volta no pior caso, senão o transmissor
         #     reenvia quadros cuja confirmação ainda está a caminho.
+        # ES: El tiempo límite debe superar un viaje de ida y vuelta en el peor caso, de lo
+        #     contrario el transmisor reenvía tramas cuya confirmación todavía va en camino.
         timeout = 2 * (delay + jitter) + proto.send_window + 2
 
         # EN: Acknowledgements cross their own channel, with the same faults and another seed.
         # PT: As confirmações atravessam um canal próprio, com as mesmas falhas e outra semente.
+        # ES: Las confirmaciones cruzan su propio canal, con las mismas fallas y otra semilla.
         ack_link = Keyword.update(link, :seed, 1, &(&1 + 1))
 
         run(
@@ -151,12 +172,16 @@ defmodule SlidingWindowMiniTcp.Arq do
   #     position from the distance to the edge of its window, always modulo 2^16.
   # PT: Os quadros levam só os 16 bits baixos da sua posição. Cada lado recupera a posição
   #     completa pela distância até a borda da sua janela, sempre módulo 2^16.
+  # ES: Las tramas llevan solo los 16 bits bajos de su posición. Cada lado recupera la posición
+  #     completa por la distancia hasta el borde de su ventana, siempre módulo 2^16.
   defp offset(seq, base), do: Integer.mod(seq - base, @seq_space)
 
   # EN: The loop of the simulation is a recursive function. Each clause is one possible
   #     situation of the transfer: finished, stuck, or one more tick to compute.
   # PT: O laço da simulação é uma função recursiva. Cada cláusula é uma situação possível da
   #     transferência: terminada, travada, ou mais um tick a calcular.
+  # ES: El bucle de la simulación es una función recursiva. Cada cláusula es una situación posible
+  #     de la transferencia: terminada, atascada, o un tick más por calcular.
   defp run(%__MODULE__{base: base, total: total} = state, now) when base >= total do
     {:ok,
      %{
@@ -209,6 +234,9 @@ defmodule SlidingWindowMiniTcp.Arq do
     # PT: Um ACK cumulativo diz "tenho tudo antes deste número". Um ACK seletivo nomeia o quadro
     #     que acabou de chegar, mesmo uma cópia antiga, porque um quadro repetido costuma
     #     indicar que o primeiro ACK se perdeu.
+    # ES: Un ACK acumulativo dice "tengo todo lo anterior a este número". Un ACK selectivo nombra
+    #     la trama que acaba de llegar, incluso una copia antigua, porque una trama repetida suele
+    #     indicar que su primer ACK se perdió.
     ack = if selective?(state.proto), do: seq, else: rem(state.expected, @seq_space)
     {ticks, ack_ch} = Channel.transmit(state.ack_ch, now)
 
@@ -222,6 +250,7 @@ defmodule SlidingWindowMiniTcp.Arq do
 
   # EN: Delivery is in order: the receiver hands over frames only while there is no hole.
   # PT: A entrega é em ordem: o receptor só repassa quadros enquanto não houver buraco.
+  # ES: La entrega es en orden: el receptor solo pasa tramas mientras no haya un hueco.
   defp deliver(state) do
     case Map.pop(state.buffer, state.expected) do
       {nil, _buffer} ->
@@ -287,6 +316,9 @@ defmodule SlidingWindowMiniTcp.Arq do
   # PT: A retransmissão seletiva tem um temporizador por quadro e reenvia só o quadro que
   #     expirou. O go-back-N tem um temporizador só: quando ele expira, a janela inteira é
   #     enviada de novo, porque o receptor descartou tudo o que veio depois do buraco.
+  # ES: La repetición selectiva tiene un temporizador por trama y reenvía solo la trama que
+  #     expiró. El go-back-N tiene un solo temporizador: cuando expira, la ventana entera se
+  #     envía de nuevo, porque el receptor descartó todo lo que vino después del hueco.
   defp fire_timers(state, now) do
     cond do
       selective?(state.proto) ->

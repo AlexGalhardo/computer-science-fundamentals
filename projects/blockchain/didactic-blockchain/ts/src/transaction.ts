@@ -9,6 +9,8 @@ const amount = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 //     with these schemas before any rule of the chain looks at it.
 // PT: Formatos dos dados que chegam de outros nós. Tudo o que é recebido por HTTP passa por
 //     estes schemas antes de qualquer regra da cadeia olhar para ele.
+// ES: Formatos de los datos que llegan de otros nodos. Todo lo que se recibe por HTTP pasa por
+//     estos schemas antes de que cualquier regla de la cadena lo mire.
 export const txInputSchema = z.strictObject({
 	txId: hex64,
 	index: z.number().int().nonnegative(),
@@ -33,6 +35,9 @@ export type Transaction = z.infer<typeof transactionSchema>;
 // PT: O estado do sistema é o conjunto de saídas de transação não gastas (UTXO). Não há contas
 //     nem saldos guardados: um "saldo" é a soma das saídas que uma chave consegue gastar. A
 //     chave do mapa é o outpoint, "<id da transação>:<índice da saída>".
+// ES: El estado del sistema es el conjunto de salidas de transacción no gastadas (UTXO). No hay
+//     cuentas ni saldos guardados: un "saldo" es la suma de las salidas que una clave puede
+//     gastar. La clave del mapa es el outpoint, "<id de la transacción>:<índice de la salida>".
 export type Utxo = Map<string, TxOutput>;
 
 export function outpoint(txId: string, index: number): string {
@@ -47,6 +52,10 @@ export function outpoint(txId: string, index: number): string {
 //     e quais saídas ela cria. Assinar o id, portanto, autoriza exatamente esta transferência,
 //     e mudar qualquer valor ou destinatário dá outro id, para o qual as assinaturas antigas não
 //     servem.
+// ES: El id es el hash de todo lo que dice la transacción, menos las firmas: qué salidas gasta
+//     y qué salidas crea. Firmar el id, por tanto, autoriza exactamente esta transferencia, y
+//     cambiar cualquier valor o destinatario da otro id, para el cual las firmas antiguas no
+//     sirven.
 export function transactionId(tx: Pick<Transaction, "coinbase" | "inputs" | "outputs">): string {
 	return sha256Hex(
 		JSON.stringify({
@@ -80,6 +89,10 @@ export function createTransaction(wallet: Wallet, spends: readonly Spend[], outp
 // PT: A primeira transação de um bloco cria moedas novas para o minerador: a recompensa do
 //     bloco mais as taxas. Ela não gasta nada, então não tem entradas. A altura faz parte dela
 //     só para que a transação de criação de cada bloco tenha um id diferente.
+// ES: La primera transacción de un bloque crea monedas nuevas para el minero: la recompensa del
+//     bloque más las comisiones. No gasta nada, así que no tiene entradas. La altura forma
+//     parte de ella solo para que la transacción de creación de cada bloque tenga un id
+//     distinto.
 export function createCoinbase(height: number, minerPublicKey: string, value: number): Transaction {
 	const body = { coinbase: height, inputs: [], outputs: [{ amount: value, publicKey: minerPublicKey }] };
 	return { id: transactionId(body), ...body };
@@ -103,6 +116,14 @@ export type TxCheck = { ok: true; fee: number } | { ok: false; reason: string };
 //        por quem gasta;
 //     4. ela não cria valor: as saídas somam no máximo o total das entradas. A diferença é a
 //        taxa, que o minerador do bloco pode recolher.
+// ES: Las reglas que una transacción común debe cumplir contra el conjunto UTXO actual:
+//     1. su id es el hash de su contenido;
+//     2. cada entrada apunta a una salida que existe y no se ha gastado (esto es lo que rechaza
+//        un doble gasto), y ninguna salida se usa dos veces dentro de la transacción;
+//     3. cada entrada está firmada por la clave DE LA SALIDA QUE GASTA, no por una clave que
+//        aporte quien gasta;
+//     4. no crea valor: las salidas suman como máximo el total de las entradas. La diferencia
+//        es la comisión, que el minero del bloque puede cobrar.
 export function checkTransaction(tx: Transaction, utxo: Utxo): TxCheck {
 	if (tx.coinbase !== null) {
 		return { ok: false, reason: "a coin-creation transaction is only valid as the first one of a block" };
@@ -169,6 +190,9 @@ export function balanceOf(utxo: Utxo, publicKey: string): number {
 // PT: O que uma carteira faz para pagar: escolhe saídas próprias não gastas suficientes, paga o
 //     destinatário e devolve o resto para si mesma como troco. Uma saída é sempre gasta por
 //     inteiro, então sem a saída de troco o restante viraria taxa.
+// ES: Lo que hace una billetera para pagar: elige suficientes salidas propias no gastadas, paga
+//     al destinatario y se devuelve el resto a sí misma como cambio. Una salida siempre se
+//     gasta completa, así que sin la salida de cambio el resto se volvería comisión.
 export function pay(wallet: Wallet, utxo: Utxo, toPublicKey: string, value: number, fee = 0): Transaction {
 	const spends: Spend[] = [];
 	let gathered = 0;

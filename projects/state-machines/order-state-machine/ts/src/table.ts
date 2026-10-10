@@ -4,6 +4,9 @@
 // PT: O vocabulário da máquina (estados e eventos) e o carregador da tabela de transições.
 //     A tabela fica em `machine.json`, um nível acima, para que as implementações em TypeScript
 //     e em Elixir leiam exatamente as mesmas regras.
+// ES: El vocabulario de la máquina (estados y eventos) y el cargador de la tabla de transiciones.
+//     La tabla está en `machine.json`, un nivel más arriba, para que las implementaciones en
+//     TypeScript y en Elixir lean exactamente las mismas reglas.
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -18,6 +21,11 @@ import { z } from "zod";
 //     digitação como "payed" não compila. Um pedido está sempre em exatamente um deles:
 //     combinações como "cancelado e entregue", que cinco booleanos independentes permitiriam,
 //     nem sequer podem ser escritas.
+// ES: Una lista cerrada de estados, escrita una sola vez. `as const` conserva los nombres
+//     literales, así que el tipo `OrderState` es la unión "created" | "paid" | ... y un error
+//     de escritura como "payed" no compila. Un pedido está siempre en exactamente uno de ellos:
+//     combinaciones como "cancelado y entregado", que cinco booleanos independientes
+//     permitirían, ni siquiera se pueden escribir.
 export const STATES = ["created", "paid", "shipped", "delivered", "cancelled", "refunded"] as const;
 export const EVENTS = ["pay", "ship", "deliver", "cancel", "refund"] as const;
 
@@ -34,6 +42,9 @@ const transitionSchema = z.object({ from: stateSchema, event: eventSchema, to: s
 // PT: `machine.json` é entrada externa: uma pessoa o edita à mão. Ele é validado na borda, e
 //     as verificações são as que fazem da tabela uma máquina determinística: apenas estados e
 //     eventos conhecidos, e no máximo um destino para cada par (estado, evento).
+// ES: `machine.json` es una entrada externa: una persona lo edita a mano. Se valida en el borde,
+//     y las verificaciones son las que hacen de la tabla una máquina determinista: solo estados
+//     y eventos conocidos, y como máximo un destino para cada par (estado, evento).
 export const tableSchema = z
 	.object({
 		initial: stateSchema,

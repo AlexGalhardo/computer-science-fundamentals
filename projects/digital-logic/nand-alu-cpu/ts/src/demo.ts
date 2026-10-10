@@ -4,6 +4,9 @@
 // PT: `bun run demo` sobe a escada inteira: portas feitas de NAND, a ALU e a CPU executando
 //     programs/multiply.asm. Com RESULTS_DIR definida, grava results/trace.txt, o arquivo com
 //     que os testes das duas linguagens se comparam.
+// ES: `bun run demo` sube la escalera entera: compuertas hechas de NAND, la ALU y la CPU
+//     ejecutando programs/multiply.asm. Con RESULTS_DIR definida, escribe results/trace.txt, el
+//     archivo con el que se comparan las pruebas de los dos lenguajes.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

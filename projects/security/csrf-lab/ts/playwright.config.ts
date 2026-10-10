@@ -10,6 +10,11 @@ import { defineConfig, devices } from "@playwright/test";
 //     testes, então os testes rodam um por vez (`workers: 1`) e cada um reinicia o app que usa.
 //     Os arquivos terminam em `.e2e.ts` para que o `bun test` (que coleta `.test.ts` e
 //     `.spec.ts`) não tente rodá-los sem navegador.
+// ES: Las pruebas corren dentro de docker-compose contra los contenedores de las apps, por el nombre del
+//     servicio. Todas las apps guardan el estado en memoria y lo comparten todas las
+//     pruebas, así que las pruebas corren una por una (`workers: 1`) y cada una reinicia la app que usa.
+//     Los archivos terminan en `.e2e.ts` para que `bun test` (que recoge `.test.ts` y
+//     `.spec.ts`) no intente ejecutarlos sin navegador.
 export default defineConfig({
 	testDir: "e2e",
 	testMatch: "**/*.e2e.ts",
@@ -21,6 +26,8 @@ export default defineConfig({
 	//     more generous than the defaults (30 s per test, 5 s per assertion).
 	// PT: Três navegadores sobem dentro de um contêiner, muitas vezes em uma máquina ocupada,
 	//     então os limites são mais folgados que os padrões (30 s por teste, 5 s por asserção).
+	// ES: Tres navegadores arrancan dentro de un contenedor, muchas veces en una máquina ocupada,
+	//     así que los límites son más holgados que los valores por defecto (30 s por prueba, 5 s por aserción).
 	timeout: 60_000,
 	expect: { timeout: 15_000 },
 	reporter: [["list"]],

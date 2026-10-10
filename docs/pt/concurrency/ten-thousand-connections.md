@@ -1,6 +1,6 @@
 # Dez mil conexões
 
-> English version: [docs/en/concurrency/ten-thousand-connections.md](../../en/concurrency/ten-thousand-connections.md)
+> English version: [docs/en/concurrency/ten-thousand-connections.md](../../en/concurrency/ten-thousand-connections.md) · Versión en español: [docs/es/concurrency/ten-thousand-connections.md](../../es/concurrency/ten-thousand-connections.md)
 
 Mini-projeto: [projects/concurrency/ten-thousand-connections](../../../projects/concurrency/ten-thousand-connections/README.pt-BR.md) (MP-CONC-3). Linguagens: TypeScript, Go, Elixir.
 

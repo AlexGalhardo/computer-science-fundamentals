@@ -6,6 +6,10 @@
 //     interna do Docker (`docker compose run tools`), contra os servidores listados em SERVERS.
 //     Se um servidor respondesse diferente dos outros, seus números não seriam comparáveis,
 //     então esta suíte precisa passar antes de qualquer carga ser gerada.
+// ES: Una única suite de pruebas de protocolo para los siete servidores. Corre dentro de la red
+//     interna de Docker (`docker compose run tools`), contra los servidores listados en SERVERS.
+//     Si un servidor respondiera distinto de los demás, sus números no serían comparables,
+//     así que esta suite debe pasar antes de generar cualquier carga.
 
 import { beforeAll, describe, expect, test } from "bun:test";
 
@@ -22,6 +26,7 @@ async function waitUntilReady(base: string): Promise<void> {
 		} catch {
 			// EN: Connection refused: the server is still starting, try again.
 			// PT: Conexão recusada: o servidor ainda está subindo, tenta de novo.
+			// ES: Conexión rechazada: el servidor todavía está arrancando, reintenta.
 		}
 		await Bun.sleep(250);
 	}

@@ -7,6 +7,11 @@ PT: Como um token é escolhido a partir das probabilidades que o modelo dá: gul
 top-k e top-p. O modelo é o mesmo em todos. Só muda o jeito de escolher.
 
 Toda função trabalha em lote: uma linha por texto sendo escrito, uma coluna por token.
+
+ES: Cómo se elige un token a partir de las probabilidades que da el modelo: voraz, temperatura,
+top-k y top-p. El modelo es el mismo en todos. Solo cambia la forma de elegir.
+
+Toda función trabaja por lotes: una fila por texto que se está escribiendo, una columna por token.
 """
 
 from dataclasses import dataclass
@@ -32,6 +37,10 @@ def apply_temperature(logits: np.ndarray, temperature: float) -> np.ndarray:
     PT: Divide os logits por T antes do softmax. T < 1 estica as diferenças entre as notas,
     então o favorito ganha ainda mais probabilidade (mais afiado). T > 1 encolhe as diferenças
     (mais achatado).
+
+    ES: Divide los logits entre T antes del softmax. T < 1 estira las diferencias entre las
+    puntuaciones, así que el favorito gana aún más probabilidad (más afilado). T > 1 encoge las
+    diferencias (más aplanado).
     """
     return softmax(logits.astype(np.float64) / temperature)
 
@@ -41,6 +50,8 @@ def _ranks(probabilities: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     #     breaks ties by the smaller token id, so the result never depends on the platform.
     # PT: order[i] lista os tokens da linha i do mais para o menos provável. Uma ordenação
     #     estável desempata pelo menor id de token, então o resultado não depende da plataforma.
+    # ES: order[i] lista los tokens de la fila i del más al menos probable. Una ordenación estable
+    #     desempata por el menor id de token, así que el resultado no depende de la plataforma.
     order = np.argsort(-probabilities, axis=1, kind="stable")
     return order, np.take_along_axis(probabilities, order, axis=1)
 
@@ -56,6 +67,8 @@ def top_k_filter(probabilities: np.ndarray, k: int) -> np.ndarray:
     """EN: Keeps the k most probable tokens, zeroes the rest and renormalises to sum 1.
 
     PT: Mantém os k tokens mais prováveis, zera o resto e renormaliza para somar 1.
+
+    ES: Conserva los k tokens más probables, pone a cero el resto y renormaliza para que sumen 1.
     """
     order, sorted_probabilities = _ranks(probabilities)
     keep = np.arange(probabilities.shape[1])[None, :] < k
@@ -72,6 +85,11 @@ def top_p_filter(probabilities: np.ndarray, p: float) -> np.ndarray:
     probabilidades somam pelo menos p. Um token fica quando os anteriores a ele ainda não
     chegaram a p, então o token que cruza o limite entra. Diferente do top-k, o tamanho do
     conjunto se adapta: um token quando o modelo tem certeza, muitos quando ele hesita.
+
+    ES: Muestreo por núcleo: conserva el conjunto MÁS PEQUEÑO de tokens más probables cuyas
+    probabilidades suman al menos p. Un token se queda cuando los anteriores a él aún no han
+    llegado a p, así que el token que cruza el límite entra. A diferencia de top-k, el tamaño del
+    conjunto se adapta: un token cuando el modelo está seguro, muchos cuando duda.
     """
     order, sorted_probabilities = _ranks(probabilities)
     before = np.cumsum(sorted_probabilities, axis=1) - sorted_probabilities
@@ -84,6 +102,9 @@ def next_token_distribution(logits: np.ndarray, setting: Setting) -> np.ndarray:
 
     PT: A distribuição da qual o token é realmente sorteado: temperatura, depois top-k, depois
     top-p. Guloso é o caso limite: toda a probabilidade no único token mais provável.
+
+    ES: La distribución de la que realmente se sortea el token: temperatura, luego top-k, luego
+    top-p. Voraz es el caso límite: toda la probabilidad en el único token más probable.
     """
     if setting.greedy:
         one_hot = np.zeros(logits.shape, dtype=np.float64)
@@ -105,6 +126,10 @@ def entropy_bits(probabilities: np.ndarray) -> np.ndarray:
     PT: Entropia de cada linha, em bits: -soma(p * log2 p). Mede o quanto a escolha está em
     aberto. 0 bits = um token tem toda a probabilidade. 1 bit = uma moeda justa entre dois
     tokens. log2(V) bits = todos os tokens igualmente prováveis.
+
+    ES: Entropía de cada fila, en bits: -suma(p * log2 p). Mide cuán abierta está la elección. 0
+    bits = un token tiene toda la probabilidad. 1 bit = una moneda justa entre dos tokens. log2(V)
+    bits = todos los tokens igualmente probables.
     """
     safe = np.where(probabilities > 0, probabilities, 1.0)
     return -(probabilities * np.log2(safe)).sum(axis=1)
@@ -117,6 +142,10 @@ def sample_rows(probabilities: np.ndarray, rng: np.random.Generator) -> np.ndarr
     PT: Sorteia um token por linha. Imagine cada linha como uma régua de 0 a 1 cortada em
     pedaços, um por token, cada um do tamanho da sua probabilidade. Um ponto aleatório da régua
     escolhe um pedaço.
+
+    ES: Sortea un token por fila. Imagina cada fila como una regla de 0 a 1 cortada en trozos, uno
+    por token, cada uno del tamaño de su probabilidad. Un punto aleatorio de la regla elige un
+    trozo.
     """
     cumulative = np.cumsum(probabilities, axis=1)
     points = rng.random(len(probabilities))[:, None] * cumulative[:, -1:]
@@ -129,6 +158,7 @@ class Generation:
     lines: list[list[int]]
     # EN: Mean entropy (bits) of the distributions the tokens were drawn from.
     # PT: Entropia média (bits) das distribuições das quais os tokens foram sorteados.
+    # ES: Entropía media (bits) de las distribuciones de las que se sortearon los tokens.
     mean_entropy_bits: float
 
 
@@ -149,6 +179,11 @@ def generate_lines(
     PT: Escreve `count` linhas de uma vez. Todo texto começa como uma única quebra de linha, e
     o laço é toda a geração de texto: roda o modelo, pega as notas da ÚLTIMA posição, escolhe
     um token, anexa, roda de novo. Uma linha acaba na próxima quebra de linha ou em `max_length`.
+
+    ES: Escribe `count` líneas a la vez. Todo texto empieza como un único salto de línea, y el
+    bucle es toda la generación de texto: ejecuta el modelo, toma las puntuaciones de la ÚLTIMA
+    posición, elige un token, lo añade, ejecuta de nuevo. Una línea termina en el siguiente salto
+    de línea o en `max_length`.
     """
     rng = np.random.default_rng(seed)
     tokens = np.full((count, 1), newline_id, dtype=np.int64)
@@ -157,6 +192,7 @@ def generate_lines(
     for _ in range(max_length):
         # EN: The model only sees its context window, so older tokens are dropped.
         # PT: O modelo só enxerga a janela de contexto, então os tokens mais antigos saem.
+        # ES: El modelo solo ve la ventana de contexto, así que los tokens más antiguos salen.
         logits, _ = forward(params, config, tokens[:, -config.block_size :])
         probabilities = next_token_distribution(logits[:, -1, :], setting)
         entropy_sum += float(entropy_bits(probabilities)[active].sum())
@@ -177,6 +213,8 @@ def next_token_probabilities(params: Params, config: Config, tokens: np.ndarray)
     """EN: P(next token | this context), for one sequence of ids.
 
     PT: P(próximo token | este contexto), para uma sequência de ids.
+
+    ES: P(siguiente token | este contexto), para una secuencia de ids.
     """
     logits, _ = forward(params, config, tokens[None, -config.block_size :])
     return softmax(logits[0, -1].astype(np.float64))

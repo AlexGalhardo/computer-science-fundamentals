@@ -8,6 +8,11 @@
 //     vai ao banco na hora: ele junta todas as chaves pedidas durante a volta atual do event loop
 //     e então chama a função de lote UMA vez com todas elas. Cem resolvers pedindo um autor cada
 //     viram um único `WHERE id = ANY(...)`.
+// ES: Un loader con agrupación en lotes, la idea detrás de la biblioteca DataLoader, escrito a mano
+//     en pocas líneas. Un resolver pide UNA clave (`load(7)`) y recibe una promesa. El loader no
+//     va a la base de datos de inmediato: junta todas las claves pedidas durante la vuelta actual del event loop
+//     y luego llama a la función de lote UNA vez con todas ellas. Cien resolvers pidiendo un autor cada
+//     uno se convierten en un único `WHERE id = ANY(...)`.
 
 interface Waiting<V> {
 	resolve: (value: V) => void;
@@ -35,6 +40,9 @@ export class BatchLoader<K, V> {
 		// PT: O cache vive enquanto o loader vive, e um loader vive por uma requisição. Pedir duas
 		//     vezes a mesma chave na mesma requisição não custa nada, e nenhum valor velho vaza
 		//     para a requisição seguinte.
+		// ES: La caché vive mientras vive el loader, y un loader vive por una petición. Pedir dos
+		//     veces la misma clave en la misma petición no cuesta nada, y ningún valor viejo se filtra
+		//     a la petición siguiente.
 		const cached = this.cache.get(key);
 		if (cached !== undefined) {
 			return cached;
@@ -54,6 +62,10 @@ export class BatchLoader<K, V> {
 			//     callbacks de promise já enfileirados. O executor GraphQL chama os resolvers de
 			//     todos os itens de uma lista antes desse ponto, então todas as chaves já estão
 			//     em `pending` nesse momento.
+			// ES: `setImmediate` se ejecuta después del código síncrono actual Y después de todos los
+			//     callbacks de promesas ya encolados. El ejecutor GraphQL llama a los resolvers de
+			//     todos los elementos de una lista antes de ese punto, así que todas las claves ya están
+			//     en `pending` en ese momento.
 			setImmediate(() => {
 				void this.flush();
 			});

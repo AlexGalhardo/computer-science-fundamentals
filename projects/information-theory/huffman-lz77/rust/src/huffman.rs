@@ -11,6 +11,10 @@ use crate::{DecodeError, read_length};
 //     de cada valor de byte (0 = o valor não aparece), e depois os códigos empacotados bit a
 //     bit. O cabeçalho custa 264 bytes para qualquer entrada, e é por isso que arquivos
 //     minúsculos ou aleatórios crescem ao serem "comprimidos".
+// ES: Formato del archivo: 8 bytes con el tamaño original, 256 bytes con la longitud del código
+//     de cada valor de byte (0 = el valor no aparece), y luego los códigos empaquetados bit a
+//     bit. El encabezado cuesta 264 bytes para cualquier entrada, y por eso los archivos
+//     diminutos o aleatorios crecen al "comprimirlos".
 pub const HEADER_LEN: usize = 8 + 256;
 
 // EN: The Huffman algorithm. Start with one node per byte value that appears, weighted by its
@@ -25,6 +29,13 @@ pub const HEADER_LEN: usize = 8 + 256;
 //     profundidade de uma folha é o comprimento do seu código. O heap entrega os dois mais leves
 //     em O(log n). Empates são decididos pelo id do nó (valor do byte nas folhas, ordem de
 //     criação nos nós unidos), então as versões em Rust e em Python montam a mesma árvore.
+// ES: El algoritmo de Huffman. Empieza con un nodo por cada valor de byte que aparece, con peso
+//     igual a su conteo. Repetidamente, toma los dos nodos más ligeros y únelos bajo un nodo
+//     nuevo cuyo peso es la suma. Los valores raros se unen primero, así que quedan más hondos
+//     en el árbol, y la profundidad de una hoja es la longitud de su código. El heap entrega
+//     los dos más ligeros en O(log n). Los empates se deciden por el id del nodo (valor del
+//     byte en las hojas, orden de creación en los nodos unidos), así que las versiones en Rust
+//     y en Python arman el mismo árbol.
 pub fn code_lengths(counts: &[u64; 256]) -> [u8; 256] {
     let mut lengths = [0u8; 256];
     let mut heap: BinaryHeap<Reverse<(u64, usize)>> = counts
@@ -38,6 +49,8 @@ pub fn code_lengths(counts: &[u64; 256]) -> [u8; 256] {
     //     told apart from "value absent" in the header.
     // PT: Um arquivo com um único valor distinto ainda precisa de um código de 1 bit: um código
     //     de 0 bit não se distinguiria de "valor ausente" no cabeçalho.
+    // ES: Un archivo con un único valor distinto aún necesita un código de 1 bit: un código de
+    //     0 bits no se distinguiría de "valor ausente" en el encabezado.
     if heap.len() == 1 {
         let Reverse((_, symbol)) = heap.pop().expect("one node");
         lengths[symbol] = 1;
@@ -55,6 +68,7 @@ pub fn code_lengths(counts: &[u64; 256]) -> [u8; 256] {
 
     // EN: Walk down from the root. Every step down adds one bit to the code.
     // PT: Desce a partir da raiz. Cada passo para baixo acrescenta um bit ao código.
+    // ES: Desciende desde la raíz. Cada paso hacia abajo añade un bit al código.
     if let Some(Reverse((_, root))) = heap.pop() {
         let mut stack = vec![(root, 0u8)];
         while let Some((node, depth)) = stack.pop() {
@@ -83,6 +97,14 @@ pub fn code_lengths(counts: &[u64; 256]) -> [u8; 256] {
 //     a árvore deu.
 //     Os códigos ficam em um u64, então comprimentos até 63 são aceitos. Um código maior que isso
 //     exigiria um arquivo de mais de 2^43 bytes, muito além do que esta ferramenta didática lê.
+// ES: Huffman canónico. El árbol en sí no se guarda: las longitudes de los códigos bastan,
+//     porque ambos lados acuerdan una regla para convertir longitudes en códigos. Ordena los
+//     símbolos por (longitud, valor) y cuenta hacia arriba, añadiendo ceros cada vez que la
+//     longitud crece. El resultado es un código de prefijo con exactamente las longitudes que
+//     dio el árbol.
+//     Los códigos quedan en un u64, así que se aceptan longitudes hasta 63. Un código mayor
+//     exigiría un archivo de más de 2^43 bytes, mucho más de lo que lee esta herramienta
+//     didáctica.
 pub fn canonical_codes(lengths: &[u8; 256]) -> [u64; 256] {
     let mut symbols: Vec<usize> = (0..256).filter(|&symbol| lengths[symbol] > 0).collect();
     symbols.sort_by_key(|&symbol| (lengths[symbol], symbol));
@@ -111,6 +133,8 @@ pub fn encode(data: &[u8]) -> Vec<u8> {
     //     that do not fill a whole byte yet.
     // PT: Os bits são escritos a partir do bit mais significativo de cada byte. `pending` guarda
     //     os bits que ainda não completam um byte.
+    // ES: Los bits se escriben desde el bit más significativo de cada byte. `pending` guarda los
+    //     bits que aún no completan un byte.
     let mut pending = 0u8;
     let mut used = 0u8;
     for &byte in data {
@@ -146,6 +170,9 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<u8>, DecodeError> {
     //     code is the start of another, so the first hit is the right one.
     // PT: Um código de prefixo pode ser decodificado de forma gulosa: leia bits até formarem um
     //     código conhecido. Nenhum código é o começo de outro, então o primeiro acerto é o certo.
+    // ES: Un código de prefijo se puede decodificar de forma voraz: lee bits hasta formar un
+    //     código conocido. Ningún código es el comienzo de otro, así que el primer acierto es el
+    //     correcto.
     let lookup: HashMap<(u8, u64), u8> = (0..=255u8)
         .filter(|&symbol| table[symbol as usize] > 0)
         .map(|symbol| ((table[symbol as usize], codes[symbol as usize]), symbol))
@@ -193,6 +220,7 @@ mod tests {
     fn lengths_follow_the_frequencies() {
         // EN: A=5, B=2, C=1, D=1: C+D=2, then B+CD=4, then A+4=9. Depths 1, 2, 3, 3.
         // PT: A=5, B=2, C=1, D=1: C+D=2, depois B+CD=4, depois A+4=9. Profundidades 1, 2, 3, 3.
+        // ES: A=5, B=2, C=1, D=1: C+D=2, luego B+CD=4, luego A+4=9. Profundidades 1, 2, 3, 3.
         let lengths = lengths_for(&[(b'A', 5), (b'B', 2), (b'C', 1), (b'D', 1)]);
         assert_eq!(
             [

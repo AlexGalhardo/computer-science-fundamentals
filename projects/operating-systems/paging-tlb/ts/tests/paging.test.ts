@@ -7,6 +7,8 @@ import { BELADY, buildReport, CLASSIC, generateAddresses } from "../src/report";
 //     docs/en/operating-systems/paging-tlb.md.
 // PT: As contagens esperadas são as documentadas, com os traços feitos à mão, em
 //     docs/pt/operating-systems/paging-tlb.md.
+// ES: Los conteos esperados son los documentados, con las trazas hechas a mano, en
+//     docs/es/operating-systems/paging-tlb.md.
 
 test("classic reference string with 3 frames: FIFO 15, LRU 12, optimal 9", () => {
 	expect(countFaults("fifo", CLASSIC, 3)).toBe(15);
@@ -34,6 +36,7 @@ test("clock gives a second chance to a page that was used again", () => {
 	expect(countFaults("clock", trace, 3)).toBe(5);
 	// EN: The fault on 5 finds page 2 with R = 1, clears the bit and evicts page 3 instead.
 	// PT: A falta na página 5 encontra a página 2 com R = 1, zera o bit e retira a página 3.
+	// ES: El fallo en la página 5 encuentra la página 2 con R = 1, borra el bit y expulsa la página 3.
 	const clock = createReplacer("clock", 3);
 	const evicted = trace.map((page) => clock.access(page).evicted);
 	expect(evicted).toEqual([undefined, undefined, undefined, 1, undefined, 3, undefined]);
@@ -81,9 +84,11 @@ test("MMU reference trace: 2 TLB hits, 6 TLB misses and 5 page faults", () => {
 	expect(mmu.counters).toEqual({ accesses: 8, tlbHits: 2, tlbMisses: 6, pageFaults: 5 });
 	// EN: Page 3 took frame 1, which belonged to page 1, the least recently used page.
 	// PT: A página 3 ficou com a moldura 1, que era da página 1, a menos recentemente usada.
+	// ES: La página 3 se quedó con el marco 1, que era de la página 1, la menos recientemente usada.
 	expect(results[5]).toMatchObject({ page: 3, frame: 1, offset: 20, physical: 4116 });
 	// EN: The last access misses the TLB but the page is still in memory: no page fault.
 	// PT: O último acesso falha na TLB, mas a página ainda está na memória: sem falta de página.
+	// ES: El último acceso falla en la TLB pero la página sigue en memoria: sin fallo de página.
 	expect(results[7]).toMatchObject({ frame: 0, physical: 20, tlbHit: false, pageFault: false });
 });
 
@@ -91,6 +96,7 @@ test("address translation: page 5 mapped to frame 3 turns 20500 into 12308", () 
 	const mmu = new Mmu({ pageSize: 4096, frames: 8, tlbEntries: 4, algorithm: "fifo" });
 	// EN: Frames are handed out in order, so touching pages 9, 8 and 7 first leaves frame 3 for page 5.
 	// PT: As molduras são entregues em ordem, então tocar antes as páginas 9, 8 e 7 deixa a moldura 3 para a página 5.
+	// ES: Los marcos se entregan en orden, así que tocar antes las páginas 9, 8 y 7 deja el marco 3 para la página 5.
 	for (const page of [9, 8, 7]) {
 		mmu.translate(page * 4096);
 	}

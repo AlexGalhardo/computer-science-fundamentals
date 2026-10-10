@@ -1,6 +1,6 @@
 # Algoritmos de limitação de taxa (MP-RL-1)
 
-> English version: [docs/en/rate-limiting/rate-limiter.md](../../en/rate-limiting/rate-limiter.md)
+> English version: [docs/en/rate-limiting/rate-limiter.md](../../en/rate-limiting/rate-limiter.md) · Versión en español: [docs/es/rate-limiting/rate-limiter.md](../../es/rate-limiting/rate-limiter.md)
 
 Mini-projeto: [`projects/rate-limiting/rate-limiter`](../../../projects/rate-limiting/rate-limiter/README.pt-BR.md). Tópicos do quiz: `fixed-window`, `sliding-window`, `token-bucket`, `leaky-bucket`, `redis-distributed`, `http-429-and-backoff`.
 
@@ -59,7 +59,7 @@ Atrás de um balanceador de carga, um limitador guardado na memória de cada ins
 
 O código óbvio está errado:
 
-```
+```text
 instância A: GET rate:alice   -> 49
 instância B: GET rate:alice   -> 49      (A ainda não escreveu)
 instância A: 49 < 50, INCR    -> 50
@@ -90,7 +90,7 @@ O Redis (`redis:8.10.2-alpine`) e as duas instâncias conversam em uma rede inte
 | --- | --- |
 | MP-RL-1.1 janela fixa, janela deslizante, token bucket e leaky bucket em memória, cada um passando em um teste orientado por tabela de requisições admitidas e rejeitadas ao longo do tempo | `docker compose run --rm ts-test` e `docker compose run --rm go-test`: os dois leem `cases/cases.json` (15 linhas do tempo, 3 por algoritmo; a janela deslizante tem duas variantes, log e contador) |
 | MP-RL-1.2 duas instâncias juntas nunca admitem mais que o limite sob carga concorrente | `docker compose run --rm distributed-test`: exatamente 50 de 400 requisições concorrentes admitidas, em cinco rodadas, e a versão ingênua ultrapassa o limite |
-| MP-RL-1.3 gráfico de requisições aceitas ao longo do tempo para os algoritmos com o mesmo tráfego | `./experiment-unix.sh` (ou `.ps1`) grava `results/burst.svg` e `results/burst.pt-BR.svg` a partir de `results/burst.json`; um teste falha quando os resultados versionados estão desatualizados |
+| MP-RL-1.3 gráfico de requisições aceitas ao longo do tempo para os algoritmos com o mesmo tráfego | `./experiment-unix.sh` (ou `.ps1`) grava `results/burst.svg`, `results/burst.pt-BR.svg` e `results/burst.es.svg` a partir de `results/burst.json`; um teste falha quando os resultados versionados estão desatualizados |
 
 ## Como rodar
 

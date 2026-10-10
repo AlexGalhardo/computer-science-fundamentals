@@ -2,6 +2,8 @@
 //     JSON file for the static dashboard.
 // PT: Transforma as linhas medidas nos dois artefatos versionados: uma tabela Markdown para
 //     pessoas e um arquivo JSON para o dashboard estático.
+// ES: Transforma las filas medidas en los dos artefactos versionados: una tabla Markdown para
+//     personas y un archivo JSON para el dashboard estático.
 
 export interface BenchRow {
 	language: string;

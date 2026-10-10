@@ -1,6 +1,6 @@
 # neural-network-from-scratch
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 It teaches **what a neuron computes and how backpropagation finds the gradients**. A scalar automatic differentiation engine is written in plain Python, a multi-layer perceptron is built on top of it and trained with gradient descent, and every gradient is checked against a numerical one. The network learns XOR and a two-class dataset, and the demo writes the loss per epoch and the decision boundary.
 

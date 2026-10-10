@@ -15,6 +15,9 @@ const isLetter = (char: string): boolean =>
 // PT: Operadores de um caractere que podem ser seguidos de `=` e formar um segundo operador.
 //     O lexer sempre prefere o mais longo ("maximal munch"): `<=` é um token só, nunca `<`
 //     seguido de `=`.
+// ES: Operadores de un carácter que pueden ir seguidos de `=` y formar un segundo operador.
+//     El lexer siempre prefiere el más largo ("maximal munch"): `<=` es un solo token, nunca `<`
+//     seguido de `=`.
 const ONE_OR_TWO: Readonly<Record<string, [TokenType, TokenType]>> = {
 	"!": ["BANG", "BANG_EQUAL"],
 	"=": ["EQUAL", "EQUAL_EQUAL"],
@@ -43,6 +46,10 @@ const SINGLE: Readonly<Record<string, TokenType>> = {
 //     tokens. Ele é um autômato finito escrito à mão: a cadeia de `if` abaixo escolhe um estado
 //     pelo primeiro caractere, e cada pequeno laço permanece nesse estado enquanto os caracteres
 //     ainda pertencem ao mesmo token.
+// ES: El lexer (o scanner) lee el código fuente un carácter a la vez y agrupa los caracteres en
+//     tokens. Es un autómata finito escrito a mano: la cadena de `if` de abajo elige un estado
+//     por el primer carácter, y cada pequeño bucle permanece en ese estado mientras los
+//     caracteres sigan perteneciendo al mismo token.
 export function tokenize(source: string): LexResult {
 	const tokens: Token[] = [];
 	const errors: SyntaxProblem[] = [];
@@ -50,6 +57,7 @@ export function tokenize(source: string): LexResult {
 	let line = 1;
 	// EN: Index of the first character of the current line. The column is the distance to it.
 	// PT: Índice do primeiro caractere da linha atual. A coluna é a distância até ele.
+	// ES: Índice del primer carácter de la línea actual. La columna es la distancia hasta él.
 	let lineStart = 0;
 
 	const at = (offset: number): string => source[index + offset] ?? "";
@@ -75,6 +83,7 @@ export function tokenize(source: string): LexResult {
 
 		// EN: A comment produces no token at all: the parser never learns it existed.
 		// PT: Um comentário não produz token algum: o parser nunca fica sabendo que ele existiu.
+		// ES: Un comentario no produce ningún token: el parser nunca se entera de que existió.
 		if (char === "/" && at(1) === "/") {
 			while (index < source.length && at(0) !== "\n") {
 				index += 1;
@@ -106,6 +115,9 @@ export function tokenize(source: string): LexResult {
 		//     consumed when a digit follows, so `1.` is the number `1` and then a stray dot.
 		// PT: Um número são dígitos, opcionalmente seguidos de ponto e mais dígitos. O ponto só é
 		//     consumido quando vem um dígito depois, então `1.` é o número `1` e um ponto solto.
+		// ES: Un número son dígitos, opcionalmente seguidos de un punto y más dígitos. El punto solo
+		//     se consume cuando viene un dígito después, así que `1.` es el número `1` y un punto
+		//     suelto.
 		if (isDigit(char)) {
 			while (isDigit(at(0))) {
 				index += 1;
@@ -134,6 +146,10 @@ export function tokenize(source: string): LexResult {
 		// PT: Uma string vai até as aspas de fechamento na mesma linha. Não há sequências de
 		//     escape. Quando a linha termina antes, o erro é reportado nas aspas de abertura, que
 		//     é onde o programador precisa olhar, e a análise continua na linha seguinte.
+		// ES: Una cadena va hasta las comillas de cierre en la misma línea. No hay secuencias de
+		//     escape. Cuando la línea termina antes, el error se reporta en las comillas de
+		//     apertura, que es donde el programador necesita mirar, y el análisis continúa en la
+		//     línea siguiente.
 		if (char === '"') {
 			index += 1;
 			while (index < source.length && at(0) !== '"' && at(0) !== "\n") {
@@ -152,6 +168,8 @@ export function tokenize(source: string): LexResult {
 		//     shows every lexical error of the file.
 		// PT: Um caractere desconhecido é reportado e pulado. O lexer não para, então uma única
 		//     execução mostra todos os erros léxicos do arquivo.
+		// ES: Un carácter desconocido se reporta y se salta. El lexer no se detiene, así que una
+		//     sola ejecución muestra todos los errores léxicos del archivo.
 		errors.push({ message: `unexpected character '${char}'`, line, column });
 		index += 1;
 	}

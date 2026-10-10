@@ -10,6 +10,11 @@ import { type IssuedInvoice, money, type Order } from "./types";
 //     o layout do recibo (atendimento) e o formato do registro gravado (quem cuida do
 //     armazenamento). Qualquer uma das três mudanças abre esta função, e as variáveis locais
 //     tornam fácil quebrar um assunto enquanto se edita outro.
+// ES: ROMPE EL PRINCIPIO DE RESPONSABILIDAD ÚNICA. Una función guarda tres asuntos que cambian
+//     por motivos distintos y a pedido de personas distintas: la regla del impuesto
+//     (finanzas), el diseño del recibo (atención al cliente) y el formato del registro
+//     guardado (quien cuida el almacenamiento). Cualquiera de los tres cambios abre esta
+//     función, y las variables locales hacen fácil romper un asunto mientras se edita otro.
 export function issueInvoice(order: Order): IssuedInvoice {
 	if (order.lines.length === 0) {
 		throw new Error("an invoice needs at least one line");

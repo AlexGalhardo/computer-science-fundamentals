@@ -1,5 +1,6 @@
 # EN: Builds and tests the master-theorem mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto master-theorem. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto master-theorem. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot
@@ -20,6 +21,8 @@ Write-Output "master-theorem: all tests passed"
 #     ./results, which the page reads.
 # PT: A demo classifica as recorrencias conhecidas, confere tres delas empiricamente e regrava
 #     ./results, que a pagina le.
+# ES: La demo clasifica las recurrencias conocidas, comprueba tres de ellas empíricamente y
+#     reescribe ./results, que lee la página.
 docker compose run --rm ts-demo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Output "master-theorem: open dashboard/index.html in a browser to draw recursion trees"

@@ -75,6 +75,11 @@ func echo(w http.ResponseWriter, r *http.Request) {
 // simplesmente dormir. Uma goroutine dormindo não usa thread: o runtime a estaciona, com uma
 // pilha de poucos kilobytes, e a thread segue rodando outras goroutines. O código parece uma
 // thread bloqueante por conexão, e custa muito menos que isso.
+//
+// ES: net/http ejecuta cada conexión en su propia goroutine, así que este handler puede
+// simplemente dormir. Una goroutine dormida no usa un thread: el runtime la estaciona, con una
+// pila de pocos kilobytes, y el thread sigue ejecutando otras goroutines. El código parece un
+// thread bloqueante por conexión, y cuesta mucho menos que eso.
 func delay(w http.ResponseWriter, r *http.Request) {
 	ms, err := strconv.Atoi(r.URL.Query().Get("ms"))
 	if err != nil || ms < 0 || ms > MaxDelayMs {

@@ -44,6 +44,9 @@ func TestDelayRejectsBadInput(t *testing.T) {
 // PT: 200 requisições que esperam 300 ms cada terminam juntas em bem menos de um segundo,
 // porque cada uma espera em sua própria goroutine. Atendidas uma depois da outra, levariam
 // um minuto.
+// ES: 200 solicitudes que esperan 300 ms cada una terminan juntas en bastante menos de un segundo,
+// porque cada una espera en su propia goroutine. Atendidas una tras otra, tardarían
+// un minuto.
 func TestDelaysRunConcurrently(t *testing.T) {
 	srv := httptest.NewServer(NewHandler())
 	defer srv.Close()

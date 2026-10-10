@@ -3,7 +3,7 @@
 
 # Computer Science Fundamentals
 
-Computer science fundamentals you can **answer, run and measure**: a bilingual
+Computer science fundamentals you can **answer, run and measure**: a trilingual
 quiz covering 32 areas, and small runnable mini-projects that show each concept
 working, with tests, benchmarks and step-by-step explanations written for
 beginners.
@@ -13,7 +13,10 @@ beginners.
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://www.conventionalcommits.org/en/v1.0.0/)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-blue.svg)](https://semver.org/)
 
-[Leia em português](./README-ptbr.md)
+<!-- markdownlint-disable-next-line MD001 -->
+### [Leia em Português Brasil](./README-ptbr.md)
+
+### [Lea en Español](./README-es.md)
 
 </div>
 
@@ -35,15 +38,15 @@ beginners.
 **Computer Science Fundamentals** is a long-term, open source (MIT) study
 reference. It has two parts that point at each other:
 
-- **A quiz.** Multiple choice, 5 alternatives, in Portuguese and English. After
+- **A quiz.** Multiple choice, 5 alternatives, in English, Portuguese and Spanish. After
   you answer, the explanation appears next to the question: the concept, why the
   right alternative is right, why each of the others is wrong, and a link to the
   mini-project that shows the idea running.
 - **Mini-projects.** Small programs that make one concept observable: a race
   condition that loses updates and four ways to fix it, a B-tree that reads 3
   pages where a binary tree reads 16, a SQL injection and the query that stops
-  it. Each one has tests, a demo or benchmark, and documentation in both
-  languages. Everything runs in Docker, so the only requirement is Docker.
+  it. Each one has tests, a demo or benchmark, and documentation in all three
+  languages (English, Portuguese and Spanish). Everything runs in Docker, so the only requirement is Docker.
 
 The live status of every area (questions written, blind review, mini-projects
 done) is generated from the repository itself:
@@ -204,15 +207,15 @@ bun run quiz:validate
 | [SECURITY.md](./SECURITY.md) | scope of the security labs and of the load tests |
 | [AGENTS.md](./AGENTS.md) | onboarding for AI coding agents |
 
-Every document under `docs/en/` has an equivalent under `docs/pt/`.
+Every document under `docs/en/` has an equivalent under `docs/pt/` and `docs/es/`.
 
 ## Repository layout
 
 ```text
 /quiz/         the quiz app and its questions (quiz/content/<area>/<topic>.json)
-/projects/     mini-projects, by area, each with tests, a demo and two READMEs
+/projects/     mini-projects, by area, each with tests, a demo and three READMEs
 /benchmarks/   cross-language benchmark workloads and their dashboard (in progress)
-/docs/         documentation per area, in English (en/) and Portuguese (pt/)
+/docs/         documentation per area, in English (en/), Portuguese (pt/) and Spanish (es/)
 /tools/        benchmark runner and mini-project generator
 /docker/       one pinned base image per language
 /.github/      continuous integration

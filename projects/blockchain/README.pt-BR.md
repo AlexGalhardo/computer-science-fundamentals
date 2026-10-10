@@ -1,6 +1,6 @@
 # Blockchain
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Uma blockchain é um livro-razão sobre o qual muitas partes que não confiam umas nas outras conseguem concordar sem uma autoridade central. Ela combina ideias estudadas em outras partes deste repositório: funções hash e árvores de Merkle tornam o histórico evidente contra adulteração, assinaturas digitais provam quem pode gastar, e a prova de trabalho transforma o acordo em uma questão de esforço computacional. Estudá-la como estrutura de dados e protocolo separa a engenharia do exagero.
 

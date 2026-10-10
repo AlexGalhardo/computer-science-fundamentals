@@ -24,6 +24,11 @@ pub trait Counter: Sync {
 //     trechos `unsafe` abaixo desligam essa proteção: prometemos ao compilador algo falso.
 //     Corrida de dados é comportamento indefinido em Rust, então este programa não tem
 //     significado garantido.
+// ES: El Rust seguro se niega a compilar una carrera de datos. Un tipo compartido entre
+//     threads debe ser `Sync`, y un número común escrito a través de `&self` no lo es. Los dos
+//     fragmentos `unsafe` de abajo desactivan esa protección: le prometemos al compilador algo
+//     falso. Una carrera de datos es comportamiento indefinido en Rust, así que este programa no
+//     tiene un significado garantizado.
 pub struct BuggyCounter {
     n: UnsafeCell<u64>,
 }
@@ -54,6 +59,9 @@ impl Counter for BuggyCounter {
         // PT: `read_volatile` e `write_volatile` forçam uma leitura e uma escrita de verdade a
         //     cada chamada. Sem eles o otimizador pode juntar o laço inteiro em uma única soma,
         //     o que esconderia o bug por sorte em vez de corrigi-lo.
+        // ES: `read_volatile` y `write_volatile` fuerzan una lectura y una escritura de verdad en
+        //     cada llamada. Sin ellos el optimizador puede juntar el bucle entero en una sola suma,
+        //     lo que escondería el bug por suerte en lugar de corregirlo.
         unsafe {
             let pointer = self.n.get();
             let current = pointer.read_volatile();
@@ -74,6 +82,9 @@ impl Counter for BuggyCounter {
 // PT: Em Rust o mutex é dono do dado. O único jeito de chegar ao número é travar, e a guarda
 //     devolvida por `lock` destrava ao sair de escopo. Esquecer de travar é erro de compilação,
 //     não um bug achado em produção.
+// ES: En Rust el mutex es dueño del dato. La única forma de llegar al número es bloquear, y la
+//     guarda devuelta por `lock` desbloquea al salir de ámbito. Olvidar bloquear es un error de
+//     compilación, no un bug encontrado en producción.
 #[derive(Default)]
 pub struct MutexCounter {
     n: Mutex<u64>,
@@ -103,6 +114,9 @@ impl Counter for MutexCounter {
 // PT: `fetch_add` lê, soma e grava como um passo indivisível do processador. `Relaxed` basta
 //     aqui: só precisamos que cada soma seja atômica, e a leitura final acontece depois do
 //     join de todas as threads, o que já a coloca depois de todas as somas.
+// ES: `fetch_add` lee, suma y escribe como un paso indivisible del procesador. `Relaxed` basta
+//     aquí: solo necesitamos que cada suma sea atómica, y la lectura final ocurre después del
+//     join de todos los threads, lo que ya la coloca después de todas las sumas.
 #[derive(Default)]
 pub struct AtomicCounter {
     n: AtomicU64,
@@ -131,6 +145,9 @@ enum Message {
 // PT: Uma thread é dona do número e ninguém mais consegue tocá-lo. As outras threads mandam
 //     mensagens por um canal, e a dona as trata uma por vez, em ordem.
 //     Nada é compartilhado, então não há sobre o que disputar.
+// ES: Un thread es dueño del número y nadie más puede tocarlo. Los otros threads envían
+//     mensajes por un canal, y el dueño los atiende uno por uno, en orden.
+//     Nada se comparte, así que no hay por qué disputar.
 pub struct ChannelCounter {
     inbox: Sender<Message>,
 }
@@ -142,6 +159,7 @@ impl ChannelCounter {
             let mut n: u64 = 0;
             // EN: The loop ends by itself when every sender is dropped.
             // PT: O laço termina sozinho quando todos os remetentes são descartados.
+            // ES: El bucle termina solo cuando todos los remitentes se descartan.
             for message in messages {
                 match message {
                     Message::Inc => n += 1,
@@ -196,6 +214,8 @@ pub fn new_counter(variant: &str) -> Option<Box<dyn Counter>> {
 //     Without it the first thread could finish before the last one starts, hiding the bug.
 // PT: A barreira é um portão de largada: cada thread espera ali até todas chegarem.
 //     Sem ela a primeira thread poderia terminar antes de a última começar, escondendo o bug.
+// ES: La barrera es una puerta de salida: cada thread espera ahí hasta que todos lleguen.
+//     Sin ella el primer thread podría terminar antes de que el último empiece, escondiendo el bug.
 pub fn run(counter: &dyn Counter, workers: usize, per_worker: u64) -> u64 {
     let gate = Barrier::new(workers);
     thread::scope(|scope| {

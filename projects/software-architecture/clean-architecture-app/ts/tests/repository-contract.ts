@@ -10,6 +10,11 @@ import { validNote } from "./support";
 //     jeito, senão trocar um pelo outro mudaria o comportamento dos casos de uso. Então a
 //     promessa é escrita uma vez, como testes contra a interface, e a mesma suíte roda para o
 //     adaptador em memória (testes de unidade) e para o PostgreSQL (testes de integração).
+// ES: UNA PRUEBA DE CONTRATO. El puerto es una promesa, y todo adaptador debe cumplirla de la
+//     misma manera, de lo contrario cambiar uno por otro alteraría el comportamiento de los
+//     casos de uso. Entonces la promesa se escribe una vez, como pruebas contra la interfaz, y la
+//     misma suite corre para el adaptador en memoria (pruebas unitarias) y para PostgreSQL
+//     (pruebas de integración).
 export function describeNoteRepositoryContract(name: string, create: () => Promise<NoteRepository>): void {
 	describe(`NoteRepository contract: ${name}`, () => {
 		let repository: NoteRepository;

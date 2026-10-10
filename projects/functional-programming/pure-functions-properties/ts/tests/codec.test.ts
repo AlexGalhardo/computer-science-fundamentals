@@ -5,6 +5,7 @@ import { check, runString } from "../src/prop";
 
 // EN: Strings made of runs of "a", "b" and "c", up to 6 runs of up to 12 characters each.
 // PT: Textos feitos de sequências de "a", "b" e "c", até 6 sequências de até 12 caracteres.
+// ES: Textos hechos de secuencias de "a", "b" y "c", hasta 6 secuencias de hasta 12 caracteres.
 const texts = runString("abc", 6, 12);
 
 describe("codec: example tests", () => {
@@ -12,6 +13,8 @@ describe("codec: example tests", () => {
 	//     passes against BOTH decoders. They do not tell the correct one from the buggy one.
 	// PT: Os exemplos são os que uma pessoa escreveria à mão, e todos passam nos DOIS
 	//     decodificadores. Eles não distinguem o correto do que tem o erro.
+	// ES: Los ejemplos son los que una persona escribiría a mano, y todos pasan en los DOS
+	//     decodificadores. No distinguen el correcto del que tiene el error.
 	for (const [plain, encoded] of cases.codec.examples) {
 		test(`"${plain}" <-> "${encoded}"`, () => {
 			expect(encode(plain ?? "")).toBe(encoded ?? "");
@@ -24,6 +27,7 @@ describe("codec: example tests", () => {
 describe("codec: round-trip property", () => {
 	// EN: Round trip: decoding what was encoded gives back the original, for any input.
 	// PT: Ida e volta: decodificar o que foi codificado devolve o original, para qualquer entrada.
+	// ES: Ida y vuelta: decodificar lo que se codificó devuelve el original, para cualquier entrada.
 	test("decode(encode(text)) == text holds for the correct decoder", () => {
 		expect(check(texts, (text) => decode(encode(text)) === text, { runs: 500 })).toEqual({ ok: true, runs: 500 });
 	});
@@ -42,6 +46,8 @@ describe("codec: round-trip property", () => {
 	//     the same failure, byte for byte.
 	// PT: Reproduzível: a semente é todo o estado do gerador, então a mesma semente dá a mesma
 	//     falha, byte a byte.
+	// ES: Reproducible: la semilla es todo el estado del generador, así que la misma semilla da el
+	//     mismo fallo, byte a byte.
 	test("the same seed reproduces the same counterexample", () => {
 		const run = () => check(texts, (text) => decodeBuggy(encode(text)) === text, { runs: 500, seed: 7 });
 		expect(run()).toEqual(run());

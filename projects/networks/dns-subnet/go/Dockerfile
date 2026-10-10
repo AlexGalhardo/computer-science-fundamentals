@@ -5,5 +5,8 @@ COPY . .
 #     network to compile. The project uses only the standard library.
 # PT: Os comandos são compilados dentro da imagem, então os contêineres do laboratório sobem na
 #     hora e não precisam de rede para compilar. O projeto usa apenas a biblioteca padrão.
+# ES: Los comandos se compilan dentro de la imagen, así que los contenedores del laboratorio
+#     arrancan al instante y no necesitan red para compilar. El proyecto usa solo la biblioteca
+#     estándar.
 RUN go build -o /usr/local/bin/ ./cmd/...
 CMD ["sh", "-c", "test -z \"$(gofmt -l .)\" && go vet ./... && go test ./..."]

@@ -1,6 +1,6 @@
 # Teoria da informação
 
-> English version: [docs/en/information-theory/README.md](../../en/information-theory/README.md)
+> English version: [docs/en/information-theory/README.md](../../en/information-theory/README.md) · Versión en español: [docs/es/information-theory/README.md](../../es/information-theory/README.md)
 
 A área tem um quiz de 100 questões (`quiz/content/information-theory/`) e dois mini-projetos. Fontes: USP Estruturas de Dados II (compressão) e Tanenbaum, Redes de Computadores, 5ª edição (capacidade de canal e controle de erros).
 

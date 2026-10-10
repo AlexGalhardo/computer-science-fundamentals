@@ -1,6 +1,6 @@
 # pytorch-basics
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Ensina **o que um framework de aprendizado profundo faz por você**, refazendo o mini-projeto [neural-network-from-scratch](../neural-network-from-scratch/) (MP-AI-2) com PyTorch. A mesma rede 2-8-8-1 é construída nos dois, e os gradientes que o PyTorch calcula são comparados com a retropropagação escrita à mão e com gradientes numéricos. Depois o laço de treinamento é escrito à mão (ida, perda, limpeza, volta, passo) no mesmo conjunto de dados, e uma tabela compara as linhas de código e o tempo de treinamento das duas versões.
 
@@ -66,8 +66,8 @@ Os gradientes, de três formas, na mesma rede (primeiras linhas, os 105 são com
 
 | Parâmetro | Retropropagação escrita à mão | `backward()` do PyTorch | Numérico |
 | --- | ---: | ---: | ---: |
-| `hidden1` w[0][0] | -0.060789 | -0.060789 | -0.060789 |
-| `hidden1` w[0][1] | 0.012666 | 0.012666 | 0.012666 |
+| `hidden1` `w[0][0]` | -0.060789 | -0.060789 | -0.060789 |
+| `hidden1` `w[0][1]` | 0.012666 | 0.012666 | 0.012666 |
 | `hidden1` b[0] | -0.049645 | -0.049645 | -0.049645 |
 
 A maior diferença entre o PyTorch e a retropropagação escrita à mão fica abaixo de 1e-12, e entre o PyTorch e o gradiente numérico abaixo de 1e-8.

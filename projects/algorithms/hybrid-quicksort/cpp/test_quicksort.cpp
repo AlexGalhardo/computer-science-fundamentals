@@ -8,6 +8,11 @@
 //     comportar de forma quadrática, e a mediana de três não. O crescimento é conferido com
 //     razões entre tempos, não com tempos absolutos: uma razão depende muito mais do algoritmo
 //     que da máquina, e os limites deixam margem larga para ruído.
+// ES: Dos tipos de prueba. Corrección: toda estrategia de pivote con todo umbral ordena toda
+//     forma. Crecimiento: con el primer elemento como pivote, la entrada ordenada debe
+//     comportarse de forma cuadrática, y la mediana de tres no. El crecimiento se comprueba con
+//     razones entre tiempos, no con tiempos absolutos: una razón depende mucho más del algoritmo
+//     que de la máquina, y los límites dejan un margen amplio para el ruido.
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -81,6 +86,9 @@ int main() {
 	// PT: Crescimento quadrático: quando n cresce 4 vezes, um algoritmo O(n²) leva cerca de 16
 	//     vezes mais tempo e um O(n log n) cerca de 4,5 vezes. Os limites 8 e 8 ficam entre os
 	//     dois, com margem larga para ruído.
+	// ES: Crecimiento cuadrático: cuando n crece 4 veces, un algoritmo O(n²) tarda cerca de 16
+	//     veces más y un O(n log n) cerca de 4.5 veces. Los límites 8 y 8 quedan entre los
+	//     dos, con un margen amplio para el ruido.
 	const Values small = hybrid_quicksort::make_input("sorted", 10'000);
 	const Values large = hybrid_quicksort::make_input("sorted", 40'000);
 	const double first_ratio = time_ms(large, Pivot::kFirst) / time_ms(small, Pivot::kFirst);
@@ -88,6 +96,8 @@ int main() {
 	//     reliably. Its growth is measured on inputs 50 times larger.
 	// PT: A mediana de três é tão rápida que 40.000 valores levam microssegundos, pouco demais
 	//     para cronometrar com confiança. O crescimento dela é medido em entradas 50 vezes maiores.
+	// ES: La mediana de tres es tan rápida que 40,000 valores tardan microsegundos, muy poco
+	//     para cronometrar con confianza. Su crecimiento se mide en entradas 50 veces mayores.
 	const double median_ratio =
 	    time_ms(hybrid_quicksort::make_input("sorted", 2'000'000), Pivot::kMedianOfThree) /
 	    time_ms(hybrid_quicksort::make_input("sorted", 500'000), Pivot::kMedianOfThree);

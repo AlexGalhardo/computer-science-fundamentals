@@ -1,6 +1,6 @@
 # l7-load-balancer
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A layer 7 load balancer written by hand in Go, with the standard library only, in about 350 lines of code plus the comments. It shows what a load balancer does on every request: choose a back end (round robin or least connections), forward the request on another connection, copy the answer back, find out which back ends are alive (active health checks) and decide when a failed request may be sent to another back end. A local k6 benchmark then compares it with NGINX in front of the same three back ends.
 

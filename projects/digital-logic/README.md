@@ -1,6 +1,6 @@
 # Digital logic
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Digital logic is the level where computing becomes physical: numbers in binary, Boolean functions, logic gates and the circuits made from them, first combinational (adders, multiplexers) and then sequential (flip-flops, registers, counters). Building an adder and then a small CPU from gates shows that a computer is a stack of simple ideas, each one built from the previous.
 

@@ -1,6 +1,6 @@
 # O limite inferior da ordenação por comparação
 
-> English version: [docs/en/big-o/sorting-lower-bound.md](../../en/big-o/sorting-lower-bound.md)
+> English version: [docs/en/big-o/sorting-lower-bound.md](../../en/big-o/sorting-lower-bound.md) · Versión en español: [docs/es/big-o/sorting-lower-bound.md](../../es/big-o/sorting-lower-bound.md)
 
 Mini-projeto MP-BIGO-3, em [`projects/big-o/sorting-lower-bound`](../../../projects/big-o/sorting-lower-bound). Ele ensina por que nenhuma ordenação por comparação supera Ω(n lg n) e como as ordenações por contagem escapam disso.
 

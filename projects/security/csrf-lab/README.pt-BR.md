@@ -1,6 +1,6 @@
 # csrf-lab
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 O navegador anexa cookies a uma requisição por causa de para onde ela **vai**, não por causa de qual página a pediu. Então uma página de outro site consegue fazer um navegador logado enviar uma requisição ao seu app, e o app enxerga uma sessão válida. Isso é a falsificação de requisição entre sites (CSRF). Este laboratório mostra o problema com navegadores de verdade: um app falso de "perfil" cujo e-mail é trocado por uma segunda origem local, e depois a mesma tentativa recusada por um token anti-CSRF, um cookie com `SameSite` explícito e "alteração de estado só por POST".
 

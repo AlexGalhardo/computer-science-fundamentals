@@ -1,6 +1,6 @@
 # mini-dbms
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um mini SGBD relacional pequeno o bastante para ser lido de uma vez. Ele ensina como a **seleção** e a **projeção** funcionam em uma tabela em memória, e como três algoritmos respondem à mesma junção: **laços aninhados** (nested loop), **junção por hash** e **junção por ordenação e intercalação** (sort-merge). O mesmo motor é escrito em Rust e em Python, toda resposta é conferida com o SQLite, e um benchmark mostra a partir de que tamanho de tabela os laços aninhados ficam para trás.
 

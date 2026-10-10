@@ -10,6 +10,10 @@ import { generateMutants, tokenize } from "../../src/mutator";
 //     mutante que não compila é "morto" por qualquer suíte, e uma mutação dentro de um
 //     comentário "sobrevive" a qualquer suíte. Por isso as regras do que pode ser alterado
 //     ficam fixadas aqui.
+// ES: Pruebas del propio mutador. Un mutador con un bug da una puntuación errónea en silencio: un
+//     mutante que no compila es "matado" por cualquier suite, y una mutación dentro de un
+//     comentario "sobrevive" a cualquier suite. Por eso las reglas de lo que se puede alterar
+//     quedan fijadas aquí.
 
 test("the tokens put back together are the original source", () => {
 	const source = 'const a = b >= 10 ? "x > y" : c; // d < e\n';

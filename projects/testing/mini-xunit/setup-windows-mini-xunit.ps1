@@ -6,6 +6,10 @@
 #     Para cada linguagem ele roda o framework nos próprios testes, e depois a demo com um teste
 #     que falha de propósito. A demo PRECISA sair com um código diferente de zero: uma execução
 #     vermelha que sai com 0 seria o pior bug que um framework de testes pode ter.
+# ES: Construye y prueba el mini-proyecto mini-xunit. El único requisito es Docker.
+#     Para cada lenguaje ejecuta el framework sobre sus propias pruebas, y luego la demo con una prueba
+#     que falla a propósito. La demo DEBE salir con un código distinto de cero: una ejecución
+#     roja que sale con 0 sería el peor bug que puede tener un framework de pruebas.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 

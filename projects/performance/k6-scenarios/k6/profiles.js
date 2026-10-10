@@ -21,6 +21,19 @@
 //     As execuções aqui são reduzidas a segundos para a demonstração inteira levar minutos. Um
 //     teste de resistência real roda por horas: o papel dele é achar vazamentos e crescimento
 //     lento, que precisam de tempo para aparecer.
+// ES: Los cuatro perfiles de carga de la lección, como datos. Un perfil es una lista de fases, y una
+//     fase es "llega a esta tasa de llegada (solicitudes por segundo) y quédate en ella tantos
+//     segundos". Lo que hace que una prueba sea de carga, estrés, pico o resistencia es solo la FORMA
+//     de esa curva:
+//       load   - sube hasta el tráfico de un día ocupado normal y se mantiene: ¿el sistema aguanta?
+//       stress - sigue subiendo más allá del tráfico normal, escalón por escalón: ¿dónde se rompe?
+//       spike  - salta a un múltiplo del tráfico en un segundo y vuelve: ¿se recupera?
+//       soak   - mantiene un tráfico constante durante mucho tiempo: ¿qué se degrada solo con el tiempo?
+//     Este archivo es JavaScript puro porque k6 lo importa directamente, y las pruebas de Bun y el
+//     reporte también lo importan, así que los tres siempre coinciden sobre las formas.
+//     Las ejecuciones aquí se reducen a segundos para que toda la demostración tome minutos. Una
+//     prueba de resistencia real corre durante horas: su papel es encontrar fugas y crecimiento
+//     lento, que necesitan tiempo para aparecer.
 
 /**
  * @typedef {object} Phase
@@ -145,6 +158,9 @@ export function peakRate(profile) {
 // PT: A capacidade de um pool de conexões, pela lei da utilização: `size` conexões, cada uma
 //     ocupada por `queryMs` por requisição, atendem no máximo size / queryMs requisições por
 //     milissegundo. Acima dessa taxa a fila por uma conexão só pode crescer.
+// ES: La capacidad de un pool de conexiones, según la ley de utilización: `size` conexiones, cada
+//     una ocupada `queryMs` por solicitud, atienden como máximo size / queryMs solicitudes por
+//     milisegundo. Por encima de esa tasa la cola por una conexión solo puede crecer.
 /**
  * @param {number} size
  * @param {number} queryMs

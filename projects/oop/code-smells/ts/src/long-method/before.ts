@@ -8,6 +8,10 @@ import type { FormatReceipt } from "./contract";
 //     Os comentários que a dividem em blocos são o sintoma: cada bloco é uma função que nunca
 //     recebeu nome. Para testar só a regra do frete é preciso montar um pedido inteiro e ler a
 //     resposta de dentro de uma string.
+// ES: MAL OLOR: Método Largo. Una función valida, calcula cuatro valores y formatea el texto.
+//     Los comentarios que la dividen en bloques son el síntoma: cada bloque es una función que
+//     nunca recibió nombre. Para probar solo la regla del envío hay que armar un pedido entero
+//     y leer la respuesta desde dentro de un string.
 export const formatReceipt: FormatReceipt = (order) => {
 	// validate
 	if (order.items.length === 0) {

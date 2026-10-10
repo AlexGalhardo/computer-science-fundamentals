@@ -27,6 +27,8 @@ describe("ripple-carry adder", () => {
 	//     addition for all 256 x 256 = 65,536 input pairs. The carry-out is the ninth bit.
 	// PT: Critério de aceite MP-DL-1.3: o somador de 8 bits feito de portas concorda com a soma
 	//     nativa para todos os 256 x 256 = 65.536 pares de entrada. O vai-um é o nono bit.
+	// ES: Criterio de aceptación MP-DL-1.3: el sumador de 8 bits hecho de compuertas coincide con
+	//     la suma nativa para los 256 x 256 = 65.536 pares de entrada. El acarreo es el noveno bit.
 	test("8 bits: agrees with native addition for all 65,536 input pairs", () => {
 		let checked = 0;
 		for (let a = 0; a < 256; a++) {

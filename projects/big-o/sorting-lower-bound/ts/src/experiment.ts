@@ -2,6 +2,8 @@
 //     inputs, and comparison counters on many large random inputs.
 // PT: Os experimentos: o limite em si, uma conferência exaustiva em todas as permutações de
 //     entradas pequenas, e contadores de comparações em muitas entradas aleatórias grandes.
+// ES: Los experimentos: la cota en sí, una comprobación exhaustiva en todas las permutaciones de
+//     entradas pequeñas, y contadores de comparaciones en muchas entradas aleatorias grandes.
 
 import { permutations } from "./decision-tree";
 import { countingSort, radixSort } from "./linear-sorts";
@@ -11,6 +13,8 @@ import { COMPARISON_SORTS, countComparisons } from "./sorts";
 //     which overflows a double near n = 171. This sum grows like n log2 n.
 // PT: log2(n!) = log2(1) + log2(2) + ... + log2(n). Somar logaritmos evita calcular n!, que
 //     estoura um double perto de n = 171. Essa soma cresce como n log2 n.
+// ES: log2(n!) = log2(1) + log2(2) + ... + log2(n). Sumar logaritmos evita calcular n!, que
+//     desborda un double cerca de n = 171. Esta suma crece como n log2 n.
 export function log2Factorial(n: number): number {
 	let total = 0;
 	for (let value = 2; value <= n; value++) {
@@ -27,6 +31,10 @@ export function log2Factorial(n: number): number {
 //     inteiro, então o limite exato é o teto: 3 comparações para n = 3, 5 para n = 4, 7 para
 //     n = 5. A guarda protege o teto de uma soma em ponto flutuante que caia um fio acima de um
 //     inteiro (n! só é potência de dois exata para n = 1 e n = 2).
+// ES: Un árbol con n! hojas tiene altura de al menos log2(n!), y una altura es un número
+//     entero, así que la cota exacta es el techo: 3 comparaciones para n = 3, 5 para n = 4, 7
+//     para n = 5. La guarda protege el techo de una suma en punto flotante que caiga un pelo
+//     por encima de un entero (n! solo es una potencia de dos exacta para n = 1 y n = 2).
 export function minimumComparisons(n: number): number {
 	const exact = log2Factorial(n);
 	const nearest = Math.round(exact);
@@ -37,6 +45,8 @@ export function minimumComparisons(n: number): number {
 //     machine, so the committed tables can be reproduced exactly.
 // PT: Um gerador pequeno com semente (mulberry32). A mesma semente dá as mesmas entradas em
 //     qualquer máquina, então as tabelas versionadas podem ser reproduzidas exatamente.
+// ES: Un generador pequeño con semilla (mulberry32). La misma semilla da las mismas entradas en
+//     cualquier máquina, así que las tablas versionadas se pueden reproducir exactamente.
 export function createRandom(seed: number): () => number {
 	let state = seed >>> 0;
 	return () => {
@@ -50,6 +60,7 @@ export function createRandom(seed: number): () => number {
 
 // EN: Fisher-Yates shuffle: every one of the n! orders of 0..n-1 is equally likely.
 // PT: Embaralhamento de Fisher-Yates: cada uma das n! ordens de 0..n-1 é igualmente provável.
+// ES: Barajado de Fisher-Yates: cada uno de los n! órdenes de 0..n-1 es igualmente probable.
 export function randomPermutation(n: number, random: () => number): number[] {
 	const values = Array.from({ length: n }, (_, index) => index);
 	for (let last = n - 1; last > 0; last--) {
@@ -80,6 +91,9 @@ export interface ExhaustiveRow {
 // PT: Para um n pequeno dá para testar todas as ordens de entrada. É aqui que o teorema pode
 //     ser conferido ao pé da letra: o pior caso é pelo menos ceil(log2 n!) e a média é pelo
 //     menos log2 n!. O melhor caso está livre para ser menor.
+// ES: Para un n pequeño se pueden probar todos los órdenes de entrada. Aquí es donde el teorema
+//     se puede comprobar al pie de la letra: el peor caso es al menos ceil(log2 n!) y el promedio
+//     es al menos log2 n!. El mejor caso es libre de ser menor.
 export function exhaustive(n: number): ExhaustiveRow[] {
 	const inputs = permutations(n);
 	return COMPARISON_SORTS.map(({ name, sort }) => {
@@ -126,6 +140,10 @@ export interface RandomReport {
 //     informam quantas vezes seu comparador foi chamado. Counting sort e radix sort não têm
 //     comparador para chamar: indexam um vetor pela chave, então sua contagem é zero por
 //     construção, e mesmo assim ordenam todas as entradas.
+// ES: Las mismas entradas aleatorias pasan por todos los algoritmos. Las ordenaciones por
+//     comparación informan cuántas veces se llamó a su comparador. Counting sort y radix sort no
+//     tienen comparador al que llamar: indexan un arreglo por la clave, así que su conteo es cero
+//     por construcción, y aun así ordenan todas las entradas.
 export function randomExperiment(n: number, inputs: number, seed: number): RandomReport {
 	const random = createRandom(seed);
 	const counts = new Map<string, number[]>(COMPARISON_SORTS.map(({ name }) => [name, []]));

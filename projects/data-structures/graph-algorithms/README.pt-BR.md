@@ -1,6 +1,6 @@
 # graph-algorithms
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Uma pequena biblioteca de grafos, escrita em C++ e em Go, com duas representações intercambiáveis (lista de adjacência e matriz de adjacência) e os algoritmos clássicos sobre elas: Dijkstra, Bellman-Ford, ordenação topológica, Prim e Kruskal. Ela ensina que o algoritmo depende da interface do grafo, não de como o grafo é guardado, e quanto custa cada representação.
 

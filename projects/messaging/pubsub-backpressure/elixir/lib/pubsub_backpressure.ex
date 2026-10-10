@@ -11,6 +11,11 @@ defmodule PubsubBackpressure do
   consegue: nada avisa o produtor para desacelerar, então a caixa cresce com o número de
   eventos. `demand/2` usa GenStage: o consumidor pede eventos e o produtor envia no máximo o
   que foi pedido, então o buffer fica abaixo de `max_demand`, não importa quantos eventos existam.
+
+  ES: `push/2` envía mensajes al buzón del consumidor lo más rápido que puede: nada le dice al
+  productor que se ralentice, así que el buzón crece con el número de eventos. `demand/2` usa
+  GenStage: el consumidor pide eventos y el productor envía como máximo lo que se pidió, así que
+  el buffer se queda por debajo de `max_demand`, sin importar cuántos eventos existan.
   """
 
   alias PubsubBackpressure.{Consumer, Meter, Producer}
@@ -66,6 +71,9 @@ defmodule PubsubBackpressure do
     #     the problem: the sender gets no signal that the receiver is falling behind.
     # PT: O `send/2` nunca bloqueia e nunca falha porque o receptor está ocupado. Esse é
     #     exatamente o problema: o remetente não recebe sinal de que o receptor está ficando para trás.
+    # ES: `send/2` nunca bloquea y nunca falla porque el receptor esté ocupado. Ese es
+    #     exactamente el problema: el emisor no recibe ninguna señal de que el receptor se está
+    #     quedando atrás.
     Enum.each(1..events, fn event -> send(consumer, {:event, event}) end)
     {:message_queue_len, waiting} = Process.info(consumer, :message_queue_len)
     Process.exit(consumer, :kill)

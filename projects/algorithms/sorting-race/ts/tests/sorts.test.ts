@@ -8,6 +8,9 @@ import { SORTS } from "../src/registry";
 // PT: As duas propriedades que definem "ordenado corretamente". Conferir só a ordem não basta:
 //     uma função que devolve [1, 1, 1] está em ordem e está errada. A saída também precisa ser
 //     uma permutação da entrada, isto é, ter os mesmos valores o mesmo número de vezes.
+// ES: Las dos propiedades que definen "ordenado correctamente". Comprobar solo el orden no basta:
+//     una función que devuelve [1, 1, 1] está en orden y está mal. La salida también debe ser
+//     una permutación de la entrada, es decir, tener los mismos valores el mismo número de veces.
 function isSorted(values: readonly number[]): boolean {
 	for (let i = 1; i < values.length; i++) {
 		if ((values[i - 1] as number) > (values[i] as number)) {
@@ -37,6 +40,7 @@ function isPermutation(a: readonly number[], b: readonly number[]): boolean {
 
 // EN: The same six cases are repeated in the tests of every other language.
 // PT: Os mesmos seis casos são repetidos nos testes de todas as outras linguagens.
+// ES: Los mismos seis casos se repiten en las pruebas de todos los demás lenguajes.
 const CASES: ReadonlyArray<[name: string, input: number[]]> = [
 	["empty", []],
 	["single element", [42]],
@@ -56,6 +60,7 @@ for (const [name, sort] of Object.entries(SORTS)) {
 				expect(isPermutation(input, output)).toBe(true);
 				// EN: A pure function must leave its argument untouched.
 				// PT: Uma função pura precisa deixar o argumento intacto.
+				// ES: Una función pura debe dejar el argumento intacto.
 				expect(input).toEqual(before);
 			});
 		}
@@ -65,6 +70,7 @@ for (const [name, sort] of Object.entries(SORTS)) {
 			lengths.forEach((raw, index) => {
 				// EN: A small value range forces many repeated keys in some of the arrays.
 				// PT: Uma faixa pequena de valores força muitas chaves repetidas em parte dos vetores.
+				// ES: Un rango pequeño de valores fuerza muchas claves repetidas en parte de los arreglos.
 				const modulus = index % 2 === 0 ? MAX_VALUE : 10;
 				const input = randomValues(raw % 300, index + 1).map((value) => value % modulus);
 				const output = sort(input);

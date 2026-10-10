@@ -1,6 +1,6 @@
 # big-o-lab
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um laboratório que ensina a **medir uma função e reconhecer sua curva de crescimento**. Seis algoritmos pequenos, um por classe (O(1), O(log n), O(n), O(n log n), O(n²) e O(2ⁿ)), contam suas próprias operações básicas enquanto o tamanho da entrada dobra. As contagens são conferidas com uma fórmula fechada, e uma etapa de ajuste de curvas nomeia a classe só a partir dos números.
 

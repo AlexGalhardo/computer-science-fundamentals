@@ -1,6 +1,6 @@
 # oop-vs-functional
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um carrinho de compras, com descontos, cupons e impostos, escrito quatro vezes: com objetos em Java e em TypeScript, e com funções sobre dados imutáveis em TypeScript e em Elixir. Ele ensina **o que muda quando as mesmas regras são escritas com objetos ou com funções**: onde fica o estado, como uma regra é escolhida (despacho dinâmico ou casamento de padrões), como um valor inválido é recusado (exceção ou valor) e que tipo de mudança é barata em cada estilo.
 
@@ -79,7 +79,7 @@ docker compose run --rm java-demo     # os mesmos recibos, pelo Java
 docker compose run --rm elixir-demo   # os mesmos recibos, pelo Elixir
 ```
 
-```
+```text
 == everything together
   subtotal 160.00
   - 6.00  bulk PEN: 20% off from 10 units

@@ -11,6 +11,9 @@ from mini_xunit import TestCase
 #     to it in `log`.
 # PT: Estas classes não são testes do framework, então moram em um arquivo que a descoberta não
 #     pega (não se chama `*_xtest.py`). Cada uma registra em `log` o que aconteceu com ela.
+# ES: Estas clases no son pruebas del framework, así que viven en un archivo que el
+#     descubrimiento no toma (no se llama `*_xtest.py`). Cada una registra en `log` lo que le
+#     ocurrió.
 
 
 class WasRun(TestCase):
@@ -57,6 +60,8 @@ class Counted(TestCase):
     # EN: Every instance gets a number. If two tests shared one instance, they would share it.
     # PT: Cada instância recebe um número. Se dois testes dividissem uma instância, dividiriam
     #     o número.
+    # ES: Cada instancia recibe un número. Si dos pruebas compartieran una instancia, compartirían
+    #     el número.
     created: ClassVar[int] = 0
     seen: ClassVar[list[int]] = []
 

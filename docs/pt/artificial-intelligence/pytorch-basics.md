@@ -1,6 +1,6 @@
 # Fundamentos de PyTorch
 
-> English version: [docs/en/artificial-intelligence/pytorch-basics.md](../../en/artificial-intelligence/pytorch-basics.md)
+> English version: [docs/en/artificial-intelligence/pytorch-basics.md](../../en/artificial-intelligence/pytorch-basics.md) · Versión en español: [docs/es/artificial-intelligence/pytorch-basics.md](../../es/artificial-intelligence/pytorch-basics.md)
 
 Mini-projeto MP-AI-6, em [`projects/artificial-intelligence/pytorch-basics`](../../../projects/artificial-intelligence/pytorch-basics). Ensina o que um framework de aprendizado profundo faz por você, refazendo o [neural-network-from-scratch](neural-network-from-scratch.md) (MP-AI-2) com PyTorch. A base está na seção [14](README.md#14-o-que-um-framework-oferece-pytorch) da página da área.
 
@@ -70,11 +70,11 @@ gradiente numérico = (perda(w + h) - perda(w - h)) / 2h        com h = 0,000001
 
 | Parâmetro | Retropropagação escrita à mão | `backward()` do PyTorch | Numérico |
 | --- | ---: | ---: | ---: |
-| `hidden1` w[0][0] | -0.060789 | -0.060789 | -0.060789 |
-| `hidden1` w[0][1] | 0.012666 | 0.012666 | 0.012666 |
+| `hidden1` `w[0][0]` | -0.060789 | -0.060789 | -0.060789 |
+| `hidden1` `w[0][1]` | 0.012666 | 0.012666 | 0.012666 |
 | `hidden1` b[0] | -0.049645 | -0.049645 | -0.049645 |
-| `hidden1` w[1][0] | -0.133021 | -0.133021 | -0.133021 |
-| `hidden1` w[1][1] | 0.010081 | 0.010081 | 0.010081 |
+| `hidden1` `w[1][0]` | -0.133021 | -0.133021 | -0.133021 |
+| `hidden1` `w[1][1]` | 0.010081 | 0.010081 | 0.010081 |
 | `hidden1` b[1] | -0.105778 | -0.105778 | -0.105778 |
 
 Nos 105 gradientes, o PyTorch e a retropropagação escrita à mão diferem em menos de 1e-12, e o PyTorch e o gradiente numérico em menos de 1e-8. Os dois primeiros são o mesmo algoritmo, então concordam até os últimos dígitos. O numérico é uma aproximação, então concorda um pouco menos. Um erro de sinal em um único peso apareceria como uma diferença milhares de vezes acima da tolerância, e um teste confere isso também.

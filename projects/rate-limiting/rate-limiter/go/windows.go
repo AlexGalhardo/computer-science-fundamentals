@@ -11,6 +11,10 @@ import "sync"
 // PT: As janelas são [0, W), [W, 2W), ... e o contador recomeça em cada fronteira. O estado
 // é um número de janela e um contador. O defeito: Limit requisições no fim de uma janela
 // mais Limit no começo da seguinte passam todas, o dobro do limite em pouco tempo.
+//
+// ES: Las ventanas son [0, W), [W, 2W), ... y el contador reinicia en cada frontera. El estado
+// es un número de ventana y un contador. El defecto: Limit solicitudes al final de una ventana
+// más Limit al comienzo de la siguiente pasan todas, el doble del límite en poco tiempo.
 type FixedWindow struct {
 	mu       sync.Mutex
 	config   Config
@@ -45,6 +49,11 @@ func (f *FixedWindow) Allow(nowMs int64) bool {
 // (t - W, t]. Nada é alinhado ao relógio, então o limite vale para qualquer intervalo de
 // tamanho W. O preço é memória: até Limit instantes por cliente. Requisições rejeitadas
 // não entram no log, senão um cliente que insiste nunca mais seria admitido.
+//
+// ES: Una solicitud en el tiempo t se admite cuando hay menos de Limit instantes en
+// (t - W, t]. Nada está alineado al reloj, así que el límite vale para cualquier intervalo de
+// tamaño W. El precio es memoria: hasta Limit instantes por cliente. Las solicitudes
+// rechazadas no entran al log, de lo contrario un cliente que insiste nunca volvería a ser admitido.
 type SlidingLog struct {
 	mu     sync.Mutex
 	config Config
@@ -79,6 +88,11 @@ func (s *SlidingLog) Allow(nowMs int64) bool {
 // o início da janela alinhada atual. A requisição é admitida quando estimativa < Limit. A
 // fórmula supõe que a janela anterior foi uniforme, então pode errar um pouco, em troca de
 // memória constante.
+//
+// ES: estimación = anterior * (1 - transcurrido / W) + actual, donde transcurrido es el tiempo
+// desde el inicio de la ventana alineada actual. La solicitud se admite cuando estimación <
+// Limit. La fórmula supone que la ventana anterior fue uniforme, así que puede equivocarse un
+// poco, a cambio de memoria constante.
 type SlidingCounter struct {
 	mu       sync.Mutex
 	config   Config
@@ -105,6 +119,7 @@ func (s *SlidingCounter) Allow(nowMs int64) bool {
 	elapsed := nowMs - windowID*windowMs
 	// EN: Both sides are multiplied by W: integers only, no rounding.
 	// PT: Os dois lados são multiplicados por W: só inteiros, sem arredondamento.
+	// ES: Los dos lados se multiplican por W: solo enteros, sin redondeo.
 	scaledEstimate := s.previous*(windowMs-elapsed) + s.current*windowMs
 	if scaledEstimate >= limit*windowMs {
 		return false

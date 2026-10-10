@@ -10,6 +10,9 @@ import { renderTable } from "./report";
 // PT: `bun run experiment`: roda o experimento de rajada e grava os resultados, a tabela e o
 //     gráfico em `results/`. O gráfico é desenhado a partir do mesmo objeto salvo como JSON,
 //     então a imagem nunca diverge dos números.
+// ES: `bun run experiment`: ejecuta el experimento de ráfaga y escribe los resultados, la tabla y
+//     el gráfico en `results/`. El gráfico se dibuja a partir del mismo objeto que se guarda como
+//     JSON, así que la imagen nunca diverge de los números.
 
 const projectDir = resolve(process.env.PROJECT_DIR ?? join(import.meta.dir, "..", ".."));
 const resultsDir = join(projectDir, "results");
@@ -37,12 +40,19 @@ const markdown = [
 	"",
 	"![Gráfico](burst.pt-BR.svg)",
 	"",
+	"## Solicitudes admitidas (Español)",
+	"",
+	renderTable(result, "es"),
+	"",
+	"![Gráfico](burst.es.svg)",
+	"",
 ].join("\n");
 
 writeFileSync(join(resultsDir, "burst.json"), `${JSON.stringify(result, null, "\t")}\n`);
 writeFileSync(join(resultsDir, "burst.md"), markdown);
 writeFileSync(join(resultsDir, "burst.svg"), renderChart(result, "en"));
 writeFileSync(join(resultsDir, "burst.pt-BR.svg"), renderChart(result, "pt"));
+writeFileSync(join(resultsDir, "burst.es.svg"), renderChart(result, "es"));
 
 console.log(renderTable(result, "en"));
-console.log(`\nwritten to ${resultsDir}: burst.json, burst.md, burst.svg, burst.pt-BR.svg`);
+console.log(`\nwritten to ${resultsDir}: burst.json, burst.md, burst.svg, burst.pt-BR.svg, burst.es.svg`);

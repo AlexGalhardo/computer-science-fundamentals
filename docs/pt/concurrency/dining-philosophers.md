@@ -1,6 +1,6 @@
 # Deadlock: o jantar dos filósofos
 
-> English version: [docs/en/concurrency/dining-philosophers.md](../../en/concurrency/dining-philosophers.md)
+> English version: [docs/en/concurrency/dining-philosophers.md](../../en/concurrency/dining-philosophers.md) · Versión en español: [docs/es/concurrency/dining-philosophers.md](../../es/concurrency/dining-philosophers.md)
 
 Mini-projeto: [projects/concurrency/dining-philosophers](../../../projects/concurrency/dining-philosophers/README.pt-BR.md) (MP-CONC-2). Linguagens: Go, Java.
 
@@ -8,7 +8,7 @@ Mini-projeto: [projects/concurrency/dining-philosophers](../../../projects/concu
 
 Cinco filósofos, cinco garfos, e cada filósofo precisa dos dois garfos ao seu lado para comer. Um garfo é uma trava: um dono por vez.
 
-```
+```text
             P0
        f0        f1
     P4              P1

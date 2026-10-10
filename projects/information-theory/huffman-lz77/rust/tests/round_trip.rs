@@ -3,6 +3,7 @@ use huffman_lz77::{entropy, huffman, lz77, report};
 
 // EN: The property that makes a compressor lossless: decode(encode(x)) == x for every x.
 // PT: A propriedade que torna um compressor sem perdas: decode(encode(x)) == x para todo x.
+// ES: La propiedad que hace sin pérdidas a un compresor: decode(encode(x)) == x para todo x.
 fn assert_round_trip(data: &[u8]) {
     assert_eq!(
         huffman::decode(&huffman::encode(data)).unwrap(),
@@ -30,6 +31,7 @@ fn every_sample_round_trips() {
 fn random_inputs_of_many_shapes_round_trip() {
     // EN: Small alphabets produce long matches and deep trees; large ones produce none.
     // PT: Alfabetos pequenos produzem repetições longas e árvores fundas; os grandes, nenhuma.
+    // ES: Los alfabetos pequeños producen repeticiones largas y árboles hondos; los grandes, no.
     let mut rng = Rng::new(42);
     for _ in 0..300 {
         let length = rng.below(700) as usize;
@@ -43,6 +45,7 @@ fn random_inputs_of_many_shapes_round_trip() {
 fn window_and_length_limits_round_trip() {
     // EN: A pattern that repeats farther back than the window, and a run longer than a token.
     // PT: Um padrão que se repete mais longe que a janela, e uma sequência maior que um token.
+    // ES: Un patrón que se repite más lejos que la ventana, y una secuencia mayor que un token.
     let mut data = samples::random()[..5000].to_vec();
     data.extend_from_slice(&samples::random()[..5000]);
     data.extend(std::iter::repeat_n(9u8, 3000));
@@ -62,6 +65,7 @@ fn entropy_acceptance_values() {
 fn huffman_stays_within_one_bit_of_the_entropy() {
     // EN: Source coding theorem: H <= average code length < H + 1 (body only, no header).
     // PT: Teorema da codificação de fonte: H <= comprimento médio < H + 1 (só o corpo).
+    // ES: Teorema de codificación de fuente: H <= longitud promedio < H + 1 (solo el cuerpo).
     for (name, data) in samples::all() {
         let body_bits = (huffman::encode(&data).len() - huffman::HEADER_LEN) as f64 * 8.0;
         let average = body_bits / data.len() as f64;
@@ -82,6 +86,8 @@ fn huffman_stays_within_one_bit_of_the_entropy() {
 fn committed_fixture_matches() {
     // EN: The same file is checked by the Python tests, so both languages agree byte for byte.
     // PT: O mesmo arquivo é conferido pelos testes em Python, então as duas linguagens concordam
+    //     byte a byte.
+    // ES: Las pruebas en Python comprueban el mismo archivo, así que los dos lenguajes coinciden
     //     byte a byte.
     let expected = include_str!("../../fixtures/expected.tsv");
     assert_eq!(report::fixture(&report::rows()), expected);

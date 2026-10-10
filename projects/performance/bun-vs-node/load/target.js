@@ -8,6 +8,11 @@
 //     erro de digitação em uma variável de ambiente). Por isso a lista de hosts permitidos é
 //     fechada: os nomes de loopback e os nomes de serviço deste docker-compose. Este arquivo é
 //     JavaScript puro porque o k6 o importa direto, e os testes do Bun também o importam.
+// ES: La regla de seguridad de toda prueba de carga de este repositorio: el destino debe ser un
+//     servicio local. Mandar carga a un host que no es tuyo es un ataque, incluso por accidente
+//     (basta un error de tipeo en una variable de entorno). Por eso la lista de hosts permitidos es
+//     cerrada: los nombres de loopback y los nombres de servicio de este docker-compose. Este
+//     archivo es JavaScript puro porque k6 lo importa directamente, y las pruebas de Bun también.
 
 export const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]", "bun-server", "node-server", "node-pm2-server"];
 
@@ -20,6 +25,9 @@ export const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]", "bun-server", "no
  * PT: O padrão é rígido de propósito. `http://localhost@example.com` e
  *     `http://localhost.example.com` parecem locais à primeira vista e não são. Tudo que o
  *     padrão não entende por completo é recusado.
+ * ES: El patrón es rígido a propósito. `http://localhost@example.com` y
+ *     `http://localhost.example.com` parecen locales a primera vista y no lo son. Todo lo que el
+ *     patrón no entiende por completo se rechaza.
  *
  * @param {string} target
  * @returns {string | undefined}

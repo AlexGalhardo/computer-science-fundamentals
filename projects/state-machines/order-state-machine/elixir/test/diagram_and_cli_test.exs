@@ -8,6 +8,8 @@ defmodule OrderStateMachine.DiagramAndCliTest do
   #     implementation renders from the table.
   # PT: O teste de atualização, do lado do Elixir: o arquivo versionado deve ser exatamente o
   #     que esta implementação renderiza a partir da tabela.
+  # ES: La prueba de actualización, desde el lado de Elixir: el archivo versionado debe ser
+  #     exactamente lo que esta implementación renderiza a partir de la tabla.
   test "the committed diagram.md is up to date" do
     committed = Path.expand("../../diagram.md", __DIR__) |> File.read!()
     assert committed == Diagram.render()
@@ -33,6 +35,7 @@ defmodule OrderStateMachine.DiagramAndCliTest do
   test "the demo shows a full order and a rejected transition" do
     assert {output, 0} = CLI.run(["demo"])
     assert output =~ "A full order"
+    assert output =~ "Un pedido completo"
     assert output =~ "REJECTED"
   end
 

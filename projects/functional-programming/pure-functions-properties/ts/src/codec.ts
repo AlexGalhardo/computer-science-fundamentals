@@ -2,6 +2,8 @@
 //     except digits, which the encoded form reserves for the counts.
 // PT: Codificação run-length: "aaabcc" vira "3a1b2c". A entrada pode conter qualquer
 //     caractere exceto dígitos, que a forma codificada reserva para as contagens.
+// ES: Codificación run-length: "aaabcc" se convierte en "3a1b2c". La entrada puede contener
+//     cualquier carácter excepto dígitos, que la forma codificada reserva para las cuentas.
 
 // EN: A pipeline: the regular expression cuts the text into runs (one character followed by
 //     any number of copies of itself), and each run is written as its length followed by its
@@ -11,6 +13,10 @@
 //     qualquer número de cópias dele mesmo), e cada sequência é escrita como o seu comprimento
 //     seguido do seu caractere. É o mesmo formato da versão em Elixir, que agrupa com
 //     `Enum.chunk_by/2`.
+// ES: Un pipeline: la expresión regular corta el texto en secuencias (un carácter seguido de
+//     cualquier número de copias de sí mismo), y cada secuencia se escribe como su longitud
+//     seguida de su carácter. Es el mismo formato de la versión en Elixir, que agrupa con
+//     `Enum.chunk_by/2`.
 export function encode(text: string): string {
 	return (text.match(/(.)\1*/gs) ?? []).map((run) => `${run.length}${run.charAt(0)}`).join("");
 }
@@ -19,6 +25,8 @@ export function encode(text: string): string {
 //     correctly.
 // PT: `\d+` lê uma contagem com qualquer número de dígitos, então uma sequência de 10 ou
 //     mais é decodificada corretamente.
+// ES: `\d+` lee una cuenta con cualquier número de dígitos, así que una secuencia de 10 o
+//     más se decodifica correctamente.
 export function decode(encoded: string): string {
 	return [...encoded.matchAll(/(\d+)(\D)/g)]
 		.map(([, count, letter]) => (letter ?? "").repeat(Number(count)))
@@ -32,6 +40,10 @@ export function decode(encoded: string): string {
 //     o par "0a" e a sequência desaparece. Todo exemplo com sequências menores que 10
 //     continua passando, e é por isso que os testes com exemplos não percebem o erro e a
 //     propriedade de ida e volta percebe.
+// ES: ERROR SEMBRADO, mantenido a propósito. `\d` lee un único dígito, así que "10a" se lee como
+//     el par "0a" y la secuencia desaparece. Todo ejemplo con secuencias menores que 10
+//     sigue pasando, y por eso las pruebas con ejemplos no notan el error y la
+//     propiedad de ida y vuelta sí.
 export function decodeBuggy(encoded: string): string {
 	return [...encoded.matchAll(/(\d)(\D)/g)].map(([, count, letter]) => (letter ?? "").repeat(Number(count))).join("");
 }

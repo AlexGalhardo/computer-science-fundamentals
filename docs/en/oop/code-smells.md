@@ -1,6 +1,6 @@
 # Executable code smell catalogue
 
-> Versão em português: [docs/pt/oop/code-smells.md](../../pt/oop/code-smells.md)
+> Versão em português: [docs/pt/oop/code-smells.md](../../pt/oop/code-smells.md) · Versión en español: [docs/es/oop/code-smells.md](../../es/oop/code-smells.md)
 
 Mini-project MP-OOP-2, in [`projects/oop/code-smells`](../../../projects/oop/code-smells). It teaches how to recognise common smells and remove them. Languages: TypeScript and Java.
 

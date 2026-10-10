@@ -2,6 +2,8 @@
 //     results/results-ts.md and results/table-ts.json.
 // PT: `bun run src/demo.ts` roda os três experimentos, imprime as tabelas e grava
 //     results/results-ts.md e results/table-ts.json.
+// ES: `bun run src/demo.ts` ejecuta los tres experimentos, imprime las tablas y escribe
+//     results/results-ts.md y results/table-ts.json.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -25,6 +27,9 @@ import { CHOSEN, sameSettings } from "./search";
 // PT: Uma casa decimal, com metades sempre arredondadas para cima. JavaScript e Python
 //     arredondam uma metade exata como 94.25 em direções diferentes, e os dois arquivos de
 //     resultados devem mostrar os mesmos números.
+// ES: Un decimal, con las mitades siempre redondeadas hacia arriba. JavaScript y Python redondean
+//     una mitad exacta como 94.25 en direcciones distintas, y los dos archivos de resultados deben
+//     mostrar los mismos números.
 function oneDecimal(value: number): string {
 	return (Math.floor(value * 10 + 0.5) / 10).toFixed(1);
 }

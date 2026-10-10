@@ -5,6 +5,9 @@ FROM python:3.14.8-slim-trixie
 # PT: OPENBLAS_NUM_THREADS=1: o NumPy entrega os produtos de matrizes ao OpenBLAS, que por padrão
 #     abre uma thread por núcleo. As matrizes aqui são minúsculas, então as threads só se
 #     atrapalham, e uma única thread ainda faz as somas rodarem na mesma ordem em toda execução.
+# ES: OPENBLAS_NUM_THREADS=1: NumPy entrega los productos de matrices a OpenBLAS, que por defecto
+#     abre un hilo por núcleo. Las matrices aquí son diminutas, así que los hilos solo se estorban,
+#     y un único hilo además hace que las sumas corran en el mismo orden en cada ejecución.
 ENV OPENBLAS_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN pip install numpy==2.5.3 pytest==9.1.1 ruff==0.16.10
 WORKDIR /app

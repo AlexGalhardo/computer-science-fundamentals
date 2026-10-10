@@ -15,6 +15,10 @@ import solid.dip.Infrastructure.SqlOrderTable;
 //     palavras: um lugar para guardar pedidos e um jeito de avisar o cliente. Essas interfaces
 //     pertencem à regra. Os detalhes se adaptam a elas, então a dependência do código-fonte
 //     passa a apontar dos detalhes para a regra.
+// ES: INVERSIÓN DE DEPENDENCIAS. La regla de negocio declara lo que necesita, con sus propias
+//     palabras: un lugar para guardar pedidos y una forma de avisar al cliente. Esas interfaces
+//     pertenecen a la regla. Los detalles se adaptan a ellas, así que la dependencia del código
+//     fuente pasa a apuntar de los detalles hacia la regla.
 public final class DipAfter {
   private DipAfter() {}
 
@@ -55,6 +59,8 @@ public final class DipAfter {
   //     the interfaces of the rule. Replacing SMTP or SQL is a change here and nowhere else.
   // PT: A raiz de composição: o único lugar que cita os detalhes concretos e os encaixa nas
   //     interfaces da regra. Trocar o SMTP ou o SQL é uma mudança aqui e em nenhum outro lugar.
+  // ES: La composition root: el único lugar que cita los detalles concretos y los encaja en las
+  //     interfaces de la regla. Cambiar SMTP o SQL es un cambio aquí y en ningún otro lugar.
   public static CheckoutApp createCheckout() {
     SmtpMailer mailer = new SmtpMailer();
     SqlOrderTable table = new SqlOrderTable();

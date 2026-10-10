@@ -4,6 +4,9 @@
 // PT: `bun run images [carga...]` constrói a imagem de cada linguagem para as cargas dadas
 //     (todas por padrão). O runner as construiria de qualquer forma, mas fazer isso antes
 //     mostra um erro de compilação na hora e deixa os testes rodarem sem um benchmark inteiro.
+// ES: `bun run images [carga...]` construye la imagen de cada lenguaje para las cargas dadas
+//     (todas por defecto). El runner las construiría de todos modos, pero hacerlo antes
+//     muestra un error de compilación al instante y deja correr las pruebas sin un benchmark completo.
 
 import { buildImage, RUNNER_WORKLOADS, readConfig } from "./lib";
 

@@ -1,6 +1,6 @@
 # order-state-machine
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 The life cycle of an order as an explicit state machine. It teaches **how explicit states and transitions remove invalid situations**: the rules live in one transition table, one generic function looks the table up, every event that is not in the table is rejected, and the tests and the diagram are generated from that same table.
 
@@ -75,15 +75,15 @@ docker compose run --rm ts-demo          # a full order, then a rejected transit
 docker compose run --rm elixir-demo      # the same, in Elixir
 ```
 
-```
-== A full order / Um pedido completo ==
+```text
+== A full order / Um pedido completo / Un pedido completo ==
 start: created
   pay      created -> paid
   ship     paid -> shipped
   deliver  shipped -> delivered
 end: delivered
 
-== A rejected transition / Uma transição rejeitada ==
+== A rejected transition / Uma transição rejeitada / Una transición rechazada ==
 start: created
   pay      created -> paid
   deliver  REJECTED: not allowed in paid, the order stays in paid
@@ -92,7 +92,7 @@ start: created
 end: delivered
 ```
 
-The TypeScript version also prints a description of the final state in English and Portuguese.
+The TypeScript version also prints a description of the final state in English, Portuguese and Spanish, after `end:` (`EN: delivered to the customer`, `PT: entregue ao cliente`, `ES: entregado al cliente`).
 
 To walk your own order, pass the events in order. The exit code is 0 when every event was accepted, 1 when one was rejected and 2 for an unknown event.
 

@@ -6,6 +6,10 @@
 //     (inteiros e memória). O JavaScript tem um tipo numérico só, um float de 64 bits, então a
 //     aritmética do n-body é a mesma das outras linguagens. O crivo usa um typed array, que é
 //     um bloco real de bytes em vez de um array de valores encaixotados.
+// ES: Carga de CPU en un thread en TypeScript sobre Bun: `nbody` (punto flotante) y `sieve`
+//     (enteros y memoria). JavaScript tiene un solo tipo numérico, un float de 64 bits, así que la
+//     aritmética del n-body es la misma de los otros lenguajes. La criba usa un typed array, que es
+//     un bloque real de bytes en lugar de un arreglo de valores encajonados.
 
 import { readFileSync } from "node:fs";
 
@@ -29,6 +33,7 @@ function planet(x: number, y: number, z: number, vx: number, vy: number, vz: num
 
 // EN: Sun, Jupiter, Saturn, Uranus and Neptune.
 // PT: Sol, Júpiter, Saturno, Urano e Netuno.
+// ES: Sol, Júpiter, Saturno, Urano y Neptuno.
 function makeBodies(): Body[] {
 	return [
 		planet(0, 0, 0, 0, 0, 0, 1),
@@ -90,6 +95,7 @@ function offsetMomentum(bodies: Body[]): void {
 
 // EN: One time step: every pair pulls on each other, then every body moves.
 // PT: Um passo de tempo: cada par se atrai, depois cada corpo anda.
+// ES: Un paso de tiempo: cada par se atrae, luego cada cuerpo avanza.
 function advance(bodies: Body[]): void {
 	for (let i = 0; i < bodies.length; i++) {
 		const a = bodies[i] as Body;
@@ -142,6 +148,7 @@ function nbody(n: number): string {
 
 // EN: Sieve of Eratosthenes. The checksum is "how many primes:the largest one".
 // PT: Crivo de Eratóstenes. O checksum é "quantos primos:o maior deles".
+// ES: Criba de Eratóstenes. El checksum es "cuántos primos:el mayor de ellos".
 function sieve(n: number): string {
 	const composite = new Uint8Array(n + 1);
 	for (let i = 2; i * i <= n; i++) {
@@ -164,6 +171,7 @@ function sieve(n: number): string {
 
 // EN: VmHWM in /proc/self/status is the peak resident memory of the process, in kibibytes.
 // PT: VmHWM em /proc/self/status é o pico de memória residente do processo, em kibibytes.
+// ES: VmHWM en /proc/self/status es el pico de memoria residente del proceso, en kibibytes.
 function peakMemoryKb(): number {
 	const match = /VmHWM:\s+(\d+)/.exec(readFileSync("/proc/self/status", "utf8"));
 	return match?.[1] === undefined ? 0 : Number(match[1]);

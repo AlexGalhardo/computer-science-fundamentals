@@ -1,6 +1,6 @@
 # Laboratório de senhas e sessões: armazenamento, limite de tentativas e cookies de sessão (MP-SEC-6)
 
-> English version: [docs/en/security/passwords-sessions-lab.md](../../en/security/passwords-sessions-lab.md)
+> English version: [docs/en/security/passwords-sessions-lab.md](../../en/security/passwords-sessions-lab.md) · Versión en español: [docs/es/security/passwords-sessions-lab.md](../../es/security/passwords-sessions-lab.md)
 
 Mini-projeto: [`projects/security/passwords-sessions-lab`](../../../projects/security/passwords-sessions-lab/README.pt-BR.md). Tópicos do quiz: `authentication`, `sessions-cookies`.
 
@@ -43,7 +43,7 @@ A taxa é o custo do servidor por login e, lida pelo outro lado, o número de pa
 
 ## A falha
 
-```
+```text
 outra pessoa                        servidor (vulnerável)                   alice-fake
 GET /home  ---------------------->  sessão nova X, anônima
         (X vai parar no navegador da alice-fake)

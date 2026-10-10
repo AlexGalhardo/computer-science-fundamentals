@@ -1,6 +1,6 @@
 # hybrid-quicksort
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 One quicksort with two knobs: the pivot strategy (first element, random, median of three) and the threshold `k` below which a range is sorted with insertion sort. The project measures what each knob changes in practice: the pivot decides whether sorted input is the best case or the quadratic worst case, and the threshold trims the constant factor.
 

@@ -40,6 +40,8 @@ describe("formulas", () => {
 	//     that generated them. This is the sanity check of the least-squares formula.
 	// PT: Quando os dados seguem exatamente a lei de Amdahl, o ajuste precisa devolver a fração
 	//     serial que os gerou. É o teste de sanidade da fórmula de mínimos quadrados.
+	// ES: Cuando los datos siguen exactamente la ley de Amdahl, el ajuste debe devolver la fracción
+	//     serial que los generó. Es la prueba de cordura de la fórmula de mínimos cuadrados.
 	test("the fit recovers the serial fraction of exact Amdahl data", () => {
 		for (const s of [0, 0.01, 0.1, 0.5]) {
 			const points = [1, 2, 4, 8].map((workers) => ({ workers, speedup: amdahl(s, workers) }));

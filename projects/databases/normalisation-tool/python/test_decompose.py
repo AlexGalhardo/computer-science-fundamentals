@@ -43,6 +43,8 @@ def test_chase_on_the_two_classic_decompositions() -> None:
     #     lossy, because B determines nothing and the join invents combinations.
     # PT: R(A, B, C) com A -> B. Dividir por A é sem perda (teorema de Heath). Dividir por B tem
     #     perda, porque B não determina nada e a junção inventa combinações.
+    # ES: R(A, B, C) con A -> B. Dividir por A es sin pérdida (teorema de Heath). Dividir por B
+    #     tiene pérdida, porque B no determina nada y el join inventa combinaciones.
     relation = frozenset("ABC")
     fds = parse_fds("A -> B")
     assert is_lossless(relation, sets("A B", "A C"), fds)
@@ -62,6 +64,8 @@ def test_chase_needs_more_than_one_pass() -> None:
     #     B -> C can.
     # PT: Três relações: nenhum par de linhas basta de início, a regra A -> B precisa disparar
     #     antes que B -> C possa.
+    # ES: Tres relaciones: ningún par de filas basta al inicio, la regla A -> B debe activarse
+    #     antes de que B -> C pueda.
     relation = frozenset("ABCD")
     fds = parse_fds("A -> B; B -> C; C -> D")
     assert is_lossless(relation, sets("A B", "B C", "C D"), fds)
@@ -129,6 +133,11 @@ def test_decompositions_are_lossless_on_random_schemas() -> None:
     #     perda. As outras promessas de cada algoritmo também são conferidas: a síntese para a
     #     3FN mantém todas as dependências e gera relações na 3FN, e o algoritmo da FNBC gera
     #     relações na FNBC.
+    # ES: El criterio de aceptación de MP-DB-2.2, además de los casos de libro: para 300
+    #     conjuntos aleatorios de dependencias el chase debe confirmar que las dos
+    #     descomposiciones son sin pérdida. También se verifican las otras promesas de cada
+    #     algoritmo: la síntesis a la 3FN mantiene todas las dependencias y produce relaciones
+    #     en 3FN, y el algoritmo de la FNBC produce relaciones en FNBC.
     generator = random.Random(2026)
     for _ in range(300):
         names = list("ABCDEF")[: generator.randrange(2, 7)]

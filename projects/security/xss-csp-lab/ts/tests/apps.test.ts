@@ -15,6 +15,11 @@ import { createVulnerableApp } from "../src/vulnerable/vulnerable-app";
 //     codificado, e o cabeçalho da política). Se um navegador depois executa o script é provado
 //     pelos testes Playwright em `tests/e2e`. As mesmas funções de cenário rodam contra os dois
 //     apps.
+// ES: Pruebas del lado del servidor, sin navegador y sin red: `app.handle` recibe una Request y
+//     devuelve la Response. Comprueban lo que el servidor ESCRIBE (marcado crudo o texto
+//     codificado, y la cabecera de la política). Si un navegador después ejecuta el script lo prueban
+//     las pruebas Playwright en `tests/e2e`. Las mismas funciones de escenario corren contra las dos
+//     apps.
 
 const ORIGIN = "http://lab.test";
 

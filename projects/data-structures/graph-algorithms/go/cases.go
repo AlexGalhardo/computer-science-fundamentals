@@ -16,6 +16,8 @@ var ErrUnknownProblem = errors.New("unknown problem number in the case file")
 //
 // EN: A case file starts with the number of the problem, then the data of that problem.
 // PT: Um arquivo de caso começa com o número do problema, depois vêm os dados desse problema.
+// ES: Un archivo de caso empieza con el número del problema, luego vienen los datos de ese
+// problema.
 func SolveCase(input io.Reader, representation Representation) (string, error) {
 	reader := bufio.NewReader(input)
 	var problem int
@@ -41,6 +43,11 @@ func SolveCase(input io.Reader, representation Representation) (string, error) {
 // partir de 0 aqui dentro. Os casos 4 e 5 são grafos aleatórios que contêm ciclos, e a saída
 // esperada deles lista só os vértices que podem ser ordenados, então a ordem parcial é
 // impressa como está.
+// ES: Problema 1 de los casos de referencia: imprimir el menor ordenamiento topológico, en orden
+// lexicográfico, de un grafo dirigido. Los vértices se numeran desde 1 en el archivo y desde 0
+// aquí dentro. Los casos 4 y 5 son grafos aleatorios que contienen ciclos, y la salida esperada
+// de ellos lista solo los vértices que pueden ordenarse, así que el orden parcial se imprime
+// tal como está.
 func solveOrdering(reader io.Reader, representation Representation) (string, error) {
 	var vertices, arcs int
 	if _, err := fmt.Fscan(reader, &vertices, &arcs); err != nil {
@@ -77,6 +84,13 @@ func solveOrdering(reader io.Reader, representation Representation) (string, err
 // mínimo: o vértice (j, i) significa "j caixas fechadas, i objetos guardados", e fechar mais
 // uma caixa com os objetos de i até i' é um arco para (j + 1, i') cujo peso é a sobra ao
 // quadrado. Os arcos só vão da camada j para a camada j + 1, então o grafo é acíclico.
+// ES: Problema 2 de los casos de referencia: n objetos, en el orden dado, van a exactamente k
+// cajas de volumen V. Una caja recibe una secuencia consecutiva de objetos (quizá ninguno), y el
+// costo es la suma de los cuadrados del espacio que sobra en cada caja. El problema se modela
+// como camino mínimo: el vértice (j, i) significa "j cajas cerradas, i objetos guardados", y
+// cerrar una caja más con los objetos de i hasta i' es un arco hacia (j + 1, i') cuyo peso es el
+// sobrante al cuadrado. Los arcos solo van de la capa j a la capa j + 1, así que el grafo es
+// acíclico.
 func solvePacking(reader io.Reader, representation Representation) (string, error) {
 	var objects, boxes int
 	var volume Weight
@@ -126,6 +140,8 @@ func solvePacking(reader io.Reader, representation Representation) (string, erro
 // EN: "V E" on the first line, then one "from to weight" line per arc, vertices numbered from 0.
 // PT: "V E" na primeira linha, depois uma linha "origem destino peso" por arco, com vértices
 // numerados a partir de 0.
+// ES: "V E" en la primera línea, luego una línea "origen destino peso" por arco, con vértices
+// numerados desde 0.
 func ReadWeightedGraph(input io.Reader, representation Representation) (Graph, error) {
 	reader := bufio.NewReader(input)
 	var vertices, arcs int

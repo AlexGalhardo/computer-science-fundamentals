@@ -17,6 +17,8 @@ type Action = "pay" | "ship" | "cancel";
 //     to the State pattern changes where the rules live, not what they are.
 // PT: A tabela de transições do pedido, escrita uma única vez. Os dois desenhos precisam
 //     obedecê-la: a refatoração para o padrão State muda onde as regras ficam, não o que são.
+// ES: La tabla de transiciones del pedido, escrita una sola vez. Los dos diseños deben
+//     obedecerla: la refactorización al patrón State cambia dónde están las reglas, no lo que son.
 const TABLE: Record<Status, Record<Action, Status | null>> = {
 	pending: { pay: "paid", ship: null, cancel: "cancelled" },
 	paid: { pay: null, ship: "shipped", cancel: "cancelled" },
@@ -70,6 +72,8 @@ describe("state: where the rules live", () => {
 	//     conditionals on the status inside the methods.
 	// PT: O defeito do primeiro desenho e o que o segundo remove, medido no código:
 	//     condicionais sobre o status dentro dos métodos.
+	// ES: El defecto del primer diseño y lo que elimina el segundo, medido en el código:
+	//     condicionales sobre el estado dentro de los métodos.
 	test("the conditional design tests the status in every method, the State design in none", () => {
 		expect(code("before.ts").match(/if \(this\.current ===/g)?.length).toBe(3);
 		expect(code("after.ts").match(/\bif\b|\bswitch\b/g)).toBeNull();

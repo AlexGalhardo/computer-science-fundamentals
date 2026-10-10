@@ -6,6 +6,10 @@
 //     calculada pelo classificador TypeScript testado e gravada em `../results/results.js`,
 //     então este arquivo só consulta a resposta e desenha a árvore de recursão. Não há etapa de
 //     build nem requisição de rede: a página funciona aberta direto do disco.
+// ES: Página estática del teorema maestro. La clasificación de cada (a, b, f) ofrecido aquí fue
+//     calculada por el clasificador TypeScript probado y guardada en `../results/results.js`,
+//     así que este archivo solo busca la respuesta y dibuja el árbol de recursión. No hay paso
+//     de build ni petición de red: la página funciona abierta directo desde el disco.
 
 const SVG = "http://www.w3.org/2000/svg";
 const WIDTH = 760;
@@ -17,10 +21,12 @@ const NODE = "#2563eb";
 const BAR = "#d97706";
 
 const CASES = {
-	"case-1": "Case 1: the leaves dominate / Caso 1: as folhas dominam",
-	"case-2": "Case 2: every level costs the same / Caso 2: todo nível custa o mesmo",
-	"case-3": "Case 3: the root dominates / Caso 3: a raiz domina",
-	"not-applicable": "The basic master theorem does not apply / O teorema mestre básico não se aplica",
+	"case-1": "Case 1: the leaves dominate / Caso 1: as folhas dominam / Caso 1: las hojas dominan",
+	"case-2":
+		"Case 2: every level costs the same / Caso 2: todo nível custa o mesmo / Caso 2: cada nivel cuesta lo mismo",
+	"case-3": "Case 3: the root dominates / Caso 3: a raiz domina / Caso 3: la raíz domina",
+	"not-applicable":
+		"The basic master theorem does not apply / O teorema mestre básico não se aplica / El teorema maestro básico no se aplica",
 };
 
 function svg(name, attributes, text) {
@@ -53,6 +59,8 @@ function formatCost(value) {
 //     n / b^i, each costing f(size), and a node of size 1 is a base case that costs 1.
 // PT: A mesma aritmética da árvore de recursão da CLI: o nível i tem a^i nós de tamanho
 //     n / b^i, cada um custando f(tamanho), e um nó de tamanho 1 é um caso base que custa 1.
+// ES: La misma aritmética del árbol de recursión de la CLI: el nivel i tiene a^i nodos de tamaño
+//     n / b^i, cada uno costando f(tamaño), y un nodo de tamaño 1 es un caso base que cuesta 1.
 function treeLevels(recurrence) {
 	const levels = [];
 	const n = recurrence.b ** DEPTH;
@@ -77,6 +85,11 @@ function nodeX(index, shown) {
 //     desenhadas, o resto é resumido). À direita, uma barra com o custo total do nível. Ler as
 //     barras de cima para baixo mostra o caso: barras crescentes significam que as folhas
 //     dominam, barras iguais significam um fator log n, barras decrescentes que a raiz domina.
+// ES: Cada fila es un nivel del árbol. A la izquierda, las llamadas de ese nivel (se dibujan como
+//     máximo nueve, el resto se resume). A la derecha, una barra con el costo total del nivel.
+//     Leer las barras de arriba hacia abajo muestra el caso: barras crecientes significan que las
+//     hojas dominan, barras iguales significan un factor log n, barras decrecientes que la raíz
+//     domina.
 function drawTree(container, recurrence) {
 	const levels = treeLevels(recurrence);
 	const height = ROW * levels.length;
@@ -107,12 +120,12 @@ function drawTree(container, recurrence) {
 			}
 			chart.append(svg("circle", { cx: nodeX(index, shown), cy: y, r: 9, fill: NODE }));
 		}
-		const hidden = level.nodes > shown ? `, ${shown} drawn / desenhados` : "";
+		const hidden = level.nodes > shown ? `, ${shown} drawn / desenhados / dibujados` : "";
 		chart.append(
 			svg(
 				"text",
 				{ x: barLeft, y: y + 26, "font-size": 12, fill: "currentColor" },
-				`${formatCost(level.nodes)} × size / tamanho ${formatCost(level.size)}${hidden}`,
+				`${formatCost(level.nodes)} × size / tamanho / tamaño ${formatCost(level.size)}${hidden}`,
 			),
 			svg("rect", {
 				x: barLeft,
@@ -124,7 +137,7 @@ function drawTree(container, recurrence) {
 			svg(
 				"text",
 				{ x: barLeft, y: y + 42, "font-size": 12, fill: "currentColor" },
-				`level cost / custo do nível: ${formatCost(level.levelCost)}`,
+				`level cost / custo do nível / costo del nivel: ${formatCost(level.levelCost)}`,
 			),
 		);
 	});
@@ -180,13 +193,14 @@ function main() {
 			`T(n) = ${a === 1 ? "" : a}T(n/${b}) + ${growthText(d, k)}  ·  log_${b}(${a}) = ${found.criticalExponent.toFixed(3)}`;
 		let solution = found.solution ? `T(n) = ${found.solution}` : "";
 		if (!found.solution && found.extendedSolution) {
-			solution = `extended case 2 / caso 2 estendido: T(n) = ${found.extendedSolution}`;
+			solution = `extended case 2 / caso 2 estendido / caso 2 extendido:T(n) = ${found.extendedSolution}`;
 		}
 		document.getElementById("verdict").textContent = `${CASES[found.case]}. ${solution}`;
 		document.getElementById("reason-en").textContent = `EN: ${found.reason.en}`;
 		document.getElementById("reason-pt").textContent = `PT: ${found.reason.pt}`;
+		document.getElementById("reason-es").textContent = `ES: ${found.reason.es}`;
 		document.getElementById("tree-note").textContent =
-			`n = ${b}^${DEPTH} = ${b ** DEPTH}. The last level is the base cases, which cost 1 each. / O último nível são os casos base, que custam 1 cada.`;
+			`n = ${b}^${DEPTH} = ${b ** DEPTH}. The last level is the base cases, which cost 1 each. / O último nível são os casos base, que custam 1 cada. / El último nivel son los casos base, que cuestan 1 cada uno.`;
 		drawTree(document.getElementById("tree"), found.recurrence);
 	}
 	for (const select of [selectA, selectB, selectF]) {

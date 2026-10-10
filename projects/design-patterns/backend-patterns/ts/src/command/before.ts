@@ -8,6 +8,10 @@ type Entry = { kind: "add"; sku: string; quantity: number } | { kind: "remove"; 
 //     em um único `switch`. O conhecimento de uma operação fica dividido em dois lugares, então
 //     toda operação nova (aplicar cupom, mudar quantidade) edita o carrinho duas vezes, e não
 //     existe um objeto que possa ser enfileirado, registrado ou refeito.
+// ES: DISEÑO QUE FALLA. El carrito ejecuta cada operación en un método propio y deshace todas
+//     en un único `switch`. El conocimiento de una operación queda dividido en dos lugares, así
+//     que toda operación nueva (aplicar cupón, cambiar cantidad) edita el carrito dos veces, y
+//     no existe un objeto que se pueda encolar, registrar o rehacer.
 export class Cart {
 	private readonly items = new Map<string, number>();
 	private readonly log: Entry[] = [];

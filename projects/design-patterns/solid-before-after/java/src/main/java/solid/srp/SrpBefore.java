@@ -14,6 +14,9 @@ import solid.srp.Invoices.Order;
 // PT: QUEBRA O PRINCÍPIO DA RESPONSABILIDADE ÚNICA. Um método guarda três assuntos que mudam
 //     por motivos diferentes: a regra de imposto, o layout do recibo e o formato do registro
 //     gravado. Qualquer uma das três mudanças abre este método.
+// ES: ROMPE EL PRINCIPIO DE RESPONSABILIDAD ÚNICA. Un método guarda tres asuntos que cambian por
+//     motivos distintos: la regla del impuesto, el diseño del recibo y el formato del registro
+//     guardado. Cualquiera de los tres cambios abre este método.
 public final class SrpBefore {
   private SrpBefore() {}
 

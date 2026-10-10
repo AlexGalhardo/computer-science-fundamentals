@@ -4,12 +4,16 @@
 // PT: Transforma os resumos do k6 do teste de carga na tabela de resultados versionada, e confere
 //     os critérios de aceite no caminho: o checkout ingênuo precisa vender demais, e cada correção
 //     precisa vender exatamente o estoque.
+// ES: Transforma los resúmenes de k6 de la prueba de carga en la tabla de resultados versionada, y verifica
+//     los criterios de aceptación en el camino: el checkout ingenuo debe vender de más, y cada corrección
+//     debe vender exactamente el stock.
 
 import { z } from "zod";
 import { STRATEGIES, type Strategy } from "./checkout";
 
 // EN: The summaries are files written by another tool, so they are validated like any input.
 // PT: Os resumos são arquivos escritos por outra ferramenta, então são validados como qualquer entrada.
+// ES: Los resúmenes son archivos escritos por otra herramienta, así que se validan como cualquier entrada.
 export const summarySchema = z.object({
 	strategy: z.enum(STRATEGIES),
 	round: z.number().int().min(1),
@@ -46,7 +50,7 @@ export interface Row {
 	p95MsMean: number;
 }
 
-export type Language = "en" | "pt";
+export type Language = "en" | "pt" | "es";
 
 function mean(values: number[]): number {
 	return values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -56,6 +60,8 @@ function mean(values: number[]): number {
 //     spread is noise, not a result.
 // PT: Desvio padrão amostral. Uma diferença entre duas estratégias menor que essa dispersão é
 //     ruído, não resultado.
+// ES: Desviación estándar muestral. Una diferencia entre dos estrategias menor que esa dispersión es
+//     ruido, no resultado.
 function stddev(values: number[]): number {
 	if (values.length < 2) {
 		return 0;
@@ -97,6 +103,8 @@ export function aggregate(summaries: Summary[]): Row[] {
 //     test showed what the lesson claims.
 // PT: Os critérios de aceite em código. Devolve uma frase por violação, vazio quando o teste de
 //     carga mostrou o que a lição afirma.
+// ES: Los criterios de aceptación como código. Devuelve una frase por violación, vacío cuando la prueba de
+//     carga mostró lo que afirma la lección.
 export function violations(summaries: Summary[]): string[] {
 	const problems: string[] = [];
 	for (const strategy of STRATEGIES) {
@@ -127,28 +135,39 @@ function range(min: number, max: number): string {
 }
 
 export function renderTable(rows: Row[], language: Language): string {
-	const header =
-		language === "en"
-			? [
-					"Strategy",
-					"Rounds",
-					"Orders created",
-					"Requests/s (mean ± sd)",
-					"Rejected: sold out (mean)",
-					"Rejected: gave up after conflicts (mean)",
-					"Rejected share",
-					"p95 latency (ms)",
-				]
-			: [
-					"Estratégia",
-					"Rodadas",
-					"Pedidos criados",
-					"Requisições/s (média ± dp)",
-					"Rejeitadas: esgotado (média)",
-					"Rejeitadas: desistiu após conflitos (média)",
-					"Parcela rejeitada",
-					"Latência p95 (ms)",
-				];
+	const headers: Record<Language, string[]> = {
+		en: [
+			"Strategy",
+			"Rounds",
+			"Orders created",
+			"Requests/s (mean ± sd)",
+			"Rejected: sold out (mean)",
+			"Rejected: gave up after conflicts (mean)",
+			"Rejected share",
+			"p95 latency (ms)",
+		],
+		pt: [
+			"Estratégia",
+			"Rodadas",
+			"Pedidos criados",
+			"Requisições/s (média ± dp)",
+			"Rejeitadas: esgotado (média)",
+			"Rejeitadas: desistiu após conflitos (média)",
+			"Parcela rejeitada",
+			"Latência p95 (ms)",
+		],
+		es: [
+			"Estrategia",
+			"Rondas",
+			"Pedidos creados",
+			"Solicitudes/s (media ± ds)",
+			"Rechazadas: agotado (media)",
+			"Rechazadas: desistió tras conflictos (media)",
+			"Proporción rechazada",
+			"Latencia p95 (ms)",
+		],
+	};
+	const header = headers[language];
 	const lines = [`| ${header.join(" | ")} |`, `| ${header.map(() => "---").join(" | ")} |`];
 	for (const row of rows) {
 		const orders = range(row.ordersMin, row.ordersMax).replace("to", language === "en" ? "to" : "a");

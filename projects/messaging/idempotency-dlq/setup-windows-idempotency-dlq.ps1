@@ -4,10 +4,17 @@
 # PT: Constrói e testa o mini-projeto idempotency-dlq. O único requisito é o Docker.
 #     Os testes de ponta a ponta em TypeScript usam um RabbitMQ e um PostgreSQL reais; os testes
 #     em Go são em memória. Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
+# ES: Construye y prueba el mini-proyecto idempotency-dlq. El único requisito es Docker.
+#     Las pruebas de extremo a extremo en TypeScript usan un RabbitMQ y un PostgreSQL reales; las
+#     pruebas en Go son en memoria. Los contenedores y volúmenes se eliminan al final, incluso
+#     cuando una prueba falla.
 # EN: Docker writes its progress to stderr. With "Stop", Windows PowerShell 5.1 turns that into a
 #     terminating error whenever the output is redirected, so failures are checked by exit code.
 # PT: O Docker escreve o progresso em stderr. Com "Stop", o Windows PowerShell 5.1 transforma isso
 #     em erro fatal sempre que a saída é redirecionada, então as falhas são conferidas pelo código de saída.
+# ES: Docker escribe su progreso en stderr. Con "Stop", Windows PowerShell 5.1 lo convierte en un
+#     error fatal siempre que la salida se redirige, así que los fallos se verifican por el código
+#     de salida.
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot

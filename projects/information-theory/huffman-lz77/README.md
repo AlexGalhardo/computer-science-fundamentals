@@ -1,6 +1,6 @@
 # huffman-lz77
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How far can a file shrink, and why? This mini-project measures the **Shannon entropy** of a file, compresses it with **Huffman coding** (short codes for frequent bytes) and with **LZ77** (references to repeated stretches), and puts the three numbers side by side for five generated sample files. The same code is written in Rust and in Python, and the two produce byte-identical output.
 

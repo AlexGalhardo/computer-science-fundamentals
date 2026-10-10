@@ -4,6 +4,9 @@
 // PT: `bun run ts/src/bench.ts <problema>-<versão> <n>` resolve uma instância e imprime uma linha
 //     JSON no contrato de benchmark, por exemplo `knapsack-memo 20`. Montar a instância faz
 //     parte do trecho cronometrado, mas é linear em n e desprezível perto dos resolvedores.
+// ES: `bun run ts/src/bench.ts <problema>-<versión> <n>` resuelve una instancia e imprime una línea
+//     JSON en el contrato de benchmark, por ejemplo `knapsack-memo 20`. Construir la instancia
+//     forma parte del tramo cronometrado, pero es lineal en n y despreciable frente a los resolvedores.
 
 import { newCounter } from "./counter";
 import { PROBLEMS, VERSIONS, type Version } from "./problems";
@@ -37,6 +40,7 @@ console.log(
 		implementation,
 		// EN: The answer is the checksum: equal values prove that the versions and the languages agree.
 		// PT: A resposta é o checksum: valores iguais provam que as versões e as linguagens concordam.
+		// ES: La respuesta es el checksum: valores iguales prueban que las versiones y los lenguajes coinciden.
 		checksum: String(answer),
 	}),
 );

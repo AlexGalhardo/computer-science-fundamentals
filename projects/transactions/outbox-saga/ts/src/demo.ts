@@ -2,6 +2,8 @@
 //     services, prints what happened and writes results/results.md.
 // PT: A demo: `docker compose run --rm demo`. Roda os cinco cenários contra os dois serviços em
 //     execução, mostra o que aconteceu e grava results/results.md.
+// ES: La demo: `docker compose run --rm demo`. Ejecuta los cinco escenarios contra los dos servicios en
+//     ejecución, muestra lo que ocurrió y escribe results/results.md.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

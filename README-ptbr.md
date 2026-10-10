@@ -4,7 +4,7 @@
 # Computer Science Fundamentals
 
 Fundamentos de ciência da computação que você pode **responder, rodar e medir**:
-um quiz bilíngue cobrindo 32 áreas, e mini-projetos executáveis que mostram cada
+um quiz trilíngue cobrindo 32 áreas, e mini-projetos executáveis que mostram cada
 conceito funcionando, com testes, benchmarks e explicações passo a passo
 escritas para iniciantes.
 
@@ -13,7 +13,10 @@ escritas para iniciantes.
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://www.conventionalcommits.org/en/v1.0.0/)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-blue.svg)](https://semver.org/)
 
-[Read in English](./README.md)
+<!-- markdownlint-disable-next-line MD001 -->
+### [Read in English](./README.md)
+
+### [Lea en Español](./README-es.md)
 
 </div>
 
@@ -35,7 +38,7 @@ escritas para iniciantes.
 **Computer Science Fundamentals** é uma referência de estudo de longo prazo,
 open source (MIT). Ela tem duas partes que apontam uma para a outra:
 
-- **Um quiz.** Múltipla escolha, 5 alternativas, em português e inglês. Depois
+- **Um quiz.** Múltipla escolha, 5 alternativas, em inglês, português e espanhol. Depois
   da resposta, a explicação aparece ao lado da questão: o conceito, por que a
   alternativa certa está certa, por que cada uma das outras está errada, e um
   link para o mini-projeto que mostra a ideia funcionando.
@@ -43,7 +46,7 @@ open source (MIT). Ela tem duas partes que apontam uma para a outra:
   condição de corrida que perde atualizações e quatro formas de corrigi-la, uma
   árvore B que lê 3 páginas onde uma árvore binária lê 16, uma injeção de SQL e
   a consulta que a impede. Cada um tem testes, uma demo ou benchmark, e
-  documentação nos dois idiomas. Tudo roda em Docker, então o único requisito é
+  documentação nos três idiomas (inglês, português e espanhol). Tudo roda em Docker, então o único requisito é
   o Docker.
 
 O status atual de cada área (questões escritas, revisão cega, mini-projetos
@@ -211,15 +214,15 @@ bun run quiz:validate
 | [SECURITY.md](./SECURITY.md) | escopo dos laboratórios de segurança e dos testes de carga |
 | [AGENTS.md](./AGENTS.md) | orientação para agentes de IA |
 
-Todo documento em `docs/pt/` tem um equivalente em `docs/en/`.
+Todo documento em `docs/pt/` tem um equivalente em `docs/en/` e `docs/es/`.
 
 ## Estrutura do repositório
 
 ```text
 /quiz/         o app do quiz e as questões (quiz/content/<area>/<topico>.json)
-/projects/     mini-projetos, por área, cada um com testes, demo e dois READMEs
+/projects/     mini-projetos, por área, cada um com testes, demo e três READMEs
 /benchmarks/   cargas de benchmark entre linguagens e o dashboard (em andamento)
-/docs/         documentação por área, em inglês (en/) e português (pt/)
+/docs/         documentação por área, em inglês (en/), português (pt/) e espanhol (es/)
 /tools/        runner de benchmark e gerador de mini-projetos
 /docker/       uma imagem base fixada por linguagem
 /.github/      integração contínua

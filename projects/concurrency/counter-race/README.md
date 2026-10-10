@@ -1,6 +1,6 @@
 # counter-race
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Eight workers add 1 to the same counter 125,000 times each. The answer should be 1,000,000. Without synchronisation it is not, because `counter++` is three steps (read, add, write) and two workers can read the same old value. This mini-project shows that lost update in Go, Rust, Java and TypeScript, and then fixes it in four ways: a mutex, an atomic operation, message passing and an actor.
 
@@ -72,7 +72,7 @@ docker compose run --rm go-demo      # also: rust-demo, java-demo, ts-demo, elix
 
 Output of the Go demo on the machine described in [results/results.md](results/results.md):
 
-```
+```text
 variant       final       lost         ms
 buggy        230786     769214        5.4
 mutex       1000000          0       30.7

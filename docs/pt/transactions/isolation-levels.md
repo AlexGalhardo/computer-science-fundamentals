@@ -1,6 +1,6 @@
 # Níveis de isolamento no PostgreSQL (MP-TX-1)
 
-> English version: [docs/en/transactions/isolation-levels.md](../../en/transactions/isolation-levels.md)
+> English version: [docs/en/transactions/isolation-levels.md](../../en/transactions/isolation-levels.md) · Versión en español: [docs/es/transactions/isolation-levels.md](../../es/transactions/isolation-levels.md)
 
 Mini-projeto: [`projects/transactions/isolation-levels`](../../../projects/transactions/isolation-levels/README.pt-BR.md). Tópicos do quiz: `isolation-levels-anomalies`, `mvcc`, `locking`, `acid-properties`.
 

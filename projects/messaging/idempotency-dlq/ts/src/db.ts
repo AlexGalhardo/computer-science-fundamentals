@@ -5,6 +5,10 @@
 //     (`balance + amount`), que NÃO é idempotente por natureza. Aplicar a mesma mensagem duas
 //     vezes credita duas vezes, e a tabela `ledger` guarda uma linha por efeito aplicado para os
 //     testes poderem contar.
+// ES: El efecto secundario de este laboratorio es un crédito en una cuenta: una actualización
+//     relativa (`balance + amount`), que NO es idempotente por naturaleza. Aplicar el mismo mensaje
+//     dos veces acredita dos veces, y la tabla `ledger` guarda una fila por efecto aplicado para
+//     que las pruebas puedan contarlos.
 
 import { Pool, type PoolClient } from "pg";
 import type { Payment } from "./core";
@@ -47,6 +51,8 @@ async function credit(client: PoolClient, payment: Payment): Promise<void> {
 		//     poisoned message: it fails on every attempt.
 		// PT: Uma conta desconhecida nunca passa a existir por esperar. Neste laboratório ela faz
 		//     o papel da mensagem envenenada: falha em toda tentativa.
+		// ES: Una cuenta desconocida nunca pasa a existir por esperar. En este laboratorio hace
+		//     el papel del mensaje envenenado: falla en cada intento.
 		throw new Error(`unknown account ${payment.accountId}`);
 	}
 	await client.query("INSERT INTO ledger (message_id, account_id, amount_cents) VALUES ($1, $2, $3)", [
@@ -77,6 +83,8 @@ export type Outcome = "applied" | "duplicate";
 //     exactly once, which no broker promises.
 // PT: Sem proteção: toda entrega aplica o efeito. Só é correto se cada mensagem chegar exatamente
 //     uma vez, o que nenhum broker promete.
+// ES: Sin protección: toda entrega aplica el efecto. Solo es correcto si cada mensaje llega
+//     exactamente una vez, algo que ningún broker promete.
 export async function applyNaive(pool: Pool, payment: Payment): Promise<Outcome> {
 	await inTransaction(pool, (client) => credit(client, payment));
 	return "applied";
@@ -98,6 +106,15 @@ export async function applyNaive(pool: Pool, payment: Payment): Promise<Outcome>
 //         conflita. O banco decide, então não existe a corrida de checar e depois agir;
 //       - queda no meio: a transação é desfeita e nem a marca nem o efeito existem, então a
 //         reentrega é processada normalmente.
+// ES: El almacén de claves de idempotencia. El id del mensaje se inserta en la MISMA transacción
+//     que el efecto, bajo una clave primaria:
+//       - primera entrega: el insert funciona, el efecto se aplica, ambos se confirman juntos;
+//       - duplicado: el insert entra en conflicto, no se aplica nada;
+//       - dos copias en el mismo instante: el segundo insert espera a la primera transacción y
+//         luego entra en conflicto. La base de datos decide, así que no existe la carrera de
+//         verificar y luego actuar;
+//       - caída a la mitad: la transacción se revierte y no existen ni la marca ni el efecto, así
+//         que la reentrega se procesa con normalidad.
 export async function applyIdempotent(pool: Pool, payment: Payment): Promise<Outcome> {
 	return inTransaction(pool, async (client) => {
 		const mark = await client.query(

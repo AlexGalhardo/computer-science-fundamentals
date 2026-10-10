@@ -2,6 +2,7 @@ defmodule OrderStateMachine.CLI do
   @moduledoc """
   EN: Command line: `mix order <event> [event...]` and `mix order demo`.
   PT: Linha de comando: `mix order <evento> [evento...]` e `mix order demo`.
+  ES: Línea de comandos: `mix order <evento> [evento...]` y `mix order demo`.
   """
 
   # EN: Returns the text and the exit code instead of printing and halting, so the tests can
@@ -10,6 +11,9 @@ defmodule OrderStateMachine.CLI do
   # PT: Devolve o texto e o código de saída em vez de imprimir e encerrar, para que os testes
   #     possam chamá-la. Código de saída: 0 quando todo evento foi aceito, 1 quando algum foi
   #     rejeitado, 2 em uso incorreto.
+  # ES: Devuelve el texto y el código de salida en lugar de imprimir y terminar, para que las
+  #     pruebas puedan llamarla. Código de salida: 0 cuando todo evento fue aceptado, 1 cuando
+  #     alguno fue rechazado, 2 en uso incorrecto.
   @spec run([String.t()]) :: {String.t(), 0 | 1 | 2}
   def run(["demo"]) do
     {full, _code} = walk([:pay, :ship, :deliver])
@@ -18,10 +22,10 @@ defmodule OrderStateMachine.CLI do
     output =
       Enum.join(
         [
-          "== A full order / Um pedido completo ==",
+          "== A full order / Um pedido completo / Un pedido completo ==",
           full,
           "",
-          "== A rejected transition / Uma transição rejeitada ==",
+          "== A rejected transition / Uma transição rejeitada / Una transición rechazada ==",
           rejected
         ],
         "\n"

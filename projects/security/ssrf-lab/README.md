@@ -1,6 +1,6 @@
 # ssrf-lab
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A defensive, local lab about server-side request forgery (SSRF): how a server can be tricked into calling internal services. The same small ElysiaJS feature (a "link preview" that fetches a URL given by the user and returns part of the page) exists twice: a version that fetches anything, labelled `vulnerable`, and a fixed version with a host allow-list, scheme validation, validation of the resolved address, redirects re-validated hop by hop, a size limit and a timeout. One scenario runs against both, with a fake internal service and a fake public site on internal Docker networks.
 
@@ -31,7 +31,7 @@ docker compose run --rm demo
 docker compose down -v --remove-orphans
 ```
 
-It prints a narrated walk-through, in English and Portuguese: the four URLs of the scenario, the addresses the two host names resolve to and how the fix classifies them, the scenario against the vulnerable app (the fake token leaks, directly and through a redirect), the same scenario against the fixed app (both attempts refused, normal previews work), and the address check still refusing when the allow-list is misconfigured.
+It prints a narrated walk-through, in English, Portuguese and Spanish (each step has an `EN:`, a `PT:` and an `ES:` line): the four URLs of the scenario, the addresses the two host names resolve to and how the fix classifies them, the scenario against the vulnerable app (the fake token leaks, directly and through a redirect), the same scenario against the fixed app (both attempts refused, normal previews work), and the address check still refusing when the allow-list is misconfigured.
 
 ## Tests
 

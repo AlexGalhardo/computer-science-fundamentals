@@ -11,6 +11,10 @@ import (
 // PT: Os dois autômatos podem ser exportados na linguagem DOT do Graphviz, que é texto puro. Cole
 // a saída em qualquer visualizador de Graphviz, ou rode `dot -Tsvg`, para ver o desenho. Os
 // estados de aceitação são círculos duplos, e uma seta vinda do nada marca o estado inicial.
+// ES: Los dos autómatas se pueden exportar en el lenguaje DOT de Graphviz, que es texto plano.
+// Pega la salida en cualquier visor de Graphviz, o ejecuta `dot -Tsvg`, para ver el dibujo. Los
+// estados de aceptación son círculos dobles, y una flecha venida de la nada marca el estado
+// inicial.
 const dotHeader = "\trankdir=LR;\n\tnode [shape=circle];\n\tstart [shape=point];\n"
 
 func dotLabel(text string) string {

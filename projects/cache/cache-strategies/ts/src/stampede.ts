@@ -13,6 +13,14 @@
 //       none    leitura cache-aside simples: toda falha consulta o banco
 //       lock    só a requisição que ganha o `SET lock NX PX` consulta, as outras esperam a cópia
 //       early   uma requisição renova o valor ANTES de ele expirar, ninguém chega a ver uma falha
+//
+// ES: El stampede (thundering herd, dogpile). Una clave popular expira. Toda solicitud que llega
+//     antes de que alguien guarde una copia nueva ve un fallo, y cada una ejecuta la misma
+//     consulta costosa. La base de datos recibe cientos de consultas idénticas para un único valor.
+//
+//       none    lectura cache-aside simple: todo fallo consulta la base de datos
+//       lock    solo la solicitud que gana el `SET lock NX PX` consulta, las otras esperan su copia
+//       early   una solicitud renueva el valor ANTES de que expire, nadie llega a ver un fallo
 
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -38,6 +46,9 @@ const MAX_WAIT_MS = 15_000;
 // PT: O valor em cache leva o seu próprio instante de "renovar depois de". O Redis só conhece a
 //     expiração dura. A renovação antecipada precisa de uma anterior, suave, e o único lugar
 //     para guardá-la é junto do valor.
+// ES: El valor en caché lleva su propio instante de "renovar después de". Redis solo conoce el
+//     vencimiento duro. La renovación anticipada necesita uno anterior, suave, y el único lugar
+//     para guardarlo es junto al valor.
 const envelopeSchema = z.object({ product: productSchema, refreshAt: z.number() });
 type Envelope = z.infer<typeof envelopeSchema>;
 
@@ -68,6 +79,9 @@ export class HotKey {
 	// PT: Como o experimento conta "consultas por expiração". Uma consulta que começa quando
 	//     nenhuma outra carga está em andamento abre uma nova rajada. As que começam enquanto há
 	//     uma em andamento pertencem à mesma expiração: são a manada.
+	// ES: Cómo cuenta el experimento las "consultas por expiración". Una consulta que empieza
+	//     cuando ninguna otra carga está en curso abre una nueva ráfaga. Las que empiezan mientras
+	//     hay una en curso pertenecen a la misma expiración: son la manada.
 	private inFlight = 0;
 	private bursts: number[] = [];
 
@@ -143,6 +157,12 @@ export class HotKey {
 	//     uma requisição lenta pode ganhar a trava logo depois de o vencedor anterior gravar o
 	//     valor e soltá-la. Segundo, quem espera e nunca vê o valor tenta a trava também, então
 	//     um vencedor que caiu atrasa os outros só até a trava expirar.
+	// ES: El bloqueo cambia "todos recalculan" por "uno recalcula, los demás esperan". Dos
+	//     detalles sostienen la corrección. Primero, después de ganar el bloqueo el caché se
+	//     verifica DE NUEVO: una solicitud lenta puede ganar el bloqueo justo después de que el
+	//     ganador anterior guardó el valor y lo liberó. Segundo, quien espera y nunca ve el valor
+	//     intenta el bloqueo también, así que un ganador que se cayó retrasa a los demás solo
+	//     hasta que el bloqueo expire.
 	private async readWithLock(): Promise<HotResult> {
 		const hit = await this.cached();
 		if (hit !== null) {
@@ -164,6 +184,7 @@ export class HotKey {
 			}
 			// EN: A little randomness in the wait keeps the waiters from asking Redis in step.
 			// PT: Um pouco de acaso na espera evita que todos perguntem ao Redis no mesmo compasso.
+			// ES: Un poco de azar en la espera evita que todos le pregunten a Redis al mismo compás.
 			await sleep(WAIT_STEP_MS + Math.random() * WAIT_STEP_MS);
 			const filled = await this.cached();
 			if (filled !== null) {
@@ -183,6 +204,11 @@ export class HotKey {
 	//     percebe pega a trava e recarrega em segundo plano, e todos (inclusive ela) continuam
 	//     recebendo a cópia ainda válida. Comparado com a trava sozinha, ninguém espera. Um cache
 	//     frio não tem cópia para servir, então só esse caso recai na trava.
+	// ES: La renovación anticipada nunca deja que la clave caliente llegue a expirar mientras
+	//     está en uso. Dentro de los últimos `earlyRefreshMs` del tiempo de vida, la primera
+	//     solicitud que lo nota toma el bloqueo y recarga en segundo plano, y todos (incluida esa
+	//     solicitud) siguen recibiendo la copia aún válida. Comparado con el bloqueo solo, nadie
+	//     espera. Un caché frío no tiene copia que servir, así que solo ese caso recurre al bloqueo.
 	private async readEarly(): Promise<HotResult> {
 		const hit = await this.cached();
 		if (hit === null) {
@@ -201,6 +227,7 @@ export class HotKey {
 		try {
 			// EN: Same second look as in the lock: the previous refresher may have just finished.
 			// PT: A mesma segunda olhada da trava: quem renovou antes pode ter acabado de terminar.
+			// ES: La misma segunda mirada del bloqueo: quien renovó antes puede haber terminado hace un instante.
 			const current = await this.cached();
 			if (current === null || Date.now() >= current.refreshAt) {
 				await this.load();

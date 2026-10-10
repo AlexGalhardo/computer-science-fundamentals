@@ -8,6 +8,11 @@
 //     desta aplicação, guardar. Ele importa as entidades e as suas próprias portas, e mais nada.
 //     Leia o arquivo de novo e repare no que falta: nenhuma requisição, nenhum código de status,
 //     nenhum SQL, nenhum `console`. A mesma classe atende a API HTTP e o terminal.
+// ES: SEGUNDA CAPA: casos de uso. Un caso de uso es algo que la aplicación hace por su usuario,
+//     escrito como una secuencia de pasos: validar mediante la entidad, aplicar las reglas de
+//     esta aplicación, guardar. Importa las entidades y sus propios puertos, y nada más. Lee el
+//     archivo de nuevo y fíjate en lo que falta: ninguna petición, ningún código de estado,
+//     ningún SQL, ningún `console`. La misma clase atiende la API HTTP y la terminal.
 
 import { Note } from "../entities/note";
 import { err, ok, type Result } from "../entities/result";
@@ -26,6 +31,9 @@ export class CreateNote {
 	// PT: Injeção de dependência: o caso de uso recebe os seus colaboradores, não os constrói.
 	//     Quem chama `new CreateNote(...)` decide se as notas vão para a memória ou para o
 	//     PostgreSQL, e quem chama é a raiz de composição, em `main/`.
+	// ES: Inyección de dependencias: el caso de uso recibe sus colaboradores, no los construye.
+	//     Quien llama a `new CreateNote(...)` decide si las notas van a la memoria o a
+	//     PostgreSQL, y quien llama es la raíz de composición, en `main/`.
 	constructor(
 		private readonly repository: NoteRepository,
 		private readonly ids: IdGenerator,
@@ -53,6 +61,10 @@ export class CreateNote {
 		//     nota é. Outro produto poderia permitir. Por isso ela mora no caso de uso e não na
 		//     entidade, e por isso precisa do repositório: uma nota sozinha não tem como saber
 		//     das outras.
+		// ES: "No hay dos notas con el mismo título" es una regla de ESTA aplicación, no de lo que
+		//     una nota es. Otro producto podría permitirlo. Por eso vive en el caso de uso y no en
+		//     la entidad, y por eso necesita el repositorio: una nota sola no tiene cómo saber de
+		//     las demás.
 		const sameTitle = await this.repository.findByTitle(note.value.title.value);
 		if (sameTitle !== undefined) {
 			return err({ kind: "duplicate-title", message: `a note titled "${sameTitle.title.value}" already exists` });

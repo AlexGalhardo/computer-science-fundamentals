@@ -1,6 +1,8 @@
 """EN: The loss, the training loop (gradient descent) and the accuracy.
 
 PT: A perda, o laço de treinamento (descida do gradiente) e a acurácia.
+
+ES: La pérdida, el bucle de entrenamiento (descenso de gradiente) y la exactitud.
 """
 
 import math
@@ -25,6 +27,13 @@ def binary_cross_entropy(logit: Value, label: int) -> Value:
     classe certa é sigmoid(s * z), com s = +1 para a classe 1 e s = -1 para a classe 0. O negativo
     do seu logaritmo é log(1 + e^(-s z)): perto de 0 quando a rede acerta com confiança, grande
     quando erra com confiança.
+
+    ES: La pérdida de un ejemplo: -log de la probabilidad dada a la clase correcta.
+
+    La red devuelve un logit z. La probabilidad de la clase 1 es sigmoid(z), así que la
+    probabilidad de la clase correcta es sigmoid(s * z), con s = +1 para la clase 1 y s = -1 para la
+    clase 0. El negativo de su logaritmo es log(1 + e^(-s z)): cerca de 0 cuando la red acierta con
+    confianza, grande cuando se equivoca con confianza.
     """
     sign = 1.0 if label == 1 else -1.0
     return ((logit * -sign).exp() + 1.0).log()
@@ -40,6 +49,7 @@ def mean_loss(model: MLP, points: list[Point], labels: list[int]) -> Value:
 def predict(model: MLP, point: Point) -> int:
     # EN: sigmoid(z) > 0.5 exactly when z > 0, so the sign of the logit is the decision.
     # PT: sigmoid(z) > 0,5 exatamente quando z > 0, então o sinal do logit é a decisão.
+    # ES: sigmoid(z) > 0,5 exactamente cuando z > 0, así que el signo del logit es la decisión.
     return 1 if model(list(point)).data > 0.0 else 0
 
 
@@ -70,6 +80,14 @@ def fit(
     2. zera os gradientes antigos;
     3. volta: a retropropagação preenche o gradiente de cada peso;
     4. atualização: move cada peso um pequeno passo CONTRA o seu gradiente.
+
+    ES: Descenso de gradiente con el lote entero. Devuelve la pérdida de cada época.
+
+    Una época son los cuatro pasos de todo bucle de entrenamiento jamás escrito:
+    1. ida: calcula la pérdida con los pesos actuales;
+    2. pone a cero los gradientes antiguos;
+    3. vuelta: la retropropagación rellena el gradiente de cada peso;
+    4. actualización: mueve cada peso un pequeño paso EN CONTRA de su gradiente.
     """
     history: list[float] = []
     for _ in range(epochs):
@@ -84,7 +102,12 @@ def fit(
 
 @dataclass
 class Run:
-    """EN: A trained model with its loss per epoch. PT: Um modelo treinado e a perda por época."""
+    """EN: A trained model with its loss per epoch.
+
+    PT: Um modelo treinado e a perda por época.
+
+    ES: Un modelo entrenado y la pérdida por época.
+    """
 
     model: MLP
     losses: list[float]

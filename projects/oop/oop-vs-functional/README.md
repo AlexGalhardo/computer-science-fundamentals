@@ -1,6 +1,6 @@
 # oop-vs-functional
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 One shopping cart, with discounts, coupons and taxes, written four times: with objects in Java and in TypeScript, and with functions over immutable data in TypeScript and in Elixir. It teaches **what changes when the same rules are written with objects or with functions**: where the state lives, how a rule is chosen (dynamic dispatch or pattern matching), how an invalid value is refused (exception or value), and which kind of change is cheap in each style.
 
@@ -79,7 +79,7 @@ docker compose run --rm java-demo     # the same receipts, from Java
 docker compose run --rm elixir-demo   # the same receipts, from Elixir
 ```
 
-```
+```text
 == everything together
   subtotal 160.00
   - 6.00  bulk PEN: 20% off from 10 units

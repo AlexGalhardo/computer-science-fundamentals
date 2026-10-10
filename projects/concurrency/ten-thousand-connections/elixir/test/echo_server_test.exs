@@ -27,6 +27,8 @@ defmodule EchoServerTest do
   #     scheduler, so they all sleep at the same time.
   # PT: 200 processos que esperam 300 ms cada terminam juntos: processos dormindo não seguram
   #     um escalonador, então todos dormem ao mesmo tempo.
+  # ES: 200 procesos que esperan 300 ms cada uno terminan juntos: los procesos dormidos no retienen
+  #     un planificador, así que todos duermen al mismo tiempo.
   test "delays overlap, one process each", %{in_flight: in_flight} do
     {micros, results} =
       :timer.tc(fn ->

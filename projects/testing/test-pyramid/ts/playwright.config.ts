@@ -9,6 +9,10 @@ import { baseUrl } from "./tests/base-url";
 //     intercalar. Sem retentativas: um teste que só passa na segunda tentativa é um teste
 //     intermitente, e escondê-lo anularia a lição. A pasta de saída fica em /tmp para que a
 //     suíte também rode como um usuário que não pode escrever em /app.
+// ES: Un worker, porque la tienda guarda un único carrito en el servidor y las pruebas no pueden
+//     intercalarse. Sin reintentos: una prueba que solo pasa al segundo intento es una prueba
+//     intermitente, y esconderla anularía la lección. La carpeta de salida queda en /tmp para que la
+//     suite también se ejecute como un usuario que no puede escribir en /app.
 export default defineConfig({
 	testDir: "tests/e2e",
 	testMatch: "**/*.e2e.ts",

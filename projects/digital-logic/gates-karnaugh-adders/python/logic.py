@@ -10,6 +10,12 @@ PT: A versão em TypeScript simula o circuito uma linha por vez. Os inteiros do 
     inteiro é o valor do sinal na linha r. Uma porta processa então todas as linhas com um único
     `&`, `|` ou `^`. Isso se chama simulação bit-paralela, e é como funcionam os simuladores
     lógicos rápidos.
+
+ES: La versión en TypeScript simula el circuito una fila a la vez. Los enteros de Python no
+    tienen límite de tamaño, así que aquí una columna entera de la tabla de verdad es UN entero:
+    el bit r del entero es el valor de la señal en la fila r. Una compuerta procesa entonces
+    todas las filas con un solo `&`, `|` o `^`. Esto se llama simulación bit-paralela, y es como
+    funcionan los simuladores lógicos rápidos.
 """
 
 import ast
@@ -28,6 +34,9 @@ def variable_column(index: int, variable_count: int) -> int:
         are the familiar 00001111, 00110011 and 01010101 patterns, read from row 0 to row 7.
     PT: Na linha r, a variável `index` vale o bit (n - 1 - index) de r. Com 3 variáveis as
         colunas são os padrões conhecidos 00001111, 00110011 e 01010101, lidos da linha 0 à 7.
+    ES: En la fila r, la variable `index` vale el bit (n - 1 - index) de r. Con 3 variables las
+        columnas son los patrones conocidos 00001111, 00110011 y 01010101, leídos de la fila 0
+        a la 7.
     """
     shift = variable_count - 1 - index
     column = 0
@@ -75,6 +84,10 @@ def parse(text: str) -> ast.expr:
     PT: O Python já tem um parser com as prioridades certas (~ primeiro, depois &, depois ^,
         depois |), então nenhum parser é escrito aqui: `ast.parse` devolve a árvore. Só os tipos
         de nó de uma expressão booleana são aceitos, e nada é executado com `eval`.
+    ES: Python ya tiene un parser con las prioridades correctas (~ primero, luego &, luego ^,
+        luego |), así que aquí no se escribe ningún parser: `ast.parse` devuelve el árbol. Solo
+        se aceptan los tipos de nodo de una expresión booleana, y nunca se ejecuta nada con
+        `eval`.
     """
     try:
         tree = ast.parse(text.strip(), mode="eval").body
@@ -113,6 +126,9 @@ def evaluate(tree: ast.expr, columns: dict[str, int], ones: int) -> int:
     PT: Toda operação age em todas as linhas de uma vez. O NOT não pode ser o `~` do Python, que
         daria um número negativo: inverter é fazer XOR com a coluna de uns, e assim o resultado
         mantém exatamente um bit por linha.
+    ES: Toda operación actúa sobre todas las filas a la vez. El NOT no puede ser el `~` de
+        Python, que daría un número negativo: invertir es hacer XOR con la columna de unos, y
+        así el resultado mantiene exactamente un bit por fila.
     """
     if isinstance(tree, ast.Name):
         if tree.id not in columns:

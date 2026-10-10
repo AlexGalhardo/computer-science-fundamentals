@@ -4,6 +4,9 @@
 // PT: O lado dos pagamentos na saga. Ele reage a OrderCreated, decide, grava o pagamento e
 //     responde com PaymentCompleted ou PaymentFailed. As três escritas (a marca de "já
 //     processado", a linha do pagamento e o evento de saída) dividem uma transação.
+// ES: El lado de los pagos en la saga. Reacciona a OrderCreated, decide, guarda el pago y
+//     responde con PaymentCompleted o PaymentFailed. Las tres escrituras (la marca de "ya
+//     procesado", la fila del pago y el evento de salida) comparten una transacción.
 
 import type { Pool } from "pg";
 import { inTransaction, MESSAGING_SCHEMA } from "./shared/db";
@@ -33,6 +36,8 @@ export interface Decision {
 //     be triggered on purpose by choosing the amount.
 // PT: Um substituto determinístico para uma processadora de cartão, para o caminho de falha da
 //     saga poder ser disparado de propósito pela escolha do valor.
+// ES: Un sustituto determinístico de un procesador de tarjetas, para poder disparar a propósito el
+//     camino de fallo de la saga mediante la elección del monto.
 export function decide(amountCents: number): Decision {
 	return amountCents > LIMIT_CENTS
 		? { status: "FAILED", reason: "amount above the fake card limit" }
@@ -61,6 +66,9 @@ export async function handleOrderCreated(pool: Pool, event: DomainEvent): Promis
 		// PT: Entrega at-least-once significa que este handler VAI ver o mesmo evento duas vezes
 		//     algum dia. Cobrar um cliente duas vezes não é aceitável, então a duplicata é
 		//     detectada aqui.
+		// ES: La entrega at-least-once significa que este manejador VA a ver el mismo evento dos veces
+		//     algún día. Cobrar a un cliente dos veces no es aceptable, así que el duplicado se
+		//     detecta aquí.
 		if (!(await firstTimeSeen(client, event.id))) {
 			return "duplicate";
 		}

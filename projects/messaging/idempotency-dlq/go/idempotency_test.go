@@ -72,6 +72,9 @@ func applyTwiceAtOnce(store Store, ledger *Ledger) {
 // PT: O gancho segura cada goroutine logo depois da checagem até AS DUAS terem checado. Esse é
 // o entrelaçamento azarado de checar e depois agir, forçado de propósito para o teste falhar do
 // mesmo jeito toda vez, e não uma vez a cada mil execuções.
+// ES: El hook retiene a cada goroutine justo después de su verificación hasta que AMBAS hayan
+// verificado. Ese es el entrelazado desafortunado de verificar y luego actuar, forzado a propósito
+// para que la prueba falle del mismo modo siempre y no una vez cada mil ejecuciones.
 func TestRacyStoreAppliesTwice(t *testing.T) {
 	store := NewRacyStore()
 	var checked sync.WaitGroup

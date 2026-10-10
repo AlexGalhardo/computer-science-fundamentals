@@ -3,6 +3,9 @@
 # PT: O contexto de build é a pasta do mini-projeto, então o mesmo arquivo serve ao docker
 #     compose e ao runner de benchmark. Nenhuma dependência é instalada: o Bun roda TypeScript
 #     e os testes sozinho.
+# ES: El contexto de build es la carpeta del mini-proyecto, así que el mismo archivo sirve a docker
+#     compose y al runner de benchmark. No se instala ninguna dependencia: Bun ejecuta TypeScript
+#     y las pruebas por sí solo.
 FROM oven/bun:1.4.2
 WORKDIR /src
 COPY ts/ .

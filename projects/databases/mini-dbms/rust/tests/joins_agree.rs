@@ -7,6 +7,9 @@ use mini_dbms::{Pair, Table, Value, hash_join, materialise, nested_loop_join, so
 // PT: Uma tabela aleatória com chave de texto tirada de um conjunto pequeno, para que as chaves
 //     se repitam dos dois lados e algumas chaves de uma tabela faltem na outra. Esses são os
 //     casos em que um algoritmo de junção costuma errar.
+// ES: Una tabla aleatoria con clave de texto tomada de un conjunto pequeño, para que las claves
+//     se repitan en los dos lados y algunas claves de una tabla falten en la otra. Esos son los
+//     casos en que un algoritmo de join suele equivocarse.
 fn random_table(random: &mut Lcg, rows: u64, distinct_keys: u64) -> Table {
     let mut table = Table::new(&["key", "payload"]);
     for _ in 0..rows {
@@ -28,6 +31,8 @@ fn sorted(mut pairs: Vec<Pair>) -> Vec<Pair> {
 //     orders, so the pairs are sorted before comparing.
 // PT: Os três algoritmos precisam devolver o mesmo conjunto de pares. Eles os encontram em
 //     ordens diferentes, então os pares são ordenados antes de comparar.
+// ES: Los tres algoritmos deben devolver el mismo conjunto de pares. Los encuentran en órdenes
+//     distintos, así que los pares se ordenan antes de comparar.
 #[test]
 fn three_joins_return_the_same_rows_on_random_tables() {
     let mut random = Lcg::new(2026);
@@ -83,6 +88,9 @@ fn unknown_join_column_is_an_error() {
 // PT: Na carga do benchmark cada linha de R casa com exatamente uma linha de S, então a junção
 //     tem n linhas. O checksum precisa ser o mesmo nos três algoritmos: é o que a tabela do
 //     benchmark usa para mostrar que as implementações concordam.
+// ES: En la carga del benchmark cada fila de R coincide con exactamente una fila de S, así que
+//     el join tiene n filas. El checksum debe ser el mismo en los tres algoritmos: es lo que usa
+//     la tabla del benchmark para mostrar que las implementaciones concuerdan.
 #[test]
 fn benchmark_workload_has_n_matches_and_one_checksum() {
     let (r, s) = bench_tables(1000);

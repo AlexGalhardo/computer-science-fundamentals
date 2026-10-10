@@ -1,6 +1,6 @@
 # aloha-csma
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Como estações compartilham um canal sem um coordenador. Três simuladores em Python, só com a biblioteca padrão: ALOHA puro, slotted ALOHA e CSMA/CD com recuo binário exponencial. O mini-projeto reproduz os dois picos famosos (18,4% e 36,8%) e mostra por que escutar o canal e abortar colisões muda tudo.
 

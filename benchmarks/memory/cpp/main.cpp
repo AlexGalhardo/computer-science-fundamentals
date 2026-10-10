@@ -14,6 +14,15 @@
 //     Modelo do C++: gerência manual de memória com posse. Cada nó é dono dos filhos por
 //     std::unique_ptr, então uma árvore é liberada, nó a nó, no momento exato em que a raiz sai
 //     de escopo. Não há coletor nem pausa, mas cada nó é uma chamada ao alocador.
+// ES: Carga de memoria. `binary-trees` construye y descarta un número enorme de pequeños nodos
+//     de árbol: un árbol de profundidad n+1, un árbol de vida larga de profundidad n
+//     mantenido hasta el final, y muchos árboles de vida corta de cada profundidad par de 4 a n. El
+//     checksum es el total de nodos visitados. `idle` no hace nada: su tiempo es el costo de
+//     inicialización del runtime y su memoria es la base que paga todo programa en ese lenguaje.
+//     Modelo de C++: gestión manual de memoria con propiedad. Cada nodo es dueño de sus hijos
+//     mediante std::unique_ptr, así que un árbol se libera, nodo a nodo, en el momento exacto en
+//     que la raíz sale de alcance. No hay recolector ni pausa, pero cada nodo es una llamada al
+//     asignador.
 
 #include <sys/resource.h>
 
@@ -42,6 +51,7 @@ std::unique_ptr<Node> make(int depth) {
 
 // EN: Walks the whole tree and counts its nodes, which forces every node to be read.
 // PT: Percorre a árvore inteira e conta os nós, o que obriga a ler cada nó.
+// ES: Recorre el árbol completo y cuenta los nodos, lo que obliga a leer cada nodo.
 long check(const Node& node) { return node.left ? 1 + check(*node.left) + check(*node.right) : 1; }
 
 long binary_trees(int n) {

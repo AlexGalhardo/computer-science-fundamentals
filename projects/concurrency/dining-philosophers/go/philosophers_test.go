@@ -22,6 +22,9 @@ func envInt(name string, fallback int) int {
 // PT: Deadlock é questão de tempo, então o teste repete o jantar 10 vezes e exige que a mesa
 // ingênua congele em pelo menos 9 delas. "Congelar" significa: ninguém comeu por 500 ms,
 // enquanto uma mesa saudável serve centenas de refeições nesse tempo.
+// ES: El deadlock es cuestión de tiempo, así que la prueba repite la cena 10 veces y exige que la
+// mesa ingenua se congele en al menos 9 de ellas. "Congelarse" significa: nadie comió durante
+// 500 ms, mientras que una mesa sana sirve cientos de comidas en ese tiempo.
 func TestNaiveTableDeadlocks(t *testing.T) {
 	const runs = 10
 	deadlocks := 0
@@ -42,6 +45,8 @@ func TestNaiveTableDeadlocks(t *testing.T) {
 // philosopher must have eaten. The counters are the proof.
 // PT: As correções precisam sobreviver a um jantar longo (60 segundos por padrão) sem
 // congelar, e todo filósofo precisa ter comido. Os contadores são a prova.
+// ES: Las correcciones deben sobrevivir a una cena larga (60 segundos por defecto) sin
+// congelarse, y todo filósofo debe haber comido. Los contadores son la prueba.
 func TestFixesRunWithEveryPhilosopherEating(t *testing.T) {
 	soak := time.Duration(envInt("SOAK_SECONDS", 60)) * time.Second
 	for _, strategy := range []Strategy{Ordered, Waiter} {

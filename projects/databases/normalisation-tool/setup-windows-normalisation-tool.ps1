@@ -1,5 +1,6 @@
 # EN: Builds and tests the normalisation-tool mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto normalisation-tool. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto normalisation-tool. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

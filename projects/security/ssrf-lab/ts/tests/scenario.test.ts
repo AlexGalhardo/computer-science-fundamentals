@@ -8,6 +8,11 @@
 //     que o uso normal continua funcionando, porque uma "correção" que quebra a prévia não é
 //     correção. O serviço interno falso conta as requisições que recebeu, então "barrado" é
 //     conferido como "nenhuma requisição foi feita", não só como "o token não foi mostrado".
+// ES: El mismo escenario corre contra las dos apps. Contra la app vulnerable las pruebas afirman que la
+//     falla es observable. Contra la app corregida afirman que los mismos intentos son bloqueados Y
+//     que el uso normal sigue funcionando, porque una "corrección" que rompe la vista previa no es
+//     corrección. El servicio interno falso cuenta las solicitudes que recibió, así que "bloqueado" se
+//     comprueba como "no se hizo ninguna solicitud", no solo como "el token no se mostró".
 
 import { beforeAll, describe, expect, test } from "bun:test";
 import { z } from "zod";
@@ -22,6 +27,7 @@ const hitsSchema = z.object({ secretHits: z.number() });
 
 // EN: The test container sits on the internal network, so it can ask the counter directly.
 // PT: O contêiner de teste está na rede interna, então consegue perguntar ao contador diretamente.
+// ES: El contenedor de prueba está en la red interna, así que puede preguntar al contador directamente.
 async function secretHits(): Promise<number> {
 	const response = await fetch(`${config.INTERNAL_ADMIN_ORIGIN}/hits`);
 	return hitsSchema.parse(await response.json()).secretHits;
@@ -49,6 +55,7 @@ beforeAll(async () => {
 
 	// EN: A deliberately wrong configuration: somebody added the internal name to the allow-list.
 	// PT: Uma configuração errada de propósito: alguém colocou o nome interno na lista de permissão.
+	// ES: Una configuración errónea a propósito: alguien puso el nombre interno en la lista de permitidos.
 	const tooWide = { ...policy, allowedHosts: [...policy.allowedHosts, internalHost] };
 	misconfigured = await runScenario(createFixedApp(tooWide), config);
 	misconfiguredHits = (await secretHits()) - afterFixed;

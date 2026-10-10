@@ -20,6 +20,8 @@ type Message struct {
 // message twice credits twice. Effects counts how many credits were applied.
 // PT: Um crédito é uma atualização relativa, então não é idempotente por natureza: aplicar a
 // mesma mensagem duas vezes credita duas vezes. Effects conta quantos créditos foram aplicados.
+// ES: Un crédito es una actualización relativa, así que no es idempotente por naturaleza: aplicar
+// el mismo mensaje dos veces acredita dos veces. Effects cuenta cuántos créditos se aplicaron.
 type Ledger struct {
 	mu      sync.Mutex
 	balance int64
@@ -66,6 +68,11 @@ func (NoStore) Apply(_ string, effect func()) bool {
 // race e o detector de corrida fica calado, mas a lógica está errada: duas goroutines com o
 // mesmo id podem terminar a checagem antes de qualquer uma marcar, e as duas aplicam o efeito.
 // AfterCheck é um gancho de teste que roda nessa janela, para um teste abri-la de propósito.
+// ES: Este es el bug de verificar y luego actuar. Cada paso está protegido por el mutex, así que no
+// hay data race y el detector de carreras guarda silencio, pero la lógica es incorrecta: dos
+// goroutines con el mismo id pueden terminar la verificación antes de que cualquiera marque, y las
+// dos aplican el efecto. AfterCheck es un hook de prueba que corre en esa ventana, para que una
+// prueba la abra a propósito.
 type RacyStore struct {
 	mu         sync.Mutex
 	seen       map[string]bool
@@ -105,6 +112,11 @@ func (s *RacyStore) Apply(id string, effect func()) bool {
 // marca acontecem como um passo indivisível, então uma segunda goroutine com o mesmo id espera
 // e depois encontra a marca. Um único lock serializa todos os efeitos, que é a escolha simples e
 // correta para uma lição; um sistema real deixa o banco fazer isso com uma chave única.
+// ES: El mutex hace el papel de la transacción de base de datos del lado TypeScript: la
+// verificación, el efecto y la marca ocurren como un paso indivisible, así que una segunda
+// goroutine con el mismo id espera y luego encuentra la marca. Un único lock serializa todos los
+// efectos, que es la elección simple y correcta para una lección; un sistema real deja que la base
+// de datos lo haga con una clave única.
 type AtomicStore struct {
 	mu   sync.Mutex
 	seen map[string]bool

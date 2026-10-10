@@ -22,6 +22,9 @@ from mini_xunit import (
 # PT: Descoberta e relatório, conferidos por fora: a linha de comando é iniciada como um processo
 #     de verdade nas pastas de exemplo, e o teste olha o que um usuário ou um job de CI veria, o
 #     relatório impresso e o código de saída.
+# ES: Descubrimiento e informe, comprobados desde fuera: la línea de comandos se inicia como un
+#     proceso de verdad en las carpetas de ejemplo, y la prueba mira lo que vería un usuario o un
+#     job de CI, el informe impreso y el código de salida.
 
 ROOT = Path(__file__).resolve().parent.parent
 

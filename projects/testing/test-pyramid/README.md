@@ -1,6 +1,6 @@
 # test-pyramid
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A tiny shop (a catalogue, a cart, 10% off from 100.00) tested at every level of the test pyramid: unit, integration, end-to-end with Playwright, plus a smoke suite and a regression suite. One bug is seeded on purpose at each level, and a matrix shows which suite notices which bug and what each suite costs. The lesson: every level sees something the others cannot, and the price of a test grows as it climbs.
 
@@ -78,7 +78,7 @@ One end-to-end test costs about as much as 200 unit tests, before counting the C
 
 ## Structure
 
-```
+```text
 ts/src/pricing.ts            pure rules (unit level)
 ts/src/cart-repository.ts    SQL on SQLite (integration level)
 ts/src/app.ts                HTTP handler, input validated with Zod

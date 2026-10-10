@@ -1,6 +1,6 @@
 # Idempotência e dead-letter queue (MP-MSG-2)
 
-> English version: [docs/en/messaging/idempotency-dlq.md](../../en/messaging/idempotency-dlq.md)
+> English version: [docs/en/messaging/idempotency-dlq.md](../../en/messaging/idempotency-dlq.md) · Versión en español: [docs/es/messaging/idempotency-dlq.md](../../es/messaging/idempotency-dlq.md)
 
 Mini-projeto: [`projects/messaging/idempotency-dlq`](../../../projects/messaging/idempotency-dlq/README.pt-BR.md). Tópicos do quiz: `idempotent-consumers`, `ack-retry-dlq`, `delivery-guarantees`, `rabbitmq-exchanges-routing`.
 
@@ -55,7 +55,7 @@ A lição a guardar: um lock em volta de cada passo não é um lock em volta da 
 
 Uma mensagem que falhou não é repetida na hora. Uma dependência fora do ar não ganha nada em ser chamada de novo um milissegundo depois, e uma mensagem que sempre falha giraria tão rápido quanto o consumidor consegue falhar. A espera dobra a cada falha:
 
-```
+```text
 espera depois da tentativa n que falhou = base x 2^(n-1)      base 200 ms: 200, 400, 800 ms
 ```
 

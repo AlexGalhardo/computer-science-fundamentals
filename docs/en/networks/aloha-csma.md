@@ -1,6 +1,6 @@
 # ALOHA and CSMA/CD
 
-> Versão em português: [docs/pt/networks/aloha-csma.md](../../pt/networks/aloha-csma.md)
+> Versão em português: [docs/pt/networks/aloha-csma.md](../../pt/networks/aloha-csma.md) · Versión en español: [docs/es/networks/aloha-csma.md](../../es/networks/aloha-csma.md)
 
 Mini-project: [`projects/networks/aloha-csma`](../../../projects/networks/aloha-csma/README.md). Language: Python. Quiz topic: `networks` / `medium-access-control`.
 
@@ -22,7 +22,7 @@ Time is measured in **frame times**: one frame takes 1 unit. The **offered load 
 
 A frame that starts at time t occupies the channel until t + 1. It is destroyed by any frame that started after t - 1 (still on the air) or that starts before t + 1. The **vulnerable period** is therefore 2 frame times. With Poisson attempts, the probability of no other start in 2 frame times is e^(-2G), which gives:
 
-```
+```text
 S = G * e^(-2G)        maximum at G = 0.5:  S = 1/(2e) = 0.184
 ```
 
@@ -32,7 +32,7 @@ S = G * e^(-2G)        maximum at G = 0.5:  S = 1/(2e) = 0.184
 
 If frames may start only at slot boundaries, two frames either overlap completely or not at all. The vulnerable period halves to 1 frame time:
 
-```
+```text
 S = G * e^(-G)         maximum at G = 1:  S = 1/e = 0.368
 ```
 

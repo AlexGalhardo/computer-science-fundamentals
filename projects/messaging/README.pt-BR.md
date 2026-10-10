@@ -1,6 +1,6 @@
 # Mensageria
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A mensageria permite que serviços cooperem sem chamar uns aos outros diretamente: um lado publica uma mensagem e outro a processa depois. Filas, publish/subscribe e logs diferem em quem recebe uma mensagem, em que ordem e quantas vezes, e essas diferenças decidem se um sistema sobrevive a uma queda ou a um consumidor lento. Garantias de entrega, confirmações, retentativas, filas de mensagens mortas e consumidores idempotentes são o centro do assunto.
 

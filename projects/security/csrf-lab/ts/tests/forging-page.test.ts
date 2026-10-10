@@ -9,6 +9,9 @@ const BASE = "http://other-origin:3000";
 // PT: A página forjadora faz parte do escopo de segurança do laboratório, então também é
 //     testada: não pode ser possível apontá-la para um host que não seja um dos contêineres do
 //     próprio laboratório.
+// ES: La página falsificadora forma parte del alcance de seguridad del laboratorio, así que también se
+//     prueba: no debe ser posible apuntarla a un host que no sea uno de los contenedores del
+//     propio laboratorio.
 describe("forging page: scope", () => {
 	const app = createForgingPageApp();
 

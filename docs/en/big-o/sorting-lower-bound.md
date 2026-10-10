@@ -1,6 +1,6 @@
 # The lower bound of comparison sorting
 
-> Versão em português: [docs/pt/big-o/sorting-lower-bound.md](../../pt/big-o/sorting-lower-bound.md)
+> Versão em português: [docs/pt/big-o/sorting-lower-bound.md](../../pt/big-o/sorting-lower-bound.md) · Versión en español: [docs/es/big-o/sorting-lower-bound.md](../../es/big-o/sorting-lower-bound.md)
 
 Mini-project MP-BIGO-3, in [`projects/big-o/sorting-lower-bound`](../../../projects/big-o/sorting-lower-bound). It teaches why no comparison sort beats Ω(n lg n) and how counting sorts escape it.
 

@@ -1,6 +1,6 @@
 # sql-injection-lab
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A defensive, local lab about SQL injection. The same small ElysiaJS app (a login and a product search on PostgreSQL) exists twice: a version that builds its SQL by concatenating strings, labelled `vulnerable`, and a fixed version with parameterised queries, input validation and a least-privilege database role. One scenario runs against both and shows why string concatenation is exploitable and why placeholders are the fix.
 
@@ -31,7 +31,7 @@ docker compose run --rm demo
 docker compose down -v --remove-orphans
 ```
 
-It prints a narrated walk-through, in English and Portuguese: the SQL text the vulnerable version sends to the database, the scenario against the vulnerable app (login without a password, the fake secrets in the search result), the same scenario against the fixed app (both attempts fail, normal use works), and the effect of the read-only role.
+It prints a narrated walk-through, in English, Portuguese and Spanish (each step has an `EN:`, a `PT:` and an `ES:` line): the SQL text the vulnerable version sends to the database, the scenario against the vulnerable app (login without a password, the fake secrets in the search result), the same scenario against the fixed app (both attempts fail, normal use works), and the effect of the read-only role.
 
 ## Tests
 

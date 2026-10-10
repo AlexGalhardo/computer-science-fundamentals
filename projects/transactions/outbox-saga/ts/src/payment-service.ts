@@ -2,6 +2,8 @@
 //     small read-only HTTP API used by the tests and the demo.
 // PT: Ponto de entrada do serviço de pagamentos: o consumidor de OrderCreated, o relay do outbox
 //     e uma pequena API HTTP somente leitura usada pelos testes e pela demo.
+// ES: Punto de entrada del servicio de pagos: el consumidor de OrderCreated, el relay del outbox
+//     y una pequeña API HTTP de solo lectura usada por las pruebas y la demo.
 
 import { Elysia } from "elysia";
 import { z } from "zod";

@@ -1,6 +1,8 @@
 """EN: Sweeps the offered load, simulates the three protocols and writes the results files.
 
 PT: Varre a carga oferecida, simula os três protocolos e escreve os arquivos de resultados.
+
+ES: Recorre la carga ofrecida, simula los tres protocolos y escribe los archivos de resultados.
 """
 
 import argparse
@@ -26,6 +28,8 @@ def sweep(seed: int, frames: int, stations: int, frame_slots: int) -> dict:
     """EN: One row per offered load. A fixed seed makes the whole table reproducible.
 
     PT: Uma linha por carga oferecida. Uma semente fixa torna a tabela inteira reproduzível.
+
+    ES: Una fila por carga ofrecida. Una semilla fija hace reproducible toda la tabla.
     """
     rng = random.Random(seed)
     rows = []

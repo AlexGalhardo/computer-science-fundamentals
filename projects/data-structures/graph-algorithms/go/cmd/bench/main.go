@@ -8,6 +8,10 @@
 // grafo tem n vértices e cerca de 8n arcos, e é montado antes de o relógio começar, então só o
 // algoritmo é cronometrado. C++ e Go usam o mesmo gerador e a mesma semente, e o checksum prova
 // que os dois calcularam a mesma resposta.
+// ES: El nombre de la implementación es "<algoritmo>-<representación>", por ejemplo
+// "dijkstra-matrix". El grafo tiene n vértices y cerca de 8n arcos, y se arma antes de que el
+// reloj empiece, así que solo se cronometra el algoritmo. C++ y Go usan el mismo generador y la
+// misma semilla, y el checksum prueba que los dos calcularon la misma respuesta.
 package main
 
 import (
@@ -35,6 +39,8 @@ func below(limit int) int {
 // needs an acyclic graph, so there every arc goes from the smaller label to the larger one.
 // PT: Uma cadeia 0 - 1 - ... - (n-1) garante que o grafo é conexo. A ordenação topológica
 // precisa de um grafo acíclico, então nela todo arco vai do rótulo menor para o maior.
+// ES: Una cadena 0 - 1 - ... - (n-1) garantiza que el grafo es conexo. El ordenamiento topológico
+// necesita un grafo acíclico, así que en él todo arco va de la etiqueta menor a la mayor.
 func fill(graph graphs.Graph, n int, acyclic bool) {
 	add := func(a, b int, weight graphs.Weight) {
 		if acyclic {
@@ -66,6 +72,7 @@ func sumOf(result graphs.PathResult) uint64 {
 
 // EN: Linux keeps the peak resident memory of a process in /proc/self/status (VmHWM, in kB).
 // PT: O Linux guarda o pico de memória residente de um processo em /proc/self/status (VmHWM, em kB).
+// ES: Linux guarda el pico de memoria residente de un proceso en /proc/self/status (VmHWM, en kB).
 func peakMemoryKb() int {
 	file, err := os.Open("/proc/self/status")
 	if err != nil {

@@ -5,6 +5,10 @@
 //     testes só conhecem a interface `ApiClient`. Se os três estilos passam nas mesmas
 //     asserções, eles expõem o mesmo domínio, e o que sobra para comparar é custo (requisições,
 //     bytes, comandos).
+// ES: UNA suite de comportamiento, ejecutada tres veces: contra REST, GraphQL y JSON-RPC. Las
+//     pruebas solo conocen la interfaz `ApiClient`. Si los tres estilos pasan las mismas
+//     aserciones, exponen el mismo dominio, y lo que queda por comparar es el costo (peticiones,
+//     bytes, comandos).
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { Pool } from "pg";
@@ -49,6 +53,7 @@ describe.each([...STYLES])("the same behaviour through %s", (style) => {
 	let client: ApiClient;
 	// EN: Each style writes its review on a different book, so the three runs do not interfere.
 	// PT: Cada estilo grava sua resenha em um livro diferente, então as três execuções não interferem.
+	// ES: Cada estilo guarda su reseña en un libro diferente, así que las tres ejecuciones no interfieren.
 	const ownBook = 100 + STYLES.indexOf(style);
 
 	beforeAll(() => {

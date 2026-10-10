@@ -5,6 +5,10 @@
 //     "lab-fake-password", então nada aqui pode ser confundido com uma credencial real. As
 //     senhas ficam escritas no código só porque isto é um laboratório: um sistema real nunca
 //     faz isso.
+// ES: Los datos falsos del laboratorio. Todo nombre termina en "-fake" y toda contraseña empieza con
+//     "lab-fake-password", así que nada de aquí puede confundirse con una credencial real. Las
+//     contraseñas están escritas en el código solo porque esto es un laboratorio: un sistema real nunca
+//     hace eso.
 
 export interface FakeAccount {
 	username: string;
@@ -18,6 +22,8 @@ export const BOB: FakeAccount = { username: "bob-fake", password: "lab-fake-pass
 //     holds an MD5 hash, and it is upgraded to Argon2id on her next successful login.
 // PT: carol-legacy-fake não faz login desde o sistema antigo: na API corrigida a linha dela ainda
 //     guarda um hash MD5, que é atualizado para Argon2id no próximo login bem-sucedido dela.
+// ES: carol-legacy-fake no inicia sesión desde el sistema antiguo: en la API corregida su fila aún
+//     guarda un hash MD5, que se actualiza a Argon2id en su próximo inicio de sesión exitoso.
 export const CAROL: FakeAccount = { username: "carol-legacy-fake", password: "lab-fake-password-carol" };
 
 export const ACCOUNTS: readonly FakeAccount[] = [ALICE, BOB, CAROL];
@@ -25,12 +31,16 @@ export const ACCOUNTS: readonly FakeAccount[] = [ALICE, BOB, CAROL];
 // EN: Two usernames that are not registered, used to show what the API answers for them.
 // PT: Dois nomes de usuário que não estão cadastrados, usados para mostrar o que a API responde
 //     para eles.
+// ES: Dos nombres de usuario que no están registrados, usados para mostrar lo que responde la API
+//     para ellos.
 export const UNKNOWN_USERNAMES = ["nobody-fake", "ghost-fake"] as const;
 
 // EN: The password two fake users share in the storage comparison, and the one the benchmark
 //     hashes again and again.
 // PT: A senha que dois usuários falsos compartilham na comparação de armazenamento, e a que o
 //     benchmark usa repetidas vezes para calcular hashes.
+// ES: La contraseña que comparten dos usuarios falsos en la comparación de almacenamiento, y la que el
+//     benchmark usa repetidas veces para calcular hashes.
 export const SHARED_FAKE_PASSWORD = "lab-fake-password";
 
 // EN: A fixed, short list of obviously wrong values. It only exists to count attempts: the
@@ -39,6 +49,9 @@ export const SHARED_FAKE_PASSWORD = "lab-fake-password";
 // PT: Uma lista fixa e curta de valores obviamente errados. Ela só existe para contar
 //     tentativas: o cenário mostra se o servidor ainda avalia a sexta tentativa errada. Não é
 //     um dicionário e nada aqui tenta descobrir uma senha.
+// ES: Una lista fija y corta de valores obviamente incorrectos. Existe solo para contar
+//     intentos: el escenario muestra si el servidor aún evalúa el sexto intento incorrecto. No es
+//     un diccionario y nada aquí intenta descubrir una contraseña.
 export const WRONG_PASSWORDS = [
 	"wrong-fake-1",
 	"wrong-fake-2",
@@ -50,4 +63,5 @@ export const WRONG_PASSWORDS = [
 
 // EN: Time is a function, so the tests move it forward instead of sleeping.
 // PT: O tempo é uma função, então os testes o adiantam em vez de dormir.
+// ES: El tiempo es una función, así que las pruebas lo adelantan en lugar de dormir.
 export type Clock = () => number;

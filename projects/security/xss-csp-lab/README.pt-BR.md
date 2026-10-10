@@ -1,6 +1,6 @@
 # xss-csp-lab
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um laboratório defensivo sobre cross-site scripting (XSS). Três páginas pequenas (um livro de visitas, uma busca e uma página de boas-vindas) são servidas duas vezes pelo ElysiaJS: uma com os erros clássicos, outra corrigida. Um Chromium de verdade, conduzido pelo Playwright dentro do Docker, abre as duas e mostra que o mesmo texto roda como código na versão vulnerável e é exibido como texto puro na corrigida. A correção tem três partes: escape de HTML no servidor, `textContent` em vez de `innerHTML` no navegador, e um cabeçalho Content Security Policy (CSP) como segunda camada.
 

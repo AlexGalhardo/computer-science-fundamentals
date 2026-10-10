@@ -59,6 +59,10 @@ func (r *Router) Serve(req *Request) Response {
 	//     405 Method Not Allowed, com um cabeçalho Allow listando os métodos que funcionariam.
 	//     O HEAD é respondido pelo handler do GET: mesmos cabeçalhos, e o corpo é descartado
 	//     depois.
+	// ES: El enrutamiento tiene dos preguntas, y dan dos errores distintos. ¿Alguna ruta conoce
+	//     esta RUTA? Si no: 404 Not Found. ¿Alguna acepta este MÉTODO? Si no:
+	//     405 Method Not Allowed, con una cabecera Allow que lista los métodos que funcionarían.
+	//     HEAD lo responde el handler de GET: mismas cabeceras, y el cuerpo se descarta después.
 	path := split(req.Path)
 	allowed := map[string]bool{}
 	for _, candidate := range r.routes {

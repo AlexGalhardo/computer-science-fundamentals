@@ -2,6 +2,9 @@
 //     ports of the same Caddy. This file must agree with caddy/Caddyfile and caddy/entrypoint.sh.
 // PT: A grade do experimento: três versões do HTTP vezes três condições de rede, nove portas do
 //     mesmo Caddy. Este arquivo precisa concordar com caddy/Caddyfile e caddy/entrypoint.sh.
+// ES: La cuadrícula del experimento: tres versiones de HTTP por tres condiciones de red, nueve
+//     puertos del mismo Caddy. Este archivo debe coincidir con caddy/Caddyfile y
+//     caddy/entrypoint.sh.
 
 import { z } from "zod";
 
@@ -9,6 +12,8 @@ import { z } from "zod";
 //     negotiated with ALPN: "http/1.1", "h2" or "h3".
 // PT: `alpn` é o nome que o navegador informa em `nextHopProtocol`, que é o identificador
 //     negociado com ALPN: "http/1.1", "h2" ou "h3".
+// ES: `alpn` es el nombre que informa el navegador en `nextHopProtocol`, que es el
+//     identificador negociado con ALPN: "http/1.1", "h2" o "h3".
 export const PROTOCOLS = [
 	{ id: "h1", label: "HTTP/1.1", alpn: "http/1.1", portDigit: 1 },
 	{ id: "h2", label: "HTTP/2", alpn: "h2", portDigit: 2 },
@@ -54,6 +59,9 @@ export function loadSettings(env: Record<string, string | undefined> = process.e
 	// PT: Os testes de carga deste repositório só atingem serviços locais. O host do laboratório
 	//     é um nome sob o domínio de topo reservado `.test`, que nunca resolve na internet
 	//     pública, e o código recusa qualquer outra coisa.
+	// ES: Las pruebas de carga de este repositorio solo apuntan a servicios locales. El host del
+	//     laboratorio es un nombre bajo el dominio de nivel superior reservado `.test`, que nunca
+	//     se resuelve en internet pública, y el código rechaza cualquier otra cosa.
 	if (!isLocalHost(settings.SITE_HOST)) {
 		throw new Error(
 			`refusing to run against "${settings.SITE_HOST}": the target must be localhost or a .test name`,

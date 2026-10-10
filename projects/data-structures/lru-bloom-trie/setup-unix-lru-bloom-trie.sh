@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the lru-bloom-trie mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto lru-bloom-trie. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto lru-bloom-trie. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"

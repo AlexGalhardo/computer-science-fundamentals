@@ -4,6 +4,9 @@
 // PT: Uma suíte, três servidores. `TARGETS` lista as configurações como pares `nome=url`, e cada
 //     teste abaixo roda uma vez por configuração: a API precisa se comportar igual seja qual for
 //     o runtime ou o modelo de processos que a serve. Só o número de processos respondendo pode diferir.
+// ES: Una suite, tres servidores. `TARGETS` lista las configuraciones como pares `nombre=url`, y cada
+//     prueba de abajo corre una vez por configuración: la API debe comportarse igual sea cual sea el
+//     runtime o el modelo de procesos que la sirve. Solo puede diferir el número de procesos que responden.
 
 import { describe, expect, test } from "bun:test";
 import { z } from "zod";
@@ -18,6 +21,7 @@ const env = z
 
 // EN: The same rule as the load test: a test never talks to a host that is not local.
 // PT: A mesma regra do teste de carga: um teste nunca fala com um host que não seja local.
+// ES: La misma regla de la prueba de carga: una prueba nunca habla con un host que no sea local.
 const targets = env.TARGETS.split(",").map((pair) => {
 	const [name = "", url = ""] = pair.split("=");
 	return { name, url: requireLocalTarget(url) };
@@ -35,6 +39,8 @@ async function getJson(url: string): Promise<{ status: number; body: unknown }> 
 	//     connections, not requests, so a reused connection would always reach the same worker.
 	// PT: `Connection: close` abre uma conexão nova por requisição. O cluster distribui conexões,
 	//     não requisições, então uma conexão reutilizada chegaria sempre ao mesmo worker.
+	// ES: `Connection: close` abre una conexión nueva por solicitud. El cluster distribuye conexiones,
+	//     no solicitudes, así que una conexión reutilizada llegaría siempre al mismo worker.
 	const response = await fetch(url, { headers: { Connection: "close" } });
 	return { status: response.status, body: await response.json() };
 }
@@ -68,6 +74,8 @@ describe.each(targets)("$name", ({ name, url }) => {
 	//     including the single-process ones: waiting does not occupy the event loop.
 	// PT: Cinquenta requisições que esperam 100 ms cada terminam em muito menos que 50 x 100 ms em
 	//     todas as configurações, inclusive as de processo único: esperar não ocupa o event loop.
+	// ES: Cincuenta solicitudes que esperan 100 ms cada una terminan en mucho menos que 50 x 100 ms en
+	//     todas las configuraciones, incluso las de proceso único: esperar no ocupa el event loop.
 	test("I/O-bound requests overlap on one event loop", async () => {
 		const started = performance.now();
 		const answers = await Promise.all(Array.from({ length: 50 }, () => getJson(`${url}/io?ms=100`)));
@@ -93,6 +101,7 @@ describe.each(targets)("$name", ({ name, url }) => {
 
 	// EN: The only visible difference between the setups: how many processes answer on the port.
 	// PT: A única diferença visível entre as configurações: quantos processos respondem na porta.
+	// ES: La única diferencia visible entre las configuraciones: cuántos procesos responden en el puerto.
 	test("the number of processes answering matches the process model", async () => {
 		const answers = await Promise.all(Array.from({ length: 80 }, () => getJson(`${url}/health`)));
 		const pids = new Set(answers.map((answer) => healthSchema.parse(answer.body).pid));

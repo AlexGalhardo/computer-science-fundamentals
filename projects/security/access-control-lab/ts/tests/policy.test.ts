@@ -2,6 +2,8 @@
 //     a user, an action and a resource go in, `true` or `false` comes out.
 // PT: Como toda decisão mora em uma função pura, a política pode ser testada sem HTTP: entram um
 //     usuário, uma ação e um recurso, sai `true` ou `false`.
+// ES: Como toda decisión vive en una función pura, la política puede probarse sin HTTP: entran un
+//     usuario, una acción y un recurso, sale `true` o `false`.
 
 import { describe, expect, test } from "bun:test";
 import type { User } from "../src/data";
@@ -42,6 +44,8 @@ describe("can(user, action, resource)", () => {
 //     The casts simulate a future action or resource kind that the policy does not know yet.
 // PT: As combinações para as quais ninguém escreveu regra. Todas precisam ser recusadas, até para
 //     um admin. Os casts simulam uma ação ou um tipo de recurso futuro que a política não conhece.
+// ES: Las combinaciones para las que nadie escribió regla. Todas deben rechazarse, incluso para
+//     un admin. Los casts simulan una acción o un tipo de recurso futuro que la política no conoce.
 describe("deny by default in the policy", () => {
 	test("an action that does not belong to the resource is refused", () => {
 		expect(can(carol, "use-admin-route", aliceInvoice)).toBe(false);

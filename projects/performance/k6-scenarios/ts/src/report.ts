@@ -5,13 +5,17 @@
 //     aceite no caminho: todo cenário precisa ultrapassar um threshold antes da correção e nenhum
 //     depois, e o teste de estresse precisa mostrar um joelho de latência antes da correção e
 //     nenhum depois.
+// ES: Convierte los resúmenes de k6 en los reportes Markdown versionados, y verifica los criterios
+//     de aceptación en el camino: todo escenario debe superar un umbral antes de la corrección y
+//     ninguno después, y la prueba de estrés debe mostrar una rodilla de latencia antes de la
+//     corrección y ninguna después.
 
 import { z } from "zod";
 import { P95_BUDGET_MS, PROFILES, poolCapacity, SCENARIOS } from "../../k6/profiles.js";
 
 export type Scenario = (typeof SCENARIOS)[number];
 export type Variant = "before" | "after";
-export type Language = "en" | "pt";
+export type Language = "en" | "pt" | "es";
 
 const scenarioSchema = z.custom<Scenario>(
 	(value) => typeof value === "string" && (SCENARIOS as string[]).includes(value),
@@ -28,6 +32,7 @@ const phaseSchema = z.object({
 
 // EN: The summaries are files written by another tool, so they are validated like any input.
 // PT: Os resumos são arquivos escritos por outra ferramenta, então são validados como qualquer entrada.
+// ES: Los resúmenes son archivos escritos por otra herramienta, así que se validan como cualquier entrada.
 export const summarySchema = z.object({
 	scenario: scenarioSchema,
 	variant: z.enum(["before", "after"]),
@@ -66,6 +71,11 @@ export function crossed(summary: Summary): number {
 //     só aumenta a fila. Aqui é o primeiro degrau cujo p95 é pelo menos cinco vezes o p95 do
 //     primeiro degrau E está acima do orçamento de latência. As duas condições, para que um salto
 //     de 20 ms para 100 ms em uma máquina com ruído não seja chamado de joelho.
+// ES: La rodilla de una curva de latencia es la carga en que la latencia deja de ser plana y se
+//     dispara: la tasa de llegada alcanzó la capacidad del cuello de botella, y de ahí en adelante
+//     cada solicitud extra solo alarga la cola. Aquí es el primer escalón cuyo p95 es al menos
+//     cinco veces el p95 del primer escalón Y está por encima del presupuesto de latencia. Las dos
+//     condiciones, para que un salto de 20 ms a 100 ms en una máquina con ruido no se llame rodilla.
 export const KNEE_FACTOR = 5;
 
 export function knee(summary: Summary): Phase | undefined {
@@ -109,18 +119,22 @@ const SHAPES: Record<Scenario, Record<Language, string>> = {
 	load: {
 		en: "ramp to 150 req/s in 5 s, hold 20 s, ramp down",
 		pt: "sobe a 150 req/s em 5 s, mantém 20 s, desce",
+		es: "sube a 150 req/s en 5 s, se mantiene 20 s, baja",
 	},
 	stress: {
 		en: "steps of 6 s: 50, 100, 150, 200, 250, 300 req/s",
 		pt: "degraus de 6 s: 50, 100, 150, 200, 250, 300 req/s",
+		es: "escalones de 6 s: 50, 100, 150, 200, 250, 300 req/s",
 	},
 	spike: {
 		en: "40 req/s, jump to 500 req/s for 6 s, back to 40 req/s for 16 s",
 		pt: "40 req/s, salto para 500 req/s por 6 s, volta a 40 req/s por 16 s",
+		es: "40 req/s, salto a 500 req/s durante 6 s, vuelve a 40 req/s durante 16 s",
 	},
 	soak: {
 		en: "constant 130 req/s for 60 s (scaled down: a real soak runs for hours)",
 		pt: "130 req/s constantes por 60 s (reduzido: um soak real roda por horas)",
+		es: "130 req/s constantes durante 60 s (reducido: un soak real corre durante horas)",
 	},
 };
 
@@ -139,26 +153,30 @@ function percent(rate: number): string {
 	return `${(rate * 100).toFixed(2)}%`;
 }
 
+const PASS: Record<Language, string> = { en: "pass", pt: "passou", es: "pasó" };
+const FAIL: Record<Language, string> = { en: "**FAIL**", pt: "**FALHOU**", es: "**FALLÓ**" };
+const FAILED: Record<Language, string> = { en: "failed", pt: "com erro", es: "con error" };
+
 function verdict(summary: Summary, language: Language): string {
-	if (crossed(summary) === 0) {
-		return language === "en" ? "pass" : "passou";
-	}
-	return language === "en" ? "**FAIL**" : "**FALHOU**";
+	return crossed(summary) === 0 ? PASS[language] : FAIL[language];
 }
 
 function cell(summary: Summary, language: Language): string {
-	const failed = language === "en" ? "failed" : "com erro";
-	return `${verdict(summary, language)}: p95 ${ms(summary.p95Ms)} ms, ${percent(summary.failedRate)} ${failed}`;
+	return `${verdict(summary, language)}: p95 ${ms(summary.p95Ms)} ms, ${percent(summary.failedRate)} ${FAILED[language]}`;
 }
 
 /** The overview table of the READMEs: one row per scenario, before against after. */
 export function renderOverview(summaries: Summary[], language: Language): string {
 	const first = (variant: Variant): number | undefined =>
 		summaries.find((summary) => summary.variant === variant)?.poolSize;
-	const headers =
-		language === "en"
-			? ["Scenario", "Shape", `Before (pool of ${first("before")})`, `After (pool of ${first("after")})`]
-			: ["Cenário", "Forma", `Antes (pool de ${first("before")})`, `Depois (pool de ${first("after")})`];
+	const poolBefore = first("before");
+	const poolAfter = first("after");
+	const HEADERS: Record<Language, string[]> = {
+		en: ["Scenario", "Shape", `Before (pool of ${poolBefore})`, `After (pool of ${poolAfter})`],
+		pt: ["Cenário", "Forma", `Antes (pool de ${poolBefore})`, `Depois (pool de ${poolAfter})`],
+		es: ["Escenario", "Forma", `Antes (pool de ${poolBefore})`, `Después (pool de ${poolAfter})`],
+	};
+	const headers = HEADERS[language];
 	const lines = [`| ${headers.join(" | ")} |`, `| ${headers.map(() => "---").join(" | ")} |`];
 	for (const scenario of SCENARIOS) {
 		const before = find(summaries, scenario, "before");

@@ -4,6 +4,9 @@
 // PT: O contrato de benchmark. Toda implementação, em qualquer linguagem, imprime um objeto JSON
 //     neste formato na última linha da saída. Um formato comum é o que torna um resultado em C++
 //     e um em Python comparáveis na mesma tabela.
+// ES: El contrato de benchmark. Toda implementación, en cualquier lenguaje, imprime un objeto JSON
+//     con este formato en la última línea de la salida. Un formato común es lo que hace que un
+//     resultado en C++ y uno en Python sean comparables en la misma tabla.
 
 import { z } from "zod";
 
@@ -26,6 +29,7 @@ export type BenchResult = z.infer<typeof benchResultSchema>;
 
 // EN: Programs may log before the result, so only the last non-empty line is parsed.
 // PT: Os programas podem imprimir logs antes do resultado, então só a última linha não vazia é lida.
+// ES: Los programas pueden imprimir logs antes del resultado, así que solo se lee la última línea no vacía.
 export function parseBenchOutput(output: string): BenchResult {
 	const line = output
 		.split(/\r?\n/)

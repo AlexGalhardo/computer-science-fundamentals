@@ -6,6 +6,10 @@
 #     implementação em Go, que é em memória e não precisa de serviço. A rede é interna: nenhum
 #     contêiner alcança a internet e nenhuma porta é publicada no host. Todas as credenciais são
 #     falsas e existem só dentro deste laboratório.
+# ES: Un broker RabbitMQ, una base de datos PostgreSQL y el consumidor TypeScript entre ellos, más
+#     la implementación en Go, que es en memoria y no necesita ningún servicio. La red es interna:
+#     ningún contenedor alcanza internet y no se publica ningún puerto en el host. Todas las
+#     credenciales son falsas y existen solo dentro de este laboratorio.
 name: msg-idempotency-dlq
 
 x-ts: &ts
@@ -39,12 +43,18 @@ services:
     # PT: O laboratório faz milhares de commits minúsculos e o banco é descartado no fim, então
     #     um commit não espera o disco. As transações continuam atômicas, que é o que a lição
     #     precisa. Não copie isto para um banco cujos dados importam.
+    # ES: El laboratorio hace miles de commits diminutos y la base de datos se descarta al final,
+    #     así que un commit no espera al disco. Las transacciones siguen siendo atómicas, que es lo
+    #     que necesita la lección. No copies esto a una base de datos cuyos datos importan.
     command: ["postgres", "-c", "synchronous_commit=off"]
     healthcheck:
       # EN: Over TCP, like the client. During initialisation the server answers on the Unix
       #     socket only and then restarts, so a socket check would say "ready" too early.
       # PT: Por TCP, como o cliente. Durante a inicialização o servidor só responde no socket
       #     Unix e depois reinicia, então uma checagem pelo socket diria "pronto" cedo demais.
+      # ES: Por TCP, como el cliente. Durante la inicialización el servidor solo responde en el
+      #     socket Unix y luego se reinicia, así que una verificación por el socket diría "listo"
+      #     demasiado pronto.
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U lab -d lab"]
       interval: 2s
       timeout: 5s
@@ -62,6 +72,9 @@ services:
       #     root and can create the Erlang cookie before the broker does, making the broker exit.
       # PT: Uma checagem TCP simples na porta que o cliente usa. O `rabbitmq-diagnostics` rodaria
       #     como root e pode criar o cookie do Erlang antes do broker, fazendo o broker encerrar.
+      # ES: Una verificación TCP simple en el puerto que usa el cliente. `rabbitmq-diagnostics`
+      #     correría como root y puede crear la cookie de Erlang antes que el broker, haciendo que
+      #     el broker termine.
       test: ["CMD", "nc", "-z", "127.0.0.1", "5672"]
       interval: 3s
       timeout: 10s
@@ -71,6 +84,8 @@ services:
 
   # EN: Type check and unit tests. They need no service, so the container gets no network.
   # PT: Checagem de tipos e testes unitários. Não precisam de serviço, então o contêiner fica sem rede.
+  # ES: Verificación de tipos y pruebas unitarias. No necesitan ningún servicio, así que el
+  #     contenedor se queda sin red.
   ts-test:
     <<: *ts
     network_mode: "none"
@@ -88,12 +103,18 @@ services:
     # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
     #     imagem (uid 1000) não conseguiria gravar os resultados. O script de setup exporta
     #     HOST_UID e HOST_GID; no Docker Desktop o padrão funciona.
+    # ES: Se ejecuta como el usuario del host. En Linux la carpeta montada pertenece a ese usuario,
+    #     y el usuario propio de la imagen (uid 1000) no podría escribir los resultados en ella. El
+    #     script de setup exporta HOST_UID y HOST_GID; en Docker Desktop el valor por defecto
+    #     funciona.
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       - .:/project
 
   # EN: gofmt, go vet, golangci-lint and the tests with the race detector. Standard library only.
   # PT: gofmt, go vet, golangci-lint e os testes com o detector de corrida. Só biblioteca padrão.
+  # ES: gofmt, go vet, golangci-lint y las pruebas con el detector de carreras. Solo la biblioteca
+  #     estándar.
   go-test:
     build: ./go
     image: sef-idempotency-dlq-go:local

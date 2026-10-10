@@ -1,6 +1,6 @@
 # Outbox e saga (MP-TX-4)
 
-> English version: [docs/en/transactions/outbox-saga.md](../../en/transactions/outbox-saga.md)
+> English version: [docs/en/transactions/outbox-saga.md](../../en/transactions/outbox-saga.md) · Versión en español: [docs/es/transactions/outbox-saga.md](../../es/transactions/outbox-saga.md)
 
 Mini-projeto: [`projects/transactions/outbox-saga`](../../../projects/transactions/outbox-saga/README.pt-BR.md). Tópicos do quiz: `saga-outbox`, `idempotency`, `distributed-transactions-2pc`.
 

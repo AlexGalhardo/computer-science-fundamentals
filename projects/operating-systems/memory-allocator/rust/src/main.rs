@@ -2,6 +2,8 @@
 //     output of `./demo` in the C++ implementation.
 // PT: Imprime o benchmark de fragmentação. O texto precisa ser idêntico, byte a byte, à saída de
 //     `./demo` na implementação em C++.
+// ES: Imprime el benchmark de fragmentación. El texto debe ser idéntico, byte a byte, a la salida
+//     de `./demo` en la implementación en C++.
 
 use memory_allocator::{WORKLOADS, make_allocators, run_workload};
 

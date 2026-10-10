@@ -26,6 +26,8 @@ def tiny_model(seed: int = 3) -> tuple[Params, np.ndarray, np.ndarray]:
     #     zero by accident and the comparison below is meaningful for every parameter.
     # PT: float64 e pesos, ganhos e vieses aleatórios grandes, para que nenhum gradiente fique
     #     perto de zero por acaso e a comparação abaixo valha para todos os parâmetros.
+    # ES: float64 y pesos, ganancias y sesgos aleatorios grandes, para que ningún gradiente quede
+    #     cerca de cero por azar y la comparación de abajo valga para todos los parámetros.
     params = init_params(TINY, seed, dtype=np.float64, std=0.5)
     rng = np.random.default_rng(seed + 100)
     for name in params:

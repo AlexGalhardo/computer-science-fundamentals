@@ -24,6 +24,9 @@ export class RemoveNote {
 	// PT: Uma nota que não está lá é uma resposta esperada, então volta como `Result`. O
 	//     adaptador HTTP vai transformá-la em 404 e o adaptador de terminal em código de saída 1,
 	//     e esta classe não conhece nenhum dos dois.
+	// ES: Una nota que no está es una respuesta esperada, así que vuelve como `Result`. El
+	//     adaptador HTTP la convertirá en 404 y el adaptador de terminal en código de salida 1, y
+	//     esta clase no conoce ninguno de los dos.
 	async execute(input: RemoveNoteInput): Promise<Result<{ id: string }, ApplicationError>> {
 		const removed = await this.repository.remove(input.id);
 		if (!removed) {

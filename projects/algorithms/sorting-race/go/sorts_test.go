@@ -8,6 +8,7 @@ import (
 
 // EN: Linear congruential generator with a fixed seed, so the test is reproducible.
 // PT: Gerador congruente linear com semente fixa, para o teste ser reproduzível.
+// ES: Generador congruencial lineal con semilla fija, para que la prueba sea reproducible.
 func randomValues(n int, seed int64) []int32 {
 	values := make([]int32, n)
 	state := seed
@@ -25,6 +26,8 @@ func randomValues(n int, seed int64) []int32 {
 //
 // PT: O oráculo é a ordenação da biblioteca: ser igual a ela significa estar em ordem e ser uma
 // permutação da entrada.
+// ES: El oráculo es la ordenación de la biblioteca: ser igual a ella significa estar en orden y ser
+// una permutación de la entrada.
 func TestSorts(t *testing.T) {
 	cases := map[string][]int32{
 		"empty":          {},

@@ -55,6 +55,13 @@ fn index(value: usize) -> u32 {
 //       - a qual variável um nome se refere: um número de posição, nunca uma busca por nome;
 //       - para onde o fluxo de controle vai: `if` e `while` viram saltos para índices conhecidos.
 //     `states` é uma pilha com uma entrada por função em compilação, a mais interna por último.
+// ES: El compilador recorre el árbol una vez, en el mismo orden en que lo recorrería el
+//     intérprete de árbol, pero en lugar de HACER el trabajo de cada nodo ESCRIBE las
+//     instrucciones que lo harán. La lección está en lo que decide por adelantado, para que la
+//     máquina no tenga que decidir durante la ejecución:
+//       - a qué variable se refiere un nombre: un número de posición, nunca una búsqueda por nombre;
+//       - a dónde va el flujo de control: `if` y `while` se vuelven saltos a índices conocidos.
+//     `states` es una pila con una entrada por función en compilación, la más interna al final.
 struct Compiler {
     states: Vec<FunctionState>,
     global_names: Vec<String>,
@@ -90,6 +97,10 @@ impl Compiler {
     //     cima do ramo `then`, para fora de um laço), ele ainda não sabe onde o salto cai, porque
     //     aquele código não foi gerado. Ele emite o salto com um valor provisório, compila o que
     //     vem depois, e então volta para escrever o destino real.
+    // ES: Backpatching (parcheo posterior). Cuando el compilador emite un salto hacia adelante (por
+    //     encima de la rama `then`, hacia fuera de un bucle), aún no sabe dónde cae el salto,
+    //     porque ese código no se ha generado. Emite el salto con un valor provisional, compila lo
+    //     que viene después, y luego vuelve para escribir el destino real.
     fn patch_jump(&mut self, jump: usize) {
         let chunk = &mut self.state().chunk;
         let target = index(chunk.code.len());
@@ -130,6 +141,11 @@ impl Compiler {
     //     registra onde buscá-lo quando sua closure for criada. Quando a variável está a duas ou
     //     mais funções de distância, cada função no caminho a repassa por um upvalue próprio, e
     //     é isso que a chamada recursiva constrói.
+    // ES: Un nombre que no es local de la función actual puede ser local de una función que la
+    //     rodea. En ese caso se convierte en un upvalue: el local externo se marca como capturado,
+    //     y la función actual registra dónde buscarlo cuando se cree su closure. Cuando la
+    //     variable está a dos o más funciones de distancia, cada función en el camino la pasa por
+    //     un upvalue propio, y eso es lo que construye la llamada recursiva.
     fn resolve_upvalue(&mut self, state: usize, name: &str) -> Option<usize> {
         let enclosing = state.checked_sub(1)?;
         let reference = if let Some(slot) = self.resolve_local(enclosing, name) {
@@ -161,6 +177,8 @@ impl Compiler {
     //     first, then the enclosing functions, and finally the globals.
     // PT: A ordem das três perguntas É a regra de escopo: primeiro o bloco mais interno desta
     //     função, depois as funções ao redor, e por fim as globais.
+    // ES: El orden de las tres preguntas ES la regla de ámbito: primero el bloque más interno de
+    //     esta función, luego las funciones que la rodean, y por último las globales.
     fn resolve(&mut self, name: &str) -> Target {
         let current = self.states.len() - 1;
         if let Some(slot) = self.resolve_local(current, name) {
@@ -189,6 +207,11 @@ impl Compiler {
     //     posição global. Dentro de um bloco nada é emitido: o valor simplesmente fica onde está,
     //     e o compilador lembra que essa posição da pilha agora tem nome. Esse é todo o custo de
     //     uma variável local. Declarar de novo um nome no mesmo bloco reutiliza a posição dele.
+    // ES: Le da un nombre al valor en el tope de la pila. En el nivel superior se desapila hacia
+    //     una posición global. Dentro de un bloque no se emite nada: el valor simplemente queda
+    //     donde está, y el compilador recuerda que esa posición de la pila ahora tiene nombre. Ese
+    //     es todo el costo de una variable local. Declarar de nuevo un nombre en el mismo bloque
+    //     reutiliza su posición.
     fn define_variable(&mut self, name: &str) {
         if self.state().scope_depth == 0 {
             let slot = self.global_slot(name);
@@ -214,6 +237,8 @@ impl Compiler {
     //     cannot just be popped: CLOSE_UPVALUE first moves its value to the heap.
     // PT: Sair de um bloco remove os locais dele da pilha. Um local que alguma closure capturou
     //     não pode simplesmente ser desempilhado: CLOSE_UPVALUE primeiro move o valor para o heap.
+    // ES: Salir de un bloque quita sus locales de la pila. Un local que alguna closure capturó no
+    //     puede simplemente desapilarse: CLOSE_UPVALUE primero mueve el valor al heap.
     fn end_scope(&mut self) {
         self.state().scope_depth -= 1;
         let depth = self.state().scope_depth;
@@ -257,6 +282,8 @@ impl Compiler {
             //         c, JUMP_IF_FALSE else, A, JUMP end, else: B, end:
             // PT: `if c { A } else { B }` vira:
             //         c, JUMP_IF_FALSE else, A, JUMP end, else: B, end:
+            // ES: `if c { A } else { B }` se convierte en:
+            //         c, JUMP_IF_FALSE else, A, JUMP end, else: B, end:
             Stmt::If {
                 condition,
                 then_branch,
@@ -280,6 +307,9 @@ impl Compiler {
             // PT: `while c { A }` vira:
             //         start: c, JUMP_IF_FALSE exit, A, JUMP start, exit:
             //     O salto para trás não precisa de remendo: o destino dele já existe.
+            // ES: `while c { A }` se convierte en:
+            //         start: c, JUMP_IF_FALSE exit, A, JUMP start, exit:
+            //     El salto hacia atrás no necesita parche: su destino ya existe.
             Stmt::While { condition, body } => {
                 let start = index(self.state().chunk.code.len());
                 self.expression(condition);
@@ -308,11 +338,18 @@ impl Compiler {
     //     `states`. Seus parâmetros são seus primeiros locais: quem chama empilha os argumentos
     //     em ordem, então eles já estão nas posições 0, 1, 2... quando o corpo começa. A função
     //     ao redor recebe uma única instrução, CLOSURE, que monta o valor função na execução.
+    // ES: El cuerpo de una función se compila en un chunk propio, por una nueva entrada en la pila
+    //     `states`. Sus parámetros son sus primeros locales: quien llama apila los argumentos en
+    //     orden, así que ya están en las posiciones 0, 1, 2... cuando comienza el cuerpo. La
+    //     función que la rodea recibe una única instrucción, CLOSURE, que arma el valor función en
+    //     la ejecución.
     fn function(&mut self, name: &str, params: &[String], body: &[Stmt]) {
         // EN: Inside a block the name is declared BEFORE the body is compiled, so the function
         //     can refer to itself (recursion) through an upvalue to its own slot.
         // PT: Dentro de um bloco o nome é declarado ANTES de o corpo ser compilado, para que a
         //     função consiga se referir a si mesma (recursão) por um upvalue para a própria posição.
+        // ES: Dentro de un bloque el nombre se declara ANTES de compilar el cuerpo, para que la
+        //     función pueda referirse a sí misma (recursión) por un upvalue a su propia posición.
         let is_new_local =
             self.state().scope_depth > 0 && self.declared_in_current_scope(name).is_none();
         if is_new_local {
@@ -370,6 +407,9 @@ impl Compiler {
     // PT: Pós-ordem: o código dos operandos vem primeiro e o operador por último. É a árvore
     //     escrita em notação pós-fixa (polonesa reversa), e é exatamente a ordem de que uma
     //     máquina de pilha precisa: quando ADD roda, seus dois operandos já estão no topo da pilha.
+    // ES: Postorden: el código de los operandos va primero y el operador al final. Es el árbol
+    //     escrito en notación postfija (polaca inversa), y es exactamente el orden que necesita
+    //     una máquina de pila: cuando corre ADD, sus dos operandos ya están en el tope de la pila.
     fn expression(&mut self, expression: &Expr) {
         match expression {
             Expr::Literal(literal, pos) => {
@@ -434,6 +474,8 @@ impl Compiler {
             //     code of the right side is skipped and the left value stays as the answer.
             // PT: Curto-circuito é um salto: quando o lado esquerdo já decide o resultado, o
             //     código do lado direito é pulado e o valor esquerdo fica como resposta.
+            // ES: El cortocircuito es un salto: cuando el lado izquierdo ya decide el resultado, el
+            //     código del lado derecho se salta y el valor izquierdo queda como respuesta.
             Expr::Logical {
                 is_and,
                 left,

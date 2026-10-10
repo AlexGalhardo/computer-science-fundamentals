@@ -1,6 +1,6 @@
 # Teoria da informação
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A teoria da informação mede a informação em bits e prova até onde os dados podem ser comprimidos e com que confiabilidade podem ser enviados por um canal com ruído. A entropia de Shannon define o limite do qual Huffman e LZ77 se aproximam, e a redundância acrescentada de propósito (paridade, CRC, códigos de Hamming) é o que permite a redes e discos detectar e reparar erros. As mesmas ideias explicam codificações de texto como UTF-8 e base64.
 

@@ -10,6 +10,8 @@ use mini_dbms::{hash_join, nested_loop_join, sort_merge_join};
 //     ("high water mark") of /proc/self/status, so no external crate is needed.
 // PT: Pico de memória residente deste processo em KiB. O Linux o publica na linha `VmHWM`
 //     ("marca d'água máxima") de /proc/self/status, então nenhum crate externo é necessário.
+// ES: Pico de memoria residente de este proceso en KiB. Linux lo publica en la línea `VmHWM`
+//     ("marca de agua máxima") de /proc/self/status, así que no se necesita ningún crate externo.
 fn peak_memory_kb() -> u64 {
     let status = fs::read_to_string("/proc/self/status").unwrap_or_default();
     status
@@ -26,6 +28,9 @@ fn peak_memory_kb() -> u64 {
 // PT: Ponto de entrada do benchmark: `mini-dbms bench <nested-loop|hash|sort-merge> <n>`. A
 //     montagem das tabelas fica fora do trecho cronometrado: só a junção é medida. A última
 //     linha impressa é o objeto JSON do contrato de benchmark do repositório.
+// ES: Punto de entrada del benchmark: `mini-dbms bench <nested-loop|hash|sort-merge> <n>`. El
+//     armado de las tablas queda fuera del tramo cronometrado: solo se mide el join. La última
+//     línea impresa es el objeto JSON del contrato de benchmark del repositorio.
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() != 4 || args[1] != "bench" {

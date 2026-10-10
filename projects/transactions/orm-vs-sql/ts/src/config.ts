@@ -2,6 +2,8 @@
 //     points at the `db` service of docker-compose, with obviously fake lab credentials.
 // PT: Variáveis de ambiente são entrada externa, então são validadas na borda. O padrão aponta
 //     para o serviço `db` do docker-compose, com credenciais de laboratório claramente falsas.
+// ES: Las variables de entorno son entrada externa, así que se validan en el borde. El valor por defecto
+//     apunta al servicio `db` de docker-compose, con credenciales de laboratorio claramente falsas.
 
 import { resolve } from "node:path";
 import { z } from "zod";

@@ -4,6 +4,9 @@
 // PT: Testes de integração contra um broker real. `BROKER` escolhe qual, e o docker-compose sobe
 //     só esse broker para a execução. Os mesmos três testes rodam nos quatro brokers, porque são
 //     escritos contra as interfaces comuns.
+// ES: Pruebas de integración contra un broker real. `BROKER` elige cuál, y docker-compose levanta
+//     solo ese broker para la ejecución. Las mismas tres pruebas corren en los cuatro brokers,
+//     porque están escritas contra las interfaces comunes.
 
 import { describe, expect, test } from "bun:test";
 import { adapterFactory } from "../src/adapters";

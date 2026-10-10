@@ -1,6 +1,6 @@
 # Sistemas de arquivos
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um sistema de arquivos transforma um dispositivo de blocos bruto em arquivos e diretórios com nome que sobrevivem a uma queda de energia. Abaixo da interface conhecida estão os métodos de alocação, os i-nodes, a gerência de espaço livre e o journaling, e acima dela estão as organizações de arquivo que os bancos de dados usam: registros, índices, árvores B e ordenação externa para dados que não cabem na memória. As duas metades são moldadas por um fato: o armazenamento é lento, então o que conta é o número de acessos.
 

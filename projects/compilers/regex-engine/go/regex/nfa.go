@@ -38,6 +38,12 @@ type fragment struct{ start, accept int }
 // exatamente uma entrada e uma saída, então os fragmentos se encaixam como tijolos, e o autômato
 // tem um número de estados proporcional ao tamanho do padrão (no máximo dois por nó). As
 // transições épsilon (desenhadas como ε, tomadas sem ler a entrada) são a cola.
+//
+// ES: La construcción es una regla pequeña por tipo de nodo. Cada regla devuelve un fragmento
+// con exactamente una entrada y una salida, así que los fragmentos encajan como ladrillos, y el
+// autómata tiene un número de estados proporcional al tamaño del patrón (como máximo dos por
+// nodo). Las transiciones épsilon (dibujadas como ε, tomadas sin leer la entrada) son el
+// pegamento.
 func Compile(node *Node) *NFA {
 	nfa := &NFA{}
 	whole := nfa.build(node)
@@ -103,6 +109,9 @@ func (n *NFA) build(node *Node) fragment {
 // PT: O fecho épsilon responde "em quais estados o autômato pode estar sem ler mais nada?". É uma
 // busca comum em grafo, e as marcas `seen` impedem que ela percorra para sempre um ciclo de
 // transições ε.
+// ES: La clausura épsilon responde "¿en qué estados puede estar el autómata sin leer nada más?".
+// Es una búsqueda común en un grafo, y las marcas `seen` impiden que recorra para siempre un
+// ciclo de transiciones ε.
 func (n *NFA) closure(state int, seen []bool, set []int) []int {
 	if seen[state] {
 		return set
@@ -126,6 +135,11 @@ func (n *NFA) closure(state int, seen []bool, set []int) []int {
 // conjunto contém cada estado no máximo uma vez, então o trabalho por byte é limitado pelo
 // tamanho do padrão, e o total é O(len(entrada) x len(padrão)): linear na entrada, qualquer que
 // seja o padrão.
+// ES: La simulación nunca adivina y nunca retrocede. Mantiene el CONJUNTO de todos los estados en
+// los que el autómata podría estar, y cada byte de la entrada transforma ese conjunto en el
+// siguiente. Un conjunto contiene cada estado como máximo una vez, así que el trabajo por byte
+// está acotado por el tamaño del patrón, y el total es O(len(entrada) x len(patrón)): lineal en
+// la entrada, sea cual sea el patrón.
 func (n *NFA) Match(input string) (matched bool, steps int) {
 	seen := make([]bool, len(n.States))
 	current := n.closure(n.Start, seen, nil)

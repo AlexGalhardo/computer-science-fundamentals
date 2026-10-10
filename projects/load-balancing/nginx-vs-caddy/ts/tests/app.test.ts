@@ -5,6 +5,8 @@ import { type App, createApp } from "../src/api/app";
 //     instant and deterministic.
 // PT: O handler é testado sem socket: o tempo e o crash são injetados, então os testes são
 //     instantâneos e determinísticos.
+// ES: El handler se prueba sin socket: el tiempo y el crash se inyectan, así que las pruebas son
+//     instantáneas y deterministas.
 function setup(): { app: App; slept: number[]; crashes: number[]; clock: { now: number } } {
 	const slept: number[] = [];
 	const crashes: number[] = [];

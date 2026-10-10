@@ -1,6 +1,6 @@
 # Clean architecture application (MP-ARCH-1)
 
-> Versão em português: [docs/pt/software-architecture/clean-architecture-app.md](../../pt/software-architecture/clean-architecture-app.md)
+> Versão em português: [docs/pt/software-architecture/clean-architecture-app.md](../../pt/software-architecture/clean-architecture-app.md) · Versión en español: [docs/es/software-architecture/clean-architecture-app.md](../../es/software-architecture/clean-architecture-app.md)
 
 Mini-project: [`projects/software-architecture/clean-architecture-app`](../../../projects/software-architecture/clean-architecture-app/README.md). Quiz topics: `clean-architecture-dependency-rule`, `entities-use-cases`, `interface-adapters`, `frameworks-drivers-composition-root`, `layered-hexagonal`, `domain-driven-design`.
 
@@ -8,7 +8,7 @@ Mini-project: [`projects/software-architecture/clean-architecture-app`](../../..
 
 In a typical small application the business rule ends up inside the route handler, next to the SQL:
 
-```
+```text
 route handler:  read the JSON body -> check the title -> SELECT ... -> INSERT ... -> build the JSON response
 ```
 
@@ -18,7 +18,7 @@ It works, and three things become expensive. Testing the rule "no two notes with
 
 The Clean Architecture, as described by Robert Martin and worked through in TypeScript by Otávio Lemos, arranges the code in concentric layers and states one rule about them, the **dependency rule**: a file may import only from its own layer or from a layer further in.
 
-```
+```text
             main (composition root)           knows everything, nothing imports it
    +--------------------------------------+
    |  drivers: Elysia, pg, clock, terminal |
@@ -50,7 +50,7 @@ The layers further in are the ones that change least and that everything else de
 
 The rule is about source code, not about run time. When a note is created over HTTP, control goes in and comes back out:
 
-```
+```text
 Elysia route -> NoteHttpController -> CreateNote -> NoteRepository.save() -> PostgresNoteRepository -> pg
    (driver)        (adapter)          (use case)        (port)                  (driver)
 ```

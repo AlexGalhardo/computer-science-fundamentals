@@ -4,6 +4,9 @@
 // PT: O benchmark: `docker compose run --rm bench`. Mede a latência das quatro consultas de
 //     leitura nas três abordagens e o custo do padrão N+1, e depois grava results/ e as tabelas
 //     dos dois READMEs.
+// ES: El benchmark: `docker compose run --rm bench`. Mide la latencia de las cuatro consultas de
+//     lectura en los tres enfoques y el costo del patrón N+1, y luego escribe results/ y las tablas
+//     de los READMEs.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -32,6 +35,11 @@ async function timeOne(context: Context, query: Runnable, approach: Approach): P
 //     compilação JIT, a abertura de conexões e os caches frios). Dentro de uma rodada as
 //     abordagens se revezam chamada a chamada, então um momento lento da máquina atinge as três e
 //     não só uma.
+// ES: Comparar cosas iguales. Todos los enfoques corren en el mismo proceso contra la misma base de
+//     datos, una llamada a la vez, después de un calentamiento que se descarta (las primeras
+//     llamadas pagan la compilación JIT, la apertura de conexiones y las cachés frías). Dentro de
+//     una ronda los enfoques se turnan llamada a llamada, así que un momento lento de la máquina
+//     afecta a los tres y no solo a uno.
 async function measureLatency(
 	context: Context,
 	query: Runnable,
@@ -87,6 +95,8 @@ try {
 //     slow down the timed pass.
 // PT: Os comandos são contados em uma segunda passada com o gravador ligado, para a gravação não
 //     atrasar a passada cronometrada.
+// ES: Las sentencias se cuentan en una segunda pasada con el registrador encendido, para que el
+//     registro no retrase la pasada cronometrada.
 const recording = createContext({ databaseUrl: config.DATABASE_URL, record: true });
 const nPlusOne: NPlusOneRow[] = [];
 let serverVersion = "unknown";
@@ -163,6 +173,7 @@ writeFileSync(
 for (const [file, language] of [
 	["README.md", "en"],
 	["README.pt-BR.md", "pt"],
+	["README.es.md", "es"],
 ] as const) {
 	const path = join(config.PROJECT_DIR, file);
 	const withLatency = inject(readFileSync(path, "utf8"), "latency", renderLatency(rows, language));

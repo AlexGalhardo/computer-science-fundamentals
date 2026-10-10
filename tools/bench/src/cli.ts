@@ -4,6 +4,9 @@
 // PT: `bun run bench -- --project <nome ou caminho>`
 //     Acha o mini-projeto, roda a grade de benchmark no Docker e escreve
 //     `results/results.md`, `results/results.json` e `results/results.js`.
+// ES: `bun run bench -- --project <nombre o ruta>`
+//     Encuentra el mini-proyecto, ejecuta la grilla de benchmark en Docker y escribe
+//     `results/results.md`, `results/results.json` y `results/results.js`.
 
 import { existsSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";

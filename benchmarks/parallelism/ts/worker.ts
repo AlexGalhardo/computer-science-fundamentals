@@ -2,9 +2,12 @@
 //     and posts the count back. Nothing here is shared with the main thread.
 // PT: Código de uma thread worker. Ela recebe um número de pedaço, conta os primos desse pedaço
 //     e devolve a contagem. Nada aqui é compartilhado com a thread principal.
+// ES: Código de un thread worker. Recibe un número de pedazo, cuenta los primos de ese pedazo
+//     y devuelve el conteo. Nada aquí se comparte con el thread principal.
 
 // EN: An empty export makes this file a module, so its names stay private to it.
 // PT: Um export vazio torna este arquivo um módulo, então seus nomes ficam privados a ele.
+// ES: Un export vacío convierte este archivo en un módulo, así sus nombres quedan privados a él.
 export {};
 
 declare var self: Worker;
@@ -23,6 +26,7 @@ function isPrime(k: number): boolean {
 
 // EN: Chunk c covers [c*n/256, (c+1)*n/256).
 // PT: O pedaço c cobre [c*n/256, (c+1)*n/256).
+// ES: El pedazo c cubre [c*n/256, (c+1)*n/256).
 function countChunk(chunk: number, n: number): number {
 	let count = 0;
 	const stop = Math.floor(((chunk + 1) * n) / CHUNKS);

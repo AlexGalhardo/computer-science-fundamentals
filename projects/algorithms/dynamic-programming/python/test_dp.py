@@ -4,6 +4,8 @@ EN: The naive version is the specification. The memoised and the tabulated versi
     faster ways to compute the same answer, and the tests hold them to that.
 PT: A versão ingênua é a especificação. A memoizada e a tabulada são só formas mais rápidas de
     calcular a mesma resposta, e os testes cobram isso delas.
+ES: La versión ingenua es la especificación. La memoizada y la tabulada son solo formas más
+    rápidas de calcular la misma respuesta, y las pruebas se lo exigen.
 """
 
 import pytest
@@ -37,6 +39,7 @@ def test_coin_change_known_answer() -> None:
     assert dp.coin_change_table([1, 3, 4], 6) == [0, 1, 2, 1, 1, 2, 2]
     # EN: 7 cannot be made with coins of 2 and 4: every sum of them is even.
     # PT: 7 não pode ser formado com moedas de 2 e 4: toda soma delas é par.
+    # ES: 7 no se puede formar con monedas de 2 y 4: toda suma de ellas es par.
     assert dp.coin_change_naive([2, 4], 7, dp.Counter()) == -1
     assert dp.coin_change_memo([2, 4], 7, dp.Counter()) == -1
     assert dp.coin_change_tab([2, 4], 7) == -1
@@ -73,6 +76,8 @@ def test_coin_change_versions_agree_on_random_cases() -> None:
 #     that both languages build the same instances and agree on the result.
 # PT: Respostas da referência em TypeScript para os tamanhos documentados. Números iguais aqui
 #     provam que as duas linguagens montam as mesmas instâncias e concordam no resultado.
+# ES: Respuestas de la referencia en TypeScript para los tamaños documentados. Números iguales aquí
+#     prueban que los dos lenguajes construyen las mismas instancias y coinciden en el resultado.
 TYPESCRIPT_CALLS = {"knapsack": (734544, 2380), "lcs": (117808, 198), "coins": (2550408, 86)}
 
 

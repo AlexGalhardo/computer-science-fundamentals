@@ -18,6 +18,10 @@ namespace forg {
 // PT: Os inteiros são guardados em ordem little-endian em posições fixas. Um arquivo gravado
 //     copiando inteiros direto da memória dependeria da máquina. Com a ordem dos bytes fixa, os
 //     programas em C++ e em Rust deste mini-projeto leem e gravam exatamente o mesmo arquivo.
+// ES: Los enteros se guardan en orden little-endian en posiciones fijas. Un archivo escrito
+//     copiando enteros directo desde la memoria dependería de la máquina. Con el orden de los
+//     bytes fijo, los programas en C++ y en Rust de este mini-proyecto leen y escriben
+//     exactamente el mismo archivo.
 inline void put_u32(std::uint8_t* at, std::uint32_t value) {
 	for (int i = 0; i < 4; ++i) {
 		at[i] = static_cast<std::uint8_t>(value >> (8 * i));
@@ -59,6 +63,10 @@ using Slot = std::array<std::uint8_t, kRecordSize>;
 //     texto menor que o campo é completado com espaços. O preenchimento é espaço desperdiçado
 //     (fragmentação interna), e é o preço de poder calcular onde qualquer registro começa.
 //     Layout: marca (1 byte), id (4), ano (2), cidade (20), nome (37).
+// ES: Un registro de tamaño fijo: cada campo tiene su posición fija dentro de los 64 bytes, y el
+//     texto menor que el campo se completa con espacios. El relleno es espacio desperdiciado
+//     (fragmentación interna), y es el precio de poder calcular dónde empieza cualquier
+//     registro. Layout: marca (1 byte), id (4), año (2), ciudad (20), nombre (37).
 inline Slot encode(const Record& record) {
 	if (record.city.size() > kCitySize || record.name.size() > kNameSize) {
 		throw std::invalid_argument("a field is longer than its fixed size");
@@ -104,6 +112,12 @@ inline Record decode(const Slot& slot) {
 //     slots o arquivo tem, quantos estão em uso e a cabeça da lista de livres. Como todo slot
 //     tem o mesmo tamanho, o slot de número relativo (RRN) n começa no byte 32 + n x 64, então
 //     um único seek alcança qualquer registro. Os RRNs começam em zero.
+// ES: El archivo de datos: un registro de cabecera de 32 bytes seguido de espacios (slots) de 64
+//     bytes. La cabecera hace que el archivo se describa a sí mismo: guarda el tamaño del
+//     registro, cuántos slots tiene el archivo, cuántos están en uso y la cabeza de la lista de
+//     libres. Como todo slot tiene el mismo tamaño, el slot de número relativo (RRN) n empieza
+//     en el byte 32 + n x 64, así que un único seek alcanza cualquier registro. Los RRN
+//     empiezan en cero.
 class RecordFile {
 public:
 	static RecordFile create(const std::string& path) {
@@ -145,6 +159,10 @@ public:
 	//     pilha guardada dentro do arquivo: o cabeçalho aponta para o último slot removido, e
 	//     cada slot removido guarda o RRN do que foi removido antes dele. Desempilhar o topo
 	//     custa uma leitura e duas gravações, e o arquivo só cresce quando a pilha está vazia.
+	// ES: La inserción reutiliza un slot eliminado cuando existe uno. La lista de libres es una
+	//     pila guardada dentro del archivo: la cabecera apunta al último slot eliminado, y cada
+	//     slot eliminado guarda el RRN del que se eliminó antes que él. Desapilar la cima cuesta
+	//     una lectura y dos escrituras, y el archivo solo crece cuando la pila está vacía.
 	std::uint32_t insert(const Record& record) {
 		std::uint32_t rrn = slot_count_;
 		if (free_head_ != kNoSlot) {
@@ -177,6 +195,9 @@ public:
 	// PT: A remoção não move nada. Ela marca o slot com '*', grava nele a cabeça antiga da lista
 	//     de livres e faz o cabeçalho apontar para esse slot (um push). O arquivo mantém o
 	//     tamanho, e o espaço volta na próxima inserção.
+	// ES: La eliminación no mueve nada. Marca el slot con '*', escribe en él la cabeza antigua de
+	//     la lista de libres y hace que la cabecera apunte a ese slot (un push). El archivo
+	//     mantiene su tamaño, y el espacio vuelve en la próxima inserción.
 	bool remove(std::uint32_t rrn) {
 		if (rrn >= slot_count_) {
 			return false;
@@ -196,6 +217,8 @@ public:
 
 	// EN: Walks the free list from the head, to show the order in which slots will be reused.
 	// PT: Percorre a lista de livres a partir da cabeça, para mostrar a ordem de reuso dos slots.
+	// ES: Recorre la lista de libres desde la cabeza, para mostrar el orden de reutilización de
+	//     los slots.
 	std::vector<std::uint32_t> free_list() {
 		std::vector<std::uint32_t> list;
 		for (std::int32_t at = free_head_; at != kNoSlot;) {
@@ -216,6 +239,7 @@ public:
 	std::int32_t free_head() const { return free_head_; }
 	// EN: Slots read from the file: on a disk this count is what a search costs.
 	// PT: Slots lidos do arquivo: em um disco, é essa contagem que uma busca custa.
+	// ES: Slots leídos del archivo: en un disco, es esa cuenta lo que cuesta una búsqueda.
 	std::uint64_t slot_reads() const { return slot_reads_; }
 
 private:

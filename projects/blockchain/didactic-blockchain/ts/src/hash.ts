@@ -10,6 +10,11 @@ import { createHash } from "node:crypto";
 //     muda o digest inteiro, então ninguém consegue ajustar a entrada "um pouco" para chegar a
 //     um hash desejado. Todo o resto deste projeto (ids de transação, raiz de Merkle, ligação
 //     entre blocos e prova de trabalho) é construído sobre esta única função.
+// ES: Un hash criptográfico transforma cualquier texto en una huella digital fija de 256 bits
+//     (64 dígitos hexadecimales). La misma entrada siempre da el mismo digest, y cambiar un
+//     carácter cambia el digest entero, así que nadie puede ajustar la entrada "un poco" para
+//     llegar a un hash deseado. Todo lo demás en este proyecto (ids de transacción, raíz de
+//     Merkle, enlace entre bloques y prueba de trabajo) se construye sobre esta única función.
 export function sha256Hex(data: string): string {
 	return createHash("sha256").update(data, "utf8").digest("hex");
 }

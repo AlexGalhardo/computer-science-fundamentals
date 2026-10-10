@@ -1,5 +1,6 @@
 # EN: Rust on a pinned image. Format, lint and tests run together, so a style slip fails the run.
 # PT: Rust em uma imagem fixada. Formato, lint e testes rodam juntos, então um deslize de estilo falha a execução.
+# ES: Rust en una imagen fijada. Formato, lint y pruebas corren juntos, así que un descuido de estilo falla la ejecución.
 FROM rust:1.99.0-slim-trixie
 RUN rustup component add rustfmt clippy
 WORKDIR /app

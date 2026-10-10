@@ -1,6 +1,6 @@
 # XSS and Content Security Policy lab (MP-SEC-2)
 
-> Versão em português: [docs/pt/security/xss-csp-lab.md](../../pt/security/xss-csp-lab.md)
+> Versão em português: [docs/pt/security/xss-csp-lab.md](../../pt/security/xss-csp-lab.md) · Versión en español: [docs/es/security/xss-csp-lab.md](../../es/security/xss-csp-lab.md)
 
 Mini-project: [`projects/security/xss-csp-lab`](../../../projects/security/xss-csp-lab/README.md). Quiz topics: `xss`, `csp-security-headers`.
 
@@ -14,7 +14,7 @@ The root cause is always the same: **data was written into a place that is parse
 
 ## The flaw, three times
 
-```
+```text
 visitor types:   <script>window.__labXssExecuted = true</script>
 
 server builds:   "<span>" + text + "</span>"
@@ -33,7 +33,7 @@ The DOM-based input is an `<img>` with an inline `onerror` handler, because a `<
 
 **1. Output encoding (server).** `escapeHtml` replaces `&`, `<`, `>`, `"` and `'` with `&amp;`, `&lt;`, `&gt;`, `&quot;` and `&#39;` at the moment the text is written into HTML.
 
-```
+```text
 server builds:   "<span>" + escapeHtml(text) + "</span>"
 browser parses:  <span>&lt;script&gt;...&lt;/script&gt;</span>     <- one text node
 screen shows:    <script>window.__labXssExecuted = true</script>
@@ -45,7 +45,7 @@ It works because the parser never meets a `<` that came from the visitor, so the
 
 **3. Content Security Policy (header).** The fixed app sends, on every response:
 
-```
+```http
 Content-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
 X-Content-Type-Options: nosniff
 ```
@@ -77,7 +77,7 @@ So the policy reduced the damage of a bug that is still there. Injected markup w
 | MP-SEC-2.1 stored, reflected and DOM-based XSS are demonstrated inside the lab | `docker compose run --rm e2e`: the group "vulnerable app" of `tests/e2e/xss.e2e.ts` asserts that the flag was set by the injected code in each of the three scenarios |
 | MP-SEC-2.2 the same tests fail to execute script on the fixed version | Same command: the group "fixed app" runs the same scenario functions and asserts that the flag is not set, that no element was injected, that the text is displayed as typed and that normal use works |
 | MP-SEC-2.2 CSP as a second layer | Same command: the group "vulnerable page with CSP only" asserts injected markup, no execution and a reported policy violation |
-| MP-SEC-2.3 cause and prevention documented | This page and the two READMEs of the mini-project |
+| MP-SEC-2.3 cause and prevention documented | This page and the three READMEs of the mini-project |
 | No access to the outside | `docker compose run --rm ts-test`: `tests/network-isolation.test.ts` asserts that a request to `example.com` fails. The compose network is `internal: true` and publishes no port |
 
 The server-side tests (`tests/apps.test.ts`) check the same thing one step earlier: what the server writes (raw markup or entities) and which headers it sends. The exact value of the policy is pinned by `tests/security-headers.test.ts`.

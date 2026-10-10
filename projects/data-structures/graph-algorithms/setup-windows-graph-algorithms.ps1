@@ -1,5 +1,6 @@
 # EN: Builds and tests the graph-algorithms mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto graph-algorithms. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto graph-algorithms. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

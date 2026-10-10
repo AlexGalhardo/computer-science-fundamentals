@@ -1,6 +1,6 @@
 # bpe-tokenizer
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Ensina **como o texto vira tokens, e por que um modelo conta tokens e não palavras**. Um tokenizador de byte-pair encoding (BPE) é treinado em um pequeno corpus escrito para o projeto, codifica e decodifica qualquer texto sem perda, mostra os tokens de uma frase com os seus ids e fronteiras, e tabela como o número de tokens do mesmo texto cai conforme o vocabulário cresce.
 

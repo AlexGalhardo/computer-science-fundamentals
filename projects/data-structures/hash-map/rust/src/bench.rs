@@ -10,6 +10,10 @@ use hash_map::{ChainingMap, ProbingMap, Value, mix64};
 //     n / carga e nunca redimensiona, então, com as n chaves dentro, o fator de carga é
 //     exatamente o pedido. Só as buscas são cronometradas: n chaves que existem e n que não
 //     existem. Chave ausente é o caso caro, pois a busca percorre a lista ou o bloco inteiro.
+// ES: Benchmark de búsquedas con un factor de carga elegido. La tabla nace con capacidad fija de
+//     n / carga y nunca se redimensiona, así que, con las n claves dentro, el factor de carga es
+//     exactamente el pedido. Solo se cronometran las búsquedas: n claves que existen y n que no
+//     existen. La clave ausente es el caso caro, pues la búsqueda recorre la lista o el bloque entero.
 fn next(state: &mut u64) -> u64 {
     *state ^= *state << 13;
     *state ^= *state >> 7;
@@ -27,6 +31,7 @@ fn run(n: usize, mut put: impl FnMut(u64, Value), get: impl Fn(u64) -> bool) -> 
     for _ in 0..n {
         // EN: Stored keys are even and absent keys are odd, so a miss is guaranteed.
         // PT: As chaves guardadas são pares e as ausentes são ímpares, então a falha é garantida.
+        // ES: Las claves guardadas son pares y las ausentes son impares, así que el fallo está garantizado.
         hits += u64::from(get(next(&mut present) << 1));
         hits += u64::from(get((next(&mut absent) << 1) | 1));
     }
@@ -35,6 +40,7 @@ fn run(n: usize, mut put: impl FnMut(u64, Value), get: impl Fn(u64) -> bool) -> 
 
 // EN: Linux keeps the peak resident memory of a process in /proc/self/status (VmHWM, in kB).
 // PT: O Linux guarda o pico de memória residente de um processo em /proc/self/status (VmHWM, em kB).
+// ES: Linux guarda el pico de memoria residente de un proceso en /proc/self/status (VmHWM, en kB).
 fn peak_memory_kb() -> u64 {
     std::fs::read_to_string("/proc/self/status")
         .ok()
@@ -73,6 +79,8 @@ fn main() {
         // EN: A huge limit turns resizing off, so the lists really reach the requested load.
         // PT: Um limite enorme desliga o redimensionamento, então as listas chegam mesmo à
         //     carga pedida.
+        // ES: Un límite enorme desactiva el redimensionamiento, así que las listas llegan de verdad a
+        //     la carga pedida.
         let map = std::cell::RefCell::new(ChainingMap::new(capacity, 1e18, mix64));
         run(
             n,

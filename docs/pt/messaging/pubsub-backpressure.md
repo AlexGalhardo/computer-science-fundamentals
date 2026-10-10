@@ -1,6 +1,6 @@
 # Fila, pub/sub e backpressure (MP-MSG-3)
 
-> English version: [docs/en/messaging/pubsub-backpressure.md](../../en/messaging/pubsub-backpressure.md)
+> English version: [docs/en/messaging/pubsub-backpressure.md](../../en/messaging/pubsub-backpressure.md) · Versión en español: [docs/es/messaging/pubsub-backpressure.md](../../es/messaging/pubsub-backpressure.md)
 
 Mini-projeto: [`projects/messaging/pubsub-backpressure`](../../../projects/messaging/pubsub-backpressure/README.pt-BR.md). Tópicos do quiz: `queue-pubsub-stream`, `rabbitmq-exchanges-routing`, `backpressure`, `sqs-sns`.
 
@@ -48,7 +48,7 @@ O laboratório começa com 3.000 mensagens na fila e um consumidor lento. Sem pr
 
 O GenStage coloca a mesma ideia no protocolo entre os estágios. Os dados descem, **a demanda sobe**:
 
-```
+```text
 produtor  <---- "mande 10" ------  consumidor
 produtor  ----- 10 eventos ----->  consumidor
 ```

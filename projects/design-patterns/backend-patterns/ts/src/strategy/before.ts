@@ -5,6 +5,10 @@
 //     funciona, mas está fechada para extensão: uma modalidade nova exige editá-la, e todo
 //     chamador que quer uma modalidade que este arquivo não conhece recebe uma exceção em
 //     tempo de execução. Os valores estão em centavos.
+// ES: DISEÑO QUE FALLA. Cada modalidad de envío es una rama de la misma función. La función
+//     funciona, pero está cerrada a la extensión: una modalidad nueva exige editarla, y todo
+//     llamador que quiere una modalidad que este archivo no conoce recibe una excepción en
+//     tiempo de ejecución. Los valores están en centavos.
 export function shippingCost(kind: string, weightKg: number): number {
 	if (kind === "express") {
 		return 2000 + weightKg * 400;

@@ -30,6 +30,8 @@ describe("proof of work", () => {
 	//     text, so they must find the same nonce and the same hash.
 	// PT: Valores de referência também conferidos pelos testes em Rust: as duas linguagens
 	//     montam o mesmo texto de cabeçalho, então precisam achar o mesmo nonce e o mesmo hash.
+	// ES: Valores de referencia que también comprueban las pruebas en Rust: los dos lenguajes
+	//     arman el mismo texto de encabezado, así que deben hallar el mismo nonce y el mismo hash.
 	test("reference block shared with the Rust implementation", () => {
 		const mined = mine({ ...template, difficulty: 3 });
 		expect(mined.header.nonce).toBe(REFERENCE.nonce);

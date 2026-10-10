@@ -31,6 +31,8 @@ fn basics_and_reopen() -> std::io::Result<()> {
     //     knows comes from the pages on disk.
     // PT: O primeiro valor da árvore foi descartado e o arquivo foi fechado. Tudo o que um
     //     valor novo sabe vem das páginas em disco.
+    // ES: El primer valor del árbol se descartó y el archivo se cerró. Todo lo que un valor
+    //     nuevo sabe viene de las páginas en disco.
     let mut reopened = BTree::open(&path)?;
     assert_eq!(reopened.len(), 19);
     assert_eq!(reopened.search(14)?, Some(2));
@@ -47,6 +49,10 @@ fn basics_and_reopen() -> std::io::Result<()> {
 //     resposta precisa bater, e as invariantes são conferidas pelo caminho e no fim. Graus
 //     pequenos com uma faixa pequena de chaves fazem divisões, empréstimos e fusões acontecerem
 //     o tempo todo.
+// ES: 100,000 operaciones aleatorias corren en el árbol B y en el BTreeMap estándar a la vez.
+//     Cada respuesta debe coincidir, y las invariantes se verifican por el camino y al final.
+//     Grados pequeños con un rango pequeño de claves hacen que divisiones, préstamos y fusiones
+//     ocurran todo el tiempo.
 fn random_operations(degree: usize, key_range: u64) -> std::io::Result<()> {
     let path = temp_file(&format!("random-rust-{degree}.btree"));
     let mut tree = BTree::create(&path, degree)?;
@@ -91,6 +97,9 @@ fn random_operations(degree: usize, key_range: u64) -> std::io::Result<()> {
     // PT: Remover tudo precisa trazer a árvore de volta a uma folha vazia, e as páginas
     //     liberadas no caminho precisam ser reaproveitadas: esvaziar a árvore e inserir as
     //     mesmas chaves na mesma ordem pela segunda vez não pode fazer o arquivo crescer.
+    // ES: Quitar todo debe traer el árbol de vuelta a una hoja vacía, y las páginas liberadas
+    //     en el camino deben reutilizarse: vaciar el árbol e insertar las mismas claves en el
+    //     mismo orden por segunda vez no puede hacer crecer el archivo.
     for &key in reference.keys() {
         assert!(tree.remove(key)?);
     }
@@ -130,6 +139,8 @@ fn random_operations_with_the_largest_degree() -> std::io::Result<()> {
 //     more pages than the height of the tree, and that height is 3.
 // PT: O sentido do mini-projeto inteiro em um teste: com um milhão de chaves, nenhuma busca lê
 //     mais páginas que a altura da árvore, e essa altura é 3.
+// ES: El sentido del mini-proyecto entero en una prueba: con un millón de claves, ninguna búsqueda
+//     lee más páginas que la altura del árbol, y esa altura es 3.
 #[test]
 fn a_search_in_a_million_keys_reads_at_most_the_height_in_pages() -> std::io::Result<()> {
     let result = compare(1_000_000, &std::env::temp_dir(), 10_000)?;

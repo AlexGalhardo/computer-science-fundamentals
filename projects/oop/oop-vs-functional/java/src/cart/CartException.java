@@ -4,6 +4,9 @@
 // PT: Nesta versão um valor inválido é recusado com uma exceção. O construtor que o recebe não
 //     termina, então o objeto inválido nunca é criado. É uma exceção não verificada porque um
 //     carrinho inválido é um erro de quem chama, não algo de que se recuperar.
+// ES: En esta versión un valor inválido se rechaza con una excepción. El constructor que lo recibe
+//     nunca termina, así que el objeto inválido nunca se crea. Es una excepción no verificada
+//     porque un carrito inválido es un error de quien llama, no algo de lo que recuperarse.
 public final class CartException extends RuntimeException {
   private static final long serialVersionUID = 1L;
 

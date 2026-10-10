@@ -1,6 +1,6 @@
 # mutation-testing
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Duas suítes de testes para o mesmo módulo pequeno, as duas com **100% de cobertura de linhas**. Uma não afirma quase nada, a outra afirma valores exatos. A cobertura não consegue diferenciá-las. O teste de mutação consegue: um pequeno mutador, escrito aqui em cerca de 100 linhas, planta um bug por vez no módulo e conta quantos desses bugs cada suíte percebe. A suíte fraca percebe 21%, a forte 95%.
 
@@ -31,7 +31,7 @@ docker compose run --rm coverage-strong    # relatório de cobertura da suíte f
 
 Os dois comandos de cobertura falham abaixo de 100% de linhas ou de funções (`ts/bunfig.toml`). Este é o relatório da suíte **fraca**:
 
-```
+```text
 -----------------|---------|---------|-------------------
 File             | % Funcs | % Lines | Uncovered Line #s
 -----------------|---------|---------|-------------------
@@ -57,7 +57,7 @@ Como ler:
 
 - **Morto** (killed) significa que pelo menos um teste falhou no mutante: a suíte percebeu o bug. **Sobrevivente** (survived) significa que todos os testes passaram: a suíte também passaria com esse bug em produção.
 - A suíte fraca confere que um preço "é um número" e "é positivo". Trocar 150 centavos por quilo por 151, ou `+` por `-`, não muda nenhuma das duas coisas, então esses mutantes vivem.
-- O único sobrevivente da suíte forte (`>` para `>=` na linha 38) é um **mutante equivalente**: para um pacote de exatamente 2 kg a cobrança extra é `(2 - 2) * 150 = 0` dos dois jeitos, então nenhum teste jamais enxerga diferença. Por isso a pontuação aqui é a bruta (mortos / todos os mutantes) e por isso 100% nem sempre é alcançável.
+- O único sobrevivente da suíte forte (`>` para `>=` na linha 45) é um **mutante equivalente**: para um pacote de exatamente 2 kg a cobrança extra é `(2 - 2) * 150 = 0` dos dois jeitos, então nenhum teste jamais enxerga diferença. Por isso a pontuação aqui é a bruta (mortos / todos os mutantes) e por isso 100% nem sempre é alcançável.
 
 ## O mutador
 
@@ -75,7 +75,7 @@ Escrito para este mini-projeto, sem nenhuma dependência, porque construí-lo é
 
 ## Estrutura
 
-```
+```text
 ts/src/shipping.ts             o módulo sob teste
 ts/src/mutator.ts              tokenizador e gerador de mutantes
 ts/src/run-mutation.ts         a execução de mutação e o relatório

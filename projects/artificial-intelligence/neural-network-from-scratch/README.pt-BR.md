@@ -1,6 +1,6 @@
 # neural-network-from-scratch
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Ensina **o que um neurônio calcula e como a retropropagação encontra os gradientes**. Um motor de diferenciação automática escalar é escrito em Python puro, um perceptron multicamadas é construído sobre ele e treinado com descida do gradiente, e cada gradiente é conferido contra um gradiente numérico. A rede aprende o XOR e um conjunto de dados de duas classes, e a demo grava a perda por época e a fronteira de decisão.
 

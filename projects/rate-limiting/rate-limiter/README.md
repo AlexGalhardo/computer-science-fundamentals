@@ -1,6 +1,6 @@
 # rate-limiter
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 "At most 10 requests per second" sounds like one rule, but five algorithms enforce it in five different ways, and the difference only shows when the traffic comes in bursts. This mini-project implements fixed window, sliding window (log and counter), token bucket and leaky bucket in memory, feeds all of them the same traffic and draws what each one lets through. Then it moves the limiter to Redis, where two application instances share one counter through an atomic Lua script, and shows the race that appears without it.
 
@@ -57,7 +57,7 @@ The script builds the images and runs three test suites: the in-memory algorithm
 ./experiment-windows.ps1        # Windows
 ```
 
-One command: it runs the experiment and rewrites `results/burst.json`, `results/burst.md`, `results/burst.svg` and `results/burst.pt-BR.svg`. The chart is a plain SVG file with no script and no external reference, so it opens from disk in any browser. The experiment is a simulation with an injected clock: it takes milliseconds, sends nothing anywhere and gives the same numbers on every machine. A test fails when `results/` is out of date.
+One command: it runs the experiment and rewrites `results/burst.json`, `results/burst.md`, `results/burst.svg`, `results/burst.pt-BR.svg` and `results/burst.es.svg`. The chart is a plain SVG file with no script and no external reference, so it opens from disk in any browser. The experiment is a simulation with an injected clock: it takes milliseconds, sends nothing anywhere and gives the same numbers on every machine. A test fails when `results/` is out of date.
 
 The Go implementation prints the same table: `docker compose run --rm go-test go run ./cmd/experiment`.
 

@@ -1,6 +1,6 @@
 # dining-philosophers
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Five philosophers sit at a round table with five forks, one between each pair. To eat, a philosopher needs the two forks next to him. If all five pick up the left fork at the same moment, each one waits forever for the right fork, which is in the hand of a neighbour. That is a deadlock. This mini-project builds the table that freezes, in Go and Java, shows how to read the thread dump of the frozen program, and then fixes it in two ways: lock ordering and a waiter (a semaphore).
 
@@ -72,7 +72,7 @@ docker compose run --rm java-demo
 
 Each strategy dines for 3 seconds. Output committed in [results/demo-go.txt](results/demo-go.txt) and [results/demo-java.txt](results/demo-java.txt):
 
-```
+```text
 strategy deadlock   meals per philosopher
 naive    true       [0 0 0 0 0]
 ordered  false      [189 377 754 2266 191]

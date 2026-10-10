@@ -16,6 +16,9 @@ namespace btree {
 // PT: Transforma 0, 1, 2... em chaves com cara de aleatórias. A função é uma bijeção (cada
 //     passo pode ser desfeito), então entradas diferentes dão sempre chaves diferentes e nenhuma
 //     chave se repete.
+// ES: Transforma 0, 1, 2... en claves de aspecto aleatorio. La función es una biyección (cada
+//     paso puede deshacerse), así que entradas distintas dan siempre claves distintas y ninguna
+//     clave se repite.
 inline Key scramble(std::uint64_t x) {
 	x ^= x >> 30;
 	x *= 0xbf58476d1ce4e5b9ULL;
@@ -43,6 +46,8 @@ struct Comparison {
 //     searches on both and records how many pages each search read.
 // PT: Monta as duas estruturas com as mesmas n chaves na mesma ordem, depois roda as mesmas
 //     buscas nas duas e registra quantas páginas cada busca leu.
+// ES: Arma las dos estructuras con las mismas n claves en el mismo orden, luego corre las mismas
+//     búsquedas en las dos y registra cuántas páginas leyó cada búsqueda.
 inline Comparison compare(std::uint64_t n, const std::string& directory,
                           std::uint64_t searches = 10000) {
 	const std::string tree_path = directory + "/compare.btree";
@@ -79,6 +84,7 @@ inline Comparison compare(std::uint64_t n, const std::string& directory,
 
 			// EN: scramble(n + s) was never inserted, so this search has to fail.
 			// PT: scramble(n + s) nunca foi inserida, então esta busca tem de falhar.
+			// ES: scramble(n + s) nunca fue insertada, así que esta búsqueda tiene que fallar.
 			before = tree.page_reads();
 			result.all_found = result.all_found && !tree.search(scramble(n + s)).has_value();
 			result.btree_max_missing =

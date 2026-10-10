@@ -6,6 +6,10 @@
 //     mais tempo (least recently used). Duas estruturas trabalham juntas para `get` e `put`
 //     serem O(1): um mapa de espalhamento responde "onde está o nó desta chave?", e uma lista
 //     duplamente encadeada, ordenada por uso, responde "qual é a entrada mais antiga?".
+// ES: Caché LRU: una caché de capacidad fija que, cuando está llena, descarta la entrada usada hace
+//     más tiempo (least recently used). Dos estructuras trabajan juntas para que `get` y `put`
+//     sean O(1): un mapa de dispersión responde "¿dónde está el nodo de esta clave?", y una lista
+//     doblemente enlazada, ordenada por uso, responde "¿cuál es la entrada más antigua?".
 
 interface Node<K, V> {
 	key: K;
@@ -20,6 +24,8 @@ export class LruCache<K, V> {
 	//     always the tail, found without any search.
 	// PT: `newest` é o início da lista e `oldest` é o fim. O nó a descartar é sempre o do fim,
 	//     achado sem nenhuma busca.
+	// ES: `newest` es el inicio de la lista y `oldest` es el final. El nodo a descartar es siempre el
+	//     del final, encontrado sin ninguna búsqueda.
 	private newest: Node<K, V> | undefined;
 	private oldest: Node<K, V> | undefined;
 
@@ -39,6 +45,9 @@ export class LruCache<K, V> {
 	// PT: Ler conta como uso, então o nó vai para a frente. É por isso que a lista precisa ser
 	//     duplamente encadeada: desligar um nó alcançado pelo mapa exige o anterior dele, e só
 	//     um ponteiro `previous` entrega isso em O(1).
+	// ES: Leer cuenta como uso, así que el nodo pasa al frente. Por eso la lista debe ser
+	//     doblemente enlazada: desenlazar un nodo alcanzado por el mapa exige su anterior, y solo
+	//     un puntero `previous` entrega eso en O(1).
 	get(key: K): V | undefined {
 		const node = this.nodes.get(key);
 		if (node === undefined) {
@@ -51,6 +60,7 @@ export class LruCache<K, V> {
 
 	// EN: Returns the key that was evicted to make room, or undefined when nothing left.
 	// PT: Devolve a chave descartada para abrir espaço, ou undefined quando nada saiu.
+	// ES: Devuelve la clave descartada para abrir espacio, o undefined cuando no salió nada.
 	put(key: K, value: V): K | undefined {
 		const existing = this.nodes.get(key);
 		if (existing !== undefined) {
@@ -84,6 +94,8 @@ export class LruCache<K, V> {
 	//     node was the head or the tail, and then the corresponding end of the list moves.
 	// PT: Desligar faz os dois vizinhos apontarem um para o outro. Um vizinho ausente significa
 	//     que o nó era o início ou o fim, e então a ponta correspondente da lista é que muda.
+	// ES: Desenlazar hace que los dos vecinos apunten uno al otro. Un vecino ausente significa
+	//     que el nodo era el inicio o el final, y entonces lo que cambia es la punta correspondiente de la lista.
 	private unlink(node: Node<K, V>): void {
 		if (node.previous === undefined) {
 			this.newest = node.next;

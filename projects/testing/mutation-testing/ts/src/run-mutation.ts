@@ -15,6 +15,12 @@ import { generateMutants, type Mutant } from "./mutator";
 //       survived  todos os testes passaram: a suíte não distingue o mutante do original
 //     pontuação de mutação = mortos / total. Os mutantes equivalentes NÃO são retirados do total
 //     aqui, porque ninguém consegue listá-los automaticamente. Por isso 100% nem sempre é alcançável.
+// ES: La ejecución de mutación. Para cada mutante: poner el archivo mutado en una copia borrador
+//     del proyecto, ejecutar allí una suite de pruebas y registrar el veredicto.
+//       killed    al menos una prueba falló (o la ejecución agotó el tiempo): la suite lo notó
+//       survived  todas las pruebas pasaron: la suite no distingue al mutante del original
+//     puntuación de mutación = muertos / total. Los mutantes equivalentes NO se quitan del total
+//     aquí, porque nadie puede listarlos automáticamente. Por eso 100% no siempre es alcanzable.
 const ROOT = join(import.meta.dir, "..");
 const TARGET = join("src", "shipping.ts");
 const SUITES = ["weak", "strong"] as const;
@@ -28,6 +34,7 @@ type Verdict = "killed" | "survived";
 async function testsPass(directory: string): Promise<boolean> {
 	// EN: A mutant can turn a loop into an endless one, so every run has a time limit.
 	// PT: Um mutante pode transformar um laço em um laço sem fim, então toda execução tem um limite de tempo.
+	// ES: Un mutante puede convertir un bucle en uno sin fin, así que toda ejecución tiene un límite de tiempo.
 	const child = Bun.spawn(["bun", "test"], {
 		cwd: directory,
 		stdout: "ignore",
@@ -48,6 +55,8 @@ async function verdictsFor(suite: Suite, original: string, mutants: readonly Mut
 		//     reason, so the baseline must be green before any mutant is tried.
 		// PT: Uma suíte que falha no programa original "mataria" todo mutante pelo motivo errado,
 		//     então a linha de base precisa estar verde antes de qualquer mutante ser testado.
+		// ES: Una suite que falla en el programa original "mataría" a todo mutante por la razón
+		//     equivocada, así que la línea base debe estar verde antes de probar cualquier mutante.
 		writeFileSync(target, original);
 		if (!(await testsPass(directory))) {
 			throw new Error(`the ${suite} suite fails on the original code`);
@@ -74,6 +83,7 @@ function percent(value: number): string {
 
 // EN: A `|` would end the cell of a Markdown table, so it is escaped.
 // PT: Um `|` encerraria a célula de uma tabela Markdown, então ele é escapado.
+// ES: Un `|` terminaría la celda de una tabla Markdown, así que se escapa.
 function show(text: string): string {
 	return text === "" ? "(removed)" : `\`${text.replaceAll("|", "\\|")}\``;
 }
@@ -113,12 +123,15 @@ mkdirSync(resultsDir, { recursive: true });
 //     needs write access to the folder, not to the file.
 // PT: Remover antes de escrever: o arquivo antigo pode ser de outro usuário, e substituir um
 //     arquivo exige escrita na pasta, não no arquivo.
+// ES: Eliminar antes de escribir: el archivo antiguo puede ser de otro usuario, y reemplazar un
+//     archivo requiere escritura en la carpeta, no en el archivo.
 const reportFile = join(resultsDir, "mutation-report.md");
 rmSync(reportFile, { force: true });
 writeFileSync(reportFile, report);
 
 // EN: The lesson, enforced: both suites cover every line, yet one lets most mutants live.
 // PT: A lição, imposta: as duas suítes cobrem todas as linhas, mas uma deixa a maioria dos mutantes viver.
+// ES: La lección, impuesta: las dos suites cubren todas las líneas, pero una deja vivir a la mayoría de los mutantes.
 const problems: string[] = [];
 if (score(weak) >= WEAK_MAXIMUM) {
 	problems.push(`the weak suite scores ${percent(score(weak))}, expected under ${percent(WEAK_MAXIMUM)}`);

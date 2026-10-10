@@ -1,6 +1,6 @@
 # Operating systems
 
-> Versão em português: [docs/pt/operating-systems/README.md](../../pt/operating-systems/README.md)
+> Versão em português: [docs/pt/operating-systems/README.md](../../pt/operating-systems/README.md) · Versión en español: [docs/es/operating-systems/README.md](../../es/operating-systems/README.md)
 
 The area has a quiz of 100 questions (`quiz/content/operating-systems/`) and four mini-projects. Source: Tanenbaum, Modern Operating Systems (4th edition), and the MINIX book.
 

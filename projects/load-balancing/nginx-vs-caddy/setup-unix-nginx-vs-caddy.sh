@@ -3,6 +3,8 @@
 #     The experiments that write the tables are a separate command, documented in the README.
 # PT: Constrói e testa o mini-projeto nginx-vs-caddy. O único requisito é o Docker.
 #     Os experimentos que escrevem as tabelas são um comando separado, documentado no README.
+# ES: Construye y prueba el mini-proyecto nginx-vs-caddy. El único requisito es Docker.
+#     Los experimentos que escriben las tablas son un comando aparte, documentado en el README.
 set -eu
 
 cd "$(dirname "$0")"
@@ -14,6 +16,7 @@ fi
 
 # EN: The container that writes ./results runs as the user who owns that folder.
 # PT: O contêiner que escreve em ./results roda como o usuário dono dessa pasta.
+# ES: El contenedor que escribe en ./results corre como el usuario dueño de esa carpeta.
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

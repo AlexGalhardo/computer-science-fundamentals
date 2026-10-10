@@ -1,6 +1,6 @@
 # Scaling by cores
 
-> Versão em português: [docs/pt/parallelism/scaling-by-cores.md](../../pt/parallelism/scaling-by-cores.md)
+> Versão em português: [docs/pt/parallelism/scaling-by-cores.md](../../pt/parallelism/scaling-by-cores.md) · Versión en español: [docs/es/parallelism/scaling-by-cores.md](../../es/parallelism/scaling-by-cores.md)
 
 Area: Parallelism. Mini-project: [projects/parallelism/scaling-by-cores](../../../projects/parallelism/scaling-by-cores/README.md) (MP-PAR-1). Languages: Rust, Go, C++.
 
@@ -33,7 +33,7 @@ Both are data parallel: no number and no pixel depends on another. Both are irre
 
 ## How the work is split
 
-```
+```text
 static, 4 workers                      dynamic, 4 workers
 
 rows  0 ..  499 -> worker 0 (cheap)    shared counter: next free row
@@ -100,7 +100,7 @@ All 72 rows of the grid (3 languages, sequential, static and dynamic, 1 to 8 wor
 
 Each cell is `speed-up (efficiency)` for that number of workers. The baseline is the sequential implementation of the same language.
 
-**primes**
+#### primes
 
 | Language | Schedule | Sequential (ms) | 1 | 2 | 4 | 8 | Fitted serial fraction |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -111,7 +111,7 @@ Each cell is `speed-up (efficiency)` for that number of workers. The baseline is
 | rust | static | 1388 | 0.89 (89%) | 1.46 (73%) | 2.28 (57%) | 3.31 (41%) | 24.6% |
 | rust | dynamic | 1388 | 0.75 (75%) | 1.67 (84%) | 2.49 (62%) | 3.07 (38%) | 21.4% |
 
-**mandelbrot**
+#### mandelbrot
 
 | Language | Schedule | Sequential (ms) | 1 | 2 | 4 | 8 | Fitted serial fraction |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |

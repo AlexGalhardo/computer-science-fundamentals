@@ -1,6 +1,6 @@
 # Referências: inteligência artificial e LLMs
 
-> English version: [docs/en/artificial-intelligence/references.md](../../en/artificial-intelligence/references.md)
+> English version: [docs/en/artificial-intelligence/references.md](../../en/artificial-intelligence/references.md) · Versión en español: [docs/es/artificial-intelligence/references.md](../../es/artificial-intelligence/references.md)
 
 As fontes de fato lidas em 2026-10-07 para escrever a explicação, o quiz e os mini-projetos desta área. Nada foi copiado: os textos do repositório explicam as ideias com as próprias palavras, e cada questão do quiz indica a sua fonte no campo `source`.
 

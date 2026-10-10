@@ -10,12 +10,20 @@
 //     latência são duas visões da mesma coisa.
 //     Regra de segurança do repositório: testes de carga só atingem serviços locais. O alvo vem
 //     da variável TARGET, tem localhost como padrão, e o script se recusa a iniciar caso contrário.
+// ES: Script de carga de la carga HTTP. Un número fijo de usuarios virtuales (VU) envía cada uno
+//     una petición, espera la respuesta y envía la siguiente, durante un tiempo fijo. Es un
+//     modelo "cerrado": un servidor lento recibe menos peticiones, así que las peticiones por
+//     segundo y la latencia son dos vistas de lo mismo.
+//     Regla de seguridad del repositorio: las pruebas de carga solo alcanzan servicios locales. El
+//     destino viene de la variable TARGET, tiene localhost como valor predeterminado, y el script
+//     se niega a iniciar en caso contrario.
 
 import { check } from "k6";
 import http from "k6/http";
 
 // EN: The only hosts allowed: the machine itself and the service names of docker-compose.yml.
 // PT: Os únicos hosts permitidos: a própria máquina e os nomes de serviço do docker-compose.yml.
+// ES: Los únicos hosts permitidos: la propia máquina y los nombres de servicio de docker-compose.yml.
 const LOCAL_HOSTS = [
 	"localhost",
 	"127.0.0.1",
@@ -35,6 +43,8 @@ const target = __ENV.TARGET || "http://localhost:8080";
 //     (https, a user name before the host, a path) gives null and is refused.
 // PT: Tira o host de "http://host:porta". Qualquer coisa que não tenha exatamente esse formato
 //     (https, um nome de usuário antes do host, um caminho) dá null e é recusada.
+// ES: Saca el host de "http://host:puerto". Cualquier cosa que no tenga exactamente ese formato
+//     (https, un nombre de usuario antes del host, una ruta) da null y se rechaza.
 function hostOf(url) {
 	const match = /^http:\/\/(\[[0-9a-fA-F:]+\]|[A-Za-z0-9.-]+)(:\d{1,5})?\/?$/.exec(url);
 	return match === null ? null : match[1].toLowerCase();
@@ -44,6 +54,7 @@ const host = hostOf(target);
 if (host === null || !LOCAL_HOSTS.includes(host)) {
 	// EN: An exception here, before the test starts, makes k6 exit with an error and send nothing.
 	// PT: Uma exceção aqui, antes de o teste começar, faz o k6 sair com erro e não enviar nada.
+	// ES: Una excepción aquí, antes de que empiece la prueba, hace que k6 salga con error y no envíe nada.
 	throw new Error(`refusing to run: "${target}" is not a local target (allowed hosts: ${LOCAL_HOSTS.join(", ")})`);
 }
 
@@ -77,6 +88,7 @@ export default function () {
 
 // EN: Replaces the text report with one JSON line that the collector reads.
 // PT: Substitui o relatório de texto por uma linha JSON que o coletor lê.
+// ES: Reemplaza el informe de texto por una línea JSON que lee el recolector.
 export function handleSummary(data) {
 	const duration = data.metrics.http_req_duration.values;
 	const summary = {

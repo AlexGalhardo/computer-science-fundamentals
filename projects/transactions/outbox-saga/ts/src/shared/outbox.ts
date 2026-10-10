@@ -12,6 +12,13 @@
 //     Solução: gravar o evento como uma linha, na MESMA transação da mudança de negócio. Agora o
 //     banco garante "os dois ou nenhum". Um laço separado, o relay, lê as linhas e as publica
 //     depois.
+// ES: El outbox transaccional y su contraparte del lado del consumidor.
+//     Problema: un servicio necesita cambiar su base de datos Y publicar un evento, y no existe una
+//     transacción que cubra una base de datos y un broker. Hacer uno después del otro (dual write) pierde el
+//     evento cuando el proceso muere en medio.
+//     Solución: escribir el evento como una fila, en la MISMA transacción del cambio de negocio. Ahora la
+//     base de datos garantiza "los dos o ninguno". Un bucle separado, el relay, lee las filas y las publica
+//     después.
 
 import type { Pool, PoolClient } from "pg";
 import { inTransaction } from "./db";
@@ -33,6 +40,10 @@ export async function addToOutbox(client: PoolClient, event: DomainEvent): Promi
 //     nunca publicam a mesma linha ao mesmo tempo. Uma linha só é marcada como publicada depois
 //     de o broker confirmar. Se o relay morrer entre a publicação e a marca, a linha é publicada
 //     de novo na próxima passada: o outbox entrega PELO MENOS uma vez, nunca "exatamente uma".
+// ES: Una pasada del relay. Las filas se bloquean con FOR UPDATE SKIP LOCKED, así que dos relays
+//     nunca publican la misma fila al mismo tiempo. Una fila solo se marca como publicada después
+//     de que el broker confirma. Si el relay muere entre la publicación y la marca, la fila se publica
+//     de nuevo en la siguiente pasada: el outbox entrega AL MENOS una vez, nunca "exactamente una".
 export async function relayOnce(pool: Pool, publish: (event: DomainEvent) => Promise<void>): Promise<number> {
 	return inTransaction(pool, async (client) => {
 		const pending = await client.query<{ id: string; payload: unknown }>(
@@ -81,6 +92,10 @@ export function startRelay(
 //     tentar inserir o id do evento. Se a linha foi inserida, é a primeira vez. Se o id já
 //     estava lá, o insert não faz nada e o handler pula o trabalho. Como o insert e a mudança de
 //     negócio são confirmados juntos, uma mensagem nunca fica "processada pela metade".
+// ES: El consumidor idempotente. Lo primero que hace un manejador, dentro de su transacción, es
+//     intentar insertar el id del evento. Si la fila se insertó, es la primera vez. Si el id ya
+//     estaba, el insert no hace nada y el manejador salta el trabajo. Como el insert y el cambio de
+//     negocio se confirman juntos, un mensaje nunca queda "procesado a medias".
 export async function firstTimeSeen(client: PoolClient, messageId: string): Promise<boolean> {
 	const result = await client.query(
 		"INSERT INTO processed_messages (message_id) VALUES ($1) ON CONFLICT (message_id) DO NOTHING",

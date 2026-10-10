@@ -44,6 +44,8 @@ func (s *Server) Reply(packet []byte) []byte {
 	//     answers to questions, and one of the things it checks before trusting a packet.
 	// PT: A resposta repete o identificador da consulta. É assim que o cliente associa
 	//     respostas a perguntas, e uma das coisas que ele confere antes de confiar em um pacote.
+	// ES: La respuesta repite el identificador de la consulta. Así es como el cliente asocia
+	//     respuestas con preguntas, y una de las cosas que verifica antes de confiar en un paquete.
 	reply.ID = query.ID
 	if s.Log != nil {
 		s.Log(fmt.Sprintf("%s %s -> %s", query.Question.Name, query.Question.Type, describe(reply)))

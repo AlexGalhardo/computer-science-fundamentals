@@ -1,6 +1,6 @@
 # Segurança
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Segurança de aplicações é entender como o software falha quando alguém tenta usá-lo de forma indevida, para construí-lo de modo que não falhe. Esta área é defensiva: cada falha (injeção, cross-site scripting, controle de acesso quebrado, armazenamento fraco de senhas) é estudada para explicar por que acontece e como preveni-la, seguindo as orientações da OWASP. Os laboratórios rodam apenas localmente, em Docker, e sempre trazem a correção junto com a falha.
 

@@ -4,6 +4,9 @@
 // PT: O mesmo cenário roda contra os dois apps. Contra o app vulnerável os testes afirmam que a
 //     falha é observável. Contra o app corrigido afirmam que a mesma tentativa é barrada E que o
 //     uso normal continua funcionando, porque uma "correção" que quebra o login não é correção.
+// ES: El mismo escenario corre contra las dos apps. Contra la app vulnerable las pruebas afirman que la
+//     falla es observable. Contra la app corregida afirman que el mismo intento es bloqueado Y que el
+//     uso normal sigue funcionando, porque una "corrección" que rompe el inicio de sesión no es corrección.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { Pool } from "pg";
@@ -79,6 +82,9 @@ describe("fixed app: the same attempts are blocked", () => {
 	// PT: Estes dois chamam as consultas diretamente, pulando a validação Zod das rotas. Eles
 	//     provam que os marcadores sozinhos barram a injeção: a validação é uma camada a mais,
 	//     não a correção.
+	// ES: Estas dos llaman a las consultas directamente, saltándose la validación Zod de las rutas.
+	//     Prueban que los marcadores por sí solos detienen la inyección: la validación es una capa
+	//     más, no la corrección.
 	test("parameterised login treats the tautology as a username that does not exist", async () => {
 		expect(await fixedFindUser(ownerPool, TAUTOLOGY_USERNAME, "anything")).toBeNull();
 		expect(await fixedFindUser(ownerPool, VALID_USERNAME, VALID_PASSWORD)).toEqual({

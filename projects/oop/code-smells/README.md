@@ -1,6 +1,6 @@
 # code-smells
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 An executable catalogue of code smells. Each entry has a `before` version that works and smells, an `after` version with the smell removed, and **one test suite that runs on both**. It teaches **how to recognise common smells and remove them without changing behaviour**: the tests that pass before the refactoring are the same tests that pass after it.
 
@@ -69,7 +69,7 @@ docker compose run --rm java-test
 docker compose run --rm ts-demo
 ```
 
-```
+```text
 == god-class -> Extract Class
   before: 1 file(s), 60 lines of code
   after:  1 file(s), 105 lines of code
@@ -101,7 +101,7 @@ Both versions of the delivery example were extended with a fourth kind, `drone`,
 
 **Before**, with conditionals: 4 existing files edited.
 
-```
+```text
  before/cost.ts     | 2 ++
  before/eta.ts      | 2 ++
  before/kind.ts     | 2 +-
@@ -137,7 +137,7 @@ If one of the three chains is forgotten the code still compiles, and the order f
 
 **After**, with polymorphism: 1 new file, no existing file touched.
 
-```
+```text
  after/drone.ts | 14 ++++++++++++++
  1 file changed, 14 insertions(+)
 ```

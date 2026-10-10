@@ -1,6 +1,6 @@
 # bytecode-vm
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A compiler from the syntax tree of the mini language to stack bytecode, and the virtual machine that runs it, in Rust. It teaches **why bytecode runs faster than walking a tree**: the compiler decides ahead of time what the tree-walking interpreter decides again on every visit (which variable a name means, where control goes next), so the machine is left with a flat array of small instructions and a stack.
 

@@ -4,12 +4,16 @@ defmodule PureFunctionsProperties.Codec do
       except digits, which the encoded form reserves for the counts.
   PT: Codificação run-length: "aaabcc" vira "3a1b2c". A entrada pode conter qualquer caractere
       exceto dígitos, que a forma codificada reserva para as contagens.
+  ES: Codificación run-length: "aaabcc" se convierte en "3a1b2c". La entrada puede contener
+      cualquier carácter excepto dígitos, que la forma codificada reserva para las cuentas.
   """
 
   # EN: A pipeline: split into characters, group neighbours that are equal, and write each
   #     group as its length followed by its character.
   # PT: Um pipeline: separar em caracteres, agrupar vizinhos iguais, e escrever cada grupo como
   #     o seu comprimento seguido do seu caractere.
+  # ES: Un pipeline: separar en caracteres, agrupar vecinos iguales, y escribir cada grupo como
+  #     su longitud seguida de su carácter.
   def encode(text) do
     text
     |> String.graphemes()
@@ -21,6 +25,8 @@ defmodule PureFunctionsProperties.Codec do
   #     correctly.
   # PT: `\d+` lê uma contagem com qualquer número de dígitos, então uma sequência de 10 ou mais
   #     é decodificada corretamente.
+  # ES: `\d+` lee una cuenta con cualquier número de dígitos, así que una secuencia de 10 o más
+  #     se decodifica correctamente.
   def decode(encoded), do: expand(encoded, ~r/(\d+)(\D)/)
 
   # EN: SEEDED BUG, kept on purpose. `\d` reads a single digit, so "10a" is read as the pair
@@ -30,6 +36,10 @@ defmodule PureFunctionsProperties.Codec do
   #     o par "0a" e a sequência desaparece. Todo exemplo com sequências menores que 10
   #     continua passando, e é por isso que os testes com exemplos não percebem o erro e a
   #     propriedade de ida e volta percebe.
+  # ES: ERROR SEMBRADO, mantenido a propósito. `\d` lee un único dígito, así que "10a" se lee como
+  #     el par "0a" y la secuencia desaparece. Todo ejemplo con secuencias menores que 10
+  #     sigue pasando, y por eso las pruebas con ejemplos no notan el error y la
+  #     propiedad de ida y vuelta sí.
   def decode_buggy(encoded), do: expand(encoded, ~r/(\d)(\D)/)
 
   defp expand(encoded, pattern) do

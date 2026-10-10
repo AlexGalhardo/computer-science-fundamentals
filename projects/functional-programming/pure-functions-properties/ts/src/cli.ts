@@ -4,6 +4,9 @@
 // PT: `bun run demo` imprime as três lições do mini-projeto, uma depois da outra. Este
 //     arquivo faz parte da casca imperativa: ele imprime, e tudo o que imprime foi calculado
 //     por funções puras.
+// ES: `bun run demo` imprime las tres lecciones del mini-proyecto, una tras otra. Este
+//     archivo es parte del cascarón imperativo: imprime, y todo lo que imprime fue calculado
+//     por funciones puras.
 import cases from "../../cases.json";
 import { checkoutNow, type Order, priceOrder, priceOrderImpure } from "./checkout";
 import { decode, decodeBuggy, encode } from "./codec";

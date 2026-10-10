@@ -18,6 +18,10 @@
 //       graph_cli case <arquivo> [list|matrix]                   resolve um caso de referência
 //       graph_cli path <arquivo> <origem> <destino> [list|matrix] imprime o caminho mais barato
 //     `path` usa Bellman-Ford, que aceita pesos negativos e avisa quando há ciclo negativo.
+// ES: Línea de comandos de la biblioteca.
+//       graph_cli case <archivo> [list|matrix]                   resuelve un caso de referencia
+//       graph_cli path <archivo> <origen> <destino> [list|matrix] imprime el camino más barato
+//     `path` usa Bellman-Ford, que acepta pesos negativos y avisa cuando hay ciclo negativo.
 namespace {
 
 int usage() {

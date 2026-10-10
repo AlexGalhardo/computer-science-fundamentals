@@ -21,6 +21,10 @@ const db = new Database(":memory:");
 //     Todos os testes unitários e de integração continuam passando, porque cada um monta o seu
 //     próprio banco. O erro está em como as peças foram iniciadas, e só um teste que conversa
 //     com o serviço em execução consegue vê-lo. É para isso que serve um teste de fumaça.
+// ES: BUG SEMBRADO "smoke": el despliegue "olvida" la migración, así que la tabla no existe.
+//     Todas las pruebas unitarias y de integración siguen pasando, porque cada una arma su
+//     propia base de datos. El error está en cómo se iniciaron las piezas, y solo una prueba que habla
+//     con el servicio en ejecución puede verlo. Para eso sirve una prueba de humo.
 if (!bugIs("smoke")) {
 	migrate(db);
 }

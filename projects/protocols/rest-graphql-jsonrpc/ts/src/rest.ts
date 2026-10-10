@@ -4,6 +4,9 @@
 // PT: O estilo REST. A URL nomeia um recurso (um substantivo), o método HTTP diz o que fazer com
 //     ele e o código de status HTTP carrega o resultado. O servidor decide o formato de cada
 //     representação: `GET /rest/books/7` sempre devolve o livro inteiro, queira o cliente ou não.
+// ES: El estilo REST. La URL nombra un recurso (un sustantivo), el método HTTP dice qué hacer con
+//     él y el código de estado HTTP lleva el resultado. El servidor decide el formato de cada
+//     representación: `GET /rest/books/7` siempre devuelve el libro completo, lo quiera el cliente o no.
 
 import { type AnyElysia, Elysia } from "elysia";
 import type { Pool } from "pg";
@@ -35,6 +38,10 @@ interface ResponseSettings {
 //     diz que o recurso nomeado pela URL não existe, 422 diz que a requisição foi entendida e o
 //     conteúdo quebra uma regra. Um cliente HTTP genérico, um proxy ou um cache entende os dois
 //     sem ler o corpo.
+// ES: La tabla de traducción de este estilo: un error de dominio se convierte en un código de estado HTTP. 404
+//     dice que el recurso nombrado por la URL no existe, 422 dice que la petición se entendió y el
+//     contenido rompe una regla. Un cliente HTTP genérico, un proxy o una caché entienden ambos
+//     sin leer el cuerpo.
 const STATUS_OF = { "not-found": 404, invalid: 422 } as const;
 
 async function respond<T>(
@@ -69,6 +76,9 @@ export function restRoutes(pool: Pool): AnyElysia {
 			// PT: Um sub-recurso: as resenhas "pertencem" ao livro na URL. Para mostrar um livro
 			//     com autor e resenhas um cliente precisa de três requisições (livro, autor,
 			//     resenhas). Isso é under-fetching, o outro lado das representações fixas.
+			// ES: Un sub-recurso: las reseñas "pertenecen" al libro en la URL. Para mostrar un libro
+			//     con autor y reseñas un cliente necesita tres peticiones (libro, autor,
+			//     reseñas). Eso es under-fetching, el otro lado de las representaciones fijas.
 			.get("/books/:id/reviews", ({ params, set }) =>
 				respond(pool, set, async (db) => {
 					const book = await getBook(db, parseInput(idSchema, params.id));
@@ -81,6 +91,7 @@ export function restRoutes(pool: Pool): AnyElysia {
 					const review = await addReview(db, bookId, parseInput(reviewInputSchema, body));
 					// EN: Creation answers 201 Created and points at the new resource in Location.
 					// PT: Uma criação responde 201 Created e aponta o novo recurso em Location.
+					// ES: Una creación responde 201 Created y apunta al nuevo recurso en Location.
 					set.status = 201;
 					set.headers.location = `/rest/books/${bookId}/reviews/${review.id}`;
 					return review;

@@ -13,6 +13,13 @@
 //	graphcli path <arquivo> <origem> <destino> [list|matrix] imprime o caminho mais barato
 //
 // `path` usa Bellman-Ford, que aceita pesos negativos e avisa quando há ciclo negativo.
+//
+// ES:
+//
+//	graphcli case <archivo> [list|matrix]                    resuelve un caso de referencia
+//	graphcli path <archivo> <origen> <destino> [list|matrix] imprime el camino más barato
+//
+// `path` usa Bellman-Ford, que acepta pesos negativos y avisa cuando hay ciclo negativo.
 package main
 
 import (

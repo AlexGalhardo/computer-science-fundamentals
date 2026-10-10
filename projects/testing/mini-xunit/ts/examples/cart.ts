@@ -2,6 +2,8 @@
 //     100 upwards.
 // PT: Um pedacinho de "código de aplicação" para os testes de exemplo: um carrinho com 10% de
 //     desconto a partir de 100.
+// ES: Un pedacito de "código de aplicación" para las pruebas de ejemplo: un carrito con 10% de
+//     descuento a partir de 100.
 export class Cart {
 	private readonly prices: number[] = [];
 

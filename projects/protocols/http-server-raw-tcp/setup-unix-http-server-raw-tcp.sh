@@ -5,6 +5,9 @@
 # PT: Constrói e testa o mini-projeto http-server-raw-tcp. O único requisito é o Docker.
 #     Três etapas: os testes em Go, uma checagem com o curl, e uma checagem com um navegador de
 #     verdade. Os contêineres são removidos no fim, mesmo quando uma etapa falha.
+# ES: Construye y prueba el miniproyecto http-server-raw-tcp. El único requisito es Docker.
+#     Tres etapas: las pruebas en Go, una comprobación con curl y una comprobación con un
+#     navegador de verdad. Los contenedores se eliminan al final, incluso cuando una etapa falla.
 set -eu
 
 cd "$(dirname "$0")"

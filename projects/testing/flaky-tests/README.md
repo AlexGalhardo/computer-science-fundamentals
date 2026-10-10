@@ -1,6 +1,6 @@
 # flaky-tests
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A lab of intermittent tests. Four tests fail some of the time with no change in the code, each for one of the usual reasons: the real clock, the order of concurrent results, state shared between tests, and a real network call. Next to each one is the fixed version: a fake clock, a deterministic order, isolation, a stubbed network. Each flaky test is run 50 times and fails at least once. Each fixed test is run 500 times and never fails.
 
@@ -73,7 +73,7 @@ The "real network" is the `unstable-api` service of this compose file, on an `in
 
 ## Structure
 
-```
+```text
 ts/src/session.ts          time: sessions, Clock, FakeClock
 ts/src/prices.ts           order: arrival order against request order
 ts/src/invoices.ts         shared state: a registry, its factory and a singleton

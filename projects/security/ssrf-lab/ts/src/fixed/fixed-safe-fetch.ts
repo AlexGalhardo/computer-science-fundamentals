@@ -14,6 +14,14 @@
 //       4. conexão: feita para o endereço que acabou de ser validado, não para o nome de novo;
 //       5. redirecionamentos: nunca seguidos automaticamente, cada `Location` volta ao passo 1;
 //       6. limites: um prazo único para a operação inteira e um tamanho máximo de corpo.
+// ES: La manera corregida de buscar una URL elegida por un usuario. Cada salto de la solicitud
+//     pasa por la misma compuerta, en este orden:
+//       1. esquema: solo http y https;
+//       2. nombre del host: debe estar en una lista de permitidos;
+//       3. dirección: el nombre se resuelve y TODAS las direcciones resueltas deben ser públicas;
+//       4. conexión: hecha a la dirección que acaba de validarse, no al nombre de nuevo;
+//       5. redirecciones: nunca se siguen automáticamente, cada `Location` vuelve al paso 1;
+//       6. límites: un plazo único para toda la operación y un tamaño máximo de cuerpo.
 
 import { lookup } from "node:dns/promises";
 import { isIP, isIPv6 } from "node:net";
@@ -63,6 +71,8 @@ function refuse(reason: RefusalReason, detail: string): SafeFetchResult {
 //     several records, and the operating system is free to pick any of them.
 // PT: `all: true` pede todos os endereços do nome, não só o primeiro. Um nome pode ter vários
 //     registros, e o sistema operacional é livre para escolher qualquer um deles.
+// ES: `all: true` pide todas las direcciones del nombre, no solo la primera. Un nombre puede tener varios
+//     registros, y el sistema operativo es libre de elegir cualquiera de ellos.
 export const systemResolver: Resolver = async (hostname) => {
 	const records = await lookup(hostname, { all: true });
 	return records.map((record) => record.address);
@@ -74,6 +84,9 @@ export const systemResolver: Resolver = async (hostname) => {
 // PT: Passos 1 e 2: checagens que só precisam do texto da URL. São baratas e recusam cedo a maior
 //     parte do que não faz sentido, mas NÃO bastam sozinhas: um nome permitido não diz nada sobre
 //     o endereço para o qual ele resolve.
+// ES: Pasos 1 y 2: comprobaciones que solo necesitan el texto de la URL. Son baratas y rechazan pronto la mayor
+//     parte de lo que no tiene sentido, pero NO bastan por sí solas: un nombre permitido no dice nada sobre
+//     la dirección a la que resuelve.
 function checkUrlText(url: URL, policy: FetchPolicy): SafeFetchResult | null {
 	const defaultPort = DEFAULT_PORTS[url.protocol];
 	if (defaultPort === undefined) {
@@ -81,6 +94,8 @@ function checkUrlText(url: URL, policy: FetchPolicy): SafeFetchResult | null {
 		//     the server, for example. Only the two web schemes are accepted.
 		// PT: O `fetch` de runtimes de servidor entende mais do que a web: `file:` lê o disco do
 		//     servidor, por exemplo. Só os dois esquemas da web são aceitos.
+		// ES: El `fetch` de los runtimes de servidor entiende más que la web: `file:` lee el disco del
+		//     servidor, por ejemplo. Solo se aceptan los dos esquemas de la web.
 		return refuse("scheme-not-allowed", `scheme ${url.protocol} is not http or https`);
 	}
 	if (url.username !== "" || url.password !== "") {
@@ -88,12 +103,16 @@ function checkUrlText(url: URL, policy: FetchPolicy): SafeFetchResult | null {
 		//     a link preview never needs credentials in a URL, so the form is refused outright.
 		// PT: Em `http://allowed@other/`, o host é `other`. O parser já sabe disso, mas uma prévia
 		//     de link nunca precisa de credenciais na URL, então a forma é recusada de vez.
+		// ES: En `http://allowed@other/`, el host es `other`. El parser ya lo sabe, pero una vista previa
+		//     de enlace nunca necesita credenciales en la URL, así que esa forma se rechaza de plano.
 		return refuse("credentials-in-url", "URLs with a user name or password are not accepted");
 	}
 	// EN: The comparison is exact, on the host name the parser extracted. Never use `includes`
 	//     or `endsWith` on the raw text: "allowed.example.evil.test" contains "allowed.example".
 	// PT: A comparação é exata, sobre o nome de host que o parser extraiu. Nunca use `includes` ou
 	//     `endsWith` no texto cru: "allowed.example.evil.test" contém "allowed.example".
+	// ES: La comparación es exacta, sobre el nombre de host que extrajo el parser. Nunca uses `includes` ni
+	//     `endsWith` sobre el texto crudo: "allowed.example.evil.test" contiene "allowed.example".
 	if (!policy.allowedHosts.includes(url.hostname.toLowerCase())) {
 		return refuse("host-not-allowed", `host ${url.hostname} is not on the allow-list`);
 	}
@@ -110,6 +129,9 @@ function checkUrlText(url: URL, policy: FetchPolicy): SafeFetchResult | null {
 // PT: Passo 3. Se QUALQUER endereço do nome não for público, a requisição é recusada: aceitar um
 //     nome porque "um dos endereços serve" deixaria a escolha do endereço ao acaso. O parser de
 //     URL escreve um literal IPv6 entre colchetes, que são removidos antes.
+// ES: Paso 3. Si CUALQUIER dirección del nombre no es pública, la solicitud se rechaza: aceptar un
+//     nombre porque "una de las direcciones sirve" dejaría la elección de la dirección al azar. El parser de
+//     URL escribe un literal IPv6 entre corchetes, que se quitan antes.
 async function resolveToPublicAddress(url: URL, resolve: Resolver): Promise<string | SafeFetchResult> {
 	const host = url.hostname.replace(/^\[|\]$/g, "");
 	let addresses: string[];
@@ -149,6 +171,14 @@ async function resolveToPublicAddress(url: URL, resolve: Resolver): Promise<stri
 //     Em https o certificado ainda precisa ser conferido contra o nome, então o nome é passado
 //     como nome de servidor do TLS. O laboratório não tem serviço HTTPS, então esse ramo não é
 //     coberto pelos testes deste laboratório.
+// ES: Paso 4. Entre "resolver y comprobar" y "conectar" hay un intervalo: si `fetch`
+//     recibiera el nombre, preguntaría al DNS una segunda vez, y la segunda respuesta podría ser
+//     distinta de la que se comprobó (tiempo de comprobación contra tiempo de uso). Así que la conexión se
+//     hace a la DIRECCIÓN comprobada, y el nombre original viaja solo en la cabecera `Host`, que es lo
+//     que el servidor remoto usa para elegir el sitio.
+//     En https el certificado aún debe comprobarse contra el nombre, así que el nombre se pasa
+//     como nombre de servidor de TLS. El laboratorio no tiene servicio HTTPS, así que esa rama no está
+//     cubierta por las pruebas de este laboratorio.
 async function fetchPinned(url: URL, address: string, signal: AbortSignal): Promise<Response> {
 	const pinned = new URL(url);
 	pinned.hostname = isIPv6(address) ? `[${address}]` : address;
@@ -157,6 +187,8 @@ async function fetchPinned(url: URL, address: string, signal: AbortSignal): Prom
 		//     the next URL before any connection is made.
 		// PT: "manual" devolve a resposta 3xx em vez de segui-la, então o passo 5 consegue validar
 		//     a próxima URL antes de qualquer conexão.
+		// ES: "manual" devuelve la respuesta 3xx en lugar de seguirla, así el paso 5 puede validar
+		//     la siguiente URL antes de cualquier conexión.
 		redirect: "manual",
 		signal,
 		headers: { host: url.host },
@@ -170,6 +202,9 @@ async function fetchPinned(url: URL, address: string, signal: AbortSignal): Prom
 // PT: Passo 6, o limite de tamanho. O corpo é lido pedaço por pedaço e a leitura para assim que o
 //     limite é ultrapassado. `Content-Length` é só uma dica do outro lado, então serve para
 //     recusar cedo, mas nunca pode ser a única checagem.
+// ES: Paso 6, el límite de tamaño. El cuerpo se lee trozo por trozo y la lectura se detiene en cuanto
+//     se supera el límite. `Content-Length` es solo una pista del otro lado, así que sirve para
+//     rechazar pronto, pero nunca puede ser la única comprobación.
 async function readLimitedBody(response: Response, maxBytes: number): Promise<string | null> {
 	if (Number(response.headers.get("content-length") ?? "0") > maxBytes) {
 		await response.body?.cancel();
@@ -208,6 +243,8 @@ export async function safeFetch(
 	//     keep the server busy for several times the limit.
 	// PT: Um prazo único para tudo. Um tempo limite por salto deixaria uma cadeia de
 	//     redirecionamentos lentos ocupar o servidor por várias vezes o limite.
+	// ES: Un plazo único para todo. Un tiempo límite por salto dejaría que una cadena de
+	//     redirecciones lentas ocupara el servidor durante varias veces el límite.
 	const signal = AbortSignal.timeout(policy.timeoutMs);
 	let url = new URL(rawUrl);
 
@@ -236,6 +273,9 @@ export async function safeFetch(
 			// PT: Passo 5. Um redirecionamento é o servidor remoto escolhendo a próxima URL. Essa
 			//     URL é tão não confiável quanto a primeira, então o laço recomeça da checagem de
 			//     esquema. Um `Location` relativo é resolvido contra a URL atual.
+			// ES: Paso 5. Una redirección es el servidor remoto eligiendo la siguiente URL. Esa
+			//     URL es tan poco confiable como la primera, así que el ciclo vuelve a empezar desde la comprobación del
+			//     esquema. Un `Location` relativo se resuelve contra la URL actual.
 			await response.body?.cancel();
 			if (redirects >= policy.maxRedirects) {
 				return refuse("too-many-redirects", `more than ${policy.maxRedirects} redirects`);

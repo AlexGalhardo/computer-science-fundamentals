@@ -6,6 +6,9 @@
 # PT: Roda o benchmark contra os três proxies. Um aquecimento por proxy, depois REPETITIONS
 #     rodadas. Dentro de uma rodada os proxies são medidos um depois do outro, então nunca
 #     competem entre si, e um momento ocupado da máquina não cai em um deles em toda rodada.
+# ES: Ejecuta el benchmark contra los tres proxies. Un calentamiento por proxy, luego REPETITIONS
+#     rondas. Dentro de una ronda los proxies se miden uno tras otro, así que nunca compiten entre
+#     sí, y un momento ocupado de la máquina no cae en uno de ellos en todas las rondas.
 set -eu
 
 REPETITIONS="${REPETITIONS:-5}"

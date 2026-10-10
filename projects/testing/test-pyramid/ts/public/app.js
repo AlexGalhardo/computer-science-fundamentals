@@ -5,6 +5,10 @@
 //     precisa de DOM, de um clique e de uma chamada de rede. Nenhum teste unitário ou de
 //     integração do servidor roda este arquivo, e por isso um erro aqui só é achado pela suíte
 //     de ponta a ponta.
+// ES: La mitad de navegador de la tienda. Es JavaScript puro que solo existe dentro de una página:
+//     necesita DOM, un clic y una llamada de red. Ninguna prueba unitaria o de integración del
+//     servidor ejecuta este archivo, y por eso un error aquí solo lo encuentra la suite de
+//     extremo a extremo.
 const config = window.SHOP_CONFIG ?? { refreshAfterAdd: true };
 
 function setText(testId, text) {
@@ -36,6 +40,8 @@ async function addToCart(productId) {
 	//     keeps showing the old cart until it is reloaded.
 	// PT: Com o bug semeado "e2e" esta opção é falsa: o servidor gravou o item, mas a página
 	//     continua mostrando o carrinho antigo até ser recarregada.
+	// ES: Con el bug sembrado "e2e" esta opción es falsa: el servidor guardó el ítem, pero la página
+	//     sigue mostrando el carrito antiguo hasta que se recargue.
 	if (config.refreshAfterAdd) {
 		await renderCart();
 	}

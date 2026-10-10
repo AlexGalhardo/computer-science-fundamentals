@@ -3,6 +3,9 @@
 // PT: O componente: um armazenamento de usuários e sua implementação simples, que conta quantas
 //     vezes foi de fato alcançada. Esse contador é o que permite aos testes ver um cache
 //     funcionando.
+// ES: El componente: un almacén de usuarios y su implementación simple, que cuenta cuántas
+//     veces fue alcanzada realmente. Ese contador es lo que permite a las pruebas ver una caché
+//     funcionando.
 export interface User {
 	id: string;
 	name: string;

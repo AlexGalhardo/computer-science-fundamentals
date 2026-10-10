@@ -1,6 +1,8 @@
 """EN: Draws the chart of throughput against offered load from a results.json file, as SVG.
 
 PT: Desenha o gráfico de vazão por carga oferecida a partir de um results.json, em SVG.
+
+ES: Dibuja el gráfico de rendimiento según la carga ofrecida a partir de un results.json, en SVG.
 """
 
 import argparse
@@ -14,6 +16,8 @@ LEFT, RIGHT, TOP, BOTTOM = 60, 20, 20, 50
 #     simulation agrees with the theory.
 # PT: Linhas cheias são simulações, linhas tracejadas são as fórmulas. Quando as duas se
 #     sobrepõem, a simulação concorda com a teoria.
+# ES: Las líneas continuas son simulaciones, las líneas punteadas son las fórmulas. Cuando las dos
+#     se superponen, la simulación concuerda con la teoría.
 SERIES = [
     ("pureAloha", "pure ALOHA (simulated)", "#dc2626", ""),
     ("pureAlohaTheory", "pure ALOHA: G·e^(−2G)", "#dc2626", "6 4"),

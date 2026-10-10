@@ -14,6 +14,10 @@ import (
 // PT: A linha i de Allocation é o que o processo i segura agora, e a linha i de Max é o máximo
 // de que ele pode precisar, declarado de antemão. Available é o que está livre. Todos os
 // vetores têm uma entrada por tipo de recurso.
+//
+// ES: La fila i de Allocation es lo que el proceso i retiene ahora, y la fila i de Max es lo
+// máximo que podría llegar a necesitar, declarado de antemano. Available es lo que está libre.
+// Todos los vectores tienen una entrada por tipo de recurso.
 type State struct {
 	Available  []int
 	Allocation [][]int
@@ -106,6 +110,11 @@ func fits(want, have []int) bool {
 // Suponha que ele execute até o fim e devolva tudo o que segura, o que só pode ajudar os
 // outros. Repita até nenhum processo caber. Os processos que nunca foram escolhidos são os
 // que não têm garantia de terminar.
+//
+// ES: Finge ejecutar los procesos. Busca uno cuya demanda restante quepa en lo que está libre.
+// Supón que se ejecuta hasta el final y devuelve todo lo que retiene, lo cual solo puede ayudar
+// a los demás. Repite hasta que ningún proceso quepa. Los procesos que nunca fueron elegidos son
+// los que no tienen garantía de terminar.
 func finishOrder(available []int, allocation, demand [][]int) (order, stuck []int) {
 	work := append([]int{}, available...)
 	finished := make([]bool, len(allocation))
@@ -141,6 +150,10 @@ func finishOrder(available []int, allocation, demand [][]int) (order, stuck []in
 // PT: Um estado é seguro quando existe alguma ordem em que todos os processos terminam mesmo
 // que cada um peça o seu máximo inteiro. Inseguro não significa em impasse: significa que o
 // sistema não consegue mais garantir que o impasse será evitado.
+//
+// ES: Un estado es seguro cuando existe algún orden en el que todos los procesos terminan aunque
+// cada uno pida su máximo completo. Inseguro no significa en deadlock: significa que el sistema
+// ya no puede garantizar que se evitará el deadlock.
 func (s State) SafeSequence() ([]int, bool) {
 	order, stuck := finishOrder(s.Available, s.Allocation, s.Need())
 	return order, len(stuck) == 0
@@ -154,6 +167,9 @@ func (s State) SafeSequence() ([]int, bool) {
 //
 // PT: O algoritmo do banqueiro: entregue os recursos provisoriamente e teste se o novo estado
 // é seguro. Se não for, o pedido é adiado, mesmo com os recursos livres.
+//
+// ES: El algoritmo del banquero: entrega los recursos provisionalmente y prueba si el nuevo
+// estado es seguro. Si no lo es, la solicitud se pospone, aunque los recursos estén libres.
 func (s State) Request(process int, request []int) (State, Decision) {
 	if !fits(request, s.Need()[process]) {
 		return s, DeniedExceedsMax
@@ -189,6 +205,10 @@ func (s State) Request(process int, request []int) (State, Decision) {
 // PT: A detecção olha para o presente, não para o pior caso: ela usa os pedidos atuais no
 // lugar do máximo declarado. Um processo cujo pedido não pode ser atendido mesmo depois que
 // todos os outros que conseguem terminar terminaram está em impasse.
+//
+// ES: La detección mira el presente, no el peor caso: usa las solicitudes actuales en lugar del
+// máximo declarado. Un proceso cuya solicitud no puede atenderse ni siquiera después de que
+// todos los demás que pueden terminar hayan terminado está en deadlock.
 func Detect(available []int, allocation, request [][]int) []int {
 	_, stuck := finishOrder(available, allocation, request)
 	return stuck

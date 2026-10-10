@@ -6,6 +6,9 @@ export type Status = "pending" | "paid" | "shipped" | "cancelled";
 // PT: STATE. Cada status é um objeto que responde a todas as operações naquela fase e devolve o
 //     próximo estado. Tudo o que um pedido pago pode fazer está em `paid`, em um lugar só, e um
 //     status novo é um objeto novo mais as transições que levam a ele.
+// ES: STATE. Cada estado es un objeto que responde a todas las operaciones en esa fase y
+//     devuelve el siguiente estado. Todo lo que puede hacer un pedido pagado está en `paid`, en
+//     un solo lugar, y un estado nuevo es un objeto nuevo más las transiciones que llevan a él.
 interface OrderState {
 	readonly status: Status;
 	pay(): OrderState;
@@ -49,6 +52,8 @@ const pending: OrderState = {
 //     that comes back, so the transition is part of the behaviour of each state.
 // PT: O contexto não tem condicional. Ele delega para o estado atual e guarda o estado que
 //     volta, então a transição faz parte do comportamento de cada estado.
+// ES: El contexto no tiene condicionales. Delega en el estado actual y guarda el estado que
+//     vuelve, así que la transición es parte del comportamiento de cada estado.
 export class Order {
 	private state: OrderState = pending;
 

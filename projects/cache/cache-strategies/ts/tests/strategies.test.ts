@@ -4,6 +4,9 @@
 // PT: Um teste de consistência por estratégia, e cada teste leva o nome da garantia que ele
 //     prova (ou da garantia que a estratégia NÃO dá). Eles rodam contra um Redis e um PostgreSQL
 //     de verdade, os mesmos contêineres que a API usa.
+// ES: Una prueba de consistencia por estrategia, y cada prueba lleva el nombre de la garantía
+//     que prueba (o de la garantía que la estrategia NO da). Se ejecutan contra un Redis y un
+//     PostgreSQL reales, los mismos contenedores que usa la API.
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { createApp, createLab, type Lab, resetLab } from "../src/app";
@@ -75,6 +78,12 @@ describe("cache-aside", () => {
 	//       leitor: grava o preço ANTIGO
 	//     Nada vai corrigir a cópia no cache a não ser o tempo de vida. É por isso que toda
 	//     entrada de cache-aside precisa de um.
+	// ES: La carrera que esta estrategia NO impide, reproducida paso a paso:
+	//       lector: fallo, lee la base de datos (precio antiguo) ... y se detiene antes de guardar
+	//       escritor: actualiza la base de datos, elimina la clave (aún no hay nada que eliminar)
+	//       lector: guarda el precio ANTIGUO
+	//     Nada corregirá la copia en el caché salvo su tiempo de vida. Por eso toda entrada de
+	//     cache-aside necesita uno.
 	test("limit: a read racing a write can cache the old value, and only the time to live removes it", async () => {
 		let release: () => void = () => {};
 		const paused = new Promise<void>((resolve) => {
@@ -124,6 +133,7 @@ describe("write-through", () => {
 	test("the database goes first: a write it rejects never reaches the cache", async () => {
 		// EN: 2^31 does not fit the integer column, so PostgreSQL refuses the statement.
 		// PT: 2^31 não cabe na coluna integer, então o PostgreSQL recusa o comando.
+		// ES: 2^31 no cabe en la columna integer, así que PostgreSQL rechaza la sentencia.
 		await lab.store.read("write-through", 2);
 		const before = await priceInCache(2);
 		await expect(lab.store.write("write-through", 2, 2 ** 31)).rejects.toThrow();
@@ -176,6 +186,8 @@ describe("write-behind", () => {
 	//     the acknowledgement and the flush, the client was told "saved" and the data is gone.
 	// PT: O preço de responder antes de o banco saber: se o Redis perder a memória entre a
 	//     confirmação e a descarga, o cliente ouviu "salvo" e o dado sumiu.
+	// ES: El precio de responder antes de que la base de datos sepa: si Redis pierde su memoria
+	//     entre la confirmación y el vaciado, al cliente se le dijo "guardado" y el dato desapareció.
 	test("limit: an acknowledged write is lost when the cache dies before the flush", async () => {
 		const before = await priceInDatabase(3);
 		const acknowledged = await lab.store.write("write-behind", 3, 9100);

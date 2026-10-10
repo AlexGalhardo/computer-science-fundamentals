@@ -1,7 +1,7 @@
 # upload-path-traversal-lab
 
-> English version: [README.md](README.md)
-
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
+>
 > **Laboratório de segurança, vulnerável de propósito.** O código em `ts/src/vulnerable/` existe apenas para tornar falhas observáveis dentro deste laboratório. Nunca copie, importe ou publique esse código.
 
 Uma pequena API de arquivos com duas rotas, upload e download, acredita em tudo o que o cliente diz sobre um arquivo: o nome, o tipo e o tamanho. O nome é juntado à pasta de uploads, então um nome contendo `../` lê e escreve fora dela (path traversal) e um nome repetido substitui o arquivo de outro usuário. O `Content-Type` declarado é guardado e devolvido, e nada limita o tamanho. Este laboratório reproduz essas falhas e as corrige com uma ideia: **quem decide é o servidor**. Ele gera o nome no disco, encontra arquivos por id em um índice, confere o caminho canônico, detecta o tipo pelos bytes, conta o tamanho durante a leitura e define os cabeçalhos que dizem ao navegador o que fazer com o arquivo.

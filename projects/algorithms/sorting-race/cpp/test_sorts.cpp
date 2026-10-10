@@ -2,6 +2,8 @@
 //     being equal to it means ordered and a permutation of the input.
 // PT: Mesmos seis casos da referência em TypeScript, para todo algoritmo. O oráculo é o
 //     std::sort: ser igual a ele significa estar em ordem e ser uma permutação da entrada.
+// ES: Los mismos seis casos de la referencia en TypeScript, para todo algoritmo. El oráculo es
+//     std::sort: ser igual a él significa estar en orden y ser una permutación de la entrada.
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -16,6 +18,7 @@ namespace {
 
 // EN: Linear congruential generator with a fixed seed, so the test is reproducible.
 // PT: Gerador congruente linear com semente fixa, para o teste ser reproduzível.
+// ES: Generador congruencial lineal con semilla fija, para que la prueba sea reproducible.
 sorting_race::Values random_values(std::size_t n, std::int64_t seed) {
 	sorting_race::Values values(n);
 	std::int64_t state = seed;

@@ -4,6 +4,7 @@ import * as before from "../src/ocp/before";
 
 // EN: Same tests, both versions (see tests/srp.test.ts for the idea).
 // PT: Mesmos testes, duas versões (a ideia está em tests/srp.test.ts).
+// ES: Mismas pruebas, dos versiones (la idea está en tests/srp.test.ts).
 function behaviour(name: string, discountCents: (kind: string, totalCents: number) => number): void {
 	describe(`ocp: ${name}`, () => {
 		test("gives each known kind its discount", () => {
@@ -28,6 +29,7 @@ behaviour("after", after.discountCents);
 describe("ocp: what the refactor allows", () => {
 	// EN: The new requirement of the README, met from outside: no file in `src/` is edited.
 	// PT: O requisito novo do README, atendido de fora: nenhum arquivo de `src/` é editado.
+	// ES: El requisito nuevo del README, atendido desde fuera: ningún archivo de `src/` se edita.
 	test("a new kind is added without editing the calculator", () => {
 		const student: after.DiscountRule = { kind: "student", discount: (total) => Math.round(total * 0.15) };
 		const discountCents = after.createDiscounts([...after.defaultRules, student]);

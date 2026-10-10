@@ -5,6 +5,10 @@
 //     ela roda de verdade, e suas chamadas e seu trabalho são contados. Se o teorema prevê
 //     Theta(g(n)), o trabalho medido dividido por g(n) precisa se estabilizar em uma constante
 //     quando n cresce.
+// ES: Una comprobación empírica del teorema. Se genera una función recursiva a partir de (a, b, f),
+//     se ejecuta de verdad, y se cuentan sus llamadas y su trabajo. Si el teorema predice
+//     Theta(g(n)), el trabajo medido dividido por g(n) debe estabilizarse en una constante
+//     a medida que n crece.
 
 import { type Classification, classify, type Recurrence, type RecurrenceInput } from "./classify";
 import { drivingCost } from "./tree";
@@ -22,6 +26,9 @@ export interface Counters {
 // PT: Constrói a função que a recorrência descreve: faça f(n) de trabalho, depois chame a si
 //     mesma `a` vezes em uma entrada de tamanho n / b. Nada é memoizado, então toda chamada da
 //     árvore de recursão acontece de verdade e é contada uma vez.
+// ES: Construye la función que describe la recurrencia: haz f(n) de trabajo, luego llámate a ti
+//     misma `a` veces con una entrada de tamaño n / b. Nada se memoiza, así que cada llamada del
+//     árbol de recursión ocurre de verdad y se cuenta una vez.
 export function generateRecursive(recurrence: Recurrence): (n: number) => Counters {
 	return (n) => {
 		const counters: Counters = { calls: 0, work: 0 };
@@ -48,6 +55,7 @@ export interface Growth {
 
 // EN: The predicted class as numbers: n^power * (log n)^logPower.
 // PT: A classe prevista em números: n^power * (log n)^logPower.
+// ES: La clase predicha en números: n^power * (log n)^logPower.
 export function predictedGrowth(classification: Classification): Growth | null {
 	const { d, k } = classification.recurrence;
 	switch (classification.case) {
@@ -88,6 +96,9 @@ export interface EmpiricalReport {
 // PT: Quanto work / g(n) ainda se move entre os dois maiores tamanhos. Para a g certa, fica
 //     perto de 0. Para uma g errada por um único fator log, a razão continua crescendo ou
 //     diminuindo, então sua deriva fica claramente maior.
+// ES: Cuánto se sigue moviendo work / g(n) entre los dos tamaños más grandes. Para la g correcta
+//     queda cerca de 0. Para una g equivocada por un solo factor log, la razón sigue creciendo o
+//     disminuyendo, así que su deriva queda claramente mayor.
 function drift(samples: Sample[], growth: Growth): number {
 	const last = samples[samples.length - 1];
 	const previous = samples[samples.length - 2];
@@ -106,6 +117,9 @@ const MAX_DRIFT = 0.05;
 // PT: Os tamanhos são potências de b, então n / b é sempre exato. O crescimento medido
 //     "concorda" quando a classe prevista é mais estável que suas duas vizinhas, um fator log
 //     abaixo e um acima.
+// ES: Los tamaños son potencias de b, así que n / b siempre es exacto. El crecimiento medido
+//     "concuerda" cuando la clase predicha es más estable que sus dos vecinas, un factor log
+//     por debajo y uno por encima.
 export function empiricalCheck(input: RecurrenceInput, depths: number[]): EmpiricalReport {
 	const classification = classify(input);
 	const growth = predictedGrowth(classification);

@@ -14,6 +14,9 @@
 // PT: Um gerador congruente linear. Ele é minúsculo e reproduzível, e a versão em Rust usa a
 //     mesma fórmula e a mesma semente, então os dois programas executam exatamente a mesma
 //     sequência de pedidos e precisam imprimir exatamente a mesma tabela.
+// ES: Un generador congruencial lineal. Es diminuto y reproducible, y la versión en Rust usa la
+//     misma fórmula y semilla, así que ambos programas ejecutan exactamente la misma secuencia de
+//     solicitudes y deben imprimir exactamente la misma tabla.
 class Lcg {
 public:
 	explicit Lcg(std::uint32_t seed) : state_(seed) {}
@@ -60,6 +63,8 @@ inline std::vector<Workload> workloads() {
 //     large ones. "small" has only small blocks of similar size.
 // PT: "mixed" imita um heap de uso geral: muitos blocos pequenos, alguns médios e poucos
 //     grandes. "small" tem só blocos pequenos, de tamanho parecido.
+// ES: "mixed" imita un heap de propósito general: muchos bloques pequeños, algunos medianos y
+//     unos pocos grandes. "small" tiene solo bloques pequeños de tamaño parecido.
 inline std::size_t pick_size(const std::string& workload, Lcg& random) {
 	if (workload == "small") {
 		return random.between(8, 256);
@@ -93,6 +98,11 @@ inline std::vector<std::unique_ptr<Allocator>> make_allocators(std::size_t arena
 //     diante um pedido falha sempre que nenhuma lacuna é grande o bastante. Contar essas falhas
 //     e medir a fragmentação a cada passo mostra quão bem cada estratégia mantém o espaço
 //     livre aproveitável.
+// ES: El benchmark. En cada paso el programa asigna un bloque de tamaño aleatorio (el 55% de las
+//     veces) o libera un bloque vivo al azar. Ganan las asignaciones, así que la arena se llena,
+//     y desde entonces una solicitud falla siempre que ningún hueco es lo bastante grande.
+//     Contar esos fallos y medir la fragmentación en cada paso muestra qué tan bien cada
+//     estrategia mantiene aprovechable el espacio libre.
 inline WorkloadResult run_workload(Allocator& allocator, const Workload& workload) {
 	Lcg random(workload.seed);
 	std::vector<std::size_t> live;

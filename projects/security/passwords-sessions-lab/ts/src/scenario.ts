@@ -6,6 +6,10 @@
 //     as duas versões da API de login. Os testes afirmam o que aconteceu e a demo imprime. As
 //     requisições são montadas em memória e entregues direto ao app (`app.handle`): nada sai do
 //     processo, e o único "alvo" que existe é este laboratório.
+// ES: Los escenarios del laboratorio. Cada función es un intento, escrito una vez y ejecutado contra
+//     las dos versiones de la API de inicio de sesión. Las pruebas afirman lo que ocurrió y la demo lo imprime. Las
+//     solicitudes se arman en memoria y se entregan directo a la app (`app.handle`): nada sale del
+//     proceso, y el único "objetivo" que existe es este laboratorio.
 
 import { ALICE, BOB, CAROL, type FakeAccount, UNKNOWN_USERNAMES, WRONG_PASSWORDS } from "./data";
 import { createFixedApp, createFixedUserTable, FIXED_COOKIE } from "./fixed/fixed-app";
@@ -24,9 +28,11 @@ export interface Lab {
 	cookieName: string;
 	// EN: The user table (username to stored hash), exposed so a test can see what is stored.
 	// PT: A tabela de usuários (nome para hash guardado), exposta para um teste ver o que está guardado.
+	// ES: La tabla de usuarios (nombre a hash guardado), expuesta para que una prueba vea lo que está guardado.
 	users: Map<string, string>;
 	// EN: Moves the lab's clock forward. Only the fixed API looks at the clock.
 	// PT: Adianta o relógio do laboratório. Só a API corrigida olha o relógio.
+	// ES: Adelanta el reloj del laboratorio. Solo la API corregida mira el reloj.
 	advance(ms: number): void;
 }
 
@@ -34,6 +40,8 @@ export interface Lab {
 //     standing for the address a real server reads from the connection.
 // PT: Neste laboratório o "endereço do cliente" é um rótulo que o cenário anexa à requisição,
 //     no lugar do endereço que um servidor real lê da conexão.
+// ES: En este laboratorio la "dirección del cliente" es una etiqueta que el escenario adjunta a la solicitud,
+//     en lugar de la dirección que un servidor real lee de la conexión.
 const CLIENT_HEADER = "x-lab-client";
 const DEFAULT_CLIENT = "client-a-fake";
 const OTHER_CLIENT = "client-b-fake";
@@ -87,6 +95,7 @@ export async function call(lab: Lab, path: string, options: CallOptions = {}): P
 	} catch {
 		// EN: Not JSON (for example the framework's plain-text 404): keep the text as it is.
 		// PT: Não é JSON (por exemplo o 404 em texto puro do framework): mantém o texto como está.
+		// ES: No es JSON (por ejemplo el 404 en texto plano del framework): mantiene el texto como está.
 	}
 	const setCookie = response.headers.get("set-cookie");
 	return {
@@ -125,6 +134,11 @@ export interface FixationAttempt {
 //     login no navegador que tem esse id. 3: o id antigo é apresentado de novo. Se agora ele
 //     responde como alice-fake, quem o conhecia está dentro da conta dela sem nunca ter sabido
 //     a senha.
+// ES: Fijación de sesión, paso a paso. 1: existe un id de sesión antes de cualquier inicio de sesión (el
+//     sitio entrega uno a todo visitante). Supón que otra persona lo conoce. 2: alice-fake inicia
+//     sesión en el navegador que tiene ese id. 3: el id antiguo se presenta de nuevo. Si ahora
+//     responde como alice-fake, quien lo conocía está dentro de su cuenta sin haber sabido nunca
+//     la contraseña.
 export async function loginOverExistingSession(lab: Lab): Promise<FixationAttempt> {
 	const preLoginId = (await call(lab, "/home")).cookie?.value;
 	const loggedIn = await login(lab, ALICE, { sessionId: preLoginId });
@@ -139,6 +153,7 @@ export async function loginOverExistingSession(lab: Lab): Promise<FixationAttemp
 
 // EN: The cookie a browser receives after a plain login, with its attributes.
 // PT: O cookie que um navegador recebe depois de um login comum, com os seus atributos.
+// ES: La cookie que recibe un navegador después de un inicio de sesión común, con sus atributos.
 export async function sessionCookieAfterLogin(lab: Lab): Promise<ParsedSetCookie | undefined> {
 	return (await login(lab, ALICE)).cookie;
 }
@@ -150,6 +165,7 @@ export interface LogoutAttempt {
 
 // EN: A copy of the session id is used again after the user logged out.
 // PT: Uma cópia do id de sessão é usada de novo depois que o usuário saiu.
+// ES: Una copia del id de sesión se usa de nuevo después de que el usuario salió.
 export async function reuseSessionAfterLogout(lab: Lab): Promise<LogoutAttempt> {
 	const sessionId = (await login(lab, ALICE)).cookie?.value;
 	const logout = await call(lab, "/logout", { method: "POST", sessionId });
@@ -165,6 +181,8 @@ export interface ErrorMessages {
 //     password. If the two answers differ, the API tells which names exist.
 // PT: Um login com um nome que não está cadastrado e um com um nome cadastrado e senha errada.
 //     Se as duas respostas forem diferentes, a API conta quais nomes existem.
+// ES: Un inicio de sesión con un nombre que no está registrado y uno con un nombre registrado y contraseña incorrecta.
+//     Si las dos respuestas son distintas, la API cuenta qué nombres existen.
 export async function compareErrorMessages(lab: Lab): Promise<ErrorMessages> {
 	const wrong = WRONG_PASSWORDS[0];
 	return {
@@ -182,6 +200,8 @@ export interface RepeatedFailures {
 //     right one. The question is only whether the server keeps evaluating attempts.
 // PT: Seis senhas erradas seguidas para alice-fake, da lista fixa em data.ts, e depois a certa.
 //     A pergunta é só se o servidor continua avaliando as tentativas.
+// ES: Seis contraseñas incorrectas seguidas para alice-fake, de la lista fija de data.ts, y luego la correcta.
+//     La pregunta es solo si el servidor sigue evaluando los intentos.
 export async function repeatWrongPassword(lab: Lab): Promise<RepeatedFailures> {
 	const wrongAttempts: Observation[] = [];
 	for (const password of WRONG_PASSWORDS) {
@@ -204,6 +224,10 @@ export interface SpreadFailures {
 //     não existem). Nenhuma conta alcança o seu próprio limite de cinco, então só um limite por
 //     cliente percebe. Depois bob-fake faz login com a senha certa, uma vez desse cliente e uma
 //     vez de outro.
+// ES: Un cliente falla dos veces en cada uno de cinco nombres (tres cuentas falsas y dos nombres que
+//     no existen). Ninguna cuenta alcanza su propio límite de cinco, así que solo un límite por
+//     cliente lo percibe. Después bob-fake inicia sesión con la contraseña correcta, una vez desde ese cliente y una
+//     vez desde otro.
 export async function spreadFailuresAcrossAccounts(lab: Lab): Promise<SpreadFailures> {
 	const usernames = [ALICE.username, BOB.username, CAROL.username, ...UNKNOWN_USERNAMES];
 	const failures: Observation[] = [];
@@ -232,6 +256,9 @@ export interface NormalUse {
 // PT: Uma correção que bloqueia todo mundo não é correção. Este é o uso legítimo que precisa
 //     continuar funcionando: bob-fake faz login e é reconhecido, uma senha errada é recusada, e
 //     um visitante sem sessão não está logado.
+// ES: Una corrección que bloquea a todo el mundo no es corrección. Este es el uso legítimo que debe
+//     seguir funcionando: bob-fake inicia sesión y es reconocido, una contraseña incorrecta se rechaza, y
+//     un visitante sin sesión no tiene la sesión iniciada.
 export async function normalUse(lab: Lab): Promise<NormalUse> {
 	const loggedIn = await login(lab, BOB);
 	return {

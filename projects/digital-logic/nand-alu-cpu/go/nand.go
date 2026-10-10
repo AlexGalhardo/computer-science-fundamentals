@@ -10,6 +10,11 @@
 // de tamanho fixo (Nibble é [4]Bit), então um feixe de fios com a largura errada é um erro de
 // compilação, e não uma verificação em tempo de execução. As duas versões precisam imprimir o
 // mesmo trace, byte a byte.
+// ES: Esta es la versión en Go del mini-proyecto nand-alu-cpu. Sigue el mismo diseño de la
+// referencia en TypeScript, con una diferencia que Go vuelve natural: una palabra es un array
+// de tamaño fijo (Nibble es [4]Bit), así que un haz de cables con el ancho equivocado es un
+// error de compilación, y no una verificación en tiempo de ejecución. Las dos versiones deben
+// imprimir el mismo trace, byte a byte.
 package nandcpu
 
 // Bit is the value on one wire: 0 or 1.
@@ -29,6 +34,10 @@ var nandEvaluations int
 // PT: A NAND é uma porta universal. Todas as outras funções deste pacote, do Not até a CPU, são
 // ligações de chamadas a Nand. O contador mostra quantas avaliações de porta um trabalho
 // consumiu. Ele é uma variável comum do pacote, então o simulador roda em uma única goroutine.
+// ES: La NAND es una compuerta universal. Todas las demás funciones de este paquete, desde Not
+// hasta la CPU, son conexiones de llamadas a Nand. El contador muestra cuántas evaluaciones de
+// compuerta consumió un trabajo. Es una variable común del paquete, así que el simulador corre
+// en una sola goroutine.
 func Nand(a, b Bit) Bit {
 	nandEvaluations++
 	if a == 1 && b == 1 {
@@ -74,6 +83,8 @@ func Nor(a, b Bit) Bit {
 //
 // PT: O truque é compartilhar M = (A·B)': NAND(A, M) é (A·B')', NAND(B, M) é (A'·B)', e a
 // última NAND junta os dois: A·B' + A'·B.
+// ES: El truco es compartir M = (A·B)': NAND(A, M) es (A·B')', NAND(B, M) es (A'·B)', y la
+// última NAND junta los dos: A·B' + A'·B.
 func Xor(a, b Bit) Bit {
 	shared := Nand(a, b)
 	return Nand(Nand(a, shared), Nand(b, shared))
@@ -89,6 +100,7 @@ func Xnor(a, b Bit) Bit {
 // EN: Y = S'·whenZero + S·whenOne. With NANDs, the OR of two ANDs is NAND(NAND, NAND). 4 NANDs.
 //
 // PT: Y = S'·whenZero + S·whenOne. Com NANDs, a OR de duas ANDs é NAND(NAND, NAND). 4 NANDs.
+// ES: Y = S'·whenZero + S·whenOne. Con NAND, la OR de dos AND es NAND(NAND, NAND). 4 NAND.
 func Mux(sel, whenZero, whenOne Bit) Bit {
 	return Nand(Nand(Not(sel), whenZero), Nand(sel, whenOne))
 }
@@ -111,6 +123,9 @@ func MuxNibble(sel Bit, whenZero, whenOne Nibble) Nibble {
 // PT: Um multiplexador com 4 linhas de seleção é uma árvore de multiplexadores 2 para 1: o bit
 // de seleção menos significativo escolhe dentro de cada par, o seguinte escolhe entre os pares,
 // e assim por diante. É assim que a CPU lê uma célula de memória entre 16.
+// ES: Un multiplexor con 4 líneas de selección es un árbol de multiplexores 2 a 1: el bit de
+// selección menos significativo elige dentro de cada par, el siguiente elige entre los pares,
+// y así sucesivamente. Así es como la CPU lee una celda de memoria entre 16.
 func Mux16(sel Nibble, inputs *[16]Nibble) Nibble {
 	level := inputs[:]
 	for _, selectBit := range sel {
@@ -131,6 +146,9 @@ func Mux16(sel Nibble, inputs *[16]Nibble) Nibble {
 // PT: Cada linha é a AND de todos os bits do código, diretos ou invertidos: um mintermo. A
 // entrada de habilitação desliga todas as linhas, o que faz do mesmo circuito um
 // demultiplexador.
+// ES: Cada línea es la AND de todos los bits del código, directos o invertidos: un minterm. La
+// entrada de habilitación apaga todas las líneas, lo que convierte el mismo circuito en un
+// demultiplexor.
 func Decoder16(code Nibble, enable Bit) [16]Bit {
 	var inverted Nibble
 	for i, bit := range code {

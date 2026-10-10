@@ -8,6 +8,11 @@
 #     compartilhando um Redis sob carga concorrente. Contêineres, rede e volumes são removidos
 #     no fim, mesmo quando uma etapa falha. Para o experimento de rajada e o seu gráfico, rode
 #     .\experiment-windows.ps1.
+# ES: Construye y prueba el miniproyecto rate-limiter. El único requisito es Docker.
+#     Pasos: algoritmos en memoria en TypeScript y en Go, luego dos instancias de la aplicación
+#     compartiendo un Redis bajo carga concurrente. Los contenedores, la red y los volúmenes se
+#     eliminan al final, incluso cuando un paso falla. Para el experimento de ráfaga y su
+#     gráfico, ejecuta .\experiment-windows.ps1.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 

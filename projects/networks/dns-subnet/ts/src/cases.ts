@@ -4,6 +4,9 @@ import type { Subnet } from "./subnet";
 //     the CLI prints it. Addresses are private (RFC 1918) or reserved for documentation (RFC 5737).
 // PT: A tabela de casos CIDR, calculada à mão. Os testes comparam a calculadora com ela e a CLI a
 //     imprime. Os endereços são privados (RFC 1918) ou reservados para documentação (RFC 5737).
+// ES: La tabla de casos CIDR, calculada a mano. Las pruebas comparan la calculadora con ella y la
+//     CLI la imprime. Las direcciones son privadas (RFC 1918) o reservadas para documentación
+//     (RFC 5737).
 export const CASES: Subnet[] = [
 	{
 		address: "192.168.10.77",

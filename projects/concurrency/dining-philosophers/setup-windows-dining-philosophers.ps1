@@ -1,5 +1,6 @@
 # EN: Builds and tests the dining-philosophers mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto dining-philosophers. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto dining-philosophers. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

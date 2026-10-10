@@ -2,6 +2,8 @@
 //     none it prints the table of cases used by the tests.
 // PT: Linha de comando da calculadora de sub-redes. Com argumentos ela descreve cada CIDR
 //     informado; sem nenhum ela imprime a tabela de casos usada pelos testes.
+// ES: Línea de comandos de la calculadora de subredes. Con argumentos describe cada CIDR dado;
+//     sin ninguno imprime la tabla de casos usada por las pruebas.
 import { CASES } from "./cases";
 import { describe, type Subnet } from "./subnet";
 

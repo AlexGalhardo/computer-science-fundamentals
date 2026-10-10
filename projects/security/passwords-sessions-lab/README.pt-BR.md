@@ -1,7 +1,7 @@
 # passwords-sessions-lab
 
-> English version: [README.md](README.md)
-
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
+>
 > **Laboratório de segurança, vulnerável de propósito.** O código em `ts/src/vulnerable/` existe só para tornar falhas observáveis dentro deste laboratório. Nunca copie, importe ou publique.
 
 Como senhas devem ser guardadas e como um login deve ser protegido. O laboratório tem duas partes. A primeira guarda a mesma senha falsa com quatro esquemas (texto puro, MD5, SHA-256 com sal e Argon2id), mostra o que cada um grava na tabela e mede quantos hashes por segundo cada um calcula. A segunda é uma pequena API de login em duas versões: a vulnerável não limita tentativas, mantém o mesmo id de sessão depois do login (fixação de sessão), envia um cookie sem nenhum atributo de proteção e diferencia usuário desconhecido de senha errada; a corrigida fecha cada uma dessas falhas.

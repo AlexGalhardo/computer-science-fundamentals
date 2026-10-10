@@ -5,6 +5,10 @@
 //     contêiner para. O armazenamento guarda o texto exatamente como foi digitado. Isso está
 //     certo nos dois apps: a falha não está no que é guardado, e sim em como o texto é escrito
 //     no HTML depois.
+// ES: El libro de visitas vive en memoria: un arreglo dentro del proceso, que desaparece cuando el
+//     contenedor se detiene. El almacenamiento guarda el texto exactamente como se escribió. Eso está
+//     bien en las dos apps: la falla no está en lo que se guarda, sino en cómo el texto se escribe
+//     después en el HTML.
 
 export interface GuestbookEntry {
 	author: string;
@@ -25,6 +29,7 @@ export function createGuestbookStore(): GuestbookStore {
 			entries.push(entry);
 			// EN: A bounded list, so a loop of posts cannot grow the memory forever.
 			// PT: Uma lista limitada, para que um laço de postagens não cresça a memória sem fim.
+			// ES: Una lista limitada, para que un ciclo de publicaciones no haga crecer la memoria sin fin.
 			if (entries.length > MAX_ENTRIES) entries.shift();
 		},
 		list(): readonly GuestbookEntry[] {

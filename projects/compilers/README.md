@@ -1,6 +1,6 @@
 # Compilers
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A compiler translates a program from one language into another, and an interpreter runs it directly. Both go through the same stages: splitting text into tokens, building a tree from a grammar, checking it, and then generating code or executing it. Knowing these stages removes the mystery from error messages, performance, garbage collection and every tool that reads code.
 

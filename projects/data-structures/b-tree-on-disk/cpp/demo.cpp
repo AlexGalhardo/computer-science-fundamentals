@@ -13,6 +13,10 @@
 //     para tamanhos crescentes, e imprime uma tabela Markdown com as páginas lidas por busca
 //     em cada uma.
 //       btree_demo [maior n] [diretório dos arquivos temporários]
+// ES: Demo: arma un árbol B y un árbol binario de búsqueda en disco con las mismas claves,
+//     para tamaños crecientes, e imprime una tabla Markdown con las páginas leídas por búsqueda
+//     en cada uno.
+//       btree_demo [mayor n] [directorio de los archivos temporales]
 int main(int argc, char** argv) {
 	const std::uint64_t largest = argc > 1 ? std::strtoull(argv[1], nullptr, 10) : 1000000;
 	const std::string directory = argc > 2 ? argv[2] : "/tmp";

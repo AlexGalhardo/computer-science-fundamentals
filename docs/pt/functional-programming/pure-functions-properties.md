@@ -1,6 +1,6 @@
 # Funções puras e testes baseados em propriedades
 
-> English version: [docs/en/functional-programming/pure-functions-properties.md](../../en/functional-programming/pure-functions-properties.md)
+> English version: [docs/en/functional-programming/pure-functions-properties.md](../../en/functional-programming/pure-functions-properties.md) · Versión en español: [docs/es/functional-programming/pure-functions-properties.md](../../es/functional-programming/pure-functions-properties.md)
 
 Mini-projeto MP-FP-1, em [`projects/functional-programming/pure-functions-properties`](../../../projects/functional-programming/pure-functions-properties). Ensina por que código puro é fácil de testar e o que os testes baseados em propriedades encontram. Linguagens: TypeScript e Elixir.
 
@@ -53,7 +53,7 @@ Os cinco exemplos passam no decodificador com erro. São os exemplos que uma pes
 
 A propriedade de ida e volta falha:
 
-```
+```text
 original counterexample: "aaaaaaaaaccccccccbbbbbbbbbb"
 shrunk in 6 steps to:   "aaaaaaaaaa"
 encode -> "10a", buggy decode -> ""

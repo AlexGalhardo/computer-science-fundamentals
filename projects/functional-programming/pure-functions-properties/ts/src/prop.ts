@@ -5,6 +5,10 @@
 //     aleatório puro, alguns geradores de valores que também sabem reduzir, e o laço `check`.
 //     Ela existe para mostrar como a técnica funciona; um projeto real usaria uma biblioteca
 //     como a fast-check.
+// ES: Una biblioteca de pruebas basadas en propiedades en unas 150 líneas: un generador
+//     aleatorio puro, algunos generadores de valores que también saben reducir, y el bucle
+//     `check`. Existe para mostrar cómo funciona la técnica; un proyecto real usaría una
+//     biblioteca como fast-check.
 
 // EN: The random generator is a pure function. Its whole state is one 32-bit number, the
 //     seed, which goes in as an argument and comes out, updated, next to the value. Nothing
@@ -16,6 +20,11 @@
 //     escondido em uma global, então a mesma semente sempre repete a mesma execução do teste.
 //     A fórmula é um gerador congruente linear, e só os 16 bits altos são usados porque os
 //     bits baixos desse tipo de gerador se repetem rápido.
+// ES: El generador aleatorio es una función pura. Todo su estado es un número de 32 bits, la
+//     semilla, que entra como argumento y sale, actualizada, junto al valor. Nada queda
+//     escondido en una global, así que la misma semilla siempre repite la misma ejecución de la
+//     prueba. La fórmula es un generador congruencial lineal, y solo se usan los 16 bits altos
+//     porque los bits bajos de este tipo de generador se repiten rápido.
 export type Seed = number;
 
 export function nextSeed(seed: Seed): Seed {
@@ -34,6 +43,10 @@ export function randomInt(seed: Seed, min: number, max: number): [number, Seed] 
 //     na próxima semente. `shrink` lista versões mais simples de um valor, a mais simples
 //     primeiro; é ele que transforma uma falha aleatória grande em uma pequena, que uma
 //     pessoa consegue ler.
+// ES: Un generador es un par de funciones puras. `generate` transforma una semilla en un valor y
+//     en la siguiente semilla. `shrink` lista versiones más simples de un valor, la más simple
+//     primero; es lo que convierte un fallo aleatorio grande en uno pequeño, que una
+//     persona puede leer.
 export interface Gen<T> {
 	generate(seed: Seed): [T, Seed];
 	shrink(value: T): T[];
@@ -44,6 +57,9 @@ export interface Gen<T> {
 // PT: Inteiros são reduzidos em direção a zero (ou ao limite mais próximo de zero): primeiro
 //     o próprio alvo, depois valores que cortam a distância pela metade, então a busca leva
 //     poucos passos.
+// ES: Los enteros se reducen hacia cero (o hacia el límite más cercano a cero): primero
+//     el propio objetivo, luego valores que recortan la distancia a la mitad, así la búsqueda
+//     toma pocos pasos.
 export function int(min: number, max: number): Gen<number> {
 	const target = Math.min(Math.max(0, min), max);
 	return {
@@ -60,6 +76,7 @@ export function int(min: number, max: number): Gen<number> {
 
 // EN: Picks one of a fixed list of values. An earlier position counts as simpler.
 // PT: Escolhe um valor de uma lista fixa. Uma posição anterior conta como mais simples.
+// ES: Elige un valor de una lista fija. Una posición anterior cuenta como más simple.
 export function oneOf<T>(values: readonly T[]): Gen<T> {
 	return {
 		generate: (seed) => {
@@ -72,6 +89,7 @@ export function oneOf<T>(values: readonly T[]): Gen<T> {
 
 // EN: A fixed-size tuple of independent generators. It shrinks one position at a time.
 // PT: Uma tupla de tamanho fixo de geradores independentes. Reduz uma posição por vez.
+// ES: Una tupla de tamaño fijo de generadores independientes. Reduce una posición a la vez.
 export function tuple<T extends unknown[]>(...gens: { [K in keyof T]: Gen<T[K]> }): Gen<T> {
 	return {
 		generate: (seed) => {
@@ -97,6 +115,9 @@ export function tuple<T extends unknown[]>(...gens: { [K in keyof T]: Gen<T[K]> 
 // PT: Os candidatos de uma lista, em ordem: remover a primeira ou a segunda metade, remover
 //     um elemento, e então simplificar um elemento. Listas mais curtas vêm antes porque um
 //     contraexemplo mais curto é o maior ganho.
+// ES: Los candidatos de una lista, en orden: quitar la primera o la segunda mitad, quitar
+//     un elemento, y luego simplificar un elemento. Las listas más cortas van antes porque un
+//     contraejemplo más corto es la mayor ganancia.
 function shrinkList<T>(items: readonly T[], shrinkItem: (item: T) => T[]): T[][] {
 	const half = Math.floor(items.length / 2);
 	const halves = items.length > 1 ? [items.slice(half), items.slice(0, half)] : [];
@@ -135,6 +156,12 @@ export function listOf<T>(item: Gen<T>, maxLength: number): Gen<T[]> {
 //     reduzido como uma lista de caracteres, mais um candidato que troca todas as ocorrências
 //     de um caractere pelo primeiro do alfabeto, o que mantém a sequência inteira e a
 //     simplifica.
+// ES: Arma un texto a partir de secuencias del mismo carácter, porque el codec bajo prueba solo
+//     falla en secuencias largas, y un texto uniformemente aleatorio casi nunca tiene una.
+//     Elegir lo que produce el generador forma parte de escribir una propiedad. El texto se
+//     reduce como una lista de caracteres, más un candidato que cambia todas las apariciones
+//     de un carácter por el primero del alfabeto, lo que mantiene la secuencia entera y la
+//     simplifica.
 export function runString(alphabet: string, maxRuns: number, maxRunLength: number): Gen<string> {
 	const letters = [...alphabet];
 	const simplest = letters[0] as string;
@@ -166,6 +193,10 @@ export type CheckResult<T> =
 //     propriedade e recomece a partir dele, até nenhum candidato falhar. Só funciona porque a
 //     propriedade é pura: executá-la de novo em um candidato não pode ser afetado pelas
 //     execuções anteriores.
+// ES: Reducir es una búsqueda voraz: toma el primer candidato más simple que todavía rompe la
+//     propiedad y vuelve a empezar desde él, hasta que ningún candidato falle. Solo funciona
+//     porque la propiedad es pura: ejecutarla de nuevo con un candidato no puede verse afectado
+//     por las ejecuciones anteriores.
 function shrinkFailure<T>(gen: Gen<T>, property: (value: T) => boolean, failing: T): { value: T; steps: number } {
 	let value = failing;
 	let steps = 0;
@@ -185,6 +216,9 @@ function shrinkFailure<T>(gen: Gen<T>, property: (value: T) => boolean, failing:
 // PT: Gera `runs` valores, um depois do outro a partir da mesma cadeia de sementes, e para no
 //     primeiro que torna a propriedade falsa. O resultado é um dado comum, então um teste
 //     pode fazer asserções sobre o próprio contraexemplo.
+// ES: Genera `runs` valores, uno tras otro a partir de la misma cadena de semillas, y se detiene
+//     en el primero que vuelve falsa la propiedad. El resultado es un dato común, así que una
+//     prueba puede hacer aserciones sobre el propio contraejemplo.
 export function check<T>(
 	gen: Gen<T>,
 	property: (value: T) => boolean,

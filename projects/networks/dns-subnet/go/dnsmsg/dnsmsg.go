@@ -84,6 +84,10 @@ type Question struct {
 // Authority traz registros NS que dizem a quem perguntar em seguida (uma indicação).
 // Additional traz registros de apoio, tipicamente os endereços desses servidores de nomes,
 // chamados de glue.
+// ES: Una respuesta tiene tres secciones después de la pregunta. Answer trae los registros
+// pedidos. Authority trae registros NS que dicen a quién preguntar después (una referencia).
+// Additional trae registros de apoyo, típicamente las direcciones de esos servidores de nombres,
+// llamados glue.
 type Message struct {
 	ID            uint16
 	Response      bool
@@ -105,6 +109,9 @@ var ErrMalformed = errors.New("malformed DNS message")
 // PT: Nomes DNS não diferenciam maiúsculas de minúsculas e todo nome completo termina na raiz,
 // escrita como um ponto final. Normalizar uma vez evita comparar "Example.TEST" com
 // "example.test." por todo o código.
+// ES: Los nombres DNS no distinguen mayúsculas de minúsculas y todo nombre completo termina en la
+// raíz, escrita como un punto final. Normalizar una vez evita comparar "Example.TEST" con
+// "example.test." por todo el código.
 func Canonical(name string) string {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if !strings.HasSuffix(name, ".") {
@@ -229,6 +236,10 @@ func (r *reader) uint32() (uint32, error) {
 // PT: Para economizar espaço um nome pode terminar com um ponteiro: dois bytes começando pelos
 // bits 11 que dão o deslocamento do resto do nome em um ponto anterior da mensagem. Um pacote
 // hostil pode fazer os ponteiros formarem um laço, então o número de saltos é limitado.
+// ES: Para ahorrar espacio un nombre puede terminar con un puntero: dos bytes que empiezan con los
+// bits 11 y que dan el desplazamiento del resto del nombre en un punto anterior del mensaje. Un
+// paquete hostil puede hacer que los punteros formen un ciclo, así que el número de saltos es
+// limitado.
 func (r *reader) name() (string, error) {
 	var labels []string
 	pos, jumps, end := r.pos, 0, -1

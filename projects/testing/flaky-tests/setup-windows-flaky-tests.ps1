@@ -5,6 +5,10 @@
 #     Roda os testes determinísticos, depois cada teste intermitente 50 vezes (cada um precisa
 #     falhar ao menos uma vez) e cada teste corrigido 500 vezes (nenhum pode falhar). Os
 #     contêineres são removidos no fim.
+# ES: Construye y prueba el mini-proyecto flaky-tests. El único requisito es Docker.
+#     Ejecuta las pruebas deterministas, luego cada prueba intermitente 50 veces (cada una debe
+#     fallar al menos una vez) y cada prueba corregida 500 veces (ninguna puede fallar). Los
+#     contenedores se eliminan al final.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 

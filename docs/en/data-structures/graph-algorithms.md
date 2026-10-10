@@ -1,6 +1,6 @@
 # Graph algorithms
 
-> Versão em português: [docs/pt/data-structures/graph-algorithms.md](../../pt/data-structures/graph-algorithms.md)
+> Versão em português: [docs/pt/data-structures/graph-algorithms.md](../../pt/data-structures/graph-algorithms.md) · Versión en español: [docs/es/data-structures/graph-algorithms.md](../../es/data-structures/graph-algorithms.md)
 
 Mini-project: [projects/data-structures/graph-algorithms](../../../projects/data-structures/graph-algorithms). Languages: C++, Go. Quiz topic: `data-structures` / `graphs`.
 
@@ -10,7 +10,7 @@ A graph is a set of vertices and a set of edges between them. Before any algorit
 
 ## Two representations
 
-```
+```text
 arcs: 0->1 (4), 0->2 (1), 2->1 (2)
 
 adjacency list               adjacency matrix

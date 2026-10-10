@@ -4,6 +4,8 @@ EN: Here the oracle is the library `sorted`: equal to it means ordered and a per
     the input. The algorithms themselves never call a library sort.
 PT: Aqui o oráculo é o `sorted` da biblioteca: ser igual a ele significa estar em ordem e ser
     uma permutação da entrada. Os algoritmos em si nunca chamam uma ordenação de biblioteca.
+ES: Aquí el oráculo es el `sorted` de la biblioteca: ser igual a él significa estar en orden y ser
+    una permutación de la entrada. Los algoritmos en sí nunca llaman a una ordenación de biblioteca.
 """
 
 import pytest
@@ -16,6 +18,7 @@ MAX_VALUE = 2**31 - 1
 def random_values(n: int, seed: int) -> list[int]:
     # EN: Linear congruential generator with a fixed seed, so the test is reproducible.
     # PT: Gerador congruente linear com semente fixa, para o teste ser reproduzível.
+    # ES: Generador congruencial lineal con semilla fija, para que la prueba sea reproducible.
     values = []
     state = seed
     for _ in range(n):

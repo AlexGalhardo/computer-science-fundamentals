@@ -8,6 +8,11 @@
 //     ser iguais entre si e a uma referência calculada aqui, de forma independente. Comparar
 //     tempos entre programas que fazem trabalhos diferentes não significaria nada.
 //     Precisa das imagens: `bun run images` (os scripts de setup fazem isso).
+// ES: Prueba que las siete implementaciones de cada carga calculan lo mismo. Cada programa corre
+//     en su imagen con una entrada pequeña e imprime un checksum. Todos los checksums deben ser
+//     iguales entre sí y a una referencia calculada aquí, de forma independiente. Comparar
+//     tiempos entre programas que hacen trabajos distintos no significaría nada.
+//     Necesita las imágenes: `bun run images` (los scripts de setup lo hacen).
 
 import { describe, expect, test } from "bun:test";
 import { fill, imageTag, LANGUAGES, readConfig, runProgram } from "../scripts/lib";
@@ -34,6 +39,8 @@ function sieveReference(n: number): string {
 //     report can be calculated without building a single tree.
 // PT: Uma árvore binária completa de profundidade d tem 2^(d+1) - 1 nós, então o total que os
 //     programas precisam informar pode ser calculado sem construir nenhuma árvore.
+// ES: Un árbol binario completo de profundidad d tiene 2^(d+1) - 1 nodos, así que el total que
+//     los programas deben informar se puede calcular sin construir ningún árbol.
 function binaryTreesReference(n: number): string {
 	const nodes = (depth: number): number => 2 ** (depth + 1) - 1;
 	const minDepth = 4;
@@ -57,6 +64,7 @@ interface Case {
 const cases: Case[] = [
 	// EN: -0.169087605 is the published energy of this system after 1,000 steps.
 	// PT: -0.169087605 é a energia publicada desse sistema depois de 1.000 passos.
+	// ES: -0.169087605 es la energía publicada de ese sistema después de 1.000 pasos.
 	{ workload: "cpu-single", implementation: "nbody", n: 1000, expected: "-0.169087605" },
 	{ workload: "cpu-single", implementation: "nbody", n: 20000 },
 	{ workload: "cpu-single", implementation: "sieve", n: 100000, expected: sieveReference(100000) },

@@ -1,6 +1,6 @@
 # Programação funcional
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A programação funcional constrói programas com funções puras e dados imutáveis, empurrando os efeitos colaterais para as bordas. Código escrito assim é mais fácil de testar, de entender e de executar de forma concorrente, porque o resultado de uma função depende só dos argumentos. Funções de ordem superior, closures, casamento de padrões e tipos como Option e Result saíram de Haskell e Elixir e chegaram a TypeScript, Rust e Java.
 

@@ -4,6 +4,9 @@
 // PT: `bun run classify <a> <b> <d> [k]` classifica T(n) = a * T(n / b) + n^d * (log n)^k,
 //     imprime o caso, a solução e a árvore de recursão para um n pequeno.
 //     Exemplo: `bun run classify 7 2 2` é a multiplicação de matrizes de Strassen.
+// ES: `bun run classify <a> <b> <d> [k]` clasifica T(n) = a * T(n / b) + n^d * (log n)^k,
+//     imprime el caso, la solución y el árbol de recursión para un n pequeño.
+//     Ejemplo: `bun run classify 7 2 2` es la multiplicación de matrices de Strassen.
 
 import { z } from "zod";
 import { type Classification, classify, formatRecurrence } from "./classify";
@@ -20,6 +23,8 @@ const CASE_NAMES: Record<Classification["case"], string> = {
 //     the border, so the rest of the program only ever sees numbers that make sense.
 // PT: Argumentos de linha de comando são texto digitado por uma pessoa. Eles são convertidos e
 //     validados na borda, para que o resto do programa só veja números que fazem sentido.
+// ES: Los argumentos de línea de comandos son texto escrito por una persona. Se convierten y
+//     validan en el borde, para que el resto del programa solo vea números que tienen sentido.
 const argumentsSchema = z.tuple([z.coerce.number(), z.coerce.number(), z.coerce.number()]).rest(z.coerce.number());
 
 export function describe(classification: Classification, treeLevels = 4): string {
@@ -30,6 +35,7 @@ export function describe(classification: Classification, treeLevels = 4): string
 		`result: ${CASE_NAMES[classification.case]}`,
 		`EN: ${classification.reason.en}`,
 		`PT: ${classification.reason.pt}`,
+		`ES: ${classification.reason.es}`,
 	];
 	if (classification.solution !== null) {
 		lines.push(`solution: T(n) = ${classification.solution}`);
@@ -54,6 +60,7 @@ export function run(args: string[]): { code: number; output: string } {
 	} catch (error) {
 		// EN: A recurrence outside the hypotheses (a < 1, b <= 1) is reported, not computed.
 		// PT: Uma recorrência fora das hipóteses (a < 1, b <= 1) é informada, não calculada.
+		// ES: Una recurrencia fuera de las hipótesis (a < 1, b <= 1) se informa, no se calcula.
 		if (error instanceof z.ZodError) {
 			const issues = error.issues.map((issue) => `- ${issue.message}`).join("\n");
 			return { code: 1, output: `the master theorem does not apply to this recurrence:\n${issues}` };

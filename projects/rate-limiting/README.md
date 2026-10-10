@@ -1,6 +1,6 @@
 # Rate limiting
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Rate limiting caps how many requests a client may make in a period, to protect a service from overload, abuse and unfair use. The algorithms (fixed window, sliding window, token bucket, leaky bucket) differ in how they treat bursts and in how much state they need, and running them across several servers raises questions of atomicity. The other half of the subject is the client: the 429 status, retry headers and backoff.
 

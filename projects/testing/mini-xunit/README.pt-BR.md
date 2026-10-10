@@ -1,6 +1,6 @@
 # mini-xunit
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um framework de testes construído do nada, duas vezes: uma em Python e uma em TypeScript. Caso de teste, suíte, resultado, set-up e tear-down, descoberta de arquivos de teste, um relatório e um código de saída, em cerca de 300 linhas por linguagem, comentários incluídos. Nenhuma biblioteca de testes é usada em nenhuma das duas (nem pytest, nem unittest, nem `bun:test`): o framework é testado por ele mesmo. Depois de lê-lo, `setUp`, "fixture nova" e "a execução saiu com 1" deixam de ser mágica.
 
@@ -41,18 +41,18 @@ docker compose run --rm ts-demo; echo "exit code: $?"
 
 Cada uma roda o framework em `examples/failing`, onde um teste tem uma expectativa errada de propósito. O relatório traz o nome do teste, a mensagem e o local, e o processo sai com 1:
 
-```
+```text
 FAIL CartTest.test_total_with_discount
      expected 100 but got 90.0
-     at examples/failing/cart_xtest.py:25
+     at examples/failing/cart_xtest.py:28
 2 run, 1 failed
 exit code: 1
 ```
 
-```
+```text
 FAIL CartTest.testTotalWithDiscount
      expected 100 but got 90
-     at examples/failing/cart.xunit.ts:24
+     at examples/failing/cart.xunit.ts:28
 2 run, 1 failed
 exit code: 1
 ```
@@ -88,7 +88,7 @@ O design é o mesmo. O que muda é como cada linguagem acha um método pelo nome
 
 ## Estrutura
 
-```
+```text
 python/mini_xunit/          o framework (núcleo, descoberta, relatório, linha de comando)
 python/selftest/            bootstrap, fixtures e os testes escritos com o framework
 python/examples/            um carrinho com uma pasta que passa e uma que falha

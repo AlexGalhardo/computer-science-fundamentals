@@ -2,6 +2,8 @@
 //     /out/results.md, with the machine and the exact command, so the numbers can be reproduced.
 // PT: Lê o resumo que cada execução do k6 deixou em /results e escreve uma tabela comparativa
 //     em /out/results.md, com a máquina e o comando exato, para os números serem reproduzíveis.
+// ES: Lee el resumen que cada ejecución de k6 dejó en /results y escribe una tabla comparativa
+//     en /out/results.md, con la máquina y el comando exacto, para que los números sean reproducibles.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -25,6 +27,7 @@ interface Summary {
 
 // EN: The summaries are files written by another program, so every field is checked.
 // PT: Os resumos são arquivos escritos por outro programa, então cada campo é conferido.
+// ES: Los resúmenes son archivos escritos por otro programa, así que cada campo se verifica.
 function parseSummary(file: string): Summary {
 	const data: unknown = JSON.parse(readFileSync(file, "utf8"));
 	const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;

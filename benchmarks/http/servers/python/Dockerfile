@@ -4,6 +4,9 @@
 # PT: Servidor HTTP em Python do benchmark. Todo pacote, direto ou transitivo, está fixado no
 #     requirements.txt. O `--log-level warning` desliga o log de acesso: imprimir uma linha
 #     por requisição seria medido como trabalho do servidor.
+# ES: Servidor HTTP en Python del benchmark. Todo paquete, directo o transitivo, está fijado en
+#     requirements.txt. `--log-level warning` apaga el log de acceso: imprimir una línea por
+#     petición se mediría como trabajo del servidor.
 FROM python:3.14.8-slim-trixie
 ENV PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /opt/server

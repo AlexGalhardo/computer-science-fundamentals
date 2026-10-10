@@ -3,6 +3,8 @@
 #     Gantt charts and the comparison table and writes results/. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto cpu-scheduling e depois roda a demo, que imprime os gráficos
 #     de Gantt e a tabela de comparação e grava results/. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto cpu-scheduling y luego ejecuta la demo, que imprime los
+#     diagramas de Gantt y la tabla de comparación y escribe results/. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"

@@ -1,6 +1,6 @@
 # sliding-window-mini-tcp
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Como a confiabilidade é construída em cima de um canal que perde, duplica e reordena pacotes. O mini-projeto tem duas partes:
 

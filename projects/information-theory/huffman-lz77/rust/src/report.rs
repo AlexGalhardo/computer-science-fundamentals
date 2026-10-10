@@ -11,6 +11,7 @@ pub struct Row {
     pub lz77: Vec<u8>,
     /// EN: Huffman applied to the LZ77 output, the idea behind DEFLATE.
     /// PT: Huffman aplicado à saída do LZ77, a ideia por trás do DEFLATE.
+    /// ES: Huffman aplicado a la salida de LZ77, la idea detrás de DEFLATE.
     pub both: Vec<u8>,
     pub sample_hash: u64,
 }
@@ -19,6 +20,8 @@ pub struct Row {
 //     Python produced the same bytes without committing the bytes themselves.
 // PT: FNV-1a, um hash curto e não criptográfico. É só uma impressão digital para provar que Rust
 //     e Python produziram os mesmos bytes sem versionar os próprios bytes.
+// ES: FNV-1a, un hash corto y no criptográfico. Es solo una huella digital para probar que Rust
+//     y Python produjeron los mismos bytes sin versionar los bytes mismos.
 pub fn fnv1a64(data: &[u8]) -> u64 {
     data.iter().fold(0xCBF2_9CE4_8422_2325, |hash, &byte| {
         (hash ^ u64::from(byte)).wrapping_mul(0x0000_0100_0000_01B3)
@@ -47,6 +50,8 @@ pub fn rows() -> Vec<Row> {
 // EN: Ratio = compressed size / original size. Below 1 the file shrank, above 1 it grew.
 // PT: Taxa = tamanho comprimido / tamanho original. Abaixo de 1 o arquivo encolheu, acima de 1
 //     ele cresceu.
+// ES: Razón = tamaño comprimido / tamaño original. Por debajo de 1 el archivo se redujo, por
+//     encima de 1 creció.
 fn cell(compressed: usize, original: usize) -> String {
     format!("{compressed} ({:.3})", compressed as f64 / original as f64)
 }
@@ -77,6 +82,8 @@ pub fn markdown(rows: &[Row]) -> String {
 //     both languages must reproduce it exactly.
 // PT: Uma linha por amostra com tamanhos e impressões digitais. O arquivo é versionado, e os
 //     testes das duas linguagens precisam reproduzi-lo exatamente.
+// ES: Una fila por muestra con tamaños y huellas digitales. El archivo está versionado, y las
+//     pruebas de los dos lenguajes deben reproducirlo exactamente.
 pub fn fixture(rows: &[Row]) -> String {
     let mut out =
         String::from("name\tsize\tsample\thuffman_size\thuffman\tlz77_size\tlz77\tboth_size\n");

@@ -1,6 +1,6 @@
 # rest-graphql-jsonrpc
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um domínio pequeno (autores, livros, resenhas) exposto em três estilos de API pelo mesmo servidor ElysiaJS: **REST** (`/rest/...`), **GraphQL** (`/graphql`) e **JSON-RPC 2.0** (`/rpc`). As regras do domínio são escritas uma vez, então a única coisa que muda é como uma chamada viaja sobre HTTP. O mini-projeto ensina o que cada estilo custa e oferece: quantas idas e voltas uma tela precisa, quantos bytes voltam, onde o resultado de uma chamada é informado, e por que o GraphQL precisa de agrupamento em lote para evitar o problema N+1.
 

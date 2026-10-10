@@ -53,6 +53,8 @@ func mustInspect(t *testing.T, path string) (digest, bool) {
 //
 // PT: O gerador é o contrato entre as duas linguagens: a mesma semente precisa dar o mesmo
 // arquivo. O checksum esperado é o mesmo que os testes em Rust verificam.
+// ES: El generador es el contrato entre los dos lenguajes: la misma semilla debe dar el mismo
+// archivo. El checksum esperado es el mismo que verifican las pruebas en Rust.
 func TestGeneratorIsDeterministic(t *testing.T) {
 	directory := t.TempDir()
 	first := mustGenerate(t, filepath.Join(directory, "a.txt"), target{amount: 1000}, defaultSeed, 0)
@@ -91,6 +93,9 @@ func TestGeneratorIsDeterministic(t *testing.T) {
 // PT: Aceite de MP-FS-2.2: para vários formatos de entrada, tamanhos de run e fan-ins, a saída
 // da ordenação externa é exatamente a lista de linhas da entrada ordenada na memória. Ser igual
 // a essa lista significa "ordenada" e também "mesmo multiconjunto de linhas".
+// ES: Aceptación de MP-FS-2.2: para varios formatos de entrada, tamaños de run y fan-ins, la
+// salida de la ordenación externa es exactamente la lista de líneas de la entrada ordenada en
+// memoria. Ser igual a esa lista significa "ordenada" y también "mismo multiconjunto de líneas".
 func TestOutputEqualsInMemorySort(t *testing.T) {
 	directory := t.TempDir()
 	input, output := filepath.Join(directory, "input.txt"), filepath.Join(directory, "output.txt")
@@ -212,6 +217,8 @@ func TestInputWithoutFinalLineBreakAndLongLines(t *testing.T) {
 //
 // PT: As próprias verificações são testadas: um arquivo fora de ordem, uma linha faltando e uma
 // linha alterada são todos detectados.
+// ES: Las propias verificaciones se prueban: un archivo desordenado, una línea faltante y una
+// línea alterada se detectan todos.
 func TestInspectionDetectsWrongOutputs(t *testing.T) {
 	directory := t.TempDir()
 	write := func(name, text string) (digest, bool) {

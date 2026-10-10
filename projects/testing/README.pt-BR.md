@@ -1,6 +1,6 @@
 # Testes
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Testes automatizados são como um time sabe que o software continua funcionando depois de cada mudança. O assunto cobre os níveis de teste (unidade, integração, ponta a ponta), as técnicas para escrevê-los (dublês de teste, desenvolvimento guiado por testes, testes baseados em propriedades e de mutação) e seus modos de falha, como testes instáveis e números de cobertura que não provam nada. Bons testes são o que torna seguras a refatoração e a entrega contínua.
 

@@ -9,12 +9,18 @@
 #     compartilhando um Redis sob carga concorrente. Contêineres, rede e volumes são removidos
 #     no fim, mesmo quando uma etapa falha. Para o experimento de rajada e o seu gráfico, rode
 #     ./experiment-unix.sh.
+# ES: Construye y prueba el miniproyecto rate-limiter. El único requisito es Docker.
+#     Pasos: algoritmos en memoria en TypeScript y en Go, luego dos instancias de la aplicación
+#     compartiendo un Redis bajo carga concurrente. Los contenedores, la red y los volúmenes se
+#     eliminan al final, incluso cuando un paso falla. Para el experimento de ráfaga y su
+#     gráfico, ejecuta ./experiment-unix.sh.
 set -eu
 
 cd "$(dirname "$0")"
 
 # EN: Containers that write into this folder run as the current user (see docker-compose.yml).
 # PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+# ES: Los contenedores que escriben en esta carpeta corren como el usuario actual (ver docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

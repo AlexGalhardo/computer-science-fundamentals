@@ -1,6 +1,6 @@
 # Blockchain
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A blockchain is a ledger that many parties who do not trust each other can agree on without a central authority. It combines ideas studied elsewhere in this repository: hash functions and Merkle trees make the history tamper-evident, digital signatures prove who may spend, and proof of work turns agreement into a question of computing effort. Studying it as a data structure and a protocol separates the engineering from the hype.
 

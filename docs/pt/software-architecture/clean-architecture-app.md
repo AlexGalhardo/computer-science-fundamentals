@@ -1,6 +1,6 @@
 # Aplicação em arquitetura limpa (MP-ARCH-1)
 
-> English version: [docs/en/software-architecture/clean-architecture-app.md](../../en/software-architecture/clean-architecture-app.md)
+> English version: [docs/en/software-architecture/clean-architecture-app.md](../../en/software-architecture/clean-architecture-app.md) · Versión en español: [docs/es/software-architecture/clean-architecture-app.md](../../es/software-architecture/clean-architecture-app.md)
 
 Mini-projeto: [`projects/software-architecture/clean-architecture-app`](../../../projects/software-architecture/clean-architecture-app/README.pt-BR.md). Tópicos do quiz: `clean-architecture-dependency-rule`, `entities-use-cases`, `interface-adapters`, `frameworks-drivers-composition-root`, `layered-hexagonal`, `domain-driven-design`.
 
@@ -8,7 +8,7 @@ Mini-projeto: [`projects/software-architecture/clean-architecture-app`](../../..
 
 Em uma aplicação pequena típica a regra de negócio acaba dentro do handler da rota, ao lado do SQL:
 
-```
+```text
 handler da rota:  ler o corpo JSON -> conferir o título -> SELECT ... -> INSERT ... -> montar a resposta JSON
 ```
 
@@ -18,7 +18,7 @@ Funciona, e três coisas ficam caras. Testar a regra "não há duas notas com o 
 
 A Arquitetura Limpa, como descrita por Robert Martin e desenvolvida em TypeScript por Otávio Lemos, organiza o código em camadas concêntricas e enuncia uma regra sobre elas, a **regra de dependência**: um arquivo só pode importar da própria camada ou de uma camada mais interna.
 
-```
+```text
             main (raiz de composição)          conhece tudo, nada a importa
    +--------------------------------------+
    |  drivers: Elysia, pg, relógio,        |
@@ -52,7 +52,7 @@ As camadas mais internas são as que menos mudam e das quais todo o resto depend
 
 A regra fala de código-fonte, não de tempo de execução. Quando uma nota é criada por HTTP, o controle entra e sai de novo:
 
-```
+```text
 rota Elysia -> NoteHttpController -> CreateNote -> NoteRepository.save() -> PostgresNoteRepository -> pg
   (driver)       (adaptador)       (caso de uso)       (porta)                  (driver)
 ```

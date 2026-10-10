@@ -5,6 +5,10 @@
 //     a fila de prontos, pergunta à política quem executa em seguida e por quanto tempo, e anota
 //     quem teve a CPU e quando. O tempo é uma unidade inteira abstrata, então todo resultado pode
 //     ser conferido à mão.
+// ES: Un simulador de planificación de CPU. Un único motor ejecuta todas las políticas: mantiene
+//     la cola de listos, pregunta a la política quién se ejecuta a continuación y por cuánto
+//     tiempo, y registra quién tuvo la CPU y cuándo. El tiempo es una unidad entera abstracta, así
+//     que todo resultado puede comprobarse a mano.
 
 export interface Process {
 	id: string;
@@ -64,6 +68,10 @@ export interface Entry {
 // PT: Uma política responde a três perguntas. Qual entrada pronta executa em seguida? Por quanto
 //     tempo ela pode executar antes de perder a CPU (Infinity significa "até terminar", isto é,
 //     sem preempção)? E o que acontece com a entrada que usou o quantum inteiro sem terminar?
+// ES: Una política responde tres preguntas. ¿Qué entrada lista se ejecuta a continuación? ¿Por
+//     cuánto tiempo puede ejecutarse antes de que le quiten la CPU (Infinity significa "hasta
+//     terminar", es decir, sin expropiación)? ¿Y qué pasa con una entrada que usó todo su quantum
+//     sin terminar?
 export interface Policy {
 	name: string;
 	select(ready: readonly Entry[]): number;
@@ -76,6 +84,7 @@ function indexOfMin(ready: readonly Entry[], key: (entry: Entry) => number): num
 	for (let i = 1; i < ready.length; i++) {
 		// EN: Strictly smaller, so ties keep the entry that has been in the queue the longest.
 		// PT: Estritamente menor, então empates mantêm a entrada que está há mais tempo na fila.
+		// ES: Estrictamente menor, así los empates conservan la entrada que lleva más tiempo en la cola.
 		if (key(ready[i] as Entry) < key(ready[best] as Entry)) {
 			best = i;
 		}
@@ -88,6 +97,9 @@ function indexOfMin(ready: readonly Entry[], key: (entry: Entry) => number): num
 // PT: Primeiro a chegar, primeiro a ser servido. A cabeça da fila executa até terminar. Simples e
 //     justo na ordem de chegada, mas um job longo faz todos os curtos atrás dele esperarem
 //     (efeito comboio).
+// ES: Primero en llegar, primero en ser atendido. La cabeza de la cola se ejecuta hasta terminar.
+//     Simple y justo en orden de llegada, pero un trabajo largo hace esperar a todos los cortos
+//     que están detrás (efecto convoy).
 export function fcfs(): Policy {
 	return { name: "FCFS", select: () => 0, quantum: () => Number.POSITIVE_INFINITY, expired: () => {} };
 }
@@ -98,6 +110,10 @@ export function fcfs(): Policy {
 // PT: Job mais curto primeiro, sem preempção. Entre os jobs prontos, o de menor tempo de CPU
 //     executa até terminar. Minimiza a espera média quando todos os jobs estão disponíveis
 //     juntos, mas precisa conhecer os tempos e pode deixar jobs longos em inanição.
+// ES: Primero el trabajo más corto, sin expropiación. Entre los trabajos listos, el de menor
+//     ráfaga se ejecuta hasta terminar. Minimiza el tiempo medio de espera cuando todos los
+//     trabajos están disponibles a la vez, pero necesita conocer las ráfagas y puede dejar en
+//     inanición a los trabajos largos.
 export function sjf(): Policy {
 	return {
 		name: "SJF",
@@ -113,6 +129,9 @@ export function sjf(): Policy {
 // PT: Round-robin. A cabeça da fila executa por no máximo um quantum e depois vai para o fim.
 //     Ninguém espera mais que (n - 1) quanta pela vez, o que dá bom tempo de resposta. O preço
 //     são mais trocas de contexto e um tempo de retorno maior para todos.
+// ES: Round-robin. La cabeza de la cola se ejecuta como máximo un quantum y luego va al final.
+//     Nadie espera más de (n - 1) quantums por su turno, lo que da buen tiempo de respuesta. El
+//     precio son más cambios de contexto y un mayor tiempo de retorno para todos.
 export function roundRobin(quantum: number): Policy {
 	if (!Number.isInteger(quantum) || quantum < 1) {
 		throw new Error("quantum must be a positive integer");
@@ -127,6 +146,10 @@ export function roundRobin(quantum: number): Policy {
 //     prioridade executa até terminar. O trabalho importante passa na frente, mas um processo
 //     de baixa prioridade pode ficar em inanição enquanto chegam outros de prioridade maior.
 //     Sistemas reais corrigem isso com envelhecimento (aging).
+// ES: Planificación por prioridad, sin expropiación. El proceso listo con el menor número de
+//     prioridad se ejecuta hasta terminar. El trabajo importante va primero, pero un proceso de
+//     baja prioridad puede quedar en inanición mientras siguen llegando otros de mayor prioridad.
+//     Los sistemas reales lo corrigen con envejecimiento (aging).
 export function priority(): Policy {
 	return {
 		name: "Priority",
@@ -150,6 +173,14 @@ export function priority(): Policy {
 //     nível funciona como round-robin.
 //     Simplificação: o processo em execução não é interrompido no meio do quantum quando chega
 //     um processo novo em um nível mais alto. O recém-chegado executa quando o quantum termina.
+// ES: Múltiples colas con retroalimentación. Todo proceso empieza en el nivel 0, con un quantum
+//     corto. El proceso que usa todo el quantum se considera limitado por CPU y baja un nivel,
+//     donde el quantum es el doble, pero el turno solo llega cuando los niveles superiores están
+//     vacíos. El trabajo corto e interactivo termina arriba sin que nadie informe las ráfagas al
+//     planificador. El último nivel se comporta como round-robin.
+//     Simplificación: un proceso en ejecución no es interrumpido a mitad de su quantum cuando
+//     llega un proceso nuevo a un nivel superior. El recién llegado se ejecuta cuando termina el
+//     quantum.
 export function mlfq(baseQuantum: number, levels: number): Policy {
 	if (!Number.isInteger(baseQuantum) || baseQuantum < 1 || !Number.isInteger(levels) || levels < 1) {
 		throw new Error("baseQuantum and levels must be positive integers");
@@ -184,6 +215,7 @@ export function simulate(processes: readonly Process[], policy: Policy): Schedul
 	validate(processes);
 	// EN: A stable sort keeps the input order among processes that arrive at the same instant.
 	// PT: Uma ordenação estável mantém a ordem de entrada entre processos que chegam no mesmo instante.
+	// ES: Un ordenamiento estable conserva el orden de entrada entre procesos que llegan en el mismo instante.
 	const pending: Entry[] = [...processes]
 		.sort((a, b) => a.arrival - b.arrival)
 		.map((process) => ({
@@ -210,6 +242,7 @@ export function simulate(processes: readonly Process[], policy: Policy): Schedul
 		if (ready.length === 0) {
 			// EN: Nobody is ready: the CPU idles until the next arrival.
 			// PT: Ninguém está pronto: a CPU fica ociosa até a próxima chegada.
+			// ES: Nadie está listo: la CPU queda ociosa hasta la siguiente llegada.
 			time = (pending[0] as Entry).process.arrival;
 			continue;
 		}
@@ -229,6 +262,9 @@ export function simulate(processes: readonly Process[], policy: Policy): Schedul
 		//     back to the tail. This is the usual textbook convention for round-robin ties.
 		// PT: Os processos que chegaram enquanto este executava entram na fila ANTES de ele voltar
 		//     para o fim. Essa é a convenção usual dos livros para empates no round-robin.
+		// ES: Los procesos que llegaron mientras este se ejecutaba entran en la cola ANTES de que
+		//     vuelva al final. Esta es la convención habitual de los libros para los empates en
+		//     round-robin.
 		admit();
 		if (entry.remaining === 0) {
 			entry.finish = time;
@@ -244,6 +280,9 @@ export function simulate(processes: readonly Process[], policy: Policy): Schedul
 	// PT: Tempo de retorno (turnaround) vai da chegada ao término. Espera é a parte dele gasta na
 	//     fila de prontos, ou seja, retorno menos tempo de CPU. Resposta vai da chegada à primeira
 	//     vez na CPU, que é o que um usuário interativo percebe.
+	// ES: El tiempo de retorno (turnaround) va de la llegada a la finalización. La espera es la
+	//     parte de él pasada en la cola de listos, es decir, retorno menos ráfaga. La respuesta va
+	//     de la llegada a la primera vez en la CPU, que es lo que percibe un usuario interactivo.
 	const metrics: ProcessMetrics[] = all.map((entry) => {
 		const turnaround = entry.finish - entry.process.arrival;
 		return {

@@ -6,6 +6,10 @@
 //     porque fala diretamente com o driver do banco (`pg`). Este é o único arquivo do projeto
 //     que contém SQL, e ele implementa uma interface declarada duas camadas para dentro: a seta
 //     do import aponta para dentro, do detalhe para a regra de negócio.
+// ES: El adaptador PostgreSQL para el puerto `NoteRepository`. Vive en la capa más externa
+//     porque habla directamente con el driver de la base de datos (`pg`). Este es el único
+//     archivo del proyecto que contiene SQL, e implementa una interfaz declarada dos capas
+//     hacia adentro: la flecha del import apunta hacia adentro, del detalle a la regla de negocio.
 
 import { Pool } from "pg";
 import { Note } from "../entities/note";
@@ -19,6 +23,10 @@ import type { NoteRepository } from "../use-cases/ports";
 //     duas notas são criadas no mesmo milissegundo. O UNIQUE em `title` é uma última linha de
 //     defesa: a regra é aplicada pelo caso de uso, e a restrição só pega duas requisições que
 //     conferiram no mesmo instante.
+// ES: `position` registra el orden de inserción, lo que `created_at` solo no logra cuando dos
+//     notas se crean en el mismo milisegundo. El UNIQUE en `title` es una última línea de
+//     defensa: la regla la aplica el caso de uso, y la restricción solo atrapa dos peticiones
+//     que verificaron en el mismo instante.
 const SCHEMA = `CREATE TABLE IF NOT EXISTS notes (
 	id text PRIMARY KEY,
 	position bigint GENERATED ALWAYS AS IDENTITY,
@@ -45,6 +53,10 @@ interface NoteRow {
 //     entidade não faz ideia de que os seus campos se chamam `created_at` em uma tabela. Uma
 //     linha que a entidade rejeita significa que o dado guardado está corrompido, o que ninguém
 //     esperava: isso é uma exceção.
+// ES: El mapeo entre una fila y una entidad es la razón de que este adaptador exista. La
+//     entidad no sabe que sus campos se llaman `created_at` en una tabla. Una fila que la
+//     entidad rechaza significa que el dato guardado está corrupto, lo que nadie esperaba: eso
+//     es una excepción.
 function toNote(row: NoteRow): Note {
 	const note = Note.create({
 		id: row.id,
@@ -70,6 +82,7 @@ export class PostgresNoteRepository implements NoteRepository {
 
 	// EN: Every value travels as a parameter ($1, $2), never concatenated into the SQL text.
 	// PT: Todo valor viaja como parâmetro ($1, $2), nunca concatenado no texto do SQL.
+	// ES: Todo valor viaja como parámetro ($1, $2), nunca concatenado en el texto del SQL.
 	async save(note: Note): Promise<void> {
 		await this.pool.query(
 			`INSERT INTO notes (${COLUMNS}) VALUES ($1, $2, $3, $4, $5)

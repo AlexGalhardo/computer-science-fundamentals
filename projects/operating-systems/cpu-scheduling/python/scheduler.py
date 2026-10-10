@@ -9,6 +9,12 @@ PT: O mesmo simulador de escalonamento de CPU de ts/src/scheduler.ts, em Python.
 A lição da segunda linguagem é que o algoritmo é o mesmo e só o vocabulário muda: as
 interfaces do TypeScript viram dataclasses, e os objetos de política viram classes pequenas
 com os mesmos três métodos. Os dois programas precisam imprimir exatamente os mesmos números.
+
+ES: El mismo simulador de planificación de CPU de ts/src/scheduler.ts, en Python.
+
+La lección del segundo lenguaje es que el algoritmo es el mismo y solo cambia el vocabulario: las
+interfaces de TypeScript se vuelven dataclasses, y los objetos de política se vuelven clases
+pequeñas con los mismos tres métodos. Ambos programas deben imprimir exactamente los mismos números.
 """
 
 from collections.abc import Callable, Sequence
@@ -23,6 +29,7 @@ class Process:
     burst: int
     # EN: Lower number means higher priority. Only the priority policy reads it.
     # PT: Número menor significa prioridade maior. Só a política de prioridade o lê.
+    # ES: Un número menor significa mayor prioridad. Solo la política de prioridad lo lee.
     priority: int = 0
 
 
@@ -31,6 +38,8 @@ class Slice:
     """EN: One uninterrupted stretch of CPU: a bar of the Gantt chart.
 
     PT: Um trecho ininterrupto de CPU: uma barra do gráfico de Gantt.
+
+    ES: Un tramo ininterrumpido de CPU: una barra del diagrama de Gantt.
     """
 
     id: str
@@ -78,6 +87,8 @@ def _index_of_min(ready: Sequence[Entry], key: Callable[[Entry], float]) -> int:
     for index in range(1, len(ready)):
         # EN: Strictly smaller, so ties keep the entry that has been in the queue the longest.
         # PT: Estritamente menor, então empates mantêm a entrada há mais tempo na fila.
+        # ES: Estrictamente menor, así los empates conservan la entrada que lleva más tiempo en la
+        #     cola.
         if key(ready[index]) < key(ready[best]):
             best = index
     return best
@@ -89,6 +100,9 @@ class Policy:
 
     PT: Uma política responde a três perguntas: quem executa em seguida, por quanto tempo, e o
     que acontece com a entrada que usou o quantum inteiro. O padrão é a ordem de chegada.
+
+    ES: Una política responde tres preguntas: quién se ejecuta a continuación, por cuánto tiempo, y
+    qué pasa con la entrada que usó todo el quantum. Por defecto es el orden de llegada.
     """
 
     name = "FCFS"
@@ -107,6 +121,9 @@ class Fcfs(Policy):
     """EN: First come, first served. One long job delays every short job behind it.
 
     PT: Primeiro a chegar, primeiro a ser servido. Um job longo atrasa todos os curtos atrás dele.
+
+    ES: Primero en llegar, primero en ser atendido. Un trabajo largo retrasa a todos los cortos
+    que están detrás.
     """
 
 
@@ -116,6 +133,10 @@ class Sjf(Policy):
 
     PT: Job mais curto primeiro, sem preempção. Menor espera média quando todos os jobs estão
     disponíveis juntos, mas exige conhecer os tempos e pode deixar jobs longos em inanição.
+
+    ES: Primero el trabajo más corto, sin expropiación. Menor tiempo medio de espera cuando todos
+    los trabajos están disponibles a la vez, pero exige conocer los tiempos y puede dejar a los
+    trabajos largos en inanición.
     """
 
     name = "SJF"
@@ -130,6 +151,9 @@ class RoundRobin(Policy):
 
     PT: Round-robin. Cada processo executa por no máximo um quantum e vai para o fim da fila.
     Bom tempo de resposta, pago com mais trocas de contexto e um tempo de retorno maior.
+
+    ES: Round-robin. Cada proceso se ejecuta como máximo un quantum y va al final de la cola.
+    Buen tiempo de respuesta, pagado con más cambios de contexto y un mayor tiempo de retorno.
     """
 
     def __init__(self, quantum: int) -> None:
@@ -149,6 +173,10 @@ class Priority(Policy):
     PT: Escalonamento por prioridade, sem preempção. O menor número de prioridade executa
     primeiro. Um processo de baixa prioridade pode ficar em inanição, o que sistemas reais
     corrigem com envelhecimento (aging).
+
+    ES: Planificación por prioridad, sin expropiación. El menor número de prioridad se ejecuta
+    primero. Un proceso de baja prioridad puede quedar en inanición, algo que los sistemas reales
+    corrigen con envejecimiento (aging).
     """
 
     name = "Priority"
@@ -167,6 +195,12 @@ class Mlfq(Policy):
     quantum inteiro faz o processo descer um nível, onde o quantum dobra, mas a vez só chega
     quando os níveis acima estão vazios. O processo em execução não é interrompido no meio do
     quantum por uma chegada (mesma simplificação da versão em TypeScript).
+
+    ES: Múltiples colas con retroalimentación. Todos empiezan en el nivel 0, con un quantum corto.
+    Usar todo el quantum hace que el proceso baje un nivel, donde el quantum se duplica, pero el
+    turno solo llega cuando los niveles superiores están vacíos. El proceso en ejecución no es
+    interrumpido a mitad de su quantum por una llegada (misma simplificación que la versión en
+    TypeScript).
     """
 
     def __init__(self, base_quantum: int, levels: int) -> None:
@@ -202,6 +236,7 @@ def simulate(processes: Sequence[Process], policy: Policy) -> Schedule:
     _validate(processes)
     # EN: sorted() is stable, so processes that arrive together keep their input order.
     # PT: sorted() é estável, então processos que chegam juntos mantêm a ordem de entrada.
+    # ES: sorted() es estable, así los procesos que llegan juntos conservan su orden de entrada.
     everyone = [
         Entry(process, process.burst) for process in sorted(processes, key=lambda p: p.arrival)
     ]
@@ -219,6 +254,7 @@ def simulate(processes: Sequence[Process], policy: Policy) -> Schedule:
         if not ready:
             # EN: Nobody is ready: the CPU idles until the next arrival.
             # PT: Ninguém está pronto: a CPU fica ociosa até a próxima chegada.
+            # ES: Nadie está listo: la CPU queda ociosa hasta la siguiente llegada.
             time = pending[0].process.arrival
             continue
         entry = ready.pop(policy.select(ready))
@@ -234,6 +270,8 @@ def simulate(processes: Sequence[Process], policy: Policy) -> Schedule:
         entry.remaining -= run
         # EN: Arrivals during this run enter the queue BEFORE the process goes back to the tail.
         # PT: As chegadas durante esta execução entram na fila ANTES de o processo voltar ao fim.
+        # ES: Las llegadas durante esta ejecución entran en la cola ANTES de que el proceso vuelva
+        #     al final.
         admit()
         if entry.remaining == 0:
             entry.finish = time
@@ -245,6 +283,8 @@ def simulate(processes: Sequence[Process], policy: Policy) -> Schedule:
     #     arrival to the first time on the CPU.
     # PT: Retorno (turnaround) vai da chegada ao término. Espera é retorno menos tempo de CPU.
     #     Resposta vai da chegada à primeira vez na CPU.
+    # ES: El retorno (turnaround) va de la llegada a la finalización. La espera es el retorno menos
+    #     el tiempo de CPU. La respuesta va de la llegada a la primera vez en la CPU.
     metrics = [
         Metrics(
             id=entry.process.id,
@@ -281,6 +321,9 @@ def render_gantt(slices: Sequence[Slice]) -> str:
     """EN: Draws the schedule on a time line, three characters per time unit, idle gaps as "-".
 
     PT: Desenha a escala em uma linha do tempo, três caracteres por unidade, ociosidade como "-".
+
+    ES: Dibuja la planificación en una línea de tiempo, tres caracteres por unidad, la ociosidad
+    como "-".
     """
     bars: list[Slice] = []
     cursor = 0
@@ -303,6 +346,9 @@ class Lcg:
 
     PT: Gerador congruente linear, idêntico ao do TypeScript, para que as duas linguagens
     simulem a mesma carga.
+
+    ES: Generador congruencial lineal, idéntico al de TypeScript, para que ambos lenguajes
+    simulen la misma carga.
     """
 
     def __init__(self, seed: int) -> None:

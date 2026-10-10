@@ -1,6 +1,6 @@
 # cache-friendly-matrix
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Three ways to multiply two matrices, in C++ and in Rust: the textbook order (i-j-k), the same loops interchanged (i-k-j), and a blocked version. All three do exactly the same `n³` multiplications and additions and return the same matrix, bit for bit. The only difference is the order in which memory is visited, and that alone makes the textbook order several times slower. The lesson: Big O counts operations, and the processor also charges for where the data is.
 

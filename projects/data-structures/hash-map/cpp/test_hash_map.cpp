@@ -29,10 +29,14 @@ void check(bool condition, const std::string& what) {
 //     instead of the exception, so the collision code is what the tests actually exercise.
 // PT: Um hash fraco que manda toda chave para uma de quatro posições. Ele faz da colisão a
 //     regra em vez da exceção, então o código de colisão é o que os testes realmente exercitam.
+// ES: Un hash débil que manda toda clave a una de cuatro posiciones. Hace de la colisión la
+//     regla en lugar de la excepción, así que el código de colisión es lo que las pruebas
+//     ejercitan.
 std::uint64_t weak_hash(Key key) { return key % 4; }
 
 // EN: Small deterministic generator (xorshift). A fixed seed makes a failing run reproducible.
 // PT: Gerador determinístico pequeno (xorshift). Uma semente fixa torna uma falha reproduzível.
+// ES: Generador determinista pequeño (xorshift). Una semilla fija hace reproducible un fallo.
 struct Random {
 	std::uint64_t state;
 	std::uint64_t next() {
@@ -49,6 +53,10 @@ struct Random {
 // PT: Teste de propriedade. Milhares de operações aleatórias rodam no nosso mapa e no mapa da
 //     biblioteca padrão ao mesmo tempo, e cada resposta precisa ser igual. A propriedade é
 //     "nosso mapa é indistinguível da referência", o que cobre casos que ninguém pensou em listar.
+// ES: Prueba de propiedad. Miles de operaciones aleatorias corren en nuestro mapa y en el mapa de
+//     la biblioteca estándar a la vez, y cada respuesta debe ser igual. La propiedad es
+//     "nuestro mapa es indistinguible de la referencia", lo que cubre casos que nadie pensó en
+//     listar.
 template <typename Map>
 void property_test(const std::string& name, hashmap::HashFn hash, std::uint64_t seed) {
 	Map map(8, 0.6, hash);
@@ -110,6 +118,9 @@ void resize_test(const std::string& name, double max_load) {
 // PT: As três chaves abaixo colidem com o hash fraco (4, 8 e 12 valem 0 módulo 4), então ficam
 //     em posições consecutivas. Remover a primeira não pode esconder as outras, e uma nova chave
 //     que colide não pode sobrescrevê-las nem escondê-las.
+// ES: Las tres claves de abajo colisionan con el hash débil (4, 8 y 12 valen 0 módulo 4), así que
+//     quedan en posiciones consecutivas. Quitar la primera no puede esconder a las otras, y una
+//     clave nueva que colisiona no puede sobrescribirlas ni esconderlas.
 void tombstone_test() {
 	ProbingMap map(16, 0.9, weak_hash);
 	map.put(4, 40);

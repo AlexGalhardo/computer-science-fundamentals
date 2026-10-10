@@ -18,6 +18,10 @@
 //     deslocamento e um tamanho, e nenhum byte real é tocado. O que importa aqui é a
 //     contabilidade, isto é, quais partes estão em uso, quais estão livres, e como o espaço
 //     livre se quebra em pedaços (fragmentação) conforme os blocos entram e saem.
+// ES: Asignadores de memoria sobre una arena fija. La arena es simulada: una asignación es solo
+//     un desplazamiento y un tamaño, y no se toca ningún byte real. Lo que importa aquí es la
+//     contabilidad, es decir, qué partes están en uso, cuáles están libres, y cómo el espacio
+//     libre se rompe en pedazos (fragmentación) a medida que los bloques entran y salen.
 
 struct Stats {
 	std::size_t arena = 0;
@@ -39,6 +43,11 @@ struct Stats {
 	//     é a parte da memória livre que NÃO está na maior lacuna. 0 significa que toda a memória
 	//     livre é um bloco só, e um valor perto de 1 significa que ela está espalhada em lacunas
 	//     pequenas, então um pedido grande falha embora o total livre fosse suficiente.
+	// ES: Fragmentación externa: existe memoria libre, pero está dividida en huecos. La medida es
+	//     la parte de la memoria libre que NO está en el hueco más grande. 0 significa que toda la
+	//     memoria libre es un solo bloque, y un valor cercano a 1 significa que está dispersa en
+	//     huecos pequeños, así que una solicitud grande falla aunque el total libre sería
+	//     suficiente.
 	double external_fragmentation() const {
 		const std::size_t free = free_bytes();
 		return free == 0 ? 0.0
@@ -51,6 +60,9 @@ struct Stats {
 	// PT: Fragmentação interna: espaço dentro de um bloco que quem pediu não solicitou. Os
 	//     alocadores de lista entregam exatamente o que é pedido, então não têm nenhuma. O
 	//     sistema buddy arredonda todo pedido para uma potência de dois e paga por isso aqui.
+	// ES: Fragmentación interna: espacio dentro de un bloque que quien llamó no pidió. Los
+	//     asignadores de lista entregan exactamente lo que se pide, así que no tienen ninguna. El
+	//     sistema buddy redondea cada solicitud a una potencia de dos y lo paga aquí.
 	std::size_t internal_fragmentation() const { return used - requested; }
 };
 
@@ -87,6 +99,13 @@ enum class Fit { First, Best, Worst };
 //     menor lacuna suficiente, o que tende a deixar sobras minúsculas e inúteis. O worst fit
 //     pega a maior lacuna, para que a sobra continue útil, mas destrói as lacunas grandes de
 //     que os pedidos grandes precisam.
+// ES: El asignador clásico de lista libre. La arena es una secuencia de bloques en orden de
+//     dirección, cada uno libre o en uso. La asignación elige un bloque libre (el "hueco")
+//     según la estrategia y lo divide. Las tres estrategias solo difieren en qué hueco eligen:
+//     first fit toma el primer hueco lo bastante grande, lo cual es rápido. Best fit toma el
+//     hueco más pequeño que sirva, lo que tiende a dejar sobrantes diminutos e inútiles. Worst
+//     fit toma el hueco más grande, para que el sobrante siga siendo útil, pero destruye los
+//     huecos grandes que necesitan las solicitudes grandes.
 class ListAllocator final : public Allocator {
 public:
 	ListAllocator(std::size_t arena, Fit fit) : arena_(arena), fit_(fit) {
@@ -135,6 +154,8 @@ public:
 		//     in the list as a smaller hole right after it.
 		// PT: Divide a lacuna: a primeira parte vira o bloco novo, e o resto, se houver, fica na
 		//     lista como uma lacuna menor logo depois dele.
+		// ES: Divide el hueco: la primera parte se convierte en el bloque nuevo y el resto, si lo
+		//     hay, queda en la lista como un hueco más pequeño justo después.
 		const std::size_t index = *chosen;
 		const std::size_t offset = blocks_[index].offset;
 		const std::size_t leftover = blocks_[index].size - size;
@@ -161,6 +182,10 @@ public:
 		// PT: Coalescência: o bloco liberado é fundido com um vizinho livre de cada lado. Sem
 		//     este passo, a arena acabaria como muitas lacunas pequenas e vizinhas que nunca
 		//     atenderiam a um pedido grande, mesmo depois de tudo ser liberado.
+		// ES: Fusión (coalescing): un bloque liberado se fusiona con un vecino libre a cualquiera
+		//     de los dos lados. Sin este paso, la arena acabaría como muchos huecos pequeños
+		//     adyacentes que nunca podrían atender una solicitud grande, ni siquiera después de
+		//     liberar todo.
 		auto next = it + 1;
 		if (next != blocks_.end() && next->free) {
 			it->size += next->size;
@@ -226,6 +251,15 @@ private:
 //     O companheiro de um bloco é achado com um XOR: para um bloco de tamanho s no deslocamento
 //     o, o companheiro está em o XOR s. Isso torna a divisão e a fusão muito rápidas. O preço é
 //     a fragmentação interna: um pedido de 70 bytes ocupa um bloco de 128.
+// ES: El sistema buddy. Todo tamaño de bloque es una potencia de dos. La solicitud se redondea a
+//     la siguiente potencia de dos, y un bloque libre mayor se divide por la mitad (dos
+//     "buddies", o compañeros) hasta que aparece el tamaño justo. Cuando se libera un bloque y su
+//     compañero también está libre, ambos se fusionan de vuelta en el bloque del que vinieron, y
+//     así sucesivamente hacia arriba.
+//     El compañero de un bloque se encuentra con un XOR: para un bloque de tamaño s en el
+//     desplazamiento o, el compañero está en o XOR s. Eso hace que dividir y fusionar sea muy
+//     rápido. El precio es la fragmentación interna: una solicitud de 70 bytes ocupa un bloque
+//     de 128.
 class BuddyAllocator final : public Allocator {
 public:
 	BuddyAllocator(std::size_t arena, std::size_t min_block) : arena_(arena) {
@@ -258,6 +292,8 @@ public:
 		//     half, its buddy, on the free list of the smaller order.
 		// PT: Divide até o tamanho desejado. Cada divisão fica com a metade de baixo e coloca a
 		//     metade de cima, sua companheira, na lista livre da ordem menor.
+		// ES: Divide hasta el tamaño deseado. Cada división conserva la mitad inferior y pone la
+		//     mitad superior, su compañera, en la lista libre del orden menor.
 		while (order > wanted) {
 			order -= 1;
 			free_[order].insert(offset + (std::size_t{1} << order));
@@ -278,6 +314,9 @@ public:
 		// PT: Coalescência: enquanto o companheiro está livre, ele é removido da sua lista e
 		//     fundido, o que dá um bloco da ordem seguinte começando no menor dos dois
 		//     deslocamentos.
+		// ES: Fusión (coalescing): mientras el compañero esté libre, se quita de su lista y se
+		//     fusiona, lo que da un bloque del orden siguiente que empieza en el menor de los dos
+		//     desplazamientos.
 		while (order < max_order_) {
 			const std::size_t buddy = offset ^ (std::size_t{1} << order);
 			const auto it = free_[order].find(buddy);

@@ -1,5 +1,6 @@
 // EN: The receiver: a cart that only knows how to hold quantities.
 // PT: O receptor: um carrinho que só sabe guardar quantidades.
+// ES: El receptor: un carrito que solo sabe guardar cantidades.
 export class Cart {
 	private readonly items = new Map<string, number>();
 
@@ -21,6 +22,9 @@ export class Cart {
 //     changes.
 // PT: COMMAND. Um pedido vira um objeto que carrega seus dados e sabe tanto se executar quanto
 //     se reverter. Uma operação nova é uma classe nova, e o histórico abaixo nunca muda.
+// ES: COMMAND. Un pedido se convierte en un objeto que lleva sus datos y sabe tanto ejecutarse
+//     como revertirse. Una operación nueva es una clase nueva, y el historial de abajo nunca
+//     cambia.
 export interface Command {
 	execute(): void;
 	undo(): void;
@@ -52,6 +56,7 @@ export class RemoveItem implements Command {
 
 	// EN: The command remembers what it destroyed, which is what makes the undo exact.
 	// PT: O comando lembra o que destruiu, e é isso que torna o desfazer exato.
+	// ES: El comando recuerda lo que destruyó, y eso es lo que hace exacto el deshacer.
 	execute(): void {
 		this.previous = this.cart.quantity(this.sku);
 		this.cart.set(this.sku, 0);
@@ -68,6 +73,9 @@ export class RemoveItem implements Command {
 // PT: O invocador. Duas pilhas: desfazer reverte primeiro o comando mais recente, porque cada
 //     comando rodou sobre o resultado do anterior. Executar um comando novo esvazia a pilha de
 //     refazer, já que o futuro desfeito deixou de valer.
+// ES: El invocador. Dos pilas: deshacer revierte primero el comando más reciente, porque cada
+//     comando se ejecutó sobre el resultado del anterior. Ejecutar un comando nuevo vacía la
+//     pila de rehacer, ya que el futuro deshecho dejó de valer.
 export class History {
 	private readonly done: Command[] = [];
 	private readonly undone: Command[] = [];

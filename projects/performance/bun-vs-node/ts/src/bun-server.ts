@@ -2,6 +2,8 @@
 //     into the runtime).
 // PT: A API no Bun: um processo, um event loop, servida pelo `Bun.serve` (o servidor HTTP embutido
 //     no runtime).
+// ES: La API en Bun: un proceso, un event loop, servida por `Bun.serve` (el servidor HTTP integrado
+//     en el runtime).
 
 import { route } from "./app";
 import { loadConfig } from "./config";

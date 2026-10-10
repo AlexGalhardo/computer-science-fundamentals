@@ -8,6 +8,10 @@ PT: Mesmas recorrências da referência em TypeScript em `ts/src/`, onde cada pr
     em detalhe. Todo problema tem uma versão ingênua (recursão pura), uma memoizada (a mesma
     recursão com cache) e uma tabulada (laços preenchendo uma tabela). As versões recursivas
     recebem um `Counter`, porque o número de chamadas é o que mostra o trabalho repetido.
+ES: Mismas recurrencias que la referencia en TypeScript en `ts/src/`, donde cada problema se explica
+    en detalle. Todo problema tiene una versión ingenua (recursión pura), una memoizada (la misma
+    recursión con caché) y una tabulada (bucles que llenan una tabla). Las versiones recursivas
+    reciben un `Counter`, porque el número de llamadas es lo que muestra el trabajo repetido.
 """
 
 from collections.abc import Callable, Sequence
@@ -30,6 +34,8 @@ class Item:
 def lehmer(seed: int) -> Callable[[], int]:
     # EN: Same generator as the TypeScript side, so both languages build the same instances.
     # PT: Mesmo gerador do lado TypeScript, então as duas linguagens montam as mesmas instâncias.
+    # ES: Mismo generador que el lado TypeScript, así ambos lenguajes construyen las mismas
+    #     instancias.
     state = seed % 2147483646 + 1
 
     def step() -> int:
@@ -43,6 +49,7 @@ def lehmer(seed: int) -> Callable[[], int]:
 # --- 0-1 knapsack / mochila 0-1 -------------------------------------------------------------
 # EN: best(i, w) = max(best(i + 1, w), value[i] + best(i + 1, w - weight[i])): take or skip.
 # PT: best(i, w) = max(best(i + 1, w), valor[i] + best(i + 1, w - peso[i])): levar ou pular.
+# ES: best(i, w) = max(best(i + 1, w), valor[i] + best(i + 1, w - peso[i])): llevar u omitir.
 
 
 def knapsack_naive(items: Sequence[Item], capacity: int, counter: Counter) -> int:
@@ -60,6 +67,7 @@ def knapsack_naive(items: Sequence[Item], capacity: int, counter: Counter) -> in
 def knapsack_memo(items: Sequence[Item], capacity: int, counter: Counter) -> int:
     # EN: The cache key is the pair (i, w): the only things the answer depends on.
     # PT: A chave do cache é o par (i, w): as únicas coisas de que a resposta depende.
+    # ES: La clave del caché es el par (i, w): lo único de lo que depende la respuesta.
     memo: dict[tuple[int, int], int] = {}
 
     def best(i: int, w: int) -> int:
@@ -80,6 +88,7 @@ def knapsack_memo(items: Sequence[Item], capacity: int, counter: Counter) -> int
 def knapsack_table(items: Sequence[Item], capacity: int) -> list[list[int]]:
     # EN: Row i reads only row i - 1, so the rows are filled from top to bottom.
     # PT: A linha i só lê a linha i - 1, então as linhas são preenchidas de cima para baixo.
+    # ES: La fila i solo lee la fila i - 1, así que las filas se llenan de arriba hacia abajo.
     table = [[0] * (capacity + 1)]
     for item in items:
         previous = table[-1]
@@ -100,6 +109,8 @@ def knapsack_tab(items: Sequence[Item], capacity: int) -> int:
 # --- longest common subsequence / maior subsequência comum ----------------------------------
 # EN: A match consumes one character of each string. A mismatch tries dropping one of them.
 # PT: Uma coincidência consome um caractere de cada string. Uma diferença tenta descartar um deles.
+# ES: Una coincidencia consume un carácter de cada cadena. Una diferencia intenta descartar uno
+#     de ellos.
 
 
 def lcs_naive(a: str, b: str, counter: Counter) -> int:
@@ -148,6 +159,7 @@ def lcs_tab(a: str, b: str) -> int:
 # --- coin change / troco --------------------------------------------------------------------
 # EN: coins(v) = 1 + min(coins(v - c)) over every coin c <= v, and -1 when v cannot be made.
 # PT: coins(v) = 1 + min(coins(v - c)) sobre toda moeda c <= v, e -1 quando v não pode ser formado.
+# ES: coins(v) = 1 + min(coins(v - c)) sobre toda moneda c <= v, y -1 cuando v no se puede formar.
 
 
 def _finish(result: float) -> int:
@@ -182,6 +194,8 @@ def coin_change_memo(coins: Sequence[int], amount: int, counter: Counter) -> int
 def coin_change_table(coins: Sequence[int], amount: int) -> list[float]:
     # EN: dp[v] only reads smaller amounts, so ascending order makes them final before use.
     # PT: dp[v] só lê valores menores, então a ordem crescente os deixa prontos antes do uso.
+    # ES: dp[v] solo lee montos menores, así que el orden ascendente los deja listos antes de
+    #     usarlos.
     dp: list[float] = [0] + [IMPOSSIBLE] * amount
     for v in range(1, amount + 1):
         for coin in coins:

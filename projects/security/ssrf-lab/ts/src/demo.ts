@@ -4,6 +4,9 @@
 // PT: A demo: `docker compose run --rm demo`. Ela roda o mesmo cenário contra o app vulnerável e
 //     contra o app corrigido e narra o que cada um respondeu. Também imprime os endereços para
 //     os quais os dois nomes de host resolvem, porque a correção decide com base nesses endereços.
+// ES: La demo: `docker compose run --rm demo`. Ejecuta el mismo escenario contra la app vulnerable y
+//     contra la app corregida y narra lo que respondió cada una. También imprime las direcciones a
+//     las que resuelven los dos nombres de host, porque la corrección decide con base en esas direcciones.
 
 import { loadConfig } from "./config";
 import { classifyAddress } from "./fixed/fixed-address-classifier";
@@ -12,9 +15,10 @@ import { systemResolver } from "./fixed/fixed-safe-fetch";
 import { type PreviewObservation, runScenario, type ScenarioResult, scenarioUrls } from "./scenario";
 import { createVulnerableApp } from "./vulnerable/vulnerable-app";
 
-function say(en: string, pt: string): void {
+function say(en: string, pt: string, es: string): void {
 	console.log(`EN: ${en}`);
 	console.log(`PT: ${pt}`);
+	console.log(`ES: ${es}`);
 	console.log("");
 }
 
@@ -48,6 +52,7 @@ console.log("=== SSRF lab (local, internal networks, fake data only) ===\n");
 say(
 	"1. The feature is a link preview: the SERVER fetches a URL given by the user. These are the four URLs of the scenario:",
 	"1. A funcionalidade é uma prévia de link: o SERVIDOR busca uma URL dada pelo usuário. Estas são as quatro URLs do cenário:",
+	"1. La funcionalidad es una vista previa de enlace: el SERVIDOR busca una URL dada por el usuario. Estas son las cuatro URLs del escenario:",
 );
 for (const url of Object.values(urls)) {
 	console.log(`  ${url}`);
@@ -57,6 +62,7 @@ console.log("");
 say(
 	"2. Where the two host names point. The fix judges these addresses, not the text of the URL:",
 	"2. Para onde os dois nomes de host apontam. A correção julga estes endereços, não o texto da URL:",
+	"2. Adónde apuntan los dos nombres de host. La corrección juzga estas direcciones, no el texto de la URL:",
 );
 await describeHost(config.PUBLIC_SITE_ORIGIN);
 await describeHost(config.INTERNAL_ADMIN_ORIGIN);
@@ -65,18 +71,21 @@ console.log("");
 say(
 	"3. Scenario against the VULNERABLE app: it fetches anything, so the internal service answers, directly and through the redirect.",
 	"3. Cenário contra o app VULNERÁVEL: ele busca qualquer coisa, então o serviço interno responde, diretamente e pelo redirecionamento.",
+	"3. Escenario contra la app VULNERABLE: busca cualquier cosa, así que el servicio interno responde, directamente y por la redirección.",
 );
 report(await runScenario(createVulnerableApp(), config));
 
 say(
 	"4. Same scenario against the FIXED app: both attempts are refused before any connection to the internal service, and normal previews still work.",
 	"4. Mesmo cenário contra o app CORRIGIDO: as duas tentativas são recusadas antes de qualquer conexão com o serviço interno, e as prévias normais continuam funcionando.",
+	"4. El mismo escenario contra la app CORREGIDA: los dos intentos se rechazan antes de cualquier conexión con el servicio interno, y las vistas previas normales siguen funcionando.",
 );
 report(await runScenario(createFixedApp(buildPolicy(config)), config));
 
 say(
 	"5. Defence in depth: even with the internal name wrongly added to the allow-list, the address check still refuses it.",
 	"5. Defesa em profundidade: mesmo com o nome interno colocado por engano na lista de permissão, a checagem de endereço ainda recusa.",
+	"5. Defensa en profundidad: incluso con el nombre interno puesto por error en la lista de permitidos, la comprobación de la dirección aún lo rechaza.",
 );
 const policy = buildPolicy(config);
 const tooWide = {

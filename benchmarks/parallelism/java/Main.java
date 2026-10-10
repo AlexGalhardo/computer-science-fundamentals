@@ -10,6 +10,12 @@
 //     stealing. Submeter o stream de dentro do nosso pool faz com que ele use esse pool, e é
 //     assim que o número de workers é escolhido. Virtual threads não ajudariam aqui: elas
 //     servem para esperar, não para calcular.
+// ES: Carga de paralelismo en Java: cuenta los primos por debajo de n, rango cortado en 256
+//     pedazos. Modelo de Java: un parallel stream. El stream divide los números de pedazo en
+//     tareas y las ejecuta en un ForkJoinPool, un pool de threads de plataforma (del SO) con work
+//     stealing. Enviar el stream desde dentro de nuestro pool hace que use ese pool, y es
+//     así como se elige el número de workers. Los threads virtuales no ayudarían aquí: sirven
+//     para esperar, no para calcular.
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,6 +50,7 @@ public final class Main {
 
   // EN: Chunk c covers [c*n/256, (c+1)*n/256).
   // PT: O pedaço c cobre [c*n/256, (c+1)*n/256).
+  // ES: El pedazo c cubre [c*n/256, (c+1)*n/256).
   private static long countChunk(long chunk, long n) {
     long count = 0;
     for (long k = chunk * n / CHUNKS; k < (chunk + 1) * n / CHUNKS; k++) {
@@ -73,6 +80,7 @@ public final class Main {
     } catch (IOException e) {
       // EN: Not on Linux: report zero instead of failing the run.
       // PT: Fora do Linux: informa zero em vez de derrubar a execução.
+      // ES: Fuera de Linux: informa cero en lugar de tumbar la ejecución.
     }
     return 0;
   }

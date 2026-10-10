@@ -1,6 +1,6 @@
 # b-tree-on-disk
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Uma árvore B guardada em um arquivo, um nó por página de 4096 bytes, com inserção (divisão de nó), busca e remoção (redistribuição e fusão), escrita em C++ e em Rust. Um pager conta cada página lida. Ela ensina por que bancos de dados e sistemas de arquivos usam árvores largas: o custo de uma busca em disco é o número de páginas lidas, e uma árvore larga lê 3 páginas onde uma árvore binária lê 16.
 

@@ -12,6 +12,13 @@
 //     da função entra na fila de microtarefas e o loop o executa depois. As tarefas nunca rodam
 //     ao mesmo tempo, então não há corrida de dados, e um cálculo longo bloqueia todo o resto.
 //     Uma tarefa parada é uma promise mais uma pequena closure no heap.
+// ES: Carga de concurrencia en TypeScript sobre Bun: n funciones asíncronas esperan en una compuerta, la
+//     compuerta se abre, y cada una entrega su número. La suma es el checksum.
+//     Modelo de JavaScript: un thread y un event loop. Una función `async` corre hasta el primer
+//     `await`, devuelve una promesa y sale del stack. Cuando la promesa esperada se resuelve, el resto
+//     de la función entra en la cola de microtareas y el loop lo ejecuta después. Las tareas nunca corren
+//     al mismo tiempo, así que no hay carreras de datos, y un cálculo largo bloquea todo lo demás.
+//     Una tarea detenida es una promesa más una pequeña closure en el heap.
 
 import { readFileSync } from "node:fs";
 

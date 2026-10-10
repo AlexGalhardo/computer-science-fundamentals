@@ -13,6 +13,14 @@ PT: Vetores de palavras a partir de contagem, sem rede neural e sem laço de tre
    linhas apontam na mesma direção (similaridade do cosseno).
 A versão em TypeScript faz isso com laços sobre arrays. Aqui a tabela é uma matriz NumPy, e cada
 passo é uma operação sobre a matriz inteira.
+
+ES: Vectores de palabras a partir de conteo, sin red neuronal y sin bucle de entrenamiento.
+1. Para cada palabra, cuenta qué palabras aparecen cerca de ella (conteos de coocurrencia).
+2. Repondera los conteos para que los vecinos sorprendentes valgan más que los frecuentes (PPMI).
+3. La fila de una palabra en esa tabla es su vector. Dos palabras son parecidas cuando sus filas
+   apuntan en la misma dirección (similitud del coseno).
+La versión en TypeScript hace esto con bucles sobre arreglos. Aquí la tabla es una matriz NumPy, y
+cada paso es una operación sobre la matriz entera.
 """
 
 import json
@@ -71,6 +79,8 @@ def build_vocabulary(sentences: list[list[str]]) -> list[str]:
     """EN: Sorted, so the numbering of the words is the same in TypeScript and in Python.
 
     PT: Ordenado, então a numeração das palavras é a mesma em TypeScript e em Python.
+
+    ES: Ordenado, así que la numeración de las palabras es la misma en TypeScript y en Python.
     """
     return sorted({word for sentence in sentences for word in sentence})
 
@@ -81,6 +91,9 @@ def cooccurrence(sentences: list[list[str]], index: dict[str, int], window: int 
 
     PT: counts[i, j] = quantas vezes a palavra j apareceu a no máximo `window` posições da
     palavra i, de qualquer lado. A janela é simétrica, então a matriz também é.
+
+    ES: counts[i, j] = cuántas veces apareció la palabra j a lo sumo a `window` posiciones de la
+    palabra i, de cualquier lado. La ventana es simétrica, así que la matriz también lo es.
     """
     counts = np.zeros((len(index), len(index)))
     for sentence in sentences:
@@ -107,6 +120,14 @@ def ppmi(counts: Matrix) -> Matrix:
         pmi(w, c) = log2( cont(w, c) * total / (linha(w) * linha(c)) )
     A PPMI guarda só a parte positiva. No NumPy a tabela inteira é uma expressão: `np.outer`
     monta a matriz do "esperado por acaso" e a divisão é feita célula a célula.
+
+    ES: Los conteos crudos están dominados por las palabras frecuentes: "the" queda cerca de casi
+    toda palabra, así que toda fila tiene los mayores números en las mismas pocas columnas y todas
+    apuntan hacia el mismo lado. La PMI pregunta cuántas veces más se encuentran dos palabras de lo
+    que se encontrarían por azar:
+        pmi(w, c) = log2( cont(w, c) * total / (fila(w) * fila(c)) )
+    La PPMI guarda solo la parte positiva. En NumPy la tabla entera es una expresión: `np.outer`
+    arma la matriz de lo "esperado por azar" y la división se hace celda a celda.
     """
     row_sums = counts.sum(axis=1)
     expected = np.outer(row_sums, row_sums) / row_sums.sum()
@@ -124,6 +145,10 @@ def normalize_rows(matrix: Matrix) -> Matrix:
     PT: Divide cada linha pelo próprio comprimento. Depois disso, a similaridade do cosseno de
     duas linhas é só o produto escalar, porque cosseno = dot(a, b) / (|a| * |b|) e os dois
     comprimentos são 1. Uma linha de zeros continua uma linha de zeros.
+
+    ES: Divide cada fila entre su propia longitud. Después de eso, la similitud del coseno de dos
+    filas es solo el producto punto, porque coseno = dot(a, b) / (|a| * |b|) y las dos longitudes
+    son 1. Una fila de ceros sigue siendo una fila de ceros.
     """
     lengths = np.linalg.norm(matrix, axis=1, keepdims=True)
     return np.divide(matrix, lengths, out=np.zeros_like(matrix), where=lengths > 0)
@@ -154,6 +179,11 @@ def nearest_neighbours(model: WordVectors, word: str, k: int) -> list[tuple[str,
     linhas de uma vez, ou seja, a sua similaridade do cosseno com todas as palavras do
     vocabulário. Similaridades iguais são ordenadas alfabeticamente, a mesma regra da versão em
     TypeScript.
+
+    ES: Fuerza bruta en una línea: `matrix @ vector` es el producto punto de la palabra con todas
+    las filas a la vez, es decir, su similitud del coseno con todas las palabras del vocabulario.
+    Las similitudes iguales se ordenan alfabéticamente, la misma regla de la versión en
+    TypeScript.
     """
     similarities = model.matrix @ model.matrix[model.index[word]]
     scored = [
@@ -181,6 +211,9 @@ def group_precision(model: WordVectors, groups: Groups, k: int) -> list[GroupPre
 
     PT: O teste dos vetores. Ninguém disse ao código que "dog" e "cat" são animais. Se os
     vizinhos de "dog" são todos animais, os grupos foram recuperados só a partir dos contextos.
+
+    ES: La prueba de los vectores. Nadie le dijo al código que "dog" y "cat" son animales. Si los
+    vecinos de "dog" son todos animales, los grupos se recuperaron solo a partir de los contextos.
     """
     rows = []
     for group, words in groups.items():
@@ -205,6 +238,10 @@ def group_contrast(model: WordVectors, groups: Groups) -> tuple[float, float]:
     PT: (cosseno médio de duas palavras de teste do mesmo grupo, cosseno médio de duas palavras
     de teste de grupos diferentes). `rows @ rows.T` é a tabela de todos os pares de uma vez. Com
     contagens cruas os dois números ficam próximos, com PPMI ficam distantes.
+
+    ES: (coseno medio de dos palabras de prueba del mismo grupo, coseno medio de dos palabras de
+    prueba de grupos distintos). `rows @ rows.T` es la tabla de todos los pares de una vez. Con
+    conteos crudos los dos números quedan cercanos, con PPMI quedan distantes.
     """
     tagged = [(group, word) for group, words in groups.items() for word in words]
     rows = model.matrix[[model.index[word] for _, word in tagged]]

@@ -4,6 +4,9 @@
 # PT: Go em uma imagem fixada, com o golangci-lint copiado da sua própria imagem fixada. Formato,
 #     vet, lint e testes rodam juntos. O contexto de build é a pasta do projeto, porque os testes
 #     leem fixtures/.
+# ES: Go en una imagen fijada, con golangci-lint copiado de su propia imagen fijada. Formato,
+#     vet, lint y pruebas se ejecutan juntos. El contexto de build es la carpeta del proyecto,
+#     porque las pruebas leen fixtures/.
 FROM golangci/golangci-lint:v2.14.0 AS lint
 FROM golang:1.27.1-bookworm
 COPY --from=lint /usr/bin/golangci-lint /usr/local/bin/golangci-lint

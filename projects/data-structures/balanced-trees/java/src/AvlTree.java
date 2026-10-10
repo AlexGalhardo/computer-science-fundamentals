@@ -12,6 +12,11 @@ import java.util.function.Consumer;
  * no máximo 1. Cada nó guarda a sua altura. Depois de uma inserção ou remoção, os nós do caminho de
  * volta até a raiz são conferidos, e um nó que ficou desbalanceado é corrigido com uma ou duas
  * rotações. Isso mantém a altura abaixo de cerca de 1,44 log2(n).
+ *
+ * <p>ES: Un árbol binario de búsqueda en que, en todo nodo, las alturas de los dos subárboles
+ * difieren en como máximo 1. Cada nodo guarda su altura. Después de una inserción o eliminación, se
+ * revisan los nodos del camino de vuelta hasta la raíz, y un nodo que quedó desbalanceado se
+ * corrige con una o dos rotaciones. Esto mantiene la altura por debajo de cerca de 1.44 log2(n).
  */
 public final class AvlTree implements SearchTree {
   private static final class Node {
@@ -37,6 +42,10 @@ public final class AvlTree implements SearchTree {
   //     porque o pai ainda não foi ligado a ela e uma foto tirada agora mostraria a árvore
   //     antiga. A mensagem espera aqui e é enviada por quem chamou, logo depois de guardar a raiz
   //     devolvida.
+  // ES: Un método que devuelve la nueva raíz de un subárbol no puede anunciar el cambio él mismo,
+  //     porque el padre aún no fue enlazado a ella y una foto tomada ahora mostraría el árbol
+  //     antiguo. El mensaje espera aquí y lo envía quien llamó, justo después de guardar la raíz
+  //     devuelta.
   private String pending;
 
   @Override
@@ -112,6 +121,10 @@ public final class AvlTree implements SearchTree {
   //     esquerdo de y, e a subárvore que ficava entre eles troca de pai. A sequência em-ordem é a
   //     mesma antes e depois, então a árvore continua sendo de busca. Só três referências mudam,
   //     então é O(1). O método devolve a nova raiz da subárvore.
+  // ES: Rotación. En la rotación a la izquierda el hijo derecho y sube al lugar de x, x pasa a ser
+  //     hijo izquierdo de y, y el subárbol que estaba entre ellos cambia de padre. La secuencia en
+  //     orden es la misma antes y después, así que el árbol sigue siendo de búsqueda. Solo cambian
+  //     tres referencias, así que es O(1). El método devuelve la nueva raíz del subárbol.
   private Node rotateLeft(Node x) {
     Node y = x.right;
     x.right = y.left;
@@ -144,6 +157,12 @@ public final class AvlTree implements SearchTree {
   //     rotação à esquerda resolve. Se o filho direito pende para a esquerda (caso de dentro, um
   //     zigue-zague), uma rotação simples só espelharia o problema, então o filho é girado à
   //     direita antes, para alinhar o caminho. O -2 é a imagem no espelho.
+  // ES: Factor de balance = altura del subárbol derecho menos la del izquierdo. En +2 el lado
+  //     derecho está demasiado alto. Si el hijo derecho se inclina al mismo lado (caso de afuera),
+  //     una rotación a la izquierda lo resuelve. Si el hijo derecho se inclina a la izquierda
+  //     (caso de adentro, un zigzag), una rotación simple solo reflejaría el problema, así que
+  //     antes se gira el hijo a la derecha, para alinear el camino. El -2 es la imagen en el
+  //     espejo.
   private Node rebalance(Node node) {
     update(node);
     int balance = heightOf(node.right) - heightOf(node.left);
@@ -168,6 +187,8 @@ public final class AvlTree implements SearchTree {
   //     rebalancing happens on the way back from the recursion, from the new leaf up.
   // PT: A recursão é segura aqui: a altura é logarítmica, então a pilha de chamadas é rasa. O
   //     rebalanceamento acontece na volta da recursão, da folha nova para cima.
+  // ES: La recursión es segura aquí: la altura es logarítmica, así que la pila de llamadas es poco
+  //     profunda. El rebalanceo ocurre al volver de la recursión, de la hoja nueva hacia arriba.
   private Node insert(Node node, long key) {
     if (node == null) {
       size++;

@@ -3,6 +3,9 @@ results/results-python.md and results/table-python.json.
 
 PT: `python demo.py` imprime a tabela "tamanho do vocabulário contra número de tokens" e grava
 results/results-python.md e results/table-python.json.
+
+ES: `python demo.py` imprime la tabla "tamaño del vocabulario frente a número de tokens" y escribe
+results/results-python.md y results/table-python.json.
 """
 
 import json

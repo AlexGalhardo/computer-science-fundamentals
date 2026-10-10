@@ -1,6 +1,6 @@
 # huffman-lz77
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Até onde um arquivo pode encolher, e por quê? Este mini-projeto mede a **entropia de Shannon** de um arquivo, comprime-o com **Huffman** (códigos curtos para bytes frequentes) e com **LZ77** (referências a trechos repetidos), e coloca os três números lado a lado para cinco arquivos de amostra gerados. O mesmo código está escrito em Rust e em Python, e os dois produzem saídas idênticas byte a byte.
 

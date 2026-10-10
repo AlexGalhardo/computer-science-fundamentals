@@ -37,6 +37,10 @@ public final class TreeTests {
   // PT: Teste de propriedade. Inserções, remoções e buscas aleatórias rodam na árvore e em um
   //     TreeSet, e depois de cada operação a resposta é comparada e a invariante da árvore é
   //     conferida: ordem nas três, balanceamento na AVL, cores e alturas negras na rubro-negra.
+  // ES: Prueba de propiedad. Inserciones, eliminaciones y búsquedas aleatorias corren en el árbol y
+  //     en un TreeSet, y después de cada operación se compara la respuesta y se revisa la
+  //     invariante del árbol: orden en los tres, balanceo en el AVL, colores y alturas negras en
+  //     el rojo-negro.
   private static void property(SearchTree tree, long seed) {
     String name = tree.name() + ", seed " + seed;
     TreeSet<Long> reference = new TreeSet<>();
@@ -77,6 +81,10 @@ public final class TreeTests {
   //     transformam a árvore sem balanceamento em uma lista de 100.000 nós de altura. As mesmas
   //     chaves na mesma ordem deixam as duas árvores balanceadas abaixo de 40 níveis, porque elas
   //     fazem rotações.
+  // ES: La lección del mini-proyecto en números. 100,000 claves insertadas en orden creciente
+  //     convierten el árbol sin balanceo en una lista de 100,000 nodos de altura. Las mismas
+  //     claves en el mismo orden dejan los dos árboles balanceados por debajo de 40 niveles,
+  //     porque hacen rotaciones.
   private static void sortedInsertion() {
     int n = 100_000;
     for (SearchTree tree : Steps.allTrees()) {
@@ -115,6 +123,8 @@ public final class TreeTests {
   //     equals the rotation counter, no rotation is missing from the replay.
   // PT: O visualizador mostra um quadro por mudança. Se o número de quadros rotulados "rotate" é
   //     igual ao contador de rotações, nenhuma rotação ficou fora da reprodução.
+  // ES: El visualizador muestra un cuadro por cambio. Si el número de cuadros rotulados "rotate" es
+  //     igual al contador de rotaciones, ninguna rotación quedó fuera de la reproducción.
   private static void visualiserSteps() {
     for (SearchTree tree : Steps.allTrees()) {
       String name = tree.name();

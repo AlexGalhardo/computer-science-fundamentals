@@ -5,6 +5,10 @@
 //     é bigint no PostgreSQL e o node-postgres devolve bigint como string, então o SQL puro
 //     converte para integer. Os ORMs escondem essa conversão, o que é cômodo até uma contagem
 //     passar de 2^53.
+// ES: Consulta 4, una agregación: cuántos posts tiene cada autor, del mayor al menor. `count(*)`
+//     es bigint en PostgreSQL y node-postgres devuelve bigint como string, así que el SQL puro
+//     lo convierte a integer. Los ORM esconden esa conversión, lo que es cómodo hasta que un conteo
+//     pasa de 2^53.
 
 import { asc, count, desc, eq } from "drizzle-orm";
 import { authors, posts } from "../drizzle-schema";

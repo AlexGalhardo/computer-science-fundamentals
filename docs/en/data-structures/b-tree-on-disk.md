@@ -1,6 +1,6 @@
 # B-tree on disk
 
-> Versão em português: [docs/pt/data-structures/b-tree-on-disk.md](../../pt/data-structures/b-tree-on-disk.md)
+> Versão em português: [docs/pt/data-structures/b-tree-on-disk.md](../../pt/data-structures/b-tree-on-disk.md) · Versión en español: [docs/es/data-structures/b-tree-on-disk.md](../../es/data-structures/b-tree-on-disk.md)
 
 Mini-project: [projects/data-structures/b-tree-on-disk](../../../projects/data-structures/b-tree-on-disk). Languages: C++, Rust. Quiz topics: `data-structures` / `binary-search-trees`, `avl-trees`, `red-black-trees`.
 
@@ -14,7 +14,7 @@ A balanced binary tree with a million keys is about 20 levels tall. If each node
 
 A node holds many keys in order, and one child between each pair of keys:
 
-```
+```text
                   [ 30 | 60 ]
                  /     |     \
      [ 10 | 20 ]   [ 40 | 50 ]   [ 70 | 80 | 90 ]
@@ -44,7 +44,7 @@ Children are **page numbers**, not memory addresses. A pointer means nothing aft
 
 **Insert** goes down once. Before entering a full child it **splits** it: the middle key goes up to the parent and half of the keys move to a new page.
 
-```
+```text
 before: parent [ 50 ]            child [ 10 | 20 | 30 ]  (full, t = 2)
 after:  parent [ 20 | 50 ]       children [ 10 ] and [ 30 ]
 ```

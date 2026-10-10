@@ -7,6 +7,11 @@ EN: The tabular version of the Karnaugh map, in two steps: find every prime impl
 PT: A versão tabular do mapa de Karnaugh, em dois passos: achar todos os implicantes primos e
     depois escolher o conjunto mais barato de implicantes primos que cobre todos os mintermos.
     Este arquivo é uma segunda implementação, independente, de `ts/src/quine-mccluskey.ts`.
+
+ES: La versión tabular del mapa de Karnaugh, en dos pasos: encontrar todos los implicantes
+    primos y luego elegir el conjunto más barato de implicantes primos que cubre todos los
+    minterms. Este archivo es una segunda implementación, independiente, de
+    `ts/src/quine-mccluskey.ts`.
 """
 
 from collections.abc import Iterable, Sequence
@@ -22,6 +27,9 @@ class Implicant:
         the term ~B & ~D.
     PT: `mask` marca as variáveis eliminadas (os traços do método tabular) e `value` guarda o
         valor das outras. Com 4 variáveis, mask 0b1010 e value 0 são -0-0, o termo ~B & ~D.
+    ES: `mask` marca las variables eliminadas (los guiones del método tabular) y `value` guarda
+        el valor de las otras. Con 4 variables, mask 0b1010 y value 0 son -0-0, el término
+        ~B & ~D.
     """
 
     mask: int
@@ -50,6 +58,9 @@ def find_prime_implicants(terms: Iterable[int]) -> list[Implicant]:
     PT: X & Y | X & ~Y = X. Dois termos com os mesmos traços cujos valores diferem em exatamente
         um bit viram um termo com um traço a mais. Um termo que nunca se fundiu é um implicante
         primo.
+    ES: X & Y | X & ~Y = X. Dos términos con los mismos guiones cuyos valores difieren en
+        exactamente un bit se convierten en un término con un guion más. Un término que nunca
+        se fusionó es un implicante primo.
     """
     current = {Implicant(0, term) for term in terms}
     primes: set[Implicant] = set()
@@ -77,6 +88,9 @@ def minimise(
         terms help to build larger groups in step 1 but do not have to be covered.
     PT: Um implicante primo é essencial quando é o único que cobre algum mintermo. Os termos
         irrelevantes ajudam a formar grupos maiores no passo 1, mas não precisam ser cobertos.
+    ES: Un implicante primo es esencial cuando es el único que cubre algún minterm. Los
+        términos irrelevantes ayudan a formar grupos más grandes en el paso 1, pero no hace
+        falta cubrirlos.
     """
     required = sorted(set(minterms))
     optional = set(dont_cares)

@@ -34,6 +34,7 @@ test("latency rows compare each approach with raw SQL", () => {
 	expect(rows[1]?.stddevMs).toBeCloseTo(Math.SQRT2, 5);
 	expect(renderLatency(rows, "en")).toContain("| `q` | prisma | 3.000 |");
 	expect(renderLatency(rows, "pt")).toContain("Vezes o SQL puro");
+	expect(renderLatency(rows, "es")).toContain("Veces el SQL puro");
 });
 
 test("the N+1 table shows statements and speed-up", () => {

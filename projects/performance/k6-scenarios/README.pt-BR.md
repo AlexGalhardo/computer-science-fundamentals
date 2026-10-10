@@ -1,6 +1,6 @@
 # k6-scenarios
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Uma API local sobre PostgreSQL com um gargalo proposital (um pool de 2 conexões), e quatro cenários de k6 que olham para ele cada um de um ângulo: **load** (carga), **stress** (estresse), **spike** (pico) e **soak** (resistência). Todo cenário tem thresholds, falha neles com o pool pequeno, e passa com um pool de 20. Nada mais muda entre as duas execuções. A lição é para que serve cada tipo de teste de carga, e como um gargalo que nenhum gráfico de CPU mostra aparece como um joelho na curva de latência.
 

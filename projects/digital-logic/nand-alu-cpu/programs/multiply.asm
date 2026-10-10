@@ -7,6 +7,11 @@
 ;     A célula 0 da memória guarda x, a célula 1 guarda o contador y e a célula 2 guarda o
 ;     produto (começa em 0 porque todo registrador liga zerado). O produto precisa caber em
 ;     4 bits (0 a 15).
+; ES: Multiplica dos números por sumas repetidas: producto = x + x + ... + x, y veces.
+;     La CPU no tiene instrucción de multiplicar, así que el programa construye una con ADD y
+;     un bucle. La celda 0 de la memoria guarda x, la celda 1 guarda el contador y y la celda 2
+;     guarda el producto (empieza en 0 porque todo registro arranca en cero). El producto debe
+;     caber en 4 bits (0 a 15).
 
         LDI 3       ; x = 3
         STA 0

@@ -1,6 +1,6 @@
 # Databases (theory)
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Database theory explains how data is modelled as relations, queried with a declarative language and stored so that queries stay fast and data stays correct. The relational model, relational algebra, normalisation, indexes and query optimisation are the ideas behind every SQL database, and they are what lets a developer design a schema and read a query plan instead of guessing.
 

@@ -1,6 +1,6 @@
 # Load balancing
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A load balancer spreads requests over several servers so that a service can handle more traffic than one machine and survive the loss of one. The topic covers where the balancing happens (transport or application layer), how a server is chosen (round robin, least connections, hashing), how dead servers are detected and avoided, and the related roles of reverse proxy, TLS termination and API gateway.
 

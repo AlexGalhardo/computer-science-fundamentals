@@ -8,6 +8,11 @@
 //     crua de um lado, texto codificado e um cabeçalho de política do outro. Ela não tem
 //     navegador, então mostra o que o servidor ENVIA; os testes Playwright (serviço `e2e`)
 //     mostram o que um navegador FAZ com isso.
+// ES: La demo. Envía la misma entrada inofensiva a la app vulnerable y a la corregida e
+//     imprime lo que responde cada una, para que la diferencia pueda leerse en la terminal: marcado
+//     crudo de un lado, texto codificado y una cabecera de política del otro. No tiene
+//     navegador, así que muestra lo que el servidor ENVÍA; las pruebas Playwright (servicio `e2e`)
+//     muestran lo que un navegador HACE con eso.
 
 import { FAKE_AUTHOR, MARKER, SCRIPT_INPUT } from "./lab-inputs";
 import { loadLabTargets } from "./lab-targets";

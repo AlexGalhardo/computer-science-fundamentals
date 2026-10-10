@@ -13,6 +13,8 @@ def random_table(generator: random.Random, rows: int, distinct_keys: int) -> Tab
     # EN: Few distinct keys, so keys repeat on both sides and some are missing on one side.
     # PT: Poucas chaves distintas, para que as chaves se repitam dos dois lados e algumas faltem
     #     em um dos lados.
+    # ES: Pocas claves distintas, para que las claves se repitan en los dos lados y algunas
+    #     falten en uno de ellos.
     table = Table(["key", "payload"])
     for _ in range(rows):
         table.insert((f"k{generator.randrange(distinct_keys)}", generator.randrange(1_000_000)))
@@ -66,6 +68,9 @@ def test_benchmark_workload_has_n_matches_and_one_checksum() -> None:
     # PT: Cada linha de R casa com exatamente uma linha de S, então a junção tem n linhas, e os
     #     três algoritmos precisam imprimir o mesmo checksum. O valor também aparece na tabela
     #     de benchmark versionada, onde as duas linguagens o mostram lado a lado.
+    # ES: Cada fila de R coincide con exactamente una fila de S, así que el join tiene n filas,
+    #     y los tres algoritmos deben imprimir el mismo checksum. El mismo valor aparece en la
+    #     tabla de benchmark versionada, donde los dos lenguajes lo muestran lado a lado.
     r, s = bench_tables(1000)
     digests = {name: checksum(r, s, join(r, "k", s, "k")) for name, join in JOINS.items()}
     assert len(set(digests.values())) == 1
@@ -78,5 +83,8 @@ def test_committed_fixture_is_what_sqlite_answers_today() -> None:
     # PT: Os testes em Rust confiam em `fixtures/sqlite_cases.tsv`. Este teste o regenera em
     #     memória a partir do SQLite e compara, para que o arquivo não se afaste das respostas
     #     reais.
+    # ES: Las pruebas en Rust confían en `fixtures/sqlite_cases.tsv`. Esta prueba lo regenera en
+    #     memoria a partir de SQLite y compara, para que el archivo no se aleje de las respuestas
+    #     reales.
     committed = FIXTURE_PATH.read_text(encoding="utf-8").splitlines()
     assert committed == render().splitlines()

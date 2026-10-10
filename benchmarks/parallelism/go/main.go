@@ -6,6 +6,10 @@
 // pedaços. Modelo do Go: goroutines no escalonador M:N do runtime. O GOMAXPROCS diz quantas
 // threads do SO podem rodar código Go ao mesmo tempo, então recebe o número de workers. As
 // goroutines pegam números de pedaço de um canal, que é como o Go divide trabalho: comunicando.
+// ES: Carga de paralelismo en Go: cuenta los primos por debajo de n, rango cortado en 256
+// pedazos. Modelo de Go: goroutines en el planificador M:N del runtime. GOMAXPROCS dice cuántos
+// threads del SO pueden ejecutar código Go al mismo tiempo, así que recibe el número de workers. Las
+// goroutines toman números de pedazo de un canal, que es como Go reparte el trabajo: comunicando.
 package main
 
 import (
@@ -40,6 +44,7 @@ func isPrime(k int) bool {
 
 // EN: Chunk c covers [c*n/256, (c+1)*n/256).
 // PT: O pedaço c cobre [c*n/256, (c+1)*n/256).
+// ES: El pedazo c cubre [c*n/256, (c+1)*n/256).
 func countChunk(chunk, n int) int {
 	count := 0
 	for k := chunk * n / chunks; k < (chunk+1)*n/chunks; k++ {
@@ -66,6 +71,7 @@ func countPrimes(n, workers int) int {
 			defer wg.Done()
 			// EN: Each goroutine adds into its own slot, so no lock is needed for the sum.
 			// PT: Cada goroutine soma na própria posição, então a soma não precisa de trava.
+			// ES: Cada goroutine suma en su propia posición, así la suma no necesita candado.
 			for chunk := range jobs {
 				partial[w] += countChunk(chunk, n)
 			}

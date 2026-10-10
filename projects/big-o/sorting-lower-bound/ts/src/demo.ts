@@ -4,6 +4,9 @@
 // PT: `bun run demo` desenha a árvore de decisão para n = 3, mede as árvores para n = 3 e 4,
 //     confere todas as permutações de entradas pequenas, conta comparações em 1.000 entradas
 //     aleatórias e grava as tabelas em results/.
+// ES: `bun run demo` dibuja el árbol de decisión para n = 3, mide los árboles para n = 3 y 4,
+//     comprueba todas las permutaciones de entradas pequeñas, cuenta comparaciones en 1,000
+//     entradas aleatorias y escribe las tablas en results/.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";

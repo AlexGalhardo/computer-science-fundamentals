@@ -7,6 +7,8 @@ describe("builder: before", () => {
 	//     the same type change places without the compiler noticing.
 	// PT: O defeito, duas vezes. Um objeto inválido é criado sem reclamação, e dois argumentos
 	//     do mesmo tipo trocam de lugar sem o compilador perceber.
+	// ES: El defecto, dos veces. Un objeto inválido se crea sin quejas, y dos argumentos del mismo
+	//     tipo intercambian lugar sin que el compilador lo note.
 	test("a POST with no body is accepted", () => {
 		const request = new HttpRequest("POST", "/orders", undefined, undefined, 30, true, false);
 		expect(request.method).toBe("POST");

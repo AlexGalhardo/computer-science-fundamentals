@@ -2,6 +2,8 @@
 #     fixed versions. slf4j-nop is the "do nothing" logger HikariCP asks for.
 # PT: Cliente de banco em Java do benchmark. Os jars são baixados do Maven Central em versões
 #     fixas. O slf4j-nop é o logger "que não faz nada" que o HikariCP pede.
+# ES: Cliente de base de datos en Java del benchmark. Los jars se descargan de Maven Central en
+#     versiones fijas. slf4j-nop es el logger "que no hace nada" que pide HikariCP.
 FROM eclipse-temurin:25.0.4.1_1-jdk-noble
 ARG PGJDBC_VERSION=42.7.14
 ARG HIKARI_VERSION=7.1.0

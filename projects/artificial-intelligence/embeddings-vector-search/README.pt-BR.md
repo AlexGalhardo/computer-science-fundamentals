@@ -1,6 +1,6 @@
 # embeddings-vector-search
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Ensina **como o significado vira um vetor e como vetores parecidos são encontrados**. Os vetores de palavras são construídos contando quais palavras aparecem perto umas das outras em um corpus gerado para o projeto, sem rede neural. Os vizinhos mais próximos de uma palavra acabam sendo as palavras do seu grupo. Uma busca por força bruta é comparada com um índice de planos aleatórios (LSH), que faz muito menos comparações e às vezes erra. E uma pergunta recupera as passagens com mais chance de respondê-la, que é a etapa de busca do RAG.
 

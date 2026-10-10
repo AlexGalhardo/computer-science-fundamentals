@@ -1,12 +1,12 @@
 # queue-comparison
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 O que muda quando a mesma tarefa roda em quatro brokers diferentes? Uma mensagem "pedido realizado" dispara um e-mail de confirmação simulado, e o mesmo código de produtor e consumidor roda em **BullMQ (Redis)**, **RabbitMQ**, **Kafka** e **SQS (LocalStack)** por meio de uma única interface TypeScript. O código é o mesmo; o comportamento não: a ordem, o que acontece quando um consumidor morre com uma mensagem nas mãos e a velocidade mudam, e os testes e o benchmark mostram como.
 
 Código: MP-MSG-1. Explicação completa: [docs/pt/messaging/queue-comparison.md](../../../docs/pt/messaging/queue-comparison.md). Reconstrói o projeto legado `references/projects/message-queues-pubsub` dentro das regras deste repositório.
 
-```
+```text
 produtor --send(orders)--> [ BullMQ | RabbitMQ | Kafka | SQS ] --handler(order)--> e-mail simulado
             OrderProducer            QueueAdapter                 OrderConsumer
 ```

@@ -7,6 +7,9 @@ defmodule PubsubBackpressureTest do
   # PT: O critério de aceitação: um fluxo guiado por demanda mantém o buffer abaixo do tamanho
   #     configurado. 2.000 eventos por um buffer de 10, com um consumidor 1.000 vezes mais lento
   #     do que o produtor conseguiria ser.
+  # ES: El criterio de aceptación: un flujo guiado por la demanda mantiene el buffer por debajo del
+  #     tamaño configurado. 2,000 eventos a través de un buffer de 10, con un consumidor 1,000
+  #     veces más lento de lo que podría ser el productor.
   @tag timeout: 120_000
   test "GenStage keeps the buffer under max_demand" do
     result = PubsubBackpressure.demand(2_000, max_demand: 10, min_demand: 5)
@@ -32,6 +35,8 @@ defmodule PubsubBackpressureTest do
   #     number of events: ten times more events, about ten times more waiting.
   # PT: O contraste. Com `send/2` puro o buffer é a caixa de mensagens, e ela cresce com o
   #     número de eventos: dez vezes mais eventos, cerca de dez vezes mais espera.
+  # ES: El contraste. Con `send/2` simple el buffer es el buzón, y crece con el número de eventos:
+  #     diez veces más eventos, unas diez veces más espera.
   test "without backpressure the mailbox grows with the number of events" do
     small = PubsubBackpressure.push(1_000)
     large = PubsubBackpressure.push(10_000)

@@ -4,6 +4,9 @@ import type { Expr, Stmt } from "./frontend/ast";
 //     JavaScript values; a function is an object that also remembers where it was created.
 // PT: Um valor em tempo de execução da mini linguagem. Números, strings, booleanos e `nil` mapeiam
 //     direto para valores do JavaScript; uma função é um objeto que também lembra onde foi criada.
+// ES: Un valor en tiempo de ejecución del minilenguaje. Números, strings, booleanos y `nil` se
+//     mapean directo a valores de JavaScript; una función es un objeto que además recuerda dónde
+//     fue creada.
 export type Value = number | string | boolean | null | MiniFunction;
 
 // EN: A closure: the code of the function (its declaration in the tree) together with the
@@ -14,6 +17,10 @@ export type Value = number | string | boolean | null | MiniFunction;
 //     ativo quando o comando `fn` foi executado. Carregar esse ambiente é o truque todo: quando a
 //     função é chamada depois, mesmo após o bloco que a criou ter terminado, suas variáveis
 //     livres ainda são encontradas ali.
+// ES: Una closure: el código de la función (su declaración en el árbol) junto con el entorno que
+//     estaba activo cuando se ejecutó el comando `fn`. Cargar ese entorno es todo el truco:
+//     cuando la función se llama más tarde, incluso después de que terminó el bloque que la creó,
+//     sus variables libres aún se encuentran allí.
 export class MiniFunction {
 	constructor(
 		readonly declaration: Extract<Stmt, { kind: "Fn" }>,
@@ -43,6 +50,10 @@ export class RuntimeError extends Error {
 //     busca percorre essa cadeia para fora e para no primeiro nome encontrado, que é exatamente
 //     a regra "a declaração mais interna vence" (sombreamento). A cadeia segue onde o código foi
 //     ESCRITO, não quem o chamou: isso é escopo estático (léxico).
+// ES: Un entorno mapea nombres a valores de UN ámbito y apunta al ámbito que lo rodea. Una
+//     búsqueda recorre esa cadena hacia afuera y se detiene en el primer nombre encontrado, que
+//     es exactamente la regla "la declaración más interna gana" (sombreado). La cadena sigue
+//     dónde se ESCRIBIÓ el código, no quién lo llamó: eso es ámbito estático (léxico).
 export class Environment {
 	private readonly values = new Map<string, Value>();
 
@@ -79,6 +90,9 @@ export class Environment {
 // PT: Cada chamada de função da mini linguagem usa vários quadros de pilha do JavaScript, então
 //     uma recursão sem limite derrubaria o hospedeiro. O interpretador conta a profundidade e
 //     reporta o seu próprio erro.
+// ES: Cada llamada de función del minilenguaje usa varios marcos de pila de JavaScript, así que
+//     una recursión sin límite derribaría al anfitrión. El intérprete cuenta la profundidad y
+//     reporta su propio error.
 export const MAX_CALL_DEPTH = 200;
 
 export function formatValue(value: Value): string {
@@ -93,6 +107,7 @@ export function formatValue(value: Value): string {
 
 // EN: Only `false` and `nil` are false. Everything else, including 0 and "", is true.
 // PT: Apenas `false` e `nil` são falsos. Todo o resto, inclusive 0 e "", é verdadeiro.
+// ES: Solo `false` y `nil` son falsos. Todo lo demás, incluidos 0 y "", es verdadero.
 const isTruthy = (value: Value): boolean => value !== false && value !== null;
 
 // EN: How a statement finished: normally (`undefined`), or with a `return` that must unwind every
@@ -101,6 +116,9 @@ const isTruthy = (value: Value): boolean => value !== false && value !== null;
 // PT: Como um comando terminou: normalmente (`undefined`), ou com um `return` que precisa
 //     desfazer todos os blocos e laços ao redor até a chamada da função. Devolver este pequeno
 //     objeto pela recursão é o jeito de um interpretador de árvore fazer um salto.
+// ES: Cómo terminó un comando: normalmente (`undefined`), o con un `return` que debe deshacer
+//     todos los bloques y bucles que lo rodean hasta la llamada de la función. Devolver este
+//     pequeño objeto por la recursión es la manera en que un intérprete de árbol hace un salto.
 type Completion = { returned: Value } | undefined;
 
 // EN: A tree-walking interpreter has no separate "program" to run: the tree IS the program. To
@@ -109,6 +127,9 @@ type Completion = { returned: Value } | undefined;
 // PT: Um interpretador de árvore não tem um "programa" separado para rodar: a árvore É o
 //     programa. Para executar um nó ele executa os filhos necessários e combina os resultados,
 //     então a estrutura do interpretador espelha a da gramática, um caso por tipo de nó.
+// ES: Un intérprete de árbol no tiene un "programa" separado que ejecutar: el árbol ES el
+//     programa. Para ejecutar un nodo ejecuta los hijos que necesita y combina sus resultados,
+//     así que la estructura del intérprete refleja la de la gramática, un caso por tipo de nodo.
 export class Interpreter {
 	readonly globals = new Environment();
 	private depth = 0;
@@ -157,6 +178,8 @@ export class Interpreter {
 				//     ends the new scope is simply dropped, and its variables with it.
 				// PT: Um bloco ganha um escopo novo cujo pai é o atual. Quando o bloco termina o
 				//     escopo novo é simplesmente descartado, e suas variáveis junto.
+				// ES: Un bloque obtiene un ámbito nuevo cuyo padre es el actual. Cuando el bloque
+				//     termina, el ámbito nuevo simplemente se descarta, y sus variables con él.
 				return this.executeAll(statement.body, new Environment(env));
 			case "If":
 				if (isTruthy(this.evaluate(statement.condition, env))) {
@@ -214,6 +237,8 @@ export class Interpreter {
 				//     The result is the deciding operand itself, not a boolean made from it.
 				// PT: Curto-circuito: o lado direito só roda quando o esquerdo não decidiu. O
 				//     resultado é o próprio operando que decidiu, não um booleano feito dele.
+				// ES: Cortocircuito: el lado derecho solo corre cuando el izquierdo no decidió. El
+				//     resultado es el propio operando que decidió, no un booleano hecho a partir de él.
 				const left = this.evaluate(expression.left, env);
 				const decided = expression.operator === "or" ? isTruthy(left) : !isTruthy(left);
 				return decided ? left : this.evaluate(expression.right, env);
@@ -265,6 +290,7 @@ export class Interpreter {
 			case "%":
 				// EN: JavaScript would answer Infinity or NaN. The language treats it as an error.
 				// PT: O JavaScript responderia Infinity ou NaN. A linguagem trata como erro.
+				// ES: JavaScript respondería Infinity o NaN. El lenguaje lo trata como error.
 				if (right === 0) {
 					throw new RuntimeError("division by zero", line, column);
 				}
@@ -290,6 +316,10 @@ export class Interpreter {
 	//     argumentos. Seu pai é o ambiente que a função CAPTUROU, não o ambiente de quem chamou.
 	//     Com o ambiente do chamador como pai a linguagem teria escopo dinâmico, e closures não
 	//     funcionariam.
+	// ES: Una llamada crea la activación de la función: un entorno nuevo con los parámetros
+	//     ligados a los argumentos. Su padre es el entorno que la función CAPTURÓ, no el entorno de
+	//     quien llama. Con el entorno del llamador como padre el lenguaje tendría ámbito dinámico, y
+	//     las closures no funcionarían.
 	private call(expression: Extract<Expr, { kind: "Call" }>, env: Environment): Value {
 		const { line, column } = expression;
 		const callee = this.evaluate(expression.callee, env);

@@ -1,6 +1,6 @@
 # mini-language-parser
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 The front end of a small programming language, written by hand. It teaches **how source text becomes tokens and then a tree**: a lexer that reads characters and produces tokens with line and column, and a parser (recursive descent for statements, Pratt parsing for expressions) that produces an abstract syntax tree and reports every syntax error of a file in one run.
 

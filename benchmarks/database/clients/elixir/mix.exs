@@ -11,6 +11,7 @@ defmodule Client.MixProject do
 
   # EN: Exact version, and mix.lock pins every transitive package too.
   # PT: Versão exata, e o mix.lock fixa também todo pacote transitivo.
+  # ES: Versión exacta, y mix.lock fija también todo paquete transitivo.
   defp deps do
     [{:postgrex, "0.22.4"}]
   end

@@ -1,5 +1,6 @@
 # EN: Builds and tests the bytecode-vm mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto bytecode-vm. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto bytecode-vm. El único requisito es Docker.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 

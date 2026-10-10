@@ -27,6 +27,8 @@ type limiterCase struct {
 // decisions written there by hand.
 // PT: A tabela é o mesmo arquivo que os testes em TypeScript leem. As duas linguagens
 // precisam chegar às decisões escritas lá à mão.
+// ES: La tabla es el mismo archivo que leen las pruebas en TypeScript. Los dos lenguajes
+// deben llegar a los veredictos escritos allí a mano.
 func loadCases(t *testing.T) []limiterCase {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("..", "cases", "cases.json"))
@@ -105,6 +107,10 @@ func TestNewRejectsBadInput(t *testing.T) {
 // lógico. Com o mutex, passam exatamente Limit requisições. Remova o Lock de qualquer Allow
 // e este teste falha de duas formas: passam mais que Limit, e o `go test -race` denuncia a
 // corrida de dados.
+// ES: La parte específica de Go. 64 goroutines golpean el mismo limitador en el mismo instante
+// lógico. Con el mutex, pasan exactamente Limit solicitudes. Quita el Lock de cualquier Allow
+// y esta prueba falla de dos formas: pasan más que Limit, y `go test -race` delata la
+// carrera de datos.
 func TestConcurrentCallersNeverExceedTheLimit(t *testing.T) {
 	const goroutines, perGoroutine, limit = 64, 200, 100
 	for _, algorithm := range Algorithms {

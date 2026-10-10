@@ -1,6 +1,6 @@
 # HTTP server on raw TCP (MP-PROTO-3)
 
-> Versão em português: [docs/pt/protocols/http-server-raw-tcp.md](../../pt/protocols/http-server-raw-tcp.md)
+> Versão em português: [docs/pt/protocols/http-server-raw-tcp.md](../../pt/protocols/http-server-raw-tcp.md) · Versión en español: [docs/es/protocols/http-server-raw-tcp.md](../../es/protocols/http-server-raw-tcp.md)
 
 Mini-project: [`projects/protocols/http-server-raw-tcp`](../../../projects/protocols/http-server-raw-tcp/README.md). Quiz topic: `http-semantics`.
 
@@ -10,7 +10,7 @@ TCP gives a program a stream of bytes, with no idea of "message". HTTP/1.1 is a 
 
 ## The shape of a message
 
-```
+```text
 request line     POST /echo HTTP/1.1\r\n
 header fields    Host: localhost\r\n
                  Content-Length: 11\r\n

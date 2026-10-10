@@ -18,6 +18,7 @@ interface Module {
 
 // EN: Same tests, both versions (see tests/srp.test.ts for the idea).
 // PT: Mesmos testes, duas versões (a ideia está em tests/srp.test.ts).
+// ES: Mismas pruebas, dos versiones (la idea está en tests/srp.test.ts).
 function behaviour(name: string, module: Module): void {
 	describe(`lsp: ${name}`, () => {
 		test("charges the fee where a withdrawal is possible and the balance is enough", () => {
@@ -50,6 +51,8 @@ describe("lsp: what the refactor removes", () => {
 	//     concrete type, and an inherited method that only throws.
 	// PT: O sintoma de uma substituição quebrada, contado no código-fonte: clientes que perguntam
 	//     o tipo concreto, e um método herdado que só lança exceção.
+	// ES: El síntoma de una sustitución rota, contado en el código fuente: clientes que preguntan
+	//     el tipo concreto, y un método heredado que solo lanza una excepción.
 	test("the clients no longer ask for the concrete type", () => {
 		expect(code("before.ts").match(/instanceof/g)?.length).toBe(2);
 		expect(code("after.ts").match(/instanceof/g)).toBeNull();

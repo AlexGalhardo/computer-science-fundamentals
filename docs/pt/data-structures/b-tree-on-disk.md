@@ -1,6 +1,6 @@
 # Árvore B em disco
 
-> English version: [docs/en/data-structures/b-tree-on-disk.md](../../en/data-structures/b-tree-on-disk.md)
+> English version: [docs/en/data-structures/b-tree-on-disk.md](../../en/data-structures/b-tree-on-disk.md) · Versión en español: [docs/es/data-structures/b-tree-on-disk.md](../../es/data-structures/b-tree-on-disk.md)
 
 Mini-projeto: [projects/data-structures/b-tree-on-disk](../../../projects/data-structures/b-tree-on-disk). Linguagens: C++, Rust. Tópicos do quiz: `data-structures` / `binary-search-trees`, `avl-trees`, `red-black-trees`.
 
@@ -14,7 +14,7 @@ Uma árvore binária balanceada com um milhão de chaves tem cerca de 20 níveis
 
 Um nó guarda muitas chaves em ordem, e um filho entre cada par de chaves:
 
-```
+```text
                   [ 30 | 60 ]
                  /     |     \
      [ 10 | 20 ]   [ 40 | 50 ]   [ 70 | 80 | 90 ]
@@ -44,7 +44,7 @@ Os filhos são **números de página**, não endereços de memória. Um ponteiro
 
 **A inserção** desce uma única vez. Antes de entrar em um filho cheio ela o **divide** (split): a chave do meio sobe para o pai e metade das chaves vai para uma página nova.
 
-```
+```text
 antes:  pai [ 50 ]               filho [ 10 | 20 | 30 ]  (cheio, t = 2)
 depois: pai [ 20 | 50 ]          filhos [ 10 ] e [ 30 ]
 ```

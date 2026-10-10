@@ -6,6 +6,8 @@ use std::time::Instant;
 //     each row timed PASSES times.
 // PT: A mesma grade do benchmark em TypeScript: (dificuldade, blocos minerados nela), cada
 //     linha cronometrada PASSES vezes.
+// ES: La misma cuadrícula del benchmark en TypeScript: (dificultad, bloques minados en ella),
+//     cada fila cronometrada PASSES veces.
 pub const GRID: [(u32, u64); 4] = [(1, 40000), (2, 4000), (3, 500), (4, 150)];
 pub const PASSES: usize = 3;
 
@@ -27,6 +29,9 @@ pub struct Row {
 // PT: Minera `blocks` cabeçalhos fixos em uma dificuldade. Os cabeçalhos são os mesmos que o
 //     benchmark em TypeScript minera, então o número de tentativas precisa ser idêntico nas
 //     duas linguagens. Eles são montados antes de o relógio começar.
+// ES: Mina `blocks` encabezados fijos con una dificultad. Los encabezados son los mismos que
+//     mina el benchmark en TypeScript, así que el número de intentos debe ser idéntico en los
+//     dos lenguajes. Se arman antes de que empiece el reloj.
 pub fn measure(difficulty: u32, blocks: u64, passes: usize) -> Row {
     let merkle_root = sha256_hex("bench");
     let headers: Vec<Header> = (0..blocks)

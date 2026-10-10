@@ -6,6 +6,8 @@ import type { DiscountRule } from "../discount-rule";
 //     the lines and ignores the running total, the opposite of the coupons.
 // PT: Uma porcentagem sobre as linhas de um produto, a partir de uma quantidade mínima. Esta
 //     regra olha as linhas e ignora o total corrente, o oposto dos cupons.
+// ES: Un porcentaje sobre las líneas de un producto, a partir de una cantidad mínima. Esta regla
+//     mira las líneas e ignora el total corriente, lo opuesto a los cupones.
 export class BulkDiscount implements DiscountRule {
 	readonly #sku: string;
 	readonly #minQuantity: number;

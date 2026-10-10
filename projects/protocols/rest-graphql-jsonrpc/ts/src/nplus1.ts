@@ -4,6 +4,9 @@
 // PT: A requisição usada para mostrar o problema N+1: 100 livros, cada um com autor e resenhas.
 //     Ingênuo: 1 comando para a lista + 100 para os autores + 100 para as resenhas = 201.
 //     Em lote: 1 para a lista + 1 para todos os autores + 1 para todas as resenhas = 3.
+// ES: La petición usada para mostrar el problema N+1: 100 libros, cada uno con autor y reseñas.
+//     Ingenuo: 1 comando para la lista + 100 para los autores + 100 para las reseñas = 201.
+//     En lote: 1 para la lista + 1 para todos los autores + 1 para todas las reseñas = 3.
 
 import { z } from "zod";
 import { GraphqlClient } from "./clients";

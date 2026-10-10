@@ -4,6 +4,10 @@
 // PT: `bun run demo`. Roda um cenário pequeno por padrão, primeiro no desenho com defeito e
 //     depois na versão com o padrão, e mostra o que cada um fez. Toda linha vem da execução do
 //     código deste projeto, então a saída é um passeio curto pelas dez pastas de `src/`.
+// ES: `bun run demo`. Ejecuta un escenario pequeño por patrón, primero sobre el diseño que falla
+//     y luego sobre la versión con el patrón, y muestra lo que hizo cada uno. Cada línea sale de
+//     la ejecución del código de este proyecto, así que la salida es un recorrido corto por las
+//     diez carpetas de `src/`.
 
 import * as adapterAfter from "./adapter/after";
 import * as adapterBefore from "./adapter/before";
@@ -35,6 +39,7 @@ interface Scenario {
 
 // EN: A scenario may end in an exception on purpose. The message is part of the story.
 // PT: Um cenário pode terminar em exceção de propósito. A mensagem faz parte da história.
+// ES: Un escenario puede terminar en una excepción a propósito. El mensaje es parte de la historia.
 function attempt(run: () => string): string {
 	try {
 		return run();

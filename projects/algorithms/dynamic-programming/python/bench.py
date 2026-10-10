@@ -2,6 +2,7 @@
 
 EN: Solves one instance and prints one JSON line in the benchmark contract.
 PT: Resolve uma instância e imprime uma linha JSON no contrato de benchmark.
+ES: Resuelve una instancia e imprime una línea JSON en el contrato de benchmark.
 """
 
 import json
@@ -29,6 +30,9 @@ def main() -> None:
     # PT: As versões memoizadas descem tão fundo quanto o tamanho da entrada. O limite padrão de
     #     1000 quadros do Python é uma rede de segurança, não uma lei, então ele é aumentado
     #     para os tamanhos maiores.
+    # ES: Las versiones memoizadas descienden tan hondo como el largo de la entrada. El límite
+    #     por defecto de 1000 marcos de Python es una red de seguridad, no una ley, así que se
+    #     aumenta para los tamaños mayores.
     sys.setrecursionlimit(4 * MAX_N + 1000)
 
     start = time.perf_counter()

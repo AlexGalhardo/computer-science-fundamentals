@@ -13,6 +13,14 @@ passo até o anel sumir. Uma rede pequena, escrita à mão com NumPy, aprende a 
 somado. A geração parte de ruído puro e tira um pouco dele a cada passo, até os pontos voltarem
 para o anel. Segue o método de "Denoising Diffusion Probabilistic Models" (Ho, Jain e Abbeel,
 2020) com tudo pequeno o bastante para desenhar.
+
+ES: Un modelo de difusión en miniatura, con puntos de dos dimensiones en lugar de píxeles.
+
+La "imagen" aquí es un punto (x, y) sobre un anillo. El proceso directo suma ruido gaussiano paso
+a paso hasta que el anillo desaparece. Una red pequeña, escrita a mano con NumPy, aprende a decir
+qué ruido se sumó. La generación parte de ruido puro y le quita un poco en cada paso, hasta que
+los puntos vuelven al anillo. Sigue el método de "Denoising Diffusion Probabilistic Models" (Ho,
+Jain y Abbeel, 2020) con todo lo bastante pequeño como para dibujarlo.
 """
 
 import math
@@ -28,9 +36,13 @@ IntArray = npt.NDArray[np.int64]
 #     distance from any point p to it is exact and one line long: |length of p - radius|.
 # PT: A forma alvo é um anel de raio 1 centrado na origem. O anel foi escolhido porque a distância
 #     de qualquer ponto p até ele é exata e cabe em uma linha: |comprimento de p - raio|.
+# ES: La forma objetivo es un anillo de radio 1 centrado en el origen. Se eligió el anillo porque la
+#     distancia de cualquier punto p a él es exacta y cabe en una línea: |longitud de p - radio|.
 RING_RADIUS = 1.0
 # EN: Real data is never perfectly clean, so each point sits a little inside or outside the ring.
 # PT: Dado real nunca é perfeitamente limpo, então cada ponto fica um pouco dentro ou fora do anel.
+# ES: Un dato real nunca es perfectamente limpio, así que cada punto queda un poco dentro o fuera
+#     del anillo.
 RING_JITTER = 0.03
 
 # EN: The paper uses 1000 steps with beta going from 0.0001 to 0.02. Here there are 10 times
@@ -41,6 +53,10 @@ RING_JITTER = 0.03
 #     cada beta é 10 vezes maior, então a quantidade total de ruído é quase a mesma e o último
 #     passo continua sendo ruído puro. Passos maiores são uma aproximação mais grosseira, o que é
 #     aceitável para um anel e não seria para uma fotografia.
+# ES: El artículo usa 1000 pasos con beta yendo de 0,0001 a 0,02. Aquí hay 10 veces menos pasos y
+#     cada beta es 10 veces mayor, así que la cantidad total de ruido es casi la misma y el último
+#     paso sigue siendo ruido puro. Pasos mayores son una aproximación más gruesa, lo que es
+#     aceptable para un anillo y no lo sería para una fotografía.
 STEPS = 100
 BETA_START = 0.001
 BETA_END = 0.2
@@ -55,6 +71,8 @@ def make_ring(count: int, seed: int) -> Array:
     """EN: `count` points on the ring: a random angle, and a radius that is almost RING_RADIUS.
 
     PT: `count` pontos sobre o anel: um ângulo aleatório, e um raio que é quase RING_RADIUS.
+
+    ES: `count` puntos sobre el anillo: un ángulo aleatorio, y un radio que es casi RING_RADIUS.
     """
     rng = np.random.default_rng(seed)
     angle = rng.uniform(0.0, 2.0 * math.pi, count)
@@ -69,6 +87,10 @@ class Schedule:
 
     PT: Quanto ruído cada passo soma. Todos os vetores têm STEPS + 1 posições para que o índice t
     seja o passo t: o índice 0 é o dado limpo (beta 0, alpha_bar 1) e o índice STEPS é o último.
+
+    ES: Cuánto ruido suma cada paso. Todos los vectores tienen STEPS + 1 posiciones para que el
+    índice t sea el paso t: el índice 0 es el dato limpio (beta 0, alpha_bar 1) y el índice STEPS
+    es el último.
     """
 
     betas: Array
@@ -91,6 +113,11 @@ def make_schedule(steps: int = STEPS, start: float = BETA_START, end: float = BE
     #     alpha_t = 1 - beta_t é a parte do ponto anterior que sobrevive ao passo, e
     #     alpha_bar_t = alpha_1 x alpha_2 x ... x alpha_t é a parte do ponto ORIGINAL que ainda
     #     está lá depois de t passos. Começa em 1 e precisa terminar perto de 0.
+    # ES: beta_t es la varianza del ruido sumado en el paso t. Crece en línea recta: los primeros
+    #     pasos casi no tocan el dato, los últimos suman mucho.
+    #     alpha_t = 1 - beta_t es la parte del punto anterior que sobrevive al paso, y
+    #     alpha_bar_t = alpha_1 x alpha_2 x ... x alpha_t es la parte del punto ORIGINAL que sigue
+    #     ahí tras t pasos. Empieza en 1 y tiene que terminar cerca de 0.
     betas = np.concatenate([[0.0], np.linspace(start, end, steps)])
     alphas = 1.0 - betas
     return Schedule(betas=betas, alphas=alphas, alpha_bars=np.cumprod(alphas))
@@ -106,6 +133,11 @@ def forward_step(previous: Array, t: int, schedule: Schedule, rng: np.random.Gen
 
     x_t = sqrt(1 - beta_t) x_(t-1) + sqrt(beta_t) ruído. O encolhimento é o que impede a variância
     de crescer sem limite: com variância 1 antes do passo, (1 - beta) x 1 + beta = 1.
+
+    ES: Un paso del proceso directo: encoge un poco el punto y suma un poco de ruido.
+
+    x_t = sqrt(1 - beta_t) x_(t-1) + sqrt(beta_t) ruido. El encogimiento es lo que impide que la
+    varianza crezca sin límite: con varianza 1 antes del paso, (1 - beta) x 1 + beta = 1.
     """
     beta = schedule.betas[t]
     return math.sqrt(1.0 - beta) * previous + math.sqrt(beta) * rng.standard_normal(previous.shape)
@@ -117,6 +149,9 @@ def forward_chain(
     """EN: Runs the forward process step by step and returns the points at the steps in `keep`.
 
     PT: Roda o processo direto passo a passo e devolve os pontos nos passos listados em `keep`.
+
+    ES: Ejecuta el proceso directo paso a paso y devuelve los puntos en los pasos listados en
+    `keep`.
     """
     rng = np.random.default_rng(seed)
     points = start
@@ -142,6 +177,13 @@ def noisy_at(start: Array, t: int | IntArray, schedule: Schedule, noise: Array) 
     gaussianos é de novo ruído gaussiano, então t ruídos pequenos podem virar um ruído grande. O
     treino depende disto: cada exemplo custa uma multiplicação em vez de até STEPS passos.
     `t` pode ser um passo para todos os pontos ou um passo por ponto.
+
+    ES: El atajo: el punto en el paso t de un solo salto, sin recorrer los pasos.
+
+    x_t = sqrt(alpha_bar_t) x_0 + sqrt(1 - alpha_bar_t) ruido. Funciona porque una suma de ruidos
+    gaussianos es de nuevo ruido gaussiano, así que t ruidos pequeños pueden volverse un ruido
+    grande. El entrenamiento depende de esto: cada ejemplo cuesta una multiplicación en lugar de
+    hasta STEPS pasos. `t` puede ser un paso para todos los puntos o un paso por punto.
     """
     alpha_bar = np.reshape(schedule.alpha_bars[t], (-1, 1))
     return np.sqrt(alpha_bar) * start + np.sqrt(1.0 - alpha_bar) * noise
@@ -162,6 +204,14 @@ def time_embedding(t: IntArray, steps: int) -> Array:
     ruído puro) são tarefas diferentes. Um número cru seria difícil de usar, então o passo é
     descrito por senos e cossenos de várias velocidades: as ondas lentas dizem "cedo ou tarde", as
     rápidas separam passos vizinhos. É a mesma ideia da codificação de posição de um transformer.
+
+    ES: Convierte el número del paso en 16 números que la red puede usar.
+
+    La red necesita saber el paso, porque quitar ruido en el paso 5 (casi limpio) y en el paso 95
+    (casi ruido puro) son tareas distintas. Un número crudo sería difícil de usar, así que el paso
+    se describe con senos y cosenos de varias velocidades: las ondas lentas dicen "temprano o
+    tarde", las rápidas separan pasos vecinos. Es la misma idea de la codificación de posición de
+    un transformer.
     """
     frequencies = 2.0 ** np.arange(TIME_FREQUENCIES) * (math.pi / 8.0)
     angles = (np.asarray(t, dtype=np.float64) / steps)[:, None] * frequencies[None, :]
@@ -173,6 +223,8 @@ class Network:
     """EN: A multilayer perceptron: a list of weight matrices and a list of bias vectors.
 
     PT: Um perceptron multicamadas: uma lista de matrizes de pesos e uma lista de vetores de viés.
+
+    ES: Un perceptrón multicapa: una lista de matrices de pesos y una lista de vectores de sesgo.
     """
 
     weights: list[Array]
@@ -191,6 +243,9 @@ def make_network(sizes: tuple[int, ...], seed: int) -> Network:
     # PT: Os pesos começam como números aleatórios pequenos, na escala 1 / sqrt(entradas da
     #     camada), para o sinal não explodir nem morrer ao atravessar as camadas. Os vieses
     #     começam em zero.
+    # ES: Los pesos empiezan como números aleatorios pequeños, en la escala 1 / sqrt(entradas de la
+    #     capa), para que la señal no explote ni muera al atravesar las capas. Los sesgos empiezan
+    #     en cero.
     rng = np.random.default_rng(seed)
     pairs = list(zip(sizes[:-1], sizes[1:], strict=True))
     weights = [rng.standard_normal((n_in, n_out)) / math.sqrt(n_in) for n_in, n_out in pairs]
@@ -205,6 +260,10 @@ def forward_pass(network: Network, inputs: Array) -> list[Array]:
     PT: Roda a rede e guarda a saída de cada camada, porque a volta (backward) precisa delas. As
     camadas escondidas usam tanh. A última não tem ativação: um valor de ruído pode ser qualquer
     número real.
+
+    ES: Ejecuta la red y guarda la salida de cada capa, porque la vuelta (backward) las necesita.
+    Las capas ocultas usan tanh. La última no tiene activación: un valor de ruido puede ser
+    cualquier número real.
     """
     activations = [inputs]
     last = len(network.weights) - 1
@@ -230,6 +289,13 @@ def backward_pass(
     camada out = in @ W + b: dPerda/dW = in.T @ gradient, dPerda/db = soma de gradient no lote, e
     o gradiente entregue à camada anterior é gradient @ W.T. Atravessar uma tanh multiplica pela
     derivada dela, 1 - tanh^2, e é por isso que a ida guardou as saídas.
+
+    ES: Backpropagation: la regla de la cadena aplicada de la última capa a la primera.
+
+    `gradient` siempre quiere decir "cuánto cambia la pérdida cuando cambia la salida de esta
+    capa". Para una capa out = in @ W + b: dPérdida/dW = in.T @ gradient, dPérdida/db = suma de
+    gradient en el lote, y el gradiente entregado a la capa anterior es gradient @ W.T. Atravesar
+    una tanh multiplica por su derivada, 1 - tanh^2, y por eso la ida guardó las salidas.
     """
     weight_gradients: list[Array] = []
     bias_gradients: list[Array] = []
@@ -248,6 +314,9 @@ def predict_noise(network: Network, noisy: Array, t: IntArray, steps: int) -> li
 
     PT: A rede lê o ponto com ruído e o passo, e responde com o palpite do ruído (dois números por
     ponto). Devolve a saída de todas as camadas; o palpite é a última.
+
+    ES: La red lee el punto con ruido y el paso, y responde con la estimación del ruido (dos
+    números por punto). Devuelve la salida de todas las capas; la estimación es la última.
     """
     return forward_pass(network, np.concatenate([noisy, time_embedding(t, steps)], axis=1))
 
@@ -264,6 +333,13 @@ def noise_loss(
 
     Devolve a perda e os gradientes, na ordem de Network.parameters(). A derivada de
     mean((palpite - ruído)^2) em relação ao palpite é 2 (palpite - ruído) / número de valores.
+
+    ES: El objetivo del entrenamiento: error cuadrático medio entre el ruido verdadero y la
+    estimación.
+
+    Devuelve la pérdida y los gradientes, en el orden de Network.parameters(). La derivada de
+    mean((estimación - ruido)^2) respecto a la estimación es 2 (estimación - ruido) / número de
+    valores.
     """
     activations = predict_noise(network, noisy, t, steps)
     error = activations[-1] - noise
@@ -285,6 +361,13 @@ class Adam:
     cada peso anda cerca de `rate` por passo qualquer que seja a escala do seu gradiente. As duas
     médias começam em zero, e a divisão por (1 - decay^step) corrige esse viés nos primeiros
     passos.
+
+    ES: El optimizador Adam. El descenso de gradiente simple usa un tamaño de paso para todos los
+    pesos. Adam guarda, para cada peso, una media móvil del gradiente (`mean`, la dirección) y del
+    gradiente al cuadrado (`square`, el tamaño típico), y divide una entre la raíz de la otra, así
+    que cada peso avanza cerca de `rate` por paso sea cual sea la escala de su gradiente. Las dos
+    medias empiezan en cero, y la división entre (1 - decay^step) corrige ese sesgo en los primeros
+    pasos.
     """
 
     rate: float
@@ -311,6 +394,7 @@ class Adam:
             square += (1.0 - self.square_decay) * gradient**2
             # EN: `-=` changes the array in place, so the network sees the new weights.
             # PT: `-=` altera o vetor no lugar, então a rede enxerga os pesos novos.
+            # ES: `-=` modifica el vector en su lugar, así que la red ve los pesos nuevos.
             parameter -= rate * (mean / mean_fix) / (np.sqrt(square / square_fix) + self.epsilon)
 
 
@@ -334,6 +418,7 @@ class Trained:
     data: Array
     # EN: Mean loss of each block of `log_every` iterations, for the loss curve.
     # PT: Perda média de cada bloco de `log_every` iterações, para a curva de perda.
+    # ES: Pérdida media de cada bloque de `log_every` iteraciones, para la curva de pérdida.
     losses: list[float]
 
 
@@ -357,6 +442,16 @@ def train(config: TrainConfig | None = None) -> Trained:
     5. move os pesos para o erro quadrático diminuir.
 
     Os rótulos (o ruído) foram criados por nós, então isto é aprendizado supervisionado comum.
+
+    ES: Entrena el predictor de ruido. Cada iteración es la receta del artículo:
+
+    1. toma un lote de puntos limpios x_0 de los datos;
+    2. sortea un paso t para cada uno;
+    3. sortea el ruido y salta a x_t con el atajo;
+    4. pregunta a la red cuál fue el ruido, dados x_t y t;
+    5. mueve los pesos para que el error cuadrático disminuya.
+
+    Las etiquetas (el ruido) las creamos nosotros, así que esto es aprendizaje supervisado común.
     """
     config = config or TrainConfig()
     schedule = make_schedule()
@@ -377,6 +472,8 @@ def train(config: TrainConfig | None = None) -> Trained:
         #     adjustments at the end.
         # PT: O tamanho do passo cai suavemente até zero (meia onda de cosseno): movimentos
         #     grandes primeiro, ajustes finos no fim.
+        # ES: El tamaño del paso cae suavemente hasta cero (media onda de coseno): movimientos
+        #     grandes primero, ajustes finos al final.
         rate = config.rate * 0.5 * (1.0 + math.cos(math.pi * iteration / config.iterations))
         optimiser.update(network.parameters(), gradients, rate)
         block.append(loss)
@@ -406,6 +503,15 @@ def reverse_step(
     uma das duas escolhas do artigo): a rede dá a resposta média, e sem esse ruído todos os pontos
     escorregariam para a mesma média borrada. `noise` é None no último passo, em que o resultado
     precisa sair limpo.
+
+    ES: Un paso de la generación, de x_t a x_(t-1).
+
+    La red dice qué ruido ve en x_t. Solo se retira la parte que pertenece a este paso:
+    (1 - alpha_t) / sqrt(1 - alpha_bar_t). Dividir entre sqrt(alpha_t) deshace el encogimiento del
+    paso directo. Después se suma de vuelta un poco de ruido nuevo (sigma_t = sqrt(beta_t) aquí,
+    una de las dos opciones del artículo): la red da la respuesta media, y sin ese ruido todos los
+    puntos resbalarían hacia la misma media borrosa. `noise` es None en el último paso, en el que
+    el resultado tiene que salir limpio.
     """
     steps = np.full(len(points), t, dtype=np.int64)
     guess = predict_noise(network, points, steps, schedule.steps)[-1]
@@ -430,6 +536,11 @@ def sample(
     reverso STEPS vezes, chamando a rede uma vez por passo. É por isso que um modelo de difusão é
     mais lento que um modelo que responde em uma passada só. Devolve os pontos nos passos de
     `keep`; o passo 0 é o resultado final.
+
+    ES: Genera `count` puntos nuevos. Parte de ruido gaussiano puro (paso STEPS) y aplica el paso
+    inverso STEPS veces, llamando a la red una vez por paso. Por eso un modelo de difusión es más
+    lento que un modelo que responde en una sola pasada. Devuelve los puntos en los pasos de
+    `keep`; el paso 0 es el resultado final.
     """
     rng = np.random.default_rng(seed)
     schedule = trained.schedule
@@ -447,6 +558,8 @@ def ring_distance(points: Array) -> float:
     """EN: Mean distance from the points to the ring: |length of the point - radius|.
 
     PT: Distância média dos pontos até o anel: |comprimento do ponto - raio|.
+
+    ES: Distancia media de los puntos al anillo: |longitud del punto - radio|.
     """
     return float(np.mean(np.abs(np.linalg.norm(points, axis=1) - RING_RADIUS)))
 
@@ -461,6 +574,11 @@ def sector_counts(points: Array, sectors: int = SECTORS) -> list[int]:
 
     Uma distância média pequena não basta: um modelo que põe todos os pontos no mesmo lugar do
     anel também a teria. Uma fatia vazia revela essa falha.
+
+    ES: Corta el plano en porciones iguales, como una pizza, y cuenta los puntos de cada una.
+
+    Una distancia media pequeña no basta: un modelo que pone todos los puntos en el mismo lugar
+    del anillo también la tendría. Una porción vacía revela ese fallo.
     """
     angle = np.arctan2(points[:, 1], points[:, 0]) + math.pi
     index = np.minimum((angle / (2.0 * math.pi) * sectors).astype(np.int64), sectors - 1)
@@ -485,6 +603,14 @@ def ks_statistic(values: Array) -> float:
     normal padrão diz que essa parte deveria ser normal_cdf(valor). A estatística é a maior
     diferença entre as duas, em qualquer lugar: 0 seria um encaixe perfeito. Para uma amostra que
     é mesmo normal ela fica abaixo de cerca de 1,95 / sqrt(n) em 999 de 1000 casos.
+
+    ES: Estadístico de Kolmogorov-Smirnov contra la normal estándar.
+
+    Ordena los valores. Después del i-ésimo de n valores, la parte de la muestra ya vista es i / n.
+    Una normal estándar dice que esa parte debería ser normal_cdf(valor). El estadístico es la
+    mayor diferencia entre las dos, en cualquier lugar: 0 sería un ajuste perfecto. Para una
+    muestra que de verdad es normal queda por debajo de cerca de 1,95 / sqrt(n) en 999 de 1000
+    casos.
     """
     ordered = np.sort(values)
     count = len(ordered)
@@ -499,6 +625,8 @@ class GaussianReport:
     """EN: What a cloud of 2D points must show to pass for standard Gaussian noise.
 
     PT: O que uma nuvem de pontos 2D precisa mostrar para passar por ruído gaussiano padrão.
+
+    ES: Lo que una nube de puntos 2D necesita mostrar para pasar por ruido gaussiano estándar.
     """
 
     mean: tuple[float, float]
@@ -517,6 +645,10 @@ class GaussianReport:
         PT: As verificações que falham, com tolerâncias para uma amostra de `count` pontos. Cada
         tolerância vale cerca de 4 erros padrão, então ruído de verdade passa quase sempre. Uma
         lista vazia quer dizer "estes testes não distinguem os pontos de ruído gaussiano".
+
+        ES: Las comprobaciones que fallan, con tolerancias para una muestra de `count` puntos. Cada
+        tolerancia vale cerca de 4 errores estándar, así que el ruido de verdad pasa casi siempre.
+        Una lista vacía quiere decir "estas pruebas no distinguen los puntos de ruido gaussiano".
         """
         unit = 1.0 / math.sqrt(count)
         checks = {
@@ -539,6 +671,10 @@ def gaussian_report(points: Array, start: Array) -> GaussianReport:
     PT: Mede `points` contra uma normal padrão: média 0 e variância 1 em cada coordenada, nenhuma
     correlação entre x e y, nenhuma correlação com o ponto de onde cada um partiu (`start`),
     68,27% dos valores a até 1 e 95,45% a até 2 desvios padrão, e a estatística KS.
+
+    ES: Mide `points` contra una normal estándar: media 0 y varianza 1 en cada coordenada, ninguna
+    correlación entre x e y, ninguna correlación con el punto del que partió cada uno (`start`),
+    68,27% de los valores a hasta 1 y 95,45% a hasta 2 desviaciones estándar, y el estadístico KS.
     """
 
     def pair(values: Array) -> tuple[float, float]:

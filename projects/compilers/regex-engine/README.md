@@ -1,6 +1,6 @@
 # regex-engine
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A regular expression engine built the textbook way, in Go. It teaches **how a regular expression becomes an automaton**: the pattern is parsed into a tree, the tree becomes a nondeterministic automaton (Thompson construction), and that becomes a deterministic one (subset construction). A naive backtracking matcher is included only to show what the automata avoid.
 

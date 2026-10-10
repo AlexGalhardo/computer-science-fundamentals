@@ -1,6 +1,6 @@
 # Balanced search trees
 
-> Versão em português: [docs/pt/data-structures/balanced-trees.md](../../pt/data-structures/balanced-trees.md)
+> Versão em português: [docs/pt/data-structures/balanced-trees.md](../../pt/data-structures/balanced-trees.md) · Versión en español: [docs/es/data-structures/balanced-trees.md](../../es/data-structures/balanced-trees.md)
 
 Mini-project: [projects/data-structures/balanced-trees](../../../projects/data-structures/balanced-trees). Languages: C++, Java. Quiz topics: `data-structures` / `binary-search-trees`, `avl-trees`, `red-black-trees`.
 
@@ -10,7 +10,7 @@ A binary search tree answers "is this key here?" by going left or right at each 
 
 When the keys arrive already sorted, each one is larger than all the others and goes to the right of the last one. The tree becomes a linked list:
 
-```
+```text
 insert 10, 20, 30, 40          a balanced tree with the same keys
 
 10                                   20
@@ -26,7 +26,7 @@ insert 10, 20, 30, 40          a balanced tree with the same keys
 
 A rotation swaps the roles of a node and one of its children, changing three pointers:
 
-```
+```text
       x                 y
      / \               / \
     A   y     -->     x   C        left rotation at x

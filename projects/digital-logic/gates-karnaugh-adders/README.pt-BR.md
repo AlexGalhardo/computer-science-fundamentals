@@ -1,6 +1,6 @@
 # gates-karnaugh-adders
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Mini-projeto MP-DL-1. Ele ensina **como uma função booleana vira um circuito**, em três passos: uma expressão é analisada e simulada com portas para gerar a sua tabela-verdade, uma tabela-verdade é minimizada pelo método de Quine-McCluskey (o mapa de Karnaugh feito em forma de tabela), e portas são ligadas para formar um meio somador, um somador completo e um somador de 8 bits com propagação de vai-um que soma de verdade.
 

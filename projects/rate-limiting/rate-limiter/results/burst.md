@@ -31,3 +31,17 @@ Every algorithm is configured as 10 requests per 1000 ms and receives the same 8
 | Leaky bucket (saindo da fila) | 5 | 11 | 29 | 10 | 55 | 10 |
 
 ![Gráfico](burst.pt-BR.svg)
+
+## Solicitudes admitidas (Español)
+
+| Serie | bajo el límite (0-1 s) | ráfaga en la frontera (1-3 s) | sobrecarga continua (3-6 s) | ráfaga instantánea tras el silencio (6-8 s) | Total | peor intervalo de 1 s |
+| --- | --- | --- | --- | --- | --- | --- |
+| Tráfico ofrecido | 5 | 20 | 40 | 15 | 80 | 20 |
+| Ventana fija | 5 | 20 | 20 | 10 | 55 | 20 |
+| Ventana deslizante (log) | 5 | 10 | 20 | 10 | 45 | 10 |
+| Ventana deslizante (contador) | 5 | 11 | 20 | 10 | 46 | 11 |
+| Token bucket | 5 | 11 | 29 | 10 | 55 | 19 |
+| Leaky bucket (admitidas) | 5 | 11 | 29 | 10 | 55 | 19 |
+| Leaky bucket (saliendo de la cola) | 5 | 11 | 29 | 10 | 55 | 10 |
+
+![Gráfico](burst.es.svg)

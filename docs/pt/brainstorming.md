@@ -1,7 +1,7 @@
 # Registro do brainstorming
 
-> English version: [docs/en/brainstorming.md](../en/brainstorming.md)
-
+> English version: [docs/en/brainstorming.md](../en/brainstorming.md) · Versión en español: [docs/es/brainstorming.md](../es/brainstorming.md)
+>
 > Nota (2026-10-08): a pasta `references/` citada neste documento foi removida do repositório e do histórico. As referências de estudo estão em [REFERENCES.pt-BR.md](../../REFERENCES.pt-BR.md).
 
 Registro das perguntas feitas no brainstorming da Fase 2, em 2026-10-07, com a opção escolhida e as descartadas. As decisões consolidadas estão em [decisions.md](decisions.md), o desenho do quiz em [quiz.md](quiz.md) e o backlog em [mini-project-catalog.md](mini-project-catalog.md).

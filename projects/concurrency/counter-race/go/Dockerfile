@@ -3,6 +3,9 @@
 # PT: O contexto de build é a pasta do mini-projeto, então o mesmo arquivo serve ao docker
 #     compose e ao runner de benchmark. O detector de corrida precisa de cgo e de um compilador
 #     C, que esta imagem tem.
+# ES: El contexto de build es la carpeta del mini-proyecto, así que el mismo archivo sirve a docker
+#     compose y al runner de benchmark. El detector de carreras necesita cgo y un compilador
+#     C, que esta imagen tiene.
 FROM golang:1.27.1-bookworm
 WORKDIR /src
 COPY go/ .
@@ -10,5 +13,7 @@ COPY go/ .
 #     demo binary lives outside /app (the runner mounts the project over /app).
 # PT: Compilado aqui, enquanto o build ainda tem o cache da toolchain, para os testes começarem
 #     rápido e o binário da demo ficar fora de /app (o runner monta o projeto sobre /app).
+# ES: Compilado aquí, mientras el build todavía tiene la caché de la toolchain, para que las pruebas
+#     empiecen rápido y el binario de la demo quede fuera de /app (el runner monta el proyecto sobre /app).
 RUN go build -o /usr/local/bin/counter-race-go ./cmd/demo && go build -race -o /dev/null ./cmd/demo
 CMD ["sh", "-c", "test -z \"$(gofmt -l .)\" && go vet ./... && go test -v -count=1 ./..."]

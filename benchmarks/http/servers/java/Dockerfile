@@ -4,6 +4,9 @@
 # PT: Servidor HTTP em Java do benchmark. Os três jars do Jackson são baixados do Maven Central
 #     em versões fixas (um artefato publicado lá nunca muda), o que evita uma ferramenta de
 #     build inteira para um arquivo fonte.
+# ES: Servidor HTTP en Java del benchmark. Los tres jars de Jackson se descargan de Maven Central
+#     en versiones fijas (un artefacto publicado allí nunca cambia), lo que evita una herramienta
+#     de build completa para un archivo fuente.
 FROM eclipse-temurin:25.0.4.1_1-jdk-noble
 ARG JACKSON_VERSION=3.2.3
 ARG JACKSON_ANNOTATIONS_VERSION=2.22

@@ -14,6 +14,8 @@ public final class Demo {
   //     scales.
   // PT: 8 workers por padrão. O benchmark define WORKERS como 1, 2, 4 e 8 para mostrar como cada
   //     correção escala.
+  // ES: 8 workers por defecto. El benchmark define WORKERS como 1, 2, 4 y 8 para mostrar cómo
+  //     escala cada corrección.
   private static final int WORKERS =
       Math.max(1, Integer.parseInt(System.getenv().getOrDefault("WORKERS", "8")));
 
@@ -77,6 +79,7 @@ public final class Demo {
     Measurement m = measure(variant, n);
     // EN: The checksum is the final value. For a correct counter it equals n.
     // PT: O checksum é o valor final. Em um contador correto ele é igual a n.
+    // ES: El checksum es el valor final. En un contador correcto es igual a n.
     System.out.printf(
         Locale.ROOT,
         "{\"n\":%d,\"elapsedMs\":%.3f,\"memoryKb\":%d,\"language\":\"java\","

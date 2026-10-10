@@ -20,6 +20,9 @@ const usage = "usage: scaling-by-cores <primes|mandelbrot>-<seq|static|dynamic> 
 // PT: Pico de memória residente deste processo, como o kernel do Linux informa em
 // /proc/self/status (a linha VmHWM, em kB). O benchmark sempre roda em um contêiner
 // Linux, e fora do Linux o campo é informado como 0 em vez de falhar.
+// ES: Pico de memoria residente de este proceso, como lo informa el kernel de Linux en
+// /proc/self/status (la línea VmHWM, en kB). El benchmark siempre corre en un contenedor
+// Linux, y fuera de Linux el campo se informa como 0 en lugar de fallar.
 func peakMemoryKb() uint64 {
 	status, err := os.ReadFile("/proc/self/status")
 	if err != nil {
@@ -66,6 +69,9 @@ func run(implementation string, n uint64, workers int) (string, bool) {
 	// PT: n é o número de itens nas duas cargas, então um único tamanho compara as duas: os
 	// inteiros 1..n testados quanto à primalidade, ou os pixels de uma imagem quadrada
 	// cujo lado é a raiz quadrada inteira de n.
+	// ES: n es el número de ítems en las dos cargas, así que un solo tamaño compara las dos: los
+	// enteros 1..n probados por primalidad, o los píxeles de una imagen cuadrada
+	// cuyo lado es la raíz cuadrada entera de n.
 	case "primes":
 		var stats primeStats
 		if sequential {
@@ -120,6 +126,8 @@ func main() {
 	// the work: it is the serial tail every run pays.
 	// PT: Só o trabalho é cronometrado, não a inicialização do processo. O checksum faz parte
 	// do trabalho: é a cauda serial que toda execução paga.
+	// ES: Solo se cronometra el trabajo, no el arranque del proceso. El checksum forma parte
+	// del trabajo: es la cola serial que paga toda ejecución.
 	start := time.Now()
 	checksum, ok := run(implementation, n, workers)
 	if !ok {
@@ -129,6 +137,7 @@ func main() {
 
 	// EN: The benchmark contract: one JSON object on the last line of output.
 	// PT: O contrato de benchmark: um objeto JSON na última linha da saída.
+	// ES: El contrato de benchmark: un objeto JSON en la última línea de la salida.
 	fmt.Printf(
 		"{\"n\":%d,\"elapsedMs\":%.3f,\"memoryKb\":%d,\"language\":\"go\",\"implementation\":%q,\"checksum\":%q}\n",
 		n, elapsedMs, peakMemoryKb(), implementation, checksum,

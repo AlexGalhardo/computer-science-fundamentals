@@ -8,6 +8,11 @@
 //     nós, então achar tudo o que começa com um prefixo é descer pelo prefixo uma vez e recolher
 //     a subárvore abaixo dele. O custo depende do tamanho do prefixo e da quantidade de
 //     respostas, não de quantas palavras estão guardadas.
+// ES: Trie (árbol de prefijos): un árbol en que cada arista es un carácter y cada camino desde
+//     la raíz deletrea un prefijo. Las palabras que empiezan igual comparten los mismos primeros
+//     nodos, así que encontrar todo lo que empieza con un prefijo es bajar por el prefijo una vez
+//     y recoger el subárbol debajo de él. El costo depende del tamaño del prefijo y de la cantidad
+//     de respuestas, no de cuántas palabras están guardadas.
 
 interface TrieNode {
 	children: Map<string, TrieNode>;
@@ -15,6 +20,8 @@ interface TrieNode {
 	//     "card"), so the end of a word is an explicit mark, not "has no children".
 	// PT: Um nó pode ser o fim de uma palavra e também o meio de outras mais longas ("car"
 	//     dentro de "card"), então o fim de palavra é uma marca explícita, não "não tem filhos".
+	// ES: Un nodo puede ser el final de una palabra y también el medio de otras más largas ("car"
+	//     dentro de "card"), así que el fin de palabra es una marca explícita, no "no tiene hijos".
 	isWord: boolean;
 }
 
@@ -64,6 +71,8 @@ export class Trie {
 		//     alphabetical order so that they are popped, and therefore listed, in order.
 		// PT: Percurso em profundidade com pilha explícita. Os filhos são empilhados em ordem
 		//     alfabética invertida para serem desempilhados, e portanto listados, em ordem.
+		// ES: Recorrido en profundidad con pila explícita. Los hijos se apilan en orden
+		//     alfabético invertido para ser desapilados, y por tanto listados, en orden.
 		const stack: [TrieNode, string][] = [[start, prefix]];
 		for (let top = stack.pop(); top !== undefined; top = stack.pop()) {
 			const [node, text] = top;

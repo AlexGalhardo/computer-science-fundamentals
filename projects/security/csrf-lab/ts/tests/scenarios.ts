@@ -4,6 +4,8 @@ import { FAKE_USER, FORGED_EMAIL, LEGITIMATE_NEW_EMAIL, SESSION_COOKIE } from ".
 //     scenario functions below run against the vulnerable app and against the fixed one.
 // PT: A menor coisa que os dois apps têm em comum: algo que responde a uma Request. As mesmas
 //     funções de cenário abaixo rodam contra o app vulnerável e contra o corrigido.
+// ES: Lo mínimo que tienen en común las dos apps: algo que responde a una Request. Las mismas
+//     funciones de escenario de abajo corren contra la app vulnerable y contra la corregida.
 export type Handler = { handle(request: Request): Promise<Response> };
 
 const BASE = "http://app-under-test:3000";
@@ -20,6 +22,7 @@ export type LoggedIn = {
 	setCookie: string;
 	// EN: What a browser would send back: only `name=value`, never the attributes.
 	// PT: O que um navegador devolveria: apenas `nome=valor`, nunca os atributos.
+	// ES: Lo que devolvería un navegador: solo `nombre=valor`, nunca los atributos.
 	cookieHeader: string;
 };
 
@@ -44,6 +47,9 @@ export async function logIn(app: Handler): Promise<LoggedIn> {
 // PT: Estas duas funções encenam o pior caso: um navegador que ANEXOU o cookie de sessão a uma
 //     requisição escrita por outro site. É o que acontece quando o `SameSite` não a barra. A
 //     página forjadora conhece o caminho e o nome do campo, e mais nada.
+// ES: Estas dos funciones escenifican el peor caso: un navegador que ADJUNTÓ la cookie de sesión a una
+//     solicitud escrita por otro sitio. Es lo que ocurre cuando `SameSite` no la bloquea. La
+//     página falsificadora conoce la ruta y el nombre del campo, y nada más.
 export async function forgedPost(app: Handler, cookieHeader: string): Promise<Response> {
 	const init = form({ email: FORGED_EMAIL });
 	return app.handle(
@@ -72,6 +78,8 @@ export async function readCsrfTokenFromPage(app: Handler, cookieHeader: string):
 //     whatever hidden fields the server put there.
 // PT: O usuário legítimo: abre a página do próprio app e envia o formulário do próprio app com
 //     os campos ocultos que o servidor tiver colocado ali.
+// ES: El usuario legítimo: abre la página de la propia app y envía el formulario de la propia app con
+//     los campos ocultos que el servidor haya puesto allí.
 export async function legitimateChange(app: Handler, cookieHeader: string): Promise<Response> {
 	const token = await readCsrfTokenFromPage(app, cookieHeader);
 	const fields: Record<string, string> = { email: LEGITIMATE_NEW_EMAIL };

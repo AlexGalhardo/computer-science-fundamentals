@@ -1,6 +1,6 @@
 # Cache LRU, filtro de Bloom e trie
 
-> English version: [docs/en/data-structures/lru-bloom-trie.md](../../en/data-structures/lru-bloom-trie.md)
+> English version: [docs/en/data-structures/lru-bloom-trie.md](../../en/data-structures/lru-bloom-trie.md) · Versión en español: [docs/es/data-structures/lru-bloom-trie.md](../../es/data-structures/lru-bloom-trie.md)
 
 Mini-projeto: [projects/data-structures/lru-bloom-trie](../../../projects/data-structures/lru-bloom-trie). Linguagens: TypeScript, Go. Tópicos do quiz: `data-structures` / `arrays-and-lists`, `hash-tables`, `binary-trees-and-traversals`.
 
@@ -16,7 +16,7 @@ Três estruturas, cada uma a resposta padrão para uma pergunta que sistemas rea
 
 LRU significa least recently used (menos recentemente usada): quando a cache está cheia, é descartada a entrada que está há mais tempo sem ser lida nem gravada. Duas estruturas são combinadas:
 
-```
+```text
 mapa:       chave -> nó                     (acha um nó em O(1))
 
 lista:      mais nova <-> ... <-> ... <-> mais antiga
@@ -37,7 +37,7 @@ Um filtro de Bloom é um conjunto que não guarda chaves, só um vetor de m bits
 
 Os bits nunca são desligados, então uma chave adicionada é sempre reconhecida: **não há falsos negativos**. Uma chave que nunca foi adicionada pode encontrar os seus k bits ligados por outras chaves: isso é um **falso positivo**, e a probabilidade dele depois de n chaves é
 
-```
+```text
 p = (1 - e^(-k n / m))^k
 ```
 
@@ -60,7 +60,7 @@ Medido na execução versionada (200.000 sondagens que nunca foram adicionadas):
 
 Uma trie é uma árvore em que cada aresta é um caractere, então cada caminho a partir da raiz soletra um prefixo.
 
-```
+```text
 (raiz)
   c
   └─ a

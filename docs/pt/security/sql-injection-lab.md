@@ -1,6 +1,6 @@
 # Laboratório de SQL injection (MP-SEC-1)
 
-> English version: [docs/en/security/sql-injection-lab.md](../../en/security/sql-injection-lab.md)
+> English version: [docs/en/security/sql-injection-lab.md](../../en/security/sql-injection-lab.md) · Versión en español: [docs/es/security/sql-injection-lab.md](../../es/security/sql-injection-lab.md)
 
 Mini-projeto: [`projects/security/sql-injection-lab`](../../../projects/security/sql-injection-lab/README.pt-BR.md). Tópicos do quiz: `injection`, `owasp-threat-modelling`.
 
@@ -51,7 +51,7 @@ Uma função de cenário faz as mesmas cinco requisições aos dois apps: um log
 | MP-SEC-1.1 rede interna, dados falsos, sem acesso externo | `tests/network-isolation.test.ts`: uma requisição a `http://example.com` falha de dentro do contêiner. O `docker-compose.yml` não publica porta e a única rede é `internal: true` |
 | MP-SEC-1.2 a versão vulnerável tem as duas falhas | `tests/scenario.test.ts`, bloco vulnerável: a tautologia responde `200` com um usuário logado, e a busca com `UNION` devolve os três segredos falsos |
 | MP-SEC-1.3 a versão corrigida as barra e o uso normal funciona | `tests/scenario.test.ts`, bloco corrigido: a tautologia responde `422`, a busca com `UNION` responde `200` com zero linhas, um login válido e uma busca normal continuam funcionando. Dois testes chamam as consultas parametrizadas diretamente, sem validação, e obtêm o mesmo resultado seguro. `tests/least-privilege.test.ts`: `lab_readonly` recebe SQLSTATE `42501` ao ler `secrets` ou ao escrever |
-| MP-SEC-1.4 documentação | Os dois READMEs têm "Por que a falha acontece", "Como prevenir" e "O que não funciona como correção" |
+| MP-SEC-1.4 documentação | Os três READMEs têm "Por que a falha acontece", "Como prevenir" e "O que não funciona como correção" |
 
 ## Como rodar
 

@@ -1,6 +1,6 @@
 # cache-strategies
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um cache é uma segunda cópia do dado, e toda a dificuldade está em manter as duas cópias juntas. Este mini-projeto coloca o Redis na frente do PostgreSQL, atrás de uma API em ElysiaJS, e mostra duas coisas. Primeiro, como as três estratégias clássicas se comportam em uma escrita (cache-aside, write-through e write-behind), cada uma com um teste que diz o que ela garante e o que não garante. Segundo, o estouro da manada (cache stampede): 300 leitores de uma chave popular mandam centenas de consultas idênticas ao banco toda vez que a chave expira, e uma trava ou uma renovação antecipada reduzem isso a uma.
 

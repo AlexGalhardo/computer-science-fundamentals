@@ -13,6 +13,10 @@
 //       tree_demo heights   imprime uma tabela Markdown: altura e rotações das três árvores
 //                           depois da inserção ordenada e da aleatória de 1.000 a 100.000 chaves
 //       tree_demo steps     imprime o dashboard/steps.js, os dados do visualizador de rotações
+// ES: Demo.
+//       tree_demo heights   imprime una tabla Markdown: altura y rotaciones de los tres árboles
+//                           después de insertar ordenado y aleatorio, de 1,000 a 100,000 claves
+//       tree_demo steps     imprime dashboard/steps.js, los datos del visualizador de rotaciones
 namespace {
 
 void heights() {
@@ -26,6 +30,8 @@ void heights() {
 				//     three trees and for the Java program.
 				// PT: A ordem aleatória é uma permutação pseudoaleatória fixa, a mesma para as
 				//     três árvores e para o programa em Java.
+				// ES: El orden aleatorio es una permutación pseudoaleatoria fija, la misma para
+				//     los tres árboles y para el programa en Java.
 				std::uint64_t state = 88172645463325252ULL;
 				std::vector<trees::Key> keys(static_cast<std::size_t>(n));
 				for (std::size_t i = 0; i < keys.size(); ++i) {

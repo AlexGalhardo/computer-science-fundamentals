@@ -4,6 +4,9 @@
 // PT: As cinco anomalias do laboratório, cada uma escrita como uma intercalação fixa de duas
 //     transações, A e B. O mesmo roteiro roda em todos os níveis de isolamento. Só o nível muda,
 //     então qualquer diferença no resultado é causada apenas pelo nível.
+// ES: Las cinco anomalías del laboratorio, cada una escrita como una intercalación fija de dos
+//     transacciones, A y B. El mismo guion se ejecuta en todos los niveles de aislamiento. Solo
+//     cambia el nivel, así que cualquier diferencia en el resultado la causa únicamente el nivel.
 
 import type { Outcomes, Step } from "./harness";
 
@@ -11,6 +14,8 @@ import type { Outcomes, Step } from "./harness";
 //     it as READ COMMITTED, which is why the first two columns of the matrix are always equal.
 // PT: Ordenados do mais fraco para o mais forte. O PostgreSQL aceita READ UNCOMMITTED mas o trata
 //     como READ COMMITTED, e por isso as duas primeiras colunas da matriz são sempre iguais.
+// ES: Ordenados del más débil al más fuerte. PostgreSQL acepta READ UNCOMMITTED pero lo trata
+//     como READ COMMITTED, y por eso las dos primeras columnas de la matriz son siempre iguales.
 export const LEVELS = ["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE"] as const;
 export type Level = (typeof LEVELS)[number];
 
@@ -19,7 +24,7 @@ export type AnomalyId = (typeof ANOMALY_IDS)[number];
 
 export interface Anomaly {
 	id: AnomalyId;
-	name: { en: string; pt: string };
+	name: { en: string; pt: string; es: string };
 	/** Statements that put the tables in the starting state. Run by the observer session. */
 	setup: string[];
 	steps: (level: Level) => Step[];
@@ -48,9 +53,12 @@ function numberAt(outcomes: Outcomes, label: string, column: string): number | u
 // PT: Leitura suja: B enxerga um valor que A escreveu mas ainda não confirmou. Se A desfizer, B
 //     agiu sobre um dado que nunca existiu. O PostgreSQL nunca mostra dado não confirmado, em
 //     nenhum nível.
+// ES: Lectura sucia: B ve un valor que A escribió pero aún no confirmó. Si A deshace, B actuó
+//     sobre un dato que nunca existió. PostgreSQL nunca muestra datos no confirmados, en ningún
+//     nivel.
 const dirtyRead: Anomaly = {
 	id: "dirty-read",
-	name: { en: "Dirty read", pt: "Leitura suja" },
+	name: { en: "Dirty read", pt: "Leitura suja", es: "Lectura sucia" },
 	setup: ACCOUNTS,
 	steps: (level) => [
 		begin("A", level),
@@ -67,9 +75,11 @@ const dirtyRead: Anomaly = {
 //     values, because B committed an update in between.
 // PT: Leitura não repetível: A lê a mesma linha duas vezes em uma transação e recebe dois valores
 //     diferentes, porque B confirmou uma atualização no meio.
+// ES: Lectura no repetible: A lee la misma fila dos veces en una transacción y recibe dos valores
+//     diferentes, porque B confirmó una actualización en medio.
 const nonRepeatableRead: Anomaly = {
 	id: "non-repeatable-read",
-	name: { en: "Non-repeatable read", pt: "Leitura não repetível" },
+	name: { en: "Non-repeatable read", pt: "Leitura não repetível", es: "Lectura no repetible" },
 	setup: ACCOUNTS,
 	steps: (level) => [
 		begin("A", level),
@@ -88,9 +98,11 @@ const nonRepeatableRead: Anomaly = {
 //     committed by B. No row that A had read changed. The set of rows did.
 // PT: Fantasma: A roda a mesma busca duas vezes e na segunda uma linha nova passa a casar,
 //     inserida e confirmada por B. Nenhuma linha que A tinha lido mudou. O conjunto de linhas mudou.
+// ES: Fantasma: A ejecuta la misma búsqueda dos veces y en la segunda una fila nueva pasa a coincidir,
+//     insertada y confirmada por B. Ninguna fila que A había leído cambió. El conjunto de filas cambió.
 const phantom: Anomaly = {
 	id: "phantom",
-	name: { en: "Phantom read", pt: "Leitura fantasma" },
+	name: { en: "Phantom read", pt: "Leitura fantasma", es: "Lectura fantasma" },
 	setup: ACCOUNTS,
 	steps: (level) => [
 		begin("A", level),
@@ -121,9 +133,14 @@ const phantom: Anomaly = {
 //     calculado na aplicação a partir do valor lido antes, então a escrita de B apaga o depósito
 //     de A: a conta termina com 120 em vez de 130. O UPDATE de B precisa esperar o bloqueio de
 //     linha de A, e o que acontece quando o bloqueio é liberado é toda a diferença entre os níveis.
+// ES: Actualización perdida: ambos leen 100, A escribe 100 + 10 y B escribe 100 + 20. El nuevo saldo se
+//     calcula en la aplicación a partir del valor leído antes, así que la escritura de B borra el
+//     depósito de A: la cuenta termina con 120 en lugar de 130. El UPDATE de B debe esperar el
+//     bloqueo de fila de A, y lo que ocurre cuando se libera el bloqueo es toda la diferencia entre
+//     los niveles.
 const lostUpdate: Anomaly = {
 	id: "lost-update",
-	name: { en: "Lost update", pt: "Atualização perdida" },
+	name: { en: "Lost update", pt: "Atualização perdida", es: "Actualización perdida" },
 	setup: ACCOUNTS,
 	steps: (level) => [
 		begin("A", level),
@@ -150,6 +167,8 @@ const lostUpdate: Anomaly = {
 	//     is the silent loss: B "succeeded" and A's deposit is gone.
 	// PT: 130 seriam os dois depósitos. 110 significa que B foi recusada e sabe que deve tentar
 	//     de novo. Só 120 é a perda silenciosa: B "deu certo" e o depósito de A sumiu.
+	// ES: 130 serían los dos depósitos. 110 significa que B fue rechazada y sabe que debe intentarlo
+	//     de nuevo. Solo 120 es la pérdida silenciosa: B "tuvo éxito" y el depósito de A desapareció.
 	occurred: (outcomes) => numberAt(outcomes, "final balance", "balance") === 120,
 };
 
@@ -162,9 +181,14 @@ const lostUpdate: Anomaly = {
 //     leu e escreveu, então não há conflito de escrita, mas juntas elas quebram a regra. Um
 //     snapshot não enxerga isso. Só a verificação serializável das dependências de leitura e
 //     escrita enxerga.
+// ES: Write skew: la regla es "al menos un médico de guardia". Cada transacción verifica la regla, ve
+//     dos médicos de guardia y saca a un médico diferente. Ninguna escribió una fila que la otra
+//     leyó y escribió, así que no hay conflicto de escritura, pero juntas rompen la regla. Un
+//     snapshot no ve esto. Solo la verificación serializable de las dependencias de lectura y
+//     escritura lo ve.
 const writeSkew: Anomaly = {
 	id: "write-skew",
-	name: { en: "Write skew", pt: "Write skew" },
+	name: { en: "Write skew", pt: "Write skew", es: "Write skew" },
 	setup: ["TRUNCATE doctors", "INSERT INTO doctors (name, on_call) VALUES ('alice', true), ('bob', true)"],
 	steps: (level) => [
 		begin("A", level),

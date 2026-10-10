@@ -1,12 +1,12 @@
 # outbox-saga
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Como dois serviços ficam consistentes quando cada um tem o seu banco e nenhuma transação cobre os dois? Este mini-projeto roda um serviço de pedidos e um serviço de pagamentos, cada um com o seu PostgreSQL, conversando pelo RabbitMQ. Ele mostra o **bug do dual write** (confirmar no banco, depois publicar: uma queda no meio perde o evento), corrige com um **outbox transacional**, torna os consumidores **idempotentes**, e fecha o fluxo de negócio como uma **saga com compensação**: um pagamento que falha cancela o pedido.
 
 Código: MP-TX-4. Explicação completa: [docs/pt/transactions/outbox-saga.md](../../../docs/pt/transactions/outbox-saga.md).
 
-```
+```text
 cliente -> order-service --(orders-db: orders + outbox)--> relay --> RabbitMQ --> payment-service --(payments-db)
                ^                                                                        |
                +----------- PaymentCompleted / PaymentFailed <--- relay <--- outbox ----+

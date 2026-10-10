@@ -29,6 +29,8 @@ func main() {
 	// balancer chose.
 	// PT: O nome da instância vai em um cabeçalho, então um cliente consegue ver qual back end
 	// o balanceador escolheu.
+	// ES: El nombre de la instancia va en un encabezado, así un cliente puede ver qué back end
+	// eligió el balanceador.
 	mux.HandleFunc("GET /work", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Instance", name)

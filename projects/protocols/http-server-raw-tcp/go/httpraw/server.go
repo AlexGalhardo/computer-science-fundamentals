@@ -50,6 +50,8 @@ func (s *Server) Serve(ctx context.Context, listener net.Listener) error {
 		//     and each goroutine reads its own stream in a simple blocking loop.
 		// PT: Uma goroutine por conexão. O TCP entrega ao servidor um fluxo de bytes por
 		//     cliente, e cada goroutine lê o seu fluxo em um laço bloqueante simples.
+		// ES: Una goroutine por conexión. TCP entrega al servidor un flujo de bytes por
+		//     cliente, y cada goroutine lee su flujo en un bucle bloqueante simple.
 		open.Go(func() {
 			s.ServeConn(conn)
 		})
@@ -75,6 +77,11 @@ func (s *Server) ServeConn(conn net.Conn) {
 	//     enviar a próxima requisição antes de a resposta da primeira chegar (pipelining), então
 	//     bytes da requisição 2 já podem estar no buffer quando a requisição 1 termina. Saber
 	//     exatamente onde um corpo termina (Content-Length) é o que mantém as duas separadas.
+	// ES: El MISMO lector con buffer se usa en todas las peticiones de la conexión. Un cliente
+	//     puede enviar la siguiente petición antes de que llegue la respuesta de la primera
+	//     (pipelining), así que bytes de la petición 2 pueden estar ya en el buffer cuando
+	//     termina la petición 1. Saber exactamente dónde termina un cuerpo (Content-Length) es
+	//     lo que mantiene separadas a las dos.
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
 
@@ -95,6 +102,11 @@ func (s *Server) ServeConn(conn net.Conn) {
 		//     menos que o cliente tenha pedido "Connection: keep-alive". Reaproveitar a conexão
 		//     economiza um handshake TCP (e um de TLS, quando há TLS) em cada requisição depois
 		//     da primeira.
+		// ES: Keep-alive. En HTTP/1.1 la conexión sigue abierta después de una respuesta, a
+		//     menos que uno de los lados diga "Connection: close". En HTTP/1.0 es al revés: se
+		//     cierra, a menos que el cliente haya pedido "Connection: keep-alive". Reutilizar la
+		//     conexión ahorra un handshake TCP (y uno de TLS, cuando hay TLS) en cada petición
+		//     después de la primera.
 		keepAlive := req.Proto == "HTTP/1.1" && !req.Header.HasToken("Connection", "close")
 		if req.Proto == "HTTP/1.0" {
 			keepAlive = req.Header.HasToken("Connection", "keep-alive")
@@ -110,6 +122,9 @@ func (s *Server) ServeConn(conn net.Conn) {
 		// PT: A codificação chunked não existe no HTTP/1.0. Para um cliente assim a única forma
 		//     de marcar o fim de um corpo de tamanho desconhecido é fechar a conexão, então o
 		//     fluxo é juntado e enviado com Content-Length.
+		// ES: La codificación chunked no existe en HTTP/1.0. Para un cliente así, la única forma
+		//     de marcar el fin de un cuerpo de tamaño desconocido es cerrar la conexión, así que
+		//     el flujo se junta y se envía con Content-Length.
 		if resp.Stream != nil && req.Proto == "HTTP/1.0" {
 			resp = buffered(resp)
 		}
@@ -133,6 +148,10 @@ func (s *Server) refuse(writer *bufio.Writer, err error) {
 	// PT: Depois de uma requisição malformada o servidor não tem como saber onde a próxima
 	//     começaria, então ele responde uma vez e fecha a conexão. Tentar "ressincronizar" nos
 	//     bytes seguintes é exatamente aquilo de que os ataques de request smuggling dependem.
+	// ES: Después de una petición mal formada el servidor no tiene forma de saber dónde
+	//     empezaría la siguiente, así que responde una vez y cierra la conexión. Intentar
+	//     "resincronizar" en los bytes siguientes es justo de lo que dependen los ataques de
+	//     request smuggling.
 	var parseErr *ParseError
 	var netErr net.Error
 	switch {

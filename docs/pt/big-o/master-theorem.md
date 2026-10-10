@@ -1,6 +1,6 @@
 # Teorema mestre interativo
 
-> English version: [docs/en/big-o/master-theorem.md](../../en/big-o/master-theorem.md)
+> English version: [docs/en/big-o/master-theorem.md](../../en/big-o/master-theorem.md) · Versión en español: [docs/es/big-o/master-theorem.md](../../es/big-o/master-theorem.md)
 
 Mini-projeto MP-BIGO-2, em [`projects/big-o/master-theorem`](../../../projects/big-o/master-theorem). Ele ensina como os três casos do teorema mestre decidem o custo de uma recorrência.
 
@@ -8,7 +8,7 @@ Mini-projeto MP-BIGO-2, em [`projects/big-o/master-theorem`](../../../projects/b
 
 Um algoritmo de divisão e conquista divide um problema de tamanho n em `a` subproblemas de tamanho `n/b`, e faz `f(n)` de trabalho fora das chamadas recursivas (dividir e combinar):
 
-```
+```text
 T(n) = a·T(n/b) + f(n)        a ≥ 1, b > 1
 ```
 

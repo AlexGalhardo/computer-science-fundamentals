@@ -1,6 +1,6 @@
 # Quiz
 
-> English version: [docs/en/quiz.md](../en/quiz.md)
+> English version: [docs/en/quiz.md](../en/quiz.md) · Versión en español: [docs/es/quiz.md](../es/quiz.md)
 
 O quiz é a porta de entrada do repositório: um app único que cobre todas as áreas. Os miniprojetos continuam no plano, e a explicação de cada pergunta aponta para o miniprojeto que demonstra o conceito. Decisões tomadas em 2026-10-07.
 
@@ -9,13 +9,13 @@ O quiz é a porta de entrada do repositório: um app único que cobre todas as �
 - Múltipla escolha com **5 alternativas** e uma única correta.
 - Depois da resposta, a explicação do conceito aparece ao lado.
 - Cada pergunta tem um nível: básica, intermediária ou avançada.
-- Toda pergunta existe em português e em inglês desde o início.
+- Toda pergunta existe em inglês, português e espanhol (o espanhol foi adicionado em 2026-10-08).
 
 ## Tela
 
 Uma pergunta por tela, em um grid de duas colunas. No celular as colunas empilham.
 
-```
+```text
 +---------------------------+---------------------------+
 | Big O  ·  pergunta 3/20   |  EXPLICAÇÃO               |
 |                           |                           |
@@ -41,7 +41,7 @@ Uma pergunta por tela, em um grid de duas colunas. No celular as colunas empilha
 
 ## Recursos obrigatórios
 
-- **i18n**: o app inteiro, interface e perguntas, em português e inglês, com seletor de língua.
+- **i18n**: o app inteiro, interface e perguntas, em inglês, português e espanhol, com seletor de língua.
 - **Tema claro e escuro**, com um botão de alternância. A primeira visita segue a preferência do sistema.
 - **Mobile friendly**: utilizável a partir de 320 px de largura, com controles no tamanho de toque.
 
@@ -54,7 +54,8 @@ Uma pergunta por tela, em um grid de duas colunas. No celular as colunas empilha
 
 ## Tecnologia
 
-- Next.js com geração estática (SSG, toda página pré-renderizada no build) e Tailwind CSS v4, sem backend.
+- Next.js com geração estática (SSG, toda página pré-renderizada no build), sem backend.
+- Base UI (`@base-ui/react`) para os componentes interativos: botões, os alternadores de idioma e de tema, os selects, o medidor de progresso de uma área e o popup de um termo no resumo teórico. O Base UI não tem estilos, então o Tailwind CSS v4 é a camada de estilo, com os tokens de tema de `quiz/src/app/globals.css` como única fonte de cores.
 - O app fica em `quiz/`, na raiz do repositório.
 - As perguntas ficam em arquivos JSON, em `quiz/content/<área>/<tópico>.json`, validados por um schema.
 
@@ -68,7 +69,7 @@ Campos de cada pergunta:
 | `answer` | índice da alternativa correta (0 a 4) |
 | `source` | livro ou aula e capítulo que a pergunta cobre |
 | `miniProject` | caminho do miniprojeto relacionado, quando existir |
-| `pt`, `en` | para cada língua: enunciado, 5 alternativas, 5 explicações (uma por alternativa), conceito e exemplo opcional |
+| `en`, `pt`, `es` | para cada língua: enunciado, 5 alternativas, 5 explicações (uma por alternativa), conceito e exemplo opcional |
 
 ## Volume e cobertura
 
@@ -85,6 +86,6 @@ Campos de cada pergunta:
 
 ## Garantia de qualidade
 
-- **Validação automática**: um script checa que cada pergunta tem 5 alternativas, exatamente uma correta, explicação para cada alternativa, e os textos em PT e EN.
+- **Validação automática**: um script checa que cada pergunta tem 5 alternativas, exatamente uma correta, explicação para cada alternativa, e os textos em EN, PT e ES.
 - **Revisor independente**: um segundo agente responde cada lote sem ver o gabarito. Toda divergência é revista antes de a pergunta entrar.
 - **Revisão do autor** por amostragem.

@@ -5,6 +5,10 @@
 //     menos 32 bytes (256 bits, o tamanho da saída do SHA-256, como a RFC 7518 exige para o
 //     HS256) produzidos pelo gerador aleatório do sistema operacional. Ninguém a escolhe e
 //     ninguém consegue decorá-la.
+// ES: LA CORRECCIÓN, parte 1: la clave. HS256 es tan fuerte como la clave. Aquí la clave tiene al
+//     menos 32 bytes (256 bits, el tamaño de la salida de SHA-256, como exige la RFC 7518 para
+//     HS256) producidos por el generador aleatorio del sistema operativo. Nadie la elige y
+//     nadie puede memorizarla.
 
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
@@ -19,6 +23,10 @@ export const MIN_KEY_BYTES = 32;
 //     perfeitamente em todos os testes e é falsificável em produção, e ninguém percebe.
 //     O tamanho é um piso, não uma prova de qualidade: 32 bytes digitados por uma pessoa
 //     continuam sendo uma frase adivinhável. Por isso o padrão abaixo pede bytes aleatórios ao sistema.
+// ES: Negarse a iniciar es la falla correcta. Un servidor que arranca con una clave corta funciona
+//     perfectamente en todas las pruebas y es falsificable en producción, y nadie lo nota.
+//     El tamaño es un piso, no una prueba de calidad: 32 bytes escritos por una persona
+//     siguen siendo una frase adivinable. Por eso el valor por defecto de abajo pide bytes aleatorios al sistema.
 export function assertStrongKey(key: Buffer): Buffer {
 	if (key.length < MIN_KEY_BYTES) {
 		throw new Error(`signing key too short: ${key.length} bytes, need at least ${MIN_KEY_BYTES}`);
@@ -28,6 +36,7 @@ export function assertStrongKey(key: Buffer): Buffer {
 
 // EN: The environment is external input too, so it is validated: canonical base64 only.
 // PT: O ambiente também é entrada externa, então é validado: só base64 canônico.
+// ES: El entorno también es entrada externa, así que se valida: solo base64 canónico.
 const base64KeySchema = z
 	.string()
 	.regex(/^[A-Za-z0-9+/]+={0,2}$/)
@@ -41,6 +50,10 @@ const base64KeySchema = z
 //     processo reinicia, o que é aceitável em um laboratório). Com valor (por exemplo vindo da
 //     variável de ambiente JWT_LAB_KEY_BASE64), ele precisa ser o base64 de pelo menos 32 bytes.
 //     Em um sistema real a chave vem de um gerenciador de segredos e nunca é versionada no git.
+// ES: Sin valor, se genera una clave aleatoria nueva al iniciar (todo token muere cuando el
+//     proceso se reinicia, lo cual es aceptable en un laboratorio). Con valor (por ejemplo venido de la
+//     variable de entorno JWT_LAB_KEY_BASE64), debe ser el base64 de al menos 32 bytes.
+//     En un sistema real la clave viene de un gestor de secretos y nunca se versiona en git.
 export function loadSigningKey(base64Value: string | undefined): Buffer {
 	if (base64Value === undefined) return randomBytes(MIN_KEY_BYTES);
 	const parsed = base64KeySchema.safeParse(base64Value);

@@ -1,6 +1,6 @@
 # Simulador de escalonamento de CPU
 
-> English version: [docs/en/operating-systems/cpu-scheduling.md](../../en/operating-systems/cpu-scheduling.md)
+> English version: [docs/en/operating-systems/cpu-scheduling.md](../../en/operating-systems/cpu-scheduling.md) · Versión en español: [docs/es/operating-systems/cpu-scheduling.md](../../es/operating-systems/cpu-scheduling.md)
 
 Mini-projeto: [`projects/operating-systems/cpu-scheduling`](../../../projects/operating-systems/cpu-scheduling/). Item do plano: MP-OS-1. Tópico do quiz: `operating-systems` / `scheduling`.
 
@@ -49,7 +49,7 @@ Todos os processos chegam no instante 0, salvo indicação.
 
 O gráfico de Gantt desenha a escala em uma linha do tempo. A CLI o imprime em texto, e a página estática `dashboard/index.html` o desenha com barras coloridas, uma cor por processo, para que o mesmo processo possa ser acompanhado entre as políticas.
 
-```
+```text
 SJF
 |           A           |  E  |     B     |      D       |            C             |
 0                       8     10          14             19                         28

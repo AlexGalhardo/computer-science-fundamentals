@@ -1,6 +1,6 @@
 # file-organisation
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Como registros, espaço livre e índices vivem dentro de arquivos, em C++ e em Rust. Um arquivo de dados de registros de tamanho fixo, com cabeçalho, dá acesso direto pelo número relativo do registro (RRN) e reaproveita os slots removidos com uma lista de livres guardada dentro do próprio arquivo. Um índice primário e dois índices secundários com listas invertidas respondem buscas sem varrer o arquivo. A codificação run-length e a de Huffman comprimem o arquivo de dados e informam a taxa.
 

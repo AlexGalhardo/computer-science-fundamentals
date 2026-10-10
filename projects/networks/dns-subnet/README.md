@@ -1,6 +1,6 @@
 # dns-subnet
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How names are resolved and how addresses are divided. Two tools:
 

@@ -4,6 +4,9 @@
 // PT: O corpus, as passagens, as perguntas e as tabelas esperadas ficam em ../data,
 //     compartilhados pelas implementações em TypeScript e em Python, então as duas leem os mesmos
 //     bytes. No Docker a pasta é montada e DATA_DIR aponta para ela.
+// ES: El corpus, los pasajes, las preguntas y las tablas esperadas están en ../data, compartidos
+//     por las implementaciones en TypeScript y en Python, así que las dos leen los mismos bytes. En
+//     Docker la carpeta se monta y DATA_DIR apunta a ella.
 
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -45,6 +48,8 @@ function text(record: Record<string, unknown>, key: string, file: string): strin
 // EN: JSON.parse returns "anything", so each file is checked field by field before it is used.
 // PT: JSON.parse devolve "qualquer coisa", então cada arquivo é conferido campo a campo antes de
 //     ser usado.
+// ES: JSON.parse devuelve "cualquier cosa", así que cada archivo se comprueba campo a campo antes
+//     de usarse.
 function readRecords(name: string): Record<string, unknown>[] {
 	const parsed: unknown = JSON.parse(readData(name));
 	if (!Array.isArray(parsed) || !parsed.every(isRecord)) throw new Error(`${name}: expected a list of objects`);

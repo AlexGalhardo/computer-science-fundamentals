@@ -8,6 +8,8 @@ type trieNode struct {
 	// "card"), so the end of a word is an explicit mark, not "has no children".
 	// PT: Um nó pode ser o fim de uma palavra e também o meio de outras mais longas ("car"
 	// dentro de "card"), então o fim de palavra é uma marca explícita, não "não tem filhos".
+	// ES: Un nodo puede ser el final de una palabra y también el medio de otras más largas ("car"
+	// dentro de "card"), así que el fin de palabra es una marca explícita, no "no tiene hijos".
 	isWord bool
 }
 
@@ -21,6 +23,11 @@ type trieNode struct {
 // que começam igual dividem os mesmos primeiros nós, então achar tudo o que começa com um
 // prefixo é descer pelo prefixo uma vez e recolher a subárvore abaixo dele. O custo depende do
 // tamanho do prefixo e da quantidade de respostas, não de quantas palavras estão guardadas.
+// ES: Cada arista es un carácter y cada camino desde la raíz deletrea un prefijo. Las palabras
+// que empiezan igual comparten los mismos primeros nodos, así que encontrar todo lo que empieza
+// con un prefijo es bajar por el prefijo una vez y recoger el subárbol debajo de él. El costo
+// depende del tamaño del prefijo y de la cantidad de respuestas, no de cuántas palabras están
+// guardadas.
 type Trie struct {
 	root  *trieNode
 	count int
@@ -74,6 +81,8 @@ func (t *Trie) WithPrefix(prefix string) []string {
 // come out in alphabetical order with no sorting of the result.
 // PT: Percurso em profundidade da subárvore. Os filhos são visitados em ordem, então as
 // palavras saem em ordem alfabética sem que o resultado precise ser ordenado.
+// ES: Recorrido en profundidad del subárbol. Los hijos se visitan en orden, así que las
+// palabras salen en orden alfabético sin que el resultado deba ordenarse.
 func collect(node *trieNode, text []rune, words *[]string) {
 	if node.isWord {
 		*words = append(*words, string(text))

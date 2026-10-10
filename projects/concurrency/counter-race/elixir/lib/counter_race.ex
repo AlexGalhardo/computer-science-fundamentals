@@ -9,6 +9,11 @@ defmodule CounterRace do
   no argumento do próprio laço. Nenhum outro processo consegue ler ou escrever essa memória: o
   único jeito de chegar ao número é mandar uma mensagem ao dono. O dono pega uma mensagem por
   vez da caixa de entrada, então dois incrementos nunca se sobrepõem.
+
+  ES: La corrección por actor del mini-proyecto counter-race. Un proceso es dueño del número y lo
+  guarda en el argumento de su propio bucle. Ningún otro proceso puede leer ni escribir esa
+  memoria: la única forma de llegar al número es enviarle un mensaje al dueño. El dueño toma un
+  mensaje a la vez de su buzón, así que dos incrementos nunca se superponen.
   """
 
   @doc "Starts the process that owns the counter and returns its pid."
@@ -19,6 +24,8 @@ defmodule CounterRace do
   #     new value. There is no variable that two processes could write at the same time.
   # PT: O estado vive no argumento `n`. "Alterá-lo" é chamar o laço de novo com um valor novo.
   #     Não existe variável que dois processos possam escrever ao mesmo tempo.
+  # ES: El estado vive en el argumento `n`. "Cambiarlo" es llamar al bucle de nuevo con un valor
+  #     nuevo. No existe una variable que dos procesos puedan escribir al mismo tiempo.
   defp loop(n) do
     receive do
       :inc ->
@@ -67,6 +74,11 @@ defmodule CounterRace do
   sozinha, mas outro processo pode encaixar a própria mensagem entre este `get` e este `set`.
   Os dois leem 41 e os dois gravam 42: a mesma atualização perdida, agora um nível acima.
   A correção é fazer da operação inteira UMA mensagem (`inc/1`).
+
+  ES: Los actores eliminan las carreras de datos, no toda condición de carrera. Cada mensaje se
+  atiende por separado, pero otro proceso puede meter su propio mensaje entre este `get` y este
+  `set`. Los dos leen 41 y los dos escriben 42: la misma actualización perdida, ahora un nivel
+  más arriba. La corrección es hacer de la operación completa UN solo mensaje (`inc/1`).
   """
   @spec get_then_set(pid()) :: {:set, non_neg_integer()}
   def get_then_set(counter), do: send(counter, {:set, value(counter) + 1})
@@ -86,6 +98,7 @@ defmodule CounterRace do
         spawn_link(fn ->
           # EN: Starting gate: every worker waits for `:go`, so all of them run at the same time.
           # PT: Portão de largada: todo worker espera o `:go`, então todos rodam ao mesmo tempo.
+          # ES: Puerta de salida: todo worker espera el `:go`, así todos corren al mismo tiempo.
           receive do
             :go -> :ok
           end
@@ -98,6 +111,9 @@ defmodule CounterRace do
           # PT: A BEAM só garante a ordem das mensagens entre um remetente e um destinatário.
           #     Esta chamada síncrona vem depois de todos os incrementos deste worker, então a
           #     resposta prova que o dono já tratou cada um deles.
+          # ES: La BEAM solo garantiza el orden de los mensajes entre un remitente y un destinatario.
+          #     Esta llamada síncrona viene después de todos los incrementos de este worker, así que
+          #     la respuesta prueba que el dueño ya atendió cada uno de ellos.
           value(counter)
           send(parent, {:done, self()})
         end)

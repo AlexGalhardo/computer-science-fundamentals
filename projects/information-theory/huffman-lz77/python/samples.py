@@ -5,6 +5,10 @@
 #     reproduzida em qualquer lugar e nada é copiado de terceiros. Cada um isola um tipo de
 #     redundância. Os comentários sobre o que cada amostra mostra estão em `rust/src/samples.rs`;
 #     este arquivo o espelha.
+# ES: Los cinco archivos de muestra se generan, no se descargan, así que la tabla puede
+#     reproducirse en cualquier lugar y no se copia nada de terceros. Cada uno aísla un tipo de
+#     redundancia. Los comentarios sobre lo que muestra cada muestra están en
+#     `rust/src/samples.rs`; este archivo lo refleja.
 SAMPLE_SIZE = 16 * 1024
 SEED = 0x001F_07E0
 MASK = (1 << 64) - 1
@@ -24,6 +28,9 @@ WORDS = [
 # PT: O mesmo gerador xorshift64* da versão em Rust. Os inteiros do Rust dão a volta em 64 bits
 #     sozinhos; os do Python crescem sem limite, então cada passo que pode transbordar é cortado
 #     de volta para 64 bits com `& MASK`.
+# ES: El mismo generador xorshift64* de la versión en Rust. Los enteros de Rust dan la vuelta en
+#     64 bits solos; los de Python crecen sin límite, así que cada paso que puede desbordarse se
+#     recorta de vuelta a 64 bits con `& MASK`.
 class Rng:
     def __init__(self, seed: int) -> None:
         self.state = max(seed, 1)

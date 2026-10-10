@@ -1,6 +1,6 @@
 # Corrida de ordenação
 
-> English version: [docs/en/algorithms/sorting-race.md](../../en/algorithms/sorting-race.md)
+> English version: [docs/en/algorithms/sorting-race.md](../../en/algorithms/sorting-race.md) · Versión en español: [docs/es/algorithms/sorting-race.md](../../es/algorithms/sorting-race.md)
 
 Mini-projeto: [`projects/algorithms/sorting-race`](../../../projects/algorithms/sorting-race/README.pt-BR.md) (MP-ALG-1). Linguagens: TypeScript (referência), C++, Python, Java, Elixir, Rust e Go. Quiz: área `algorithms`, tópicos `elementary-sorts`, `merge-sort`, `quicksort`, `heapsort`, `linear-time-sorts` e `sorting-properties`.
 

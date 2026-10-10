@@ -8,6 +8,12 @@
 //     sem explicação. Uma palavra escrita como [[id-do-termo|palavras visíveis]] vira um botão
 //     que abre a entrada `id-do-termo` do glossário. Simples nunca pode significar errado: cada
 //     frase aqui precisa continuar verdadeira também para uma pessoa adulta.
+// ES: Todos los textos del dashboard, en inglés, portugués y español. La página está escrita para
+//     un niño curioso de diez años: frases cortas, comparaciones de todos los días y ninguna
+//     palabra técnica sin explicación. Una palabra escrita como [[id-del-termino|palabras visibles]]
+//     se convierte en un botón que abre la entrada `id-del-termino` del glosario. Simple nunca
+//     puede significar incorrecto: cada frase de aquí tiene que seguir siendo verdadera también
+//     para una persona adulta.
 
 window.BENCH_CONTENT = {
 	languageNames: {
@@ -1573,6 +1579,787 @@ window.BENCH_CONTENT = {
 						"O tempo de build usa um programa de um arquivo, e Python, Bun, Java e Elixir não produzem código de máquina antes da hora, então as barras deles medem outra etapa. O tamanho do binário não conta nada do sistema operacional e nada passa por strip.",
 						"O banco de dados mede principalmente o driver e uma ida e volta muito curta. Os drivers diferem em padrões que pesam mais que a linguagem, como preparar um comando uma vez ou a cada chamada. A libpq não tem pool, então a fase de pool em C++ usa uma conexão por thread.",
 						"Velocidade, memória e CPU são só três das razões para escolher uma linguagem. Segurança, facilidade de escrever, bibliotecas e a experiência do time não estão em gráfico nenhum.",
+					],
+				},
+			],
+		},
+	},
+
+	es: {
+		ui: {
+			title: "Benchmark de lenguajes",
+			languageSwitch: "Idioma de la página",
+			navLabel: "Secciones",
+			nav: {
+				start: "Inicio",
+				languages: "Lenguajes",
+				cpu: "CPU",
+				parallelism: "Paralelismo",
+				concurrency: "Concurrencia",
+				http: "HTTP",
+				memory: "Memoria",
+				build: "Compilación",
+				size: "Tamaño",
+				database: "Base de datos",
+				glossary: "Glosario",
+				methodology: "Metodología",
+			},
+			theme: { toDark: "Tema oscuro", toLight: "Tema claro" },
+			filterTitle: "Elige los lenguajes que quieres comparar",
+			filterHelp:
+				"Desmarca un lenguaje para ocultarlo en todos los gráficos. Las frases bajo los gráficos también cambian.",
+			what: "Qué se mide",
+			analogy: "Piénsalo así",
+			matters: "Por qué importa",
+			read: "Cómo leer los gráficos",
+			shows: "Qué muestra esto",
+			why: "¿Por qué pasó esto?",
+			careful: "¡Cuidado!",
+			numbers: "Ver los números en una tabla",
+			noData: "Ningún lenguaje seleccionado. Marca al menos un lenguaje en el filtro de arriba.",
+			better: {
+				lower: "Barra más corta = mejor",
+				higher: "Barra más larga = mejor",
+				diagonal: "Más cerca de la línea punteada = mejor",
+			},
+			gc: "recolector de basura",
+			manual: "sin recolector",
+			ideal: "perfecto",
+			axes: { workers: "workers (cuántos trabajan al mismo tiempo)", speedup: "veces más rápido" },
+			limits: { efficiency: "100 % = nada desperdiciado", cpu: "400 % = los 4 núcleos permitidos" },
+			endpoint: {
+				label: "Tipo de petición",
+				rich: "Tipo de [[request|petición]]:",
+				echo: "Eco JSON",
+				primes: "Contar primos (CPU)",
+			},
+			models: {
+				coroutines: "corrutinas",
+				"os-threads": "threads del SO",
+				"tokio-tasks": "tareas async",
+				goroutines: "goroutines",
+				"virtual-threads": "threads virtuales",
+				promises: "promesas",
+				processes: "procesos BEAM",
+				"asyncio-tasks": "tareas asyncio",
+			},
+			steps: {
+				"compile-and-link": "compilar a código de máquina",
+				"compile-to-bytecode": "compilar a bytecode",
+				"bundle-no-typecheck": "empaquetar, sin revisar tipos",
+				"bytecode-automatic": "bytecode, normalmente automático",
+			},
+			phase: {
+				label: "Tipo de operación",
+				rich: "Tipo de [[query|operación]]:",
+				insert: "Insertar filas",
+				read: "Leer por clave",
+				query: "Filtrar y sumar",
+				pool: "Leer por clave, 8 a la vez",
+			},
+			artifacts: {
+				cpp: "El programa como instrucciones del procesador. Toma prestada la biblioteca de C++ del sistema.",
+				rust: "El programa como instrucciones del procesador, con la biblioteca propia de Rust dentro.",
+				go: "El programa como instrucciones del procesador, con todo el runtime de Go dentro.",
+				java: "Un jar: el programa como bytecode para la JVM.",
+				ts: "Un archivo JavaScript con el programa.",
+				elixir: "El programa como bytecode para la BEAM.",
+				python: "El programa como texto. Python entrega el código fuente.",
+			},
+			runtimes: {
+				cpp: "La biblioteca de C++ del sistema.",
+				rust: "Una pequeña biblioteca auxiliar del sistema.",
+				go: "Nada.",
+				java: "Una máquina Java reducida al mínimo (hecha con jlink).",
+				ts: "El programa Bun, con su motor de JavaScript.",
+				elixir: "La máquina de Erlang y las bibliotecas de Erlang y Elixir.",
+				python: "El intérprete de Python y su biblioteca estándar.",
+			},
+			captions: {
+				single: "Solo {name} está seleccionado. Marca más lenguajes para comparar.",
+				same: "{best} y {worst} quedaron más o menos igual aquí: la diferencia es menor que el ruido de la medición.",
+				faster: "{best} terminó primero: unas {times} veces más rápido que {worst}, el más lento de aquí.",
+				lighter: "{best} usó la menor memoria: unas {times} veces menos que {worst}, que usó la mayor.",
+				more: "{best} respondió la mayor cantidad de peticiones: unas {times} veces más por segundo que {worst}.",
+				efficiency:
+					"{best} desperdició lo mínimo: sus workers se aprovecharon unas {times} veces mejor que los de {worst}.",
+				cpu: "{best} mantuvo el procesador menos ocupado, unas {times} veces menos que {worst}. Poco solo es bueno si las peticiones se respondieron igual de rápido.",
+				speedup:
+					"Con {workers} workers, {best} se volvió unas {times} veces más rápido que con 1 worker. {worst} se volvió unas {worstTimes} veces más rápido. Lo perfecto sería {workers} veces.",
+				latency:
+					"La petición típica (p50) fue más rápida en {typical}: {p50}. Las peticiones con mala suerte (p99) esperaron menos en {tail}: {p99}.",
+				smaller: "{best} es el más pequeño aquí: unas {times} veces menor que {worst}, el más grande.",
+				moreOps:
+					"{best} hizo la mayor cantidad de operaciones: unas {times} veces más por segundo que {worst}.",
+				lessCpu:
+					"{best} usó el menor tiempo de procesador en toda la prueba: unas {times} veces menos que {worst}.",
+				dbLatency:
+					"La operación típica (p50) fue más rápida en {typical}: {p50}. Las operaciones con mala suerte (p99) esperaron menos en {tail}: {p99}.",
+			},
+			tips: {
+				time: "{name}\nPromedio de 5 ejecuciones: {mean}\nEjecución más rápida y más lenta: {low} a {high}\nSolo el trabajo, sin el arranque: {section}\nTiempo de CPU: {cpu}",
+				memory: "{name}\nMayor memoria en uso en un momento: {value}",
+				speedup:
+					"{name}, {workers} workers\n{speedup} más rápido que con 1 worker\nEficiencia: {efficiency}\nTiempo del trabajo: {time}\nTiempo de CPU (todos los núcleos): {cpu}",
+				efficiency:
+					"{name}, {workers} workers\nEficiencia: {efficiency}\nSpeed-up: {speedup} (lo perfecto sería {workers}×)",
+				tasks: "{name}\n{n} tareas esperando a la vez\nTiempo total: {mean}\nSolo el trabajo, sin el arranque: {section}\nMemoria máxima: {peak}\nMemoria por tarea: {each}",
+				rps: "{name}\n{rps} en promedio\nEjecución más lenta y más rápida: {low} a {high}\nCPU del generador de carga: {k6} (cerca de 400 % es el límite)",
+				latency:
+					"{name}\nLa mitad de las peticiones tardó menos de {p50}\n95 de cada 100 tardaron menos de {p95}\n99 de cada 100 tardaron menos de {p99}",
+				cpu: "{name}\nCPU promedio del servidor: {cpu}\nEso es cerca de {cores} de los 4 núcleos que puede usar",
+				ops: "{name}\n{ops} en promedio\nEjecución más lenta y más rápida: {low} a {high}\nDriver: {driver}",
+				clientCpu: "{name}\nTiempo de procesador usado por el programa cliente en toda la prueba: {cpu}",
+				build: "{name}\nQué se mide: {step}\nDesde cero: {cold}\nDespués de cambiar una línea: {warm}\nComando: {command}",
+				size: "{name}\nLo que entregas: {artifact}\nLo que necesita para ejecutarse: {runtime}\nJuntos: {total}\n{what}\nNecesita: {needs}",
+			},
+			tables: {
+				language: "Lenguaje",
+				process: "Programa completo",
+				range: "Más rápida – más lenta (ms)",
+				section: "Solo el trabajo",
+				cpu: "Tiempo de CPU",
+				peak: "Memoria máxima",
+				workers: "Workers",
+				sectionTime: "Tiempo del trabajo",
+				speedup: "Speed-up",
+				efficiency: "Eficiencia",
+				model: "Tipo de tarea",
+				tasks: "Tareas",
+				total: "Tiempo total",
+				perTask: "Memoria por tarea",
+				rps: "Peticiones por segundo",
+				meanCpu: "CPU promedio",
+				k6Cpu: "CPU del generador de carga",
+				step: "Qué se mide",
+				cold: "Desde cero",
+				warm: "Después de una edición",
+				command: "Comando",
+				artifact: "Lo que entregas",
+				runtime: "Lo que necesita",
+				totalSize: "Juntos",
+				artifactIs: "El artefacto es",
+				runtimeIs: "El runtime es",
+				ops: "Operaciones por segundo",
+				clientCpu: "Tiempo de CPU del cliente",
+				clientMemory: "Memoria del cliente",
+				driver: "Driver",
+			},
+			footer: "Datos generados el {date}. Todo lo de esta página se midió en una sola máquina, en un solo día. Ejecuta la suite en tu propio computador y los números serán diferentes.",
+		},
+
+		intro: {
+			title: "Siete lenguajes de programación, la misma tarea",
+			paragraphs: [
+				"Un lenguaje de programación es una forma de decirle a un computador qué hacer. Aquí siete lenguajes recibieron exactamente las mismas tareas, y un [[benchmark|benchmark]] midió cómo se comportó cada uno: cuánto tardó, cuánta [[memory|memoria]] necesitó y qué tan ocupado mantuvo el [[core|procesador]].",
+				"No hay un ganador de todo. Un lenguaje que es lento en un gráfico puede ser el más liviano en otro, y el más fácil de escribir no aparece en ningún gráfico. El objetivo de esta página es entender por qué las barras se ven como se ven.",
+			],
+			howTitle: "Cómo usar esta página",
+			how: [
+				"Las palabras con una línea punteada, como [[thread|thread]], tienen una explicación. Apúntalas, tócalas o llega a ellas con la tecla Tab.",
+				"Cada gráfico dice en qué dirección es mejor y tiene una frase que lo lee por ti.",
+				"La tarjeta verde explica por qué ocurrió el resultado. La tarjeta amarilla dice lo que el gráfico no demuestra.",
+				'Apunta o toca una barra para ver más números. "Ver los números en una tabla" muestra todos.',
+				"Todas las palabras difíciles están juntas en el glosario al final, y la metodología explica exactamente cómo se midió todo.",
+			],
+		},
+
+		languages: {
+			title: "Conoce los siete lenguajes",
+			lead: "Cada lenguaje tiene su propia forma de convertir tu texto en algo que el procesador entiende, y su propia forma de hacer muchas cosas a la vez. Esas dos decisiones explican la mayoría de los gráficos de abajo.",
+			fields: { what: "Qué es", runs: "Cómo se ejecuta", threads: "Cómo hace muchas cosas a la vez" },
+			cards: {
+				cpp: {
+					what: "Un lenguaje de los años 80 usado para juegos, navegadores y sistemas operativos. Le da al programador control sobre cada detalle.",
+					runs: "Es [[compiled|compilado]]: antes de que el programa se ejecute, un traductor lo convierte en instrucciones que el procesador sigue directamente. Arranca al instante.",
+					threads:
+						"Usa [[thread|threads]] del sistema operativo. Son potentes pero pesados, así que los programas usan pocos. También tiene [[coroutine|corrutinas]], tareas muy livianas, pero debes organizarlas tú mismo. No hay [[gc|recolector de basura]]: el programa libera su propia memoria.",
+				},
+				rust: {
+					what: "Un lenguaje joven (2015) creado para ser tan rápido como C++ y a la vez negarse a construir programas con los errores de memoria más comunes.",
+					runs: "Es [[compiled|compilado]] a instrucciones para el procesador, como C++. Arranca al instante.",
+					threads:
+						"Usa [[thread|threads]] del sistema operativo para calcular y [[async|tareas async]] muy livianas para esperar. No hay [[gc|recolector de basura]]: el compilador calcula, antes de que el programa se ejecute, cuándo se puede liberar cada trozo de memoria.",
+				},
+				go: {
+					what: "Un lenguaje de Google (2009) hecho para servidores. Es pequeño y simple a propósito.",
+					runs: "Es [[compiled|compilado]] a instrucciones para el procesador y arranca al instante. Un [[gc|recolector de basura]] limpia la memoria mientras el programa se ejecuta.",
+					threads:
+						"Tiene [[goroutine|goroutines]]: tareas diminutas que el propio Go reparte entre los [[core|núcleos]]. Iniciar cien mil de ellas es normal.",
+				},
+				java: {
+					what: "Un lenguaje de 1995, muy común en bancos y grandes empresas.",
+					runs: "Se ejecuta dentro de una [[vm|máquina virtual]], la JVM. La JVM arranca despacio, observa qué partes del programa se usan más y las convierte en instrucciones rápidas mientras se ejecuta ([[jit|JIT]]). Un [[gc|recolector de basura]] limpia la memoria.",
+					threads:
+						"Tiene [[thread|threads]] clásicos y, desde 2023, [[virtual-thread|threads virtuales]]: threads muy livianos administrados por la JVM, así que un programa puede tener muchos miles de ellos.",
+				},
+				ts: {
+					what: "TypeScript es JavaScript, el lenguaje de las páginas web, con verificaciones adicionales. Aquí se ejecuta en Bun, un programa que ejecuta JavaScript fuera del navegador.",
+					runs: "Bun lee el texto del programa y convierte las partes más usadas en instrucciones rápidas mientras se ejecuta ([[jit|JIT]]). Un [[gc|recolector de basura]] limpia la memoria.",
+					threads:
+						"Tu código se ejecuta en un solo [[thread|thread]] con un [[event-loop|event loop]]: hace una cosa pequeña a la vez y cambia muy rápido mientras espera. Para usar más [[core|núcleos]] tiene que iniciar workers separados.",
+				},
+				python: {
+					what: "Un lenguaje de 1991 fácil de leer y escribir. Es el favorito para aprender, para la ciencia y para la inteligencia artificial.",
+					runs: "Es [[interpreted|interpretado]]: un programa lee tu código y lo ejecuta paso a paso. Eso es flexible y lento para cálculos pesados. Los programas reales de Python le pasan la parte pesada a bibliotecas escritas en C.",
+					threads:
+						"Un candado llamado [[gil|GIL]] deja que solo un [[thread|thread]] ejecute código Python a la vez. Para calcular en varios [[core|núcleos]] inicia varios [[process|procesos]]. Para esperar muchas cosas usa un [[event-loop|event loop]].",
+				},
+				elixir: {
+					what: "Un lenguaje de 2012 que se ejecuta en la máquina de Erlang, creada en los años 80 para centrales telefónicas que nunca deben detenerse.",
+					runs: "Se ejecuta dentro de una [[vm|máquina virtual]], la BEAM, que también convierte el programa en instrucciones rápidas ([[jit|JIT]]). Cada tarea tiene su propia memoria y su propio [[gc|recolector de basura]].",
+					threads:
+						"Todo es un [[beam-process|proceso BEAM]]: una tarea diminuta que no comparte nada y habla enviando mensajes. La BEAM los reparte entre todos los [[core|núcleos]] y se asegura de que ninguna tarea se quede con un núcleo por demasiado tiempo.",
+				},
+			},
+		},
+
+		sections: {
+			cpu: {
+				title: "CPU: un worker pensando duro",
+				lead: "¿Qué tan rápido puede calcular cada lenguaje cuando usa un solo [[core|núcleo]] del procesador?",
+				what: "Dos cálculos. El primero mueve el Sol y cuatro planetas paso a paso, lo que es pura aritmética con números decimales ([[n-body|n-body]]). El segundo encuentra todos los [[prime|números primos]] hasta diez millones con un método llamado [[sieve|criba]]. El tiempo va desde el momento en que el programa arranca hasta el momento en que termina.",
+				analogy:
+					"Es un examen de matemáticas con las mismas preguntas para todos. Un estudiante, un lápiz y un cronómetro.",
+				matters:
+					"Los juegos, el video, la ciencia y la inteligencia artificial pasan su tiempo calculando. Si un lenguaje es diez veces más lento en esto, el mismo trabajo necesita diez veces más tiempo o diez veces más computadores.",
+				read: "Cada barra es un lenguaje. Una barra más corta significa menos tiempo, así que más corta es mejor. El número está en [[ms|milisegundos]]. La línea negra delgada muestra la más rápida y la más lenta de las 5 ejecuciones.",
+				charts: {
+					"cpu-nbody": {
+						title: "Mover los planetas un millón de pasos",
+						unit: "Tiempo del programa completo, en [[ms|milisegundos]] ([[mean|promedio]] de 5 ejecuciones, ± [[stddev|desviación estándar]]).",
+						why: "C++, Rust y Go son [[compiled|compilados]]: el procesador sigue sus instrucciones directamente. Java y TypeScript primero tienen que notar qué parte se usa más y traducirla mientras se ejecuta ([[jit|JIT]]), así que pierden un poco al principio. Python es [[interpreted|interpretado]]: por cada suma pequeña hace muchas verificaciones adicionales. Elixir nunca cambia un número en su lugar, crea números nuevos en cada paso, y eso cuesta tiempo.",
+						careful:
+							"Este es un cálculo pequeño, escrito de la forma simple en cada lenguaje. Los programas reales de Python usan bibliotecas como NumPy, que hacen esto en C y son mucho más rápidas de lo que sugiere este gráfico. El gráfico mide el lenguaje en sí, no lo que la gente construye con él.",
+					},
+					"cpu-sieve": {
+						title: "Encontrar todos los números primos hasta diez millones",
+						unit: "Tiempo del programa completo, en [[ms|milisegundos]] ([[mean|promedio]] de 5 ejecuciones, ± [[stddev|desviación estándar]]).",
+						why: "Esta tarea escribe en una lista enorme de diez millones de casillas, así que la velocidad de la [[memory|memoria]] importa tanto como la velocidad de calcular. Por eso los lenguajes compilados quedan cerca unos de otros. Elixir no tiene una lista común que se pueda modificar en su lugar, así que usa una especial que es más lenta de alcanzar. La barra de Java incluye el tiempo que tarda en arrancar la [[vm|JVM]].",
+						careful:
+							"Las barras incluyen el [[startup|arranque]] de cada lenguaje. Para un trabajo tan corto, el arranque puede ser la mayor parte de la barra. La tabla muestra el tiempo del trabajo solo, y ahí el orden cambia.",
+					},
+				},
+			},
+
+			parallelism: {
+				title: "Paralelismo: más workers, el mismo trabajo",
+				lead: "Si un [[worker|worker]] tarda un rato, ¿dieciséis workers terminan dieciséis veces antes?",
+				what: "Un trabajo grande: contar los [[prime|números primos]] por debajo de dos millones. Se corta en 256 pedazos y se le da a 1, 2, 4, 8 y luego 16 [[worker|workers]]. Medimos cuántas veces más rápido se vuelve el trabajo. Ese número es el [[speedup|speed-up]].",
+				analogy:
+					"Un cocinero hace 256 sándwiches. Con dos cocineros debería tardar la mitad del tiempo. Con dieciséis cocineros en una cocina con ocho estufas, empiezan a estorbarse unos a otros.",
+				matters:
+					"Hace años que los procesadores dejaron de ser mucho más rápidos. En cambio, tienen más [[core|núcleos]]. Un programa solo se beneficia si su lenguaje realmente puede usarlos todos.",
+				read: "En el gráfico de líneas, la línea punteada es el resultado perfecto: el doble de workers, el doble de rápido. Una línea que se mantiene cerca de ella usa bien los núcleos. En el gráfico de barras, una [[efficiency|eficiencia]] del 100 % significa que ningún worker desperdició tiempo.",
+				charts: {
+					"par-speedup": {
+						title: "Cuántas veces más rápido con más workers",
+						unit: "[[speedup|Speed-up]]: tiempo con 1 worker dividido por el tiempo con más workers. Los dos ejes se duplican en cada paso.",
+						why: "Ningún lenguaje alcanza la línea perfecta, por tres razones. Primero, el trabajo es corto, así que el tiempo para iniciar los workers y repartir los pedazos es una parte grande. Python inicia un [[process|proceso]] completamente nuevo por cada worker y TypeScript un worker separado con su propia memoria, y ambos son lentos de iniciar. Los demás solo inician un [[thread|thread]] liviano o una tarea. Segundo, esta máquina tiene 8 [[core|núcleos]] reales, y cada uno finge ser dos: los workers del 9 al 16 comparten un núcleo real con otro worker, así que aportan poco o incluso estorban. Tercero, otros programas estaban usando la misma máquina durante la prueba.",
+						careful:
+							"El speed-up dice qué tan bien usa un lenguaje más núcleos. No dice qué lenguaje es el más rápido. Un lenguaje lento puede tener un gran speed-up y aun así terminar último. La tabla muestra los tiempos reales. Un punto por encima de la línea punteada no es magia: es ruido en la medición, porque aquí nada puede superar lo perfecto.",
+					},
+					"par-efficiency": {
+						title: "Cuánto de cada worker se usó realmente, con 8 workers",
+						unit: "[[efficiency|Eficiencia]]: speed-up dividido por el número de workers, en porcentaje.",
+						why: "La eficiencia baja cuando los workers esperan en lugar de trabajar: esperan a ser iniciados, esperan el siguiente pedazo o comparten un [[core|núcleo]]. El trabajo es corto para los lenguajes rápidos (unas pocas centésimas de segundo), así que el tiempo para iniciar los workers es una parte grande. Un trabajo más largo mostraría una eficiencia más alta para ellos.",
+						careful:
+							'Otros programas se estaban ejecutando en esta máquina durante la medición. Un vecino ocupado se lleva núcleos, y eso baja estas barras. Lee las diferencias de unos pocos puntos porcentuales como "lo mismo".',
+					},
+				},
+			},
+
+			concurrency: {
+				title: "Concurrencia: cien mil tareas esperando",
+				lead: "Calcular rápido es una habilidad. Llevar la cuenta de una enorme cantidad de cosas que en su mayoría están esperando es otra.",
+				what: "El programa inicia 100.000 [[task|tareas]]. Cada una espera una señal, luego envía un mensaje y termina. No se calcula nada. Medimos el tiempo total y cuánta [[memory|memoria]] cuesta cada tarea que espera.",
+				analogy:
+					"Un mesero atiende cien mil mesas. Nadie está comiendo todavía, todos esperan a la cocina. Un buen mesero no necesita a una persona parada en cada mesa: le basta una libretita.",
+				matters:
+					"Una aplicación de chat o un servidor de juegos tiene muchos miles de personas conectadas, y casi todas están esperando en cualquier momento. Si cada persona que espera cuesta mucha memoria, el servidor se llena rápido.",
+				read: "Las barras más cortas son mejores en ambos gráficos. El primero es el tiempo total en [[ms|milisegundos]]. El segundo es la memoria de una tarea en bytes (B). Mil bytes son más o menos una página de texto.",
+				charts: {
+					"conc-time": {
+						title: "Tiempo para iniciar, despertar y terminar todas las tareas",
+						unit: "Tiempo del programa completo, en [[ms|milisegundos]] ([[mean|promedio]] de 5 ejecuciones, ± [[stddev|desviación estándar]]).",
+						why: "Cada lenguaje tiene su propio tipo de tarea liviana. Las [[coroutine|corrutinas]] de C++, las [[async|tareas async]] de Rust y las promesas de TypeScript son poco más que una nota que dice dónde se detuvo la tarea, así que son muy rápidas. Las [[goroutine|goroutines]] y los [[beam-process|procesos BEAM]] llevan cada uno un pequeño espacio privado, lo que cuesta un poco más. Los [[virtual-thread|threads virtuales]] de Java son lentos aquí porque la [[vm|JVM]] acaba de arrancar y todavía no ha hecho rápido este código ([[jit|JIT]]): en una verificación aparte, el mismo trabajo repetido en una JVM que ya estaba caliente tardó más de 10 veces menos. C++ con un [[thread|thread]] del sistema operativo por tarea solo pudo con 10.000 tareas, y aun así es lento, porque el sistema operativo tiene que administrar cada thread.",
+						careful:
+							"Ninguna tarea hace trabajo real aquí, así que este gráfico no dice nada sobre qué tan rápido se ejecutarían las tareas. Además mide un solo arranque en frío. Un servidor que sigue funcionando durante días se comporta como el caso caliente.",
+					},
+					"conc-memory": {
+						title: "Memoria usada por una tarea que espera",
+						unit: "Bytes por tarea: [[peak-memory|memoria máxima]] adicional con todas las tareas, dividida por el número de tareas.",
+						why: "Las tareas más pequeñas solo guardan dónde se detuvieron. Una [[goroutine|goroutine]] y un [[beam-process|proceso BEAM]] empiezan con un par de miles de bytes propios, listos para crecer. Un [[thread|thread]] del sistema operativo necesita mucho más, porque el sistema le reserva espacio y lleva sus propios registros.",
+						careful:
+							"Una tarea que hace trabajo real necesita más memoria que una vacía. Estos son los precios iniciales. El número de un lenguaje con [[gc|recolector de basura]] también depende de cuándo decidió limpiar el recolector.",
+					},
+				},
+			},
+
+			http: {
+				title: "HTTP: un servidor bajo presión",
+				lead: "Cada lenguaje ejecuta un pequeño [[server|servidor]] web. Un programa hace el papel de 32 usuarios impacientes que no paran de preguntar, una [[request|petición]] tras otra.",
+				what: "Cuántas peticiones responde el servidor cada segundo ([[rps|peticiones por segundo]]), cuánto tarda cada respuesta ([[latency|latencia]]) y cuánto procesador y [[memory|memoria]] usa el servidor mientras tanto. Hay dos tipos de petición: una envía un pequeño texto [[json|JSON]] y lo recibe de vuelta, la otra le pide al servidor que cuente [[prime|números primos]], lo que lo obliga a calcular.",
+				analogy:
+					"Una caseta de peaje en una carretera. Las peticiones por segundo son cuántos autos pasan cada segundo. La latencia es cuánto espera un auto. Una caseta puede dejar pasar muchos autos y aun así hacer esperar mucho a unos pocos con mala suerte.",
+				matters:
+					"Todos los sitios web y aplicaciones hablan con servidores como estos. Un servidor que responde más peticiones con el mismo computador cuesta menos. Un servidor con esperas largas se siente lento, aunque sea rápido en promedio.",
+				read: "Usa los botones para cambiar el tipo de petición. En peticiones por segundo, más largo es mejor. En latencia, memoria y CPU, más corto es mejor. En el gráfico de latencia cada lenguaje tiene tres barras: [[p50|p50]], [[p95|p95]] y [[p99|p99]].",
+				charts: {
+					"http-rps": {
+						title: "Peticiones respondidas por segundo",
+						unit: "[[rps|Peticiones por segundo]] ([[mean|promedio]] de 3 ejecuciones de 10 segundos, ± [[stddev|desviación estándar]]). 32 [[vu|usuarios virtuales]].",
+						why: 'En la petición de eco pequeña casi todos los servidores son más rápidos que el programa que envía las peticiones. Ese programa estaba usando la mayor parte de sus propios 4 [[core|núcleos]] (mira "CPU del generador de carga" en la tabla), así que las barras más altas muestran sobre todo el límite de la prueba, y su orden es ruido. Python es la excepción: su servidor ejecuta tu código en un solo [[thread|thread]] y es [[interpreted|interpretado]], así que ahí el servidor es el verdadero límite. Cambia a "Contar primos" y todos los servidores tienen que calcular: los que reparten las peticiones entre sus 4 núcleos y calculan rápido (Go, Rust, C++) se mantienen arriba, mientras que TypeScript y Python solo pueden usar un núcleo aproximadamente.',
+						careful:
+							"Cada lenguaje usa una biblioteca de servidor distinta, y la biblioteca importa tanto como el lenguaje. Python y TypeScript se ejecutan de la forma predeterminada, con un solo proceso. En la vida real la gente inicia varias copias para usar todos los núcleos. Y si la CPU del propio generador de carga está cerca de 400 % (mira la tabla), la barra muestra el límite del generador, no el del servidor.",
+					},
+					"http-latency": {
+						title: "Cuánto espera una petición",
+						unit: "[[latency|Latencia]] en [[ms|milisegundos]]: [[p50|p50]] (típica), [[p95|p95]] y [[p99|p99]] (las de mala suerte).",
+						why: "Cuando un servidor trabaja en una petición a la vez, las demás hacen fila, como autos en una sola caseta. La fila hace que todos esperen más. Los servidores que reparten el trabajo entre varios [[core|núcleos]] mantienen la fila corta. Un [[gc|recolector de basura]] también puede pausar un servidor por un momento, y eso aparece en p99.",
+						careful:
+							"Los 32 usuarios esperan una respuesta antes de volver a preguntar. Entonces un servidor lento también recibe menos peticiones, y su latencia se ve mejor de lo que sería con una multitud real que no espera. Los tiempos también incluyen el viaje dentro del computador entre los dos programas.",
+					},
+					"http-cpu": {
+						title: "Qué tan ocupado mantuvo el servidor al procesador",
+						unit: "CPU [[mean|promedio]] del servidor mientras corría la carga. 100 % es un [[core|núcleo]] completamente ocupado.",
+						why: "Una barra cerca de 100 % pertenece a un servidor que corre en un solo [[thread|thread]]: no puede usar un segundo núcleo ni siquiera cuando está sobrecargado. Las barras cerca de 400 % pertenecen a servidores que reparten el trabajo entre los 4 núcleos que se les permitieron. Un servidor que estuvo esperando sobre todo a que el generador de carga enviara más queda en algún punto intermedio.",
+						careful:
+							"Una barra corta no es automáticamente buena. Usar poca CPU y responder pocas peticiones significa que el servidor no pudo aprovechar la máquina. Lee este gráfico junto con las peticiones por segundo.",
+					},
+					"http-memory": {
+						title: "Memoria que necesitó el servidor",
+						unit: "[[peak-memory|Memoria máxima]] del servidor, en [[mib|MiB]], mientras corría la carga.",
+						why: "Los servidores de C++, Rust y Go son un solo programa pequeño. Java y Elixir cargan toda una [[vm|máquina virtual]], y Java reserva mucha memoria por adelantado para que su [[gc|recolector de basura]] trabaje con menos frecuencia. Python y TypeScript cargan su propio runtime y sus bibliotecas.",
+						careful:
+							"La memoria se muestreó una vez por segundo, así que un pico muy corto puede pasar desapercibido. A los lenguajes con recolector de basura a menudo se les puede indicar que usen menos memoria, a costa de algo de velocidad. Aquí se usaron los valores predeterminados.",
+					},
+				},
+			},
+
+			memory: {
+				title: "Memoria: el tamaño de la mochila",
+				lead: "¿Cuánta [[memory|memoria]] carga un programa y quién la ordena?",
+				what: "Dos cosas. Primero, un programa que construye y desecha millones de pequeños datos organizados como [[binary-tree|árboles]]: medimos la mayor cantidad de memoria que tuvo en un momento ([[peak-memory|memoria máxima]]) y el tiempo. Segundo, un programa que arranca y se detiene sin hacer nada: su tiempo es el [[startup|tiempo de arranque]] y su memoria es el mínimo que necesita ese lenguaje.",
+				analogy:
+					"Una mochila. Algunos estudiantes empacan solo lo que necesitan hoy y guardan cada cosa apenas terminan (sin recolector). Otros lo tiran todo adentro y ordenan de vez en cuando ([[gc|recolector de basura]]). La segunda forma es más fácil, pero la mochila se hace más grande.",
+				matters:
+					"La memoria cuesta dinero en la nube y es escasa en teléfonos y dispositivos pequeños. El tiempo de arranque importa para herramientas pequeñas que se ejecutan miles de veces al día.",
+				read: "Las barras más cortas son mejores en los cuatro gráficos. La memoria está en [[mib|MiB]], el tiempo en [[ms|milisegundos]]. Junto a cada nombre puedes ver si el lenguaje tiene recolector de basura.",
+				charts: {
+					"mem-trees-peak": {
+						title: "Construir millones de árboles pequeños: mayor memoria retenida",
+						unit: "[[peak-memory|Memoria máxima]] del programa, en [[mib|MiB]].",
+						why: "C++ y Rust devuelven cada trozo de memoria en el momento en que ya no se necesita, así que retienen solo lo que está vivo. Los lenguajes con [[gc|recolector de basura]] dejan que la basura se acumule un rato antes de limpiar, así que su pico suele ser más alto. Go limpia con frecuencia y se mantiene cerca de C++ y Rust. Java reserva un espacio grande por adelantado a propósito: con mucho espacio, su recolector tiene que trabajar con menos frecuencia.",
+						careful:
+							"Más memoria no es simplemente peor. Un recolector que limpia poco puede hacer que el programa sea más rápido. Y la mayoría de los lenguajes permiten ajustar esto. Solo se midieron los valores predeterminados.",
+					},
+					"mem-trees-time": {
+						title: "Construir millones de árboles pequeños: tiempo",
+						unit: "Tiempo del programa completo, en [[ms|milisegundos]] ([[mean|promedio]] de 5 ejecuciones, ± [[stddev|desviación estándar]]).",
+						why: "Una sorpresa: algunos lenguajes con [[gc|recolector de basura]] pueden superar a C++ y a Rust aquí. Pedir memoria les sale muy barato (simplemente toman el siguiente lugar libre), y desechar un árbol de vida corta casi no cuesta nada. C++ y Rust le piden al sistema cada trozo pequeño y devuelven cada uno. Algunos recolectores también trabajan en otros [[core|núcleos]] al mismo tiempo: mira el tiempo de CPU en la tabla, puede ser mayor que el tiempo del reloj.",
+						careful:
+							"Los programadores de C++ y Rust que necesitan velocidad aquí usan otras técnicas, como tomar un solo bloque grande de memoria de una vez. Esta prueba usa la forma simple y cotidiana en cada lenguaje.",
+					},
+					"mem-idle-time": {
+						title: "Un programa que no hace nada: tiempo de arranque",
+						unit: "[[startup|Tiempo de arranque]] en [[ms|milisegundos]]: el programa arranca y termina de inmediato.",
+						why: "Un programa [[compiled|compilado]] está listo en el momento en que el sistema lo carga. Los demás primero tienen que poner en marcha su propia maquinaria: Python su intérprete, Bun su motor de JavaScript, Java y Elixir toda una [[vm|máquina virtual]].",
+						careful:
+							"Esto solo importa para programas que arrancan a menudo y viven poco. A un servidor que arranca una vez y funciona durante meses no le importa una fracción de segundo.",
+					},
+					"mem-idle-peak": {
+						title: "Un programa que no hace nada: memoria",
+						unit: "[[peak-memory|Memoria máxima]] en [[mib|MiB]] de un programa que arranca y termina de inmediato.",
+						why: "Este es el tamaño de la mochila vacía. Un programa compilado casi no trae nada consigo. Una [[vm|máquina virtual]] o un intérprete trae sus propias herramientas: el traductor, el [[gc|recolector de basura]], la biblioteca estándar.",
+						careful:
+							"Unas pocas decenas de MiB no importan en un portátil. Importan cuando ejecutas miles de programas pequeños a la vez, o en un dispositivo diminuto.",
+					},
+				},
+			},
+
+			build: {
+				title: "Compilación: esperar al traductor",
+				lead: "Antes de que algunos lenguajes puedan ejecutar tu programa, un traductor tiene que convertirlo en otra cosa. ¿Cuánto esperas?",
+				what: 'El tiempo para compilar el mismo programa pequeño (el de los planetas y los primos de la sección de CPU). "Desde cero" empieza sin restos de compilaciones anteriores. "Después de una edición" cambia una línea y compila otra vez, que es lo que un programador hace cientos de veces al día. Cada barra dice qué es realmente el paso, porque no todos los lenguajes hacen lo mismo aquí.',
+				analogy:
+					"Un libro en un idioma extranjero. Puedes pagarle a un traductor para que traduzca primero todo el libro y luego leerlo rápido ([[compiled|compilado]]). O puedes leer con un diccionario en la mano, traduciendo sobre la marcha: empiezas de inmediato, pero lees más despacio ([[interpreted|interpretado]]).",
+				matters:
+					"Un programador cambia algo, compila y mira el resultado, todo el día. Si cada compilación tarda un minuto, el día se va esperando. Por eso Go se diseñó para compilar rápido.",
+				read: "Las barras más cortas son mejores. El número está en [[ms|milisegundos]]. Junto a cada nombre está lo que hace el paso: convertir el programa en instrucciones del procesador, en [[bytecode|bytecode]], o solo empaquetarlo en un archivo ([[bundle|bundle]]).",
+				charts: {
+					"build-cold": {
+						title: "Compilar desde cero",
+						unit: "Tiempo en [[ms|milisegundos]] ([[mean|promedio]] de 5 compilaciones, ± [[stddev|desviación estándar]]), con todo resultado anterior borrado antes.",
+						why: "C++, Rust y Go hacen el trabajo duro ahora: convierten el programa en instrucciones del procesador y las hacen rápidas, para que ejecutar sea veloz después. C++ es lento incluso para un archivo pequeño porque vuelve a leer el texto de archivos grandes de bibliotecas en cada compilación. Go también tiene que preparar su propia biblioteca la primera vez, porque se vació su almacén de piezas ya hechas ([[cache|caché]]). Java y Elixir solo traducen a [[bytecode|bytecode]], una forma intermedia, y dejan el resto a su [[vm|máquina virtual]] en tiempo de ejecución. La mayor parte de su barra es el propio traductor arrancando. Bun solo empaqueta el archivo, sin revisar los tipos. Python casi no hace nada aquí: traduce mientras se ejecuta.",
+						careful:
+							"Este es el otro lado del gráfico de CPU: los tres lenguajes que hacen la traducción real aquí (C++, Rust, Go) fueron los más rápidos allá. El programa es un solo archivo pequeño. Un proyecto real tiene miles de archivos, y ahí las diferencias son mucho mayores y dependen tanto de las herramientas como del lenguaje.",
+					},
+					"build-warm": {
+						title: "Compilar otra vez después de cambiar una línea",
+						unit: "Tiempo en [[ms|milisegundos]] ([[mean|promedio]] de 5 compilaciones, ± [[stddev|desviación estándar]]), después de agregar una línea al programa.",
+						why: "Go guarda en una [[cache|caché]] las piezas ya hechas que construyó y solo reconstruye lo que cambió, así que esta compilación es mucho más rápida que la primera. Rust también guarda las piezas ya hechas de su biblioteca, pero aun así reconstruye todo el archivo del programa. Para los demás nada cambia: con un solo archivo no hay nada que reutilizar, así que toda la traducción se ejecuta de nuevo.",
+						careful:
+							"Con un solo archivo hay poco que reutilizar, así que este gráfico muestra lo mínimo que puede ahorrar una compilación en caliente. Los proyectos grandes se dividen en muchas piezas precisamente para que una edición reconstruya solo una pieza.",
+					},
+				},
+			},
+
+			size: {
+				title: "Tamaño: qué entra en la caja",
+				lead: "Para entregarle tu programa a otra persona, ¿qué tienes que meter en la caja y cuánto pesa?",
+				what: "Dos tamaños en disco para el mismo programa pequeño. El [[artifact|artefacto]] es lo que la compilación produce a partir de tu código. El [[runtime|runtime]] es todo lo demás que debe estar en el otro computador para que el artefacto se ejecute, sin contar el sistema operativo.",
+				analogy:
+					"Un videojuego. El cartucho es pequeño, pero no sirve sin la consola. Algunos lenguajes te dan solo el cartucho y esperan que la consola esté ahí. Otros construyen la consola dentro de cada cartucho.",
+				matters:
+					"Los programas pequeños son más rápidos de descargar, de iniciar y de copiar a muchas máquinas. Y un programa que no necesita nada instalado es mucho más fácil de entregar a alguien.",
+				read: "Las barras más cortas son mejores. El primer gráfico es solo lo que entregas. El segundo suma lo que necesita para ejecutarse. Compara los dos: un lenguaje puede ser el más pequeño en el primero y uno de los más grandes en el segundo.",
+				charts: {
+					"size-artifact": {
+						title: "Lo que entregas",
+						unit: "Tamaño en disco del [[artifact|artefacto]]. 1 MiB son 1.024 KiB.",
+						why: "Python y TypeScript entregan el texto del programa, y Java y Elixir entregan [[bytecode|bytecode]]: todos son diminutos, porque la maquinaria real vive en otro lugar. Go y Rust ponen su propia maquinaria dentro del programa (Go incluso su [[gc|recolector de basura]] y su administrador de tareas), así que el archivo es más grande. C++ es pequeño porque toma prestada su biblioteca del sistema.",
+						careful:
+							"Una barra pequeña aquí es la mitad de la historia: mira el siguiente gráfico antes de decidir quién es el más pequeño. Y nada se comprimió: los programas compilados todavía llevan información para encontrar errores, que se puede quitar.",
+					},
+					"size-total": {
+						title: "Lo que entregas más lo que necesita para ejecutarse",
+						unit: "Tamaño en disco del [[artifact|artefacto]] más su [[runtime|runtime]].",
+						why: "Ahora sí se cuentan las consolas. Go no necesita nada más, así que su barra no cambia. Java necesita una máquina Java, Python su intérprete y su biblioteca, Bun su motor de JavaScript, Elixir la máquina de Erlang. Eso mide lo mismo si tu programa tiene diez líneas o un millón.",
+						careful:
+							"El runtime se paga una vez por computador, no una vez por programa: diez programas de Python comparten un solo Python. El sistema operativo y su biblioteca básica de C no se cuentan para nadie. Un programa más grande haría crecer el primer gráfico y dejaría igual el runtime.",
+					},
+				},
+			},
+
+			database: {
+				title: "Base de datos: preguntarle al bibliotecario",
+				lead: "La mayoría de los programas guardan sus datos en una [[database|base de datos]]. ¿Qué tan rápido puede hacerle preguntas cada lenguaje?",
+				what: "Cada programa habla con la misma base de datos (PostgreSQL) y hace cuatro cosas: insertar 5.000 filas una por una, leer cada fila por su número, hacer una pregunta que necesita filtrar y sumar, y volver a leer por número con 8 workers a la vez que comparten un [[pool|pool]] de conexiones. Medimos las operaciones por segundo, la [[latency|espera]] de cada operación y el procesador y la [[memory|memoria]] que usó el programa.",
+				analogy:
+					"Una biblioteca donde solo el bibliotecario puede tocar los estantes. Caminas hasta el mostrador, pides un libro, esperas y vuelves. La mayor parte del tiempo se va en caminar y esperar, no en qué tan rápido hablas. Un pool es como tener ocho mostradores abiertos.",
+				matters:
+					"En un sitio web real, lo que suele tardar es la base de datos, no el lenguaje. Esta sección muestra que lenguajes que estaban a cien veces de distancia en el gráfico de CPU pueden quedar casi lado a lado aquí.",
+				read: "Usa los botones para elegir el tipo de operación. En operaciones por segundo, más largo es mejor. En latencia, CPU y memoria, más corto es mejor. La CPU y la memoria pertenecen a toda la prueba, así que no cambian con los botones.",
+				charts: {
+					"db-ops": {
+						title: "Operaciones por segundo",
+						unit: "Operaciones por segundo ([[mean|promedio]] de 3 ejecuciones, ± [[stddev|desviación estándar]]). Cada operación es un [[round-trip|viaje de ida y vuelta]] a la base de datos.",
+						why: "Cada operación es un viaje a la base de datos y de vuelta, y el programa espera la mayor parte del tiempo. Por eso las barras están mucho más cerca unas de otras que en la sección de CPU. Lo que todavía difiere es el [[driver|driver]], la biblioteca que habla con la base de datos: cuántos mensajes envía por una pregunta y si recuerda una pregunta que ya hizo. Con 8 workers a la vez, varios viajes ocurren al mismo tiempo, así que el total sube en la mayoría de los lenguajes. Python baja en cambio: sus 8 threads pasan el tiempo peleando por el [[gil|GIL]]. Y Rust, uno de los lenguajes más rápidos de esta página, está entre los más lentos con una sola conexión: su biblioteca hace más trabajo alrededor de cada pregunta.",
+						careful:
+							"Esto mide sobre todo el driver y el viaje, no el lenguaje. La base de datos corre en el mismo computador y guarda sus datos en memoria, así que el viaje es mucho más corto que en la vida real. Con una red real, las barras estarían todavía más cerca.",
+					},
+					"db-latency": {
+						title: "Cuánto espera una operación",
+						unit: "[[latency|Latencia]] en [[ms|milisegundos]]: [[p50|p50]] (típica), [[p95|p95]] y [[p99|p99]] (las de mala suerte).",
+						why: "La espera típica es el tiempo de un viaje más el trabajo de la base de datos. Las esperas de mala suerte vienen de momentos en que otra cosa necesitó el procesador: otro programa en la máquina, o un [[gc|recolector de basura]] ordenando.",
+						careful:
+							"Son fracciones de milisegundo. Diferencias tan pequeñas se causan fácilmente por los otros programas que se estaban ejecutando en la máquina, así que no le des mucha importancia al orden.",
+					},
+					"db-cpu": {
+						title: "Tiempo de procesador usado por el programa cliente",
+						unit: "[[cpu-time|Tiempo de CPU]] en [[ms|milisegundos]] de toda la prueba (los cuatro tipos de operación juntos).",
+						why: "Mientras espera a la base de datos, un programa debería usar casi nada de procesador. Lo que sí usa se va en preparar cada pregunta y leer cada respuesta. Un lenguaje [[interpreted|interpretado]] gasta más en eso, y una [[vm|máquina virtual]] además gasta tiempo arrancando y preparando su código. La biblioteca también cuenta: la de Rust usó mucho tiempo de procesador aquí aunque el lenguaje en sí es rápido.",
+						careful:
+							"Esto es solo el cliente. La base de datos hizo la parte pesada y no está en esta barra. Se incluye el arranque de cada lenguaje.",
+					},
+					"db-memory": {
+						title: "Memoria usada por el programa cliente",
+						unit: "[[peak-memory|Memoria máxima]] del programa cliente, en [[mib|MiB]].",
+						why: "Los datos aquí son diminutos, así que esto es casi otra vez la mochila vacía de cada lenguaje (mira la sección de Memoria) más su biblioteca de base de datos y 9 conexiones abiertas.",
+						careful:
+							"Un programa que lee resultados grandes necesitaría mucha más. Esto solo muestra el precio inicial.",
+					},
+				},
+			},
+		},
+
+		glossary: {
+			title: "Glosario",
+			lead: "Todas las palabras con una línea punteada de esta página, explicadas en un solo lugar.",
+			terms: {
+				benchmark: {
+					term: "Benchmark",
+					text: "Una prueba justa: todos reciben la misma tarea y medimos el resultado, como el tiempo o la memoria.",
+				},
+				core: {
+					term: "Núcleo",
+					text: "Uno de los trabajadores dentro del procesador. Un procesador con 8 núcleos puede hacer 8 cosas exactamente al mismo tiempo.",
+				},
+				memory: {
+					term: "Memoria (RAM)",
+					text: "El espacio de escritorio del computador. Es donde un programa guarda las cosas que está usando ahora mismo. Se vacía cuando el programa termina.",
+				},
+				ms: {
+					term: "Milisegundo (ms)",
+					text: "Una milésima de segundo. Un parpadeo dura entre 100 y 300 ms.",
+				},
+				mib: {
+					term: "MiB (mebibyte)",
+					text: "Una unidad de memoria: un poco más de un millón de bytes. Una foto de un teléfono ocupa unos 3 MiB.",
+				},
+				mean: {
+					term: "Promedio",
+					text: "El tipo habitual de promedio: se suman todos los resultados y se divide por cuántos hay.",
+				},
+				stddev: {
+					term: "Desviación estándar (±)",
+					text: "Un número que dice cuánto cambian los resultados de una ejecución a la siguiente. Pequeño significa que las ejecuciones fueron parecidas. Si dos barras difieren en menos que esto, trátalas como iguales.",
+				},
+				warmup: {
+					term: "Calentamiento",
+					text: "Una primera ejecución que se descarta, como estirarse antes de una carrera. Deja que el computador se prepare para que las ejecuciones reales sean justas.",
+				},
+				compiled: {
+					term: "Compilado",
+					text: "El programa se traduce a las instrucciones propias del procesador antes de ejecutarse. Traducir toma tiempo una sola vez, y luego el programa corre rápido.",
+				},
+				interpreted: {
+					term: "Interpretado",
+					text: "Otro programa lee tu código y lo ejecuta paso a paso mientras corre. Es fácil de cambiar, pero más lento para cálculos pesados.",
+				},
+				jit: {
+					term: "JIT (just in time)",
+					text: "Una mezcla de ambos: el programa empieza leyéndose paso a paso, y las partes más usadas se traducen a instrucciones rápidas mientras se ejecuta.",
+				},
+				vm: {
+					term: "Máquina virtual",
+					text: "Un programa que finge ser un computador y ejecuta tu programa dentro de él. Se encarga de la memoria y de las tareas por ti.",
+				},
+				gc: {
+					term: "Recolector de basura",
+					text: "Un ayudante dentro del lenguaje que encuentra la memoria que nadie usa más y la libera. El programador no necesita acordarse de limpiar.",
+				},
+				thread: {
+					term: "Thread",
+					text: "Una línea de trabajo dentro de un programa. Un programa con varios threads puede hacer varias cosas a la vez, cada una en un núcleo distinto.",
+				},
+				process: {
+					term: "Proceso",
+					text: "Un programa completo en ejecución, con su propia memoria. Dos procesos no pueden tocar la memoria del otro.",
+				},
+				worker: {
+					term: "Worker",
+					text: "Uno de los ayudantes que se reparten un trabajo, para que el trabajo termine antes. Puede ser un thread o un proceso completo.",
+				},
+				task: {
+					term: "Tarea",
+					text: "Un trabajo pequeño con un principio y un final. Muchas tareas pueden estar en curso a la vez, aunque la mayoría esté esperando.",
+				},
+				goroutine: {
+					term: "Goroutine",
+					text: "La tarea muy liviana de Go. El propio Go decide qué núcleo ejecuta cada goroutine, así que un programa puede tener cientos de miles.",
+				},
+				"virtual-thread": {
+					term: "Thread virtual",
+					text: "El thread muy liviano de Java. La máquina Java, no el sistema operativo, se encarga de él, así que cuesta poco.",
+				},
+				"beam-process": {
+					term: "Proceso BEAM",
+					text: "La tarea muy liviana de Elixir. No comparte nada con las demás y habla solo enviando mensajes.",
+				},
+				coroutine: {
+					term: "Corrutina",
+					text: "Una función que puede detenerse a la mitad, dejar que otra se ejecute y continuar después desde donde se detuvo.",
+				},
+				async: {
+					term: "Tarea async",
+					text: 'Una tarea que dice "llámame cuando esté listo" en lugar de quedarse quieta mientras espera. Mientras tanto, el thread hace otro trabajo.',
+				},
+				"event-loop": {
+					term: "Event loop",
+					text: "Un worker con una lista de pendientes. Toma el siguiente trabajo pequeño, lo hace y toma el siguiente. Es muy rápido mientras los trabajos son cortos, y todo espera cuando un trabajo es largo.",
+				},
+				gil: {
+					term: "GIL",
+					text: "Un candado de Python que deja que solo un thread ejecute código Python a la vez, incluso en un computador con muchos núcleos.",
+				},
+				speedup: {
+					term: "Speed-up",
+					text: "Cuántas veces más rápido se vuelve un trabajo con más workers. El doble de rápido con dos workers es un speed-up de 2.",
+				},
+				efficiency: {
+					term: "Eficiencia",
+					text: "Speed-up dividido por el número de workers. 100 % significa que cada worker hizo una parte completa. 50 % significa que la mitad de su tiempo se desperdició.",
+				},
+				"cpu-time": {
+					term: "Tiempo de CPU",
+					text: "El tiempo de trabajo de todos los núcleos sumado. Cuatro núcleos ocupados durante un segundo hacen cuatro segundos de tiempo de CPU.",
+				},
+				"wall-time": {
+					term: "Tiempo de reloj",
+					text: "El tiempo que leerías en un reloj de pared, desde el comienzo hasta el final.",
+				},
+				"peak-memory": {
+					term: "Memoria máxima",
+					text: "La mayor memoria que el programa usó en un solo momento, como lo más lleno que llegó a estar la mochila.",
+				},
+				startup: {
+					term: "Tiempo de arranque",
+					text: "El tiempo que un programa necesita para prepararse antes de hacer su primera cosa útil.",
+				},
+				server: {
+					term: "Servidor",
+					text: "Un programa que espera peticiones de otros programas y las responde. Los sitios web viven en servidores.",
+				},
+				request: {
+					term: "Petición",
+					text: 'Una pregunta enviada a un servidor, como "envíame esta página". El servidor devuelve una respuesta.',
+				},
+				json: {
+					term: "JSON",
+					text: "Una forma simple de escribir datos como texto, para que programas en lenguajes distintos puedan entenderse.",
+				},
+				rps: {
+					term: "Peticiones por segundo",
+					text: "Cuántas peticiones responde el servidor cada segundo. También se llama throughput. Más es mejor.",
+				},
+				latency: {
+					term: "Latencia",
+					text: "El tiempo entre enviar una petición y recibir la respuesta. Menos es mejor.",
+				},
+				p50: {
+					term: "p50 (mediana)",
+					text: "La mitad de las peticiones fueron más rápidas que esto y la otra mitad más lentas. Es la espera típica.",
+				},
+				p95: {
+					term: "p95",
+					text: "95 de cada 100 peticiones fueron más rápidas que esto. Solo las 5 más lentas esperaron más.",
+				},
+				p99: {
+					term: "p99",
+					text: "99 de cada 100 peticiones fueron más rápidas que esto. Es la espera de la petición con mala suerte entre cien.",
+				},
+				vu: {
+					term: "Usuario virtual",
+					text: "Un usuario de mentira creado por el programa de prueba. Envía una petición, espera la respuesta y envía la siguiente.",
+				},
+				"n-body": {
+					term: "N-body",
+					text: "Un cálculo de cómo varios cuerpos en el espacio, como el Sol y los planetas, se atraen entre sí y se mueven.",
+				},
+				prime: {
+					term: "Número primo",
+					text: "Un número mayor que 1 que solo se puede dividir por 1 y por sí mismo, como 2, 3, 5, 7 y 11.",
+				},
+				sieve: {
+					term: "Criba",
+					text: "Un método antiguo para encontrar primos: se escriben todos los números y luego se tachan los múltiplos de 2, de 3, de 5... Lo que queda es primo.",
+				},
+				database: {
+					term: "Base de datos",
+					text: 'Un programa cuyo trabajo es guardar datos de forma segura y responder preguntas sobre ellos, como "¿qué artículos cuestan menos de 10?".',
+				},
+				driver: {
+					term: "Driver",
+					text: "Una biblioteca que permite a un programa hablar con una base de datos. Convierte tu pregunta en los mensajes que la base de datos entiende.",
+				},
+				pool: {
+					term: "Pool de conexiones",
+					text: "Unas pocas conexiones a la base de datos que se mantienen abiertas y se comparten. Abrir una conexión es lento, así que los programas piden una prestada, la usan y la devuelven.",
+				},
+				query: {
+					term: "Consulta",
+					text: 'Una pregunta o una orden enviada a una base de datos, como "dame la fila 7" o "agrega esta fila".',
+				},
+				"round-trip": {
+					term: "Viaje de ida y vuelta",
+					text: "Enviar un mensaje y esperar a que vuelva la respuesta. Cada viaje toma tiempo aunque el trabajo sea mínimo.",
+				},
+				bytecode: {
+					term: "Bytecode",
+					text: "Una traducción intermedia de un programa: ya no es el texto que escribiste, todavía no son instrucciones para el procesador. Una máquina virtual lo ejecuta.",
+				},
+				bundle: {
+					term: "Bundle",
+					text: "Todos los archivos de un programa empaquetados en un solo archivo, para que sea fácil de enviar y rápido de cargar.",
+				},
+				artifact: {
+					term: "Artefacto",
+					text: "Lo que produce una compilación y que le entregas a otra persona: un archivo de programa, un paquete o un bundle.",
+				},
+				runtime: {
+					term: "Runtime",
+					text: "La maquinaria que un programa necesita a su alrededor para ejecutarse, como un intérprete, una máquina virtual o un recolector de basura.",
+				},
+				cache: {
+					term: "Caché",
+					text: "Un lugar donde se guardan resultados para no tener que hacer el mismo trabajo dos veces.",
+				},
+				"binary-tree": {
+					term: "Árbol binario",
+					text: "Una forma de organizar datos en la que cada pieza apunta a otras dos, como un árbol genealógico al revés.",
+				},
+			},
+		},
+
+		methodology: {
+			title: "Metodología",
+			lead: "Esta parte es para lectores que quieren comprobar el trabajo o repetirlo. La misma información está en benchmarks/README.md.",
+			measuredAt: "Medido el:",
+			databaseLabel: "Base de datos",
+			blocks: [
+				{
+					title: "Cómo se produjeron los números",
+					items: [
+						"Cada programa se ejecuta en un contenedor Docker construido a partir de una imagen fija, sin red. Los programas se compilan dentro de la imagen, así que ninguna ejecución lee el programa a través de un bind mount.",
+						"CPU, paralelismo, concurrencia y memoria usan el runner compartido del repositorio (tools/bench): hyperfine 2.0.0 ejecuta cada comando 5 veces después de 1 ejecución de calentamiento descartada, dentro del contenedor, y registra el tiempo de reloj, el tiempo de CPU (usuario más sistema) y la memoria residente máxima de todo el proceso. El programa también imprime el tiempo de su sección medida, sin el arranque.",
+						"Los gráficos de tiempo muestran el proceso completo (promedio, con el rango de las 5 ejecuciones). Las tablas también muestran la sección medida.",
+						"El speed-up usa la sección medida, porque el arranque de un runtime no es trabajo paralelo. El runner lee la sección una sola vez, así que un pequeño recolector adicional (scripts/collect-sections.ts) ejecuta cada caso 5 veces más. Speed-up = tiempo promedio de la sección con 1 worker / promedio con w workers. Eficiencia = speed-up / w.",
+						"Memoria por tarea = (memoria máxima con n tareas − memoria máxima con 0 tareas) / n.",
+						"HTTP: cada servidor corre solo, limitado a 4 CPU y 2 GiB, en una red interna de Docker sin puertos publicados. k6 2.3.0, también limitado a 4 CPU, ejecuta 32 usuarios virtuales durante 10 s, 3 veces, cada una después de una ejecución de calentamiento de 3 s. La CPU y la memoria del contenedor del servidor se muestrean cerca de una vez por segundo con docker stats mientras k6 envía carga. La primera y la última muestra de cada ejecución se descartan.",
+						"Compilación: hyperfine ejecuta el comando de compilación 5 veces con --prepare. El modo en frío borra la salida y la caché del compilador antes de cada ejecución (para Go, toda la caché de compilación). El modo en caliente agrega una línea de comentario al código fuente antes de cada ejecución. El programa es el de cpu-single.",
+						"Tamaño: tamaños exactos de stat y du dentro de las imágenes. Runtime significa lo que debe estar presente además del artefacto, sin contar el sistema operativo y glibc: libstdc++ y libgcc compartidas para C++, libgcc para Rust, nada para Go, un runtime de jlink con java.base para Java, el ejecutable de bun, el resto del release de mix para Elixir, la instalación de CPython para Python.",
+						"Base de datos: PostgreSQL 18.6 con sus datos en tmpfs, en una red interna de Docker, 4 CPU para el servidor y 4 para el cliente. Cada cliente se ejecuta una vez como calentamiento y 3 veces medido: 5.000 inserciones de una fila, 5.000 lecturas por clave primaria, 200 agregados filtrados, y luego 5.000 lecturas por clave desde 8 workers en un pool de 8 conexiones. La latencia la mide el cliente alrededor de cada llamada. El tiempo de CPU y la memoria máxima son los del propio cliente, tomados del kernel.",
+						"Antes de cualquier medición, las pruebas verifican que las siete implementaciones imprimen el mismo checksum para la misma entrada, y que los siete servidores pasan la misma suite de pruebas de protocolo.",
+					],
+				},
+				{
+					title: "Máquina",
+					data: "machine",
+					paragraphs: [
+						"Todos los resultados vienen de esta única máquina. Docker corre dentro de una máquina virtual (WSL 2), que agrega su propia sobrecarga y ruido.",
+					],
+				},
+				{
+					title: "Versiones de runtime",
+					data: "runtimes",
+					paragraphs: [
+						"Las etiquetas de imagen están fijadas, y también cada biblioteca (Cargo.lock, mix.lock, requirements.txt, URL de descarga fijas).",
+					],
+				},
+				{
+					title: "Comandos exactos",
+					data: "commands",
+					paragraphs: [
+						"Un solo comando reproduce todo: ./setup-unix-benchmarks.sh o ./setup-windows-benchmarks.ps1. Los comandos de abajo son lo que se ejecutó dentro de cada contenedor.",
+					],
+				},
+				{
+					title: "Cómo leer cada gráfico",
+					items: [
+						"Barras de tiempo: más corta es mejor. El bigote es la ejecución más rápida y la más lenta de las 5, y ± es la desviación estándar. Las barras empiezan en cero y la escala es lineal, así que los lenguajes muy rápidos parecen una astilla junto a uno lento: lee el número.",
+						"Speed-up: los dos ejes son logarítmicos en base 2. La diagonal punteada es el speed-up lineal. El host tiene 8 núcleos físicos con SMT (16 lógicos), así que el paso de 8 a 16 workers no puede duplicarse.",
+						"Eficiencia: speed-up dividido por los workers, mostrada para 8 workers, el número de núcleos físicos.",
+						"Peticiones por segundo: más largo es mejor. Revisa la columna de CPU de k6 en la tabla: cerca de 400 % el generador de carga estaba saturado y el servidor podría haber hecho más.",
+						"Latencia: p50, p95 y p99 de la duración de la petición vista por k6, promedio de las 3 ejecuciones. El modelo de carga es cerrado (un usuario espera la respuesta), así que la latencia bajo sobrecarga se subestima (omisión coordinada).",
+						"CPU del servidor: 100 % es un núcleo. El límite de cada servidor es 400 %.",
+						"Memoria: tamaño máximo del conjunto residente del proceso (runner) o la mayor muestra de docker stats del contenedor (HTTP).",
+					],
+				},
+				{
+					title: "Límites de esta comparación",
+					items: [
+						"Ruido. Otros contenedores se estaban ejecutando en la misma máquina durante la medición. Las ejecuciones son pocas (5, o 3 en HTTP) y cortas. Trata una diferencia menor que la dispersión como ninguna diferencia, y no ordenes lenguajes cuyas barras estén cerca.",
+						"Una máquina, un día, una versión de cada runtime, configuración predeterminada. Sin flags de JVM, sin ajuste de GOGC, sin cambio de asignador, sin optimización guiada por perfil.",
+						"Programas pequeños escritos de la forma simple. Miden el runtime del lenguaje en una tarea estrecha, no aplicaciones reales, y no las bibliotecas que la gente usa para ir más rápido (NumPy, arenas, SIMD).",
+						"Los tiempos del proceso completo incluyen el arranque del runtime, que domina las ejecuciones cortas de los lenguajes rápidos.",
+						"HTTP compara pilas de servidor, no solo lenguajes: cpp-httplib, axum, net/http, el servidor del JDK, Bun.serve, Bandit y FastAPI sobre uvicorn. Python y Bun corren un proceso (su valor predeterminado) mientras los demás usan 4 núcleos. Cliente y servidor comparten la máquina.",
+						"La concurrencia mide un arranque en frío. El resultado de la JVM está dominado por código que el JIT todavía no ha compilado. Los threads del SO en C++ se detienen en 10.000 porque 100.000 threads chocarían con el límite de threads de la máquina virtual de Docker, compartida con otros trabajos.",
+						"El paralelismo en Python usa procesos iniciados con el método spawn, así que el tiempo incluye iniciar intérpretes.",
+						"El tiempo de compilación usa un programa de un solo archivo, y Python, Bun, Java y Elixir no producen código de máquina por adelantado, así que sus barras miden otro paso. El tamaño del binario no cuenta nada del sistema operativo y nada pasa por strip.",
+						"La base de datos mide sobre todo el driver y un viaje de ida y vuelta muy corto. Los drivers difieren en valores predeterminados que pesan más que el lenguaje, como preparar una sentencia una vez o en cada llamada. libpq no tiene pool, así que la fase de pool en C++ usa una conexión por thread.",
+						"Velocidad, memoria y CPU son solo tres de las razones para elegir un lenguaje. La seguridad, la facilidad de escritura, las bibliotecas y la experiencia del equipo no están en ningún gráfico.",
 					],
 				},
 			],

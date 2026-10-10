@@ -6,6 +6,9 @@ EN: The step-by-step tables are printed by the TypeScript demo (`ts/src/demo.ts`
 PT: As tabelas passo a passo são impressas pela demo em TypeScript (`ts/src/demo.ts`). Este
     script mostra a outra metade da lição em Python: quantas chamadas a recursão pura faz em
     comparação com a mesma recursão mais um cache.
+ES: Las tablas paso a paso las imprime la demo en TypeScript (`ts/src/demo.ts`). Este script
+    muestra la otra mitad de la lección en Python: cuántas llamadas hace la recursión pura en
+    comparación con la misma recursión más un caché.
 """
 
 import dp

@@ -3,6 +3,9 @@ exists, but Keras wrote it.
 
 PT: O jeito de alto nível: descrever o modelo, `compile`, `fit`, `evaluate`. O laço de
 treinamento existe, mas foi o Keras que escreveu.
+
+ES: La forma de alto nivel: describir el modelo, `compile`, `fit`, `evaluate`. El bucle de
+entrenamiento existe, pero lo escribió Keras.
 """
 
 from dataclasses import dataclass
@@ -18,6 +21,8 @@ class FitRun:
     """EN: A model trained with `fit`, its loss per epoch and what `evaluate` returned.
 
     PT: Um modelo treinado com `fit`, a perda por época e o que o `evaluate` devolveu.
+
+    ES: Un modelo entrenado con `fit`, la pérdida por época y lo que devolvió `evaluate`.
     """
 
     model: keras.Model
@@ -33,6 +38,8 @@ def train_with_fit(seed: int = SEED, epochs: int = EPOCHS) -> FitRun:
     #     the same on every run.
     # PT: Uma chamada fixa as sementes do Python, do NumPy e do TensorFlow, então os pesos
     #     iniciais são os mesmos em toda execução.
+    # ES: Una llamada fija las semillas de Python, de NumPy y de TensorFlow, así que los pesos
+    #     iniciales son los mismos en cada ejecución.
     keras.utils.set_random_seed(seed)
     model = build_model()
     # EN: `compile` does no computation. It only stores the three choices the loop needs: how
@@ -44,6 +51,11 @@ def train_with_fit(seed: int = SEED, epochs: int = EPOCHS) -> FitRun:
     #     relatar (as métricas). O `metrics=["accuracy"]` de costume estaria errado aqui: ele
     #     corta em 0,5, o corte certo para uma probabilidade, e este modelo devolve um logit,
     #     cujo corte é 0.
+    # ES: `compile` no hace ninguna cuenta. Solo guarda las tres elecciones que necesita el
+    #     bucle: cómo actualizar (el optimizador), qué minimizar (la pérdida) y qué más informar
+    #     (las métricas). El `metrics=["accuracy"]` habitual sería incorrecto aquí: corta en 0,5,
+    #     el corte correcto para una probabilidad, y este modelo devuelve un logit, cuyo corte
+    #     es 0.
     model.compile(
         optimizer=keras.optimizers.SGD(learning_rate=LEARNING_RATE),
         loss=make_loss(),
@@ -59,6 +71,11 @@ def train_with_fit(seed: int = SEED, epochs: int = EPOCHS) -> FitRun:
     #     e os embaralha. O MP-AI-2 usava todos os pontos a cada passo, então o lote é
     #     ajustado para o conjunto de treino inteiro e o embaralhamento é desligado: uma época,
     #     uma atualização.
+    # ES: `fit` es el bucle de entrenamiento completo: en cada época ejecuta la ida, la pérdida,
+    #     los gradientes y la actualización. Por defecto corta los datos en mini-batches de 32
+    #     puntos y los baraja. MP-AI-2 usaba todos los puntos en cada paso, así que el lote se
+    #     ajusta al conjunto de entrenamiento entero y el barajado se desactiva: una época, una
+    #     actualización.
     history = model.fit(
         inputs, targets, epochs=epochs, batch_size=TRAIN_SIZE, shuffle=False, verbose=0
     )
@@ -66,6 +83,8 @@ def train_with_fit(seed: int = SEED, epochs: int = EPOCHS) -> FitRun:
     #     The test points were never shown to `fit`.
     # PT: O `evaluate` mede sem treinar: devolve a perda e depois cada métrica. Os pontos de
     #     teste nunca foram mostrados ao `fit`.
+    # ES: `evaluate` mide sin entrenar: devuelve la pérdida y luego cada métrica. Los puntos de
+    #     prueba nunca se le mostraron a `fit`.
     train_loss, train_accuracy = model.evaluate(inputs, targets, verbose=0)
     test_loss, test_accuracy = model.evaluate(*as_arrays(*moons_test()), verbose=0)
     return FitRun(

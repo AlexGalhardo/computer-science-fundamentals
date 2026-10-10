@@ -1,6 +1,6 @@
 # Inteligência artificial e LLMs
 
-> English version: [docs/en/artificial-intelligence/README.md](../../en/artificial-intelligence/README.md)
+> English version: [docs/en/artificial-intelligence/README.md](../../en/artificial-intelligence/README.md) · Versión en español: [docs/es/artificial-intelligence/README.md](../../es/artificial-intelligence/README.md)
 
 Esta página explica, para quem está começando, as ideias por trás da IA moderna: como um programa aprende a partir de dados, o que são tokens e vetores, como um modelo de linguagem escreve texto e como um modelo de imagem desenha. Ela segue a ordem dos tópicos do quiz da área (QC-AI), e cada seção aponta para o mini-projeto que mostra a ideia funcionando. Todos os números abaixo são pequenos o bastante para conferir à mão.
 

@@ -8,6 +8,12 @@
 //     criptográfico": só somas de 32 bits, rotações, deslocamentos e lógica de bits, repetidos
 //     por 64 rodadas. Não há chave nem segredo. Não use esta cópia para nada real: código de
 //     produção usa uma biblioteca revisada, de tempo constante e acelerada por hardware.
+// ES: SHA-256 escrito a mano, siguiendo la FIPS 180-4. Rust no tiene esta función hash en su
+//     biblioteca estándar, y escribir estas 80 líneas muestra de qué está hecho un "hash
+//     criptográfico": solo sumas de 32 bits, rotaciones, desplazamientos y lógica de bits,
+//     repetidos durante 64 rondas. No hay clave ni secreto. No uses esta copia para nada real:
+//     el código de producción usa una biblioteca revisada, de tiempo constante y acelerada por
+//     hardware.
 
 /// First 32 bits of the fractional parts of the cube roots of the first 64 primes.
 const K: [u32; 64] = [
@@ -30,6 +36,9 @@ const INITIAL: [u32; 8] = [
 //     bit ends up depending on every input bit, which is where the avalanche effect comes from.
 // PT: A função de compressão: mistura um bloco de 64 bytes no estado de 8 palavras. Cada bit de
 //     saída acaba dependendo de todos os bits de entrada, e é daí que vem o efeito avalanche.
+// ES: La función de compresión: mezcla un bloque de 64 bytes en el estado de 8 palabras. Cada
+//     bit de salida termina dependiendo de todos los bits de entrada, y de ahí viene el efecto
+//     avalancha.
 fn compress(state: &mut [u32; 8], block: &[u8; 64]) {
     let mut w = [0u32; 64];
     for (word, bytes) in w.iter_mut().zip(block.as_chunks::<4>().0) {
@@ -75,6 +84,9 @@ fn compress(state: &mut [u32; 8], block: &[u8; 64]) {
 // PT: O preenchimento torna a mensagem um múltiplo de 64 bytes: um byte 0x80, zeros e o tamanho
 //     da mensagem em bits como um número de 64 bits. Como o tamanho faz parte do último bloco,
 //     mensagens de tamanhos diferentes nunca têm a mesma forma preenchida.
+// ES: El relleno vuelve el mensaje un múltiplo de 64 bytes: un byte 0x80, ceros y el tamaño del
+//     mensaje en bits como un número de 64 bits. Como el tamaño forma parte del último bloque,
+//     mensajes de distintos tamaños nunca tienen la misma forma rellenada.
 pub fn sha256(message: &[u8]) -> [u8; 32] {
     let mut state = INITIAL;
     let (blocks, rest) = message.as_chunks::<64>();

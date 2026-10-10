@@ -10,6 +10,10 @@ import { ALGORITHMS, type LimiterConfig } from "./limiter";
 //     algoritmos, todos configurados como "10 requisições por segundo", e registramos quais
 //     requisições cada um admite. É uma simulação com relógio injetado: nada espera, nada
 //     depende da máquina, e rodar duas vezes dá os mesmos números.
+// ES: El experimento de ráfaga. La MISMA lista de instantes de llegada se entrega a todos los
+//     algoritmos, todos configurados como "10 solicitudes por segundo", y registramos cuáles
+//     solicitudes admite cada uno. Es una simulación con reloj inyectado: nada espera, nada
+//     depende de la máquina, y ejecutarla dos veces da los mismos números.
 
 export const EXPERIMENT_CONFIG = { limit: 10, windowMs: 1000, binMs: 100, durationMs: 8000 } as const;
 
@@ -17,20 +21,40 @@ export interface Phase {
 	id: string;
 	fromMs: number;
 	toMs: number;
-	label: { en: string; pt: string };
+	label: { en: string; pt: string; es: string };
 }
 
 // EN: Four phases, each built to expose one behaviour.
 // PT: Quatro fases, cada uma montada para expor um comportamento.
+// ES: Cuatro fases, cada una armada para exponer un comportamiento.
 export const PHASES: readonly Phase[] = [
-	{ id: "calm", fromMs: 0, toMs: 1000, label: { en: "under the limit", pt: "abaixo do limite" } },
-	{ id: "boundary", fromMs: 1000, toMs: 3000, label: { en: "burst across a boundary", pt: "rajada na fronteira" } },
-	{ id: "overload", fromMs: 3000, toMs: 6000, label: { en: "sustained overload", pt: "sobrecarga contínua" } },
+	{
+		id: "calm",
+		fromMs: 0,
+		toMs: 1000,
+		label: { en: "under the limit", pt: "abaixo do limite", es: "bajo el límite" },
+	},
+	{
+		id: "boundary",
+		fromMs: 1000,
+		toMs: 3000,
+		label: { en: "burst across a boundary", pt: "rajada na fronteira", es: "ráfaga en la frontera" },
+	},
+	{
+		id: "overload",
+		fromMs: 3000,
+		toMs: 6000,
+		label: { en: "sustained overload", pt: "sobrecarga contínua", es: "sobrecarga continua" },
+	},
 	{
 		id: "instant",
 		fromMs: 6000,
 		toMs: 8000,
-		label: { en: "instant burst after silence", pt: "rajada instantânea após silêncio" },
+		label: {
+			en: "instant burst after silence",
+			pt: "rajada instantânea após silêncio",
+			es: "ráfaga instantánea tras el silencio",
+		},
 	},
 ];
 
@@ -38,6 +62,7 @@ export function buildTraffic(): number[] {
 	const arrivals: number[] = [];
 	// EN: Calm: 5 requests in the first second, half the limit. Everyone must admit them all.
 	// PT: Calmaria: 5 requisições no primeiro segundo, metade do limite. Todos devem admitir tudo.
+	// ES: Calma: 5 solicitudes en el primer segundo, la mitad del límite. Todos deben admitirlo todo.
 	for (let t = 100; t < 1000; t += 200) {
 		arrivals.push(t);
 	}
@@ -45,16 +70,20 @@ export function buildTraffic(): number[] {
 	//     first 100 ms of the next. Twenty requests in 200 ms, twice the limit.
 	// PT: Rajada na fronteira: 10 requisições nos últimos 100 ms de uma janela fixa e 10 nos
 	//     primeiros 100 ms da seguinte. Vinte requisições em 200 ms, o dobro do limite.
+	// ES: Ráfaga en la frontera: 10 solicitudes en los últimos 100 ms de una ventana fija y 10 en
+	//     los primeros 100 ms de la siguiente. Veinte solicitudes en 200 ms, el doble del límite.
 	for (let t = 1900; t < 2100; t += 10) {
 		arrivals.push(t);
 	}
 	// EN: Sustained overload: 20 requests per second for two seconds, twice the limit.
 	// PT: Sobrecarga contínua: 20 requisições por segundo durante dois segundos, o dobro do limite.
+	// ES: Sobrecarga continua: 20 solicitudes por segundo durante dos segundos, el doble del límite.
 	for (let t = 3000; t < 5000; t += 50) {
 		arrivals.push(t);
 	}
 	// EN: Instant burst: after two silent seconds, 15 requests in the same millisecond.
 	// PT: Rajada instantânea: depois de dois segundos de silêncio, 15 requisições no mesmo milissegundo.
+	// ES: Ráfaga instantánea: tras dos segundos de silencio, 15 solicitudes en el mismo milisegundo.
 	for (let i = 0; i < 15; i++) {
 		arrivals.push(7000);
 	}
@@ -84,6 +113,9 @@ export interface ExperimentResult {
 // PT: A medida honesta de um limitador não é "quantas por segundo do relógio", e sim "quantas
 //     no pior intervalo de uma janela, comece onde começar". Cada evento é testado como início
 //     de um intervalo desses, [t, t + W).
+// ES: La medida honesta de un limitador no es "cuántas por segundo del reloj", sino "cuántas en
+//     el peor intervalo de una ventana, empiece donde empiece". Cada evento se prueba como inicio
+//     de uno de esos intervalos, [t, t + W).
 export function peakPerWindow(times: readonly number[], windowMs: number): number {
 	let peak = 0;
 	let end = 0;
@@ -128,6 +160,8 @@ export function runExperiment(): ExperimentResult {
 	//     Admission looks like the token bucket; the departures are where the smoothing shows.
 	// PT: Uma série a mais para o leaky bucket: QUANDO as requisições admitidas saem da fila.
 	//     A admissão se parece com a do token bucket; é nas saídas que a suavização aparece.
+	// ES: Una serie más para el leaky bucket: CUÁNDO salen de la cola sus solicitudes admitidas.
+	//     La admisión se parece a la del token bucket; el suavizado aparece en las salidas.
 	const shaper = new LeakyBucket(config);
 	const departures: number[] = [];
 	for (const time of traffic) {

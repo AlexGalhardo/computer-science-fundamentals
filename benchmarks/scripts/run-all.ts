@@ -5,6 +5,10 @@
 //     Sem argumento, roda todas as etapas. Uma etapa que falha é tentada de novo: a causa usual
 //     é um timeout do registry enquanto o Docker confere uma imagem base, o que uma segunda
 //     tentativa resolve.
+// ES: `bun run all [paso...]` ejecuta la suite completa en orden y regenera todos los resultados.
+//     Sin argumento, ejecuta todos los pasos. Un paso que falla se intenta de nuevo: la causa
+//     habitual es un timeout del registry mientras Docker comprueba una imagen base, lo que un
+//     segundo intento resuelve.
 
 import { benchmarksDir } from "./lib";
 

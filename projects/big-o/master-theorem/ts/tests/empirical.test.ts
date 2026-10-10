@@ -24,6 +24,8 @@ describe("generated recursive function", () => {
 //     merge sort, binary search and a 7-way split.
 // PT: Aceite de MP-BIGO-2.2: o crescimento medido concorda com a classe prevista para
 //     merge sort, busca binária e uma divisão em 7.
+// ES: Aceptación de MP-BIGO-2.2: el crecimiento medido concuerda con la clase predicha para
+//     merge sort, búsqueda binaria y una división en 7.
 describe("empirical check", () => {
 	for (const item of EMPIRICAL) {
 		test(`${item.name}: measured growth agrees with the predicted class`, () => {
@@ -41,6 +43,7 @@ describe("empirical check", () => {
 
 	// EN: The check must be able to fail: a wrong prediction does not pass it.
 	// PT: A conferência precisa poder falhar: uma previsão errada não passa por ela.
+	// ES: La comprobación debe poder fallar: una predicción equivocada no pasa por ella.
 	test("a wrong class has a larger drift than the right one", () => {
 		const report = empiricalCheck({ a: 2, b: 2, d: 1 }, [10, 12, 14, 15, 16]);
 		expect(report.drift.oneLogLess).toBeGreaterThan(0.05);

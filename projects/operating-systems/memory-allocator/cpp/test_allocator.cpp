@@ -2,6 +2,8 @@
 //     non-zero code if any failed. That is all a test runner needs to be.
 // PT: Testes sem framework: cada CHECK registra uma falha, e o programa termina com código
 //     diferente de zero se alguma falhou. Um executor de testes não precisa ser mais que isso.
+// ES: Pruebas sin framework: cada CHECK registra un fallo, y el programa termina con un código
+//     distinto de cero si alguno falló. Eso es todo lo que necesita ser un ejecutor de pruebas.
 
 #include <algorithm>
 #include <cstdlib>
@@ -33,6 +35,9 @@ void check(bool condition, const char* expression, int line) {
 // PT: O invariante por trás de "dois blocos vivos nunca se sobrepõem": ordenados por
 //     deslocamento, cada bloco precisa terminar antes do início do seguinte ou exatamente
 //     nele, e o último precisa terminar dentro da arena.
+// ES: El invariante detrás de "dos bloques vivos nunca se superponen": ordenados por
+//     desplazamiento, cada bloque debe terminar antes del inicio del siguiente o justo en él, y
+//     el último debe terminar dentro de la arena.
 bool no_overlap(const Allocator& allocator, std::size_t arena) {
 	std::vector<LiveBlock> live = allocator.live_blocks();
 	std::sort(live.begin(), live.end(),
@@ -51,6 +56,8 @@ bool no_overlap(const Allocator& allocator, std::size_t arena) {
 //     one-unit blocks that stay in use so the holes cannot merge.
 // PT: Monta a lista de lacunas de livro 12, 5, 30, 8 e 20 (em ordem de endereço), separadas por
 //     blocos de uma unidade que continuam em uso para que as lacunas não se fundam.
+// ES: Construye la lista de huecos de libro de texto 12, 5, 30, 8 y 20 (en orden de dirección),
+//     separados por bloques de una unidad que siguen en uso para que los huecos no se fusionen.
 std::vector<std::size_t> make_holes(ListAllocator& allocator) {
 	std::vector<std::size_t> holes;
 	for (const std::size_t size : {12, 5, 30, 8, 20}) {
@@ -130,10 +137,12 @@ void test_buddy_rounds_up_splits_and_merges() {
 	CHECK(stats.internal_fragmentation() == 58);
 	// EN: 1024 was split into 512 + 256 + 128 + the block of 128 that was handed out.
 	// PT: 1024 foi dividido em 512 + 256 + 128 + o bloco de 128 que foi entregue.
+	// ES: 1024 se dividió en 512 + 256 + 128 + el bloque de 128 que se entregó.
 	CHECK(stats.free_blocks == 3);
 	CHECK(stats.largest_free == 512);
 	// EN: The next block of 128 is the buddy of the first: offset 0 XOR 128.
 	// PT: O próximo bloco de 128 é o companheiro do primeiro: deslocamento 0 XOR 128.
+	// ES: El siguiente bloque de 128 es el compañero del primero: desplazamiento 0 XOR 128.
 	const auto b = allocator.allocate(100);
 	CHECK(b == 128u);
 	CHECK(allocator.allocate(1) == 256u);
@@ -164,6 +173,10 @@ void test_invalid_arguments_are_rejected() {
 // PT: O teste aleatório dos critérios de aceite. Para cada estratégia: milhares de alocações e
 //     liberações aleatórias, o invariante de não sobreposição conferido depois de cada uma, e
 //     no fim tudo é liberado em ordem aleatória, e a arena precisa voltar a ser um bloco livre só.
+// ES: La prueba aleatorizada de los criterios de aceptación. Para cada estrategia: miles de
+//     asignaciones y liberaciones aleatorias, el invariante de no superposición comprobado
+//     después de cada una, y al final todo se libera en orden aleatorio y la arena debe volver a
+//     ser un único bloque libre.
 void test_random_operations_never_overlap_and_everything_coalesces() {
 	const std::size_t arena = 1 << 14;
 	for (std::uint32_t seed = 1; seed <= 5; ++seed) {

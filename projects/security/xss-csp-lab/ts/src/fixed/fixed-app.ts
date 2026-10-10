@@ -10,6 +10,12 @@
 //     2. o script do navegador usa `textContent` em vez de `innerHTML` (API segura do DOM);
 //     3. toda resposta leva uma Content Security Policy (segunda camada).
 //     A entrada externa também é validada com Zod.
+// ES: La app corregida. Mismas páginas y mismas rutas que la vulnerable, con tres cambios:
+//     1. todo texto del usuario pasa por `escapeHtml` en el momento en que se escribe en el HTML
+//        (codificación de salida);
+//     2. el script del navegador usa `textContent` en lugar de `innerHTML` (API segura del DOM);
+//     3. toda respuesta lleva una Content Security Policy (segunda capa).
+//     La entrada externa también se valida con Zod.
 
 import { Elysia } from "elysia";
 import { z } from "zod";
@@ -30,6 +36,10 @@ const DOM_CLIENT = new URL("./fixed-dom-client.js", import.meta.url);
 //     500. Repare no que ela NÃO faz: não procura `<script>` nem remove `<`. Um visitante pode
 //     escrever sobre HTML. A validação limita o que é aceito; é a codificação na saída que
 //     torna o texto inofensivo.
+// ES: La validación comprueba formato y tamaño: un nombre tiene de 1 a 40 caracteres, un mensaje hasta
+//     500. Fíjate en lo que NO hace: no busca `<script>` ni quita `<`. Un visitante puede
+//     escribir sobre HTML. La validación limita lo que se acepta; es la codificación en la salida la que
+//     vuelve inofensivo el texto.
 const guestbookBody = z.object({
 	author: z.string().trim().min(1).max(40),
 	message: z.string().trim().min(1).max(500),
@@ -51,6 +61,8 @@ function html(body: string): Response {
 //     hole again, one screen later.
 // PT: A mensagem de erro é uma constante. Repetir aqui o valor rejeitado abriria o mesmo buraco
 //     de novo, uma tela depois.
+// ES: El mensaje de error es una constante. Repetir aquí el valor rechazado abriría el mismo agujero
+//     de nuevo, una pantalla después.
 function invalidInput(): Response {
 	return respond("Invalid input.", { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } });
 }
@@ -61,6 +73,9 @@ function invalidInput(): Response {
 // PT: A CORREÇÃO (armazenado). A entrada é escapada aqui, no último momento antes de virar HTML.
 //     O armazenamento guarda o texto original, então a mesma entrada poderia depois ser enviada
 //     como JSON ou e-mail com a codificação adequada àquele outro lugar.
+// ES: LA CORRECCIÓN (almacenado). La entrada se escapa aquí, en el último momento antes de volverse HTML.
+//     El almacenamiento guarda el texto original, así que la misma entrada podría después enviarse
+//     como JSON o correo con la codificación adecuada para ese otro lugar.
 function renderGuestbook(entries: readonly GuestbookEntry[]): string {
 	const items = entries
 		.map(
@@ -86,6 +101,8 @@ ${items}
 //     `<script>` arrives as `&lt;script&gt;` and is displayed as text.
 // PT: A CORREÇÃO (refletido). O termo é escapado antes de ser escrito entre as tags, então
 //     `<script>` chega como `&lt;script&gt;` e é exibido como texto.
+// ES: LA CORRECCIÓN (reflejado). El término se escapa antes de escribirse entre las etiquetas, así que
+//     `<script>` llega como `&lt;script&gt;` y se muestra como texto.
 function renderSearch(term: string): string {
 	return renderPage({
 		title: "Search",

@@ -1,6 +1,6 @@
 # Performance
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Performance engineering is measuring before changing: defining what fast means (latency percentiles, throughput), producing a realistic load, finding where the time goes with a profiler, and only then optimising. It connects several layers, from CPU caches and memory locality to runtime behaviour, database queries and the capacity of a whole service, and it depends on a sound benchmarking method to avoid fooling yourself.
 

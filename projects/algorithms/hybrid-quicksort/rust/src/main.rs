@@ -8,6 +8,11 @@
 //     JSON no contrato de benchmark.
 //     `hybrid-quicksort sweep <n>` ordena a mesma entrada aleatória com limiares 0, 5, 10, 20 e
 //     50 e imprime uma tabela Markdown com o melhor.
+// ES: Dos modos, los mismos que el programa en C++.
+//     `hybrid-quicksort <pivote>-k<umbral> <forma> <n>` ordena una entrada e imprime una línea
+//     JSON en el contrato de benchmark.
+//     `hybrid-quicksort sweep <n>` ordena la misma entrada aleatoria con umbrales 0, 5, 10, 20 y
+//     50 e imprime una tabla Markdown con el mejor.
 
 use std::fs;
 use std::process::ExitCode;
@@ -31,6 +36,8 @@ struct Measurement {
 //     run of a few milliseconds is too noisy to tell threshold 10 from threshold 20.
 // PT: A ordenação é repetida em cópias novas da entrada e o tempo mediano é informado. Uma
 //     execução de poucos milissegundos é ruidosa demais para separar o limiar 10 do limiar 20.
+// ES: La ordenación se repite sobre copias nuevas de la entrada y se informa el tiempo mediano.
+//     Una ejecución de pocos milisegundos es demasiado ruidosa para separar el umbral 10 del 20.
 fn measure(input: &[i32], pivot: Pivot, threshold: usize) -> Measurement {
     let mut times = Vec::with_capacity(REPETITIONS);
     let mut sorted = Vec::new();
@@ -60,6 +67,7 @@ fn parse_number(text: &str, limit: usize) -> Result<usize, String> {
 
 // EN: VmHWM in /proc/self/status is the peak resident memory of the process in kibibytes.
 // PT: VmHWM em /proc/self/status é o pico de memória residente do processo em kibibytes.
+// ES: VmHWM en /proc/self/status es el pico de memoria residente del proceso en kibibytes.
 fn peak_memory_kb() -> u64 {
     fs::read_to_string("/proc/self/status")
         .ok()

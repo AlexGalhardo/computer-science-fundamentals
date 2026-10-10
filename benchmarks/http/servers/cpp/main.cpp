@@ -14,6 +14,14 @@
 //     clássico: simples, usa todos os núcleos, e limitado pelo número de threads quando muitas
 //     conexões ficam ociosas.
 //     Protocolo (o mesmo nas 7 linguagens): GET /health, POST /echo, GET /primes?limit=N.
+// ES: Servidor HTTP del benchmark en C++. La biblioteca estándar no tiene red, así que se usan
+//     dos bibliotecas pequeñas de un solo header: cpp-httplib para HTTP y nlohmann/json para
+//     JSON, ambas muy comunes en proyectos C++ que quieren un servidor sin un framework grande.
+//     Modelo: un pool fijo de threads del SO. Un thread acepta conexiones y las pone en una cola,
+//     y cada thread del pool toma una conexión y la atiende con llamadas bloqueantes. Es el modelo
+//     clásico: simple, usa todos los núcleos, y limitado por el número de threads cuando muchas
+//     conexiones quedan ociosas.
+//     Protocolo (el mismo en los 7 lenguajes): GET /health, POST /echo, GET /primes?limit=N.
 
 #include <httplib.h>
 
@@ -37,6 +45,7 @@ bool is_prime(int k) {
 
 // EN: The CPU-bound endpoint: count the primes up to limit by trial division.
 // PT: O endpoint preso à CPU: conta os primos até limit por divisão por tentativa.
+// ES: El endpoint limitado por CPU: cuenta los primos hasta limit por división de prueba.
 int count_primes(int limit) {
 	int count = 0;
 	for (int k = 2; k <= limit; k++) {
@@ -65,6 +74,10 @@ int main() {
 	// PT: O corpo é interpretado e serializado de novo, então isto mede a biblioteca de JSON e
 	//     a pilha HTTP, não uma cópia de bytes. Com o terceiro argumento false, o parse()
 	//     informa o erro por um valor "discarded" em vez de lançar exceção.
+	// ES: El cuerpo se interpreta y se serializa de nuevo, así que esto mide la biblioteca de JSON
+	// y
+	//     la pila HTTP, no una copia de bytes. Con el tercer argumento false, parse()
+	//     informa el error mediante un valor "discarded" en lugar de lanzar una excepción.
 	server.Post("/echo", [](const httplib::Request& request, httplib::Response& response) {
 		nlohmann::json value = nlohmann::json::parse(request.body, nullptr, false);
 		if (value.is_discarded()) {

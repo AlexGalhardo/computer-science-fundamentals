@@ -28,6 +28,12 @@ using Value = std::uint64_t;
 //     vez de metade, e um milhão de chaves cabe em uma árvore de só 3 níveis. É por isso que
 //     bancos de dados e sistemas de arquivos usam árvores largas: o custo de uma busca é o
 //     número de páginas lidas.
+// ES: Un árbol B guardado en un archivo, un nodo por página. Un nodo de árbol binario guarda una
+//     clave y tiene dos hijos. Un nodo de árbol B llena una página entera de claves: aquí hasta
+//     169 claves y 170 hijos. Cada página leída descarta entonces 169/170 de las claves restantes
+//     en vez de la mitad, y un millón de claves cabe en un árbol de solo 3 niveles. Por eso las
+//     bases de datos y los sistemas de archivos usan árboles anchos: el costo de una búsqueda es
+//     el número de páginas leídas.
 class BTree {
 public:
 	// EN: The minimum degree t fixes the size of a node: every node except the root has
@@ -36,6 +42,9 @@ public:
 	// PT: O grau mínimo t fixa o tamanho de um nó: todo nó, menos a raiz, tem entre t - 1 e
 	//     2t - 1 chaves. 2t - 1 = 169 é o máximo que cabe em uma página de 4096 bytes com este
 	//     layout. Os testes usam t = 2 para que divisões e fusões aconteçam o tempo todo.
+	// ES: El grado mínimo t fija el tamaño de un nodo: todo nodo, menos la raíz, tiene entre t - 1
+	//     y 2t - 1 claves. 2t - 1 = 169 es el máximo que cabe en una página de 4096 bytes con este
+	//     layout. Las pruebas usan t = 2 para que divisiones y fusiones ocurran todo el tiempo.
 	static constexpr std::size_t kMaxDegree = 85;
 	static constexpr std::size_t kMaxKeys = 2 * kMaxDegree - 1;
 
@@ -75,6 +84,8 @@ public:
 		} catch (const std::exception&) {
 			// EN: A destructor must not throw. Call flush() directly to see a write error.
 			// PT: Um destrutor não pode lançar exceção. Chame flush() para ver um erro de escrita.
+			// ES: Un destructor no puede lanzar una excepción. Llama a flush() para ver un error
+			//     de escritura.
 		}
 	}
 
@@ -82,6 +93,9 @@ public:
 	//     is found. Inside the page the keys are sorted, so a binary search picks the child.
 	// PT: A busca lê uma página por nível, da raiz para baixo, e para assim que acha a chave.
 	//     Dentro da página as chaves estão ordenadas, então uma busca binária escolhe o filho.
+	// ES: La búsqueda lee una página por nivel, de la raíz hacia abajo, y se detiene en cuanto
+	//     encuentra la clave. Dentro de la página las claves están ordenadas, así que una búsqueda
+	//     binaria elige el hijo.
 	std::optional<Value> search(Key key) {
 		PageId id = root_;
 		for (;;) {
@@ -108,6 +122,12 @@ public:
 	//     raiz nova, e todas as folhas ficam um nível mais fundas ao mesmo tempo. É assim que
 	//     todas as folhas ficam na mesma profundidade. Devolve true para chave nova e false
 	//     quando um valor foi trocado.
+	// ES: Inserción en una pasada, de arriba hacia abajo. Antes de entrar a un hijo lleno, el
+	//     hijo se divide, así que siempre hay espacio al llegar a la hoja y nada necesita subir
+	//     de vuelta. El árbol solo crece por arriba: cuando la raíz está llena se divide bajo una
+	//     raíz nueva, y todas las hojas quedan un nivel más hondas a la vez. Así todas las hojas
+	//     quedan a la misma profundidad. Devuelve true para clave nueva y false cuando se
+	//     reemplazó un valor.
 	bool insert(Key key, Value value) {
 		Node node = load(root_);
 		if (node.keys.size() == max_keys()) {
@@ -160,6 +180,11 @@ public:
 	//     mínimo de t - 1 chaves, o filho é reabastecido, então remover uma chave lá embaixo
 	//     nunca deixa um nó vazio demais. Uma chave achada em um nó interno é trocada pelo seu
 	//     antecessor ou sucessor, que mora em uma folha, e é esse que acaba removido.
+	// ES: Eliminación en una pasada, de arriba hacia abajo. Antes de entrar a un hijo que tiene
+	//     solo el mínimo de t - 1 claves, el hijo se reabastece, así que quitar una clave allá
+	//     abajo nunca deja un nodo demasiado vacío. Una clave hallada en un nodo interno se
+	//     cambia por su antecesor o sucesor, que vive en una hoja, y ese es el que termina
+	//     eliminado.
 	bool remove(Key key) {
 		Node node = load(root_);
 		for (;;) {
@@ -216,6 +241,10 @@ public:
 	//     um número legal de chaves, as chaves estão em ordem (dentro de cada nó e em relação às
 	//     chaves dos ancestrais), e toda folha está na mesma profundidade. Devolve um texto
 	//     vazio quando tudo vale, ou a descrição do primeiro problema.
+	// ES: Recorre el árbol entero y verifica las tres invariantes de un árbol B: todo nodo tiene
+	//     un número legal de claves, las claves están en orden (dentro de cada nodo y respecto a
+	//     las claves de los ancestros), y toda hoja está a la misma profundidad. Devuelve un
+	//     texto vacío cuando todo vale, o la descripción del primer problema.
 	std::string check() {
 		std::uint64_t keys = 0;
 		const std::string problem = check_node(root_, 1, std::nullopt, std::nullopt, keys);
@@ -271,6 +300,10 @@ private:
 	//     para chaves, valores e números de página dos filhos. Os filhos são números de página,
 	//     não endereços de memória: um ponteiro não significa nada depois que o programa
 	//     termina, um número de página vale enquanto o arquivo existir.
+	// ES: Layout de página de un nodo: marca de hoja, cantidad de claves y tres áreas fijas
+	//     para claves, valores y números de página de los hijos. Los hijos son números de página,
+	//     no direcciones de memoria: un puntero no significa nada después de que el programa
+	//     termina, un número de página vale mientras el archivo exista.
 	Node load(PageId id) {
 		const Page page = pager_.read(id);
 		Node node;
@@ -325,6 +358,10 @@ private:
 	//     arquivo: cada página livre guarda o número da próxima. Um nó novo reaproveita uma
 	//     página livre antes de o arquivo crescer, então remover não deixa o arquivo cheio de
 	//     páginas mortas.
+	// ES: Las páginas liberadas por las fusiones forman una lista enlazada dentro del propio
+	//     archivo: cada página libre guarda el número de la siguiente. Un nodo nuevo reutiliza una
+	//     página libre antes de que el archivo crezca, así que eliminar no deja el archivo lleno
+	//     de páginas muertas.
 	PageId allocate() {
 		if (free_head_ == 0) {
 			return pager_.append();
@@ -348,6 +385,9 @@ private:
 	// PT: Divisão (split). Um filho cheio tem 2t - 1 chaves. A chave do meio sobe para o pai e
 	//     as t - 1 chaves depois dela vão para uma nova página irmã. O filho fica com as
 	//     primeiras t - 1.
+	// ES: División (split). Un hijo lleno tiene 2t - 1 claves. La clave del medio sube al padre y
+	//     las t - 1 claves después de ella van a una nueva página hermana. El hijo se queda con
+	//     las primeras t - 1.
 	Node split_child(Node& parent, std::size_t i, Node& child) {
 		Node sibling;
 		sibling.id = allocate();
@@ -381,6 +421,11 @@ private:
 	//     chave do pai que fica entre eles viram um único nó cheio, de 2t - 1 chaves. A página
 	//     do filho direito é liberada. Se a raiz ficar sem nenhuma chave, o nó fundido vira a
 	//     nova raiz e a árvore fica um nível mais baixa, de novo para todas as folhas de uma vez.
+	// ES: Fusión (merge), lo opuesto de la división. Dos hijos vecinos con t - 1 claves cada uno y
+	//     la clave del padre que queda entre ellos se vuelven un único nodo lleno, de 2t - 1
+	//     claves. La página del hijo derecho se libera. Si la raíz se queda sin ninguna clave, el
+	//     nodo fusionado pasa a ser la nueva raíz y el árbol queda un nivel más bajo, de nuevo
+	//     para todas las hojas a la vez.
 	void merge(Node& parent, std::size_t i, Node& left, Node& right) {
 		const auto at = static_cast<std::ptrdiff_t>(i);
 		left.keys.push_back(parent.keys[i]);
@@ -411,6 +456,11 @@ private:
 	//     chave do pai que fica entre os dois irmãos desce para o filho, e a chave mais próxima
 	//     do irmão mais cheio sobe para ocupar o lugar dela. As chaves giram pelo pai para que
 	//     a ordem seja preservada. Só quando nenhum irmão pode emprestar é que dois nós se fundem.
+	// ES: Redistribución. Un hijo con solo t - 1 claves pide una prestada por medio del padre: la
+	//     clave del padre que queda entre los dos hermanos baja al hijo, y la clave más cercana
+	//     del hermano más lleno sube a ocupar su lugar. Las claves giran por el padre para que
+	//     el orden se preserve. Solo cuando ningún hermano puede prestar es que dos nodos se
+	//     fusionan.
 	Node refill(Node& parent, std::size_t i, Node child) {
 		std::optional<Node> left;
 		if (i > 0) {
@@ -461,6 +511,9 @@ private:
 	//     of its left subtree. The successor is the first key of the leftmost leaf on the right.
 	// PT: O antecessor de uma chave em um nó interno é a última chave da folha mais à direita
 	//     da subárvore esquerda. O sucessor é a primeira chave da folha mais à esquerda da direita.
+	// ES: El antecesor de una clave en un nodo interno es la última clave de la hoja más a la
+	//     derecha del subárbol izquierdo. El sucesor es la primera clave de la hoja más a la
+	//     izquierda del derecho.
 	std::pair<Key, Value> edge_entry(Node node, bool last) {
 		while (!node.leaf) {
 			node = load(last ? node.children.back() : node.children.front());

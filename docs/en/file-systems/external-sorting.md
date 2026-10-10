@@ -1,6 +1,6 @@
 # External sorting
 
-> Versão em português: [docs/pt/file-systems/external-sorting.md](../../pt/file-systems/external-sorting.md)
+> Versão em português: [docs/pt/file-systems/external-sorting.md](../../pt/file-systems/external-sorting.md) · Versión en español: [docs/es/file-systems/external-sorting.md](../../es/file-systems/external-sorting.md)
 
 Mini-project: [projects/file-systems/external-sorting](../../../projects/file-systems/external-sorting). Languages: Rust, Go. Quiz topic: `file-systems` / `external-sorting`.
 
@@ -12,7 +12,7 @@ External merge sort keeps two promises: memory use does not depend on the size o
 
 ## Phase 1: run generation
 
-```
+```text
 input file:   [ ......... 320 MiB, in any order ......... ]
                  |          |          |               |
               read 8 MiB  read 8 MiB  read 8 MiB  ...  read the rest
@@ -28,7 +28,7 @@ Number of runs = ceil(file size / run size), give or take one, because the buffe
 
 ## Phase 2: k-way merge with a heap
 
-```
+```text
 run-0:  apple  fig    pear  ...        heap of run numbers, ordered by
 run-1:  banana grape  plum  ...   -->  the current line of each run   -->  output
 run-2:  cherry kiwi   lime  ...        (top = smallest current line)
@@ -40,7 +40,7 @@ Each run is read from start to end through its own buffer, and only one line of 
 
 The merge reads at most `fan-in` runs at a time. With more runs than that, a pass joins groups of `fan-in` runs into longer runs, and the next pass joins those:
 
-```
+```text
 41 runs, fan-in 8:   41  -->  6  -->  1        2 merge passes
 48 runs, fan-in 2:   48 -> 24 -> 12 -> 6 -> 3 -> 2 -> 1      6 merge passes
 ```

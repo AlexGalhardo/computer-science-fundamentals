@@ -8,6 +8,11 @@
 // só aloca. Em segundo plano o coletor marca os nós ainda alcançáveis e libera o resto,
 // começando um ciclo cada vez que o heap dobra (GOGC=100). Ele não move objetos e suas pausas
 // são muito curtas, ao preço de usar outros núcleos enquanto o programa roda.
+// ES: Carga de memoria en Go: `binary-trees` (asigna y descarta muchos nodos pequeños) e `idle`
+// (arranca y sale). Modelo de Go: recolector de basura concurrente de marcado y barrido. El programa
+// solo asigna. En segundo plano el recolector marca los nodos todavía alcanzables y libera el resto,
+// iniciando un ciclo cada vez que el heap se duplica (GOGC=100). No mueve objetos y sus pausas
+// son muy cortas, a costa de usar otros núcleos mientras el programa corre.
 package main
 
 import (
@@ -31,6 +36,7 @@ func build(depth int) *node {
 
 // EN: Walks the whole tree and counts its nodes.
 // PT: Percorre a árvore inteira e conta os nós.
+// ES: Recorre el árbol completo y cuenta los nodos.
 func (n *node) check() int {
 	if n.left == nil {
 		return 1
@@ -48,6 +54,7 @@ func binaryTrees(n int) int {
 		for i := 0; i < iterations; i++ {
 			// EN: Nothing frees this tree here. It becomes garbage and the collector finds it.
 			// PT: Nada libera esta árvore aqui. Ela vira lixo e o coletor a encontra.
+			// ES: Nada libera este árbol aquí. Se vuelve basura y el recolector lo encuentra.
 			total += build(depth).check()
 		}
 	}

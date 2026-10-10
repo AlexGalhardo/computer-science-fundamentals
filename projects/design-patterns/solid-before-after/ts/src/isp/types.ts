@@ -9,6 +9,9 @@ export interface Product {
 // PT: A lista de preços de um fornecedor chega como texto CSV: `id,name,priceCents`, um produto
 //     por linha. O arquivo pertence ao fornecedor, então o catálogo montado sobre ele pode ser
 //     lido e não pode ser gravado.
+// ES: La lista de precios de un proveedor llega como texto CSV: `id,name,priceCents`, un
+//     producto por línea. El archivo pertenece al proveedor, así que el catálogo montado sobre
+//     él se puede leer y no se puede escribir.
 export function parseCsv(csv: string): Product[] {
 	return csv
 		.split("\n")

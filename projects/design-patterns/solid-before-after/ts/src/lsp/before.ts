@@ -24,6 +24,11 @@ class Account {
 //     e daí em diante nenhum código pode confiar em um `Account`: todo cliente abaixo precisa
 //     perguntar o tipo concreto antes de chamar. Cada conta nova que não permite saque
 //     acrescenta uma linha a todos eles.
+// ES: ROMPE EL PRINCIPIO DE SUSTITUCIÓN DE LISKOV. Una cuenta a plazo fijo "es una" cuenta, así
+//     que hereda `withdraw`, una promesa que no puede cumplir. Responde lanzando una excepción,
+//     y desde entonces ningún código puede confiar en un `Account`: todo cliente de abajo debe
+//     preguntar el tipo concreto antes de llamar. Cada cuenta nueva que no permite retiro
+//     añade una línea a todos ellos.
 class FixedTermAccount extends Account {
 	withdraw(): void {
 		throw new Error("a fixed-term account cannot be withdrawn");

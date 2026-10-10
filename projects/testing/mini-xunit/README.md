@@ -1,6 +1,6 @@
 # mini-xunit
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A test framework built from nothing, twice: once in Python and once in TypeScript. Test case, suite, result, set-up and tear-down, discovery of test files, a report and an exit code, in about 300 lines per language, comments included. No test library is used in either one (no pytest, no unittest, no `bun:test`): the framework is tested by itself. After reading it, `setUp`, "fresh fixture" and "the run exited with 1" stop being magic.
 
@@ -41,18 +41,18 @@ docker compose run --rm ts-demo; echo "exit code: $?"
 
 Each runs the framework on `examples/failing`, where one test has a wrong expectation on purpose. The report has the name of the test, the message and the location, and the process exits with 1:
 
-```
+```text
 FAIL CartTest.test_total_with_discount
      expected 100 but got 90.0
-     at examples/failing/cart_xtest.py:25
+     at examples/failing/cart_xtest.py:28
 2 run, 1 failed
 exit code: 1
 ```
 
-```
+```text
 FAIL CartTest.testTotalWithDiscount
      expected 100 but got 90
-     at examples/failing/cart.xunit.ts:24
+     at examples/failing/cart.xunit.ts:28
 2 run, 1 failed
 exit code: 1
 ```
@@ -88,7 +88,7 @@ The design is the same. What changes is how each language finds a method by name
 
 ## Structure
 
-```
+```text
 python/mini_xunit/          the framework (core, discovery, reporter, command line)
 python/selftest/            bootstrap, fixtures and the tests written with the framework
 python/examples/            a cart with a passing folder and a failing folder

@@ -5,6 +5,10 @@ EN: Prints a truth table as bit-parallel columns, the Quine-McCluskey results an
 PT: Imprime uma tabela-verdade como colunas bit-paralelas, os resultados do Quine-McCluskey e
     a passada única que soma os 65.536 pares. Com RESULTS_DIR definida, grava
     results/results-python.md.
+
+ES: Imprime una tabla de verdad como columnas bit-paralelas, los resultados de Quine-McCluskey
+    y la pasada única que suma los 65.536 pares. Con RESULTS_DIR definida, escribe
+    results/results-python.md.
 """
 
 import os

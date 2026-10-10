@@ -1,6 +1,6 @@
 # external-sorting
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How to sort a file that is larger than memory, written in Rust and in Go. Run generation sorts one memory-sized piece at a time and writes it as a sorted run, and a k-way merge driven by a min-heap joins the runs, in one pass or in several. A container with 32 MiB of memory sorts a file of 320 MiB, and a benchmark shows what the run size and the merge fan-in do to the total time.
 

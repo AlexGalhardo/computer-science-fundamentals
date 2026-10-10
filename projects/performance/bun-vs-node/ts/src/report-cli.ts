@@ -4,6 +4,9 @@
 // PT: `docker compose run --rm report`. Lê os resumos brutos do k6 em `k6-results/` (ignorada pelo
 //     git), grava `results/` e a tabela dos dois READMEs, e termina com erro quando uma
 //     configuração não foi medida ou uma requisição falhou.
+// ES: `docker compose run --rm report`. Lee los resúmenes brutos de k6 en `k6-results/` (ignorada por
+//     git), escribe `results/` y la tabla de los README, y termina con error cuando una
+//     configuración no se midió o una solicitud falló.
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -66,6 +69,7 @@ writeFileSync(
 for (const [file, language] of [
 	["README.md", "en"],
 	["README.pt-BR.md", "pt"],
+	["README.es.md", "es"],
 ] as const) {
 	const path = join(env.PROJECT_DIR, file);
 	writeFileSync(path, injectTable(readFileSync(path, "utf8"), renderTable(rows, language)));

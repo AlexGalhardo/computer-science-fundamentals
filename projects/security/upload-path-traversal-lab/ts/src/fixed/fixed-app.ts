@@ -6,6 +6,10 @@
 //     uma ideia: nada do que o cliente envia decide algo sobre o disco ou sobre como um navegador
 //     vai tratar o arquivo. O servidor gera o nome, mede o tamanho, detecta o tipo e define os
 //     cabeçalhos da resposta. Toda entrada externa (fora o token) é validada com Zod.
+// ES: LA CORRECCIÓN, parte 3: las rutas. Las mismas dos rutas de la versión vulnerable, construidas sobre
+//     una idea: nada de lo que envía el cliente decide algo sobre el disco ni sobre cómo un navegador
+//     tratará el archivo. El servidor genera el nombre, mide el tamaño, detecta el tipo y define las
+//     cabeceras de la respuesta. Toda entrada externa (salvo el token) se valida con Zod.
 
 import { randomUUID } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
@@ -24,6 +28,9 @@ export interface FixedAppOptions {
 	// PT: A pasta de uploads. Ela precisa ficar fora de qualquer pasta servida como arquivos
 	//     estáticos, para que o único caminho até um arquivo guardado seja a rota de download
 	//     abaixo, com suas verificações e cabeçalhos.
+	// ES: La carpeta de cargas. Debe quedar fuera de cualquier carpeta servida como archivos
+	//     estáticos, para que el único camino hasta un archivo guardado sea la ruta de descarga
+	//     de abajo, con sus verificaciones y cabeceras.
 	uploadRoot: string;
 	maxBytes?: number;
 }
@@ -34,6 +41,9 @@ export interface FixedAppOptions {
 // PT: Uma linha do índice. O índice é a fonte da verdade sobre um arquivo: de quem é, como se
 //     chamava, e qual tipo o SERVIDOR detectou. Aqui ele fica em memória; uma aplicação real o
 //     guarda em um banco de dados.
+// ES: Una fila del índice. El índice es la fuente de verdad sobre un archivo: de quién es, cómo se
+//     llamaba, y qué tipo detectó el SERVIDOR. Aquí queda en memoria; una aplicación real lo
+//     guarda en una base de datos.
 interface StoredFile {
 	id: string;
 	owner: string;
@@ -48,6 +58,9 @@ interface StoredFile {
 // PT: Um download é pedido por id, e um id tem exatamente um formato: o UUID que o servidor gerou.
 //     Um nome com `../`, uma variante codificada ou qualquer outra coisa não é um UUID e para
 //     aqui, antes de qualquer caminho ser montado.
+// ES: Una descarga se pide por id, y un id tiene exactamente un formato: el UUID que generó el servidor.
+//     Un nombre con `../`, una variante codificada o cualquier otra cosa no es un UUID y se detiene
+//     aquí, antes de que se arme cualquier ruta.
 const fileIdSchema = z.uuid();
 
 function lastSegment(name: string): string {
@@ -62,6 +75,10 @@ function lastSegment(name: string): string {
 //     de um caminho. Mesmo assim é validado: tamanho razoável, sem caracteres de controle (uma
 //     quebra de linha dentro do valor de um cabeçalho deixaria o cliente escrever cabeçalhos
 //     extras), e só o último segmento é mantido, porque um rótulo não tem pastas.
+// ES: El nombre original se guarda solo como una etiqueta para mostrar a las personas. Nunca pasa a ser parte
+//     de una ruta. Aun así se valida: tamaño razonable, sin caracteres de control (un
+//     salto de línea dentro del valor de una cabecera dejaría que el cliente escribiera cabeceras
+//     extra), y solo se mantiene el último segmento, porque una etiqueta no tiene carpetas.
 const originalNameSchema = z
 	.string()
 	.min(1)
@@ -74,6 +91,8 @@ const originalNameSchema = z
 //     the bytes say; it is never stored and never sent back.
 // PT: O tipo declarado é só uma alegação. Ele precisa ser um dos tipos permitidos E concordar com
 //     o que os bytes dizem; nunca é guardado e nunca é devolvido.
+// ES: El tipo declarado es solo una afirmación. Debe ser uno de los tipos permitidos Y concordar con
+//     lo que dicen los bytes; nunca se guarda y nunca se devuelve.
 const declaredTypeSchema = z.enum(ALLOWED_TYPES);
 
 const contentLengthSchema = z
@@ -83,6 +102,7 @@ const contentLengthSchema = z
 
 // EN: `text/plain; charset=utf-8` -> `text/plain`.
 // PT: `text/plain; charset=utf-8` -> `text/plain`.
+// ES: `text/plain; charset=utf-8` -> `text/plain`.
 function mediaType(header: string | null): string {
 	return (header ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
 }
@@ -95,6 +115,10 @@ function mediaType(header: string | null): string {
 //     conta e para no primeiro byte acima do limite, então um upload enorme nunca fica na memória
 //     nem no disco. O `Content-Length` é conferido antes só como atalho: é um cabeçalho escrito
 //     pelo cliente, então pode recusar cedo, mas nunca é a prova de que o corpo é pequeno.
+// ES: El límite de tamaño se aplica DURANTE la lectura. El cuerpo llega en trozos; el servidor los
+//     cuenta y se detiene en el primer byte por encima del límite, así una carga enorme nunca queda en memoria
+//     ni en disco. `Content-Length` se comprueba antes solo como atajo: es una cabecera escrita
+//     por el cliente, así que puede rechazar pronto, pero nunca es la prueba de que el cuerpo es pequeño.
 async function readLimited(request: Request, maxBytes: number): Promise<Uint8Array> {
 	const rawLength = request.headers.get("content-length");
 	if (rawLength !== null) {
@@ -135,6 +159,10 @@ async function readLimited(request: Request, maxBytes: number): Promise<Uint8Arr
 //     dentro do site. O nome original entra duas vezes, as duas codificadas com segurança: uma
 //     alternativa ASCII com todo caractere incomum substituído, e o nome completo em
 //     percent-encoding (RFC 6266 e RFC 5987). Aspas ou quebra de linha cruas nunca chegam ao cabeçalho.
+// ES: `Content-Disposition: attachment` manda al navegador guardar el archivo en lugar de mostrarlo
+//     dentro del sitio. El nombre original entra dos veces, las dos codificadas con seguridad: una
+//     alternativa ASCII con todo carácter inusual reemplazado, y el nombre completo en
+//     percent-encoding (RFC 6266 y RFC 5987). Comillas o saltos de línea crudos nunca llegan a la cabecera.
 export function contentDisposition(originalName: string): string {
 	const fallback = originalName.replace(/[^A-Za-z0-9._-]/g, "_");
 	const encoded = encodeURIComponent(originalName).replace(
@@ -152,6 +180,8 @@ function contentTypeHeader(type: AllowedType): string {
 //     of the app, and writing it by hand would only lose that information.
 // PT: O tipo de retorno fica por conta da inferência de propósito: o Elysia codifica cada rota
 //     no tipo do app, e escrevê-lo à mão só perderia essa informação.
+// ES: El tipo de retorno se deja a la inferencia a propósito: Elysia codifica cada ruta
+//     en el tipo de la app, y escribirlo a mano solo perdería esa información.
 export function createFixedApp(options: FixedAppOptions) {
 	const { uploadRoot } = options;
 	const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
@@ -175,6 +205,10 @@ export function createFixedApp(options: FixedAppOptions) {
 			//     está na lista de permissão (415), ler no máximo `maxBytes` (413), detectar o
 			//     tipo pelos bytes e comparar (415), e só então gravar. `parse: "none"` impede o
 			//     framework de ler o corpo sozinho, então o limite acima é o único leitor.
+			// ES: La carga, en orden: quien llama (401), la etiqueta es razonable (400), el tipo declarado
+			//     está en la lista de permitidos (415), leer como máximo `maxBytes` (413), detectar el
+			//     tipo por los bytes y comparar (415), y solo entonces escribir. `parse: "none"` impide que el
+			//     framework lea el cuerpo por su cuenta, así que el límite de arriba es el único lector.
 			.post(
 				"/upload",
 				async ({ request }) => {
@@ -198,6 +232,10 @@ export function createFixedApp(options: FixedAppOptions) {
 					//     não há com o que fazer traversal, e dois uploads nunca colidem. A
 					//     verificação de caminho é aplicada mesmo assim (defesa em profundidade),
 					//     e a flag `wx` faz a escrita falhar em vez de substituir um arquivo existente.
+					// ES: El nombre en el disco es un id aleatorio generado aquí. El cliente no opina, así que
+					//     no hay con qué hacer traversal, y dos cargas nunca colisionan. La
+					//     verificación de ruta se aplica de todos modos (defensa en profundidad),
+					//     y la flag `wx` hace que la escritura falle en lugar de reemplazar un archivo existente.
 					const id = randomUUID();
 					const path = resolveInsideRoot(uploadRoot, id);
 					if (path === null) throw new HttpError(400, "invalid_name");
@@ -225,6 +263,11 @@ export function createFixedApp(options: FixedAppOptions) {
 			//     de outro usuário responde o mesmo 404 de um inexistente (verificação de dono é
 			//     o assunto do access-control-lab). Depois a verificação canônica segue links
 			//     simbólicos, e os bytes são lidos do caminho que ela devolveu.
+			// ES: La descarga nunca recibe una ruta. Recibe un id, valida el formato, busca
+			//     en el índice, y arma la ruta a partir del id que el SERVIDOR guardó. Un archivo
+			//     de otro usuario responde el mismo 404 que uno inexistente (la verificación del dueño es
+			//     el tema de access-control-lab). Después la verificación canónica sigue los enlaces
+			//     simbólicos, y los bytes se leen de la ruta que ella devolvió.
 			.get("/download", async ({ request }) => {
 				const user = requireUser(request);
 				const id = fileIdSchema.safeParse(new URL(request.url).searchParams.get("file"));
@@ -248,6 +291,13 @@ export function createFixedApp(options: FixedAppOptions) {
 				//     - `Content-Disposition: attachment` baixa em vez de renderizar.
 				//     - A CSP é uma última camada: se o arquivo for renderizado mesmo assim, ele
 				//       não pode carregar nem executar nada.
+				// ES: Las cabeceras que deciden cómo un navegador trata el archivo:
+				//     - `Content-Type` es el tipo que detectó el servidor, nunca la afirmación del cliente.
+				//     - `X-Content-Type-Options: nosniff` prohíbe al navegador adivinar otro
+				//       tipo mirando el contenido.
+				//     - `Content-Disposition: attachment` descarga en lugar de renderizar.
+				//     - La CSP es una última capa: si el archivo se renderiza de todos modos, no
+				//       puede cargar ni ejecutar nada.
 				return new Response(await readFile(path), {
 					headers: {
 						"content-type": contentTypeHeader(stored.type),

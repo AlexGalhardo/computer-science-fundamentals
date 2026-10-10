@@ -10,6 +10,10 @@ defmodule PubsubBackpressure.Producer do
   PT: Um produtor GenStage nunca empurra. Ele espera o `handle_demand/2`, que diz quantos
   eventos os consumidores pediram, e devolve no máximo essa quantidade. Conseguir produzir um
   milhão de eventos por segundo não muda nada: sem demanda, nada sai.
+
+  ES: Un productor GenStage nunca empuja. Espera a `handle_demand/2`, que dice cuántos eventos
+  pidieron los consumidores, y devuelve como máximo esa cantidad. Poder producir un millón de
+  eventos por segundo no cambia nada: sin demanda, nada sale.
   """
   use GenStage
 
@@ -41,6 +45,11 @@ defmodule PubsubBackpressure.Consumer do
   eventos pedidos e ainda não processados. `min_demand` é a marca de reposição: quando os
   eventos pendentes caem até ela, o consumidor pede mais, então nunca fica parado esperando um
   lote novo.
+
+  ES: `max_demand` es el tamaño del buffer: el consumidor nunca tiene más de esa cantidad de
+  eventos pedidos y aún no procesados. `min_demand` es la marca de reposición: cuando los eventos
+  pendientes bajan hasta ella, el consumidor pide más, así que nunca se queda parado esperando un
+  lote nuevo.
   """
   use GenStage
 

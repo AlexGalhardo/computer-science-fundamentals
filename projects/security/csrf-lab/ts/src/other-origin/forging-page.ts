@@ -8,6 +8,11 @@
 //     só consegue atingir os contêineres de app deste compose (veja LAB_APP_HOSTS), com um
 //     e-mail falso fixo. É uma demonstração, não uma ferramenta: não a copie nem a aponte para
 //     nenhum outro lugar.
+// ES: LA PÁGINA FALSIFICADORA DEL LABORATORIO. Este es el "otro sitio" del experimento: un segundo
+//     origen que hace que el navegador del visitante envíe una solicitud a la app del laboratorio. Solo
+//     puede alcanzar los contenedores de app de este compose (ve LAB_APP_HOSTS), con un
+//     correo falso fijo. Es una demostración, no una herramienta: no la copies ni la apuntes a
+//     ningún otro lugar.
 // ============================================================================================
 import { type AnyElysia, Elysia } from "elysia";
 import { z } from "zod";
@@ -16,6 +21,7 @@ import { escapeHtml, htmlResponse, textResponse } from "../shared/http";
 
 // EN: The target is a key from a closed list, never a free URL.
 // PT: O alvo é uma chave de uma lista fechada, nunca uma URL livre.
+// ES: El objetivo es una clave de una lista cerrada, nunca una URL libre.
 const targetSchema = z.object({ target: z.enum(LAB_APP_HOSTS) });
 
 const BANNER = "LAB FORGING PAGE: local demonstration, targets only this lab's own containers.";
@@ -50,6 +56,10 @@ export function createForgingPageApp(): AnyElysia {
 			//     uma navegação de nível superior comum iniciada por outro site, exatamente como
 			//     um link em um resultado de busca, e é por isso que até cookies `SameSite=Lax`
 			//     vão junto.
+			// ES: Falsificación por GET. La página "hace clic" en un enlace hacia la app. Para el navegador esto es
+			//     una navegación de nivel superior común iniciada por otro sitio, exactamente como
+			//     un enlace en un resultado de búsqueda, y por eso incluso las cookies `SameSite=Lax`
+			//     van incluidas.
 			.get("/forge/get", ({ query }) => {
 				const parsed = targetSchema.safeParse(query);
 				if (!parsed.success) {
@@ -65,6 +75,9 @@ export function createForgingPageApp(): AnyElysia {
 			// PT: Forja por POST. Um formulário oculto cujo `action` é o app, enviado por script
 			//     assim que a página carrega. Formulários HTML sempre puderam enviar para outros
 			//     sites, e a página nunca vê a resposta. Nem precisa: o dano é a requisição.
+			// ES: Falsificación por POST. Un formulario oculto cuyo `action` es la app, enviado por script
+			//     en cuanto carga la página. Los formularios HTML siempre pudieron enviar a otros
+			//     sitios, y la página nunca ve la respuesta. Ni lo necesita: el daño es la solicitud.
 			.get("/forge/post", ({ query }) => {
 				const parsed = targetSchema.safeParse(query);
 				if (!parsed.success) {

@@ -8,6 +8,10 @@ import type { CartLine } from "./cart";
 //     e de mais nada, então uma regra nova é uma classe nova em `rules/` e nenhum arquivo
 //     existente é editado. O preço dessa liberdade: uma terceira operação teria de ser
 //     acrescentada aqui e escrita em todas as classes de regra.
+// ES: El contrato de toda regla de descuento: dos operaciones. El carrito depende de esta interfaz
+//     y de nada más, así que una regla nueva es una clase nueva en `rules/` y no se edita ningún
+//     archivo existente. El precio de esa libertad: una tercera operación tendría que agregarse
+//     aquí y escribirse en todas las clases de regla.
 export interface DiscountRule {
 	/** How much this rule takes off, given the lines and what is still to pay. */
 	discountCents(lines: readonly CartLine[], runningCents: number): number;

@@ -4,6 +4,9 @@
 // PT: O BullMQ é uma biblioteca, não um servidor: o "broker" é o Redis. Uma `Queue` grava jobs em
 //     estruturas do Redis e um `Worker` os pega. O worker segura um lock em cada job ativo e o
 //     renova; um job cujo lock expirou está "stalled" e volta para ser processado de novo.
+// ES: BullMQ es una biblioteca, no un servidor: el "broker" es Redis. Una `Queue` escribe jobs en
+//     estructuras de Redis y un `Worker` los toma. El worker mantiene un lock sobre cada job
+//     activo y lo renueva; un job cuyo lock expiró está "stalled" y vuelve a procesarse.
 
 import { type ConnectionOptions, Queue, Worker } from "bullmq";
 import type { Config } from "../config";
@@ -35,6 +38,8 @@ export class BullmqAdapter implements QueueAdapter {
 		//     Redis client must be disabled, as BullMQ requires.
 		// PT: Um worker fica bloqueado no Redis esperando jobs, então o limite de retentativas por
 		//     requisição do cliente Redis precisa ser desativado, como o BullMQ exige.
+		// ES: Un worker se queda bloqueado en Redis esperando jobs, así que el límite de reintentos
+		//     por solicitud del cliente Redis debe desactivarse, como exige BullMQ.
 		this.connection = { host: url.hostname, port: Number(url.port || 6379), maxRetriesPerRequest: null };
 	}
 
@@ -72,6 +77,8 @@ export class BullmqAdapter implements QueueAdapter {
 				//     somebody started it before and did not finish.
 				// PT: `attemptsStarted` conta quantas vezes um worker começou este job. Acima de 1,
 				//     alguém já o começou antes e não terminou.
+				// ES: `attemptsStarted` cuenta cuántas veces un worker empezó este job. Por encima
+				//     de 1, alguien ya lo empezó antes y no terminó.
 				await handler(order, { redelivered: job.attemptsStarted > 1 });
 			},
 			{

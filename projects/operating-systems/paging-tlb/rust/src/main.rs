@@ -2,6 +2,8 @@
 //     printed by `bun run src/cli.ts faults` in the TypeScript implementation.
 // PT: Imprime as tabelas de faltas de página. O texto precisa ser idêntico, byte a byte, ao
 //     impresso por `bun run src/cli.ts faults` na implementação em TypeScript.
+// ES: Imprime las tablas de fallos de página. El texto debe ser idéntico, byte a byte, al
+//     impreso por `bun run src/cli.ts faults` en la implementación en TypeScript.
 
 use paging_tlb::{Algorithm, BELADY, CLASSIC, count_faults};
 

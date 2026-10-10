@@ -6,6 +6,9 @@ import { type Matrix, type Solution, tourLength } from "./instance";
 // PT: Vizinho mais próximo: uma heurística gulosa. Da cidade atual, vai sempre à cidade ainda
 //     não visitada mais próxima. Roda em O(n²) e sempre devolve um passeio válido, mas não dá
 //     garantia de qualidade: as escolhas baratas do início podem forçar trechos longos no fim.
+// ES: Vecino más cercano: una heurística voraz. Desde la ciudad actual, va siempre a la ciudad aún
+//     no visitada más próxima. Corre en O(n²) y siempre devuelve un recorrido válido, pero no da
+//     garantía de calidad: las elecciones baratas del inicio pueden forzar tramos largos al final.
 export function nearestNeighbour(dist: Matrix): Solution {
 	const n = dist.length;
 	if (n === 0) {
@@ -20,6 +23,7 @@ export function nearestNeighbour(dist: Matrix): Solution {
 		for (let city = 0; city < n; city++) {
 			// EN: The strict `<` keeps the lowest index on a tie, so every language picks the same city.
 			// PT: O `<` estrito mantém o menor índice no empate, então toda linguagem escolhe a mesma cidade.
+			// ES: El `<` estricto mantiene el menor índice en el empate, así que todo lenguaje elige la misma ciudad.
 			if (!visited[city] && (next === -1 || (row[city] as number) < (row[next] as number))) {
 				next = city;
 			}
@@ -39,6 +43,10 @@ export function nearestNeighbour(dist: Matrix): Solution {
 //     o que inverte o pedaço entre b e c. Se o passeio encurtar, mantém a mudança. Repete até
 //     nenhum par de trechos melhorar. No plano, isso remove todo cruzamento. O resultado é um
 //     ótimo local: nenhum movimento 2-opt o melhora, mas um passeio melhor ainda pode existir.
+// ES: 2-opt: búsqueda local. Toma dos tramos del recorrido, a→b y c→d, y los reconecta como a→c y b→d,
+//     lo que invierte el pedazo entre b y c. Si el recorrido se acorta, conserva el cambio. Repite hasta
+//     que ningún par de tramos mejore. En el plano, esto elimina todo cruce. El resultado es un
+//     óptimo local: ningún movimiento 2-opt lo mejora, pero aún puede existir un recorrido mejor.
 export function twoOpt(dist: Matrix, start: readonly number[] = nearestNeighbour(dist).tour): Solution {
 	const n = start.length;
 	const tour = [...start];
@@ -57,6 +65,7 @@ export function twoOpt(dist: Matrix, start: readonly number[] = nearestNeighbour
 				const e = tour[(j + 1) % n] as number;
 				// EN: Only the two legs change, so the gain is computed in O(1).
 				// PT: Só os dois trechos mudam, então o ganho é calculado em O(1).
+				// ES: Solo cambian los dos tramos, así que la ganancia se calcula en O(1).
 				if (d(a, c) + d(b, e) < d(a, b) + d(c, e)) {
 					for (let lo = i + 1, hi = j; lo < hi; lo++, hi--) {
 						const tmp = tour[lo] as number;

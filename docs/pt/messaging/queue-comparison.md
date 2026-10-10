@@ -1,6 +1,6 @@
 # Comparação de filas (MP-MSG-1)
 
-> English version: [docs/en/messaging/queue-comparison.md](../../en/messaging/queue-comparison.md)
+> English version: [docs/en/messaging/queue-comparison.md](../../en/messaging/queue-comparison.md) · Versión en español: [docs/es/messaging/queue-comparison.md](../../es/messaging/queue-comparison.md)
 
 Mini-projeto: [`projects/messaging/queue-comparison`](../../../projects/messaging/queue-comparison/README.pt-BR.md). Tópicos do quiz: `queue-pubsub-stream`, `delivery-guarantees`, `ordering-partitioning`, `ack-retry-dlq`, `rabbitmq-exchanges-routing`, `kafka-topics-partitions-offsets`, `bullmq-redis`, `sqs-sns`.
 

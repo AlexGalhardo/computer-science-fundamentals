@@ -1,6 +1,6 @@
 # k6-scenarios
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A local API on PostgreSQL with a deliberate bottleneck (a connection pool of 2), and four k6 scenarios that each look at it from a different angle: **load**, **stress**, **spike** and **soak**. Every scenario has thresholds, fails them with the small pool, and passes with a pool of 20. Nothing else changes between the two runs. The lesson is what each type of load test is for, and how a bottleneck that no CPU graph shows appears as a knee in the latency curve.
 

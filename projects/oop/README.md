@@ -1,6 +1,6 @@
 # Object-oriented programming
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Object-oriented programming organises a program as objects that keep their own state and expose behaviour through an interface. Encapsulation, polymorphism, inheritance and composition are tools for controlling how a change in one part spreads to the others. Most business code is written this way, so knowing where the ideas help, and where they produce coupling and code smells, matters every day.
 

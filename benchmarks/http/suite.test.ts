@@ -4,6 +4,9 @@
 // PT: Testes da carga HTTP no lado do host (`bun run test:http`). Eles constroem e sobem os
 //     sete servidores, rodam a suíte de protocolo de dentro da rede interna, e provam que o
 //     script do k6 recusa todo alvo que não é local. Precisa do Docker.
+// ES: Pruebas de la carga HTTP del lado del host (`bun run test:http`). Construyen y levantan los
+//     siete servidores, ejecutan la suite de protocolo desde dentro de la red interna, y prueban
+//     que el script de k6 rechaza todo destino que no es local. Necesita Docker.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { join } from "node:path";
@@ -20,6 +23,8 @@ function compose(args: string[]): ReturnType<typeof run> {
 //     network at all, even a wrong decision could not reach anything.
 // PT: O `k6 inspect` só executa o topo do script, onde o alvo é verificado. Sem rede nenhuma,
 //     nem uma decisão errada conseguiria alcançar algo.
+// ES: `k6 inspect` solo ejecuta la parte superior del script, donde se verifica el destino. Sin
+//     ninguna red, ni siquiera una decisión equivocada podría alcanzar algo.
 function inspectWithTarget(target: string | undefined): ReturnType<typeof run> {
 	const env = target === undefined ? [] : ["-e", `TARGET=${target}`];
 	return run([

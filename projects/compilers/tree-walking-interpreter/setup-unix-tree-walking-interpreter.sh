@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the tree-walking-interpreter mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto tree-walking-interpreter. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto tree-walking-interpreter. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"

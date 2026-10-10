@@ -1,6 +1,8 @@
 """EN: The two datasets of the mini-project, generated here with a fixed seed.
 
 PT: Os dois conjuntos de dados do mini-projeto, gerados aqui com uma semente fixa.
+
+ES: Los dos conjuntos de datos del miniproyecto, generados aquí con una semilla fija.
 """
 
 import math
@@ -12,6 +14,8 @@ Point = tuple[float, float]
 #     single neuron cannot learn it: it is the smallest problem that needs a hidden layer.
 # PT: XOR, "um ou outro, mas não os dois". Nenhuma linha reta separa as duas classes, então um
 #     único neurônio não consegue aprendê-lo: é o menor problema que precisa de camada oculta.
+# ES: XOR, "uno u otro, pero no los dos". Ninguna línea recta separa las dos clases, así que una
+#     sola neurona no puede aprenderlo: es el problema más pequeño que necesita capa oculta.
 XOR_POINTS: list[Point] = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]
 XOR_LABELS: list[int] = [0, 1, 1, 0]
 
@@ -24,6 +28,10 @@ def two_moons(count: int, noise: float, seed: int) -> tuple[list[Point], list[in
     PT: Dois semicírculos entrelaçados, um por classe, com ruído gaussiano em cada ponto.
 
     As classes não podem ser separadas por uma linha, mas uma fronteira curva as separa bem.
+
+    ES: Dos semicírculos entrelazados, uno por clase, con ruido gaussiano en cada punto.
+
+    Las clases no se pueden separar con una línea, pero una frontera curva las separa bien.
     """
     rng = random.Random(seed)
     points: list[Point] = []
@@ -44,6 +52,8 @@ def two_moons(count: int, noise: float, seed: int) -> tuple[list[Point], list[in
 #     sees while learning. Only the test accuracy says whether it generalises.
 # PT: O modelo é ajustado no conjunto de treino e medido no conjunto de teste, que ele nunca vê
 #     enquanto aprende. Só a acurácia de teste diz se ele generaliza.
+# ES: El modelo se ajusta en el conjunto de entrenamiento y se mide en el conjunto de prueba, que
+#     nunca ve mientras aprende. Solo la exactitud de prueba dice si generaliza.
 MOONS_NOISE = 0.12
 TRAIN_SIZE = 80
 TEST_SIZE = 200

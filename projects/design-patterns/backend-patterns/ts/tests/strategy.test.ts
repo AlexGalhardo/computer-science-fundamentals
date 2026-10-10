@@ -12,6 +12,8 @@ describe("strategy: before", () => {
 	// EN: The flaw: a caller cannot bring a new kind. The only way in is to edit the function.
 	// PT: O defeito: um chamador não consegue trazer uma modalidade nova. O único caminho é
 	//     editar a função.
+	// ES: El defecto: un llamador no puede traer una modalidad nueva. El único camino es editar la
+	//     función.
 	test("a new kind fails until the function itself is edited", () => {
 		expect(() => shippingCost("drone", 2)).toThrow("unknown shipping kind");
 	});

@@ -6,6 +6,9 @@ export type Status = "pending" | "paid" | "shipped" | "cancelled";
 // PT: DESENHO COM DEFEITO. Um campo de status, e todo método começa testando esse campo. As
 //     regras de um status ficam espalhadas por todos os métodos: para saber o que um pedido
 //     pago pode fazer é preciso ler a classe inteira, e um status novo exige rever cada método.
+// ES: DISEÑO QUE FALLA. Un campo de estado, y todo método empieza comprobando ese campo. Las
+//     reglas de un estado quedan esparcidas por todos los métodos: para saber qué puede hacer
+//     un pedido pagado hay que leer la clase entera, y un estado nuevo exige revisar cada método.
 export class Order {
 	private current: Status = "pending";
 

@@ -19,6 +19,9 @@ const app = createApp(env.INSTANCE, {
 	// PT: Um "crash" fecha o socket de escuta e todas as conexões abertas, que é o que o proxy
 	//     vê quando o processo de um back end morre: conexões novas são recusadas na hora.
 	//     A pequena espera deixa a resposta da requisição de controle sair antes.
+	// ES: Un "crash" cierra el socket de escucha y todas las conexiones abiertas, que es lo que el
+	//     proxy ve cuando muere el proceso de un back end: las conexiones nuevas se rechazan al instante.
+	//     La breve espera deja que salga primero la respuesta de la solicitud de control.
 	crash: (ms) => {
 		setTimeout(() => {
 			void server?.stop(true);

@@ -2,6 +2,8 @@
 //     what changes is how many places know their names.
 // PT: Os produtos. Tanto o desenho com defeito quanto a versão com fábrica criam estas classes;
 //     o que muda é quantos lugares conhecem seus nomes.
+// ES: Los productos. Tanto el diseño que falla como la versión con factory crean estas clases;
+//     lo que cambia es cuántos lugares conocen sus nombres.
 export interface Notifier {
 	notify(to: string, text: string): string;
 }

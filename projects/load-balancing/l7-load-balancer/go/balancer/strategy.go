@@ -12,6 +12,9 @@ import (
 //
 // PT: `usable` diz quais back ends podem ser escolhidos agora: os saudáveis que esta
 // requisição ainda não tentou. Uma estratégia devolve nil quando nenhum é utilizável.
+//
+// ES: `usable` dice qué back ends pueden elegirse ahora: los sanos que esta solicitud aún no
+// ha probado. Una estrategia devuelve nil cuando ninguno es utilizable.
 type Strategy interface {
 	Pick(backends []*Backend, usable func(*Backend) bool) *Backend
 	Name() string
@@ -42,6 +45,13 @@ func filter(backends []*Backend, usable func(*Backend) bool) []*Backend {
 // tamanho da lista e pular os mortos", é viciado: com B fora em A, B, C, toda requisição que
 // cai em B escorrega para C, então C recebe dois terços do tráfego. A primeira versão deste
 // arquivo fazia exatamente isso, e o teste pegou 34 contra 66.
+//
+// ES: Todo el estado es un contador. Cada solicitud toma el siguiente número, y el número
+// módulo la cantidad de back ends utilizables es la elección. La rotación corre sobre los back
+// ends UTILIZABLES, no sobre la lista completa. El atajo obvio, "empezar en contador módulo el
+// tamaño de la lista y saltar los caídos", está sesgado: con B fuera en A, B, C, toda solicitud
+// que cae en B se desliza a C, así que C recibe dos tercios del tráfico. La primera versión de
+// este archivo hacía exactamente eso, y la prueba lo detectó con 34 contra 66.
 type RoundRobin struct {
 	next atomic.Uint64
 }
@@ -71,6 +81,12 @@ func (r *RoundRobin) Pick(backends []*Backend, usable func(*Backend) bool) *Back
 // requisições por mais tempo, então seu contador fica alto e ele é escolhido menos vezes.
 // Empates são desfeitos em rodízio, senão um balanceador ocioso mandaria tudo para o
 // primeiro back end da lista.
+//
+// ES: El round robin cuenta solicitudes, y esta estrategia cuenta trabajo en curso. Solo
+// difieren cuando las solicitudes tardan tiempos distintos: un back end lento retiene sus
+// solicitudes por más tiempo, así que su contador queda alto y se elige menos veces. Los
+// empates se deshacen en rotación, de lo contrario un balanceador ocioso enviaría todo al
+// primer back end de la lista.
 type LeastConnections struct {
 	next atomic.Uint64
 }

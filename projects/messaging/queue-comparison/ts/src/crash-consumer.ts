@@ -4,6 +4,9 @@
 // PT: `bun run src/crash-consumer.ts <broker> <channel>`: a vítima do experimento de reentrega.
 //     Recebe uma mensagem, avisa, e depois nunca termina o handler, então a mensagem nunca é
 //     confirmada. O processo pai o mata com SIGKILL.
+// ES: `bun run src/crash-consumer.ts <broker> <channel>`: la víctima del experimento de reentrega.
+//     Recibe un mensaje, lo avisa, y luego nunca termina el handler, así que el mensaje nunca se
+//     confirma. El proceso padre lo mata con SIGKILL.
 
 import { z } from "zod";
 import { adapterFactory } from "./adapters";

@@ -2,6 +2,8 @@
 //     the deterministic seed.
 // PT: Testes de unidade das peças que não precisam de servidor: o loader em lote, as
 //     estatísticas e os dados determinísticos.
+// ES: Pruebas unitarias de las piezas que no necesitan servidor: el loader por lotes, las
+//     estadísticas y los datos deterministas.
 
 import { describe, expect, test } from "bun:test";
 import { BatchLoader } from "../src/loader";

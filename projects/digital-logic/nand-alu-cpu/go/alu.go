@@ -9,6 +9,9 @@ package nandcpu
 // PT: São duas XORs em sequência (soma = A xor B xor Cin) que expõem as suas NANDs internas
 // compartilhadas: esses dois sinais são exatamente (A·B)' e (Cin·(A xor B))', e mais uma NAND
 // os transforma no vai-um A·B + Cin·(A xor B).
+// ES: Son dos XOR en secuencia (suma = A xor B xor Cin) que exponen sus NAND internas
+// compartidas: esas dos señales son exactamente (A·B)' y (Cin·(A xor B))', y una NAND más las
+// transforma en el acarreo A·B + Cin·(A xor B).
 func FullAdder(a, b, carryIn Bit) (sum, carry Bit) {
 	sharedAB := Nand(a, b)
 	partial := Nand(Nand(a, sharedAB), Nand(b, sharedAB))
@@ -53,6 +56,17 @@ type Flags struct {
 //     entrada, o +1.
 //   - O estouro (overflow) é o vai-um que entra no bit de sinal ser diferente do que sai dele.
 //   - Vai-um e estouro só fazem sentido em ADD e SUB, então são forçados a 0 em AND e OR.
+//
+// ES: La ALU calcula todas las operaciones al mismo tiempo y un multiplexor elige un resultado,
+// que es como funciona el hardware: no existe el "if", solo cables que se seleccionan o se
+// ignoran.
+//   - La resta reutiliza el sumador: X - Y = X + Y' + 1. Las compuertas XOR invierten Y cuando
+//     subtract vale 1 (XOR con 1 invierte, XOR con 0 deja pasar) y el mismo cable es el
+//     acarreo de entrada, el +1.
+//   - El desbordamiento (overflow) es que el acarreo que entra al bit de signo sea distinto del
+//     que sale de él.
+//   - Acarreo y desbordamiento solo tienen sentido en ADD y SUB, así que se fuerzan a 0 en AND
+//     y OR.
 func ALU(x, y Nibble, op1, op0 Bit) (Nibble, Flags) {
 	arithmetic := Not(op1)
 	subtract := And(arithmetic, op0)

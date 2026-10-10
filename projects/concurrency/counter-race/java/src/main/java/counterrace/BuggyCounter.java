@@ -12,6 +12,10 @@ import com.google.errorprone.annotations.concurrent.GuardedBy;
  * <p>PT: {@code count++} parece um passo só, mas a JVM faz três: lê o campo, soma 1, grava o campo.
  * Duas threads podem ler 41 e gravar 42, e um incremento se perde. O campo diz que é protegido por
  * {@code this}, mas {@code inc} nunca pega essa trava.
+ *
+ * <p>ES: {@code count++} parece un solo paso, pero la JVM hace tres: lee el campo, suma 1, escribe
+ * el campo. Dos threads pueden leer 41 y escribir 42, y un incremento se pierde. El campo dice que
+ * está protegido por {@code this}, pero {@code inc} nunca toma ese lock.
  */
 public final class BuggyCounter implements Counter {
   // EN: `volatile` does NOT fix the bug. It only guarantees visibility: every read sees the last
@@ -23,6 +27,11 @@ public final class BuggyCounter implements Counter {
   //     aqui para a demo ser honesta: com um campo comum o compilador JIT pode juntar o laço
   //     inteiro em uma única soma, e o bug se esconderia por sorte (medimos 8 execuções limpas
   //     em 10).
+  // ES: `volatile` NO corrige el bug. Solo garantiza visibilidad: toda lectura ve la última
+  //     escritura. La lectura, la suma y la escritura siguen siendo tres pasos separados. Está
+  //     aquí para que la demo sea honesta: con un campo común el compilador JIT puede juntar el
+  //     bucle entero en una sola suma, y el bug se escondería por suerte (medimos 8 ejecuciones
+  //     limpias de 10).
   @GuardedBy("this")
   private volatile long count;
 

@@ -1,7 +1,7 @@
 # upload-path-traversal-lab
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
-
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
+>
 > **Security lab, vulnerable on purpose.** The code in `ts/src/vulnerable/` exists only to make flaws observable inside this lab. Never copy it, import it or deploy it.
 
 A small file API with two routes, upload and download, believes everything the client says about a file: its name, its type and its size. The name is joined to the upload folder, so a name containing `../` reads and writes outside it (path traversal) and a repeated name replaces another user's file. The declared `Content-Type` is stored and served back, and nothing limits the size. This lab reproduces those flaws and fixes them with one idea: **the server decides**. It generates the name on disk, finds files by id in an index, checks the canonical path, detects the type from the bytes, counts the size while reading and sets the headers that tell the browser what to do with the file.

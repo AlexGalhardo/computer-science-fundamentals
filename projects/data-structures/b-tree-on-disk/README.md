@@ -1,6 +1,6 @@
 # b-tree-on-disk
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A B-tree stored in a file, one node per 4096-byte page, with insertion (node split), search and removal (redistribution and merge), written in C++ and in Rust. A pager counts every page read. It teaches why databases and file systems use wide trees: what a search costs on disk is the number of pages it reads, and a wide tree reads 3 pages where a binary tree reads 16.
 

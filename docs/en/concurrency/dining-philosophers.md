@@ -1,6 +1,6 @@
 # Deadlock: dining philosophers
 
-> Versão em português: [docs/pt/concurrency/dining-philosophers.md](../../pt/concurrency/dining-philosophers.md)
+> Versão em português: [docs/pt/concurrency/dining-philosophers.md](../../pt/concurrency/dining-philosophers.md) · Versión en español: [docs/es/concurrency/dining-philosophers.md](../../es/concurrency/dining-philosophers.md)
 
 Mini-project: [projects/concurrency/dining-philosophers](../../../projects/concurrency/dining-philosophers/README.md) (MP-CONC-2). Languages: Go, Java.
 
@@ -8,7 +8,7 @@ Mini-project: [projects/concurrency/dining-philosophers](../../../projects/concu
 
 Five philosophers, five forks, and each philosopher needs the two forks next to him to eat. A fork is a lock: one holder at a time.
 
-```
+```text
             P0
        f0        f1
     P4              P1

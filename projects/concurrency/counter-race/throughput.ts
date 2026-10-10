@@ -6,6 +6,10 @@
 //     milhões de incrementos por segundo para cada linguagem, correção e número de workers, mais
 //     o valor final do contador, que mostra as atualizações perdidas pelas versões com bug.
 //     Rode na raiz do repositório: `bun run projects/concurrency/counter-race/throughput.ts`
+// ES: Transforma results/results.json (escrito por `bun run bench`) en results/throughput.md:
+//     millones de incrementos por segundo para cada lenguaje, corrección y número de workers, más
+//     el valor final del contador, que muestra las actualizaciones perdidas por las versiones con bug.
+//     Ejecútalo en la raíz del repositorio: `bun run projects/concurrency/counter-race/throughput.ts`
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

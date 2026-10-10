@@ -2,6 +2,8 @@
 //     `bun run repl <file>`   does the same for a whole file and exits with 1 when it has errors.
 // PT: `bun run repl`           lê linhas do teclado e mostra os tokens e a árvore de cada uma;
 //     `bun run repl <arquivo>` faz o mesmo para um arquivo inteiro e termina com 1 quando há erros.
+// ES: `bun run repl`           lee líneas del teclado y muestra los tokens y el árbol de cada una;
+//     `bun run repl <archivo>` hace lo mismo para un archivo completo y termina con 1 cuando hay errores.
 
 import { readFileSync } from "node:fs";
 import { printTree } from "./ast";
@@ -12,6 +14,8 @@ import { formatProblem } from "./token";
 //     tokens (what the lexer saw), then the tree (the structure the parser found in that list).
 // PT: Os dois produtos intermediários do front end, lado a lado: primeiro a lista plana de tokens
 //     (o que o lexer viu), depois a árvore (a estrutura que o parser encontrou nessa lista).
+// ES: Los dos productos intermedios del front end, lado a lado: primero la lista plana de tokens
+//     (lo que vio el lexer), luego el árbol (la estructura que el parser encontró en esa lista).
 export function report(source: string): { text: string; ok: boolean } {
 	const { tokens, program, errors } = parse(source);
 	const lines = ["tokens:"];

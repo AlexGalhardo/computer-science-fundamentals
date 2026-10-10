@@ -1,16 +1,16 @@
 # Decisões do projeto
 
-> English version: [docs/en/decisions.md](../en/decisions.md)
-
+> English version: [docs/en/decisions.md](../en/decisions.md) · Versión en español: [docs/es/decisions.md](../es/decisions.md)
+>
 > Nota (2026-10-08): a pasta `references/` citada neste documento foi removida do repositório e do histórico. As referências de estudo estão em [REFERENCES.pt-BR.md](../../REFERENCES.pt-BR.md).
 
 Decisões tomadas no brainstorming da Fase 2, em 2026-10-07. Elas são a entrada para o `PLAN.md`. A lista de miniprojetos por área está no [catálogo de miniprojetos](mini-project-catalog.md), o desenho do quiz em [quiz.md](quiz.md), e as perguntas feitas com as opções descartadas no [registro do brainstorming](brainstorming.md).
 
 ## Quiz
 
-O produto principal do repositório é um **quiz**: um app único que cobre todas as áreas, com 5 alternativas por pergunta e a explicação do conceito exibida ao lado da pergunta depois da resposta. Os miniprojetos continuam no plano, e cada explicação aponta para o miniprojeto que demonstra o conceito. Pelo menos 100 perguntas por área, em português e inglês. Desenho completo em [quiz.md](quiz.md).
+O produto principal do repositório é um **quiz**: um app único que cobre todas as áreas, com 5 alternativas por pergunta e a explicação do conceito exibida ao lado da pergunta depois da resposta. Os miniprojetos continuam no plano, e cada explicação aponta para o miniprojeto que demonstra o conceito. Pelo menos 100 perguntas por área, em inglês, português e espanhol. Desenho completo em [quiz.md](quiz.md).
 
-O app do quiz precisa ter i18n (português e inglês), alternância de tema claro e escuro e layout mobile friendly, construído com Next.js SSG e Tailwind CSS v4.
+O app do quiz precisa ter i18n (inglês, português e espanhol), alternância de tema claro e escuro e layout mobile friendly, construído com Next.js SSG e Tailwind CSS v4.
 
 ## Teoria e prática
 
@@ -24,8 +24,8 @@ O app do quiz precisa ter i18n (português e inglês), alternância de tema clar
 | Organização das pastas | `projects/<área>/<miniprojeto>/`, com uma subpasta por linguagem (`ts/`, `go/`, `rust/`) | O mesmo conceito fica junto e as linguagens podem ser comparadas lado a lado |
 | Linguagens por miniprojeto | Uma implementação de referência em TypeScript, mais as linguagens em que a lição muda | Implementar tudo nas 7 linguagens multiplica o trabalho sem ensinar mais |
 | Ambiente | Tudo roda em Docker, com imagens de versão fixa. Os scripts de setup exigem só Docker. Toolchain local é opcional | Sete linguagens na mesma máquina é de onde vem o "funciona na minha máquina" |
-| README | Dois arquivos por miniprojeto: `README.md` (inglês) e `README.pt-BR.md` (português) | Cada leitor recebe um documento completo em uma língua |
-| Comentários de código | Bilíngues, um bloco por conceito, não linha a linha | Didático sem dobrar o tamanho do código |
+| README | Três arquivos por miniprojeto: `README.md` (inglês), `README.pt-BR.md` (português) e `README.es.md` (espanhol, adicionado em 2026-10-08) | Cada leitor recebe um documento completo em uma língua |
+| Comentários de código | Trilíngues (`EN`, `PT`, `ES`), um bloco por conceito, não linha a linha | Didático sem dobrar o tamanho do código |
 | Dashboards | Uma página estática por miniprojeto (HTML + Tailwind CSS v4 lendo o JSON de resultados). Next.js só onde o conceito precisa de servidor | Simples de abrir e de manter |
 
 ## Benchmarks

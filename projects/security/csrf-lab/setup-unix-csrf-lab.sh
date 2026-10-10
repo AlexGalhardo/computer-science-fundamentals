@@ -5,6 +5,9 @@
 # PT: Constrói e testa o mini-projeto csrf-lab. O único requisito é o Docker.
 #     Roda os testes unitários (ts-test) e os testes com navegador (e2e, Playwright).
 #     Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
+# ES: Construye y prueba el miniproyecto csrf-lab. El único requisito es Docker.
+#     Ejecuta las pruebas unitarias (ts-test) y las pruebas con navegador (e2e, Playwright).
+#     Los contenedores y volúmenes se eliminan al final, incluso cuando una prueba falla.
 set -eu
 
 cd "$(dirname "$0")"

@@ -2,6 +2,7 @@ defmodule OrderStateMachine.Diagram do
   @moduledoc """
   EN: Renders the table as Mermaid text. It must produce exactly the committed `diagram.md`.
   PT: Renderiza a tabela como texto Mermaid. Precisa produzir exatamente o `diagram.md` versionado.
+  ES: Renderiza la tabla como texto Mermaid. Debe producir exactamente el `diagram.md` versionado.
   """
 
   # EN: The TypeScript implementation writes `diagram.md`; this one renders it again on its own.
@@ -10,6 +11,10 @@ defmodule OrderStateMachine.Diagram do
   # PT: A implementação em TypeScript grava `diagram.md`; esta o renderiza de novo por conta
   #     própria. Se as duas linguagens discordassem sobre a tabela, o teste de atualização de
   #     uma delas falharia, então o arquivo também prova que ambas implementam a mesma máquina.
+  # ES: La implementación en TypeScript escribe `diagram.md`; esta lo renderiza de nuevo por su
+  #     cuenta. Si los dos lenguajes discreparan sobre la tabla, la prueba de actualización de
+  #     uno de ellos fallaría, así que el archivo también demuestra que ambos implementan la
+  #     misma máquina.
   @spec render() :: String.t()
   def render do
     transitions = OrderStateMachine.transitions()

@@ -5,6 +5,10 @@
 // PT: A API, escrita uma vez e sem saber quem a serve. `route` recebe um método e uma URL e devolve
 //     dados simples (status e corpo). Bun e Node a embrulham cada um com o seu servidor HTTP nativo
 //     (`Bun.serve` e `node:http`), então a comparação mede os runtimes e não duas aplicações diferentes.
+// ES: La API, escrita una vez y sin saber quién la sirve. `route` recibe un método y una URL y
+//     devuelve datos simples (estado y cuerpo). Bun y Node la envuelven cada uno con su servidor HTTP
+//     nativo (`Bun.serve` y `node:http`), así que la comparación mide los runtimes y no dos
+//     aplicaciones distintas.
 
 import { z } from "zod";
 import { readContainerMemory } from "./memory";
@@ -24,6 +28,8 @@ export interface AppInfo {
 //     matter here: without them one request with a huge `n` would freeze the event loop for minutes.
 // PT: A query string vem da rede, então é validada na borda. Os limites superiores importam aqui:
 //     sem eles, uma requisição com um `n` enorme congelaria o event loop por minutos.
+// ES: La query string viene de la red, así que se valida en el borde. Los límites superiores importan
+//     aquí: sin ellos, una solicitud con un `n` enorme congelaría el event loop por minutos.
 const cpuQuery = z.object({ n: z.coerce.number().int().min(2).max(2_000_000).default(200_000) });
 const ioQuery = z.object({ ms: z.coerce.number().int().min(0).max(1_000).default(20) });
 
@@ -44,6 +50,9 @@ export async function route(method: string, rawUrl: string, info: AppInfo): Prom
 			//     PM2 cluster mode several workers share the port, and different requests show different ids.
 			// PT: O id do processo está na resposta de propósito. Com um processo ele nunca muda. No modo
 			//     cluster do PM2 vários workers dividem a porta, e requisições diferentes mostram ids diferentes.
+			// ES: El id del proceso está en la respuesta a propósito. Con un proceso nunca cambia. En el
+			//     modo cluster de PM2 varios workers comparten el puerto, y solicitudes distintas muestran
+			//     ids distintos.
 			return {
 				status: 200,
 				body: {

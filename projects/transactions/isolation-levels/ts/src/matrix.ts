@@ -2,6 +2,8 @@
 //     README. The table is never typed by hand: it is what the database actually did.
 // PT: Roda cada anomalia em cada nível de isolamento e transforma os resultados na matriz do
 //     README. A tabela nunca é digitada à mão: ela é o que o banco de dados realmente fez.
+// ES: Ejecuta cada anomalía en cada nivel de aislamiento y convierte los resultados en la matriz
+//     del README. La tabla nunca se escribe a mano: es lo que la base de datos realmente hizo.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -17,7 +19,7 @@ export interface Cell {
 	log: LogEntry[];
 }
 
-export type Language = "en" | "pt";
+export type Language = "en" | "pt" | "es";
 
 export async function prepareSchema(lab: Lab): Promise<void> {
 	for (const statement of SCHEMA) {
@@ -59,17 +61,26 @@ export function findCell(cells: Cell[], anomaly: AnomalyId, level: Level): Cell 
 // PT: Uma anomalia pode ser evitada de dois jeitos, e a matriz mostra qual. Sem erro, a transação
 //     simplesmente continuou lendo o seu snapshot. Com SQLSTATE 40001, o PostgreSQL abortou uma
 //     transação, e espera-se que a aplicação a execute de novo.
+// ES: Una anomalía puede evitarse de dos maneras, y la matriz muestra cuál. Sin error, la
+//     transacción simplemente siguió leyendo su snapshot. Con SQLSTATE 40001, PostgreSQL abortó
+//     una transacción, y se espera que la aplicación la ejecute de nuevo.
+const WORDS: Record<Language, { occurs: string; prevented: string; error: string; anomaly: string }> = {
+	en: { occurs: "**occurs**", prevented: "prevented", error: "error", anomaly: "Anomaly" },
+	pt: { occurs: "**ocorre**", prevented: "evitada", error: "erro", anomaly: "Anomalia" },
+	es: { occurs: "**ocurre**", prevented: "evitada", error: "error", anomaly: "Anomalía" },
+};
+
 function cellText(cell: Cell, language: Language): string {
+	const words = WORDS[language];
 	if (cell.occurred) {
-		return language === "en" ? "**occurs**" : "**ocorre**";
+		return words.occurs;
 	}
-	const prevented = language === "en" ? "prevented" : "evitada";
-	const error = language === "en" ? "error" : "erro";
+	const { prevented, error } = words;
 	return cell.errorCodes.length > 0 ? `${prevented} (${error} ${cell.errorCodes.join(", ")})` : prevented;
 }
 
 export function renderMatrix(cells: Cell[], language: Language): string {
-	const header = [language === "en" ? "Anomaly" : "Anomalia", ...LEVELS];
+	const header = [WORDS[language].anomaly, ...LEVELS];
 	const lines = [`| ${header.join(" | ")} |`, `| ${header.map(() => "---").join(" | ")} |`];
 	for (const anomaly of ANOMALIES) {
 		const row = LEVELS.map((level) => cellText(findCell(cells, anomaly.id, level), language));
@@ -82,6 +93,8 @@ export function renderMatrix(cells: Cell[], language: Language): string {
 //     runs are the interesting ones: the same script, one level apart, with opposite outcomes.
 // PT: O nível mais forte que ainda mostra a anomalia e o nível logo acima. Essas duas execuções
 //     são as interessantes: o mesmo roteiro, um nível de diferença, resultados opostos.
+// ES: El nivel más fuerte que aún muestra la anomalía y el nivel justo por encima. Esas dos
+//     ejecuciones son las interesantes: el mismo guion, un nivel de diferencia, resultados opuestos.
 export function boundary(cells: Cell[], anomaly: AnomalyId): { lastAllowed?: Level; firstPrevented?: Level } {
 	const allowed = LEVELS.filter((level) => findCell(cells, anomaly, level).occurred);
 	const lastAllowed = allowed.at(-1);
@@ -159,6 +172,7 @@ export function writeResults(projectDir: string, cells: Cell[], serverVersion: s
 	for (const [file, language] of [
 		["README.md", "en"],
 		["README.pt-BR.md", "pt"],
+		["README.es.md", "es"],
 	] as const) {
 		const path = join(projectDir, file);
 		writeFileSync(path, injectMatrix(readFileSync(path, "utf8"), renderMatrix(cells, language)));

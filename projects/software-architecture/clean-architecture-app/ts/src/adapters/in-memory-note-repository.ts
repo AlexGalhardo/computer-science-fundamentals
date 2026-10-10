@@ -9,11 +9,18 @@ import type { NoteRepository } from "../use-cases/ports";
 //     verdade, não um truque para testes: os casos de uso não conseguem distingui-lo do
 //     PostgreSQL. Ele também mostra que a porta não pede nada que só um banco poderia dar.
 //     As notas se perdem quando o processo termina, que é o único motivo para plugar outro adaptador.
+// ES: El adaptador más simple para el puerto `NoteRepository`: un `Map`. Es una implementación de
+//     verdad, no un truco para pruebas: los casos de uso no pueden distinguirlo de PostgreSQL.
+//     También muestra que el puerto no pide nada que solo una base de datos podría dar.
+//     Las notas se pierden cuando el proceso termina, que es la única razón para conectar otro
+//     adaptador.
 export class InMemoryNoteRepository implements NoteRepository {
 	// EN: A `Map` keeps insertion order, and saving an existing key keeps its position, so
 	//     `list` returns the oldest note first, as the port promises.
 	// PT: Um `Map` mantém a ordem de inserção, e gravar uma chave existente mantém a posição,
 	//     então `list` devolve a nota mais antiga primeiro, como a porta promete.
+	// ES: Un `Map` mantiene el orden de inserción, y guardar una clave existente mantiene su
+	//     posición, así que `list` devuelve primero la nota más antigua, como promete el puerto.
 	private readonly notes = new Map<string, Note>();
 
 	async save(note: Note): Promise<void> {

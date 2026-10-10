@@ -19,6 +19,8 @@ describe("decision tree", () => {
 	//     of lg(n!), for n = 3 and n = 4.
 	// PT: Aceite de MP-BIGO-3.1: a árvore tem n! folhas e sua altura é igual ao teto de
 	//     lg(n!), para n = 3 e n = 4.
+	// ES: Aceptación de MP-BIGO-3.1: el árbol tiene n! hojas y su altura es igual al techo de
+	//     lg(n!), para n = 3 y n = 4.
 	test.each([
 		[3, 6, 3],
 		[4, 24, 5],
@@ -35,6 +37,8 @@ describe("decision tree", () => {
 	//     than the bound, in the worst case or on average.
 	// PT: Qualquer ordenação por comparação correta tem exatamente n! folhas alcançáveis, e
 	//     nenhuma pode ser mais baixa que o limite, no pior caso ou na média.
+	// ES: Cualquier ordenación por comparación correcta tiene exactamente n! hojas alcanzables, y
+	//     ninguna puede ser más baja que la cota, en el peor caso o en promedio.
 	for (const { name, sort } of COMPARISON_SORTS) {
 		test(`${name}: n! leaves and a height at or above the bound, for n = 1 to 6`, () => {
 			for (let n = 1; n <= 6; n++) {

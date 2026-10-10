@@ -2,6 +2,8 @@
 //     start otherwise.
 // PT: As regras de chave da versão corrigida: pelo menos 32 bytes, aleatória por padrão, e
 //     recusa em iniciar caso contrário.
+// ES: Las reglas de clave de la versión corregida: al menos 32 bytes, aleatoria por defecto, y
+//     se niega a iniciar en caso contrario.
 
 import { describe, expect, test } from "bun:test";
 import { AUDIENCE, ISSUER, systemClock } from "../src/data";
@@ -15,6 +17,9 @@ import { createFixedVerifier } from "../src/fixed/fixed-verifier";
 // PT: Um valor obviamente falso, com 32 bytes, na forma base64 que uma variável de ambiente
 //     carregaria. Ele passa na regra de tamanho e NÃO é uma boa chave: é texto legível. Chaves
 //     de verdade vêm de um gerador aleatório.
+// ES: Un valor obviamente falso, de 32 bytes, en la forma base64 que llevaría una variable de entorno.
+//     Pasa la regla de tamaño y NO es una buena clave: es texto legible. Las claves
+//     de verdad vienen de un generador aleatorio.
 const FAKE_KEY_TEXT = "FAKE-KEY-not-real-jwt-lab-only!!";
 const FAKE_KEY_BASE64 = Buffer.from(FAKE_KEY_TEXT).toString("base64");
 

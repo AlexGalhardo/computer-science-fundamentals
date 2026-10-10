@@ -6,6 +6,10 @@
 //     injusto com o cluster: quatro workers mais o daemon do PM2 são cinco processos, cada um com
 //     o seu heap. O contêiner é a unidade honesta, e o Linux já contabiliza isso nos arquivos de
 //     cgroup: `memory.peak` é o maior uso desde que o contêiner subiu, `memory.current` é o de agora.
+// ES: ¿Cuánta memoria cuesta una configuración? Preguntarle a un proceso su propio RSS sería injusto
+//     con el cluster: cuatro workers más el daemon de PM2 son cinco procesos, cada uno con su heap.
+//     El contenedor es la unidad honesta, y Linux ya lo contabiliza en los archivos de cgroup:
+//     `memory.peak` es el mayor uso desde que el contenedor arrancó, `memory.current` es el de ahora.
 
 import { readFileSync } from "node:fs";
 
@@ -32,6 +36,8 @@ export function readContainerMemory(): MemoryReading {
 			//     next source is tried. Nothing is hidden: the answer says which source was used.
 			// PT: O arquivo não existe fora de um contêiner com cgroup v2 (ou em kernel antigo), então
 			//     a próxima fonte é tentada. Nada fica escondido: a resposta diz qual fonte foi usada.
+			// ES: El archivo no existe fuera de un contenedor con cgroup v2 (o en un kernel antiguo), así
+			//     que se intenta la siguiente fuente. Nada queda oculto: la respuesta dice qué fuente se usó.
 		}
 	}
 	return { bytes: process.memoryUsage().rss, source: "process-rss" };

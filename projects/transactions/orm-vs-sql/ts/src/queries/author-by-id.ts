@@ -3,6 +3,9 @@
 // PT: Consulta 1, busca pela chave primária. A consulta mais simples possível: qualquer diferença
 //     de tempo entre as abordagens aqui é puro custo da ferramenta, porque o trabalho do banco é
 //     o mesmo.
+// ES: Consulta 1, búsqueda por clave primaria. La consulta más simple posible: cualquier diferencia
+//     de tiempo entre los enfoques aquí es puro costo de la herramienta, porque el trabajo de la base
+//     de datos es el mismo.
 
 import { eq } from "drizzle-orm";
 import { authors } from "../drizzle-schema";

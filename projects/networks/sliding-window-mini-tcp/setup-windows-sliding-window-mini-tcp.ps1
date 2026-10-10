@@ -1,5 +1,6 @@
 # EN: Builds and tests the sliding-window-mini-tcp mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto sliding-window-mini-tcp. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto sliding-window-mini-tcp. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

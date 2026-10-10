@@ -3,6 +3,7 @@ import { runDemo } from "../src/demo";
 
 // EN: The demo claims that both versions answer the same. The claim is checked here.
 // PT: A demo afirma que as duas versões respondem o mesmo. A afirmação é conferida aqui.
+// ES: La demo afirma que las dos versiones responden lo mismo. La afirmación se comprueba aquí.
 test("the demo shows the same behaviour before and after, for the five principles", () => {
 	const lines = runDemo();
 	expect(lines.filter((line) => line.startsWith("  same behaviour:"))).toEqual(

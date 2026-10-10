@@ -11,6 +11,13 @@
 //       cache-aside     escrita: banco, depois APAGA a chave do cache    (cache cheio por leituras)
 //       write-through   escrita: banco, depois GRAVA a chave no cache    (os dois antes da resposta)
 //       write-behind    escrita: cache e fila pendente, responde, e o banco depois, em lote
+//
+// ES: Tres formas de mantener Redis y PostgreSQL juntos. Comparten el camino de lectura y
+//     difieren en UNA cosa: qué hace una escritura, y en qué orden.
+//
+//       cache-aside     escritura: base de datos, luego ELIMINA la clave del caché (caché llenado por lecturas)
+//       write-through   escritura: base de datos, luego GUARDA la clave en el caché (ambos antes de responder)
+//       write-behind    escritura: caché y cola pendiente, responde, y la base de datos después, en lote
 
 import { randomUUID } from "node:crypto";
 import type { Cache } from "./cache";
@@ -41,6 +48,9 @@ export interface CacheCounters {
 // PT: Uma emenda para os testes. A corrida clássica do cache-aside precisa que um leitor pare
 //     exatamente entre "li o banco" e "gravei no cache", o que nunca acontece sob encomenda,
 //     então o teste encaixa uma pausa aqui. Em produção fica vazio.
+// ES: Una costura para las pruebas. La carrera clásica del cache-aside necesita que un lector se
+//     detenga exactamente entre "leí la base de datos" y "lo guardé en el caché", lo que nunca
+//     ocurre bajo demanda, así que la prueba conecta una pausa aquí. En producción queda vacío.
 export interface Hooks {
 	beforeCacheFill?: () => Promise<void>;
 }
@@ -65,6 +75,8 @@ export class ProductStore {
 	// EN: Flushes run one at a time: the timer and a manual flush must not write the same batch.
 	// PT: As descargas rodam uma por vez: o temporizador e uma descarga manual não podem gravar
 	//     o mesmo lote.
+	// ES: Los vaciados se ejecutan de uno en uno: el temporizador y un vaciado manual no pueden
+	//     escribir el mismo lote.
 	private flushing: Promise<number> = Promise.resolve(0);
 
 	constructor(
@@ -85,6 +97,9 @@ export class ProductStore {
 	// PT: O caminho de leitura, também chamado de carga preguiçosa: olha no cache, e só na falha
 	//     vai ao banco e deixa uma cópia para o próximo leitor. A cópia leva um tempo de vida,
 	//     que é o limite de quanto uma cópia errada consegue sobreviver.
+	// ES: El camino de lectura, también llamado carga diferida: mira en el caché, y solo en un
+	//     fallo va a la base de datos y deja una copia para el siguiente lector. La copia lleva un
+	//     tiempo de vida, que es el límite de cuánto tiempo puede sobrevivir una copia equivocada.
 	async read(strategy: Strategy, id: number): Promise<ReadResult | null> {
 		const key = productKey(id);
 		const cached = parseProduct(await this.cache.get(key));
@@ -100,6 +115,10 @@ export class ProductStore {
 		// PT: Com write-behind o banco pode estar ATRASADO: uma escrita pode ainda esperar na fila
 		//     enquanto a cópia no cache já expirou. Ler o banco agora traria o preço antigo e o
 		//     guardaria no cache. Por isso a fila é consultada antes.
+		// ES: Con write-behind la base de datos puede estar ATRASADA: una escritura puede seguir
+		//     esperando en la cola mientras su copia en el caché ya expiró. Leer la base de datos
+		//     ahora traería el precio antiguo y lo guardaría en el caché. Por eso primero se
+		//     consulta la cola.
 		if (strategy === "write-behind") {
 			const pending = parseProduct(await this.cache.hashGet(PENDING, String(id)));
 			if (pending !== null) {
@@ -140,6 +159,11 @@ export class ProductStore {
 	//     commits no banco. Um delete não tem valor para errar: a próxima leitura carrega a
 	//     verdade. O banco vai primeiro, então nunca há um momento com o valor novo no cache e
 	//     ainda não confirmado.
+	// ES: Cache-aside elimina en lugar de actualizar. Dos escritores que hacen SET en el caché
+	//     pueden dejarlo con el valor más antiguo si sus comandos de caché llegan en el orden
+	//     opuesto al de sus commits en la base de datos. Una eliminación no tiene valor que
+	//     pueda equivocarse: la siguiente lectura carga la verdad. La base de datos va primero,
+	//     así que nunca hay un momento con el valor nuevo en el caché y aún sin confirmar.
 	private async writeCacheAside(id: number, price: number): Promise<Product | null> {
 		const product = await this.db.writePrice(id, price);
 		await this.cache.del(productKey(id));
@@ -154,6 +178,10 @@ export class ProductStore {
 	//     leitura que vem depois de uma escrita é um acerto e está fresca. Quem paga é o
 	//     escritor: duas viagens antes da resposta. O banco continua indo primeiro: se ele
 	//     recusar a escrita, o cache nem é tocado.
+	// ES: Write-through solo responde después de que AMBOS lugares tienen el valor nuevo, así que
+	//     la lectura que sigue a una escritura es un acierto y está fresca. El precio lo paga el
+	//     escritor: dos viajes antes de la respuesta. La base de datos sigue yendo primero: si
+	//     rechaza la escritura, el caché ni siquiera se toca.
 	private async writeThrough(id: number, price: number): Promise<Product | null> {
 		const product = await this.db.writePrice(id, price);
 		if (product === null) {
@@ -171,6 +199,10 @@ export class ProductStore {
 	//     escritas pendentes (sem tempo de vida: precisa sobreviver até a descarga) e para a
 	//     chave do cache. Até a próxima descarga o banco fica atrás do cache, e se o Redis perder
 	//     a memória antes disso, uma escrita confirmada some.
+	// ES: Write-behind responde después de tocar solo Redis. El valor nuevo va a un hash de
+	//     escrituras pendientes (sin tiempo de vida: debe sobrevivir hasta el vaciado) y a la
+	//     clave del caché. Hasta el próximo vaciado la base de datos queda atrás del caché, y si
+	//     Redis pierde su memoria antes de eso, una escritura confirmada desaparece.
 	private async writeBehind(id: number, price: number): Promise<Product | null> {
 		const current = await this.read("write-behind", id);
 		if (current === null) {
@@ -201,6 +233,11 @@ export class ProductStore {
 	//     (aglutinação). O `RENAME` tira o hash inteiro do caminho de forma atômica, então as
 	//     escritas que chegam durante a descarga começam um hash novo e não se perdem nem são
 	//     gravadas duas vezes.
+	// ES: El hash de pendientes tiene UN campo por producto, así que diez escrituras al mismo
+	//     producto dentro de un intervalo son una fila del lote: solo importa el último valor
+	//     (coalescencia). `RENAME` aparta todo el hash de forma atómica, así que las escrituras
+	//     que llegan durante el vaciado inician un hash nuevo y no se pierden ni se escriben dos
+	//     veces.
 	private async flushOnce(): Promise<number> {
 		const batchKey = `write-behind:flushing:${randomUUID()}`;
 		if (!(await this.cache.renameIfExists(PENDING, batchKey))) {
@@ -219,6 +256,8 @@ export class ProductStore {
 			//     newer write that arrived meanwhile, so the next flush tries again.
 			// PT: O banco recusou o lote. Devolve os valores, sem passar por cima de uma escrita
 			//     mais nova que chegou nesse meio tempo, para a próxima descarga tentar de novo.
+			// ES: La base de datos rechazó el lote. Devuelve los valores, sin pisar una escritura
+			//     más nueva que llegó entretanto, para que el próximo vaciado lo intente de nuevo.
 			for (const [field, raw] of Object.entries(fields)) {
 				await this.cache.hashSetIfAbsent(PENDING, field, raw);
 			}

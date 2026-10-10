@@ -1,6 +1,6 @@
 # isolation-levels
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Which anomaly does each isolation level allow? This mini-project answers by experiment. A two-session harness drives two transactions against a local PostgreSQL in a fixed, logged order, reproduces five anomalies (dirty read, non-repeatable read, phantom, lost update, write skew) at each of the four isolation levels, and writes the result matrix below.
 

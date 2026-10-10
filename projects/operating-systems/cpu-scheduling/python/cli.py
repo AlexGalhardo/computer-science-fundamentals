@@ -1,6 +1,8 @@
 """EN: `python cli.py [gantt|compare|all]` prints the same text as the TypeScript CLI.
 
 PT: `python cli.py [gantt|compare|all]` imprime o mesmo texto que a CLI em TypeScript.
+
+ES: `python cli.py [gantt|compare|all]` imprime el mismo texto que la CLI en TypeScript.
 """
 
 import sys

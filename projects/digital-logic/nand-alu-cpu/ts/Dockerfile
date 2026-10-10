@@ -2,6 +2,8 @@
 #     shared with the Go version.
 # PT: O contexto de build é a pasta do mini-projeto, porque programs/ e results/trace.txt são
 #     compartilhados com a versão em Go.
+# ES: El contexto de build es la carpeta del mini-proyecto, porque programs/ y results/trace.txt
+#     se comparten con la versión en Go.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY ts/ ./

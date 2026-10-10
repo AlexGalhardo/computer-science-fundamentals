@@ -1,6 +1,6 @@
 # File systems
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A file system turns a raw block device into named files and directories that survive a power failure. Below the familiar interface are allocation methods, i-nodes, free space management and journaling, and above it are the file organisations that databases use: records, indexes, B-trees and external sorting for data that does not fit in memory. Both halves are shaped by one fact: storage is slow, so the number of accesses is what counts.
 

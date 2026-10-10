@@ -8,11 +8,18 @@ from collections import Counter
 #     de cada valor de byte (0 = o valor não aparece), e depois os códigos empacotados bit a
 #     bit. O cabeçalho custa 264 bytes para qualquer entrada, e é por isso que arquivos
 #     minúsculos ou aleatórios crescem ao serem "comprimidos".
+# ES: Formato del archivo: 8 bytes con el tamaño original, 256 bytes con la longitud del código
+#     de cada valor de byte (0 = el valor no aparece), y luego los códigos empaquetados bit a
+#     bit. El encabezado cuesta 264 bytes para cualquier entrada, y por eso los archivos
+#     diminutos o aleatorios crecen al "comprimirlos".
 HEADER_LEN = 8 + 256
 
 
 class DecodeError(ValueError):
-    """EN: The compressed input is damaged. PT: A entrada comprimida está danificada."""
+    """EN: The compressed input is damaged.
+    PT: A entrada comprimida está danificada.
+    ES: La entrada comprimida está dañada.
+    """
 
 
 # EN: The Huffman algorithm. Start with one node per byte value that appears, weighted by its
@@ -27,6 +34,13 @@ class DecodeError(ValueError):
 #     profundidade de uma folha é o comprimento do seu código. O heap entrega os dois mais leves
 #     em O(log n). Empates são decididos pelo id do nó (valor do byte nas folhas, ordem de
 #     criação nos nós unidos), então as versões em Rust e em Python montam a mesma árvore.
+# ES: El algoritmo de Huffman. Empieza con un nodo por cada valor de byte que aparece, con peso
+#     igual a su conteo. Repetidamente, toma los dos nodos más ligeros y únelos bajo un nodo
+#     nuevo cuyo peso es la suma. Los valores raros se unen primero, así que quedan más hondos
+#     en el árbol, y la profundidad de una hoja es la longitud de su código. El heap entrega
+#     los dos más ligeros en O(log n). Los empates se deciden por el id del nodo (valor del
+#     byte en las hojas, orden de creación en los nodos unidos), así que las versiones en Rust
+#     y en Python arman el mismo árbol.
 def code_lengths(counts: dict[int, int]) -> list[int]:
     lengths = [0] * 256
     heap = [(count, symbol) for symbol, count in counts.items() if count > 0]
@@ -36,6 +50,8 @@ def code_lengths(counts: dict[int, int]) -> list[int]:
     #     told apart from "value absent" in the header.
     # PT: Um arquivo com um único valor distinto ainda precisa de um código de 1 bit: um código
     #     de 0 bit não se distinguiria de "valor ausente" no cabeçalho.
+    # ES: Un archivo con un único valor distinto aún necesita un código de 1 bit: un código de
+    #     0 bits no se distinguiría de "valor ausente" en el encabezado.
     if len(heap) == 1:
         lengths[heap[0][1]] = 1
         return lengths
@@ -50,6 +66,7 @@ def code_lengths(counts: dict[int, int]) -> list[int]:
 
     # EN: Walk down from the root. Every step down adds one bit to the code.
     # PT: Desce a partir da raiz. Cada passo para baixo acrescenta um bit ao código.
+    # ES: Desciende desde la raíz. Cada paso hacia abajo añade un bit al código.
     stack = [(heap[0][1], 0)] if heap else []
     while stack:
         node, depth = stack.pop()
@@ -71,6 +88,11 @@ def code_lengths(counts: dict[int, int]) -> list[int]:
 #     símbolos por (comprimento, valor) e conte para cima, acrescentando zeros sempre que o
 #     comprimento cresce. O resultado é um código de prefixo com exatamente os comprimentos que
 #     a árvore deu.
+# ES: Huffman canónico. El árbol en sí no se guarda: las longitudes de los códigos bastan,
+#     porque ambos lados acuerdan una regla para convertir longitudes en códigos. Ordena los
+#     símbolos por (longitud, valor) y cuenta hacia arriba, añadiendo ceros cada vez que la
+#     longitud crece. El resultado es un código de prefijo con exactamente las longitudes que
+#     dio el árbol.
 def canonical_codes(lengths: list[int]) -> dict[int, tuple[int, int]]:
     """Maps each symbol to (length, code)."""
     codes: dict[int, tuple[int, int]] = {}
@@ -95,6 +117,10 @@ def encode(data: bytes) -> bytes:
     #     um único número grande: desloca à esquerda pelo comprimento do código e soma o código.
     #     O primeiro código fica nos bits mais altos, a mesma ordem que a versão em Rust escreve
     #     bit a bit.
+    # ES: Los enteros de Python no tienen límite de tamaño, así que todo el cuerpo se arma como
+    #     un único número grande: desplaza a la izquierda por la longitud del código y suma el
+    #     código. El primer código queda en los bits más altos, el mismo orden en que la versión
+    #     en Rust escribe bit a bit.
     body = 0
     bits = 0
     for byte in data:
@@ -120,6 +146,9 @@ def decode(packed: bytes) -> bytes:
     #     code is the start of another, so the first hit is the right one.
     # PT: Um código de prefixo pode ser decodificado de forma gulosa: leia bits até formarem um
     #     código conhecido. Nenhum código é o começo de outro, então o primeiro acerto é o certo.
+    # ES: Un código de prefijo se puede decodificar de forma voraz: lee bits hasta formar un
+    #     código conocido. Ningún código es el comienzo de otro, así que el primer acierto es el
+    #     correcto.
     lookup = {pair: symbol for symbol, pair in canonical_codes(lengths).items()}
     longest = max(lengths)
 

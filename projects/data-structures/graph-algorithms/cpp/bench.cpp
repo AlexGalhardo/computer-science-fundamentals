@@ -19,6 +19,10 @@
 //     "dijkstra-matrix". O grafo tem n vértices e cerca de 8n arcos, e é montado antes de o
 //     relógio começar, então só o algoritmo é cronometrado. C++ e Go usam o mesmo gerador e a
 //     mesma semente, e o checksum prova que os dois calcularam a mesma resposta.
+// ES: Benchmark. El nombre de la implementación es "<algoritmo>-<representación>", por ejemplo
+//     "dijkstra-matrix". El grafo tiene n vértices y cerca de 8n arcos, y se arma antes de que
+//     el reloj empiece, así que solo se cronometra el algoritmo. C++ y Go usan el mismo
+//     generador y la misma semilla, y el checksum prueba que los dos calcularon la misma respuesta.
 namespace {
 
 std::uint64_t state = 42;
@@ -34,6 +38,8 @@ int below(int limit) {
 //     needs an acyclic graph, so there every arc goes from the smaller label to the larger one.
 // PT: Uma cadeia 0 - 1 - ... - (n-1) garante que o grafo é conexo. A ordenação topológica
 //     precisa de um grafo acíclico, então nela todo arco vai do rótulo menor para o maior.
+// ES: Una cadena 0 - 1 - ... - (n-1) garantiza que el grafo es conexo. El ordenamiento topológico
+//     necesita un grafo acíclico, así que en él todo arco va de la etiqueta menor a la mayor.
 void fill(graphs::Graph& graph, int n, bool acyclic) {
 	for (int v = 1; v < n; ++v) {
 		const graphs::Weight weight = 1 + below(1000);

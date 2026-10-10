@@ -58,6 +58,8 @@ def test_minimum_comparisons_is_the_exact_ceiling() -> None:
 #     average is at least lg n!. This also holds for the built-in sort, which we did not write.
 # PT: O teorema, conferido em todas as permutações: o pior caso é pelo menos ceil(lg n!) e a
 #     média é pelo menos lg n!. Isso também vale para a ordenação embutida, que não escrevemos.
+# ES: El teorema, comprobado en todas las permutaciones: el peor caso es al menos ceil(lg n!) y el
+#     promedio es al menos lg n!. Esto también vale para la ordenación integrada, que no escribimos.
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 6, 7])
 def test_worst_and_average_case_respect_the_bound(n: int) -> None:
     for row in exhaustive(n):
@@ -76,6 +78,9 @@ def test_merge_sort_is_optimal_for_three_and_four_elements() -> None:
 # PT: Aceite de MP-BIGO-3.2 e 3.3 no lado Python, em 200 das mesmas entradas com semente:
 #     ordenações por comparação nunca ficam abaixo de lg(n!), counting e radix sort fazem zero
 #     comparações.
+# ES: Aceptación de MP-BIGO-3.2 y 3.3 en el lado de Python, en 200 de las mismas entradas con
+#     semilla: las ordenaciones por comparación nunca quedan por debajo de lg(n!), counting y
+#     radix sort hacen cero comparaciones.
 def test_random_inputs() -> None:
     rows = {row.algorithm: row for row in random_experiment(N, 200, SEED)}
     assert set(rows) == {"merge sort", "sorted() (Timsort)", "counting sort", "radix sort"}

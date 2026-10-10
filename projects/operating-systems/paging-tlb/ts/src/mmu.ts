@@ -40,6 +40,13 @@ export interface Counters {
 //     falta de TLB, a tabela de páginas é consultada. Se a página não está na memória, ocorre
 //     uma falta de página: uma moldura é obtida (retirando outra página, se preciso) e a página
 //     é carregada.
+// ES: Una unidad de gestión de memoria en miniatura. Una dirección virtual se divide en un número
+//     de página (los bits altos) y un desplazamiento (los bits bajos). El número de página se
+//     traduce a un número de marco y el desplazamiento se copia sin cambios.
+//     La traducción se busca primero en la TLB, una pequeña caché de traducciones recientes. En
+//     un fallo de TLB se consulta la tabla de páginas. Si la página no está en memoria, ocurre un
+//     fallo de página: se obtiene un marco (expulsando otra página si es necesario) y se carga la
+//     página.
 export class Mmu {
 	readonly counters: Counters = { accesses: 0, tlbHits: 0, tlbMisses: 0, pageFaults: 0 };
 	private readonly offsetBits: number;
@@ -50,6 +57,9 @@ export class Mmu {
 	//     the least recently used translation first, which is the one the TLB drops when full.
 	// PT: Um Map lembra a ordem de inserção. Apagar e reinserir a entrada a cada acerto mantém a
 	//     tradução menos recentemente usada em primeiro lugar, que é a que a TLB descarta quando cheia.
+	// ES: Un Map recuerda el orden de inserción. Borrar y reinsertar la entrada en cada acierto
+	//     mantiene primero la traducción menos recientemente usada, que es la que la TLB descarta
+	//     cuando está llena.
 	private readonly tlb = new Map<number, number>();
 
 	constructor(private readonly options: MmuOptions) {
@@ -79,6 +89,8 @@ export class Mmu {
 		//     LRU and clock need to know that the page was used.
 		// PT: O algoritmo de substituição é avisado de todo acesso, não só das faltas, porque o LRU
 		//     e o relógio precisam saber que a página foi usada.
+		// ES: Se avisa al algoritmo de reemplazo de cada acceso, no solo de los fallos, porque LRU y
+		//     clock necesitan saber que la página fue usada.
 		const access = this.replacer.access(page);
 		if (tlbHit) {
 			this.counters.tlbHits += 1;
@@ -95,6 +107,9 @@ export class Mmu {
 					// PT: A página retirada não está mais na memória, então sua tradução precisa sair
 					//     da tabela de páginas E da TLB. Uma entrada velha na TLB mandaria o programa
 					//     para uma moldura que agora guarda outra página.
+					// ES: La página expulsada ya no está en memoria, así que su traducción debe salir
+					//     de la tabla de páginas Y de la TLB. Una entrada obsoleta en la TLB enviaría
+					//     al programa a un marco que ahora guarda otra página.
 					this.pageTable.delete(access.evicted);
 					this.tlb.delete(access.evicted);
 				}
@@ -120,6 +135,10 @@ export class Mmu {
 //     memória. Na falta, a tabela de páginas é lida antes, um acesso à memória por nível. A média
 //     é ponderada pela taxa de acerto. As faltas de página ficam de fora: custam milissegundos,
 //     não nanossegundos.
+// ES: Tiempo efectivo de acceso: la TLB siempre se consulta. En un acierto sigue un acceso a
+//     memoria. En un fallo se lee primero la tabla de páginas, un acceso a memoria por nivel. El
+//     promedio se pondera por la tasa de aciertos. Los fallos de página quedan fuera: cuestan
+//     milisegundos, no nanosegundos.
 export function effectiveAccessTime(hitRatio: number, memoryNs: number, tlbNs: number, levels = 1): number {
 	const hit = tlbNs + memoryNs;
 	const miss = tlbNs + levels * memoryNs + memoryNs;

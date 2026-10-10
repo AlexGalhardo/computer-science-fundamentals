@@ -2,6 +2,8 @@
 #     Dependencies come from the lockfile, in their own layer.
 # PT: Uma imagem roda os testes, o script de repetição e o serviço instável do laboratório.
 #     As dependências vêm do lockfile, em uma camada própria.
+# ES: Una imagen ejecuta las pruebas, el script de repetición y el servicio inestable del laboratorio.
+#     Las dependencias vienen del lockfile, en su propia capa.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock ./

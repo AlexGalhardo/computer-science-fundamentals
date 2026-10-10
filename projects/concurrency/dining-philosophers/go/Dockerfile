@@ -2,6 +2,8 @@
 #     container needs no network.
 # PT: O contexto de build é a pasta do mini-projeto. A demo é compilada no build, então o
 #     contêiner não precisa de rede.
+# ES: El contexto de build es la carpeta del mini-proyecto. La demo se compila en el build, así que
+#     el contenedor no necesita red.
 FROM golang:1.27.1-bookworm
 WORKDIR /src
 COPY go/ .

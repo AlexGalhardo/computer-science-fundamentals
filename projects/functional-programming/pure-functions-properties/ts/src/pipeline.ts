@@ -3,6 +3,9 @@
 // PT: Um relatório de vendas montado pela composição de pequenas funções puras. Cada etapa
 //     recebe um valor e devolve um novo, então as etapas podem ser testadas sozinhas e lidas
 //     de cima para baixo.
+// ES: Un reporte de ventas armado componiendo pequeñas funciones puras. Cada paso
+//     recibe un valor y devuelve uno nuevo, así que los pasos se pueden probar solos y leer
+//     de arriba hacia abajo.
 
 export type Line = { readonly category: string; readonly unitCents: number; readonly quantity: number };
 export type SalesOrder = { readonly status: string; readonly lines: readonly Line[] };
@@ -14,6 +17,9 @@ export type CategoryTotal = { readonly category: string; readonly totalCents: nu
 // PT: `pipe(f, g, h)(x)` é `h(g(f(x)))`: as funções rodam na ordem em que são escritas. As
 //     sobrecargas dizem ao compilador que o tipo de saída de uma etapa precisa ser o tipo de
 //     entrada da seguinte. A implementação é uma redução sobre a lista de funções.
+// ES: `pipe(f, g, h)(x)` es `h(g(f(x)))`: las funciones corren en el orden en que se escriben.
+//     Las sobrecargas le dicen al compilador que el tipo de salida de un paso debe ser el tipo
+//     de entrada del siguiente. La implementación es una reducción sobre la lista de funciones.
 export function pipe<A, B>(f1: (a: A) => B): (a: A) => B;
 export function pipe<A, B, C>(f1: (a: A) => B, f2: (b: B) => C): (a: A) => C;
 export function pipe<A, B, C, D>(f1: (a: A) => B, f2: (b: B) => C, f3: (c: C) => D): (a: A) => D;
@@ -33,6 +39,8 @@ export function pipe(...fns: Array<(value: unknown) => unknown>): (value: unknow
 //     that fits in the pipeline.
 // PT: Etapas em forma curried: a primeira chamada fixa uma configuração e devolve a função
 //     de um argumento que encaixa no pipeline.
+// ES: Pasos en forma curried: la primera llamada fija una configuración y devuelve la función
+//     de un argumento que encaja en el pipeline.
 export const onlyStatus =
 	(status: string) =>
 	(orders: readonly SalesOrder[]): SalesOrder[] =>
@@ -55,6 +63,9 @@ export function lineTotals(orders: readonly SalesOrder[]): CategoryTotal[] {
 // PT: Agrupar é uma redução cujo acumulador é um Map de categoria para total. Um Map novo é
 //     criado dentro da chamada e não escapa antes do fim, então a mutação local não pode ser
 //     observada e a função continua pura.
+// ES: Agrupar es una reducción cuyo acumulador es un Map de categoría a total. Un Map nuevo se
+//     crea dentro de la llamada y no escapa antes del final, así que la mutación local no puede
+//     observarse y la función sigue siendo pura.
 export function totalsByCategory(lines: readonly CategoryTotal[]): CategoryTotal[] {
 	const totals = lines.reduce(
 		(acc, line) => acc.set(line.category, (acc.get(line.category) ?? 0) + line.totalCents),
@@ -68,6 +79,9 @@ export function totalsByCategory(lines: readonly CategoryTotal[]): CategoryTotal
 // PT: Maior total primeiro; totais iguais são ordenados pelo nome da categoria, para o
 //     resultado não depender da ordem da entrada. `toSorted` devolve um array novo, ao
 //     contrário de `sort`.
+// ES: Primero el total mayor; los totales iguales se ordenan por el nombre de la categoría, para
+//     que el resultado no dependa del orden de la entrada. `toSorted` devuelve un array nuevo,
+//     al contrario de `sort`.
 export function ranked(totals: readonly CategoryTotal[]): CategoryTotal[] {
 	return totals.toSorted((a, b) => b.totalCents - a.totalCents || (a.category < b.category ? -1 : 1));
 }

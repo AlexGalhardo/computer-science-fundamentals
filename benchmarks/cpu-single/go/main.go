@@ -4,6 +4,9 @@
 // PT: Carga de CPU em uma thread em Go: `nbody` (ponto flutuante) e `sieve` (inteiros e
 // memória). O Go compila antes da hora para código de máquina e tem coletor de lixo, que
 // quase não trabalha aqui porque os núcleos alocam uma vez só.
+// ES: Carga de CPU en un thread en Go: `nbody` (punto flotante) y `sieve` (enteros y
+// memoria). Go compila por adelantado a código de máquina y tiene recolector de basura, que
+// casi no trabaja aquí porque los núcleos asignan una sola vez.
 package main
 
 import (
@@ -27,6 +30,7 @@ type body struct {
 
 // EN: Sun, Jupiter, Saturn, Uranus and Neptune.
 // PT: Sol, Júpiter, Saturno, Urano e Netuno.
+// ES: Sol, Júpiter, Saturno, Urano y Neptuno.
 func makeBodies() []body {
 	planet := func(x, y, z, vx, vy, vz, mass float64) body {
 		return body{x, y, z, vx * daysPerYear, vy * daysPerYear, vz * daysPerYear, mass * solarMass}
@@ -62,6 +66,9 @@ func offsetMomentum(bodies []body) {
 // PT: Um passo de tempo. Cada produto é guardado em uma variável antes de ser somado: o
 // compilador Go pode fundir x*y+z em uma instrução em algumas CPUs, e uma atribuição
 // explícita proíbe isso, mantendo o arredondamento idêntico ao das outras linguagens.
+// ES: Un paso de tiempo. Cada producto se guarda en una variable antes de sumarse: el
+// compilador de Go puede fusionar x*y+z en una instrucción en algunas CPU, y una asignación
+// explícita lo prohíbe, manteniendo el redondeo idéntico al de los otros lenguajes.
 func advance(bodies []body) {
 	for i := range bodies {
 		a := &bodies[i]
@@ -116,6 +123,7 @@ func nbody(n int) string {
 
 // EN: Sieve of Eratosthenes. The checksum is "how many primes:the largest one".
 // PT: Crivo de Eratóstenes. O checksum é "quantos primos:o maior deles".
+// ES: Criba de Eratóstenes. El checksum es "cuántos primos:el mayor de ellos".
 func sieve(n int) string {
 	composite := make([]bool, n+1)
 	for i := 2; i*i <= n; i++ {
@@ -137,6 +145,7 @@ func sieve(n int) string {
 
 // EN: On Linux, Maxrss is the peak resident memory of the process, in kibibytes.
 // PT: No Linux, Maxrss é o pico de memória residente do processo, em kibibytes.
+// ES: En Linux, Maxrss es el pico de memoria residente del proceso, en kibibytes.
 func peakMemoryKb() int64 {
 	var usage syscall.Rusage
 	if err := syscall.Getrusage(syscall.RUSAGE_SELF, &usage); err != nil {

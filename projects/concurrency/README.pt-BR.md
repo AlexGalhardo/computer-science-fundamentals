@@ -1,6 +1,6 @@
 # Concorrência
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Concorrência é a arte de estruturar um programa como várias atividades que avançam em tempos sobrepostos e compartilham estado com segurança. É onde vivem os bugs mais difíceis (condições de corrida, deadlocks, inanição), e cada linguagem responde de um jeito: travas e operações atômicas, canais, atores ou um laço de eventos. Conhecer os modelos permite escolher um deles de propósito.
 

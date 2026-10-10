@@ -23,6 +23,8 @@ func run(addr string, pause time.Duration) error {
 	//     "HTTP" is in the httpraw package.
 	// PT: net.Listen entrega um socket TCP, e nada acima dele. Tudo o que faz dos bytes "HTTP"
 	//     está no pacote httpraw.
+	// ES: net.Listen entrega un socket TCP, y nada por encima. Todo lo que convierte los bytes
+	//     en "HTTP" está en el paquete httpraw.
 	var config net.ListenConfig
 	listener, err := config.Listen(ctx, "tcp", addr)
 	if err != nil {

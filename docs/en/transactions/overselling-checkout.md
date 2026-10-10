@@ -1,12 +1,12 @@
 # Overselling at checkout (MP-TX-2)
 
-> Versão em português: [docs/pt/transactions/overselling-checkout.md](../../pt/transactions/overselling-checkout.md)
+> Versão em português: [docs/pt/transactions/overselling-checkout.md](../../pt/transactions/overselling-checkout.md) · Versión en español: [docs/es/transactions/overselling-checkout.md](../../es/transactions/overselling-checkout.md)
 
 Mini-project: [`projects/transactions/overselling-checkout`](../../../projects/transactions/overselling-checkout/README.md). Quiz topics: `locking`, `isolation-levels-anomalies`, `acid-properties`, `mvcc`.
 
 ## The bug
 
-```
+```text
 buyer A: SELECT stock  -> 10
 buyer B: SELECT stock  -> 10      (A has not written yet)
 buyer A: UPDATE stock = 9, INSERT order

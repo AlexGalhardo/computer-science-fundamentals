@@ -8,6 +8,11 @@
 //     embutidos das duas linguagens usam algoritmos diferentes, então `Math.random()` e
 //     `random.random()` nunca coincidem. Com semente fixa e a mesma aritmética, os planos
 //     aleatórios do índice são idênticos nas duas linguagens, e os baldes também.
+// ES: Un generador aleatorio pequeño y con semilla (mulberry32), escrito a mano para que las
+//     implementaciones en TypeScript y en Python sorteen exactamente los mismos números. Los
+//     generadores incorporados de los dos lenguajes usan algoritmos distintos, así que
+//     `Math.random()` y `random.random()` nunca coinciden. Con semilla fija y la misma aritmética,
+//     los planos aleatorios del índice son idénticos en los dos lenguajes, y las cubetas también.
 
 export type Rng = () => number;
 
@@ -21,6 +26,9 @@ export function mulberry32(seed: number): Rng {
 		// PT: Tudo aqui é aritmética inteira de 32 bits: `Math.imul` multiplica e guarda os 32 bits
 		//     baixos, `>>>` desloca sem sinal. Aritmética inteira não arredonda, e por isso a
 		//     sequência pode ser reproduzida bit a bit em outra linguagem.
+		// ES: Todo aquí es aritmética de enteros de 32 bits: `Math.imul` multiplica y conserva los 32
+		//     bits bajos, `>>>` desplaza sin signo. La aritmética de enteros no redondea, y por eso la
+		//     secuencia se puede reproducir bit a bit en otro lenguaje.
 		state = (state + 0x6d2b79f5) >>> 0;
 		let t = state;
 		t = Math.imul(t ^ (t >>> 15), t | 1);
@@ -49,6 +57,10 @@ export function pick<T>(rng: Rng, items: readonly T[]): T {
 //     zero. A receita usual (Box-Muller) chama log e cos, cujo último dígito pode diferir entre
 //     linguagens. Somar quatro números uniformes e subtrair 2 dá uma forma parecida com o sino
 //     usando só somas, que são exatas na mesma ordem em qualquer lugar.
+// ES: Un plano aleatorio necesita coordenadas repartidas como una curva en campana alrededor de
+//     cero. La receta habitual (Box-Muller) llama a log y cos, cuyo último dígito puede diferir
+//     entre lenguajes. Sumar cuatro números uniformes y restar 2 da una forma parecida a la
+//     campana usando solo sumas, que son exactas en el mismo orden en cualquier lugar.
 export function bellRandom(rng: Rng): number {
 	return rng() + rng() + rng() + rng() - 2;
 }

@@ -21,6 +21,8 @@ fn print_chain(chain: &[Block]) {
 //     block and shows where validation fails.
 // PT: Monta uma cadeia pequena, mostra que ela valida, depois muda uma transação de um bloco
 //     antigo e mostra onde a validação falha.
+// ES: Arma una cadena pequeña, muestra que valida, luego cambia una transacción de un bloque
+//     antiguo y muestra dónde falla la validación.
 fn demo() -> ExitCode {
     let mut chain = vec![genesis()];
     add_block(&mut chain, vec!["alice pays bob 20".into()], 1, DIFFICULTY);

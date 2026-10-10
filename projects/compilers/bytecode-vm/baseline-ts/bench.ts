@@ -6,6 +6,10 @@
 //     interpretador de árvore do MP-COMP-2 (copiado em `src/`). Ele espelha o comando `bench` do
 //     binário em Rust: `let n = <n>;` vai na frente do programa, leitura e análise ficam fora do
 //     trecho cronometrado, e a última linha é o JSON do contrato de benchmark.
+// ES: `bun run baseline-ts/bench.ts <programa.mini> <n>` ejecuta un programa de benchmark en el
+//     intérprete de árbol del MP-COMP-2 (copiado en `src/`). Refleja el comando `bench` del
+//     binario en Rust: `let n = <n>;` va delante del programa, la lectura y el análisis quedan
+//     fuera del tramo cronometrado, y la última línea es el JSON del contrato de benchmark.
 
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";

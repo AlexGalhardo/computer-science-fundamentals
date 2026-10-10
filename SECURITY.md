@@ -1,6 +1,6 @@
-# Security Policy · Política de Segurança
+# Security Policy · Política de Segurança · Política de seguridad
 
-> [English](#english) · [Português](#português)
+> [English](#english) · [Português](#português) · [Español](#español)
 
 ## English
 
@@ -51,3 +51,29 @@ Scripts de k6 e ferramentas similares têm como alvo **somente serviços locais*
 ### Como reportar uma vulnerabilidade
 
 Falhas dentro dos labs são intencionais e documentadas. Se você encontrar um problema **não intencional** (por exemplo, um lab que consegue acessar a rede externa, um segredo vazado ou uma dependência vulnerável em código fora dos labs), reporte de forma privada pelo [GitHub Security Advisories](https://github.com/AlexGalhardo/computer-science-fundamentals/security/advisories/new) em vez de abrir uma issue pública.
+
+---
+
+## Español
+
+### Este repositorio contiene código intencionalmente vulnerable
+
+El área de seguridad reúne **laboratorios** que reproducen vulnerabilidades web conocidas (OWASP Top 10, XSS, inyección SQL, CSP débil y otras) con fines **defensivos y educativos**, en el mismo espíritu que OWASP Juice Shop y DVWA.
+
+**Nunca despliegues un laboratorio en una red pública o compartida.**
+
+### Reglas de alcance para todo laboratorio
+
+1. Corre **solo en local**, dentro de Docker, en una red **sin acceso externo** (`internal: true` en `docker-compose`).
+2. Todo ejemplo vulnerable incluye su **versión corregida**.
+3. Una **prueba automatizada** demuestra que el exploit funciona contra la versión vulnerable y falla contra la corregida.
+4. La documentación se centra en **por qué** ocurre la falla y **cómo prevenirla**.
+5. Nada de payloads dirigidos a sistemas reales, técnicas de evasión ni herramientas de ataque reutilizables fuera del laboratorio.
+
+### Pruebas de carga y rendimiento
+
+Los scripts de k6 y herramientas similares apuntan **solo a servicios locales** (`localhost` o `docker-compose`) creados en este repositorio. Nunca se usan URL de terceros.
+
+### Cómo reportar una vulnerabilidad
+
+Las fallas dentro de los laboratorios son intencionales y están documentadas. Si encuentras un problema **no intencional** (por ejemplo, un laboratorio que puede acceder a la red externa, un secreto filtrado o una dependencia vulnerable en código fuera de los laboratorios), repórtalo de forma privada mediante [GitHub Security Advisories](https://github.com/AlexGalhardo/computer-science-fundamentals/security/advisories/new) en lugar de abrir un issue público.

@@ -20,6 +20,9 @@ import (
 // PT: Todo teste aqui é um teste de integração em miniatura: servidores HTTP reais na
 // interface de loopback fazem o papel dos back ends, e as requisições passam pelo handler
 // real do proxy. Nenhuma rede fora da máquina é usada.
+// ES: Cada prueba aquí es una prueba de integración en miniatura: servidores HTTP reales en la
+// interfaz de loopback hacen el papel de los back ends, y las solicitudes pasan por el handler
+// real del proxy. No se usa ninguna red fuera de la máquina.
 
 type fakeBackend struct {
 	server *httptest.Server
@@ -70,6 +73,9 @@ func newProxy(t *testing.T, strategy Strategy, backends ...*fakeBackend) (*Proxy
 	// PT: Folgado de propósito. Uma requisição que falha também remove o back end (verificação
 	// passiva), então um timeout curto em uma máquina de teste ocupada removeria back ends
 	// saudáveis e estragaria as contagens.
+	// ES: Holgado a propósito. Una solicitud que falla también saca su back end (verificación
+	// pasiva), así que un timeout corto en una máquina de prueba ocupada sacaría back ends sanos
+	// y arruinaría los conteos.
 	options.ResponseTimeout = 10 * time.Second
 	proxy := NewProxy(pool, strategy, options)
 	front := httptest.NewServer(proxy)
@@ -196,6 +202,9 @@ func closedLoop(t *testing.T, url string, total, workers int) (failures int64) {
 // PT: Dois back ends respondem em 20 ms e um em 80 ms. Com o mesmo número de requisições em
 // andamento em cada um, as taxas são 1/20 : 1/20 : 1/80 = 4 : 4 : 1, então o lento deve
 // atender 1/9 das requisições. O round robin, sob a mesma carga, dá a ele um terço.
+// ES: Dos back ends responden en 20 ms y uno en 80 ms. Con el mismo número de solicitudes en
+// curso en cada uno, las tasas son 1/20 : 1/20 : 1/80 = 4 : 4 : 1, así que el lento debe
+// atender 1/9 de las solicitudes. El round robin, bajo la misma carga, le da un tercio.
 func TestDistributionWithOneSlowBackend(t *testing.T) {
 	const total, workers, tolerance = 1200, 30, 0.05
 	cases := []struct {
@@ -266,6 +275,8 @@ func TestNoRequestFailsWhileABackendStops(t *testing.T) {
 	// connections that are open, which is what the death of a process looks like.
 	// PT: O back end é parado no meio da carga. CloseClientConnections derruba as conexões
 	// abertas, que é como a morte de um processo se parece.
+	// ES: El back end se detiene en medio de la carga. CloseClientConnections corta las
+	// conexiones abiertas, que es como se ve la muerte de un proceso.
 	go func() {
 		time.Sleep(150 * time.Millisecond)
 		c.server.CloseClientConnections()
@@ -371,6 +382,8 @@ func TestRetryAfterSendingOnlyForIdempotentRequests(t *testing.T) {
 // POST can go to another one.
 // PT: Uma conexão que nem chegou a abrir é diferente: o back end não viu nada, então até um
 // POST pode ir para outro.
+// ES: Una conexión que nunca llegó a abrirse es distinta: el back end no vio nada, así que
+// incluso un POST puede ir a otro.
 func TestPostIsRetriedWhenTheConnectionWasRefused(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

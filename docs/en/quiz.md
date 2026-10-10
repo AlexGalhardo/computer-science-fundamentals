@@ -1,6 +1,6 @@
 # Quiz
 
-> Versão em português: [docs/pt/quiz.md](../pt/quiz.md)
+> Versão em português: [docs/pt/quiz.md](../pt/quiz.md) · Versión en español: [docs/es/quiz.md](../es/quiz.md)
 
 The quiz is the front door of the repository: one app covering every area. The mini-projects stay in the plan, and the explanation of each question points to the mini-project that demonstrates the concept. Decisions taken on 2026-10-07.
 
@@ -9,13 +9,13 @@ The quiz is the front door of the repository: one app covering every area. The m
 - Multiple choice with **5 alternatives** and a single correct one.
 - After the answer, the explanation of the concept appears next to it.
 - Every question has a level: basic, intermediate or advanced.
-- Every question exists in Portuguese and in English from the start.
+- Every question exists in English, Portuguese and Spanish (Spanish was added on 2026-10-08).
 
 ## Screen
 
 One question per screen, in a two-column grid. On a phone the columns stack.
 
-```
+```text
 +---------------------------+---------------------------+
 | Big O  ·  question 3/20   |  EXPLANATION              |
 |                           |                           |
@@ -41,7 +41,7 @@ One question per screen, in a two-column grid. On a phone the columns stack.
 
 ## Required features
 
-- **i18n**: the whole app, interface and questions, in Portuguese and English, with a language selector.
+- **i18n**: the whole app, interface and questions, in English, Portuguese and Spanish, with a language selector.
 - **Light and dark theme**, with a toggle. The first visit follows the system preference.
 - **Mobile friendly**: usable from 320 px wide, with touch-sized controls.
 
@@ -54,7 +54,8 @@ One question per screen, in a two-column grid. On a phone the columns stack.
 
 ## Technology
 
-- Next.js with static site generation (SSG, every page pre-rendered at build time) and Tailwind CSS v4, no back end.
+- Next.js with static site generation (SSG, every page pre-rendered at build time), no back end.
+- Base UI (`@base-ui/react`) for the interactive components: buttons, the language and theme toggles, the selects, the progress meter of an area and the popup of a term in the theory summary. Base UI is unstyled, so Tailwind CSS v4 is the styling layer, with the theme tokens of `quiz/src/app/globals.css` as the only source of colours.
 - The app lives in `quiz/`, at the repository root.
 - Questions live in JSON files, in `quiz/content/<area>/<topic>.json`, validated by a schema.
 
@@ -68,7 +69,7 @@ Fields of each question:
 | `answer` | index of the correct alternative (0 to 4) |
 | `source` | book or lecture and chapter the question covers |
 | `miniProject` | path of the related mini-project, when there is one |
-| `pt`, `en` | for each language: statement, 5 alternatives, 5 explanations (one per alternative), concept and optional example |
+| `en`, `pt`, `es` | for each language: statement, 5 alternatives, 5 explanations (one per alternative), concept and optional example |
 
 ## Volume and coverage
 
@@ -85,6 +86,6 @@ Fields of each question:
 
 ## Quality assurance
 
-- **Automatic validation**: a script checks that every question has 5 alternatives, exactly one correct, an explanation for each alternative, and the texts in PT and EN.
+- **Automatic validation**: a script checks that every question has 5 alternatives, exactly one correct, an explanation for each alternative, and the texts in EN, PT and ES.
 - **Independent reviewer**: a second agent answers each batch without seeing the answer key. Every disagreement is reviewed before the question is accepted.
 - **Owner review** by sampling.

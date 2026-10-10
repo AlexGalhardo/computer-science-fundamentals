@@ -13,6 +13,10 @@ export interface Totals {
 // PT: RESPONSABILIDADE ÚNICA. Três funções, um motivo de mudança para cada. A regra de imposto
 //     não sabe nada de texto, o layout do recibo não faz conta com alíquotas, e o formato do
 //     registro é uma linha. Cada uma pode ser testada, alterada e reaproveitada sem as outras.
+// ES: RESPONSABILIDAD ÚNICA. Tres funciones, un motivo de cambio para cada una. La regla del
+//     impuesto no sabe nada de texto, el diseño del recibo no hace cuentas con alícuotas, y el
+//     formato del registro es una línea. Cada una se puede probar, modificar y reutilizar sin
+//     las otras.
 export function calculateTotals(order: Order): Totals {
 	if (order.lines.length === 0) {
 		throw new Error("an invoice needs at least one line");
@@ -42,6 +46,7 @@ export function toRecord(order: Order, totals: Totals): string {
 
 // EN: What is left here is coordination: call the three in order. It has no rule of its own.
 // PT: O que sobra aqui é coordenação: chamar as três em ordem. Não há regra própria.
+// ES: Lo que queda aquí es coordinación: llamar a las tres en orden. No hay regla propia.
 export function issueInvoice(order: Order): IssuedInvoice {
 	const totals = calculateTotals(order);
 	return {

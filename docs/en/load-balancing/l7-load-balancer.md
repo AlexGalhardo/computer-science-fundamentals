@@ -1,6 +1,6 @@
 # Hand-written layer 7 load balancer
 
-> Versão em português: [docs/pt/load-balancing/l7-load-balancer.md](../../pt/load-balancing/l7-load-balancer.md)
+> Versão em português: [docs/pt/load-balancing/l7-load-balancer.md](../../pt/load-balancing/l7-load-balancer.md) · Versión en español: [docs/es/load-balancing/l7-load-balancer.md](../../es/load-balancing/l7-load-balancer.md)
 
 Mini-project: [projects/load-balancing/l7-load-balancer](../../../projects/load-balancing/l7-load-balancer/README.md) (MP-LB-2). Language: Go.
 
@@ -8,7 +8,7 @@ Mini-project: [projects/load-balancing/l7-load-balancer](../../../projects/load-
 
 NGINX and Caddy hide the work behind one line of configuration. Writing the balancer by hand shows that the work is short to describe and full of decisions:
 
-```
+```text
 client ──TCP 1──> balancer ──TCP 2──> back end
                     │
                     ├─ 1. choose a back end          strategy.go
@@ -26,7 +26,7 @@ It is a **layer 7** balancer because it reads the HTTP request. The client's TCP
 
 **Least connections** keeps, per back end, the number of requests sent and not yet finished, and picks the smallest. With requests of equal duration it behaves like round robin. With a back end four times slower it gives that back end about one ninth of the requests instead of one third, because each back end finishes requests at a rate of (requests in flight) / (time per request):
 
-```
+```text
 fast: 10 in flight / 20 ms = 500 requests/s   (twice)
 slow: 10 in flight / 80 ms = 125 requests/s
 slow share = 125 / 1125 = 1/9

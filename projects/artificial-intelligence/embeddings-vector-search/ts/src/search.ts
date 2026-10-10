@@ -6,6 +6,11 @@
 //     A força bruta compara a consulta com todos os vetores: sempre certa, custo = n comparações.
 //     O índice (LSH de hiperplanos aleatórios, "locality-sensitive hashing") compara a consulta só
 //     com os vetores que caíram no mesmo balde: muito menos comparações, às vezes errado.
+// ES: Dos formas de encontrar el vector guardado más parecido a una consulta.
+//     La fuerza bruta compara la consulta con todos los vectores: siempre acierta, costo = n
+//     comparaciones. El índice (LSH de hiperplanos aleatorios, "locality-sensitive hashing")
+//     compara la consulta solo con los vectores que cayeron en la misma cubeta: muchas menos
+//     comparaciones, a veces se equivoca.
 
 import { dot, type Vector } from "./embeddings";
 import { bellRandom, mulberry32 } from "./rng";
@@ -22,6 +27,8 @@ export interface SearchResult {
 //     one dot product. A tie keeps the first vector, in both languages.
 // PT: Todo vetor aqui tem comprimento 1, então o cosseno é só o produto escalar. Uma comparação =
 //     um produto escalar. Um empate fica com o primeiro vetor, nas duas linguagens.
+// ES: Todo vector aquí tiene longitud 1, así que el coseno es solo el producto punto. Una
+//     comparación = un producto punto. Un empate se queda con el primer vector, en los dos lenguajes.
 export function bruteForce(vectors: readonly Vector[], query: Vector): SearchResult {
 	let best = -1;
 	let similarity = Number.NEGATIVE_INFINITY;
@@ -50,6 +57,10 @@ export interface Planes {
 //     como o seu vetor normal r, e o lado de um vetor v é o sinal de dot(r, v). Dois vetores
 //     separados por um ângulo pequeno raramente são separados por um plano aleatório: a chance de
 //     caírem do mesmo lado é 1 - ângulo/180 graus. Esse único fato é o índice inteiro.
+// ES: Un plano aleatorio que pasa por el origen corta el espacio en dos mitades. Se guarda como su
+//     vector normal r, y el lado de un vector v es el signo de dot(r, v). Dos vectores separados
+//     por un ángulo pequeño rara vez los separa un plano aleatorio: la probabilidad de caer del
+//     mismo lado es 1 - ángulo/180 grados. Ese único hecho es el índice entero.
 export function makePlanes(seed: number, tables: number, bits: number, dimensions: number): Planes {
 	const rng = mulberry32(seed);
 	const normals: Vector[] = [];
@@ -76,6 +87,9 @@ export function sides(planes: Planes, vector: Vector): Uint8Array {
 // PT: `bits` lados em sequência formam um número binário, a chave do balde: com 3 planos, "acima,
 //     abaixo, acima" é 101 = balde 5. Mais bits = mais baldes e menores = menos comparações, mas
 //     uma chance maior de o vizinho verdadeiro ser separado por um dos planos.
+// ES: `bits` lados seguidos forman un número binario, la clave de la cubeta: con 3 planos, "arriba,
+//     abajo, arriba" es 101 = cubeta 5. Más bits = más cubetas y más pequeñas = menos comparaciones,
+//     pero una mayor probabilidad de que el vecino verdadero quede separado por uno de los planos.
 export function bucketKey(planes: Planes, vectorSides: Uint8Array, table: number, bits: number): number {
 	let key = 0;
 	for (let bit = 0; bit < bits; bit++) {
@@ -101,6 +115,11 @@ export interface LshSettings {
 //     junta os candidatos de todas. Mais tabelas = menos erros e mais comparações. As
 //     configurações podem usar menos tabelas e menos bits do que os planos oferecem (um prefixo),
 //     então um único conjunto de planos serve à tabela de troca inteira.
+// ES: Una tabla puede equivocarse: el vecino puede estar justo al otro lado de un plano. Por eso el
+//     índice mantiene varias tablas independientes, cada una con sus planos, y una consulta junta
+//     los candidatos de todas. Más tablas = menos errores y más comparaciones. Las configuraciones
+//     pueden usar menos tablas y menos bits de los que ofrecen los planos (un prefijo), así que un
+//     único conjunto de planos sirve para toda la tabla de intercambio.
 export class LshIndex {
 	private readonly buckets: Map<number, number[]>[] = [];
 
@@ -136,6 +155,8 @@ export class LshIndex {
 			//     side. Flipping one bit of the key at a time visits those buckets too.
 			// PT: Multi-sonda: o erro mais provável é um vizinho que difere em exatamente um lado.
 			//     Inverter um bit da chave por vez visita esses baldes também.
+			// ES: Multi-sonda: el error más probable es un vecino que difiere en exactamente un lado.
+			//     Invertir un bit de la clave a la vez visita esas cubetas también.
 			if (probes === 1) for (let bit = 0; bit < bits; bit++) keys.push(key ^ (1 << bit));
 			for (const probe of keys) {
 				for (const position of this.buckets[table]?.get(probe) ?? []) seen.add(position);
@@ -181,6 +202,10 @@ export const MAX_BITS = 12;
 // PT: As configurações da tabela de troca. A primeira é a mais rápida e fica bem abaixo da meta
 //     de 95% de propósito: mostra o que se perde. Cada uma das seguintes compra concordância com
 //     mais comparações: mais tabelas, menos bits, ou sondar os baldes vizinhos.
+// ES: Las configuraciones de la tabla de intercambio. La primera es la más rápida y queda muy por
+//     debajo de la meta de 95% a propósito: muestra lo que se pierde. Cada una de las siguientes
+//     compra coincidencia con más comparaciones: más tablas, menos bits, o sondear las cubetas
+//     vecinas.
 export const SETTINGS: readonly LshSettings[] = [
 	{ tables: 1, bits: 12, probes: 0 },
 	{ tables: 4, bits: 12, probes: 0 },
@@ -206,6 +231,9 @@ export function sameSettings(a: LshSettings, b: LshSettings): boolean {
 // PT: O experimento: para cada consulta, pergunta à força bruta (a verdade) e pergunta ao índice,
 //     depois conta em quantas vezes os dois primeiros resultados são o mesmo vetor e quantas
 //     comparações o índice fez.
+// ES: El experimento: para cada consulta, pregunta a la fuerza bruta (la verdad) y pregunta al
+//     índice, luego cuenta en cuántas ocasiones los dos primeros resultados son el mismo vector y
+//     cuántas comparaciones hizo el índice.
 export function tradeOff(
 	vectors: readonly Vector[],
 	queries: readonly Vector[],

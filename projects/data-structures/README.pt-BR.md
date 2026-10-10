@@ -1,6 +1,6 @@
 # Estruturas de dados
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Estruturas de dados são as formas de organizar dados na memória e em disco para que as operações de que um programa precisa sejam baratas. Escolher entre um vetor, uma lista ligada, uma tabela hash, uma árvore balanceada ou um grafo costuma ser a decisão que mais muda o custo de um programa, e é a base de bancos de dados, compiladores, sistemas operacionais e redes.
 

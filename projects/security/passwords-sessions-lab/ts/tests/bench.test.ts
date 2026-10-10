@@ -2,6 +2,8 @@
 //     of the test run: it lives in the `bench` service, because it takes several seconds.
 // PT: A aritmética do benchmark, com um sujeito inventado. A medição de verdade não faz parte
 //     dos testes: ela fica no serviço `bench`, porque leva vários segundos.
+// ES: La aritmética del benchmark, con un sujeto inventado. La medición de verdad no forma parte
+//     de las pruebas: queda en el servicio `bench`, porque tarda varios segundos.
 
 import { describe, expect, test } from "bun:test";
 import { measure, renderTable, SUBJECTS, spreadOf } from "../src/bench";

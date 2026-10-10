@@ -2,6 +2,9 @@
 //     Caddy image is built, so the generated files are not committed.
 // PT: `bun run src/build-site.ts <pasta>` grava a página e suas 200 imagens. Roda durante a
 //     construção da imagem do Caddy, então os arquivos gerados não são versionados.
+// ES: `bun run src/build-site.ts <carpeta>` escribe la página y sus 200 imágenes. Corre
+//     durante la construcción de la imagen de Caddy, así que los archivos generados no se
+//     versionan.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

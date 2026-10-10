@@ -10,6 +10,10 @@ import java.util.function.Consumer;
  * <p>PT: A árvore sem balanceamento, a AVL e a rubro-negra respondem às mesmas perguntas com as
  * mesmas operações, então os mesmos testes e as mesmas medições rodam em todas. O que muda é a
  * forma que cada uma permite.
+ *
+ * <p>ES: El árbol sin balanceo, el AVL y el rojo-negro responden a las mismas preguntas con las
+ * mismas operaciones, así que las mismas pruebas y las mismas mediciones corren en todos. Lo que
+ * cambia es la forma que cada uno permite.
  */
 public interface SearchTree {
   String name();
@@ -45,6 +49,10 @@ public interface SearchTree {
    * <p>PT: O observador é chamado toda vez que a árvore muda de um jeito que vale mostrar: uma
    * chave foi ligada, houve uma rotação, as cores mudaram. O visualizador o usa para tirar uma foto
    * da árvore por passo.
+   *
+   * <p>ES: El observador se llama cada vez que el árbol cambia de una forma que vale la pena
+   * mostrar: se enlazó una clave, hubo una rotación, cambiaron los colores. El visualizador lo usa
+   * para tomar una foto del árbol por paso.
    */
   void observe(Consumer<String> observer);
 }

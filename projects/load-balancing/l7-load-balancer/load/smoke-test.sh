@@ -6,6 +6,10 @@
 #     precisam ser respondidas com 200, e cada um dos três back ends precisa receber
 #     exatamente 10. Uma requisição por vez, então o least connections sempre vê um empate e
 #     faz rodízio como o round robin.
+# ES: Verificación de punta a punta dentro de docker-compose: 30 solicitudes por cada proxy deben
+#     responderse con 200, y cada uno de los tres back ends debe recibir exactamente 10. Una
+#     solicitud a la vez, así que el least connections siempre ve un empate y rota como el round
+#     robin.
 set -eu
 
 failed=0

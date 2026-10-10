@@ -5,6 +5,9 @@
 //     trabalho com interfaces incompatíveis: nomes de método diferentes, unidades diferentes
 //     (unidades de moeda contra centavos) e respostas em formatos diferentes. Nada aqui usa
 //     rede.
+// ES: Dos SDK de pago inventados, en lugar de bibliotecas de terceros. Hacen el mismo trabajo
+//     con interfaces incompatibles: nombres de método distintos, unidades distintas (unidades
+//     de moneda contra centavos) y respuestas con formatos distintos. Nada aquí usa red.
 const LIMIT_CENTS = 100_000;
 
 export interface AcmeTransaction {

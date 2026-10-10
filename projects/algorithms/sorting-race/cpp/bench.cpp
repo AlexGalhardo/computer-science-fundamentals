@@ -2,6 +2,8 @@
 //     JSON line in the benchmark contract. Only the sort is timed.
 // PT: `bench <algoritmo> <variante> <n>` lê `data/<variante>-<n>.txt`, ordena e imprime uma
 //     linha JSON no contrato de benchmark. Só a ordenação é cronometrada.
+// ES: `bench <algoritmo> <variante> <n>` lee `data/<variante>-<n>.txt`, ordena e imprime una
+//     línea JSON en el contrato de benchmark. Solo se cronometra la ordenación.
 #include <sys/resource.h>
 
 #include <algorithm>
@@ -21,6 +23,7 @@ const std::array<std::string, 3> kVariants{"random", "sorted", "reversed"};
 
 // EN: The file is external input: a value that is not an integer from 0 to 2^31 - 1 is an error.
 // PT: O arquivo é entrada externa: um valor que não é um inteiro de 0 a 2^31 - 1 é um erro.
+// ES: El archivo es entrada externa: un valor que no es un entero de 0 a 2^31 - 1 es un error.
 sorting_race::Values read_values(const std::string& path, std::size_t expected) {
 	std::ifstream file(path);
 	if (!file) {
@@ -62,6 +65,8 @@ int run(int argc, char** argv) {
 	//     minimum is the measurement least disturbed by other programs on the machine.
 	// PT: Até 5 execuções enquanto o total fica abaixo de 300 ms, e a mais rápida é informada: o
 	//     mínimo é a medida menos perturbada por outros programas na máquina.
+	// ES: Hasta 5 ejecuciones mientras el total se mantiene por debajo de 300 ms, y se informa la
+	//     más rápida: el mínimo es la medida menos perturbada por otros programas en la máquina.
 	sorting_race::Values sorted;
 	double elapsed_ms = 0;
 	double spent_ms = 0;
@@ -76,6 +81,7 @@ int run(int argc, char** argv) {
 
 	// EN: On Linux, ru_maxrss is the peak resident memory of the process in kibibytes.
 	// PT: No Linux, ru_maxrss é o pico de memória residente do processo em kibibytes.
+	// ES: En Linux, ru_maxrss es el pico de memoria residente del proceso en kibibytes.
 	rusage usage_info{};
 	getrusage(RUSAGE_SELF, &usage_info);
 

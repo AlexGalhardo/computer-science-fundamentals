@@ -8,6 +8,11 @@
 //     valor, e não o que vem antes dele. O resultado é o número médio de bits por byte que
 //     qualquer código símbolo a símbolo (como Huffman) precisa no mínimo. Vai de 0 (um único
 //     valor) a 8 (os 256 valores igualmente frequentes).
+// ES: Entropía de Shannon de orden 0, H = suma de p * log2(1/p) sobre los valores de byte que
+//     aparecen. "Orden 0" significa que cada byte se mira por separado: solo importa la
+//     frecuencia del valor, y no lo que viene antes. El resultado es el número promedio de bits
+//     por byte que cualquier código símbolo a símbolo (como Huffman) necesita como mínimo. Va de
+//     0 (un único valor) a 8 (los 256 valores igualmente frecuentes).
 pub fn bits_per_byte(data: &[u8]) -> f64 {
     if data.is_empty() {
         return 0.0;
@@ -21,12 +26,14 @@ pub fn bits_per_byte(data: &[u8]) -> f64 {
             let p = count as f64 / total;
             // EN: Written as p * log2(1/p) so that a certain symbol (p = 1) gives +0, not -0.
             // PT: Escrito como p * log2(1/p) para que um símbolo certo (p = 1) dê +0, e não -0.
+            // ES: Escrito como p * log2(1/p) para que un símbolo seguro (p = 1) dé +0, y no -0.
             p * (1.0 / p).log2()
         })
         .sum()
 }
 
 /// EN: The entropy bound for the whole input, in bytes. PT: O limite da entropia para a entrada inteira, em bytes.
+/// ES: El límite de entropía para toda la entrada, en bytes.
 pub fn bound_bytes(data: &[u8]) -> f64 {
     bits_per_byte(data) * data.len() as f64 / 8.0
 }
@@ -68,6 +75,7 @@ mod tests {
     fn known_distributions() {
         // EN: 1/2, 1/4, 1/4 gives 1.5 bits; 1/2, 1/4, 1/8, 1/8 gives 1.75 bits.
         // PT: 1/2, 1/4, 1/4 dá 1,5 bit; 1/2, 1/4, 1/8, 1/8 dá 1,75 bit.
+        // ES: 1/2, 1/4, 1/4 da 1.5 bits; 1/2, 1/4, 1/8, 1/8 da 1.75 bits.
         assert!(close(bits_per_byte(b"aabc"), 1.5));
         assert!(close(bits_per_byte(b"aaaabbcd"), 1.75));
         assert!(close(bits_per_byte(b"ab"), 1.0));

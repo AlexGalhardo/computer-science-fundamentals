@@ -1,6 +1,6 @@
 # Neural network from scratch
 
-> Versão em português: [docs/pt/artificial-intelligence/neural-network-from-scratch.md](../../pt/artificial-intelligence/neural-network-from-scratch.md)
+> Versão em português: [docs/pt/artificial-intelligence/neural-network-from-scratch.md](../../pt/artificial-intelligence/neural-network-from-scratch.md) · Versión en español: [docs/es/artificial-intelligence/neural-network-from-scratch.md](../../es/artificial-intelligence/neural-network-from-scratch.md)
 
 Mini-project MP-AI-2, in [`projects/artificial-intelligence/neural-network-from-scratch`](../../../projects/artificial-intelligence/neural-network-from-scratch). It teaches what a neuron computes and how backpropagation finds the gradients. The background is in sections [5](README.md#5-neurons-layers-and-activation-functions) and [6](README.md#6-gradient-descent-and-backpropagation) of the area page.
 

@@ -2,6 +2,8 @@
 //     uniform `run(context, approach)`, so tests, capture and benchmark can loop over them.
 // PT: O catálogo do laboratório. `runnable` esconde os tipos de argumento de cada consulta atrás
 //     de um `run(context, approach)` uniforme, para testes, captura e benchmark percorrerem todas.
+// ES: El catálogo del laboratorio. `runnable` esconde los tipos de argumento de cada consulta detrás
+//     de un `run(context, approach)` uniforme, para que pruebas, captura y benchmark las recorran todas.
 
 import type { Approach, Context } from "../context";
 import { addPostWithComment } from "./add-post-with-comment";

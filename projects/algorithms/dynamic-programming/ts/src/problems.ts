@@ -16,6 +16,11 @@ const ALPHABET = "ACGT";
 //       knapsack: n itens, pesos 1..20, valores 1..100, capacidade 5n
 //       lcs:      duas strings de n letras sobre A, C, G, T
 //       coins:    valor n com moedas 1, 3 e 4
+// ES: Cada problema construye su instancia a partir de un único tamaño `n` y una semilla, así que
+//     el benchmark, las pruebas y la implementación en Python resuelven exactamente las mismas instancias.
+//       knapsack: n ítems, pesos 1..20, valores 1..100, capacidad 5n
+//       lcs:      dos cadenas de n letras sobre A, C, G, T
+//       coins:    monto n con monedas 1, 3 y 4
 export function knapsackInstance(n: number, seed = 1): { items: Item[]; capacity: number } {
 	const next = lehmer(seed * 1000 + n);
 	const items = Array.from({ length: n }, () => ({ weight: 1 + (next() % 20), value: 1 + (next() % 100) }));
@@ -38,6 +43,8 @@ export type Solver = (n: number, counter: Counter, seed?: number) => number;
 //     recursive call, so they leave the counter untouched.
 // PT: Uma tabela para os três problemas e as três versões. As versões tabuladas não fazem
 //     chamada recursiva, então não mexem no contador.
+// ES: Una tabla para los tres problemas y las tres versiones. Las versiones tabuladas no hacen
+//     llamada recursiva, así que no tocan el contador.
 export const PROBLEMS: Readonly<Record<string, Readonly<Record<Version, Solver>>>> = {
 	knapsack: {
 		naive: (n, counter, seed) => {
@@ -79,4 +86,7 @@ export const PROBLEMS: Readonly<Record<string, Readonly<Record<Version, Solver>>
 // PT: O tamanho de entrada em que o README e os testes comparam o número de chamadas. Grande o
 //     bastante para a versão ingênua fazer pelo menos 100 vezes mais chamadas, pequeno o
 //     bastante para rodar em um instante.
+// ES: El tamaño de entrada en el que el README y las pruebas comparan el número de llamadas. Lo
+//     bastante grande para que la versión ingenua haga al menos 100 veces más llamadas, lo bastante
+//     pequeño para ejecutarse en un instante.
 export const DOCUMENTED_SIZE: Readonly<Record<string, number>> = { knapsack: 20, lcs: 12, coins: 30 };

@@ -1,6 +1,6 @@
 # Embeddings and vector search
 
-> Versão em português: [docs/pt/artificial-intelligence/embeddings-vector-search.md](../../pt/artificial-intelligence/embeddings-vector-search.md)
+> Versão em português: [docs/pt/artificial-intelligence/embeddings-vector-search.md](../../pt/artificial-intelligence/embeddings-vector-search.md) · Versión en español: [docs/es/artificial-intelligence/embeddings-vector-search.md](../../es/artificial-intelligence/embeddings-vector-search.md)
 
 Mini-project MP-AI-3, in [`projects/artificial-intelligence/embeddings-vector-search`](../../../projects/artificial-intelligence/embeddings-vector-search). It teaches how meaning becomes a vector and how similar vectors are found. The background is section 8 of [the area page](README.md#8-embeddings-and-similarity), with the dot product and the cosine of [section 3](README.md#3-vectors-and-matrices) and the retrieval step of [section 11](README.md#11-using-llms).
 

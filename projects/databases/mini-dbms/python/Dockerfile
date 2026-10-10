@@ -4,6 +4,7 @@ RUN pip install pytest==9.1.1 ruff==0.16.10
 WORKDIR /app
 # EN: A Python test checks that the committed SQLite fixture is still what SQLite answers.
 # PT: Um teste em Python confere que o fixture do SQLite versionado ainda é o que o SQLite responde.
+# ES: Una prueba en Python comprueba que el fixture de SQLite versionado sigue siendo lo que SQLite responde.
 COPY fixtures ./fixtures
 COPY python ./python
 WORKDIR /app/python

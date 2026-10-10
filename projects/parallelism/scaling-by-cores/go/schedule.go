@@ -10,6 +10,11 @@ package main
 // trabalhador com um bloco barato termina cedo e fica ocioso. scheduleDynamic deixa cada
 // trabalhador buscar o próximo pedaço pequeno quando fica livre: um pouco de coordenação
 // por pedaço, e a carga se equilibra sozinha.
+// ES: Dos formas de repartir un bucle entre trabajadores. scheduleStatic corta los ítems en
+// un bloque contiguo por trabajador antes de cualquier ejecución: coordinación cero, pero el
+// trabajador con un bloque barato termina antes y queda ocioso. scheduleDynamic deja que cada
+// trabajador tome la siguiente porción pequeña cuando queda libre: algo de coordinación
+// por porción, y la carga se equilibra sola.
 type schedule int
 
 const (
@@ -30,6 +35,10 @@ type span struct {
 // máximo um. Os primeiros total % workers blocos ficam com os itens que sobram, então
 // nada se perde quando a divisão não é exata. Cada item pertence a exatamente um
 // bloco: é isso que deixa os trabalhadores rodarem sem travas.
+// ES: Divide total ítems en `workers` bloques contiguos cuyos tamaños difieren en como
+// máximo uno. Los primeros total % workers bloques se quedan con los ítems que sobran, así que
+// nada se pierde cuando la división no es exacta. Cada ítem pertenece a exactamente un
+// bloque: eso es lo que deja a los trabajadores correr sin bloqueos.
 func splitStatic(total uint64, workers int) []span {
 	count := uint64(max(workers, 1))
 	base := total / count

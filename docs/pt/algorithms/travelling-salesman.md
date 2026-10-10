@@ -1,6 +1,6 @@
 # Caixeiro-viajante
 
-> English version: [docs/en/algorithms/travelling-salesman.md](../../en/algorithms/travelling-salesman.md)
+> English version: [docs/en/algorithms/travelling-salesman.md](../../en/algorithms/travelling-salesman.md) · Versión en español: [docs/es/algorithms/travelling-salesman.md](../../es/algorithms/travelling-salesman.md)
 
 Mini-projeto: [`projects/algorithms/travelling-salesman`](../../../projects/algorithms/travelling-salesman/README.pt-BR.md) (MP-ALG-3). Linguagens: TypeScript e Rust. Quiz: área `algorithms`, tópicos `backtracking`, `dynamic-programming` e `greedy`.
 

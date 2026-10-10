@@ -5,6 +5,9 @@
 # PT: Constrói e testa o mini-projeto bun-vs-node. O único requisito é o Docker.
 #     Os contêineres são removidos no fim, mesmo quando um teste falha.
 #     Para o teste de carga com k6 e a tabela de resultados, rode ./load-test-unix.sh.
+# ES: Construye y prueba el miniproyecto bun-vs-node. El único requisito es Docker.
+#     Los contenedores se eliminan al final, incluso cuando una prueba falla.
+#     Para la prueba de carga con k6 y la tabla de resultados, ejecuta ./load-test-unix.sh.
 set -eu
 
 cd "$(dirname "$0")"
@@ -16,6 +19,7 @@ fi
 
 # EN: Containers that write into this folder run as the current user (see docker-compose.yml).
 # PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+# ES: Los contenedores que escriben en esta carpeta corren como el usuario actual (ver docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

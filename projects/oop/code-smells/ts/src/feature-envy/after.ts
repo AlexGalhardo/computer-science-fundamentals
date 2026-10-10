@@ -8,6 +8,10 @@ import type { InvoiceInput, RenderInvoice } from "./contract";
 //     ele usa: o endereço se monta sozinho, a linha sabe seu total e seu texto, a fatura soma
 //     suas linhas. Os campos ficaram privados, porque ninguém de fora precisa mais deles. A
 //     impressora agora diz a cada objeto o que quer, em vez de pedir as partes dele.
+// ES: REFACTORIZADO con Mover Método. Cada pedazo de comportamiento se fue a la clase cuyos
+//     datos usa: la dirección se arma sola, la línea sabe su total y su texto, la factura suma
+//     sus líneas. Los campos quedaron privados, porque nadie de afuera los necesita ya. El
+//     impresor ahora le dice a cada objeto lo que quiere, en vez de pedir sus partes.
 
 const money = (cents: number): string => (cents / 100).toFixed(2);
 

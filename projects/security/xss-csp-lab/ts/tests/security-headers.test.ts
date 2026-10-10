@@ -6,6 +6,8 @@ import { buildContentSecurityPolicy, CONTENT_SECURITY_POLICY, SECURITY_HEADERS }
 //     pinned by a test: loosening it has to be a visible, deliberate change.
 // PT: A política é tão forte quanto a sua diretiva mais fraca, então o valor exato do cabeçalho
 //     é fixado por um teste: afrouxá-la precisa ser uma mudança visível e deliberada.
+// ES: La política es tan fuerte como su directiva más débil, así que el valor exacto de la cabecera
+//     lo fija una prueba: aflojarla debe ser un cambio visible y deliberado.
 
 test("the Content-Security-Policy header has exactly the expected value", () => {
 	expect(CONTENT_SECURITY_POLICY).toBe(
@@ -33,6 +35,8 @@ test("the security headers include the policy and nosniff", () => {
 // EN: The demo and the browser tests refuse any address that is not one of the lab hosts.
 // PT: A demo e os testes de navegador recusam qualquer endereço que não seja um host do
 //     laboratório.
+// ES: La demo y las pruebas de navegador rechazan cualquier dirección que no sea un host del
+//     laboratorio.
 test("only lab hosts are accepted as targets", () => {
 	expect(assertLabUrl("http://vulnerable:3000")).toBe("http://vulnerable:3000");
 	expect(loadLabTargets({})).toEqual({ vulnerable: "http://vulnerable:3000", fixed: "http://fixed:3000" });

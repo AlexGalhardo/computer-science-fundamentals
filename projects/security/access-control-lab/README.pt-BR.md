@@ -1,7 +1,7 @@
 # access-control-lab
 
-> English version: [README.md](README.md)
-
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
+>
 > **Laboratório de segurança, vulnerável de propósito.** O código em `ts/src/vulnerable/` existe só para tornar uma falha observável dentro deste laboratório. Nunca copie, importe ou publique.
 
 Uma pequena API de faturas sabe exatamente quem está logado e mesmo assim deixa qualquer usuário ler, alterar e apagar qualquer fatura trocando o número na URL, e deixa um usuário comum chamar uma rota de admin cuja única proteção é um botão escondido. Este laboratório reproduz essa falha (controle de acesso quebrado: IDOR, também chamado de quebra de autorização em nível de objeto, mais uma verificação de papel ausente) e a corrige colocando toda decisão de autorização em uma única função, `can(user, action, resource)`, que nega por padrão.

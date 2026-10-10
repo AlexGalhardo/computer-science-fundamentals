@@ -2,6 +2,8 @@
 #     docker/go.Dockerfile gets it.
 # PT: O gofmt e o go vet vêm com o Go. O golangci-lint vem da sua imagem fixada, do mesmo modo
 #     que em docker/go.Dockerfile.
+# ES: gofmt y go vet vienen con Go. golangci-lint viene de su imagen fijada, del mismo modo que
+#     en docker/go.Dockerfile.
 FROM golangci/golangci-lint:v2.14.0 AS lint
 FROM golang:1.27.1-bookworm
 COPY --from=lint /usr/bin/golangci-lint /usr/local/bin/golangci-lint

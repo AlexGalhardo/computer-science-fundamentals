@@ -1,12 +1,12 @@
 # pubsub-backpressure
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Duas perguntas que todo desenho de mensageria precisa responder. **Quem recebe uma mensagem?** Um entre vários workers (fila de trabalho, consumidores concorrentes) ou todo assinante (publish/subscribe, fan-out). **O que acontece quando o produtor é mais rápido que o consumidor?** Ou um buffer cresce até a memória acabar, ou o consumidor empurra de volta e o produtor desacelera: backpressure. Este mini-projeto responde às duas com experimentos no RabbitMQ, com um produtor e um consumidor dentro de um processo, e com um pipeline GenStage em Elixir.
 
 Código: MP-MSG-3. Explicação completa: [docs/pt/messaging/pubsub-backpressure.md](../../../docs/pt/messaging/pubsub-backpressure.md).
 
-```
+```text
 fila de trabalho:  produtor -> [tasks] -> worker A | worker B | worker C     cada mensagem uma vez
 fan-out:           produtor -> (exchange fanout) -> [q.A] -> assinante A
                                                  -> [q.B] -> assinante B     uma cópia para cada
@@ -70,7 +70,7 @@ O buffer ilimitado cresce em linha reta enquanto a execução dura: cerca de 45 
 
 Impresso por `docker compose run --rm elixir-demo`. O consumidor leva 1 ms por evento.
 
-```
+```text
 pipeline                            events   peak buffer
 push, no backpressure                 1000           999
 push, no backpressure                10000          9997

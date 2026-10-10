@@ -1,6 +1,6 @@
 # Algoritmos em grafos
 
-> English version: [docs/en/data-structures/graph-algorithms.md](../../en/data-structures/graph-algorithms.md)
+> English version: [docs/en/data-structures/graph-algorithms.md](../../en/data-structures/graph-algorithms.md) · Versión en español: [docs/es/data-structures/graph-algorithms.md](../../es/data-structures/graph-algorithms.md)
 
 Mini-projeto: [projects/data-structures/graph-algorithms](../../../projects/data-structures/graph-algorithms). Linguagens: C++, Go. Tópico do quiz: `data-structures` / `graphs`.
 
@@ -10,7 +10,7 @@ Um grafo é um conjunto de vértices e um conjunto de arestas entre eles. Antes 
 
 ## Duas representações
 
-```
+```text
 arcos: 0->1 (4), 0->2 (1), 2->1 (2)
 
 lista de adjacência          matriz de adjacência

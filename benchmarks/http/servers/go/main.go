@@ -8,6 +8,11 @@
 // bloqueante comum, e o runtime multiplexa as goroutines sobre poucas threads do SO, usando
 // todos os núcleos que pode usar.
 // Protocolo (o mesmo nas 7 linguagens): GET /health, POST /echo, GET /primes?limit=N.
+// ES: Servidor HTTP del benchmark en Go, solo con la biblioteca estándar (net/http).
+// Modelo: el servidor levanta una goroutine por conexión. Los handlers se escriben como código
+// bloqueante común, y el runtime multiplexa las goroutines sobre pocos threads del SO, usando
+// todos los núcleos que puede usar.
+// Protocolo (el mismo en los 7 lenguajes): GET /health, POST /echo, GET /primes?limit=N.
 package main
 
 import (
@@ -40,6 +45,7 @@ func isPrime(k int) bool {
 
 // EN: The CPU-bound endpoint: count the primes up to limit by trial division.
 // PT: O endpoint preso à CPU: conta os primos até limit por divisão por tentativa.
+// ES: El endpoint limitado por CPU: cuenta los primos hasta limit por división de prueba.
 func countPrimes(limit int) int {
 	count := 0
 	for k := 2; k <= limit; k++ {
@@ -62,6 +68,8 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 // library and the HTTP stack, not a copy of bytes.
 // PT: O endpoint de eco interpreta o corpo JSON e o serializa de novo, então mede a biblioteca
 // de JSON e a pilha HTTP, não uma cópia de bytes.
+// ES: El endpoint de eco interpreta el cuerpo JSON y lo serializa de nuevo, así que mide la biblioteca
+// de JSON y la pila HTTP, no una copia de bytes.
 func echo(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	var value any

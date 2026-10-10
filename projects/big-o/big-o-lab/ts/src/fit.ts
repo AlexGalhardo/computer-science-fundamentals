@@ -4,6 +4,9 @@
 // PT: Ajuste de curvas. Dados pontos medidos (n, y), qual curva de crescimento os explica melhor?
 //     Para cada candidata g(n) procuramos a reta y = a + c * g(n) que passa mais perto dos
 //     pontos, e ficamos com a candidata de menor erro.
+// ES: Ajuste de curvas. Dados unos puntos medidos (n, y), ¿qué curva de crecimiento los explica
+//     mejor? Para cada candidata g(n) buscamos la recta y = a + c * g(n) que pasa más cerca de
+//     los puntos, y nos quedamos con la candidata de menor error.
 
 import type { ComplexityClass } from "./samples";
 
@@ -20,6 +23,7 @@ export interface Candidate {
 
 // EN: The candidates, from the slowest to the fastest growth. The order matters for ties.
 // PT: As candidatas, do crescimento mais lento ao mais rápido. A ordem importa nos empates.
+// ES: Las candidatas, del crecimiento más lento al más rápido. El orden importa en los empates.
 export const CANDIDATES: Candidate[] = [
 	{ id: "constant", label: "O(1)", g: () => 1 },
 	{ id: "logarithmic", label: "O(log n)", g: (n) => Math.log2(n) },
@@ -52,12 +56,17 @@ function mean(values: number[]): number {
 //     c = covariância(x, y) / variância(x) e passa pelo ponto das médias. O termo a absorve
 //     custos fixos, e a constante c é exatamente a constante que a notação O esconde: o ajuste
 //     a encontra, a classe a ignora.
+// ES: Mínimos cuadrados con una variable. La mejor recta por los puntos (x, y) tiene pendiente
+//     c = covarianza(x, y) / varianza(x) y pasa por el punto de las medias. El término a absorbe
+//     costos fijos, y la constante c es exactamente la constante que la notación O esconde: el
+//     ajuste la encuentra, la clase la ignora.
 export function fitCandidate(points: Point[], candidate: Candidate): Fit {
 	const xs = points.map((point) => candidate.g(point.n));
 	const ys = points.map((point) => point.y);
 	const base = { id: candidate.id, label: candidate.label };
 	// EN: 2^n overflows to Infinity for large n. Such a curve cannot describe the data.
 	// PT: 2^n estoura para Infinity quando n é grande. Uma curva assim não descreve os dados.
+	// ES: 2^n se desborda a Infinity cuando n es grande. Una curva así no describe los datos.
 	if (points.length === 0 || xs.some((x) => !Number.isFinite(x))) {
 		return { ...base, scale: 0, intercept: 0, error: Number.POSITIVE_INFINITY };
 	}
@@ -67,6 +76,7 @@ export function fitCandidate(points: Point[], candidate: Candidate): Fit {
 	const covariance = mean(xs.map((x, index) => (x - meanX) * ((ys[index] ?? 0) - meanY)));
 	// EN: With no variance in x (the constant candidate) the line is flat: y = mean of y.
 	// PT: Sem variância em x (a candidata constante) a reta é horizontal: y = média de y.
+	// ES: Sin varianza en x (la candidata constante) la recta es horizontal: y = media de y.
 	const scale = variance === 0 ? 0 : covariance / variance;
 	const intercept = meanY - scale * meanX;
 	const squaredErrors = xs.map((x, index) => ((ys[index] ?? 0) - (intercept + scale * x)) ** 2);
@@ -75,6 +85,8 @@ export function fitCandidate(points: Point[], candidate: Candidate): Fit {
 	//     operations and samples that count a handful can be read on the same scale.
 	// PT: Dividir pela média de y torna o erro relativo, para que amostras que contam bilhões de
 	//     operações e amostras que contam meia dúzia sejam lidas na mesma escala.
+	// ES: Dividir por la media de y vuelve relativo el error, para que las muestras que cuentan
+	//     miles de millones de operaciones y las que cuentan un puñado se lean en la misma escala.
 	const error = meanY === 0 ? rootMeanSquare : rootMeanSquare / Math.abs(meanY);
 	return { ...base, scale, intercept, error };
 }
@@ -90,6 +102,9 @@ export interface FitReport {
 // PT: Uma curva de crescimento mais rápido só vence quando é claramente melhor. Dados constantes
 //     são ajustados perfeitamente por todas as candidatas (com c = 0), e a resposta honesta
 //     nesse caso é a curva mais simples, então o empate fica com a candidata que vem primeiro.
+// ES: Una curva de crecimiento más rápido solo gana cuando es claramente mejor. Los datos
+//     constantes los ajusta perfectamente cada candidata (con c = 0), y la respuesta honesta ahí
+//     es la curva más simple, así que el empate se lo lleva la candidata que viene primero.
 const TIE_TOLERANCE = 1e-9;
 
 export function fitCurve(points: Point[]): FitReport {

@@ -5,6 +5,10 @@
 #     Roda os testes, o relatório de cobertura das duas suítes (cada uma precisa dar 100%) e a
 #     execução de mutação, que falha a menos que a suíte fraca pontue abaixo de 60% e a forte
 #     acima de 90%.
+# ES: Construye y prueba el mini-proyecto mutation-testing. El único requisito es Docker.
+#     Ejecuta las pruebas, el informe de cobertura de las dos suites (cada una debe dar 100%) y la
+#     ejecución de mutación, que falla a menos que la suite débil puntúe por debajo de 60% y la fuerte
+#     por encima de 90%.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 

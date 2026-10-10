@@ -45,6 +45,8 @@ describe.each(versions)("feature envy, %s", (_name, renderInvoice) => {
 
 // EN: What the refactoring bought: the address label exists once and anyone can reuse it.
 // PT: O que a refatoração comprou: a etiqueta de endereço existe uma vez e qualquer um a reusa.
+// ES: Lo que la refactorización compró: la etiqueta de dirección existe una vez y cualquiera la
+//     reutiliza.
 describe("feature envy, only possible after", () => {
 	test("a shipping label needs no invoice and no printer", () => {
 		const address = new after.Address("Rua das Flores", "12", "Campinas", "SP", "13000000");

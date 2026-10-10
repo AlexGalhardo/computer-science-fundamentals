@@ -5,6 +5,10 @@
 //     um único jeito: perguntando "a é menor que b?". Aqui essa pergunta é uma função recebida
 //     de fora, então quem chama pode contar quantas vezes ela foi feita, ou até respondê-la de
 //     propósito.
+// ES: Tres ordenaciones por comparación. Una ordenación por comparación aprende sobre su entrada
+//     de una sola manera: preguntando "¿a es menor que b?". Aquí esa pregunta es una función que
+//     llega desde fuera, así que quien llama puede contar cuántas veces se hizo, o incluso
+//     responderla a propósito.
 
 export type Less<T> = (a: T, b: T) => boolean;
 export type ComparisonSort = <T>(items: readonly T[], less: Less<T>) => T[];
@@ -13,6 +17,8 @@ export type ComparisonSort = <T>(items: readonly T[], less: Less<T>) => T[];
 //     so merging m elements costs at most m - 1 comparisons.
 // PT: Merge sort: ordena cada metade, depois intercala. Cada comparação da intercalação coloca
 //     um elemento, então intercalar m elementos custa no máximo m - 1 comparações.
+// ES: Merge sort: ordena cada mitad, luego mezcla. Cada comparación de la mezcla coloca un
+//     elemento, así que mezclar m elementos cuesta como máximo m - 1 comparaciones.
 export const mergeSort: ComparisonSort = <T>(items: readonly T[], less: Less<T>): T[] => {
 	if (items.length <= 1) {
 		return [...items];
@@ -28,6 +34,8 @@ export const mergeSort: ComparisonSort = <T>(items: readonly T[], less: Less<T>)
 		//     their original order (a stable sort).
 		// PT: Pegar da direita só quando ela é estritamente menor mantém itens iguais na
 		//     ordem original (ordenação estável).
+		// ES: Tomar de la derecha solo cuando es estrictamente menor mantiene los elementos iguales
+		//     en su orden original (ordenación estable).
 		if (less(right[j] as T, left[i] as T)) {
 			merged.push(right[j] as T);
 			j++;
@@ -46,6 +54,10 @@ export const mergeSort: ComparisonSort = <T>(items: readonly T[], less: Less<T>)
 //     Descer um item custa duas comparações por nível: uma para escolher o filho maior, outra
 //     para compará-lo com o pai. Por isso o heapsort faz cerca do dobro das comparações do
 //     merge sort.
+// ES: Heapsort: construye un heap de máximo, luego mueve repetidamente el mayor elemento al
+//     final. Hundir un elemento cuesta dos comparaciones por nivel: una para elegir el hijo
+//     mayor, otra para compararlo con el padre. Por eso heapsort hace cerca del doble de
+//     comparaciones que merge sort.
 export const heapSort: ComparisonSort = <T>(items: readonly T[], less: Less<T>): T[] => {
 	const heap = [...items];
 	const siftDown = (start: number, end: number): void => {
@@ -81,6 +93,9 @@ export const heapSort: ComparisonSort = <T>(items: readonly T[], less: Less<T>):
 // PT: Quicksort com o primeiro item como pivô: cada outro item é comparado com o pivô uma vez e
 //     vai para um lado. Uma divisão equilibrada dá cerca de n log n comparações, e um pivô que
 //     é sempre o menor dá n(n-1)/2.
+// ES: Quicksort con el primer elemento como pivote: cada otro elemento se compara con el pivote
+//     una vez y va a un lado. Una división equilibrada da cerca de n log n comparaciones, y un
+//     pivote que siempre es el menor da n(n-1)/2.
 export const quickSort: ComparisonSort = <T>(items: readonly T[], less: Less<T>): T[] => {
 	if (items.length <= 1) {
 		return [...items];
@@ -102,6 +117,7 @@ export const COMPARISON_SORTS: { name: string; sort: ComparisonSort }[] = [
 
 // EN: Sorts numbers and reports how many comparisons the algorithm asked for.
 // PT: Ordena números e informa quantas comparações o algoritmo pediu.
+// ES: Ordena números e informa cuántas comparaciones pidió el algoritmo.
 export function countComparisons(
 	sort: ComparisonSort,
 	values: readonly number[],

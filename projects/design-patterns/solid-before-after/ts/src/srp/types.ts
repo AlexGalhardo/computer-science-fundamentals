@@ -2,6 +2,8 @@
 //     on floating point rounding.
 // PT: Os dados com que as duas versões trabalham. O dinheiro fica em centavos, como inteiros,
 //     então nenhum teste depende de arredondamento de ponto flutuante.
+// ES: Los datos con que trabajan las dos versiones. El dinero está en centavos, como enteros,
+//     así que ninguna prueba depende del redondeo de punto flotante.
 export interface OrderLine {
 	description: string;
 	quantity: number;

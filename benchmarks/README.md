@@ -1,6 +1,6 @@
 # Language benchmarks
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 The same eight workloads in the seven languages of the repository (C++, Rust, Go, Java, TypeScript on Bun, Elixir and Python), measured in Docker on pinned images, with a static dashboard that explains every chart in plain words.
 
@@ -38,7 +38,7 @@ Single steps, from `benchmarks/`:
 
 ## Structure
 
-```
+```text
 benchmarks/
 ├── docker/            one Dockerfile per language, shared by the runner workloads
 ├── cpu-single/        n-body and prime sieve, one thread

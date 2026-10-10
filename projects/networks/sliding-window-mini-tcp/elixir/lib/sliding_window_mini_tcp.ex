@@ -5,6 +5,9 @@ defmodule SlidingWindowMiniTcp do
 
   PT: Ponto de entrada da implementação em Elixir: roda os três protocolos ARQ sobre o canal
   simulado com várias taxas de perda e imprime uma tabela em Markdown.
+
+  ES: Punto de entrada de la implementación en Elixir: ejecuta los tres protocolos ARQ sobre el
+  canal simulado con varias tasas de pérdida e imprime una tabla en Markdown.
   """
 
   alias SlidingWindowMiniTcp.Arq
@@ -17,6 +20,8 @@ defmodule SlidingWindowMiniTcp do
   EN: Deterministic pseudo-random file, so every run transfers the same bytes.
 
   PT: Arquivo pseudoaleatório determinístico, para que toda execução transfira os mesmos bytes.
+
+  ES: Archivo pseudoaleatorio determinista, para que toda ejecución transfiera los mismos bytes.
   """
   @spec random_file(non_neg_integer(), integer()) :: binary()
   def random_file(size, seed) do

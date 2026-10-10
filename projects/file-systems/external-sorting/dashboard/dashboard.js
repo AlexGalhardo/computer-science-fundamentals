@@ -4,6 +4,9 @@
 // PT: Dashboard estático de um mini-projeto. Ele lê `window.BENCH_RESULTS`, escrito pelo runner
 //     de benchmark em `../results/results.js`, e desenha um gráfico e uma tabela. Não há etapa
 //     de build nem requisição de rede: a página funciona aberta direto do disco.
+// ES: Dashboard estático de un mini-proyecto. Lee `window.BENCH_RESULTS`, escrito por el runner
+//     de benchmark en `../results/results.js`, y dibuja un gráfico y una tabla. No hay paso de
+//     build ni petición de red: la página funciona abierta directo desde el disco.
 
 const SVG = "http://www.w3.org/2000/svg";
 const COLOURS = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#4b5563"];
@@ -47,6 +50,10 @@ function formatMs(value) {
 // PT: Os dois eixos são logarítmicos. Os tamanhos crescem em potências de dez e os tempos cobrem
 //     várias ordens de grandeza, então em um eixo linear os valores pequenos ficariam espremidos
 //     em um canto. Em um gráfico log-log, um polinômio O(n^k) é uma reta de inclinação k.
+// ES: Los dos ejes son logarítmicos. Los tamaños crecen en potencias de diez y los tiempos
+//     cubren varios órdenes de magnitud, así que en un eje lineal los valores pequeños quedarían
+//     aplastados en una esquina. En un gráfico log-log, un polinomio O(n^k) es una recta de
+//     pendiente k.
 function logScale(min, max, from, to) {
 	const low = Math.log10(Math.max(min, 1e-6));
 	const high = Math.log10(Math.max(max, 1e-6));

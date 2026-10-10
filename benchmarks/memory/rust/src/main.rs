@@ -6,6 +6,10 @@
 //     (sobe e sai). Modelo do Rust: posse, verificada pelo compilador. Um `Box` é uma alocação
 //     no heap com exatamente um dono, e é liberado quando o dono sai de escopo. Nenhum coletor
 //     roda, e esquecer de liberar ou liberar duas vezes não compila.
+// ES: Carga de memoria en Rust: `binary-trees` (asigna y libera muchos nodos pequeños) e `idle`
+//     (arranca y sale). Modelo de Rust: propiedad, verificada por el compilador. Un `Box` es una asignación
+//     en el heap con exactamente un dueño, y se libera cuando el dueño sale de alcance. Ningún recolector
+//     corre, y olvidar liberar o liberar dos veces no compila.
 
 use std::time::Instant;
 
@@ -25,6 +29,7 @@ fn make(depth: u32) -> Box<Node> {
 
 // EN: Walks the whole tree and counts its nodes.
 // PT: Percorre a árvore inteira e conta os nós.
+// ES: Recorre el árbol completo y cuenta los nodos.
 fn check(node: &Node) -> u64 {
     match &node.children {
         Some((left, right)) => 1 + check(left) + check(right),
@@ -43,6 +48,7 @@ fn binary_trees(n: u32) -> u64 {
         for _ in 0..iterations {
             // EN: The temporary tree is dropped, and so freed, at the end of this statement.
             // PT: A árvore temporária é descartada, e portanto liberada, no fim desta instrução.
+            // ES: El árbol temporal se descarta, y por lo tanto se libera, al final de esta instrucción.
             total += check(&make(depth));
         }
         depth += 2;

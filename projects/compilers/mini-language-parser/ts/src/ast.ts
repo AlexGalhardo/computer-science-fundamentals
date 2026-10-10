@@ -8,6 +8,12 @@
 //     a forma da árvore já diz o que eles diziam. Todo nó guarda a linha e a coluna do token que
 //     melhor o identifica (o operador de uma expressão binária, o nome de uma variável, o `(` de
 //     uma chamada), para que as fases seguintes reportem erros no lugar certo.
+// ES: El árbol de sintaxis abstracta (AST). A diferencia de un árbol de derivación, guarda solo
+//     lo que importa para el significado: paréntesis, punto y coma y llaves desaparecen, porque la
+//     forma del árbol ya dice lo que ellos decían. Cada nodo guarda la línea y la columna del
+//     token que mejor lo identifica (el operador de una expresión binaria, el nombre de una
+//     variable, el `(` de una llamada), para que las fases siguientes reporten los errores en el
+//     lugar correcto.
 
 interface Positioned {
 	line: number;
@@ -41,6 +47,8 @@ type Node = Expr | Stmt;
 // EN: The label of a node and its children, in one place, so both printers below agree.
 // PT: O rótulo de um nó e seus filhos, em um único lugar, para que os dois impressores abaixo
 //     concordem.
+// ES: La etiqueta de un nodo y sus hijos, en un solo lugar, para que los dos impresores de abajo
+//     coincidan.
 function describe(node: Node): { label: string; children: Node[] } {
 	switch (node.kind) {
 		case "Number":
@@ -96,6 +104,9 @@ function describe(node: Node): { label: string; children: Node[] } {
 // PT: Forma de uma linha em notação prefixa, `(+ 1 (* 2 3))`. A precedência aparece como
 //     aninhamento, o que faz dela a forma mais prática para testes: dois programas têm a mesma
 //     árvore exatamente quando imprimem o mesmo texto.
+// ES: Forma de una línea en notación prefija, `(+ 1 (* 2 3))`. La precedencia aparece como
+//     anidamiento, lo que la hace la forma más práctica para las pruebas: dos programas tienen el
+//     mismo árbol exactamente cuando imprimen el mismo texto.
 export function toSExpression(node: Node): string {
 	const { label, children } = describe(node);
 	if (children.length === 0 && node.kind !== "Block" && node.kind !== "Return" && node.kind !== "Fn") {
@@ -106,6 +117,7 @@ export function toSExpression(node: Node): string {
 
 // EN: The same tree drawn with branches, one node per line, for people.
 // PT: A mesma árvore desenhada com ramos, um nó por linha, para pessoas.
+// ES: El mismo árbol dibujado con ramas, un nodo por línea, para las personas.
 export function printTree(nodes: Node[]): string {
 	const lines: string[] = [];
 	const walk = (node: Node, prefix: string, isLast: boolean): void => {

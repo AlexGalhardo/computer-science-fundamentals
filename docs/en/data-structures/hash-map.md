@@ -1,6 +1,6 @@
 # Hash map from scratch
 
-> Versão em português: [docs/pt/data-structures/hash-map.md](../../pt/data-structures/hash-map.md)
+> Versão em português: [docs/pt/data-structures/hash-map.md](../../pt/data-structures/hash-map.md) · Versión en español: [docs/es/data-structures/hash-map.md](../../es/data-structures/hash-map.md)
 
 Mini-project: [projects/data-structures/hash-map](../../../projects/data-structures/hash-map). Languages: C++, Rust, TypeScript. Quiz topic: `data-structures` / `hash-tables`.
 
@@ -12,7 +12,7 @@ A hash map turns a key into an array index with a hash function, so a lookup goe
 
 Each position (bucket) holds a linked list with every entry that hashed there.
 
-```
+```text
 bucket 0: (8, h) -> (4, d)
 bucket 1: (5, e)
 bucket 2: empty
@@ -29,7 +29,7 @@ A collision only makes one list longer. The cost of an operation is the length o
 
 Every entry lives in the array itself. When the position given by the hash is taken, the next one is tried, then the next, wrapping around at the end.
 
-```
+```text
 h(k) = k mod 7        insert 10, 17, 24, 3
 
 index:   0    1    2    3    4    5    6

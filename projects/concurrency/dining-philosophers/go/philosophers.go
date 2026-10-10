@@ -33,6 +33,11 @@ var Strategies = []Strategy{Naive, Ordered, Waiter}
 // pegar o segundo. Esta pausa curta torna esse azar comum, então o bug aparece em
 // milissegundos em vez de uma vez por mês em produção. As correções usam a mesma pausa e
 // mesmo assim nunca travam.
+//
+// ES: Un deadlock necesita mala suerte en el tiempo: los cinco deben sostener un tenedor antes de
+// que alguien tome el segundo. Esta pausa corta hace común esa mala suerte, así que el bug aparece
+// en milisegundos en lugar de una vez al mes en producción. Las correcciones usan la misma pausa y
+// aun así nunca se traban.
 const Reach = time.Millisecond
 
 // Result is what happened at the table.
@@ -64,6 +69,11 @@ func (r Result) EveryoneAte() bool {
 // garfo tem um só dono), posse e espera (segurar um garfo enquanto espera o outro), não
 // preempção (ninguém tira o garfo da sua mão) e espera circular (0 espera 1, 1 espera 2 ...
 // 4 espera 0). Tire qualquer uma delas e o deadlock fica impossível.
+//
+// ES: Un deadlock necesita cuatro condiciones al mismo tiempo (Coffman): exclusión mutua (un
+// tenedor tiene un solo dueño), retener y esperar (sostener un tenedor mientras se espera el otro),
+// sin expropiación (nadie te quita el tenedor de la mano) y espera circular (0 espera a 1, 1
+// espera a 2 ... 4 espera a 0). Quita cualquiera de ellas y el deadlock se vuelve imposible.
 func forks(strategy Strategy, i, n int) (first, second int) {
 	left, right := i, (i+1)%n
 	// EN: Lock ordering breaks the circular wait. Forks have a global order and everybody
@@ -72,6 +82,9 @@ func forks(strategy Strategy, i, n int) (first, second int) {
 	// PT: A ordenação de travas quebra a espera circular. Os garfos têm uma ordem global e
 	// todos pegam primeiro o de menor número. O último filósofo fica entre o garfo 4 e o 0,
 	// então ele tenta primeiro o 0, como o vizinho: o círculo de espera não consegue se fechar.
+	// ES: El ordenamiento de locks rompe la espera circular. Los tenedores tienen un orden global y
+	// todos toman primero el de menor número. El último filósofo se sienta entre el tenedor 4 y el 0,
+	// así que intenta primero el 0, como su vecino: el círculo de espera no puede cerrarse.
 	if strategy == Ordered && right < left {
 		return right, left
 	}
@@ -86,6 +99,9 @@ func forks(strategy Strategy, i, n int) (first, second int) {
 //
 // PT: É assim que se detecta um deadlock por fora: com um tempo limite sobre o avanço.
 // Nada quebra e nenhum erro aparece. O programa simplesmente para de fazer o trabalho.
+//
+// ES: Así se detecta un deadlock desde afuera: con un tiempo límite sobre el avance.
+// Nada se rompe y no aparece ningún error. El programa simplemente deja de hacer el trabajo.
 func Run(strategy Strategy, n int, duration, stall time.Duration) Result {
 	table := make([]sync.Mutex, n)
 	meals := make([]atomic.Int64, n)
@@ -98,6 +114,9 @@ func Run(strategy Strategy, n int, duration, stall time.Duration) Result {
 	// PT: O garçom é um semáforo contador com n-1 permissões, feito com um canal com buffer.
 	// Com no máximo 4 dos 5 filósofos à mesa, pelo menos um deles sempre consegue os dois
 	// garfos. Isso também quebra a espera circular: um círculo precisa dos cinco.
+	// ES: El mesero es un semáforo contador con n-1 permisos, hecho con un canal con buffer.
+	// Con a lo sumo 4 de los 5 filósofos en la mesa, al menos uno de ellos siempre consigue los dos
+	// tenedores. Esto también rompe la espera circular: un círculo necesita los cinco.
 	waiter := make(chan struct{}, n-1)
 
 	for i := range n {
@@ -142,6 +161,9 @@ func Run(strategy Strategy, n int, duration, stall time.Duration) Result {
 			// PT: As goroutines presas nunca poderão ser acordadas: uma goroutine bloqueada em
 			// um mutex não tem botão de cancelar. Elas ficam para trás, e esse é o custo de
 			// um deadlock.
+			// ES: Las goroutines atascadas nunca podrán despertarse: una goroutine bloqueada en
+			// un mutex no tiene botón de cancelar. Quedan atrás, y ese es el costo de
+			// un deadlock.
 			counts, _ := snapshot()
 			return Result{Meals: counts, Deadlocked: true}
 		}

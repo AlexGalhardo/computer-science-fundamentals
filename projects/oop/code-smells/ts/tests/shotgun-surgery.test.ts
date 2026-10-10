@@ -31,6 +31,8 @@ describe.each(versions)("shotgun surgery, %s", (_name, billing) => {
 //     symbol written? That is the number of files a change of currency would touch.
 // PT: O mau cheiro, medido. Um teste que lê o código-fonte: em quantos arquivos o símbolo da
 //     moeda está escrito? Esse é o número de arquivos que uma troca de moeda tocaria.
+// ES: El mal olor, medido. Un test que lee el código fuente: ¿en cuántos archivos está escrito
+//     el símbolo de la moneda? Ese es el número de archivos que tocaría un cambio de moneda.
 function filesThatKnowTheCurrency(version: string): string[] {
 	const folder = new URL(`../src/shotgun-surgery/${version}/`, import.meta.url);
 	return readdirSync(folder)

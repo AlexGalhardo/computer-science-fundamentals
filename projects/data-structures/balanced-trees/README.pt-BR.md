@@ -1,6 +1,6 @@
 # balanced-trees
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Três árvores de busca com a mesma interface, escritas em C++ e em Java: uma árvore binária de busca sem balanceamento, uma árvore AVL e uma árvore rubro-negra. Ele ensina como uma árvore sem balanceamento degenera em lista quando as chaves chegam ordenadas, e como as rotações evitam isso. Uma página estática reproduz a inserção de uma sequência fixa e mostra cada rotação.
 

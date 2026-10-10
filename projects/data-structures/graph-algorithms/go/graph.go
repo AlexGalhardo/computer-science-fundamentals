@@ -38,6 +38,9 @@ type Arc struct {
 // or on an adjacency matrix. What changes is the cost of each operation, not the answer.
 // PT: Todo algoritmo conversa só com esta interface, então roda sem mudanças em lista de
 // adjacência ou em matriz de adjacência. O que muda é o custo de cada operação, não a resposta.
+// ES: Todo algoritmo habla solo con esta interfaz, así que corre sin cambios en lista de
+// adyacencia o en matriz de adyacencia. Lo que cambia es el costo de cada operación, no la
+// respuesta.
 type Graph interface {
 	VertexCount() int
 	AddArc(from, to int, weight Weight)
@@ -51,6 +54,8 @@ type Graph interface {
 // followed from either end.
 // PT: Uma aresta não dirigida é guardada como dois arcos, um em cada sentido, para poder ser
 // seguida a partir de qualquer uma das pontas.
+// ES: Una arista no dirigida se guarda como dos arcos, uno en cada sentido, para poder seguirse
+// desde cualquiera de los extremos.
 func AddEdge(graph Graph, a, b int, weight Weight) {
 	graph.AddArc(a, b, weight)
 	graph.AddArc(b, a, weight)
@@ -73,6 +78,8 @@ func Arcs(graph Graph) []Arc {
 // it suits sparse graphs. Testing whether one specific arc exists means walking a list.
 // PT: A memória é O(V + E) e percorrer os vizinhos de um vértice custa o grau dele, por isso
 // ela serve bem a grafos esparsos. Testar se um arco específico existe exige percorrer uma lista.
+// ES: La memoria es O(V + E) y recorrer los vecinos de un vértice cuesta su grado, por eso sirve
+// bien para grafos dispersos. Probar si existe un arco específico exige recorrer una lista.
 type AdjacencyList struct {
 	lists [][]Edge
 }
@@ -113,6 +120,10 @@ func (g *AdjacencyList) Neighbors(from int) []Edge { return g.lists[from] }
 // é uma leitura, O(1), mas a memória é O(V^2) mesmo com poucas arestas, e listar os vizinhos de
 // um vértice sempre percorre uma linha inteira. Uma célula guarda um valor, então de dois arcos
 // paralelos só o mais leve fica.
+// ES: La celda (i, j) guarda el peso del arco i -> j, o Infinity para "sin arco". Probar un arco
+// es una lectura, O(1), pero la memoria es O(V^2) aun con pocas aristas, y listar los vecinos de
+// un vértice siempre recorre una fila entera. Una celda guarda un valor, así que de dos arcos
+// paralelos solo queda el más liviano.
 type AdjacencyMatrix struct {
 	vertices int
 	cells    []Weight
@@ -124,6 +135,8 @@ type AdjacencyMatrix struct {
 // memory of the machine.
 // PT: 100.000 vértices pediriam 10^10 células. Recusar cedo é melhor do que esgotar a memória
 // da máquina.
+// ES: 100,000 vértices pedirían 10^10 celdas. Rechazar temprano es mejor que agotar la memoria
+// de la máquina.
 func NewAdjacencyMatrix(vertices int) (*AdjacencyMatrix, error) {
 	if vertices > MatrixVertexLimit {
 		return nil, ErrTooManyVertices

@@ -6,6 +6,8 @@ import { NORMAL_INPUT, SCRIPT_INPUT } from "../src/lab-inputs";
 //     nothing else changes.
 // PT: Testes unitários da função de codificação: os cinco caracteres especiais viram entidades,
 //     e nada mais muda.
+// ES: Pruebas unitarias de la función de codificación: los cinco caracteres especiales se vuelven entidades,
+//     y nada más cambia.
 
 test("each special character becomes its entity", () => {
 	expect(escapeHtml(`<>&"'`)).toBe("&lt;&gt;&amp;&quot;&#39;");

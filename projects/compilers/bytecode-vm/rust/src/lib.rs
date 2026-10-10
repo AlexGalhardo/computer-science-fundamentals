@@ -36,6 +36,9 @@ impl fmt::Display for MiniError {
 // PT: O pipeline inteiro, um estágio por linha: texto -> árvore -> bytecode -> execução. Os três
 //     primeiros estágios acontecem uma vez, antes de o programa começar. Só o último repete
 //     trabalho, e ele nunca mais olha para o texto nem para a árvore.
+// ES: El pipeline completo, una etapa por línea: texto -> árbol -> bytecode -> ejecución. Las
+//     tres primeras etapas ocurren una vez, antes de que el programa empiece. Solo la última
+//     repite trabajo, y nunca más mira el texto ni el árbol.
 pub fn run_source(source: &str, output: &mut dyn Write) -> Result<(), MiniError> {
     let tree = parser::parse(source).map_err(MiniError::Syntax)?;
     let program = compiler::compile(&tree);

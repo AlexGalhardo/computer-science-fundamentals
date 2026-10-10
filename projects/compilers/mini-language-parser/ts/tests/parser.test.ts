@@ -10,6 +10,8 @@ import { formatProblem } from "../src/token";
 //     the expected value shows the grouping the parser must find.
 // PT: A árvore de um programa como uma linha de texto. Comparar árvores como texto mantém cada
 //     teste legível: o valor esperado mostra o agrupamento que o parser precisa encontrar.
+// ES: El árbol de un programa como una línea de texto. Comparar árboles como texto mantiene cada
+//     prueba legible: el valor esperado muestra la agrupación que el parser debe encontrar.
 function tree(source: string): string {
 	const result = parse(source);
 	expect(result.errors).toEqual([]);
@@ -148,6 +150,9 @@ test("the report shows tokens, then the tree, then the errors", () => {
 // PT: Os programas de exemplo são a bancada de testes compartilhada pelos três mini-projetos de
 //     compiladores. Aqui eles só precisam ser analisados sem erros; o interpretador e a máquina
 //     virtual os executam.
+// ES: Los programas de ejemplo son el banco de pruebas compartido por los tres mini-proyectos de
+//     compiladores. Aquí solo deben analizarse sin errores; el intérprete y la máquina virtual
+//     los ejecutan.
 test("every example program parses without errors", () => {
 	const directory = join(import.meta.dir, "..", "..", "examples");
 	const files = readdirSync(directory).filter((name) => name.endsWith(".mini"));

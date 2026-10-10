@@ -16,6 +16,10 @@ import (
 // slice mantido em ordem de uso. Ele custa O(n) por operação e é fácil de confiar, que é
 // justamente para o que um modelo serve. A cache de verdade precisa se comportar igual e ser
 // O(1).
+// ES: Modelo de referencia: el mismo comportamiento escrito de la forma más obvia, con un único
+// slice mantenido en orden de uso. Cuesta O(n) por operación y es fácil de confiar, que es
+// justamente para lo que sirve un modelo. La caché de verdad debe comportarse igual y ser
+// O(1).
 type modelCache struct {
 	capacity int
 	keys     []int
@@ -77,6 +81,9 @@ func TestLRUSmallScenario(t *testing.T) {
 // PT: Teste de propriedade: para cada capacidade de 1 a 8, milhares de gets e puts aleatórios
 // rodam na cache e no modelo. O valor devolvido, a chave descartada e a ordem inteira das
 // chaves precisam ser iguais depois de cada operação.
+// ES: Prueba de propiedad: para cada capacidad de 1 a 8, miles de gets y puts aleatorios
+// corren en la caché y en el modelo. El valor devuelto, la clave descartada y el orden entero
+// de las claves deben ser iguales después de cada operación.
 func TestLRUEvictionOrderMatchesTheModel(t *testing.T) {
 	for capacity := 1; capacity <= 8; capacity++ {
 		cache, err := NewLRU[int, int](capacity)
@@ -112,6 +119,8 @@ func TestLRUEvictionOrderMatchesTheModel(t *testing.T) {
 // about 0.8% to about 15%, so the formula is checked in very different regimes.
 // PT: Cada configuração é (bits, funções de espalhamento, chaves adicionadas). A taxa teórica
 // vai de cerca de 0,8% a cerca de 15%, então a fórmula é conferida em regimes bem diferentes.
+// ES: Cada configuración es (bits, funciones de dispersión, claves agregadas). La tasa teórica
+// va de cerca de 0.8% a cerca de 15%, así que la fórmula se verifica en regímenes muy distintos.
 func TestBloomFilterRates(t *testing.T) {
 	const probes = 200_000
 	for _, config := range [][3]int{{200_000, 7, 20_000}, {100_000, 3, 10_000}, {64_000, 2, 16_000}, {150_000, 5, 30_000}} {
@@ -126,6 +135,7 @@ func TestBloomFilterRates(t *testing.T) {
 			}
 			// EN: Every key that was added has to be reported as present, with no exception.
 			// PT: Toda chave que foi adicionada precisa ser dada como presente, sem exceção.
+			// ES: Toda clave que fue agregada debe darse como presente, sin excepción.
 			for i := range keys {
 				if !filter.MightContain(fmt.Sprintf("member-%d", i)) {
 					t.Fatalf("false negative for member-%d", i)
@@ -134,6 +144,8 @@ func TestBloomFilterRates(t *testing.T) {
 			// EN: None of the probe keys was added, so every "probably yes" is a false positive.
 			// PT: Nenhuma das chaves de sondagem foi adicionada, então todo "provavelmente sim"
 			// é um falso positivo.
+			// ES: Ninguna de las claves de sondeo fue agregada, así que todo "probablemente sí"
+			// es un falso positivo.
 			falsePositives := 0
 			for i := range probes {
 				if filter.MightContain(fmt.Sprintf("outsider-%d", i)) {
@@ -190,6 +202,9 @@ func TestTrieSmallSet(t *testing.T) {
 // PT: O filtro linear é a definição da resposta: olhar todas as palavras e ficar com as que
 // começam com o prefixo. A trie precisa devolver exatamente o mesmo conjunto, para prefixos que
 // existem, para palavras inteiras e para prefixos que não casam com nada.
+// ES: El filtro lineal es la definición de la respuesta: mirar todas las palabras y quedarse con las
+// que empiezan con el prefijo. El trie debe devolver exactamente el mismo conjunto, para prefijos
+// que existen, para palabras enteras y para prefijos que no coinciden con nada.
 func TestTriePrefixSearchMatchesALinearFilter(t *testing.T) {
 	words := GenerateWords(100_000, 7)
 	trie := NewTrie()

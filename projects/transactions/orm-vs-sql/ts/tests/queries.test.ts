@@ -34,6 +34,8 @@ function of(name: string): Record<Approach, Captured> {
 //     legitimately differs between the three runs of the write query.
 // PT: Um post novo recebe um id novo da sequência a cada vez, então o id é o único campo que
 //     legitimamente difere entre as três execuções da consulta de escrita.
+// ES: Un post nuevo recibe un id nuevo de la secuencia cada vez, así que el id es el único campo que
+//     difiere legítimamente entre las tres ejecuciones de la consulta de escritura.
 function comparable(result: unknown): unknown {
 	if (typeof result === "object" && result !== null && "postId" in result) {
 		const { postId: _postId, ...rest } = result;
@@ -116,6 +118,7 @@ describe("transaction", () => {
 			const before = await postsOfAuthor(2);
 			// EN: 201 characters break the CHECK of comments.body, after the post was inserted.
 			// PT: 201 caracteres quebram o CHECK de comments.body, depois de o post ter sido inserido.
+			// ES: 201 caracteres rompen el CHECK de comments.body, después de que el post ya se insertó.
 			const tooLong = "x".repeat(201);
 			await expect(
 				addPostWithComment[approach](context, 2, "A fake post that must vanish", tooLong),

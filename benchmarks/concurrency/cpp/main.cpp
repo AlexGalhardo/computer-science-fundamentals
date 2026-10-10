@@ -18,6 +18,17 @@
 //     - `coroutines`: corrotinas sem pilha do C++20. A linguagem dá o mecanismo de suspender e
 //       retomar, mas nenhum escalonador, então o pequeno escalonador abaixo é escrito à mão.
 //       Uma corrotina parada é só um pequeno quadro no heap, e tudo roda em uma thread.
+// ES: Carga de concurrencia: crea n tareas que esperan en una compuerta cerrada, abre la compuerta,
+//     y cada tarea envía su número a un buzón de mensajes. El checksum es la suma de los números.
+//     No se calcula nada: el costo medido es el costo de la tarea en sí (crearla, mantenerla
+//     detenida, despertarla, pasar un mensaje).
+//     C++ tiene dos respuestas, y las dos están aquí:
+//     - `os-threads`: un std::thread por tarea. El kernel reserva un stack y estructuras de
+//       planificación para cada uno, así que esto se limita a 10.000 tareas en bench.json.
+//     - `coroutines`: corrutinas sin stack de C++20. El lenguaje da el mecanismo de suspender y
+//       retomar, pero ningún planificador, así que el pequeño planificador de abajo está escrito a
+//       mano. Una corrutina detenida es solo un pequeño marco en el heap, y todo corre en un
+//       thread.
 
 #include <sys/resource.h>
 
@@ -50,6 +61,7 @@ long run_threads(long n) {
 			{
 				// EN: wait() releases the mutex and puts the thread to sleep in the kernel.
 				// PT: O wait() solta o mutex e põe a thread para dormir no kernel.
+				// ES: wait() suelta el mutex y pone el thread a dormir en el kernel.
 				std::unique_lock lock(gate_mutex);
 				gate.wait(lock, [&] { return open; });
 			}
@@ -76,6 +88,8 @@ long run_threads(long n) {
 //     at once and keeps its frame alive at the end until the owner destroys it.
 // PT: O tipo de retorno de uma corrotina diz ao compilador como ela se comporta: esta começa a
 //     rodar na hora e mantém seu quadro vivo no final até o dono destruí-lo.
+// ES: El tipo de retorno de una corrutina le dice al compilador cómo se comporta: esta empieza a
+//     correr de inmediato y mantiene su marco vivo al final hasta que el dueño lo destruya.
 struct Task {
 	struct promise_type {
 		Task get_return_object() {
@@ -93,6 +107,8 @@ struct Task {
 //     handle, and release() resumes the parked coroutines one after the other.
 // PT: O portão é o escalonador inteiro: `co_await gate` estaciona a corrotina guardando seu
 //     handle, e o release() retoma as corrotinas paradas uma depois da outra.
+// ES: La compuerta es todo el planificador: `co_await gate` estaciona la corrutina guardando su
+//     handle, y release() retoma las corrutinas detenidas una tras otra.
 struct Gate {
 	bool open = false;
 	std::vector<std::coroutine_handle<>> waiting;

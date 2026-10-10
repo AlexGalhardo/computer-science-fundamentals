@@ -19,6 +19,10 @@ public final class TableTest {
   //     congelar em pelo menos 9 delas. Dois detectores precisam concordar: o tempo limite
   //     (ninguém comeu por 500 ms) e a JVM, que precisa achar as cinco threads de filósofos em
   //     um ciclo de travas.
+  // ES: El deadlock es cuestión de tiempo, así que la cena se repite 10 veces y la mesa
+  //     ingenua debe congelarse en al menos 9 de ellas. Dos detectores deben coincidir: el tiempo
+  //     límite (nadie comió durante 500 ms) y la JVM, que debe encontrar los cinco threads de
+  //     filósofos en un ciclo de locks.
   private static void naiveTableDeadlocks() throws InterruptedException {
     int deadlocks = 0;
     for (int run = 1; run <= 10; run++) {
@@ -30,6 +34,8 @@ public final class TableTest {
       // EN: Frozen threads of earlier runs stay in the JVM, so the cycle count grows by 5.
       // PT: As threads congeladas das execuções anteriores continuam na JVM, então a contagem
       //     do ciclo cresce de 5 em 5.
+      // ES: Los threads congelados de ejecuciones anteriores siguen en la JVM, así que la cuenta
+      //     del ciclo crece de 5 en 5.
       if (result.deadlocked() && result.threadsInCycle() >= SEATS) {
         deadlocks++;
       }
@@ -46,6 +52,9 @@ public final class TableTest {
   // PT: As correções precisam sobreviver a um jantar longo (60 segundos por padrão) sem
   //     congelar, e todo filósofo precisa ter comido. Os contadores são a prova. Este teste roda
   //     primeiro, enquanto a JVM não tem threads congeladas deixadas pelo teste de deadlock.
+  // ES: Las correcciones deben sobrevivir a una cena larga (60 segundos por defecto) sin
+  //     congelarse, y todo filósofo debe haber comido. Los contadores son la prueba. Esta prueba se
+  //     ejecuta primero, mientras la JVM no tiene threads congelados dejados por la prueba de deadlock.
   private static void fixesRunWithEveryPhilosopherEating(Duration soak) throws Exception {
     try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
       Future<Table.Result> ordered =

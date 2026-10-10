@@ -11,6 +11,14 @@ Uma imagem é uma tabela de números. Um filtro (também chamado de kernel) é u
 números. A convolução desliza o filtro sobre a imagem e, em cada posição, multiplica os números
 que se sobrepõem e soma tudo. Nada além disso acontece dentro de `torch.nn.functional.conv2d`, só
 que muito mais rápido. Os testes comparam este arquivo com o framework, número por número.
+
+ES: Convolución escrita a mano, con bucles simples de Python, para mostrar lo que calcula un
+framework.
+
+Una imagen es una tabla de números. Un filtro (también llamado kernel) es una tabla pequeña de
+números. La convolución desliza el filtro sobre la imagen y, en cada posición, multiplica los
+números que se superponen y suma todo. Dentro de `torch.nn.functional.conv2d` no ocurre nada más,
+solo que mucho más rápido. Las pruebas comparan este archivo con el framework, número por número.
 """
 
 import torch
@@ -23,6 +31,10 @@ import torch
 #     um número positivo grande onde a imagem vai do escuro (esquerda) para o claro (direita), um
 #     número negativo grande do claro para o escuro, e 0 em uma região lisa. SOBEL_Y faz o mesmo
 #     de cima para baixo. Uma CNN não recebe esses números: ela aprende os seus próprios filtros.
+# ES: Los filtros de Sobel, escritos por personas mucho antes de las redes neuronales. SOBEL_X
+#     responde con un número positivo grande donde la imagen pasa de oscuro (izquierda) a claro
+#     (derecha), un número negativo grande de claro a oscuro, y 0 en una región lisa. SOBEL_Y hace
+#     lo mismo de arriba abajo. Una CNN no recibe esos números: aprende sus propios filtros.
 SOBEL_X = torch.tensor([[-1.0, 0.0, 1.0], [-2.0, 0.0, 2.0], [-1.0, 0.0, 1.0]])
 SOBEL_Y = torch.tensor([[-1.0, -2.0, -1.0], [0.0, 0.0, 0.0], [1.0, 2.0, 1.0]])
 
@@ -40,6 +52,13 @@ def output_size(size: int, kernel: int, stride: int = 1, padding: int = 0) -> in
     W é o lado da imagem, F o lado do filtro, P o padding (zeros somados em cada borda) e S o
     stride (quantos pixels o filtro pula). Exemplo: W=20, F=3, P=0, S=1 dá 18, porque um filtro
     de largura 3 cabe em 18 lugares de uma linha de largura 20.
+
+    ES: Cuántas posiciones visita el filtro a lo largo de un lado: (W - F + 2P) / S + 1, redondeado
+    hacia abajo.
+
+    W es el lado de la imagen, F el lado del filtro, P el padding (ceros añadidos en cada borde) y S
+    el stride (cuántos píxeles salta el filtro). Ejemplo: W=20, F=3, P=0, S=1 da 18, porque un
+    filtro de ancho 3 cabe en 18 lugares de una fila de ancho 20.
     """
     return (size - kernel + 2 * padding) // stride + 1
 
@@ -51,6 +70,9 @@ def conv2d_by_hand(
 
     PT: Convolução de uma imagem em tons de cinza (H x W) com um filtro (FH x FW), com quatro
     laços.
+
+    ES: Convolución de una imagen en escala de grises (H x W) con un filtro (FH x FW), con cuatro
+    bucles.
     """
     pixels: list[list[float]] = image.tolist()
     weights: list[list[float]] = kernel.tolist()
@@ -61,6 +83,9 @@ def conv2d_by_hand(
     #     pixels. With a 3x3 filter and padding 1 the output has the same size as the input.
     # PT: O padding cerca a imagem com zeros, para que o filtro também possa ficar centrado nos
     #     pixels da borda. Com um filtro 3x3 e padding 1 a saída tem o mesmo tamanho da entrada.
+    # ES: El padding rodea la imagen con ceros, para que el filtro también pueda quedar centrado en
+    #     los píxeles del borde. Con un filtro 3x3 y padding 1 la salida tiene el mismo tamaño que
+    #     la entrada.
     padded = [[0.0] * (width + 2 * padding) for _ in range(height + 2 * padding)]
     for row in range(height):
         for column in range(width):
@@ -81,6 +106,12 @@ def conv2d_by_hand(
     #     reserva o nome convolução para a versão espelhada, mas as bibliotecas de deep learning
     #     usam esta e a chamam de convolução. Como os pesos são aprendidos, espelhar não mudaria
     #     nada.
+    # ES: Los dos bucles de fuera eligen dónde está el filtro. Los dos de dentro multiplican cada
+    #     peso por el píxel que tiene debajo y suman los productos: un producto punto por posición.
+    #     El filtro NO se refleja. Las matemáticas llaman a esta operación correlación cruzada y
+    #     reservan el nombre convolución para la versión reflejada, pero las bibliotecas de deep
+    #     learning usan esta y la llaman convolución. Como los pesos se aprenden, reflejar no
+    #     cambiaría nada.
     for out_row in range(out_height):
         for out_column in range(out_width):
             total = 0.0
@@ -108,6 +139,13 @@ def conv2d_by_framework(
     para a entrada e (filtros, canais, altura, largura) para os pesos. Uma imagem em tons de
     cinza e um filtro viram 1 x 1 x H x W e 1 x 1 x F x F, e as dimensões extras são removidas no
     fim.
+
+    ES: La misma operación hecha por PyTorch.
+
+    El framework trabaja con lotes, así que quiere 4 dimensiones: (imágenes, canales, alto, ancho)
+    para la entrada y (filtros, canales, alto, ancho) para los pesos. Una imagen en escala de
+    grises y un filtro se vuelven 1 x 1 x H x W y 1 x 1 x F x F, y las dimensiones extra se quitan
+    al final.
     """
     result = torch.nn.functional.conv2d(
         image[None, None], kernel[None, None], stride=stride, padding=padding

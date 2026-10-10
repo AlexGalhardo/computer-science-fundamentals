@@ -12,6 +12,13 @@
 //       feat(tdd-kata): green - ...    a menor mudança que o faz passar
 //       refactor(tdd-kata): ...        uma limpeza com todos os testes ainda passando
 //     Qualquer outro assunto (o esqueleto, a documentação) não é um passo e é ignorado.
+// ES: Comprueba si un historial de git sigue el ritmo del desarrollo guiado por pruebas. Lee
+//     líneas con el formato "<sha> <asunto>" (lo que imprime `git log --reverse --format="%h %s"`)
+//     y mira solo el prefijo de cada asunto:
+//       test(tdd-kata): red - ...      una prueba nueva que falla
+//       feat(tdd-kata): green - ...    el cambio más pequeño que la hace pasar
+//       refactor(tdd-kata): ...        una limpieza con todas las pruebas aún pasando
+//     Cualquier otro asunto (el esqueleto, la documentación) no es un paso y se ignora.
 
 export type StepKind = "red" | "green" | "refactor";
 
@@ -57,6 +64,11 @@ export function parseLog(log: string): Step[] {
 //       green     só logo depois de um red: nenhum código de produção sem um teste falhando
 //       refactor  só com a barra verde: nunca limpar com um teste falhando
 //     e o histórico não pode parar em um red.
+// ES: Las reglas del ritmo, como una pequeña máquina de estados sobre el paso anterior:
+//       red       solo con la barra verde (al principio, o después de green o refactor)
+//       green     solo justo después de un red: ningún código de producción sin una prueba fallando
+//       refactor  solo con la barra verde: nunca limpiar con una prueba fallando
+//     y el historial no puede terminar en un red.
 export function checkSteps(steps: readonly Step[]): string[] {
 	const problems: string[] = [];
 	let previous: StepKind | undefined;

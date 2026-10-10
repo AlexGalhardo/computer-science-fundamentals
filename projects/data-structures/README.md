@@ -1,6 +1,6 @@
 # Data structures
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Data structures are the ways of organising data in memory and on disk so that the operations a program needs are cheap. Choosing between an array, a linked list, a hash table, a balanced tree or a graph is usually the decision that most changes the cost of a program, and it is the base of databases, compilers, operating systems and networks.
 

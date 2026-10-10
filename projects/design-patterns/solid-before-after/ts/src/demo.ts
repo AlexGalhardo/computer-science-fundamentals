@@ -6,6 +6,10 @@
 //     no refatorado, e mostra as duas respostas lado a lado. Elas são iguais: uma refatoração
 //     muda a forma do código, não o comportamento. A última linha de cada bloco diz quanto o
 //     requisito novo do README custa em cada versão.
+// ES: `bun run demo`. Para cada principio, ejecuta la misma llamada en el módulo con la
+//     violación y en el refactorizado, y muestra las dos respuestas lado a lado. Son iguales:
+//     una refactorización cambia la forma del código, no el comportamiento. La última línea de
+//     cada bloque dice cuánto cuesta el requisito nuevo del README en cada versión.
 
 import * as dipAfter from "./dip/after";
 import * as dipBefore from "./dip/before";

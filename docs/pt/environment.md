@@ -1,12 +1,12 @@
 # Ambiente
 
-> English version: [docs/en/environment.md](../en/environment.md)
+> English version: [docs/en/environment.md](../en/environment.md) · Versión en español: [docs/es/environment.md](../es/environment.md)
 
 Tudo roda em Docker com imagens fixadas, então o único requisito na máquina é o Docker. Ter as linguagens instaladas localmente é opcional. As imagens base ficam em `docker/`, um Dockerfile por linguagem, e nenhuma usa `latest`.
 
 | Linguagem | Dockerfile | Imagem base | Ferramentas adicionadas |
 | --- | --- | --- | --- |
-| TypeScript | `docker/ts.Dockerfile` | `oven/bun:1.4.2` | O Bun é runtime, gerenciador de pacotes e executor de testes. O Biome 2.5.15 vem do `package.json` da raiz |
+| TypeScript | `docker/ts.Dockerfile` | `oven/bun:1.4.2` | O Bun é runtime, gerenciador de pacotes e executor de testes. O Biome 2.5.15 e o markdownlint-cli2 0.23.3 vêm do `package.json` da raiz |
 | Python | `docker/python.Dockerfile` | `python:3.14.8-slim-trixie` | ruff 0.16.10, pytest 9.1.1 |
 | Go | `docker/go.Dockerfile` | `golang:1.27.1-bookworm` | golangci-lint 2.14.0 (o gofmt vem com o Go) |
 | Rust | `docker/rust.Dockerfile` | `rust:1.99.0-slim-trixie` | rustfmt, clippy |
@@ -26,6 +26,7 @@ Tudo roda em Docker com imagens fixadas, então o único requisito na máquina �
 | Go | `.golangci.yml` |
 | Elixir | `.formatter.exs` |
 | Java | `docker/java/spotless.gradle` |
+| Markdown | `.markdownlint-cli2.jsonc` |
 
 ## Como construir as imagens
 
@@ -37,4 +38,4 @@ done
 
 ## Como atualizar uma versão
 
-Troque a tag no Dockerfile e nesta tabela (nos dois idiomas) no mesmo commit, reconstrua a imagem e rode de novo os testes dos mini-projetos que a usam. Somente versões estáveis: nada de `latest`, `rc`, `beta` ou nightly.
+Troque a tag no Dockerfile e nesta tabela (nos três idiomas) no mesmo commit, reconstrua a imagem e rode de novo os testes dos mini-projetos que a usam. Somente versões estáveis: nada de `latest`, `rc`, `beta` ou nightly.

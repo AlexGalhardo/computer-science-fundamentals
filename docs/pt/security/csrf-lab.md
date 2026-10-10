@@ -1,6 +1,6 @@
 # Laboratório de CSRF (MP-SEC-3)
 
-> English version: [docs/en/security/csrf-lab.md](../../en/security/csrf-lab.md)
+> English version: [docs/en/security/csrf-lab.md](../../en/security/csrf-lab.md) · Versión en español: [docs/es/security/csrf-lab.md](../../es/security/csrf-lab.md)
 
 Mini-projeto: [`projects/security/csrf-lab`](../../../projects/security/csrf-lab/README.pt-BR.md). Tópicos do quiz: `csrf-samesite`, `sessions-cookies`.
 
@@ -10,7 +10,7 @@ Laboratório defensivo e educacional. Roda apenas em Docker, em uma rede interna
 
 Um cookie de sessão responde a uma pergunta: "qual navegador logado é este?". O navegador o anexa a toda requisição para o host que o definiu, seja qual for a página que iniciou a requisição.
 
-```
+```text
 1. usuário -> app           POST /login                 o app define o cookie de sessão
 2. usuário -> outro site    GET  /alguma-pagina         (mesmo navegador, outra aba ou um link)
 3. a página do outro site faz o navegador enviar:

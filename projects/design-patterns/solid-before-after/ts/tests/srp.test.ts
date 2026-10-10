@@ -19,6 +19,9 @@ const order: Order = {
 // PT: O comportamento do módulo, escrito uma vez e executado contra as duas versões. Estes
 //     testes foram escritos para `before` e não mudaram para `after`: é isso que faz da segunda
 //     versão uma refatoração, e não uma reescrita.
+// ES: El comportamiento del módulo, escrito una vez y ejecutado contra las dos versiones. Estas
+//     pruebas se escribieron para `before` y no cambiaron para `after`: eso es lo que hace de
+//     la segunda versión una refactorización, y no una reescritura.
 function behaviour(name: string, issueInvoice: (order: Order) => IssuedInvoice): void {
 	describe(`srp: ${name}`, () => {
 		test("adds the state tax to the subtotal", () => {
@@ -57,6 +60,7 @@ behaviour("after", after.issueInvoice);
 describe("srp: what the refactor allows", () => {
 	// EN: Only possible after the split: the tax rule is checked with no text in sight.
 	// PT: Só é possível depois da separação: a regra de imposto é verificada sem texto algum.
+	// ES: Solo es posible después de la separación: la regla del impuesto se verifica sin texto alguno.
 	test("each responsibility can be tested alone", () => {
 		const totals = after.calculateTotals(order);
 		expect(totals).toEqual({ subtotalCents: 10750, ratePercent: 18, taxCents: 1935, totalCents: 12685 });

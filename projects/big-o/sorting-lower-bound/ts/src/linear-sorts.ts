@@ -6,6 +6,10 @@
 //     posição em um vetor. Como não fazem comparações, o argumento da árvore de decisão não as
 //     descreve, e o limite inferior n log n não se aplica. O preço: só funcionam para chaves
 //     que são inteiros pequenos e não negativos (ou que podem ser cortadas em dígitos).
+// ES: Dos ordenaciones que nunca preguntan "¿a es menor que b?". Usan la propia clave como
+//     posición en un arreglo. Como no hacen comparaciones, el argumento del árbol de decisión no
+//     las describe, y la cota inferior n log n no se aplica. El precio: solo funcionan con claves
+//     que son enteros pequeños y no negativos (o que se pueden cortar en dígitos).
 
 function assertKeys(values: readonly number[], limit: number): void {
 	for (const value of values) {
@@ -21,6 +25,9 @@ function assertKeys(values: readonly number[], limit: number): void {
 // PT: Um counting sort estável por uma chave inteira em [0, buckets). Três passagens: contar
 //     quantos itens têm cada chave, transformar as contagens na primeira posição de cada chave,
 //     depois colocar cada item. O custo é n + buckets, sem comparar dois itens.
+// ES: Un counting sort estable por una clave entera en [0, buckets). Tres pasadas: contar
+//     cuántos elementos tienen cada clave, convertir los conteos en la primera posición de cada
+//     clave, luego colocar cada elemento. El costo es n + buckets, sin comparar dos elementos.
 function sortByKey(values: readonly number[], buckets: number, keyOf: (value: number) => number): number[] {
 	const positions = new Array<number>(buckets + 1).fill(0);
 	for (const value of values) {
@@ -44,6 +51,8 @@ function sortByKey(values: readonly number[], buckets: number, keyOf: (value: nu
 //     when limit is O(n), and a bad idea when the range is much larger than the data.
 // PT: Counting sort para inteiros em [0, limit): tempo e memória Theta(n + limit). É linear
 //     quando limit é O(n), e uma má ideia quando o intervalo é muito maior que os dados.
+// ES: Counting sort para enteros en [0, limit): tiempo y memoria Theta(n + limit). Es lineal
+//     cuando limit es O(n), y una mala idea cuando el rango es mucho mayor que los datos.
 export function countingSort(values: readonly number[], limit: number): number[] {
 	assertKeys(values, limit);
 	return sortByKey(values, limit, (value) => value);
@@ -56,6 +65,10 @@ export function countingSort(values: readonly number[], limit: number): number[]
 //     Depois da passagem i os itens estão ordenados pelos últimos i dígitos, e a estabilidade é
 //     o que preserva o trabalho das passagens anteriores. Custo: Theta(d * (n + base)) para
 //     chaves de d dígitos.
+// ES: Radix sort (dígito menos significativo primero): un counting sort estable por dígito.
+//     Después de la pasada i los elementos quedan ordenados por sus últimos i dígitos, y la
+//     estabilidad es lo que conserva el trabajo de las pasadas anteriores. Costo:
+//     Theta(d * (n + base)) para claves de d dígitos.
 export function radixSort(values: readonly number[], base = 10): number[] {
 	assertKeys(values, Number.MAX_SAFE_INTEGER);
 	let sorted = [...values];

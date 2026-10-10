@@ -8,6 +8,11 @@
 //     comparam o que o app vulnerável e o app corrigido respondem exatamente às mesmas requisições.
 //     Os apps são chamados em processo (`app.handle`), então nada aqui abre conexão de rede:
 //     o cenário não tem como ser apontado para uma URL.
+// ES: Un escenario, ejecutado contra las dos apps. Hace cuatro solicitudes: un inicio de sesión normal,
+//     una búsqueda normal, y las dos entradas de demostración del laboratorio. Las pruebas y la demo
+//     comparan lo que responden la app vulnerable y la app corregida a exactamente las mismas solicitudes.
+//     Las apps se llaman en proceso (`app.handle`), así que nada aquí abre conexión de red:
+//     el escenario no puede apuntarse a una URL.
 
 import { z } from "zod";
 import type { LabApp } from "./db";
@@ -20,12 +25,16 @@ export const NORMAL_SEARCH = "mouse";
 //     row, and `--` turns the rest of the line (the password check) into a comment.
 // PT: A tautologia clássica. A aspa fecha o literal de texto, `OR '1'='1'` é verdadeiro para
 //     toda linha, e `--` transforma o resto da linha (a checagem da senha) em comentário.
+// ES: La tautología clásica. La comilla cierra el literal de texto, `OR '1'='1'` es verdadero para
+//     toda fila, y `--` convierte el resto de la línea (la comprobación de la contraseña) en comentario.
 export const TAUTOLOGY_USERNAME = "' OR '1'='1' --";
 
 // EN: One UNION. It closes the LIKE pattern and appends the rows of another table to the result.
 //     It works only because `secrets` has three columns of the same types as the product query.
 // PT: Um UNION. Ele fecha o padrão do LIKE e acrescenta ao resultado as linhas de outra tabela.
 //     Só funciona porque `secrets` tem três colunas dos mesmos tipos da consulta de produtos.
+// ES: Un UNION. Cierra el patrón del LIKE y agrega al resultado las filas de otra tabla.
+//     Solo funciona porque `secrets` tiene tres columnas de los mismos tipos que la consulta de productos.
 export const UNION_SEARCH = "%' UNION SELECT id, label, secret_value FROM secrets --";
 
 export const FAKE_SECRET_MARKER = "FAKE-";
@@ -54,6 +63,7 @@ export interface ScenarioResult {
 
 // EN: A response is external input too, so it is parsed instead of trusted.
 // PT: Uma resposta também é entrada externa, então ela é interpretada em vez de ser dada como certa.
+// ES: Una respuesta también es entrada externa, así que se interpreta en lugar de darla por correcta.
 const loginResponse = z.object({ user: z.object({ username: z.string() }) });
 const searchResponse = z.object({
 	products: z.array(z.object({ name: z.string(), description: z.string() })),
@@ -61,6 +71,7 @@ const searchResponse = z.object({
 
 // EN: The host is never contacted: `handle` routes the request inside this process.
 // PT: O host nunca é contatado: `handle` roteia a requisição dentro deste processo.
+// ES: El host nunca se contacta: `handle` enruta la solicitud dentro de este proceso.
 const BASE = "http://localhost";
 
 async function readJson(response: Response): Promise<unknown> {

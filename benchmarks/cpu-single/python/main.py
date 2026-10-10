@@ -8,6 +8,10 @@ PT: `nbody` (ponto flutuante) e `sieve` (inteiros e memória). O CPython interpr
     instrução por vez e todo número é um objeto no heap, então os mesmos laços que levam
     milissegundos em uma linguagem compilada levam segundos aqui. Os laços são escritos à mão
     de propósito: truques de fatiamento ou NumPy mediriam código C, não o interpretador.
+ES: `nbody` (punto flotante) y `sieve` (enteros y memoria). CPython interpreta bytecode una
+    instrucción a la vez y todo número es un objeto en el heap, así que los mismos bucles que
+    toman milisegundos en un lenguaje compilado toman segundos aquí. Los bucles están escritos a
+    mano a propósito: trucos de rebanado o NumPy medirían código C, no el intérprete.
 """
 
 import json
@@ -24,6 +28,7 @@ DT = 0.01
 def make_bodies() -> list[list[float]]:
     # EN: Sun, Jupiter, Saturn, Uranus and Neptune as [x, y, z, vx, vy, vz, mass].
     # PT: Sol, Júpiter, Saturno, Urano e Netuno como [x, y, z, vx, vy, vz, massa].
+    # ES: Sol, Júpiter, Saturno, Urano y Neptuno como [x, y, z, vx, vy, vz, masa].
     raw = [
         (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0),
         (
@@ -83,6 +88,7 @@ def offset_momentum(bodies: list[list[float]]) -> None:
 def advance(bodies: list[list[float]]) -> None:
     # EN: One time step: every pair pulls on each other, then every body moves.
     # PT: Um passo de tempo: cada par se atrai, depois cada corpo anda.
+    # ES: Un paso de tiempo: cada par se atrae, luego cada cuerpo avanza.
     count = len(bodies)
     for i in range(count):
         a = bodies[i]
@@ -128,6 +134,7 @@ def nbody(n: int) -> str:
 def sieve(n: int) -> str:
     # EN: Sieve of Eratosthenes. The checksum is "how many primes:the largest one".
     # PT: Crivo de Eratóstenes. O checksum é "quantos primos:o maior deles".
+    # ES: Criba de Eratóstenes. El checksum es "cuántos primos:el mayor de ellos".
     composite = bytearray(n + 1)
     i = 2
     while i * i <= n:
@@ -160,6 +167,7 @@ def main() -> None:
                 "elapsedMs": round(elapsed_ms, 3),
                 # EN: On Linux, ru_maxrss is the peak resident memory, already in kibibytes.
                 # PT: No Linux, ru_maxrss é o pico de memória residente, já em kibibytes.
+                # ES: En Linux, ru_maxrss es el pico de memoria residente, ya en kibibytes.
                 "memoryKb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
                 "language": "python",
                 "implementation": implementation,

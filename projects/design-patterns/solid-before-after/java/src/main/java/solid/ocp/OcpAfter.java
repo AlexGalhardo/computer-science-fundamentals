@@ -9,6 +9,10 @@ import java.util.function.LongUnaryOperator;
 // PT: ABERTO-FECHADO. Uma regra de desconto é um objeto atrás de uma interface, e a calculadora
 //     só percorre as regras que recebeu. A calculadora fica fechada (não muda mais) e o sistema
 //     fica aberto (um tipo novo é uma regra nova entregue a `Discounts`).
+// ES: ABIERTO-CERRADO. Una regla de descuento es un objeto detrás de una interfaz, y la
+//     calculadora solo recorre las reglas que recibió. La calculadora queda cerrada (ya no
+//     cambia) y el sistema queda abierto (un tipo nuevo es una regla nueva entregada a
+//     `Discounts`).
 public final class OcpAfter {
   private OcpAfter() {}
 

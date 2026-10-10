@@ -2,6 +2,9 @@
 //     broker. The answers differ per broker, and those differences are the content of the README.
 // PT: Os experimentos. Cada um é escrito uma vez, contra as interfaces comuns, e executado em
 //     todos os brokers. As respostas mudam por broker, e essas diferenças são o conteúdo do README.
+// ES: Los experimentos. Cada uno se escribe una vez, contra las interfaces comunes, y se ejecuta en
+//     todos los brokers. Las respuestas cambian según el broker, y esas diferencias son el
+//     contenido del README.
 
 import { join } from "node:path";
 import { FakeMailer, makeOrders, type OrderPlaced } from "./order";
@@ -42,6 +45,9 @@ export interface RoundTrip {
 // PT: Envia `orders`, depois inicia UM consumidor e espera até todo pedido distinto chegar.
 //     A produção termina antes de o consumo começar, então as duas velocidades são medidas
 //     separadamente.
+// ES: Envía `orders`, luego inicia UN consumidor y espera hasta que llegue cada pedido distinto.
+//     La producción termina antes de que empiece el consumo, así que las dos velocidades se miden
+//     por separado.
 export async function roundTrip(
 	factory: AdapterFactory,
 	orders: OrderPlaced[],
@@ -108,6 +114,8 @@ export interface OrderingResult {
 //     says how far from the sent order the delivery was, not only yes or no.
 // PT: Uma mensagem está "fora de ordem" quando uma mensagem enviada depois dela já foi vista.
 //     Contá-las diz o quão longe da ordem de envio a entrega ficou, não só sim ou não.
+// ES: Un mensaje está "fuera de orden" cuando ya se vio un mensaje enviado después de él. Contarlos
+//     dice qué tan lejos del orden de envío estuvo la entrega, no solo sí o no.
 export function analyseOrder(received: OrderPlaced[]): OrderingResult {
 	let highest = -1;
 	let outOfOrder = 0;
@@ -131,6 +139,7 @@ export const ORDERING_PARTITIONS = 3;
 
 // EN: Ordering: 200 orders sent in sequence, one consumer handling one message at a time.
 // PT: Ordem: 200 pedidos enviados em sequência, um consumidor tratando uma mensagem por vez.
+// ES: Orden: 200 pedidos enviados en secuencia, un consumidor procesando un mensaje a la vez.
 export async function orderingExperiment(factory: AdapterFactory, count = 200): Promise<OrderingResult> {
 	const orders = makeOrders(count, "ord");
 	const { received } = await roundTrip(factory, orders, {
@@ -156,6 +165,9 @@ export interface RedeliveryResult {
 // PT: Reentrega: um consumidor em OUTRO processo recebe a mensagem e é morto com SIGKILL antes de
 //     conseguir confirmar. Nada é simulado: o processo morre de verdade com a mensagem nas mãos.
 //     Um segundo consumidor então espera para ver se o broker a entrega de novo.
+// ES: Reentrega: un consumidor en OTRO proceso recibe el mensaje y se mata con SIGKILL antes de
+//     poder confirmar. No se simula nada: el proceso muere de verdad con el mensaje en las manos.
+//     Un segundo consumidor espera entonces para ver si el broker se lo entrega de nuevo.
 export async function redeliveryExperiment(
 	broker: BrokerName,
 	factory: AdapterFactory,
@@ -248,6 +260,9 @@ export const THROUGHPUT_PARALLELISM = 16;
 //     measured run reports messages per second. The table shows mean, lowest and highest run.
 // PT: Vazão: uma rodada de aquecimento é descartada (conexões, JIT, criação de tópico), depois
 //     cada rodada medida informa mensagens por segundo. A tabela mostra média, menor e maior.
+// ES: Throughput: una ejecución de calentamiento se descarta (conexiones, JIT, creación del topic),
+//     luego cada ejecución medida informa mensajes por segundo. La tabla muestra la media, la más
+//     baja y la más alta.
 export async function throughputExperiment(
 	factory: AdapterFactory,
 	messages: number,

@@ -14,6 +14,9 @@ import solid.srp.Invoices.Order;
 // PT: RESPONSABILIDADE ÚNICA. Três métodos, um motivo de mudança para cada. A regra de imposto
 //     não sabe nada de texto, o layout do recibo não faz conta com alíquotas, e o formato do
 //     registro é uma linha. `issueInvoice` só coordena os três.
+// ES: RESPONSABILIDAD ÚNICA. Tres métodos, un motivo de cambio para cada uno. La regla del
+//     impuesto no sabe nada de texto, el diseño del recibo no hace cuentas con alícuotas, y el
+//     formato del registro es una línea. `issueInvoice` solo coordina los tres.
 public final class SrpAfter {
   private SrpAfter() {}
 

@@ -12,6 +12,12 @@ import { assertConfig, type LimiterConfig, type RateLimiter } from "./limiter";
 //     que todo mundo escreve. O defeito está na fronteira: o contador volta a zero de uma vez,
 //     então `limit` requisições no fim de uma janela mais `limit` no começo da seguinte passam
 //     todas, até o dobro do limite em um tempo muito curto.
+// ES: Ventana fija. El tiempo se corta en ventanas alineadas a múltiplos de `windowMs`
+//     ([0, W), [W, 2W), ...) y un contador cuenta las solicitudes admitidas en la ventana actual.
+//     El estado es mínimo (un número de ventana y un contador), y por eso es el primer algoritmo
+//     que todo el mundo escribe. El defecto está en la frontera: el contador vuelve a cero de
+//     golpe, así que `limit` solicitudes al final de una ventana más `limit` al comienzo de la
+//     siguiente pasan todas, hasta el doble del límite en un tiempo muy corto.
 export class FixedWindow implements RateLimiter {
 	private windowId = -1;
 	private count = 0;
@@ -30,6 +36,8 @@ export class FixedWindow implements RateLimiter {
 		//     here, because the counter is discarded at the boundary anyway.
 		// PT: Uma requisição rejeitada não é contada. Contá-la não mudaria nenhuma decisão
 		//     aqui, porque o contador é descartado na fronteira de qualquer forma.
+		// ES: Una solicitud rechazada no se cuenta. Contarla no cambiaría ninguna decisión aquí,
+		//     porque el contador se descarta en la frontera de todas formas.
 		if (this.count >= this.config.limit) {
 			return false;
 		}

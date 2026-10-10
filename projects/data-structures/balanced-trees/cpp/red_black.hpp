@@ -22,12 +22,21 @@ namespace trees {
 //     pretos. Juntas, elas implicam que o caminho mais longo tem no máximo o dobro do mais
 //     curto, então a altura fica abaixo de 2 log2(n + 1). O balanceamento é mais frouxo que o
 //     da AVL, e em troca as atualizações precisam de menos rotações.
+// ES: Árbol rojo-negro: un árbol binario de búsqueda en que cada nodo es rojo o negro y valen
+//     cuatro reglas. La raíz es negra. Las hojas NIL son negras. Un nodo rojo no tiene hijo
+//     rojo. Todo camino de un nodo hasta las hojas NIL pasa por el mismo número de nodos negros.
+//     Juntas, implican que el camino más largo tiene como máximo el doble del más corto, así que
+//     la altura queda por debajo de 2 log2(n + 1). El balanceo es más flojo que el del AVL, y a
+//     cambio las actualizaciones necesitan menos rotaciones.
 class RedBlackTree final : public SearchTree {
 public:
 	// EN: One shared sentinel node plays the part of every NIL leaf. It is black, and having a
 	//     real node there lets the code read `node->left->red` without testing for null.
 	// PT: Um único nó sentinela compartilhado faz o papel de todas as folhas NIL. Ele é preto, e
 	//     ter um nó de verdade ali deixa o código ler `node->left->red` sem testar ponteiro nulo.
+	// ES: Un único nodo centinela compartido hace el papel de todas las hojas NIL. Es negro, y
+	//     tener un nodo de verdad ahí deja que el código lea `node->left->red` sin probar un
+	//     puntero nulo.
 	RedBlackTree() : nil_(new Node{0, false, nullptr, nullptr, nullptr}), root_(nil_) {
 		nil_->left = nil_->right = nil_->parent = nil_;
 	}
@@ -46,6 +55,9 @@ public:
 	// PT: O nó novo entra como folha vermelha. O vermelho não altera o número de nós pretos de
 	//     nenhum caminho, então a única regra que pode quebrar é "nó vermelho não tem filho
 	//     vermelho", e essa tem conserto local.
+	// ES: El nodo nuevo entra como hoja roja. El rojo no altera el número de nodos negros de
+	//     ningún camino, así que la única regla que puede romperse es "un nodo rojo no tiene hijo
+	//     rojo", y esa tiene arreglo local.
 	bool insert(Key key) override {
 		Node* parent = nil_;
 		Node* node = root_;
@@ -86,6 +98,10 @@ public:
 		//     tem dois filhos) e `hole` é o nó que assume essa posição. Se o nó que saiu era
 		//     preto, os caminhos que passam por `hole` perderam um nó preto e a árvore precisa
 		//     ser consertada a partir dali.
+		// ES: `moved` es el nodo que sale de su posición (el propio objetivo, o el sucesor cuando
+		//     el objetivo tiene dos hijos) y `hole` es el nodo que asume esa posición. Si el nodo
+		//     que salió era negro, los caminos que pasan por `hole` perdieron un nodo negro y el
+		//     árbol debe arreglarse a partir de ahí.
 		Node* moved = target;
 		bool moved_was_red = moved->red;
 		Node* hole = nil_;
@@ -200,6 +216,8 @@ private:
 	//     sentinel and needs to climb from it.
 	// PT: Aqui o sentinela também recebe um pai, de propósito: o fix_remove pode começar no
 	//     sentinela e precisa subir a partir dele.
+	// ES: Aquí el centinela también recibe un padre, a propósito: fix_remove puede empezar en el
+	//     centinela y necesita subir a partir de él.
 	void transplant(Node* old, Node* replacement) { replace_child(old, replacement); }
 
 	// EN: While the new node and its parent are both red, look at the uncle. A red uncle means
@@ -210,6 +228,10 @@ private:
 	//     significa que só as cores mudam: pai e tio ficam pretos, o avô fica vermelho, e o
 	//     conflito sobe dois níveis. Tio preto significa que a subárvore está torta, e uma ou
 	//     duas rotações com troca de cores encerram o conserto de vez.
+	// ES: Mientras el nodo nuevo y el padre sean ambos rojos, se mira al tío. Tío rojo significa
+	//     que solo cambian los colores: padre y tío quedan negros, el abuelo queda rojo, y el
+	//     conflicto sube dos niveles. Tío negro significa que el subárbol está torcido, y una o
+	//     dos rotaciones con cambio de colores terminan el arreglo de una vez.
 	void fix_insert(Node* node) {
 		while (node->parent->red) {
 			Node* parent = node->parent;
@@ -260,6 +282,11 @@ private:
 	//     preto com dois filhos pretos abre mão do próprio preto (fica vermelho) e o problema
 	//     sobe para o pai. Um irmão preto com um filho vermelho empresta esse vermelho por uma
 	//     ou duas rotações, o que devolve o preto que faltava e encerra o conserto.
+	// ES: `node` carga un "negro extra" que falta en sus caminos. El hermano decide qué hacer. Un
+	//     hermano rojo primero se saca del camino con una rotación. Un hermano negro con dos hijos
+	//     negros renuncia a su propio negro (queda rojo) y el problema sube al padre. Un hermano
+	//     negro con un hijo rojo presta ese rojo con una o dos rotaciones, lo que devuelve el negro
+	//     que faltaba y termina el arreglo.
 	void fix_remove(Node* node) {
 		while (node != root_ && !node->red) {
 			Node* parent = node->parent;

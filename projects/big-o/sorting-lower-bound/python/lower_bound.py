@@ -13,6 +13,14 @@ ordenações. O Python permite algo mais forte: uma classe de chave que sobrecar
 de comparação. Toda comparação entre duas chaves é interceptada, inclusive as feitas dentro do
 `sorted` embutido (Timsort), cujo código não podemos editar. E uma ordenação que não faz
 comparações fica provada: seu contador permanece em zero.
+
+ES: La cota inferior de la ordenación por comparación, vista desde Python.
+
+La versión en TypeScript cuenta comparaciones pasando una función comparadora a sus propias
+ordenaciones. Python permite algo más fuerte: una clase de clave que sobrecarga los operadores
+de comparación. Toda comparación entre dos claves es interceptada, incluso las hechas dentro
+del `sorted` integrado (Timsort), cuyo código no podemos editar. Y una ordenación que no hace
+comparaciones queda demostrada: su contador permanece en cero.
 """
 
 import itertools
@@ -23,7 +31,12 @@ from dataclasses import dataclass
 
 
 class Counter:
-    """EN: Counts comparisons between two keys. PT: Conta comparações entre duas chaves."""
+    """EN: Counts comparisons between two keys.
+
+    PT: Conta comparações entre duas chaves.
+
+    ES: Cuenta comparaciones entre dos claves.
+    """
 
     def __init__(self) -> None:
         self.comparisons = 0
@@ -39,6 +52,11 @@ class Key:
 
     Ler `key.value` não é uma comparação: olha para um único elemento. Essa é exatamente a
     diferença entre uma ordenação por comparação e um counting sort.
+
+    ES: Un entero que registra toda comparación hecha con otra clave.
+
+    Leer `key.value` no es una comparación: mira un solo elemento. Esa es exactamente la
+    diferencia entre una ordenación por comparación y un counting sort.
     """
 
     __slots__ = ("_counter", "value")
@@ -77,6 +95,8 @@ def merge_sort(items: Sequence[Key]) -> list[Key]:
     """EN: Merge sort written with the `<` operator, so every comparison is counted.
 
     PT: Merge sort escrito com o operador `<`, então toda comparação é contada.
+
+    ES: Merge sort escrito con el operador `<`, así que toda comparación se cuenta.
     """
     if len(items) <= 1:
         return list(items)
@@ -99,6 +119,8 @@ def builtin_sort(items: Sequence[Key]) -> list[Key]:
     """EN: The built-in `sorted` (Timsort). It only ever uses `<`, which the key intercepts.
 
     PT: O `sorted` embutido (Timsort). Ele só usa `<`, que a chave intercepta.
+
+    ES: El `sorted` integrado (Timsort). Solo usa `<`, que la clave intercepta.
     """
     return sorted(items)
 
@@ -109,6 +131,9 @@ def _sort_by_digit(items: Sequence[Key], buckets: int, digit: Callable[[int], in
     # PT: Um counting sort estável: conta cada dígito, transforma as contagens em primeiras
     #     posições, depois coloca cada item. O dígito é usado como índice. Dois itens nunca são
     #     comparados.
+    # ES: Un counting sort estable: cuenta cada dígito, convierte los conteos en primeras
+    #     posiciones, luego coloca cada elemento. El dígito se usa como índice. Dos elementos
+    #     nunca se comparan.
     positions = [0] * (buckets + 1)
     for item in items:
         positions[digit(item.value) + 1] += 1
@@ -126,6 +151,8 @@ def counting_sort(items: Sequence[Key], limit: int) -> list[Key]:
     """EN: Counting sort for keys in [0, limit): Theta(n + limit), zero comparisons.
 
     PT: Counting sort para chaves em [0, limit): Theta(n + limit), zero comparações.
+
+    ES: Counting sort para claves en [0, limit): Theta(n + limit), cero comparaciones.
     """
     for item in items:
         if not 0 <= item.value < limit:
@@ -137,6 +164,8 @@ def radix_sort(items: Sequence[Key], base: int = 10) -> list[Key]:
     """EN: Radix sort, least significant digit first: one stable counting sort per digit.
 
     PT: Radix sort, do dígito menos significativo para o mais: um counting sort estável por dígito.
+
+    ES: Radix sort, del dígito menos significativo al más: un counting sort estable por dígito.
     """
     result = list(items)
     largest = 0
@@ -155,6 +184,8 @@ def log2_factorial(n: int) -> float:
     """EN: log2(n!), the information needed to tell n! input orders apart, in bits.
 
     PT: log2(n!), a informação necessária para distinguir n! ordens de entrada, em bits.
+
+    ES: log2(n!), la información necesaria para distinguir n! órdenes de entrada, en bits.
     """
     return sum(math.log2(value) for value in range(2, n + 1))
 
@@ -169,6 +200,11 @@ def minimum_comparisons(n: int) -> int:
 
     Para um inteiro positivo x, ceil(log2(x)) é o número de bits de x - 1. Não há ponto
     flutuante envolvido, então a resposta é exata mesmo para n na casa dos milhares.
+
+    ES: ceil(log2(n!)), calculado exactamente con los enteros ilimitados de Python.
+
+    Para un entero positivo x, ceil(log2(x)) es el número de bits de x - 1. No interviene el
+    punto flotante, así que la respuesta es exacta incluso para n del orden de miles.
     """
     return (math.factorial(n) - 1).bit_length()
 
@@ -177,6 +213,8 @@ def measure(sort: Sort, values: Sequence[int]) -> tuple[list[int], int]:
     """EN: Sorts the values and returns the result with the number of comparisons made.
 
     PT: Ordena os valores e devolve o resultado com o número de comparações feitas.
+
+    ES: Ordena los valores y devuelve el resultado con el número de comparaciones hechas.
     """
     counter = Counter()
     result = sort([Key(value, counter) for value in values])
@@ -190,7 +228,12 @@ COMPARISON_SORTS: dict[str, Sort] = {
 
 
 def linear_sorts(limit: int) -> dict[str, Sort]:
-    """EN: The sorts that index by key. PT: As ordenações que indexam pela chave."""
+    """EN: The sorts that index by key.
+
+    PT: As ordenações que indexam pela chave.
+
+    ES: Las ordenaciones que indexan por la clave.
+    """
     return {
         "counting sort": lambda items: counting_sort(items, limit),
         "radix sort": radix_sort,
@@ -199,7 +242,12 @@ def linear_sorts(limit: int) -> dict[str, Sort]:
 
 @dataclass(frozen=True)
 class Row:
-    """EN: One line of a results table. PT: Uma linha de uma tabela de resultados."""
+    """EN: One line of a results table.
+
+    PT: Uma linha de uma tabela de resultados.
+
+    ES: Una fila de una tabla de resultados.
+    """
 
     algorithm: str
     minimum: int
@@ -228,6 +276,11 @@ def exhaustive(n: int) -> list[Row]:
 
     O mínimo é o melhor caso, a média é o caso médio e o máximo é o pior caso. O teorema limita
     os dois últimos.
+
+    ES: Cada uno de los n! órdenes de entrada, para las ordenaciones por comparación.
+
+    El mínimo es el mejor caso, la media es el caso promedio y el máximo es el peor caso. El
+    teorema acota los dos últimos.
     """
     inputs = list(itertools.permutations(range(n)))
     return [_row(name, sort, inputs) for name, sort in COMPARISON_SORTS.items()]
@@ -237,6 +290,8 @@ def random_inputs(n: int, count: int, seed: int) -> list[list[int]]:
     """EN: Seeded random permutations of 0..n-1, so the tables can be reproduced.
 
     PT: Permutações aleatórias de 0..n-1 com semente, para que as tabelas sejam reproduzíveis.
+
+    ES: Permutaciones aleatorias de 0..n-1 con semilla, para que las tablas sean reproducibles.
     """
     generator = random.Random(seed)
     return [generator.sample(range(n), n) for _ in range(count)]
@@ -246,6 +301,8 @@ def random_experiment(n: int, count: int, seed: int) -> list[Row]:
     """EN: The same random inputs through every sort, comparison-based or not.
 
     PT: As mesmas entradas aleatórias em todas as ordenações, por comparação ou não.
+
+    ES: Las mismas entradas aleatorias en todas las ordenaciones, por comparación o no.
     """
     inputs = random_inputs(n, count, seed)
     sorts = {**COMPARISON_SORTS, **linear_sorts(n)}
@@ -261,5 +318,10 @@ def best_case(n: int) -> int:
     PT: Comparações que o `sorted` faz em uma entrada já ordenada: n - 1.
 
     Muito abaixo de log2(n!), e sem contradição: o limite fala do pior caso, não de toda entrada.
+
+    ES: Comparaciones que hace `sorted` con una entrada ya ordenada: n - 1.
+
+    Muy por debajo de log2(n!), y sin contradicción: la cota habla del peor caso, no de toda
+    entrada.
     """
     return measure(builtin_sort, range(n))[1]

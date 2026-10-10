@@ -5,6 +5,8 @@ import { runDemo } from "../src/demo";
 //     carry the point of three of them.
 // PT: A demo faz parte da lição, então também é testada: dez padrões, e as linhas que carregam
 //     o ponto de três deles.
+// ES: La demo es parte de la lección, así que también se prueba: diez patrones, y las líneas que
+//     llevan el punto central de tres de ellos.
 test("the demo walks through the ten patterns", () => {
 	const lines = runDemo();
 	expect(lines.filter((line) => !line.startsWith(" "))).toEqual([

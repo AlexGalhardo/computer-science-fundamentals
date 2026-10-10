@@ -8,6 +8,9 @@ import { registerUser, type SqlDatabase } from "../src/repository/before";
 // PT: O dublê que o desenho com defeito impõe aos testes: ele precisa reconhecer o texto SQL
 //     exato. Renomear uma coluna ou reordenar uma consulta quebra o teste de uma regra que não
 //     mudou.
+// ES: El doble que el diseño que falla impone a las pruebas: necesita reconocer el texto SQL
+//     exacto. Renombrar una columna o reordenar una consulta rompe la prueba de una regla que no
+//     cambió.
 class ScriptedDatabase implements SqlDatabase {
 	readonly statements: string[] = [];
 	private readonly rows: Array<Record<string, string>> = [];
@@ -37,6 +40,7 @@ describe("repository: before", () => {
 
 	// EN: The flaw made visible: the test of a business rule asserts on storage details.
 	// PT: O defeito visível: o teste de uma regra de negócio verifica detalhes de armazenamento.
+	// ES: El defecto visible: la prueba de una regla de negocio verifica detalles de almacenamiento.
 	test("the business rule cannot be exercised without knowing the storage vocabulary", () => {
 		const database = new ScriptedDatabase();
 		registerUser(database, "ana@example.test");

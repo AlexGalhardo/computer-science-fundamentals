@@ -1,6 +1,6 @@
 # rest-graphql-jsonrpc
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 One small domain (authors, books, reviews) exposed through three API styles by the same ElysiaJS server: **REST** (`/rest/...`), **GraphQL** (`/graphql`) and **JSON-RPC 2.0** (`/rpc`). The domain rules are written once, so the only thing that changes is how a call travels over HTTP. The mini-project teaches what each style costs and offers: how many round trips a screen needs, how many bytes come back, where the outcome of a call is reported, and why GraphQL needs batching to avoid the N+1 problem.
 

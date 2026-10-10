@@ -1,6 +1,6 @@
 # Order state machine
 
-> Versão em português: [docs/pt/state-machines/order-state-machine.md](../../pt/state-machines/order-state-machine.md)
+> Versão em português: [docs/pt/state-machines/order-state-machine.md](../../pt/state-machines/order-state-machine.md) · Versión en español: [docs/es/state-machines/order-state-machine.md](../../es/state-machines/order-state-machine.md)
 
 Mini-project MP-FSM-1, in [`projects/state-machines/order-state-machine`](../../../projects/state-machines/order-state-machine). It teaches how explicit states and transitions remove invalid situations. Languages: TypeScript and Elixir.
 

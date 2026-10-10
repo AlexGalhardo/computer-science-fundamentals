@@ -1,6 +1,6 @@
 # Simulador de paginação e TLB
 
-> English version: [docs/en/operating-systems/paging-tlb.md](../../en/operating-systems/paging-tlb.md)
+> English version: [docs/en/operating-systems/paging-tlb.md](../../en/operating-systems/paging-tlb.md) · Versión en español: [docs/es/operating-systems/paging-tlb.md](../../es/operating-systems/paging-tlb.md)
 
 Mini-projeto: [`projects/operating-systems/paging-tlb`](../../../projects/operating-systems/paging-tlb/). Item do plano: MP-OS-2. Tópico do quiz: `operating-systems` / `memory-management`.
 
@@ -12,7 +12,7 @@ Com memória virtual, o programa usa endereços virtuais, e o hardware traduz ca
 
 O endereço virtual se divide em dois: os bits altos são o número da página, e os bits baixos são o deslocamento. O número da página é trocado pelo número da moldura, e o deslocamento é copiado.
 
-```
+```text
 página de 4096 bytes:  20500 = 5 × 4096 + 20   ->  página 5, deslocamento 20
 a página 5 está na moldura 3                   ->  3 × 4096 + 20 = 12308
 ```
@@ -44,7 +44,7 @@ Totais: 2 acertos de TLB, 6 faltas de TLB, 5 faltas de página.
 
 A TLB é sempre consultada. No acerto, segue-se um acesso à memória, e na falta a tabela de páginas é lida antes:
 
-```
+```text
 EAT = h × (tlb + mem) + (1 − h) × (tlb + níveis × mem + mem)
 h = 0,8, tlb = 10 ns, mem = 100 ns, 1 nível:  0,8 × 110 + 0,2 × 210 = 130 ns
 ```

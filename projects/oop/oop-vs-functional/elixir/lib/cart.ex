@@ -10,6 +10,10 @@ defmodule Cart do
   #     etiquetada: o primeiro elemento diz qual regra é. As linhas @type só documentam os
   #     formatos. Todo valor em Elixir é imutável, então nenhuma função consegue alterar seus
   #     argumentos.
+  # ES: Aquí no hay clases. Un carrito es un mapa, una línea es un mapa, y una regla es una tupla
+  #     etiquetada: el primer elemento dice qué regla es. Las líneas @type solo documentan los
+  #     formatos. Todo valor en Elixir es inmutable, así que ninguna función puede modificar sus
+  #     argumentos.
   @type line :: %{sku: String.t(), unit_price_cents: integer(), quantity: integer()}
   @type rule ::
           {:percent_coupon, String.t(), integer()}
@@ -36,6 +40,9 @@ defmodule Cart do
   # PT: "Adicionar" devolve um carrinho novo. O carrinho recebido como argumento continua
   #     existindo, sem mudança, para quem o tiver em mãos. O operador pipe, em quem chama, leva
   #     o carrinho novo de uma chamada para a seguinte.
+  # ES: "Agregar" devuelve un carrito nuevo. El carrito recibido como argumento sigue existiendo,
+  #     sin cambios, para quien lo tenga en sus manos. El operador pipe, en quien llama, lleva el
+  #     carrito nuevo de una llamada a la siguiente.
   @spec add_line(t(), String.t(), integer(), integer()) :: t()
   def add_line(cart, sku, unit_price_cents, quantity) do
     line = %{sku: sku, unit_price_cents: unit_price_cents, quantity: quantity}
@@ -54,6 +61,9 @@ defmodule Cart do
   # PT: Um erro é um valor: quem chama recebe {:ok, recibo} ou {:error, código} e faz casamento
   #     de padrões sobre ele. O `with` executa os passos em ordem e para no primeiro que não
   #     casar com :ok.
+  # ES: Un error es un valor: quien llama recibe {:ok, recibo} o {:error, código} y hace pattern
+  #     matching sobre él. `with` ejecuta los pasos en orden y se detiene en el primero que no
+  #     coincide con :ok.
   @spec price(t()) :: {:ok, receipt()} | {:error, error()}
   def price(cart) do
     with :ok <- first_error(cart.lines, &line_error/1),
@@ -65,6 +75,8 @@ defmodule Cart do
       #     still to pay and the discounts applied so far from one rule to the next.
       # PT: O laço da versão com objetos vira um reduce: o acumulador leva o que ainda falta
       #     pagar e os descontos já aplicados de uma regra para a seguinte.
+      # ES: El ciclo de la versión con objetos se vuelve un reduce: el acumulador lleva lo que aún
+      #     falta por pagar y los descuentos ya aplicados de una regla a la siguiente.
       {running, discounts} =
         Enum.reduce(cart.rules, {subtotal, []}, fn rule, {running, discounts} ->
           case min(discount_cents(rule, cart.lines, running), running) do
@@ -91,6 +103,9 @@ defmodule Cart do
   # PT: Uma operação, uma função, uma cláusula por variante. A cláusula é escolhida por
   #     casamento de padrões sobre a etiqueta da tupla, que faz o papel que o despacho dinâmico
   #     faz na versão com objetos. Compare: lá, esta lógica está espalhada por quatro classes.
+  # ES: Una operación, una función, una cláusula por variante. La cláusula se elige por pattern
+  #     matching sobre la etiqueta de la tupla, que hace el papel que el despacho dinámico hace en
+  #     la versión con objetos. Compara: allá, esta lógica está repartida en cuatro clases.
   @spec discount_cents(rule(), [line()], integer()) :: integer()
   def discount_cents({:percent_coupon, _code, percent}, _lines, running) do
     div(running * percent, 100)
@@ -129,6 +144,8 @@ defmodule Cart do
   # EN: 825 basis points = 8.25%. Adding 5000 before the integer division rounds half a cent up.
   # PT: 825 pontos-base = 8,25%. Somar 5000 antes da divisão inteira arredonda meio centavo para
   #     cima.
+  # ES: 825 puntos base = 8,25%. Sumar 5000 antes de la división entera redondea medio centavo
+  #     hacia arriba.
   @spec tax_cents(tax(), integer()) :: integer()
   def tax_cents(:none, _amount), do: 0
   def tax_cents({:flat, basis_points}, amount), do: div(amount * basis_points + 5000, 10_000)
@@ -159,6 +176,9 @@ defmodule Cart do
   # PT: Guardas (`when`) restringem uma cláusula além do formato do dado. As cláusulas são
   #     testadas de cima para baixo, então os casos válidos vêm primeiro e a última cláusula de
   #     cada regra rejeita.
+  # ES: Las guardas (`when`) restringen una cláusula más allá de la forma del dato. Las cláusulas
+  #     se prueban de arriba hacia abajo, así que los casos válidos van primero y la última
+  #     cláusula de cada regla rechaza.
   defp rule_error({:percent_coupon, _code, percent}), do: percent_error(percent)
 
   defp rule_error({:fixed_coupon, _code, amount}) when is_integer(amount) and amount >= 0, do: :ok

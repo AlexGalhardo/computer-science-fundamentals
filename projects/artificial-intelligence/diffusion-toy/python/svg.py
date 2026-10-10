@@ -6,6 +6,11 @@ PT: Dois gráficos pequenos escritos como texto SVG, sem biblioteca de gráficos
 gráficos de dispersão e um gráfico de linha. SVG é texto puro, então as figuras aparecem no GitHub
 e as suas mudanças podem ser lidas em um diff. Todo número é arredondado para 2 casas decimais para
 os arquivos ficarem estáveis.
+
+ES: Dos gráficos pequeños escritos como texto SVG, sin biblioteca de gráficos: una fila de
+gráficos de dispersión y un gráfico de líneas. SVG es texto plano, así que las figuras aparecen en
+GitHub y sus cambios se pueden leer en un diff. Todo número se redondea a 2 decimales para que los
+archivos sean estables.
 """
 
 import numpy as np
@@ -25,11 +30,17 @@ def scatter_panels(panels: list[tuple[str, Array]], radius: float, limit: float 
 
     PT: Um painel quadrado por par (título, pontos), lado a lado. Cada painel mostra a região de
     -limit a +limit nos dois eixos, com o anel alvo desenhado como um círculo cinza fino.
+
+    ES: Un panel cuadrado por par (título, puntos), uno al lado de otro. Cada panel muestra la
+    región de -limit a +limit en los dos ejes, con el anillo objetivo dibujado como un círculo gris
+    fino.
     """
     # EN: A point (x, y) of the plane becomes a pixel. The y axis is flipped because in SVG the
     #     pixel row grows downwards, and in mathematics y grows upwards.
     # PT: Um ponto (x, y) do plano vira um pixel. O eixo y é invertido porque no SVG a linha de
     #     pixels cresce para baixo, e na matemática y cresce para cima.
+    # ES: Un punto (x, y) del plano se convierte en un píxel. El eje y se invierte porque en SVG la
+    #     fila de píxeles crece hacia abajo, y en matemáticas y crece hacia arriba.
     scale = PANEL / (2.0 * limit)
     width = len(panels) * PANEL + (len(panels) + 1) * GAP
     height = PANEL + TITLE + GAP
@@ -53,6 +64,7 @@ def scatter_panels(panels: list[tuple[str, Array]], radius: float, limit: float 
         ]
         # EN: Points outside the panel are pinned to its border, so that none is lost.
         # PT: Pontos fora do painel ficam presos à borda, para nenhum se perder.
+        # ES: Los puntos fuera del panel quedan pegados al borde, para que ninguno se pierda.
         for x, y in np.clip(points, -limit, limit):
             parts.append(
                 f'<circle cx="{centre_x + x * scale:.2f}" cy="{centre_y - y * scale:.2f}" r="1.6"/>'
@@ -66,6 +78,8 @@ def line_chart(xs: list[int], ys: list[float], title: str, x_label: str) -> str:
     """EN: A line through the points (xs, ys), with the y axis starting at zero.
 
     PT: Uma linha pelos pontos (xs, ys), com o eixo y começando em zero.
+
+    ES: Una línea por los puntos (xs, ys), con el eje y empezando en cero.
     """
     width, height = 560, 300
     left, right, top, bottom = 56, 16, 34, 44

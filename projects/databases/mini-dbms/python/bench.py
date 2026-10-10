@@ -7,6 +7,11 @@ PT: Ponto de entrada do benchmark: `python bench.py <nested-loop|hash|sort-merge
 
 A montagem das tabelas fica fora do trecho cronometrado: só a junção é medida. A última linha
 impressa é o objeto JSON do contrato de benchmark do repositório.
+
+ES: Punto de entrada del benchmark: `python bench.py <nested-loop|hash|sort-merge> <n>`.
+
+El armado de las tablas queda fuera del tramo cronometrado: solo se mide el join. La última
+línea impresa es el objeto JSON del contrato de benchmark del repositorio.
 """
 
 import json
@@ -37,6 +42,7 @@ def main() -> int:
                 "elapsedMs": round(elapsed_ms, 3),
                 # EN: On Linux, ru_maxrss is already in kibibytes.
                 # PT: No Linux, ru_maxrss já vem em kibibytes.
+                # ES: En Linux, ru_maxrss ya viene en kibibytes.
                 "memoryKb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
                 "language": "python",
                 "implementation": implementation,

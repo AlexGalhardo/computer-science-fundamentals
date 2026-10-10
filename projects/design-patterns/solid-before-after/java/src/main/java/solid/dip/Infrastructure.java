@@ -9,6 +9,9 @@ import java.util.List;
 // PT: Os detalhes de baixo nível, no lugar de um cliente SMTP real e de um driver SQL real.
 //     Eles registram o que teriam enviado, para que os testes possam olhar. Nada aqui usa rede
 //     nem banco de dados.
+// ES: Los detalles de bajo nivel, en lugar de un cliente SMTP real y de un driver SQL real.
+//     Registran lo que habrían enviado, para que las pruebas puedan mirarlo. Nada aquí usa red
+//     ni base de datos.
 public final class Infrastructure {
   private Infrastructure() {}
 
@@ -45,6 +48,8 @@ public final class Infrastructure {
   // EN: What the tests of both versions see: the use case, plus a look at what left the system.
   // PT: O que os testes das duas versões enxergam: o caso de uso, mais uma visão do que saiu do
   //     sistema.
+  // ES: Lo que ven las pruebas de las dos versiones: el caso de uso, más una vista de lo que
+  //     salió del sistema.
   public interface CheckoutApp {
     Receipt checkout(Cart cart);
 

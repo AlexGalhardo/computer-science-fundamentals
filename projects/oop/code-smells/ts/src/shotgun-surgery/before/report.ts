@@ -1,6 +1,7 @@
 // EN: SMELL: Shotgun Surgery (file 3 of 3). And a third copy, split by hand.
 // PT: MAU CHEIRO: Cirurgia com Espingarda (arquivo 3 de 3). E uma terceira cópia, separada à
 //     mão.
+// ES: MAL OLOR: Cirugía con Escopeta (archivo 3 de 3). Y una tercera copia, separada a mano.
 export function reportRow(label: string, cents: number): string {
 	const text = (cents / 100).toFixed(2);
 	const [whole = "0", fraction = "00"] = text.split(".");

@@ -6,6 +6,10 @@
 //     valores viajam até o PostgreSQL separados desse texto. O banco interpreta o SQL primeiro
 //     e só depois encaixa os valores, então um valor nunca vira código SQL, não importa quais
 //     caracteres ele tenha.
+// ES: Las consultas corregidas. El texto SQL es una constante con marcadores (`$1`, `$2`), y los
+//     valores viajan hasta PostgreSQL separados de ese texto. La base de datos interpreta primero el
+//     SQL y solo después encaja los valores, así que un valor nunca se vuelve código SQL, sin importar
+//     qué caracteres tenga.
 
 import type { Pool } from "pg";
 import { fakePasswordHash, type Product, type User } from "../db";
@@ -25,6 +29,9 @@ export async function fixedFindUser(pool: Pool, username: string, password: stri
 // PT: Dentro de um padrão LIKE, `%` e `_` são curingas. Não é uma injeção (o valor continua
 //     sendo só dado), mas um usuário que digita `%` casaria com todas as linhas. Escapá-los com
 //     uma barra invertida faz a busca procurar os caracteres literais.
+// ES: Dentro de un patrón LIKE, `%` y `_` son comodines. No es una inyección (el valor sigue
+//     siendo solo dato), pero un usuario que escribe `%` coincidiría con todas las filas. Escaparlos
+//     con una barra invertida hace que la búsqueda busque los caracteres literales.
 function escapeLikeWildcards(term: string): string {
 	return term.replace(/[\\%_]/g, "\\$&");
 }

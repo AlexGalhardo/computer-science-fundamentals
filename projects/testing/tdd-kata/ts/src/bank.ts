@@ -12,6 +12,10 @@ function rateKey(from: string, to: string): string {
 //     "$5 + $5 is $10", simplesmente devolvia $10 (a estratégia "fake it"). Um segundo exemplo,
 //     "$3 + $4", forçou o código de verdade (triangulação). As taxas só chegaram quando um
 //     teste precisou delas.
+// ES: El Bank conoce los tipos de cambio y nada más. La primera versión, escrita para pasar
+//     "$5 + $5 is $10", simplemente devolvía $10 (la estrategia "fake it"). Un segundo ejemplo,
+//     "$3 + $4", forzó el código de verdad (triangulación). Los tipos de cambio solo llegaron cuando
+//     una prueba los necesitó.
 export class Bank {
 	private readonly rates = new Map<string, number>();
 

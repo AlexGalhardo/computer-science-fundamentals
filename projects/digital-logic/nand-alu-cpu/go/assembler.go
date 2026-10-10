@@ -18,6 +18,9 @@ import (
 // PT: Uma instrução é um byte: o nibble alto é o código da operação (opcode) e o nibble baixo é
 // o operando, que é uma constante, um endereço de memória ou um destino de salto. O montador
 // só traduz nomes para esses números; a CPU nunca vê texto.
+// ES: Una instrucción es un byte: el nibble alto es el código de operación (opcode) y el nibble
+// bajo es el operando, que es una constante, una dirección de memoria o un destino de salto. El
+// ensamblador solo traduce nombres a esos números; la CPU nunca ve texto.
 const (
 	OpcodeNOP  = 0x0 // do nothing
 	OpcodeLDI  = 0x1 // A <- n
@@ -69,6 +72,9 @@ type statement struct {
 // PT: Duas passadas, como em todo montador. A primeira só conta as instruções para descobrir o
 // endereço de cada rótulo; a segunda emite os bytes, trocando cada rótulo pelo seu endereço. É
 // isso que permite a um salto citar um rótulo definido mais abaixo.
+// ES: Dos pasadas, como en todo ensamblador. La primera solo cuenta las instrucciones para
+// descubrir la dirección de cada etiqueta; la segunda emite los bytes, cambiando cada etiqueta
+// por su dirección. Eso es lo que permite que un salto cite una etiqueta definida más abajo.
 func Assemble(source string) ([]byte, error) {
 	labels := map[string]int{}
 	var statements []statement
@@ -157,6 +163,9 @@ func Disassemble(instruction byte) string {
 // PT: programs/ e results/ ficam um nível acima de go/. Dentro da imagem Docker elas são
 // copiadas ao lado dos arquivos Go. Este auxiliar encontra um arquivo compartilhado nos dois
 // arranjos.
+// ES: programs/ y results/ quedan un nivel por encima de go/. Dentro de la imagen Docker se
+// copian junto a los archivos Go. Este auxiliar encuentra un archivo compartido en los dos
+// arreglos.
 func ReadShared(relativePath string, roots ...string) (string, error) {
 	var lastErr error
 	for _, root := range roots {

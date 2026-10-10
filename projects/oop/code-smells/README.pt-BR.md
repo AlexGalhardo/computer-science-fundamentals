@@ -1,6 +1,6 @@
 # code-smells
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um catálogo executável de maus cheiros de código. Cada item tem uma versão `before`, que funciona e cheira mal, uma versão `after`, com o mau cheiro removido, e **uma suíte de testes que roda nas duas**. Ele ensina **como reconhecer maus cheiros comuns e removê-los sem mudar o comportamento**: os testes que passam antes da refatoração são os mesmos que passam depois.
 
@@ -69,7 +69,7 @@ docker compose run --rm java-test
 docker compose run --rm ts-demo
 ```
 
-```
+```text
 == god-class -> Extract Class
   before: 1 file(s), 60 lines of code
   after:  1 file(s), 105 lines of code
@@ -101,7 +101,7 @@ As duas versões do exemplo de entrega foram estendidas com um quarto tipo, `dro
 
 **Antes**, com condicionais: 4 arquivos existentes editados.
 
-```
+```text
  before/cost.ts     | 2 ++
  before/eta.ts      | 2 ++
  before/kind.ts     | 2 +-
@@ -137,7 +137,7 @@ Se uma das três cadeias for esquecida o código ainda compila, e o pedido falha
 
 **Depois**, com polimorfismo: 1 arquivo novo, nenhum arquivo existente tocado.
 
-```
+```text
  after/drone.ts | 14 ++++++++++++++
  1 file changed, 14 insertions(+)
 ```

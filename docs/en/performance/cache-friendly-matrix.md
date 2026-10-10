@@ -1,6 +1,6 @@
 # Cache-friendly matrix multiplication (MP-PERF-3)
 
-> Versão em português: [docs/pt/performance/cache-friendly-matrix.md](../../pt/performance/cache-friendly-matrix.md)
+> Versão em português: [docs/pt/performance/cache-friendly-matrix.md](../../pt/performance/cache-friendly-matrix.md) · Versión en español: [docs/es/performance/cache-friendly-matrix.md](../../es/performance/cache-friendly-matrix.md)
 
 Mini-project: [`projects/performance/cache-friendly-matrix`](../../../projects/performance/cache-friendly-matrix/README.md). Quiz topics: `cpu-cache-locality`, `benchmarking-methodology`.
 
@@ -10,7 +10,7 @@ Multiplying two `n × n` matrices with three nested loops is `O(n³)` whatever t
 
 ## The memory hierarchy and the cache line
 
-```
+```text
 registers   <  L1 (tens of KiB)  <  L2 (hundreds of KiB)  <  L3 (MiB)  <  RAM (GiB)
 fastest, smallest                                              slowest, largest
 ```
@@ -19,7 +19,7 @@ The cache does not hold single values. It holds **lines** of 64 bytes, so readin
 
 A matrix is stored row-major: element `(i, j)` is at index `i × n + j`.
 
-```
+```text
 row walk:     a[i][0] a[i][1] a[i][2] ... 8 elements per cache line, 1 miss in 8
 column walk:  b[0][j]            one element per line
               b[1][j]            n × 8 bytes further on

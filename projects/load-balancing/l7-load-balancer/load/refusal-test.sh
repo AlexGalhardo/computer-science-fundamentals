@@ -3,6 +3,8 @@
 #     start every time. Each target is a way a careless check could be fooled.
 # PT: Roda o script do benchmark com alvos que NÃO são locais e confere que o k6 se recusa a
 #     começar todas as vezes. Cada alvo é um jeito de enganar uma verificação descuidada.
+# ES: Ejecuta el script del benchmark con destinos que NO son locales y verifica que k6 se niega a
+#     arrancar todas las veces. Cada destino es una forma de engañar a una verificación descuidada.
 set -u
 
 failed=0

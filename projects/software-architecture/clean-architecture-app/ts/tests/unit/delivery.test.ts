@@ -4,6 +4,9 @@
 // PT: Os dois mecanismos de entrega, testados sobre os mesmos casos de uso. O controller HTTP é
 //     chamado com objetos simples, e o driver Elysia por `app.handle(request)`, que executa as
 //     rotas em memória: nenhuma porta é aberta, nenhum servidor é iniciado.
+// ES: Los dos mecanismos de entrega, probados sobre los mismos casos de uso. El controller HTTP se
+//     llama con objetos simples, y el driver Elysia mediante `app.handle(request)`, que ejecuta
+//     las rutas en memoria: no se abre ningún puerto, no se inicia ningún servidor.
 
 import { beforeEach, describe, expect, test } from "bun:test";
 import { InMemoryNoteRepository } from "../../src/adapters/in-memory-note-repository";
@@ -139,6 +142,7 @@ describe("NoteCliController", () => {
 
 	// EN: The same answer of the use case that HTTP turned into 409 becomes exit code 1 here.
 	// PT: A mesma resposta do caso de uso que o HTTP transformou em 409 vira código de saída 1 aqui.
+	// ES: La misma respuesta del caso de uso que HTTP convirtió en 409 se vuelve código de salida 1 aquí.
 	test("an error of the application goes to stderr with exit code 1", async () => {
 		await controller.run(["add", "Groceries"]);
 

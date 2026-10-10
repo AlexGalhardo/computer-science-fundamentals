@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the master-theorem mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto master-theorem. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto master-theorem. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -18,5 +19,7 @@ echo "master-theorem: all tests passed"
 #     ./results, which the page reads.
 # PT: A demo classifica as recorrências conhecidas, confere três delas empiricamente e regrava
 #     ./results, que a página lê.
+# ES: La demo clasifica las recurrencias conocidas, comprueba tres de ellas empíricamente y
+#     reescribe ./results, que lee la página.
 docker compose run --rm ts-demo
 echo "master-theorem: open dashboard/index.html in a browser to draw recursion trees"

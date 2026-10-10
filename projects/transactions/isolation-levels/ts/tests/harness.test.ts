@@ -56,6 +56,7 @@ test("a statement waiting for a lock is detected and finishes only after the loc
 	expect(next.startedAtMs).toBeGreaterThanOrEqual(waiter.finishedAtMs);
 	// EN: `balance + 20` is computed by the database on the row as it is after A's commit.
 	// PT: `balance + 20` é calculado pelo banco sobre a linha como ela ficou depois do commit de A.
+	// ES: `balance + 20` lo calcula la base de datos sobre la fila como quedó después del commit de A.
 	expect(run.outcomes.final?.rows[0]?.balance).toBe(130);
 });
 
@@ -81,6 +82,9 @@ test("at READ COMMITTED a blocked UPDATE re-checks its WHERE on the new version 
 	// PT: Quando B começou, a linha tinha saldo 100 e casava. Depois de esperar A, o PostgreSQL
 	//     avalia o WHERE de novo na linha confirmada (saldo 0), que não casa mais, então B não
 	//     atualiza nada e o saldo não fica negativo.
+	// ES: Cuando B empezó, la fila tenía saldo 100 y coincidía. Después de esperar a A, PostgreSQL
+	//     evalúa el WHERE de nuevo en la fila confirmada (saldo 0), que ya no coincide, así que B no
+	//     actualiza nada y el saldo no queda negativo.
 	expect(entry(run.log, "B withdraws 100 if there is balance").blockedAtMs).toBeDefined();
 	expect(run.outcomes["B withdraws 100 if there is balance"]?.rows).toEqual([]);
 	expect(run.outcomes.final?.rows[0]?.balance).toBe(0);

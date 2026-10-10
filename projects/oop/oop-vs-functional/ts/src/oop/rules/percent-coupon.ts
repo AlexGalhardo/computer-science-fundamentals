@@ -4,6 +4,7 @@ import type { DiscountRule } from "../discount-rule";
 
 // EN: A percentage of what is still to pay. Fractions of a cent are dropped.
 // PT: Uma porcentagem do que ainda falta pagar. Frações de centavo são descartadas.
+// ES: Un porcentaje de lo que todavía falta por pagar. Las fracciones de centavo se descartan.
 export class PercentCoupon implements DiscountRule {
 	readonly #code: string;
 	readonly #percent: number;

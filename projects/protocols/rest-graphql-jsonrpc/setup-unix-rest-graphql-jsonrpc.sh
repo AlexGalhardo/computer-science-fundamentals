@@ -3,6 +3,8 @@
 #     Containers and volumes are removed at the end, even when a test fails.
 # PT: Constrói e testa o mini-projeto rest-graphql-jsonrpc. O único requisito é o Docker.
 #     Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
+# ES: Construye y prueba el mini-proyecto rest-graphql-jsonrpc. El único requisito es Docker.
+#     Los contenedores y volúmenes se eliminan al final, incluso cuando una prueba falla.
 set -eu
 
 cd "$(dirname "$0")"
@@ -11,6 +13,8 @@ cd "$(dirname "$0")"
 #     (see docker-compose.yml).
 # PT: O contêiner do benchmark grava results/ nesta pasta e roda como o usuário atual
 #     (veja docker-compose.yml).
+# ES: El contenedor del benchmark escribe results/ en esta carpeta y corre como el usuario actual
+#     (ver docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

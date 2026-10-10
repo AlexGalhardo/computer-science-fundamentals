@@ -12,6 +12,13 @@
 //       conexão nova a um deles, e eles NÃO compartilham memória: cada um tem o seu heap.
 //     Nada aqui sabe do cluster. Esse é o ponto do modelo de processos: o código de um servidor
 //     sem estado não muda, só muda o número de processos que o executam.
+// ES: La API en Node.js, servida por `node:http`. El mismo archivo se usa dos veces:
+//     - `node dist/node-server.cjs`: un proceso, un event loop.
+//     - Modo cluster de PM2 (`ecosystem.config.cjs`): PM2 inicia este archivo N veces mediante el
+//       módulo `cluster` de Node. Los workers comparten el puerto, el proceso primario entrega cada
+//       conexión nueva a uno de ellos, y NO comparten memoria: cada uno tiene su heap.
+//     Nada aquí sabe del cluster. Ese es el punto del modelo de procesos: el código de un servidor
+//     sin estado no cambia, solo cambia el número de procesos que lo ejecutan.
 
 import { createServer } from "node:http";
 import { route } from "./app";

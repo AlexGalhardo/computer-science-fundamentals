@@ -12,6 +12,13 @@
 //       2. cpu: usuários virtuais chamando o endpoint CPU-bound em laço fechado;
 //       3. io: usuários virtuais chamando o endpoint I/O-bound em laço fechado.
 //     No fim, o `handleSummary` grava um JSON pequeno que a etapa de relatório lê.
+// ES: El escenario de carga: el mismo script de k6 corre contra cada configuración (`bun`, `node`,
+//     `node-pm2`), una a la vez. Tiene tres fases que nunca se solapan:
+//       1. calentamiento: algunas solicitudes que NO se miden, para que el compilador JIT ya
+//          haya optimizado el código caliente y las conexiones estén abiertas cuando empiece la medición;
+//       2. cpu: usuarios virtuales llamando al endpoint CPU-bound en bucle cerrado;
+//       3. io: usuarios virtuales llamando al endpoint I/O-bound en bucle cerrado.
+//     Al final, `handleSummary` escribe un JSON pequeño que lee la etapa de reporte.
 
 import { check } from "k6";
 import http from "k6/http";
@@ -20,6 +27,7 @@ import { requireLocalTarget } from "./target.js";
 
 // EN: Refused before a single request is sent when the host is not local (see target.js).
 // PT: Recusado antes de enviar uma única requisição quando o host não é local (veja target.js).
+// ES: Rechazado antes de enviar una sola solicitud cuando el host no es local (ver target.js).
 const BASE_URL = requireLocalTarget(__ENV.BASE_URL || "http://bun-server:3000");
 
 function positiveInteger(name, fallback) {
@@ -41,6 +49,7 @@ const IO_MS = positiveInteger("IO_MS", 20);
 
 // EN: Two seconds of silence between phases, so the tail of one phase never lands in the next.
 // PT: Dois segundos de silêncio entre as fases, para que o fim de uma nunca caia na seguinte.
+// ES: Dos segundos de silencio entre las fases, para que el final de una nunca caiga en la siguiente.
 const GAP_S = 2;
 const CPU_START_S = WARMUP_S + GAP_S;
 const IO_START_S = CPU_START_S + DURATION_S + GAP_S;
@@ -51,6 +60,10 @@ const IO_START_S = CPU_START_S + DURATION_S + GAP_S;
 // PT: `constant-vus` é um modelo fechado: cada usuário virtual envia uma requisição, espera a
 //     resposta e só então envia a próxima. Assim o número de requisições em andamento nunca passa
 //     do número de usuários virtuais, e um servidor mais lento apenas recebe menos requisições por segundo.
+// ES: `constant-vus` es un modelo cerrado: cada usuario virtual envía una solicitud, espera la
+//     respuesta y solo entonces envía la siguiente. Así el número de solicitudes en curso nunca
+//     supera el número de usuarios virtuales, y un servidor más lento simplemente recibe menos
+//     solicitudes por segundo.
 export const options = {
 	scenarios: {
 		warmup: { executor: "constant-vus", exec: "warmup", vus: 8, duration: `${WARMUP_S}s`, gracefulStop: "1s" },
@@ -75,6 +88,8 @@ export const options = {
 	//     nothing if one of the servers was answering errors quickly.
 	// PT: Um check sozinho nunca reprova uma execução do k6. Este threshold reprova: uma comparação
 	//     de velocidade não significa nada se um dos servidores estava devolvendo erros depressa.
+	// ES: Un check por sí solo nunca reprueba una ejecución de k6. Este umbral sí la reprueba: una
+	//     comparación de velocidad no significa nada si uno de los servidores devolvía errores rápido.
 	thresholds: { checks: ["rate>0.999"] },
 };
 
@@ -86,6 +101,8 @@ const ioDuration = new Trend("io_duration", true);
 //     a phase goes from its first request sent to its last answer received.
 // PT: Início e fim de cada requisição, relativos ao início do teste. A janela de vazão de uma fase
 //     vai da primeira requisição enviada à última resposta recebida.
+// ES: Inicio y fin de cada solicitud, relativos al inicio de la prueba. La ventana de rendimiento de
+//     una fase va de la primera solicitud enviada a la última respuesta recibida.
 const cpuStart = new Trend("cpu_start_ms");
 const cpuEnd = new Trend("cpu_end_ms");
 const ioStart = new Trend("io_start_ms");
@@ -127,6 +144,7 @@ export function io(data) {
 export function teardown() {
 	// EN: Asked once, after the load: the peak memory of the whole container (all its processes).
 	// PT: Perguntado uma vez, depois da carga: o pico de memória do contêiner inteiro (todos os processos).
+	// ES: Consultado una vez, después de la carga: el pico de memoria del contenedor completo (todos los procesos).
 	const memory = http.get(`${BASE_URL}/memory`).json();
 	memoryBytes.add(memory.bytes);
 }

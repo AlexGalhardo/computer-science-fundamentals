@@ -1,5 +1,6 @@
 // EN: Tests of the pure parts. They need neither the broker nor the database.
 // PT: Testes das partes puras. Não precisam do broker nem do banco.
+// ES: Pruebas de las partes puras. No necesitan ni el broker ni la base de datos.
 
 import { describe, expect, test } from "bun:test";
 import { backoffDelay, loadConfig, paymentSchema, seededRandom } from "../src/core";

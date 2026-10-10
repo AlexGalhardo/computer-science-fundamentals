@@ -1,5 +1,6 @@
 # EN: Builds and tests the mini-dbms mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto mini-dbms. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto mini-dbms. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

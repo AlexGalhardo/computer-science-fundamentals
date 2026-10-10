@@ -8,6 +8,8 @@ const scenarios = loadScenarios();
 //     must give the same receipt in the version with objects and in the version with functions.
 // PT: O teste de aceitação do mini-projeto: os mesmos cenários, lidos do arquivo compartilhado,
 //     precisam dar o mesmo recibo na versão com objetos e na versão com funções.
+// ES: La prueba de aceptación del miniproyecto: los mismos escenarios, leídos del archivo
+//     compartido, deben dar el mismo recibo en la versión con objetos y en la versión con funciones.
 describe("shared acceptance scenarios", () => {
 	test("the file has receipts and rejections", () => {
 		expect(scenarios.length).toBeGreaterThanOrEqual(15);

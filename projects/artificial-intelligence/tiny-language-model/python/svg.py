@@ -4,6 +4,10 @@ attention heat map. SVG is plain text, so the files show up on GitHub and diff w
 PT: Duas figuras pequenas escritas como texto SVG, sem biblioteca de gráficos: a curva de perda
 e o mapa de calor da atenção. SVG é texto puro, então os arquivos aparecem no GitHub e geram
 diffs legíveis.
+
+ES: Dos figuras pequeñas escritas como texto SVG, sin biblioteca de gráficos: la curva de pérdida
+y el mapa de calor de la atención. SVG es texto plano, así que los archivos aparecen en GitHub y
+generan diffs legibles.
 """
 
 import numpy as np
@@ -14,6 +18,7 @@ FONT = 'font-family="monospace" font-size="12"'
 def display_char(char: str) -> str:
     # EN: Invisible characters get a visible stand-in in the figures.
     # PT: Caracteres invisíveis ganham um substituto visível nas figuras.
+    # ES: Los caracteres invisibles reciben un sustituto visible en las figuras.
     return {"\n": "\\n", " ": "_"}.get(char, char)
 
 
@@ -29,6 +34,8 @@ def loss_curve_svg(
     """EN: `series` are (label, colour, one loss per step). `baselines` are horizontal lines.
 
     PT: `series` são (rótulo, cor, uma perda por passo). `baselines` são linhas horizontais.
+
+    ES: `series` son (etiqueta, color, una pérdida por paso). `baselines` son líneas horizontales.
     """
     width, height, left, right, top, bottom = 680, 380, 56, 20, 20, 44
     plot_w, plot_h = width - left - right, height - top - bottom
@@ -108,6 +115,10 @@ def attention_svg(text: str, weights: np.ndarray, query_position: int, title: st
     PT: Um quadrado por par (linha = a posição que pergunta, coluna = a posição olhada). Quanto
     mais escuro o azul, maior o peso. Quadrados cinza com um ponto são o futuro, que a máscara
     causal proíbe: todo o triângulo superior.
+
+    ES: Un cuadrado por par (fila = la posición que pregunta, columna = la posición mirada).
+    Cuanto más oscuro el azul, mayor el peso. Los cuadrados grises con un punto son el futuro, que
+    la máscara causal prohíbe: todo el triángulo superior.
     """
     cell, left, top = 18, 40, 62
     size = len(text)
@@ -164,6 +175,9 @@ def attention_text_grid(text: str, weights: np.ndarray) -> list[str]:
 
     PT: O mesmo mapa em texto. Cada célula é o peso em décimos (7 quer dizer de 0,7 a 0,8, e 9 vai
     até 1,0), "." é uma posição mascarada.
+
+    ES: El mismo mapa en texto. Cada celda es el peso en décimas (7 quiere decir de 0,7 a 0,8, y 9
+    llega hasta 1,0), "." es una posición enmascarada.
     """
     labels = [display_char(char) for char in text]
     lines = ["     " + " ".join(f"{label:>2}" for label in labels)]

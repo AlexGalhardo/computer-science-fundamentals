@@ -1,6 +1,6 @@
 # Portas lógicas, Karnaugh e somadores
 
-> English version: [docs/en/digital-logic/gates-karnaugh-adders.md](../../en/digital-logic/gates-karnaugh-adders.md)
+> English version: [docs/en/digital-logic/gates-karnaugh-adders.md](../../en/digital-logic/gates-karnaugh-adders.md) · Versión en español: [docs/es/digital-logic/gates-karnaugh-adders.md](../../es/digital-logic/gates-karnaugh-adders.md)
 
 Mini-projeto MP-DL-1, em [`projects/digital-logic/gates-karnaugh-adders`](../../../projects/digital-logic/gates-karnaugh-adders). Ele ensina como uma função booleana vira um circuito: de uma expressão para uma tabela-verdade, de uma tabela-verdade para a menor expressão, e de portas para um circuito que soma.
 

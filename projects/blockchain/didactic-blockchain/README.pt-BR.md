@@ -1,6 +1,6 @@
 # didactic-blockchain
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Uma blockchain de brinquedo, pequena o bastante para ser lida de uma vez: blocos ligados por hashes, uma raiz de Merkle por bloco, prova de trabalho com dificuldade ajustável, transações assinadas sobre saídas não gastas e três nós locais que difundem mensagens e seguem a cadeia mais longa. Ela mostra por que a alteração de uma transação antiga é detectada, por que uma moeda não pode ser gasta duas vezes e como uma bifurcação se resolve sozinha.
 
@@ -50,7 +50,7 @@ docker compose down -v
 
 A demo de rede imprime cada afirmação e a confere, e termina com erro se alguma não valer (a saída do programa é em inglês):
 
-```
+```text
 4. Double spend, attempt 2: two conflicting payments sent to two different nodes
    ok   node A accepted the payment to Bob (first seen)
    ok   node C, which already heard of it, rejected the payment to Carol: output 07de...:1 does not exist or was already spent

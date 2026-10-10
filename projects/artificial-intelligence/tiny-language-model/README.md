@@ -1,6 +1,6 @@
 # tiny-language-model
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 It teaches **how a language model predicts the next token, from counting to self-attention**. Two models learn the same small text, character by character. The first is a bigram table made by counting. The second is a decoder-only transformer whose forward pass and backpropagation are written by hand with NumPy, with no deep-learning framework. On text neither of them trained on, the transformer has a loss of 0.662 against 1.741 for the bigram, and the demo shows why: it uses clues that sit several characters back. The same trained model is then sampled with greedy decoding, temperature, top-k and top-p, and a table measures how each setting changes the entropy and the variety of what it writes.
 

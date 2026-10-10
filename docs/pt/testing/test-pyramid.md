@@ -1,6 +1,6 @@
 # Pirâmide de testes completa (MP-TEST-1)
 
-> English version: [docs/en/testing/test-pyramid.md](../../en/testing/test-pyramid.md)
+> English version: [docs/en/testing/test-pyramid.md](../../en/testing/test-pyramid.md) · Versión en español: [docs/es/testing/test-pyramid.md](../../es/testing/test-pyramid.md)
 
 Mini-projeto: [`projects/testing/test-pyramid`](../../../projects/testing/test-pyramid/README.pt-BR.md). Tópicos do quiz: `test-pyramid-levels`, `unit-tests-isolation`, `integration-tests`, `e2e-playwright`, `smoke-regression`, `ci-test-strategy`.
 
@@ -8,7 +8,7 @@ Mini-projeto: [`projects/testing/test-pyramid`](../../../projects/testing/test-p
 
 Um nível de teste é definido por quanto do sistema roda durante o teste. Quanto mais coisa roda, mais tipos de erro o teste consegue ver, e mais caro ele fica para escrever, rodar e diagnosticar.
 
-```
+```text
             /  e2e  \          3 testes   ~0,7 s cada    navegador + HTTP + SQL
            /---------\
           / integração  \      8 testes   ~8 ms cada    handler + repositório + SQLite

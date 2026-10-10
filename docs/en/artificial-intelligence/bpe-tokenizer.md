@@ -1,6 +1,6 @@
 # BPE tokenizer
 
-> Versão em português: [docs/pt/artificial-intelligence/bpe-tokenizer.md](../../pt/artificial-intelligence/bpe-tokenizer.md)
+> Versão em português: [docs/pt/artificial-intelligence/bpe-tokenizer.md](../../pt/artificial-intelligence/bpe-tokenizer.md) · Versión en español: [docs/es/artificial-intelligence/bpe-tokenizer.md](../../es/artificial-intelligence/bpe-tokenizer.md)
 
 Mini-project MP-AI-1, in [`projects/artificial-intelligence/bpe-tokenizer`](../../../projects/artificial-intelligence/bpe-tokenizer). It teaches how text becomes tokens, and why a model counts tokens and not words. The background is section 7 of [the area page](README.md#7-tokens-and-tokenisation).
 

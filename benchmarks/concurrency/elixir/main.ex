@@ -13,12 +13,21 @@
 #     núcleo e preempta um processo depois de um orçamento de "reduções" (mais ou menos chamadas
 #     de função), então nenhum processo segura um núcleo por muito tempo. Processos não
 #     compartilham nada, e o único jeito de conversar é enviar uma mensagem.
+# ES: Carga de concurrencia en Elixir: n procesos esperan un mensaje, lo reciben, y cada uno
+#     envía su número de vuelta. La suma es el checksum.
+#     Modelo de la BEAM: procesos. Un proceso de la BEAM no es un proceso del SO: es una unidad
+#     minúscula de la propia VM, con heap, stack y buzón de mensajes propios, y unas pocas
+#     centenas de palabras de memoria al nacer. La VM los ejecuta con un thread planificador por
+#     núcleo y expulsa a un proceso después de un presupuesto de "reducciones" (más o menos
+#     llamadas a función), así que ningún proceso retiene un núcleo por mucho tiempo. Los
+#     procesos no comparten nada, y la única forma de conversar es enviar un mensaje.
 defmodule Main do
   defp run(n) do
     parent = self()
 
     # EN: Here the gate is a message: every process blocks in `receive` until `:go` arrives.
     # PT: Aqui o portão é uma mensagem: cada processo bloqueia no `receive` até o `:go` chegar.
+    # ES: Aquí la compuerta es un mensaje: cada proceso se bloquea en `receive` hasta que llega `:go`.
     pids =
       for id <- 0..(n - 1)//1 do
         spawn(fn ->

@@ -15,6 +15,9 @@ defmodule PureFunctionsProperties.NormalizeTest do
   # PT: Idempotência: aplicar a função duas vezes é igual a aplicar uma. O alfabeto tem
   #     espaços, tabulação, letras maiúsculas e minúsculas e hífen, os caracteres que a
   #     função trata de forma diferente.
+  # ES: Idempotencia: aplicar la función dos veces es igual a aplicarla una. El alfabeto tiene
+  #     espacios, tabulación, letras mayúsculas y minúsculas y guion, los caracteres que la
+  #     función trata de forma distinta.
   test "normalizing twice equals normalizing once" do
     names = Prop.run_string("a B\t-", 8, 3)
 

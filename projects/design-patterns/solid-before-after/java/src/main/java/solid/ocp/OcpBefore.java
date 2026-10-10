@@ -4,6 +4,8 @@ package solid.ocp;
 //     method. Every new kind is an edit to code that already works and is already tested.
 // PT: QUEBRA O PRINCÍPIO ABERTO-FECHADO. A lista de tipos de cliente está escrita dentro do
 //     método. Todo tipo novo é uma edição em código que já funciona e já está testado.
+// ES: ROMPE EL PRINCIPIO ABIERTO-CERRADO. La lista de tipos de cliente está escrita dentro del
+//     método. Todo tipo nuevo es una edición en código que ya funciona y ya está probado.
 public final class OcpBefore {
   private OcpBefore() {}
 

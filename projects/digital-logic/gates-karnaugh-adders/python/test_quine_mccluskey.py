@@ -21,6 +21,8 @@ def round_trip(
 #     for every input. All 2^n rows are compared.
 # PT: Critério de aceite MP-DL-1.2: a expressão minimizada é equivalente à original para toda
 #     entrada. As 2^n linhas são comparadas.
+# ES: Criterio de aceptación MP-DL-1.2: la expresión minimizada es equivalente a la original
+#     para toda entrada. Se comparan las 2^n filas.
 def test_all_256_functions_of_three_variables() -> None:
     for code in range(256):
         minterms = [row for row in range(8) if (code >> row) & 1]

@@ -1,6 +1,6 @@
 # tiny-language-model
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Ensina **como um modelo de linguagem prevê o próximo token, da contagem à autoatenção**. Dois modelos aprendem o mesmo texto pequeno, caractere por caractere. O primeiro é uma tabela de bigramas feita por contagem. O segundo é um transformer só-decodificador cuja passagem direta e cuja retropropagação são escritas à mão com NumPy, sem framework de aprendizado profundo. Em texto que nenhum dos dois treinou, o transformer tem perda de 0,662 contra 1,741 do bigrama, e a demo mostra o motivo: ele usa pistas que estão vários caracteres atrás. O mesmo modelo treinado é depois amostrado com decodificação gulosa, temperatura, top-k e top-p, e uma tabela mede como cada configuração muda a entropia e a variedade do que ele escreve.
 

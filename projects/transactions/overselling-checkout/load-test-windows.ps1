@@ -4,12 +4,17 @@
 # PT: O teste de carga: 200 compradores concorrentes de 10 unidades, três rodadas por estratégia,
 #     com k6 contra a API local. Depois a etapa de relatório confere os critérios de aceite e
 #     reescreve results/ e a tabela dos dois READMEs. Uso: .\load-test-windows.ps1 [-Rounds 3]
+# ES: La prueba de carga: 200 compradores concurrentes de 10 unidades, tres rondas por estrategia,
+#     con k6 contra la API local. Después la etapa de informe verifica los criterios de aceptación y
+#     reescribe results/ y la tabla de los READMEs. Uso: .\load-test-windows.ps1 [-Rounds 3]
 param([int]$Rounds = 3)
 
 # EN: Docker writes its progress to stderr. With "Stop", Windows PowerShell 5.1 turns that into a
 #     terminating error whenever the output is redirected, so failures are checked by exit code.
 # PT: O Docker escreve o progresso em stderr. Com "Stop", o Windows PowerShell 5.1 transforma isso
 #     em erro fatal sempre que a saída é redirecionada, então as falhas são conferidas pelo código de saída.
+# ES: Docker escribe el progreso en stderr. Con "Stop", Windows PowerShell 5.1 lo convierte en un
+#     error fatal siempre que la salida se redirige, así que los fallos se verifican por el código de salida.
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot

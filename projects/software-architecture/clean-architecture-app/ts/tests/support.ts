@@ -9,6 +9,8 @@ import { UpdateNote } from "../src/use-cases/update-note";
 //     and the timestamp of every note, so it can compare whole objects.
 // PT: Dublês de teste para as duas portas imprevisíveis. Com eles um teste sabe de antemão o id
 //     e o horário de cada nota, então consegue comparar objetos inteiros.
+// ES: Dobles de prueba para los dos puertos impredecibles. Con ellos una prueba sabe de antemano
+//     el id y la marca de tiempo de cada nota, así que puede comparar objetos completos.
 export class FixedClock implements Clock {
 	constructor(private current: Date = new Date("2026-01-01T10:00:00.000Z")) {}
 
@@ -34,6 +36,9 @@ export class SequentialIds implements IdGenerator {
 //     and ids. The repository is a parameter: any implementation of the port fits.
 // PT: A mesma montagem que a raiz de composição faz, com os dublês no lugar do relógio e dos ids
 //     de verdade. O repositório é um parâmetro: qualquer implementação da porta serve.
+// ES: El mismo ensamblaje que hace la raíz de composición, con los dobles en lugar del reloj y
+//     de los ids de verdad. El repositorio es un parámetro: sirve cualquier implementación del
+//     puerto.
 export function buildUseCases(repository: NoteRepository, clock: Clock = new FixedClock()): NoteUseCases {
 	return {
 		createNote: new CreateNote(repository, new SequentialIds(), clock),

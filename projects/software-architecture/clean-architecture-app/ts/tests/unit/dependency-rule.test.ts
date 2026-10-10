@@ -2,6 +2,9 @@
 //     this file feeds it code that breaks the rule and expects it to complain.
 // PT: Testes da própria verificação automática. Uma verificação que nunca falha não prova nada,
 //     então a maior parte deste arquivo entrega a ela código que quebra a regra e espera que reclame.
+// ES: Pruebas de la propia verificación automática. Una verificación que nunca falla no prueba
+//     nada, así que la mayor parte de este archivo le entrega código que rompe la regla y espera
+//     que se queje.
 
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -166,6 +169,9 @@ describe("violations", () => {
 // PT: O critério de aceite, de ponta a ponta: copiar o `src/` real, acrescentar UM import
 //     proibido a um caso de uso, e o comando precisa terminar com código diferente de zero
 //     citando o arquivo e a linha.
+// ES: El criterio de aceptación, de punta a punta: copiar el `src/` real, agregar UN import
+//     prohibido a un caso de uso, y el comando debe terminar con un código distinto de cero
+//     citando el archivo y la línea.
 describe("the command against a tree with one outward import", () => {
 	test("exits with 1 and names the offending line", () => {
 		const copy = mkdtempSync(join(tmpdir(), "dependency-rule-"));

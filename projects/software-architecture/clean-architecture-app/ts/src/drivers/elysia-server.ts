@@ -6,6 +6,10 @@
 //     o framework web. O trabalho dele é só cola: pegar o que o Elysia interpretou, entregar ao
 //     controller como um `HttpRequest` simples, e transformar o `HttpResponse` simples em um de
 //     verdade. Trocar o Elysia significa reescrever estas poucas linhas e nada do que está dentro delas.
+// ES: CAPA MÁS EXTERNA: frameworks y drivers. Este es el único archivo del proyecto que importa
+//     el framework web. Su trabajo es solo pegamento: tomar lo que Elysia interpretó, entregarlo
+//     al controller como un `HttpRequest` simple, y convertir el `HttpResponse` simple en uno de
+//     verdad. Reemplazar Elysia significa reescribir estas pocas líneas y nada de lo que hay dentro.
 
 import { Elysia } from "elysia";
 import type { HttpResponse, NoteHttpController } from "../adapters/note-http-controller";
@@ -21,6 +25,8 @@ function send(response: HttpResponse): Response {
 //     of the app, and writing it by hand would only lose that information.
 // PT: O tipo de retorno fica por conta da inferência de propósito: o Elysia codifica cada rota
 //     no tipo do app, e escrevê-lo à mão só perderia essa informação.
+// ES: El tipo de retorno queda a cargo de la inferencia a propósito: Elysia codifica cada ruta
+//     en el tipo de la app, y escribirlo a mano solo perdería esa información.
 export function createHttpServer(controller: NoteHttpController) {
 	return (
 		new Elysia()
@@ -28,6 +34,8 @@ export function createHttpServer(controller: NoteHttpController) {
 			//     details go to the server log, never to the client.
 			// PT: Uma falha inesperada (um bug, o banco fora do ar) vira um 500 genérico. Os
 			//     detalhes vão para o log do servidor, nunca para o cliente.
+			// ES: Una falla inesperada (un bug, la base de datos caída) se convierte en un 500
+			//     genérico. Los detalles van al log del servidor, nunca al cliente.
 			.onError(({ code, error }) => {
 				if (code === "NOT_FOUND") {
 					return send({ status: 404, body: { error: "route-not-found", message: "no such route" } });

@@ -8,12 +8,19 @@
 #     e latência: três estratégias vezes três tempos de vida. A etapa de relatório confere os
 #     critérios de aceite e reescreve results/ e as tabelas dos dois READMEs.
 #     Uso: .\load-test-windows.ps1 [-Rounds 3]       (padrão 3, cerca de 6 minutos)
+# ES: La prueba de carga, con k6 contra la API local. Primero el stampede: 300 lectores de una
+#     clave caliente, sin protección, con bloqueo y con renovación anticipada. Después tasa de
+#     aciertos y latencia: tres estrategias por tres tiempos de vida. El paso de reporte
+#     verifica los criterios de aceptación y reescribe results/ y las tablas de los tres README.
+#     Uso: .\load-test-windows.ps1 [-Rounds 3]       (por defecto 3, unos 6 minutos)
 param([int]$Rounds = 3)
 
 # EN: Docker writes its progress to stderr. With "Stop", Windows PowerShell 5.1 turns that into a
 #     terminating error whenever the output is redirected, so failures are checked by exit code.
 # PT: O Docker escreve o progresso em stderr. Com "Stop", o Windows PowerShell 5.1 transforma isso
 #     em erro fatal sempre que a saída é redirecionada, então as falhas são conferidas pelo código de saída.
+# ES: Docker escribe su progreso en stderr. Con "Stop", Windows PowerShell 5.1 lo convierte en
+#     un error fatal siempre que la salida se redirige, así que las fallas se verifican por el código de salida.
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot

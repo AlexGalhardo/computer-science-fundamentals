@@ -1,6 +1,6 @@
 # Padrões de projeto no back-end
 
-> English version: [docs/en/design-patterns/backend-patterns.md](../../en/design-patterns/backend-patterns.md)
+> English version: [docs/en/design-patterns/backend-patterns.md](../../en/design-patterns/backend-patterns.md) · Versión en español: [docs/es/design-patterns/backend-patterns.md](../../es/design-patterns/backend-patterns.md)
 
 Mini-projeto MP-PAT-1, em [`projects/design-patterns/backend-patterns`](../../../projects/design-patterns/backend-patterns). Ensina qual dor cada um de dez padrões de projeto remove, mostrando primeiro o desenho com defeito.
 

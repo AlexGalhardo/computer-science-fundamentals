@@ -6,6 +6,11 @@
 //!     da referência em TypeScript em `ts/src/`, onde cada um é explicado em detalhe. O que
 //!     muda aqui: não há coletor de lixo nem runtime, e todo acesso por índice tem verificação
 //!     de limites, que é o preço da segurança de memória e custa pouco nesses laços.
+//! ES: Los seis algoritmos de ordenación de la carrera, en Rust. Mismos algoritmos y mismas
+//!     decisiones que la referencia en TypeScript en `ts/src/`, donde cada uno se explica en
+//!     detalle. Lo que cambia aquí: no hay recolector de basura ni runtime, y todo acceso por
+//!     índice tiene verificación de límites, que es el precio de la seguridad de memoria y
+//!     cuesta poco en esos bucles.
 
 /// A sort receives the input and returns a new sorted vector, leaving the input untouched.
 pub type SortFn = fn(&[i32]) -> Vec<i32>;
@@ -21,6 +26,7 @@ pub const SORTS: [(&str, SortFn); 6] = [
 
 // EN: Swap out-of-order neighbours. Stop when a pass makes no swap.
 // PT: Troca vizinhos fora de ordem. Para quando uma passada não faz trocas.
+// ES: Intercambia vecinos desordenados. Se detiene cuando una pasada no hace intercambios.
 pub fn bubble_sort(values: &[i32]) -> Vec<i32> {
     let mut a = values.to_vec();
     for end in (1..a.len()).rev() {
@@ -40,6 +46,7 @@ pub fn bubble_sort(values: &[i32]) -> Vec<i32> {
 
 // EN: Insert each value into the sorted prefix, shifting the larger values right.
 // PT: Insere cada valor no prefixo ordenado, deslocando os maiores para a direita.
+// ES: Inserta cada valor en el prefijo ordenado, desplazando los mayores hacia la derecha.
 pub fn insertion_sort(values: &[i32]) -> Vec<i32> {
     let mut a = values.to_vec();
     for i in 1..a.len() {
@@ -56,6 +63,7 @@ pub fn insertion_sort(values: &[i32]) -> Vec<i32> {
 
 // EN: Split in half, sort each half, merge. One buffer is reused by every merge.
 // PT: Divide ao meio, ordena cada metade, intercala. Um buffer é reusado em toda intercalação.
+// ES: Divide a la mitad, ordena cada mitad, mezcla. Un búfer se reutiliza en cada mezcla.
 pub fn merge_sort(values: &[i32]) -> Vec<i32> {
     let mut a = values.to_vec();
     let mut buffer = vec![0; a.len()];
@@ -79,6 +87,8 @@ fn merge_range(a: &mut [i32], buffer: &mut [i32]) {
     for slot in buffer.iter_mut() {
         // EN: `<=` takes the left value on a tie, which keeps the sort stable.
         // PT: `<=` pega o valor da esquerda no empate, o que mantém a ordenação estável.
+        // ES: `<=` toma el valor de la izquierda en el empate, lo que mantiene la ordenación
+        //     estable.
         if j >= n || (i < mid && a[i] <= a[j]) {
             *slot = a[i];
             i += 1;
@@ -94,6 +104,8 @@ fn merge_range(a: &mut [i32], buffer: &mut [i32]) {
 //     the larger one keeps the stack at O(log n).
 // PT: Partição de Hoare em torno da mediana de três. Fazer a recursão no lado menor e o laço no
 //     maior mantém a pilha em O(log n).
+// ES: Partición de Hoare alrededor de la mediana de tres. Hacer la recursión sobre el lado menor
+//     y el bucle sobre el mayor mantiene la pila en O(log n).
 pub fn quick_sort(values: &[i32]) -> Vec<i32> {
     let mut a = values.to_vec();
     if a.len() > 1 {
@@ -140,6 +152,7 @@ fn quick_range(a: &mut [i32], mut lo: isize, mut hi: isize) {
 
 // EN: Build a max-heap inside the vector, then move the maximum to the end n - 1 times.
 // PT: Constrói um max-heap dentro do vetor e move o máximo para o fim n - 1 vezes.
+// ES: Construye un max-heap dentro del vector y mueve el máximo al final n - 1 veces.
 pub fn heap_sort(values: &[i32]) -> Vec<i32> {
     let mut a = values.to_vec();
     let n = a.len();
@@ -177,6 +190,8 @@ fn sift_down(a: &mut [i32], start: usize, size: usize) {
 //     no comparison between values. Valid for integers from 0 to 2^31 - 1.
 // PT: Radix sort LSD na base 256: quatro passadas estáveis de contagem, uma por byte da chave,
 //     sem comparar valores. Válido para inteiros de 0 a 2^31 - 1.
+// ES: Radix sort LSD en base 256: cuatro pasadas estables de conteo, una por byte de la clave,
+//     sin comparar valores. Válido para enteros de 0 a 2^31 - 1.
 pub fn radix_sort(values: &[i32]) -> Vec<i32> {
     let mut source = values.to_vec();
     let mut target = vec![0; source.len()];
@@ -200,6 +215,8 @@ pub fn radix_sort(values: &[i32]) -> Vec<i32> {
 
 // EN: Same order-sensitive digest in every language: h = (h * 31 + v) mod 1,000,000,007.
 // PT: Mesmo resumo sensível à ordem em toda linguagem: h = (h * 31 + v) mod 1.000.000.007.
+// ES: El mismo resumen sensible al orden en todo lenguaje:
+//     h = (h * 31 + v) mod 1.000.000.007.
 pub fn checksum(values: &[i32]) -> String {
     let mut digest: i64 = 0;
     for &value in values {
@@ -214,6 +231,7 @@ mod tests {
 
     // EN: Linear congruential generator with a fixed seed, so the test is reproducible.
     // PT: Gerador congruente linear com semente fixa, para o teste ser reproduzível.
+    // ES: Generador congruencial lineal con semilla fija, para que la prueba sea reproducible.
     fn random_values(n: usize, seed: i64) -> Vec<i32> {
         let mut state = seed;
         (0..n)
@@ -228,6 +246,9 @@ mod tests {
     //     equal to it means ordered and a permutation of the input.
     // PT: Mesmos seis casos da referência em TypeScript. O oráculo é a ordenação da biblioteca:
     //     ser igual a ela significa estar em ordem e ser uma permutação da entrada.
+    // ES: Los mismos seis casos de la referencia en TypeScript. El oráculo es la ordenación de la
+    //     biblioteca: ser igual a ella significa estar en orden y ser una permutación de la
+    //     entrada.
     #[test]
     fn sorts_every_case() {
         let cases: [(&str, Vec<i32>); 6] = [

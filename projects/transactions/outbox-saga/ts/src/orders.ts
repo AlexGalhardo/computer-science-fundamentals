@@ -6,6 +6,10 @@
 //     responder com um evento. PaymentCompleted o torna PAID. PaymentFailed o torna CANCELLED,
 //     que é a compensação: não existe rollback distribuído, então o passo que já foi confirmado
 //     é desfeito por uma nova transação que diz "este pedido não vale".
+// ES: El lado de los pedidos en la saga. Un pedido se crea como PENDING y espera que el servicio de pagos
+//     responda con un evento. PaymentCompleted lo vuelve PAID. PaymentFailed lo vuelve CANCELLED,
+//     que es la compensación: no existe un rollback distribuido, así que el paso que ya se confirmó
+//     se deshace con una nueva transacción que dice "este pedido no vale".
 
 import type { Pool } from "pg";
 import { z } from "zod";
@@ -41,6 +45,8 @@ export const createOrderBody = z.object({
 	//     the worst possible moment.
 	// PT: Chave de laboratório: mata o processo logo depois do commit no banco, para simular uma
 	//     queda no pior momento possível.
+	// ES: Llave de laboratorio: mata el proceso justo después del commit en la base de datos, para simular
+	//     una caída en el peor momento posible.
 	crashAfterCommit: z.boolean().default(false),
 });
 
@@ -78,6 +84,10 @@ export async function findOrder(pool: Pool, id: string): Promise<Order | null> {
 //     a mesma chave quando tenta de novo (por exemplo depois de um timeout), e o servidor
 //     responde com o pedido que já criou em vez de criar um segundo. A chave é gravada na mesma
 //     transação do pedido, então os dois não podem divergir.
+// ES: Una clave de idempotencia hace seguro repetir una petición HTTP. El cliente envía la misma
+//     clave cuando reintenta (por ejemplo después de un timeout), y el servidor responde con el
+//     pedido que ya creó en lugar de crear un segundo. La clave se escribe en la misma
+//     transacción del pedido, así que los dos no pueden divergir.
 async function orderOfKey(pool: Pool, key: string | undefined): Promise<Order | null> {
 	if (key === undefined) {
 		return null;
@@ -116,6 +126,8 @@ export async function createOrder(
 		//     below, either both exist or neither does. A crash can only delay the event.
 		// PT: OUTBOX: o evento é uma linha na mesma transação do pedido. Depois do COMMIT abaixo,
 		//     ou os dois existem ou nenhum existe. Uma queda só consegue atrasar o evento.
+		// ES: OUTBOX: el evento es una fila en la misma transacción del pedido. Después del COMMIT de abajo,
+		//     o existen los dos o no existe ninguno. Una caída solo puede retrasar el evento.
 		if (input.mode === "outbox") {
 			await addToOutbox(client, event);
 		}
@@ -131,6 +143,9 @@ export async function createOrder(
 	// PT: DUAL WRITE (o bug): o pedido já foi confirmado e o evento existe só na memória deste
 	//     processo. Se o processo morrer na linha acima, ninguém nunca vai publicá-lo: o pedido
 	//     fica PENDING para sempre e o cliente nunca é cobrado.
+	// ES: DUAL WRITE (el bug): el pedido ya se confirmó y el evento existe solo en la memoria de este
+	//     proceso. Si el proceso muere en la línea de arriba, nadie lo publicará nunca: el pedido
+	//     queda PENDING para siempre y al cliente nunca se le cobra.
 	if (input.mode === "dual-write") {
 		await publish(event);
 	}
@@ -146,6 +161,8 @@ export async function createOrder(
 //     late or repeated event cannot turn a CANCELLED order into PAID or the other way round.
 // PT: O passo da saga que reage ao pagamento. O status só sai de PENDING, então um evento
 //     atrasado ou repetido não consegue transformar um pedido CANCELLED em PAID nem o contrário.
+// ES: El paso de la saga que reacciona al pago. El estado solo sale de PENDING, así que un evento
+//     atrasado o repetido no puede convertir un pedido CANCELLED en PAID ni lo contrario.
 export async function handlePaymentEvent(pool: Pool, event: DomainEvent): Promise<"applied" | "duplicate"> {
 	return inTransaction(pool, async (client) => {
 		if (!(await firstTimeSeen(client, event.id))) {

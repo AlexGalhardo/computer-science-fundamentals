@@ -1,6 +1,6 @@
 # sorting-race
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Seis algoritmos de ordenação (bubble, insertion, merge, quick, heap e radix), escritos do zero em sete linguagens, ordenam os mesmos arquivos de entrada. A corrida mostra duas coisas ao mesmo tempo: como o tempo medido de cada algoritmo acompanha seu Big O quando `n` cresce, e quanto do tempo pertence à linguagem e não ao algoritmo.
 

@@ -1,6 +1,6 @@
 # order-state-machine
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 O ciclo de vida de um pedido como uma máquina de estados explícita. Ensina **como estados e transições explícitos eliminam situações inválidas**: as regras ficam em uma única tabela de transições, uma função genérica consulta a tabela, todo evento que não está na tabela é rejeitado, e os testes e o diagrama são gerados a partir dessa mesma tabela.
 
@@ -75,15 +75,15 @@ docker compose run --rm ts-demo          # um pedido completo, depois uma transi
 docker compose run --rm elixir-demo      # o mesmo, em Elixir
 ```
 
-```
-== A full order / Um pedido completo ==
+```text
+== A full order / Um pedido completo / Un pedido completo ==
 start: created
   pay      created -> paid
   ship     paid -> shipped
   deliver  shipped -> delivered
 end: delivered
 
-== A rejected transition / Uma transição rejeitada ==
+== A rejected transition / Uma transição rejeitada / Una transición rechazada ==
 start: created
   pay      created -> paid
   deliver  REJECTED: not allowed in paid, the order stays in paid
@@ -92,7 +92,7 @@ start: created
 end: delivered
 ```
 
-A versão em TypeScript também imprime uma descrição do estado final em inglês e em português.
+A versão em TypeScript também imprime uma descrição do estado final em inglês, português e espanhol, depois de `end:` (`EN: delivered to the customer`, `PT: entregue ao cliente`, `ES: entregado al cliente`).
 
 Para conduzir o seu próprio pedido, passe os eventos em ordem. O código de saída é 0 quando todo evento foi aceito, 1 quando algum foi rejeitado e 2 para um evento desconhecido.
 

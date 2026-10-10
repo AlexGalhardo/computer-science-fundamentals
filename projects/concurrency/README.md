@@ -1,6 +1,6 @@
 # Concurrency
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Concurrency is the art of structuring a program as several activities that make progress in overlapping time and share state safely. It is where the hardest bugs live (race conditions, deadlocks, starvation), and each language answers it differently: locks and atomics, channels, actors or an event loop. Knowing the models makes it possible to pick one deliberately.
 

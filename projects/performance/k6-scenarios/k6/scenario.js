@@ -4,6 +4,10 @@
 // PT: Um único script de k6 para os quatro cenários. `SCENARIO` (load, stress, spike ou soak)
 //     escolhe o perfil em profiles.js, e `VARIANT` (before ou after) só rotula o arquivo de saída:
 //     o script é idêntico antes e depois da correção, e é isso que torna a comparação justa.
+// ES: Un único script de k6 para los cuatro escenarios. `SCENARIO` (load, stress, spike o soak)
+//     elige el perfil en profiles.js, y `VARIANT` (before o after) solo etiqueta el archivo de
+//     salida: el script es idéntico antes y después de la corrección, y eso es lo que hace justa la
+//     comparación.
 
 import { check } from "k6";
 import http from "k6/http";
@@ -12,6 +16,7 @@ import { requireLocalTarget } from "./target.js";
 
 // EN: Refused before a single request is sent when the host is not local (see target.js).
 // PT: Recusado antes de enviar uma única requisição quando o host não é local (veja target.js).
+// ES: Rechazado antes de enviar una sola solicitud cuando el host no es local (ver target.js).
 const BASE_URL = requireLocalTarget(__ENV.BASE_URL || "http://api:3000");
 
 const SCENARIO = __ENV.SCENARIO || "load";
@@ -34,6 +39,11 @@ if (VARIANT !== "before" && VARIANT !== "after") {
 //     mesmo orçamento de latência nas requisições marcadas com aquela fase, e também fazem o k6
 //     guardar números separados por fase, que o relatório precisa (`count>=0` nunca falha: está
 //     ali só para pedir a contagem).
+// ES: Un umbral (threshold) es la regla de aprobación de la prueba: cuando se supera uno, k6 termina
+//     con código 99. Los dos primeros son el nivel de servicio que promete la API. Los de cada fase
+//     usan el mismo presupuesto de latencia en las solicitudes marcadas con esa fase, y también hacen
+//     que k6 guarde números separados por fase, que el reporte necesita (`count>=0` nunca falla: está
+//     ahí solo para pedir el conteo).
 const thresholds = {
 	http_req_duration: [`p(95)<${P95_BUDGET_MS}`],
 	http_req_failed: [`rate<${ERROR_BUDGET}`],
@@ -55,6 +65,12 @@ for (const phase of profile.phases) {
 //     virtual espera a sua resposta, então um servidor lento recebe menos carga automaticamente.
 //     O preço do modelo aberto são usuários virtuais: toda requisição ainda esperando segura um,
 //     então `maxVUs` precisa cobrir taxa x pior tempo de espera.
+// ES: `ramping-arrival-rate` es un modelo ABIERTO: k6 inicia un número fijo de iteraciones por
+//     segundo, hayan sido respondidas o no las anteriores, como usuarios reales que no saben que el
+//     servidor está lento. Un modelo cerrado (`ramping-vus`) escondería el cuello de botella: cada
+//     usuario virtual espera su respuesta, así que un servidor lento recibe menos carga
+//     automáticamente. El precio del modelo abierto son los usuarios virtuales: toda solicitud que
+//     sigue esperando retiene uno, así que `maxVUs` debe cubrir tasa x peor tiempo de espera.
 export const options = {
 	summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
 	scenarios: {
@@ -88,6 +104,8 @@ export default function (data) {
 	//     the `http_req_failed` threshold, which counts every answer that is not 2xx or 3xx.
 	// PT: Um check registra o que aconteceu e nunca reprova a execução sozinho. A execução reprova
 	//     pelo threshold de `http_req_failed`, que conta toda resposta que não é 2xx ou 3xx.
+	// ES: Un check registra lo que pasó y nunca reprueba la ejecución por sí solo. La ejecución
+	//     reprueba por el umbral de `http_req_failed`, que cuenta toda respuesta que no es 2xx ni 3xx.
 	check(response, { "status is 200": (r) => r.status === 200 });
 }
 

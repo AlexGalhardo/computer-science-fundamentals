@@ -2,6 +2,8 @@
 #     itself uses nothing but the test runner built into Bun.
 # PT: As dependências (só o verificador de tipos) vêm do lockfile, em uma camada própria. O kata
 #     em si não usa nada além do executor de testes embutido no Bun.
+# ES: Las dependencias (solo el verificador de tipos) vienen del lockfile, en su propia capa. El
+#     kata en sí no usa nada además del ejecutor de pruebas integrado en Bun.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock ./

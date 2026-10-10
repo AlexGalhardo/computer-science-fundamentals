@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the hybrid-quicksort mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto hybrid-quicksort. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto hybrid-quicksort. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"

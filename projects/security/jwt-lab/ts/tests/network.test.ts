@@ -6,6 +6,10 @@
 //     então um contêiner não tem rota para a internet. example.com é o domínio reservado pela
 //     IANA para documentação; a requisição precisa falhar. O teste só faz sentido dentro do
 //     contêiner do laboratório, então é pulado fora dele (o Dockerfile define LAB_IN_DOCKER).
+// ES: Verificación de seguridad del propio laboratorio. La red de compose es `internal: true`,
+//     así que un contenedor no tiene ruta hacia internet. example.com es el dominio reservado por
+//     IANA para documentación; la solicitud debe fallar. La prueba solo tiene sentido dentro del
+//     contenedor del laboratorio, así que se omite fuera de él (el Dockerfile define LAB_IN_DOCKER).
 
 import { expect, test } from "bun:test";
 

@@ -6,6 +6,10 @@
 //     proxy LOCAL, em laço fechado (cada usuário manda a próxima requisição quando a anterior
 //     foi respondida). Ele mede duas coisas: quantas requisições por segundo passam, e quanto
 //     demoram as 1% mais lentas (p99).
+// ES: Escenario de k6 del benchmark: un número fijo de usuarios virtuales envía `GET /work` por UN
+//     proxy LOCAL, en lazo cerrado (cada usuario envía la siguiente solicitud cuando se respondió
+//     la anterior). Mide dos cosas: cuántas solicitudes por segundo pasan, y cuánto tardan el 1%
+//     más lento (p99).
 
 import { check } from "k6";
 import http from "k6/http";
@@ -15,6 +19,8 @@ import { requireLocalTarget } from "./target.js";
 //     here, k6 exits with an error and no request is ever sent.
 // PT: Esta linha roda antes de qualquer outra coisa. Com um alvo que não é local o script lança
 //     um erro aqui, o k6 termina com erro e nenhuma requisição chega a ser enviada.
+// ES: Esta línea corre antes que cualquier otra cosa. Con un destino que no es local el script
+//     lanza un error aquí, k6 termina con error y nunca se llega a enviar ninguna solicitud.
 const TARGET = requireLocalTarget(__ENV.TARGET || "http://localhost:8080");
 
 const NAME = __ENV.NAME || "proxy";
@@ -41,6 +47,9 @@ export default function () {
 // PT: O resumo é reduzido aos poucos números do relatório e escrito como um JSON pequeno por
 //     execução. As execuções com NAME=warmup são descartadas: elas só abrem as conexões e
 //     aquecem os proxies.
+// ES: El resumen se reduce a los pocos números del informe y se escribe como un JSON pequeño por
+//     ejecución. Las ejecuciones con NAME=warmup se descartan: solo abren las conexiones y
+//     calientan los proxies.
 export function handleSummary(data) {
 	const value = (metric, key) => data.metrics[metric]?.values?.[key] ?? 0;
 	const result = {

@@ -6,6 +6,10 @@
 #     instaladas na construção da imagem, a partir do lockfile versionado, então o contêiner não
 #     precisa de rede depois. O build também roda o verificador de tipos: um erro de tipo, ou
 #     uma linha `@ts-expect-error` que passe a compilar, falha o build.
+# ES: Las dos dependencias de desarrollo (TypeScript y los tipos de Bun, ambas fijadas) se
+#     instalan al construir la imagen, a partir del lockfile versionado, así que el contenedor
+#     no necesita red después. El build también ejecuta el verificador de tipos: un error de
+#     tipo, o una línea `@ts-expect-error` que pase a compilar, hace fallar el build.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY package.json bun.lock ./

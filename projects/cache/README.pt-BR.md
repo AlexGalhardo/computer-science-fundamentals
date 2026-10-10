@@ -1,6 +1,6 @@
 # Cache
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um cache guarda uma cópia de algo caro de calcular ou de buscar, para que a próxima requisição seja atendida mais rápido. Há caches em todos os níveis (navegador, CDN, aplicação, banco de dados, CPU), e todos levantam as mesmas perguntas: o que guardar, quando descartar, como saber que está desatualizado e o que acontece quando muitos clientes erram ao mesmo tempo. Errar nessas respostas troca um sistema lento por um incorreto.
 

@@ -3,6 +3,8 @@
 #     The load test itself is a separate command, documented in the README.
 # PT: Constrói e testa o mini-projeto ten-thousand-connections. O único requisito é o Docker.
 #     O teste de carga em si é um comando separado, documentado no README.
+# ES: Construye y prueba el mini-proyecto ten-thousand-connections. El único requisito es Docker.
+#     La prueba de carga en sí es un comando separado, documentado en el README.
 set -eu
 
 cd "$(dirname "$0")"

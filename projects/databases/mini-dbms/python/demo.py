@@ -1,6 +1,8 @@
 """EN: A short tour of the engine: selection, projection and the three joins on tiny tables.
 
 PT: Um passeio curto pelo motor: seleção, projeção e as três junções em tabelas minúsculas.
+
+ES: Un recorrido corto por el motor: selección, proyección y los tres joins en tablas diminutas.
 """
 
 from joins import JOINS, materialise
@@ -52,6 +54,8 @@ def main() -> None:
     #     leaves them out. The three algorithms must agree on that.
     # PT: Gina (dno 50) e o departamento Compras (dno 40) não têm par, então uma junção interna
     #     os deixa de fora. Os três algoritmos precisam concordar nisso.
+    # ES: Gina (dno 50) y el departamento Compras (dno 40) no tienen pareja, así que un join
+    #     interno los deja fuera. Los tres algoritmos deben coincidir en eso.
     for name, join in JOINS.items():
         pairs = join(emp, "dno", dept, "dno")
         joined = materialise(emp, "emp", dept, "dept", sorted(pairs))

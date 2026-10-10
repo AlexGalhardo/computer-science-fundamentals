@@ -1,6 +1,6 @@
 # memory-allocator
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Four memory allocators over a fixed arena: first fit, best fit and worst fit on a free list, and the buddy system. A benchmark runs the same sequence of allocations and frees through each of them and measures failed allocations, external fragmentation and internal fragmentation. It teaches that free memory is only useful when it is contiguous, that the strategy decides how fast the arena breaks into holes, and that coalescing is what puts it back together.
 
@@ -29,7 +29,7 @@ docker compose run --rm demo
 
 It prints the table below for two workloads and writes `results/results.md`.
 
-```
+```text
 Workload: mixed (arena 1048576 bytes, 20000 steps, seed 2026)
 strategy    attempts  failed  failed %  ext frag %  int frag %  peak used
 first-fit      11054     905      8.19       80.54        0.00     969266

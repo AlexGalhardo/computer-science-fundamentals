@@ -1,6 +1,6 @@
 # Inteligência artificial e LLMs
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A inteligência artificial moderna é aprendizado de máquina em escala: modelos com muitos números ajustáveis que são treinados com dados em vez de programados à mão. Esta área vai da matemática por baixo (probabilidade, álgebra linear, descida de gradiente e retropropagação) às peças de um grande modelo de linguagem (tokens, embeddings, atenção, previsão do próximo token) e dos geradores de imagem (difusão), e aos seus limites e custos.
 

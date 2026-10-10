@@ -30,6 +30,9 @@ public final class CounterRace {
    *
    * <p>PT: O latch é um portão de largada: cada thread espera ali e todas saem juntas. Sem ele a
    * primeira thread poderia terminar antes de a última começar, e o bug ficaria escondido.
+   *
+   * <p>ES: El latch es una puerta de salida: cada thread espera ahí y todos salen juntos. Sin él,
+   * el primer thread podría terminar antes de que el último empiece, y el bug quedaría escondido.
    */
   public static long run(Counter counter, int workers, int perWorker) throws InterruptedException {
     CountDownLatch gate = new CountDownLatch(1);
@@ -54,6 +57,7 @@ public final class CounterRace {
     gate.countDown();
     // EN: join() waits for the thread and also guarantees that this thread sees its writes.
     // PT: join() espera a thread e também garante que esta thread enxerga as escritas dela.
+    // ES: join() espera al thread y también garantiza que este thread ve las escrituras de aquel.
     for (Thread thread : threads) {
       thread.join();
     }

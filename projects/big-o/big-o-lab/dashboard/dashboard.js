@@ -4,6 +4,9 @@
 // PT: Dashboard estático do laboratório de Big O. Ele lê `window.BIG_O_LAB_RESULTS`, escrito por
 //     `bun run demo` em `../results/results.js`, e desenha um gráfico e duas tabelas. Não há
 //     etapa de build nem requisição de rede: a página funciona aberta direto do disco.
+// ES: Dashboard estático del laboratorio de Big O. Lee `window.BIG_O_LAB_RESULTS`, escrito por
+//     `bun run demo` en `../results/results.js`, y dibuja un gráfico y dos tablas. No hay paso
+//     de build ni petición de red: la página funciona abierta directo desde el disco.
 
 const SVG = "http://www.w3.org/2000/svg";
 const WIDTH = 720;
@@ -42,7 +45,7 @@ function formatValue(value) {
 }
 
 function formatError(value) {
-	return value === null ? "does not fit / não se ajusta" : value.toExponential(2);
+	return value === null ? "does not fit / não se ajusta / no se ajusta" : value.toExponential(2);
 }
 
 // EN: Both axes are logarithmic. On a log-log chart a polynomial O(n^k) is a straight line whose
@@ -51,12 +54,16 @@ function formatError(value) {
 // PT: Os dois eixos são logarítmicos. Em um gráfico log-log, um polinômio O(n^k) é uma reta de
 //     inclinação k, um logaritmo se curva para baixo até ficar plano, e uma exponencial se curva
 //     para cima. O formato da linha é a classe de crescimento.
+// ES: Los dos ejes son logarítmicos. En un gráfico log-log, un polinomio O(n^k) es una recta de
+//     pendiente k, un logaritmo se curva hacia abajo hasta quedar plano, y una exponencial se
+//     curva hacia arriba. La forma de la línea es la clase de crecimiento.
 function logScale(min, max, from, to) {
 	const low = Math.log10(Math.max(min, 1e-6));
 	const high = Math.log10(Math.max(max, 1e-6));
 	const span = high - low;
 	// EN: Flat data (the O(1) sample) has no span, so it is drawn as a line at mid-height.
 	// PT: Dados planos (a amostra O(1)) não têm amplitude, então viram uma linha a meia altura.
+	// ES: Los datos planos (la muestra O(1)) no tienen amplitud, así que se dibujan como una línea a media altura.
 	if (span === 0) {
 		return () => (from + to) / 2;
 	}
@@ -121,6 +128,8 @@ function drawChart(container, sample, metric) {
 	//     measured line, which is the point of the lab: the count is predictable.
 	// PT: A linha tracejada é a fórmula fechada. Para contagens de operações ela fica exatamente
 	//     sob a linha medida, e esse é o ponto do laboratório: a contagem é previsível.
+	// ES: La línea punteada es la fórmula cerrada. Para los conteos de operaciones queda exactamente
+	//     bajo la línea medida, y ese es el punto del laboratorio: el conteo es predecible.
 	if (metric === "operations") {
 		chart.append(
 			svg("path", {
@@ -190,11 +199,11 @@ function main() {
 		}
 		document.getElementById("title").textContent = `${sample.id}: ${sample.title}`;
 		document.getElementById("verdict").textContent =
-			`Counted: ${sample.operation}. Formula: ${sample.formula}. Best fit / melhor ajuste: ${sample.fit.best.label} (relative error / erro relativo ${formatError(sample.fit.best.error)}).`;
+			`Counted: ${sample.operation}. Formula: ${sample.formula}. Best fit / melhor ajuste / mejor ajuste: ${sample.fit.best.label} (relative error / erro relativo / error relativo ${formatError(sample.fit.best.error)}).`;
 		drawChart(document.getElementById("chart"), sample, metricSelect.value);
 		drawTable(
 			document.getElementById("table"),
-			["n", sample.operation, "formula / fórmula", "time (ms) / tempo (ms)"],
+			["n", sample.operation, "formula / fórmula", "time (ms) / tempo (ms) / tiempo (ms)"],
 			sample.points.map((point) => [
 				point.n.toLocaleString("en-US"),
 				point.operations.toLocaleString("en-US"),
@@ -204,7 +213,7 @@ function main() {
 		);
 		drawTable(
 			document.getElementById("fit"),
-			["candidate / candidata", "relative error / erro relativo", "y = a + c · g(n)"],
+			["candidate / candidata", "relative error / erro relativo / error relativo", "y = a + c · g(n)"],
 			sample.fit.candidates.map((fit) => [
 				fit.id === sample.fit.best.id ? `${fit.label} ✓` : fit.label,
 				formatError(fit.error),

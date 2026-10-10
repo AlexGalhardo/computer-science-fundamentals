@@ -9,6 +9,12 @@
 //     Os apps são chamados em processo (`app.handle`). As URLs que eles recebem para buscar são
 //     montadas a partir da configuração do laboratório e só citam os dois serviços falsos do
 //     docker-compose.
+// ES: Un escenario, ejecutado contra las dos apps. Pide cuatro vistas previas de enlace: dos legítimas
+//     y las dos entradas de demostración del laboratorio. Las pruebas y la demo comparan lo que responden
+//     la app vulnerable y la app corregida a exactamente las mismas solicitudes.
+//     Las apps se llaman en proceso (`app.handle`). Las URLs que reciben para buscar se
+//     arman a partir de la configuración del laboratorio y solo citan los dos servicios falsos de
+//     docker-compose.
 
 import { z } from "zod";
 import { type Config, FAKE_INTERNAL_TOKEN } from "./config";
@@ -49,17 +55,21 @@ export function scenarioUrls(config: Config): ScenarioUrls {
 		publicRedirect: `${config.PUBLIC_SITE_ORIGIN}/redirect-to-article`,
 		// EN: The first URL anyone would try: the internal service by its internal name.
 		// PT: A primeira URL que qualquer pessoa tentaria: o serviço interno pelo nome interno.
+		// ES: La primera URL que cualquiera probaría: el servicio interno por su nombre interno.
 		directInternal: `${config.INTERNAL_ADMIN_ORIGIN}/secret`,
 		// EN: This URL looks harmless: its host is the public site. The internal address only
 		//     appears in the answer of that site, as the target of a redirect.
 		// PT: Esta URL parece inofensiva: o host dela é o site público. O endereço interno só
 		//     aparece na resposta desse site, como destino de um redirecionamento.
+		// ES: Esta URL parece inofensiva: su host es el sitio público. La dirección interna solo
+		//     aparece en la respuesta de ese sitio, como destino de una redirección.
 		redirectToInternal: `${config.PUBLIC_SITE_ORIGIN}/redirect-to-internal`,
 	};
 }
 
 // EN: A response is external input too, so it is parsed instead of trusted.
 // PT: Uma resposta também é entrada externa, então ela é interpretada em vez de ser dada como certa.
+// ES: Una respuesta también es entrada externa, así que se interpreta en lugar de darla por correcta.
 const answerSchema = z.object({
 	preview: z.object({ title: z.string().nullable() }).optional(),
 	reason: z.string().optional(),
@@ -67,6 +77,7 @@ const answerSchema = z.object({
 
 // EN: This host is never contacted: `handle` routes the request inside this process.
 // PT: Este host nunca é contatado: `handle` roteia a requisição dentro deste processo.
+// ES: Este host nunca se contacta: `handle` enruta la solicitud dentro de este proceso.
 const BASE = "http://localhost";
 
 export async function requestPreview(app: LabApp, url: string): Promise<PreviewObservation> {

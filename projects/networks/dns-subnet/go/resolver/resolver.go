@@ -96,6 +96,9 @@ func list(records []dnsmsg.Record) string {
 // PT: O resolvedor não começa da raiz todas as vezes. Se ele já sabe quem serve example.test.,
 // uma pergunta sobre www.example.test. vai direto para lá. É por isso que os servidores raiz e
 // de TLD aguentam a carga da Internet inteira: os caches absorvem a maior parte dela.
+// ES: El resolvedor no empieza desde la raíz todas las veces. Si ya sabe quién sirve example.test.,
+// una pregunta sobre www.example.test. va directo hacia allá. Por eso los servidores raíz y de
+// TLD aguantan la carga de toda Internet: las cachés absorben la mayor parte.
 func (r *Resolver) closest(name string) (string, []netip.Addr) {
 	for zone := name; ; {
 		if servers, ok := r.Cache.Get(zone, dnsmsg.TypeNS); ok {
@@ -151,6 +154,9 @@ func (r *Resolver) resolve(ctx context.Context, question dnsmsg.Question, depth 
 		// PT: Verificação de bailiwick. Um servidor só é acreditado sobre nomes dentro da zona
 		//     pela qual foi consultado como autoridade. Sem essa regra qualquer servidor poderia
 		//     embutir na resposta um registro de um nome alheio e envenenar o cache.
+		// ES: Verificación de bailiwick. A un servidor solo se le cree sobre nombres dentro de la
+		//     zona por la que se le consultó como autoridad. Sin esta regla cualquier servidor
+		//     podría incrustar en la respuesta un registro de un nombre ajeno y envenenar la caché.
 		var answers []dnsmsg.Record
 		for _, record := range reply.Answer {
 			if dnsmsg.IsSubdomain(record.Name, zone) {
@@ -191,6 +197,9 @@ func (r *Resolver) resolve(ctx context.Context, question dnsmsg.Question, depth 
 		// PT: Glue: os endereços dos próximos servidores de nomes, enviados junto com a
 		//     indicação. Sem glue para ns1.example.test. o resolvedor teria de perguntar a
 		//     example.test. onde está o seu próprio servidor de nomes, o que é um círculo.
+		// ES: Glue: las direcciones de los siguientes servidores de nombres, enviadas junto con la
+		//     referencia. Sin glue para ns1.example.test. el resolvedor tendría que preguntarle a
+		//     example.test. dónde está su propio servidor de nombres, lo que es un círculo.
 		var next []netip.Addr
 		var names []string
 		for _, ns := range delegation {
@@ -251,6 +260,9 @@ func (r *Resolver) exchange(ctx context.Context, server netip.Addr, question dns
 	// PT: O identificador é aleatório e imprevisível. Uma resposta só é aceita se vier do
 	//     endereço consultado (o socket é conectado), repetir o identificador e repetir a
 	//     pergunta. Adivinhar tudo isso é o que um falsificador fora do caminho precisaria.
+	// ES: El identificador es aleatorio e impredecible. Una respuesta solo se acepta si viene de la
+	//     dirección consultada (el socket está conectado), repite el identificador y repite la
+	//     pregunta. Adivinar todo eso es lo que necesitaría un falsificador fuera de la ruta.
 	var id [2]byte
 	if _, err := rand.Read(id[:]); err != nil {
 		return dnsmsg.Message{}, fmt.Errorf("choosing a query id: %w", err)

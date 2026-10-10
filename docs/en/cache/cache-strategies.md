@@ -1,6 +1,6 @@
 # Cache strategies and stampede (MP-CACHE-1)
 
-> Versão em português: [docs/pt/cache/cache-strategies.md](../../pt/cache/cache-strategies.md)
+> Versão em português: [docs/pt/cache/cache-strategies.md](../../pt/cache/cache-strategies.md) · Versión en español: [docs/es/cache/cache-strategies.md](../../es/cache/cache-strategies.md)
 
 Mini-project: [`projects/cache/cache-strategies`](../../../projects/cache/cache-strategies/README.md). Quiz topics: `caching-strategies`, `consistency-trade-offs`, `stampede-penetration-avalanche`, `invalidation-ttl`.
 
@@ -14,7 +14,7 @@ Every caching strategy is an answer to one question: **on a write, who is change
 
 All three strategies of the mini-project read the same way, called lazy loading:
 
-```
+```text
 value = GET product:7              hit  -> answer
                                    miss -> SELECT in PostgreSQL
                                            SET product:7 value PX <time to live>
@@ -37,7 +37,7 @@ The write deletes the key instead of storing the new value. Two writers that bot
 
 One race is left, and the tests replay it step by step:
 
-```
+```text
 reader: GET  -> miss
 reader: SELECT -> old price
 writer: UPDATE new price (commit)

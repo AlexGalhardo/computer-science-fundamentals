@@ -16,6 +16,9 @@ const USAGE: &str =
 // PT: Pico de memória residente deste processo, como o kernel do Linux informa em
 //     /proc/self/status (a linha `VmHWM`, em kB). O benchmark sempre roda em um contêiner
 //     Linux, e fora do Linux o campo é informado como 0 em vez de falhar.
+// ES: Pico de memoria residente de este proceso, como lo informa el kernel de Linux en
+//     /proc/self/status (la línea `VmHWM`, en kB). El benchmark siempre corre en un contenedor
+//     Linux, y fuera de Linux el campo se informa como 0 en lugar de fallar.
 fn peak_memory_kb() -> u64 {
     std::fs::read_to_string("/proc/self/status")
         .ok()
@@ -44,6 +47,9 @@ fn run(implementation: &str, n: u64, workers: usize) -> Option<String> {
         // PT: `n` é o número de itens nas duas cargas, então um único tamanho compara as
         //     duas: os inteiros 1..=n testados quanto à primalidade, ou os pixels de uma
         //     imagem quadrada cujo lado é a raiz quadrada inteira de n.
+        // ES: `n` es el número de ítems en las dos cargas, así que un solo tamaño compara las
+        //     dos: los enteros 1..=n probados por primalidad, o los píxeles de una
+        //     imagen cuadrada cuyo lado es la raíz cuadrada entera de n.
         "primes" => {
             let stats = match schedule {
                 None => primes::count_sequential(n),
@@ -82,6 +88,8 @@ fn main() -> ExitCode {
     //     the work: it is the serial tail every run pays.
     // PT: Só o trabalho é cronometrado, não a inicialização do processo. O checksum faz parte
     //     do trabalho: é a cauda serial que toda execução paga.
+    // ES: Solo se cronometra el trabajo, no el arranque del proceso. El checksum forma parte
+    //     del trabajo: es la cola serial que paga toda ejecución.
     let start = Instant::now();
     let Some(checksum) = run(implementation, n, workers) else {
         eprintln!("{USAGE}");
@@ -91,6 +99,7 @@ fn main() -> ExitCode {
 
     // EN: The benchmark contract: one JSON object on the last line of output.
     // PT: O contrato de benchmark: um objeto JSON na última linha da saída.
+    // ES: El contrato de benchmark: un objeto JSON en la última línea de la salida.
     println!(
         "{{\"n\":{n},\"elapsedMs\":{elapsed_ms:.3},\"memoryKb\":{},\"language\":\"rust\",\"implementation\":\"{implementation}\",\"checksum\":\"{checksum}\"}}",
         peak_memory_kb()

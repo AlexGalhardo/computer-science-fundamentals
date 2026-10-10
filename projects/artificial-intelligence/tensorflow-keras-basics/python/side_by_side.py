@@ -9,6 +9,12 @@ cada um.
 
 Este projeto não contém PyTorch. Os números do PyTorch abaixo foram medidos pelo mini-projeto
 pytorch-basics (MP-AI-6) e são citados dos resultados versionados dele.
+
+ES: PyTorch y TensorFlow lado a lado: cada concepto en los dos frameworks, y la exactitud medida en
+cada uno.
+
+Este proyecto no contiene PyTorch. Los números de PyTorch de abajo los midió el miniproyecto
+pytorch-basics (MP-AI-6) y se citan de sus resultados versionados.
 """
 
 # EN: Source: projects/artificial-intelligence/pytorch-basics/results/results.md, section
@@ -17,6 +23,9 @@ pytorch-basics (MP-AI-6) e são citados dos resultados versionados dele.
 # PT: Fonte: projects/artificial-intelligence/pytorch-basics/results/results.md, seção
 #     "Training on the two moons", primeira linha (a regra do MP-AI-2, torch.manual_seed(7),
 #     120 épocas): 97,5% nos 80 pontos de treino, 98,0% nos 200 pontos de teste.
+# ES: Fuente: projects/artificial-intelligence/pytorch-basics/results/results.md, sección
+#     "Training on the two moons", primera fila (la regla de MP-AI-2, torch.manual_seed(7),
+#     120 épocas): 97,5% en los 80 puntos de entrenamiento, 98,0% en los 200 puntos de prueba.
 PYTORCH_TRAIN_ACCURACY = 0.975
 PYTORCH_TEST_ACCURACY = 0.980
 PYTORCH_SOURCE = "pytorch-basics/results/results.md"
@@ -74,6 +83,8 @@ def side_by_side_table(fit_accuracies: tuple[float, float], tape_test_accuracy: 
     """EN: The Markdown table of the READMEs, with the accuracies measured by this demo.
 
     PT: A tabela em Markdown dos READMEs, com as acurácias medidas por esta demo.
+
+    ES: La tabla en Markdown de los README, con las exactitudes medidas por esta demo.
     """
     train, test = fit_accuracies
     rows = ["| Concept | PyTorch | TensorFlow and Keras |", "| --- | --- | --- |"]

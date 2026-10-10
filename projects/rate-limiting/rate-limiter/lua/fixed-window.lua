@@ -20,6 +20,17 @@
 --     duas incrementam. Dentro de um script é seguro, porque o Redis executa um script do
 --     início ao fim sem deixar nenhum outro comando entrar no meio. É também por isso que um
 --     script precisa ser curto: enquanto ele roda, todos os outros clientes esperam.
+-- ES: Ventana fija en Redis, como UN script atómico.
+--     KEYS[1] = contador de este cliente. ARGV[1] = límite. ARGV[2] = ventana en milisegundos.
+--     Devuelve { admitida (1 o 0), restantes, milisegundos hasta el fin de la ventana }.
+--
+--     La ventana empieza en la primera solicitud del cliente y termina cuando la clave expira
+--     (el patrón de la documentación de Redis para INCR). El script lee el contador, decide y
+--     escribe. Hecho por la aplicación en tres comandos separados, esto es una carrera de
+--     "verificar y luego actuar": dos instancias leen 9, las dos deciden "por debajo de 10", las
+--     dos incrementan. Dentro de un script es seguro, porque Redis ejecuta un script de
+--     principio a fin sin dejar entrar ningún otro comando en medio. También por eso un
+--     script tiene que ser corto: mientras corre, todos los demás clientes esperan.
 local limit = tonumber(ARGV[1])
 local window_ms = tonumber(ARGV[2])
 
@@ -35,6 +46,9 @@ current = redis.call('INCR', KEYS[1])
 -- PT: A expiração é definida no mesmo script do primeiro incremento. Como dois comandos do
 --     cliente, uma falha entre o INCR e o EXPIRE deixaria um contador que nunca expira, e o
 --     cliente ficaria bloqueado para sempre.
+-- ES: La expiración se define en el mismo script del primer incremento. Como dos comandos del
+--     cliente, un fallo entre el INCR y el EXPIRE dejaría un contador que nunca expira, y el
+--     cliente quedaría bloqueado para siempre.
 if current == 1 then
 	redis.call('PEXPIRE', KEYS[1], window_ms)
 end

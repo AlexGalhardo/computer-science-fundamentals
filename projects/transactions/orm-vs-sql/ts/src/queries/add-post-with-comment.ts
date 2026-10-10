@@ -8,6 +8,11 @@
 //     mesma: todo comando da transação precisa passar pelo identificador da transação (`tx`).
 //     Um comando enviado pelo cliente global roda em outra conexão, fora da transação, e
 //     sobreviveria a um rollback.
+// ES: Consulta 5, una transacción con dos escrituras: un post y su primer comentario. O las dos
+//     filas existen después, o ninguna existe (atomicidad). En los tres enfoques la regla es la
+//     misma: toda sentencia de la transacción debe pasar por el manejador de la transacción (`tx`).
+//     Una sentencia enviada por el cliente global se ejecuta en otra conexión, fuera de la
+//     transacción, y sobreviviría a un rollback.
 
 import { comments, posts } from "../drizzle-schema";
 import type { QueryDefinition } from "./types";

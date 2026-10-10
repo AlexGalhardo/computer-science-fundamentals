@@ -1,6 +1,6 @@
 # Messaging
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Messaging lets services cooperate without calling each other directly: one side publishes a message and another processes it later. Queues, publish/subscribe and logs differ in who receives a message, in which order, and how many times, and those differences decide whether a system survives a crash or a slow consumer. Delivery guarantees, acknowledgements, retries, dead-letter queues and idempotent consumers are the core of the subject.
 

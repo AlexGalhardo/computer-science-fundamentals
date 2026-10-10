@@ -1,6 +1,6 @@
 # pytorch-basics
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 It teaches **what a deep learning framework does for you**, by redoing the mini-project [neural-network-from-scratch](../neural-network-from-scratch/) (MP-AI-2) with PyTorch. The same 2-8-8-1 network is built in both, and the gradients PyTorch computes are compared with the hand-written backpropagation and with numerical gradients. Then the training loop is written by hand (forward, loss, clear, backward, step) on the same dataset, and a table compares lines of code and training time of the two versions.
 
@@ -66,8 +66,8 @@ The gradients, three ways, on the same network (first rows, all 105 are compared
 
 | Parameter | Hand-written backpropagation | PyTorch `backward()` | Numerical |
 | --- | ---: | ---: | ---: |
-| `hidden1` w[0][0] | -0.060789 | -0.060789 | -0.060789 |
-| `hidden1` w[0][1] | 0.012666 | 0.012666 | 0.012666 |
+| `hidden1` `w[0][0]` | -0.060789 | -0.060789 | -0.060789 |
+| `hidden1` `w[0][1]` | 0.012666 | 0.012666 | 0.012666 |
 | `hidden1` b[0] | -0.049645 | -0.049645 | -0.049645 |
 
 The largest difference between PyTorch and the hand-written backpropagation is below 1e-12, and between PyTorch and the numerical gradient below 1e-8.

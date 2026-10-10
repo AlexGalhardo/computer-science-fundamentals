@@ -6,6 +6,10 @@
 //     conta sua própria "operação básica": o passo que mais se repete. Contar operações em vez
 //     de segundos dá um número que não depende da máquina, e esse número pode ser conferido
 //     com uma fórmula fechada.
+// ES: Seis algoritmos pequeños, uno por clase de crecimiento. Cada uno hace trabajo real y cuenta
+//     su propia "operación básica": el paso que más se repite. Contar operaciones en lugar de
+//     segundos da un número que no depende de la máquina, y ese número se puede comprobar con
+//     una fórmula cerrada.
 
 export type ComplexityClass = "constant" | "logarithmic" | "linear" | "linearithmic" | "quadratic" | "exponential";
 
@@ -40,6 +44,9 @@ export interface Sample {
 // PT: Os tamanhos dobram a cada execução. Dobrar é o experimento clássico: um custo linear
 //     dobra, um quadrático é multiplicado por 4, um logarítmico cresce uma constante, e um
 //     exponencial é elevado ao quadrado.
+// ES: Los tamaños se duplican en cada ejecución. Duplicar es el experimento clásico: un costo
+//     lineal se duplica, uno cuadrático se multiplica por 4, uno logarítmico crece una constante,
+//     y uno exponencial se eleva al cuadrado.
 export function doublingSizes(start: number, count: number): number[] {
 	return Array.from({ length: count }, (_, index) => start * 2 ** index);
 }
@@ -52,6 +59,8 @@ function ascending(n: number): number[] {
 //     data and the results are reproducible.
 // PT: Um gerador determinístico mínimo (congruencial linear), para que toda execução veja os
 //     mesmos dados "aleatórios" e os resultados sejam reproduzíveis.
+// ES: Un generador determinístico mínimo (congruencial lineal), para que toda ejecución vea los
+//     mismos datos "aleatorios" y los resultados sean reproducibles.
 export function pseudoRandom(n: number, seed = 42): number[] {
 	let state = seed;
 	return Array.from({ length: n }, () => {
@@ -62,6 +71,7 @@ export function pseudoRandom(n: number, seed = 42): number[] {
 
 // EN: O(1). Reading a position of an array is one address calculation, whatever the array size.
 // PT: O(1). Ler uma posição de um vetor é um cálculo de endereço, qualquer que seja o tamanho.
+// ES: O(1). Leer una posición de un arreglo es un cálculo de dirección, sea cual sea el tamaño.
 function readMiddle(input: number[]): Run {
 	let operations = 0;
 	const result = input[input.length >> 1] ?? -1;
@@ -73,6 +83,8 @@ function readMiddle(input: number[]): Run {
 //     the interval is halved until it is empty. A size of n takes floor(log2 n) + 1 halvings.
 // PT: O(log n). Busca binária por um valor maior que todos os elementos, que é o pior caso: o
 //     intervalo é cortado ao meio até ficar vazio. Um tamanho n exige floor(log2 n) + 1 cortes.
+// ES: O(log n). Búsqueda binaria de un valor mayor que todos los elementos, que es el peor caso:
+//     el intervalo se corta a la mitad hasta quedar vacío. Un tamaño n exige floor(log2 n) + 1 cortes.
 function binarySearchMiss(input: number[]): Run {
 	const target = input.length;
 	let operations = 0;
@@ -96,6 +108,7 @@ function binarySearchMiss(input: number[]): Run {
 
 // EN: O(n). Adding every element touches each one exactly once.
 // PT: O(n). Somar todos os elementos toca cada um exatamente uma vez.
+// ES: O(n). Sumar todos los elementos toca cada uno exactamente una vez.
 function sumAll(input: number[]): Run {
 	let operations = 0;
 	let total = 0;
@@ -112,6 +125,9 @@ function sumAll(input: number[]): Run {
 // PT: O(n log n). Merge sort. A operação contada é um elemento escrito durante a intercalação.
 //     Cada nível da recursão escreve os n elementos, e existem log2 n níveis.
 //     O resultado é 1 quando a saída está mesmo em ordem, para um teste provar que a ordenação funciona.
+// ES: O(n log n). Merge sort. La operación contada es un elemento escrito durante la mezcla.
+//     Cada nivel de la recursión escribe los n elementos, y hay log2 n niveles.
+//     El resultado es 1 cuando la salida realmente está en orden, para que una prueba demuestre que la ordenación funciona.
 function mergeSortMoves(input: number[]): Run {
 	let operations = 0;
 	const sort = (items: number[]): number[] => {
@@ -147,6 +163,8 @@ function mergeSortMoves(input: number[]): Run {
 //     starts after i, so the count is n(n-1)/2: half of n^2, and still quadratic.
 // PT: O(n^2). Conta inversões comparando cada par de posições uma vez. O laço interno começa
 //     depois de i, então a contagem é n(n-1)/2: metade de n^2, e ainda assim quadrática.
+// ES: O(n^2). Cuenta inversiones comparando cada par de posiciones una vez. El bucle interno
+//     empieza después de i, así que el conteo es n(n-1)/2: la mitad de n^2, y aun así cuadrático.
 function countInversions(input: number[]): Run {
 	let operations = 0;
 	let inversions = 0;
@@ -167,6 +185,9 @@ function countInversions(input: number[]): Run {
 // PT: O(2^n). Força bruta sobre todos os subconjuntos, procurando a maior soma. Cada elemento
 //     fica de fora ou entra, então a recursão se divide em dois em cada um dos n níveis e chega
 //     a 2^n subconjuntos completos.
+// ES: O(2^n). Fuerza bruta sobre todos los subconjuntos, buscando la mayor suma. Cada elemento
+//     se deja fuera o se toma, así que la recursión se divide en dos en cada uno de los n niveles
+//     y llega a 2^n subconjuntos completos.
 function enumerateSubsets(input: number[]): Run {
 	let operations = 0;
 	let best = 0;
@@ -222,6 +243,8 @@ export const SAMPLES: Sample[] = [
 		//     to this expression. When n is a power of two it is exactly n * log2 n.
 		// PT: Para qualquer n, a recorrência T(n) = T(floor(n/2)) + T(ceil(n/2)) + n, T(1) = 0
 		//     tem esta solução. Quando n é potência de dois ela vale exatamente n * log2 n.
+		// ES: Para cualquier n, la recurrencia T(n) = T(floor(n/2)) + T(ceil(n/2)) + n, T(1) = 0
+		//     tiene esta solución. Cuando n es potencia de dos vale exactamente n * log2 n.
 		formulaText: "n * ceil(log2 n) - 2^ceil(log2 n) + n",
 		sizes: doublingSizes(16, 12),
 		prepare: (n) => pseudoRandom(n),
@@ -250,6 +273,8 @@ export const SAMPLES: Sample[] = [
 		//     n = 32 would already mean more than four billion subsets.
 		// PT: Um custo exponencial é elevado ao quadrado quando n dobra, então os tamanhos
 		//     precisam ser minúsculos: n = 32 já significaria mais de quatro bilhões de subconjuntos.
+		// ES: Un costo exponencial se eleva al cuadrado cuando n se duplica, así que los tamaños
+		//     deben ser minúsculos: n = 32 ya significaría más de cuatro mil millones de subconjuntos.
 		sizes: doublingSizes(1, 5),
 		prepare: (n) => pseudoRandom(n),
 		run: enumerateSubsets,

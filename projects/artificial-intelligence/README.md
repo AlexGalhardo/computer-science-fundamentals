@@ -1,6 +1,6 @@
 # Artificial intelligence and LLMs
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Modern artificial intelligence is machine learning at scale: models with many adjustable numbers that are trained on data instead of being programmed by hand. This area goes from the mathematics underneath (probability, linear algebra, gradient descent and backpropagation) to the pieces of a large language model (tokens, embeddings, attention, next-token prediction) and of image generators (diffusion), and to their limits and costs.
 

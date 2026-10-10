@@ -5,6 +5,7 @@ defmodule SortingRaceTest do
 
   # EN: Linear congruential generator with a fixed seed, so the test is reproducible.
   # PT: Gerador congruente linear com semente fixa, para o teste ser reproduzível.
+  # ES: Generador congruencial lineal con semilla fija, para que la prueba sea reproducible.
   defp random_values(n, seed) do
     {values, _} =
       Enum.map_reduce(1..n, seed, fn _, state ->
@@ -19,6 +20,8 @@ defmodule SortingRaceTest do
   #     means ordered and a permutation of the input.
   # PT: Mesmos seis casos da referência em TypeScript. O oráculo é o Enum.sort: ser igual a ele
   #     significa estar em ordem e ser uma permutação da entrada.
+  # ES: Los mismos seis casos de la referencia en TypeScript. El oráculo es Enum.sort: ser igual a él
+  #     significa estar en orden y ser una permutación de la entrada.
   defp cases do
     [
       {"empty", []},

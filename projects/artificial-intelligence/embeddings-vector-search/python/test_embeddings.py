@@ -56,6 +56,8 @@ TINY = [
 
 # EN: The experiments are run once for the whole file: every test below reads the same result.
 # PT: Os experimentos rodam uma vez para o arquivo inteiro: todo teste abaixo lê o mesmo resultado.
+# ES: Los experimentos se ejecutan una vez para todo el archivo: toda prueba de abajo lee el mismo
+#     resultado.
 @pytest.fixture(scope="module")
 def experiment() -> Experiment:
     return run_experiment()

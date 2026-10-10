@@ -35,6 +35,9 @@ impl fmt::Display for RuntimeError {
 // PT: O que a máquina precisa lembrar de uma chamada que está esperando outra retornar: qual
 //     função ela estava executando, a instrução de onde continuar, e onde suas posições começam
 //     na pilha de valores. É o registro de ativação da linguagem, reduzido a três campos.
+// ES: Lo que la máquina debe recordar de una llamada que espera que otra retorne: qué función
+//     estaba ejecutando, la instrucción desde donde continuar, y dónde empiezan sus posiciones
+//     en la pila de valores. Es el registro de activación del lenguaje, reducido a tres campos.
 struct Frame {
     closure: Rc<Closure>,
     ip: usize,
@@ -86,6 +89,9 @@ impl<'out> Vm<'out> {
     // PT: Duas closures que capturam a mesma variável precisam compartilhar UM upvalue, senão uma
     //     atribuição feita por uma seria invisível para a outra. Por isso um upvalue aberto que
     //     já exista para a posição é reutilizado antes de se criar um novo.
+    // ES: Dos closures que capturan la misma variable deben compartir UN upvalue, o una asignación
+    //     hecha por una sería invisible para la otra. Por eso un upvalue abierto que ya exista
+    //     para la posición se reutiliza antes de crear uno nuevo.
     fn capture_upvalue(&mut self, slot: usize) -> Rc<RefCell<Upvalue>> {
         let existing = self
             .open_upvalues
@@ -107,6 +113,10 @@ impl<'out> Vm<'out> {
     //     sumir (seu bloco terminou ou sua função está retornando). Seu valor é copiado para o
     //     upvalue, que a partir de agora é o dono dele. É assim que uma variável sobrevive à
     //     chamada que a criou enquanto os locais comuns mantêm a velocidade de uma pilha simples.
+    // ES: Cierre: toda variable capturada en la posición `from` de la pila o por encima está a
+    //     punto de desaparecer (su bloque terminó o su función está retornando). Su valor se copia
+    //     al upvalue, que desde ahora es su dueño. Así una variable sobrevive a la llamada que la
+    //     creó mientras los locales comunes mantienen la velocidad de una pila simple.
     fn close_upvalues(&mut self, from: usize) {
         let stack = &self.stack;
         self.open_upvalues.retain(|upvalue| {
@@ -175,6 +185,12 @@ impl<'out> Vm<'out> {
     //     deste laço sobre um vetor plano, e cada variável é uma leitura indexada. O estado da
     //     chamada em execução (`closure`, `ip`, `base`) fica em variáveis locais e só é salvo em
     //     um `Frame` quando outra função é chamada.
+    // ES: El corazón de la máquina: busca la instrucción en `ip`, avanza `ip`, ejecuta, repite.
+    //     Compáralo con el intérprete de árbol. Allí, ejecutar `a + b` significaba tres llamadas
+    //     recursivas y dos búsquedas por nombre en una cadena de tablas hash. Aquí son tres pasos
+    //     de este bucle sobre un vector plano, y cada variable es una lectura indexada. El estado
+    //     de la llamada en ejecución (`closure`, `ip`, `base`) queda en variables locales y solo
+    //     se guarda en un `Frame` cuando se llama a otra función.
     pub fn run(&mut self, program: &Program) -> Result<(), RuntimeError> {
         self.global_names.clone_from(&program.global_names);
         self.globals.resize(program.global_names.len(), None);
@@ -204,6 +220,8 @@ impl<'out> Vm<'out> {
                 //     start of the current call. No name is involved at run time.
                 // PT: Uma variável local é uma posição da pilha, a uma distância fixa do início
                 //     da chamada atual. Nenhum nome participa durante a execução.
+                // ES: Una variable local es una posición de la pila, a una distancia fija del inicio
+                //     de la llamada actual. Ningún nombre participa durante la ejecución.
                 Op::GetLocal(slot) => self.stack.push(self.stack[base + slot as usize].clone()),
                 Op::SetLocal(slot) => self.stack[base + slot as usize] = self.top().clone(),
 
@@ -293,6 +311,7 @@ impl<'out> Vm<'out> {
 
                 // EN: Control flow is nothing more than assigning to the instruction pointer.
                 // PT: Fluxo de controle nada mais é que atribuir ao ponteiro de instrução.
+                // ES: El flujo de control no es más que asignar al puntero de instrucción.
                 Op::Jump(target) => ip = target as usize,
                 Op::JumpIfFalse(target) => {
                     if !self.pop().is_truthy() {
@@ -332,6 +351,10 @@ impl<'out> Vm<'out> {
                 //     da pilha, em ordem, então a nova chamada apenas declara que suas posições
                 //     começam ali: o argumento 0 é o seu local 0. O estado de quem chamou vai
                 //     para `frames`.
+                // ES: Una llamada no copia los argumentos a ningún lugar. Ya están en el tope de la
+                //     pila, en orden, así que la nueva llamada solo declara que sus posiciones
+                //     empiezan ahí: el argumento 0 es su local 0. El estado de quien llamó va a
+                //     `frames`.
                 Op::Call(count) => {
                     let count = count as usize;
                     let callee_slot = self.stack.len() - 1 - count;
@@ -371,6 +394,11 @@ impl<'out> Vm<'out> {
                 //     função) é descartado em um corte só, e o resultado é empilhado para quem
                 //     chamou, cujo estado salvo é restaurado. Sem ninguém para quem voltar, o
                 //     programa terminou.
+                // ES: Retornar deshace la llamada: el resultado se retira del tope, todo lo que la
+                //     llamada puso en la pila (sus locales, sus argumentos y el propio valor
+                //     función) se descarta de un solo corte, y el resultado se apila para quien
+                //     llamó, cuyo estado guardado se restaura. Sin nadie a quien volver, el
+                //     programa terminó.
                 Op::Return => {
                     let result = self.pop();
                     self.close_upvalues(base);

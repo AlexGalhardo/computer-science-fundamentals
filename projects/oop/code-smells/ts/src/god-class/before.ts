@@ -8,6 +8,10 @@ import type { CreateShop, Shop } from "./contract";
 //     escreve e-mails e monta o relatório. Ela tem cinco motivos para mudar, todo método pode
 //     mexer em todo campo, e nada pode ser testado ou reaproveitado sem o resto: para conferir a
 //     regra de estoque é preciso ter também preços, caixa de saída e tabela de vendas.
+// ES: MAL OLOR: Clase Dios. Una clase guarda el stock, conoce los precios, numera los pedidos,
+//     escribe correos y arma el reporte. Tiene cinco motivos para cambiar, todo método puede
+//     tocar todo campo, y nada puede probarse ni reutilizarse sin el resto: para verificar la
+//     regla de stock hay que tener también precios, bandeja de salida y tabla de ventas.
 class GodShop implements Shop {
 	private stock = new Map<string, number>();
 	private prices: Record<string, number>;

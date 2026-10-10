@@ -4,6 +4,9 @@
 // PT: A versão funcional. Dados e comportamento ficam separados: os tipos abaixo são dados
 //     simples, somente leitura e sem métodos, e as funções recebem dados e devolvem dados novos.
 //     Nada aqui é alterado no lugar.
+// ES: La versión funcional. Datos y comportamiento están separados: los tipos de abajo son datos
+//     simples, de solo lectura y sin métodos, y las funciones reciben datos y devuelven datos
+//     nuevos. Nada aquí se modifica en el mismo lugar.
 
 export type Line = Readonly<{ sku: string; unitPriceCents: number; quantity: number }>;
 
@@ -13,6 +16,9 @@ export type Line = Readonly<{ sku: string; unitPriceCents: number; quantity: num
 // PT: Um conjunto fechado de variantes (uma união discriminada). Onde a versão com objetos tem
 //     uma classe por regra, esta tem uma variante por regra, e cada função abaixo tem um `case`
 //     por variante.
+// ES: Un conjunto cerrado de variantes (una unión discriminada). Donde la versión con objetos
+//     tiene una clase por regla, esta tiene una variante por regla, y cada función de abajo tiene
+//     un `case` por variante.
 export type Rule =
 	| Readonly<{ kind: "percent-coupon"; code: string; percent: number }>
 	| Readonly<{ kind: "fixed-coupon"; code: string; amountCents: number }>
@@ -38,6 +44,8 @@ export type CartErrorCode = "invalid-quantity" | "invalid-price" | "invalid-perc
 //     and the compiler makes it check which one before using the receipt.
 // PT: Um erro é um valor, não uma exceção: quem chama recebe um recibo ou um código de erro, e o
 //     compilador obriga a conferir qual dos dois antes de usar o recibo.
+// ES: Un error es un valor, no una excepción: quien llama recibe un recibo o un código de error, y
+//     el compilador lo obliga a verificar cuál de los dos antes de usar el recibo.
 export type Result = Readonly<{ ok: true; receipt: Receipt }> | Readonly<{ ok: false; error: CartErrorCode }>;
 
 export const emptyCart: Cart = { lines: [], rules: [], tax: { kind: "none" } };
@@ -47,6 +55,9 @@ export const emptyCart: Cart = { lines: [], rules: [], tax: { kind: "none" } };
 // PT: "Adicionar" devolve um carrinho novo, que reaproveita as linhas antigas e tem uma a mais.
 //     O carrinho recebido como argumento fica exatamente como estava, então quem ainda o tem em
 //     mãos não vê mudança alguma.
+// ES: "Agregar" devuelve un carrito nuevo, que reutiliza las líneas antiguas y tiene una más. El
+//     carrito recibido como argumento queda exactamente como estaba, así que quien todavía lo
+//     tiene en sus manos no ve ningún cambio.
 export function addLine(cart: Cart, line: Line): Cart {
 	return { ...cart, lines: [...cart.lines, line] };
 }
@@ -67,6 +78,9 @@ const isPercent = (value: number): boolean => isCount(value, 0) && value <= 100;
 // PT: O truque do `never`: se uma variante for acrescentada a `Rule` e um `switch` abaixo a
 //     esquecer, esta chamada deixa de compilar. O compilador lista todas as funções que precisam
 //     do caso novo.
+// ES: El truco del `never`: si se agrega una variante a `Rule` y un `switch` de abajo la olvida,
+//     esta llamada deja de compilar. El compilador lista todas las funciones que necesitan el caso
+//     nuevo.
 function unreachable(value: never): never {
 	throw new Error(`unhandled variant: ${JSON.stringify(value)}`);
 }
@@ -113,6 +127,8 @@ const lineTotal = (line: Line): number => line.unitPriceCents * line.quantity;
 //     same logic is spread over four classes.
 // PT: Uma operação, todas as variantes em um só lugar. Compare com a versão com objetos, em que
 //     esta mesma lógica está espalhada por quatro classes.
+// ES: Una operación, todas las variantes en un solo lugar. Compárala con la versión con objetos,
+//     en la que esta misma lógica está repartida en cuatro clases.
 export function discountCents(rule: Rule, lines: readonly Line[], runningCents: number): number {
 	switch (rule.kind) {
 		case "percent-coupon":
@@ -172,6 +188,9 @@ type Progress = Readonly<{ runningCents: number; discounts: readonly AppliedDisc
 // PT: Uma função pura: o recibo depende só do carrinho recebido, e calculá-lo não altera nada.
 //     O laço da versão com objetos vira um `reduce`, que leva o total corrente e a lista de
 //     descontos de uma regra para a seguinte sem reatribuir variável alguma.
+// ES: Una función pura: el recibo depende solo del carrito dado, y calcularlo no modifica nada. El
+//     ciclo de la versión con objetos se vuelve un `reduce`, que lleva el total corriente y la
+//     lista de descuentos de una regla a la siguiente sin reasignar ninguna variable.
 export function price(cart: Cart): Result {
 	const error = validate(cart);
 	if (error !== undefined) {

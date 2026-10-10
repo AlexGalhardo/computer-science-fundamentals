@@ -10,6 +10,12 @@
 //     primária, rodar uma consulta com filtro e agregação, e ler pela chave de novo a partir de
 //     8 threads com 8 conexões. A libpq não tem pool, então o "pool" aqui é o mais simples
 //     possível: as conexões são abertas antes e cada thread fica com uma.
+// ES: Cliente de base de datos del benchmark en C++, con libpq, la biblioteca C oficial de
+//     PostgreSQL, sobre la cual la mayoría de los otros drivers se construye o se modela. Las
+//     cuatro fases son las mismas en los 7 lenguajes: insertar n filas una por una, leer cada una
+//     por la clave primaria, ejecutar una consulta con filtro y agregación, y leer por la clave de
+//     nuevo desde 8 threads con 8 conexiones. libpq no tiene pool, así que el "pool" aquí es lo más
+//     simple posible: las conexiones se abren antes y cada thread se queda con una.
 
 #include <libpq-fe.h>
 #include <sys/resource.h>
@@ -60,6 +66,7 @@ struct Phase {
 
 // EN: Runs fn for from, from+step, ... up to to, timing each call.
 // PT: Roda fn para from, from+step, ... até to, cronometrando cada chamada.
+// ES: Ejecuta fn para from, from+step, ... hasta to, cronometrando cada llamada.
 Phase timed(int from, int to, int step, const std::function<long long(int)>& fn) {
 	Phase phase;
 	const auto start = Clock::now();
@@ -94,6 +101,8 @@ PGconn* connect() {
 //     status and returns the result. The caller must PQclear it: in C nothing is freed for you.
 // PT: Envia um comando com os valores separados do texto SQL ($1, $2...), confere o status e
 //     devolve o resultado. Quem chama precisa dar PQclear: em C nada é liberado sozinho.
+// ES: Envía un comando con los valores separados del texto SQL ($1, $2...), comprueba el estado y
+//     devuelve el resultado. Quien llama debe hacer PQclear: en C nada se libera solo.
 PGresult* exec(PGconn* conn, const char* sql, const std::vector<std::string>& params) {
 	std::vector<const char*> values;
 	for (const std::string& param : params) values.push_back(param.c_str());
@@ -175,6 +184,7 @@ int main(int argc, char** argv) {
 
 		// EN: CPU time and peak memory of this client process, as counted by the kernel.
 		// PT: Tempo de CPU e pico de memória deste processo cliente, contados pelo kernel.
+		// ES: Tiempo de CPU y pico de memoria de este proceso cliente, contados por el kernel.
 		rusage usage{};
 		getrusage(RUSAGE_SELF, &usage);
 		const double cpu_ms =

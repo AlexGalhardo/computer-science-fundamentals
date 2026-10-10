@@ -16,6 +16,8 @@ const USAGE: &str = "usage:
 //     ("high water mark") of /proc/self/status, so no external crate is needed.
 // PT: Pico de memória residente deste processo em KiB. O Linux o publica na linha `VmHWM`
 //     ("marca d'água máxima") de /proc/self/status, então nenhum crate externo é necessário.
+// ES: Pico de memoria residente de este proceso en KiB. Linux lo publica en la línea `VmHWM`
+//     ("marca de agua máxima") de /proc/self/status, así que no se necesita ningún crate externo.
 fn peak_memory_kb() -> u64 {
     let status = fs::read_to_string("/proc/self/status").unwrap_or_default();
     status
@@ -34,6 +36,10 @@ fn peak_memory_kb() -> u64 {
 //     cronometrado: só a execução do bytecode é medida, que é a parte comparada com o
 //     interpretador de árvore. A última linha impressa é o objeto JSON do contrato de benchmark
 //     do repositório, e o checksum é o que o programa imprimiu.
+// ES: Punto de entrada del benchmark. Leer el archivo, analizar y compilar quedan fuera del tramo
+//     cronometrado: solo se mide la ejecución del bytecode, que es la parte que se compara con el
+//     intérprete de árbol. La última línea impresa es el objeto JSON del contrato de benchmark
+//     del repositorio, y el checksum es lo que el programa imprimió.
 fn bench(path: &str, n: &str) -> Result<(), String> {
     let n: u64 = n
         .parse()
@@ -78,6 +84,8 @@ fn main() -> ExitCode {
             //     printed before a run-time error still appears.
             // PT: A saída é bufferizada e descarregada mesmo quando o programa falha, então tudo
             //     o que ele imprimiu antes de um erro de execução ainda aparece.
+            // ES: La salida se almacena en búfer y se vuelca incluso cuando el programa falla, así
+            //     que todo lo que imprimió antes de un error de ejecución aún aparece.
             let mut output = BufWriter::new(io::stdout().lock());
             let result = run_source(source, &mut output);
             let _ = output.flush();

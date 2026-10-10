@@ -1,6 +1,6 @@
 # bun-vs-node
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A mesma API HTTP, escrita uma vez, servida de três formas: pelo Bun, por um único processo Node.js, e pelo Node.js no modo cluster do PM2 com quatro workers. Um cenário local de k6 aplica carga em um endpoint CPU-bound e em um endpoint I/O-bound de cada configuração, e um relatório transforma as execuções em uma tabela de requisições por segundo, latência p95 e memória. A lição é que a vazão depende de duas coisas separadas: a velocidade com que o runtime executa o seu código, e quantos processos o modelo de processos deixa você usar.
 

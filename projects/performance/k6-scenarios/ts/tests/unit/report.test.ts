@@ -17,6 +17,8 @@ import {
 //     thresholds are crossed. After the fix, everything is fast.
 // PT: Um resumo de k6 inventado. Antes da correção, as fases acima de 100 req/s são lentas e os
 //     thresholds globais são ultrapassados. Depois da correção, tudo é rápido.
+// ES: Un resumen de k6 inventado. Antes de la corrección, las fases por encima de 100 req/s son lentas
+//     y los umbrales globales se superan. Después de la corrección, todo es rápido.
 function summary(scenario: Scenario, variant: Variant, overrides: Partial<Summary> = {}): Summary {
 	const slow = variant === "before";
 	return {
@@ -113,6 +115,7 @@ test("the overview has one row per scenario, in both languages", () => {
 	expect(english).toContain("**FAIL**: p95 2010 ms, 30.00% failed | pass: p95 30.0 ms, 0.00% failed |");
 	expect(english.split("\n")).toHaveLength(2 + 4);
 	expect(renderOverview(allRuns(), "pt")).toContain("**FALHOU**: p95 2010 ms, 30.00% com erro | passou:");
+	expect(renderOverview(allRuns(), "es")).toContain("**FALLÓ**: p95 2010 ms, 30.00% con error | pasó:");
 });
 
 test("the scenario summary shows thresholds and phases, and the knee only for stress", () => {

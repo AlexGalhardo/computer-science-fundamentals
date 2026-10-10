@@ -17,6 +17,8 @@ describe("prop: shrinking", () => {
 	//     generator finds first, shrinking must end at the boundary, 50.
 	// PT: A propriedade "todo número é menor que 50" é falsa. Qualquer que seja o número
 	//     grande que o gerador ache primeiro, a redução precisa terminar na fronteira, 50.
+	// ES: La propiedad "todo número es menor que 50" es falsa. Sea cual sea el número
+	//     grande que el generador encuentre primero, la reducción debe terminar en la frontera, 50.
 	test("an integer shrinks to the smallest failing value", () => {
 		const result = check(int(0, 1000), (n) => n < 50);
 		expect(result.ok).toBe(false);
@@ -29,6 +31,8 @@ describe("prop: shrinking", () => {
 	//     is three zeros.
 	// PT: "Nenhuma lista tem três elementos ou mais" é falsa, e a menor lista que mostra isso
 	//     são três zeros.
+	// ES: "Ninguna lista tiene tres elementos o más" es falsa, y la lista más pequeña que lo
+	//     muestra son tres ceros.
 	test("a list shrinks to the shortest failing list of the simplest elements", () => {
 		const result = check(listOf(int(0, 100), 10), (xs) => xs.length < 3);
 		expect(result.ok).toBe(false);

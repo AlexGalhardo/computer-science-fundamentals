@@ -4,6 +4,9 @@
 // PT: Um record é um valor imutável: os campos são final, e equals, hashCode e toString comparam
 //     e imprimem o conteúdo. O construtor compacto valida, então toda CartLine que existe é
 //     válida e as outras classes nunca a conferem de novo.
+// ES: Un record es un valor inmutable: los campos son final, y equals, hashCode y toString
+//     comparan e imprimen el contenido. El constructor compacto valida, así que toda CartLine que
+//     existe es válida y las otras clases nunca la verifican de nuevo.
 public record CartLine(String sku, int unitPriceCents, int quantity) {
   public CartLine {
     if (quantity < 1) {

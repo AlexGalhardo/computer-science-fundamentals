@@ -2,6 +2,8 @@
 //     refusal. The clock is injected, so "expired" is tested without waiting.
 // PT: O verificador corrigido sozinho, sem HTTP: um teste por verificação, com o motivo exato de
 //     cada recusa. O relógio é injetado, então "expirado" é testado sem esperar.
+// ES: El verificador corregido por separado, sin HTTP: una prueba por verificación, con el motivo exacto de
+//     cada rechazo. El reloj se inyecta, así que "expirado" se prueba sin esperar.
 
 import { describe, expect, test } from "bun:test";
 import { randomBytes } from "node:crypto";
@@ -23,6 +25,9 @@ function verifierAt(now: number, extra: { maxTokenBytes?: number } = {}): FixedV
 // PT: Um token com qualquer cabeçalho e qualquer payload, corretamente assinado com HS256 e a
 //     chave do laboratório. Permite isolar uma verificação: a assinatura está certa, então só o
 //     cabeçalho ou uma claim muda.
+// ES: Un token con cualquier encabezado y cualquier payload, correctamente firmado con HS256 y la
+//     clave del laboratorio. Permite aislar una verificación: la firma es correcta, así que solo cambia el
+//     encabezado o un claim.
 function signRaw(header: unknown, payload: unknown, key: Buffer = KEY): string {
 	const signingInput = `${encodeJson(header)}.${encodeJson(payload)}`;
 	return `${signingInput}.${base64UrlEncode(hmacSha256(signingInput, key))}`;
@@ -57,6 +62,9 @@ describe("fixed verifier: pinned algorithm", () => {
 	// PT: A assinatura abaixo é uma assinatura HS256 correta. O token é recusado mesmo assim,
 	//     porque o cabeçalho não diz exatamente o que o servidor decidiu. O algoritmo é conferido
 	//     antes da assinatura, e de forma independente dela.
+	// ES: La firma de abajo es una firma HS256 correcta. El token se rechaza de todos modos,
+	//     porque el encabezado no dice exactamente lo que decidió el servidor. El algoritmo se comprueba
+	//     antes de la firma, y de forma independiente de ella.
 	test.each(["RS256", "HS512", "hs256"])("a header saying %p is refused before any signature work", (alg) => {
 		expect(reasonOf(verify(signRaw({ alg, typ: "JWT" }, VALID)))).toBe("algorithm_not_allowed");
 	});
@@ -91,6 +99,7 @@ describe("fixed verifier: signature", () => {
 describe("fixed verifier: shape and size", () => {
 	// EN: A few hand-picked shapes, one per rule. This is not a fuzzer.
 	// PT: Alguns formatos escolhidos à mão, um por regra. Isto não é um fuzzer.
+	// ES: Algunos formatos elegidos a mano, uno por regla. Esto no es un fuzzer.
 	test.each([
 		["no dots", "not-a-token"],
 		["two parts", "only.two"],

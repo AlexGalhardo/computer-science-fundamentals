@@ -1,6 +1,8 @@
 """EN: In-memory tables with selection and projection, the two simplest relational operators.
 
 PT: Tabelas em memória com seleção e projeção, os dois operadores relacionais mais simples.
+
+ES: Tablas en memoria con selección y proyección, los dos operadores relacionales más simples.
 """
 
 import operator
@@ -12,6 +14,7 @@ Row = tuple[Value, ...]
 
 # EN: The comparison operators a selection accepts, written as in SQL.
 # PT: Os operadores de comparação que uma seleção aceita, escritos como no SQL.
+# ES: Los operadores de comparación que acepta una selección, escritos como en SQL.
 OPERATORS: dict[str, Callable[[Value, Value], bool]] = {
     "=": operator.eq,
     "<>": operator.ne,
@@ -27,6 +30,8 @@ class Predicate:
     """EN: A selection condition of the form `column op constant`, such as `salary > 4000`.
 
     PT: Uma condição de seleção da forma `coluna op constante`, como `salary > 4000`.
+
+    ES: Una condición de selección de la forma `columna op constante`, como `salary > 4000`.
     """
 
     column: str
@@ -44,6 +49,11 @@ class Table:
     então, diferente de uma relação matemática, esta tabela tem ordem e pode ter linhas
     repetidas. Essa é a visão de tabela do SQL, e é por isso que `project` tem a opção
     `distinct`.
+
+    ES: Un encabezado (nombres de las columnas) y un cuerpo (filas). Las filas se guardan en una
+    lista, así que, a diferencia de una relación matemática, esta tabla tiene orden y puede
+    tener filas repetidas. Esa es la visión de tabla de SQL, y por eso `project` tiene la
+    opción `distinct`.
     """
 
     columns: list[str]
@@ -66,6 +76,9 @@ class Table:
         # PT: Seleção (restrição, o sigma da álgebra relacional): mantém as linhas em que a
         #     condição é verdadeira e mantém todas as colunas. É a cláusula WHERE do SQL. Sem
         #     índice, o único jeito de responder é olhar cada linha uma vez: O(n).
+        # ES: Selección (restricción, el sigma del álgebra relacional): conserva las filas en que
+        #     la condición es verdadera y conserva todas las columnas. Es la cláusula WHERE de
+        #     SQL. Sin índice, la única forma de responder es mirar cada fila una vez: O(n).
         if predicate.op not in OPERATORS:
             raise ValueError(f"unknown operator: {predicate.op}")
         index = self.column_index(predicate.column)
@@ -85,6 +98,12 @@ class Table:
         #     SQL as mantém a menos que se escreva DISTINCT. `distinct` escolhe entre os dois; um
         #     conjunto lembra as linhas já produzidas, então remover duplicatas continua O(n) em
         #     média.
+        # ES: Proyección (el pi del álgebra relacional): conserva las columnas pedidas de cada
+        #     fila. Descartar columnas puede volver iguales filas que eran distintas. El álgebra
+        #     relacional elimina esos duplicados porque una relación es un conjunto, mientras que
+        #     SQL los conserva a menos que se escriba DISTINCT. `distinct` elige entre los dos; un
+        #     conjunto recuerda las filas ya producidas, así que eliminar duplicados sigue siendo
+        #     O(n) en promedio.
         indexes = [self.column_index(name) for name in columns]
         seen: set[Row] = set()
         rows: list[Row] = []
@@ -102,4 +121,6 @@ class Table:
         #     order. A query result has no guaranteed order unless ORDER BY is used.
         # PT: Linhas como texto ordenado, para comparar dois resultados sem depender da ordem
         #     das linhas. O resultado de uma consulta não tem ordem garantida sem ORDER BY.
+        # ES: Filas como texto ordenado, para comparar dos resultados sin depender del orden de
+        #     las filas. El resultado de una consulta no tiene orden garantizado sin ORDER BY.
         return sorted([str(value) for value in row] for row in self.rows)

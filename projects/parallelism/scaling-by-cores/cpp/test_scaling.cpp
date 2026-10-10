@@ -53,6 +53,10 @@ void test_primes_known_values() {
 // PT: O teste de aceitação do mini-projeto: para toda quantidade de trabalhadores e para os
 //     dois escalonamentos, o resultado paralelo é exatamente o sequencial. Os limites incluem
 //     casos com menos números que trabalhadores e um limite que não é múltiplo do pedaço.
+// ES: La prueba de aceptación del mini-proyecto: para toda cantidad de trabajadores y para las
+//     dos planificaciones, el resultado paralelo es exactamente el secuencial. Los límites
+//     incluyen casos con menos números que trabajadores y un límite que no es múltiplo de la
+//     porción.
 void test_primes_parallel_equals_sequential() {
 	for (const std::uint64_t limit :
 	     {0ULL, 1ULL, 2ULL, 3ULL, 10ULL, 9'999ULL, 10'000ULL, 10'001ULL, 123'457ULL}) {
@@ -77,6 +81,8 @@ void test_escape_time() {
 //     three languages render the same image bit for bit.
 // PT: Os mesmos valores de referência são verificados pelos testes de Rust e Go, o que prova
 //     que as três linguagens geram a mesma imagem bit a bit.
+// ES: Los mismos valores de referencia se verifican en las pruebas de Rust y Go, lo que prueba
+//     que los tres lenguajes generan la misma imagen bit a bit.
 void test_mandelbrot_golden_image() {
 	const Image image = render_sequential(64, kMaxIter);
 	check(image.total_iterations == 717'248, "golden total iterations");

@@ -6,6 +6,10 @@
 //     pelo primeiro import apressado. Este módulo lê os imports de cada arquivo de `src/` e
 //     relata cada um que aponta de uma camada interna para uma externa. Ele roda junto com os
 //     testes, então um import desses quebra o build.
+// ES: LA REGLA DE DEPENDENCIA COMO UN PROGRAMA. Una regla que vive solo en un diagrama la rompe
+//     el primer import apresurado. Este módulo lee los imports de cada archivo de `src/` y
+//     reporta cada uno que apunta de una capa interna a una externa. Corre junto con las
+//     pruebas, así que un import así rompe el build.
 
 import { posix } from "node:path";
 
@@ -13,6 +17,9 @@ import { posix } from "node:path";
 //     may import from its own layer and from the layers BEFORE it, never from the ones after.
 // PT: As camadas do centro para fora. A posição nesta lista é a regra inteira: um arquivo pode
 //     importar da própria camada e das camadas ANTERIORES, nunca das posteriores.
+// ES: Las capas del centro hacia afuera. La posición en esta lista es la regla completa: un
+//     archivo puede importar de su propia capa y de las capas ANTERIORES, nunca de las
+//     posteriores.
 export const LAYERS = ["entities", "use-cases", "adapters", "drivers", "main"] as const;
 export type Layer = (typeof LAYERS)[number];
 
@@ -23,6 +30,10 @@ export type Layer = (typeof LAYERS)[number];
 //     pacote nenhum, nem mesmo um embutido como `node:fs`. Os adaptadores podem usar o Zod para
 //     conferir o formato da entrada externa. Só as duas camadas externas podem importar
 //     frameworks e drivers.
+// ES: Una biblioteca también es un detalle externo. Las dos capas internas no pueden importar
+//     ningún paquete, ni siquiera uno integrado como `node:fs`. Los adaptadores pueden usar Zod
+//     para verificar el formato de la entrada externa. Solo las dos capas externas pueden
+//     importar frameworks y drivers.
 const ALLOWED_PACKAGES: Record<Layer, readonly string[] | "any"> = {
 	entities: [],
 	"use-cases": [],
@@ -59,6 +70,11 @@ interface FoundImport {
 //     leitor didático baseado em expressões regulares, não um parser de TypeScript: uma string
 //     que contenha `//` ou o texto de um import consegue enganá-lo. Um projeto de produção
 //     usaria uma regra de lint ou uma ferramenta construída sobre o compilador.
+// ES: Los comentarios se borran antes, conservando cada salto de línea, así que un import citado
+//     dentro de un comentario no se cuenta y los números de línea siguen correctos. Este es un
+//     lector didáctico basado en expresiones regulares, no un parser de TypeScript: un string
+//     que contenga `//` o el texto de un import puede engañarlo. Un proyecto de producción
+//     usaría una regla de lint o una herramienta construida sobre el compilador.
 function blankComments(source: string): string {
 	const blank = (match: string): string => match.replace(/[^\n]/g, " ");
 	return source.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/(?<!:)\/\/[^\n]*/g, blank);
@@ -70,6 +86,9 @@ function blankComments(source: string): string {
 // PT: `import type` é capturado de propósito. Um import só de tipo desaparece em tempo de
 //     execução, mas o arquivo continua sem poder ser lido ou compilado sem o externo: é uma
 //     dependência de código-fonte, que é exatamente do que a regra trata.
+// ES: `import type` se captura a propósito. Un import solo de tipo desaparece en tiempo de
+//     ejecución, pero el archivo sigue sin poder leerse ni compilarse sin el externo: es una
+//     dependencia de código fuente, que es exactamente de lo que trata la regla.
 const IMPORT_PATTERNS = [
 	/\b(?:import|export)\b[^"';]*?\bfrom\s*["']([^"']+)["']/g,
 	/\bimport\s*["']([^"']+)["']/g,
@@ -136,6 +155,8 @@ export function checkFile(file: SourceFile): Violation[] {
 		//     the importing one in the list.
 		// PT: A comparação que aplica a regra: a camada importada não pode vir depois da que
 		//     importa na lista.
+		// ES: La comparación que aplica la regla: la capa importada no puede venir después de la
+		//     que importa en la lista.
 		if (LAYERS.indexOf(targetLayer) > LAYERS.indexOf(layer)) {
 			report(`"${layer}" is an inner layer and cannot import from "${targetLayer}"`);
 		}

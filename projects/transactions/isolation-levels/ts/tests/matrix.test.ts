@@ -21,6 +21,9 @@ import {
 // PT: O que a documentação do PostgreSQL promete. `true` significa que a anomalia aparece naquele
 //     nível. O padrão SQL é mais permissivo: permite leitura suja em READ UNCOMMITTED e fantasmas
 //     em REPEATABLE READ. O PostgreSQL não permite nenhum dos dois.
+// ES: Lo que promete la documentación de PostgreSQL. `true` significa que la anomalía aparece en ese
+//     nivel. El estándar SQL es más permisivo: permite lectura sucia en READ UNCOMMITTED y fantasmas
+//     en REPEATABLE READ. PostgreSQL no permite ninguno de los dos.
 const EXPECTED: Record<AnomalyId, Record<Level, boolean>> = {
 	"dirty-read": {
 		"READ UNCOMMITTED": false,
@@ -48,6 +51,8 @@ const EXPECTED: Record<AnomalyId, Record<Level, boolean>> = {
 //     Dirty read has no entry: PostgreSQL has no level that shows it.
 // PT: O nível em que cada anomalia para, como [nível mais forte que a mostra, nível seguinte].
 //     A leitura suja não tem entrada: o PostgreSQL não tem nível que a mostre.
+// ES: El nivel en el que se detiene cada anomalía, como [nivel más fuerte que la muestra, nivel siguiente].
+//     La lectura sucia no tiene entrada: PostgreSQL no tiene ningún nivel que la muestre.
 const BOUNDARIES: [AnomalyId, Level, Level][] = [
 	["non-repeatable-read", "READ COMMITTED", "REPEATABLE READ"],
 	["phantom", "READ COMMITTED", "REPEATABLE READ"],
@@ -133,6 +138,8 @@ describe("result matrix", () => {
 		const portuguese = readFileSync(join(config.PROJECT_DIR, "README.pt-BR.md"), "utf8");
 		expect(english).toContain(renderMatrix(cells, "en"));
 		expect(portuguese).toContain(renderMatrix(cells, "pt"));
+		const spanish = readFileSync(join(config.PROJECT_DIR, "README.es.md"), "utf8");
+		expect(spanish).toContain(renderMatrix(cells, "es"));
 		expect(readFileSync(join(config.PROJECT_DIR, "results", "matrix.md"), "utf8")).toContain(version);
 		expect(readFileSync(join(config.PROJECT_DIR, "results", "timeline.md"), "utf8")).toContain("| Blocked |");
 	});

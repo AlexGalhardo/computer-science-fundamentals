@@ -1,7 +1,7 @@
 # Mini-project catalog
 
-> Versão em português: [docs/pt/mini-project-catalog.md](../pt/mini-project-catalog.md)
-
+> Versão em português: [docs/pt/mini-project-catalog.md](../pt/mini-project-catalog.md) · Versión en español: [docs/es/mini-project-catalog.md](../es/mini-project-catalog.md)
+>
 > Note (2026-10-08): the `references/` folder mentioned in this document was removed from the repository and from its history. Study references are in [REFERENCES.md](../../REFERENCES.md).
 
 Ideas agreed in the Phase 2 brainstorming, grouped by area. This is the backlog that `PLAN.md` turns into tasks with acceptance criteria. TypeScript is the reference language unless another one is listed first.

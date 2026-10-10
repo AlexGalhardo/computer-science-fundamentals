@@ -26,6 +26,8 @@ func TestSRLatchSetHoldResetHold(t *testing.T) {
 // clock is 1, the flip-flop only looks at D when the clock rises.
 // PT: A mesma forma de onda da questão latches-flip-flops-10 do quiz: o latch acompanha D
 // enquanto o clock vale 1, o flip-flop só olha para D quando o clock sobe.
+// ES: La misma forma de onda de la pregunta latches-flip-flops-10 del quiz: el latch sigue a D
+// mientras el clock vale 1, el flip-flop solo mira D cuando el clock sube.
 func TestLatchIsLevelSensitiveAndFlipFlopIsEdgeTriggered(t *testing.T) {
 	clock := []Bit{0, 0, 1, 1, 1, 0, 0, 1, 1, 0}
 	data := []Bit{1, 0, 0, 1, 1, 0, 1, 1, 0, 0}

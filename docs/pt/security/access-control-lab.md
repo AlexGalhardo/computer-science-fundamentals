@@ -1,6 +1,6 @@
 # Laboratório de controle de acesso: IDOR e verificação de papel (MP-SEC-4)
 
-> English version: [docs/en/security/access-control-lab.md](../../en/security/access-control-lab.md)
+> English version: [docs/en/security/access-control-lab.md](../../en/security/access-control-lab.md) · Versión en español: [docs/es/security/access-control-lab.md](../../es/security/access-control-lab.md)
 
 Mini-projeto: [`projects/security/access-control-lab`](../../../projects/security/access-control-lab/README.pt-BR.md). Tópicos do quiz: `access-control`, `owasp-threat-modelling`.
 
@@ -22,7 +22,7 @@ Controle de acesso quebrado é o primeiro item do OWASP Top 10 porque a segunda 
 
 ## A falha
 
-```
+```text
 bob-fake (logado como ele mesmo)       servidor (vulnerável)
 GET /invoices/1002  ------------------> carrega a fatura 1002 -> 200, fatura dele
 GET /invoices/1001  ------------------> carrega a fatura 1001 -> 200, fatura da alice-fake

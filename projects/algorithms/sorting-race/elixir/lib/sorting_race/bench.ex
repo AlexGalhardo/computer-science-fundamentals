@@ -5,6 +5,9 @@ defmodule SortingRace.Bench do
 
   PT: `SortingRace.Bench.main([algoritmo, variante, n])` lê `data/<variante>-<n>.txt`, ordena e
   imprime uma linha JSON no contrato de benchmark. Só a ordenação é cronometrada.
+
+  ES: `SortingRace.Bench.main([algoritmo, variante, n])` lee `data/<variante>-<n>.txt`, ordena e
+  imprime una línea JSON en el contrato de benchmark. Solo se cronometra la ordenación.
   """
 
   @variants ["random", "sorted", "reversed"]
@@ -34,6 +37,8 @@ defmodule SortingRace.Bench do
   #     is the measurement least disturbed by other programs on the machine.
   # PT: Até 5 execuções enquanto o total fica abaixo de 300 ms, e a mais rápida é mantida: o
   #     mínimo é a medida menos perturbada por outros programas na máquina.
+  # ES: Hasta 5 ejecuciones mientras el total se mantiene por debajo de 300 ms, y se conserva la más
+  #     rápida: el mínimo es la medida menos perturbada por otros programas en la máquina.
   defp best_of(_sort, _values, left, spent, best)
        when best != nil and (left == 0 or spent >= 300_000),
        do: best
@@ -46,6 +51,7 @@ defmodule SortingRace.Bench do
 
   # EN: The file is external input: anything that is not an integer in range raises an error.
   # PT: O arquivo é entrada externa: o que não for um inteiro dentro da faixa gera um erro.
+  # ES: El archivo es entrada externa: lo que no sea un entero dentro del rango genera un error.
   defp read_values(path, expected) do
     values =
       path |> File.read!() |> String.split("\n", trim: true) |> Enum.map(&String.to_integer/1)
@@ -59,6 +65,7 @@ defmodule SortingRace.Bench do
 
   # EN: VmHWM ("high water mark") in /proc/self/status is the peak resident memory in kibibytes.
   # PT: VmHWM ("marca d'água") em /proc/self/status é o pico de memória residente em kibibytes.
+  # ES: VmHWM ("marca de agua") en /proc/self/status es el pico de memoria residente en kibibytes.
   defp peak_memory_kb do
     case Regex.run(~r/VmHWM:\s+(\d+)/, File.read!("/proc/self/status")) do
       [_, kb] -> String.to_integer(kb)

@@ -1,6 +1,6 @@
 # Laboratório de upload e path traversal: nomes e tipos de arquivo vindos do cliente (MP-SEC-8)
 
-> English version: [docs/en/security/upload-path-traversal-lab.md](../../en/security/upload-path-traversal-lab.md)
+> English version: [docs/en/security/upload-path-traversal-lab.md](../../en/security/upload-path-traversal-lab.md) · Versión en español: [docs/es/security/upload-path-traversal-lab.md](../../es/security/upload-path-traversal-lab.md)
 
 Mini-projeto: [`projects/security/upload-path-traversal-lab`](../../../projects/security/upload-path-traversal-lab/README.pt-BR.md). Tópicos do quiz: `ssrf-path-traversal-upload`, `csp-security-headers`.
 
@@ -20,7 +20,7 @@ Um upload de arquivo carrega os bytes do arquivo e três descrições dele. As d
 
 ## A falha
 
-```
+```text
 disco do laboratório                    bob-fake -> servidor vulnerável
 <tmp>/uploads/            raiz          GET /download?file=../private/FAKE-SECRET.txt
 <tmp>/private/                            join(uploads, "../private/FAKE-SECRET.txt")

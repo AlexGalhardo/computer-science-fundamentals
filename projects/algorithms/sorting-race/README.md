@@ -1,6 +1,6 @@
 # sorting-race
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Six sorting algorithms (bubble, insertion, merge, quick, heap and radix), written from scratch in seven languages, sort the same input files. The race shows two things at once: how the measured time of each algorithm follows its Big O when `n` grows, and how much of the time belongs to the language instead of the algorithm.
 

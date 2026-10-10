@@ -1,6 +1,6 @@
 # REST, GraphQL e JSON-RPC (MP-PROTO-1)
 
-> English version: [docs/en/protocols/rest-graphql-jsonrpc.md](../../en/protocols/rest-graphql-jsonrpc.md)
+> English version: [docs/en/protocols/rest-graphql-jsonrpc.md](../../en/protocols/rest-graphql-jsonrpc.md) · Versión en español: [docs/es/protocols/rest-graphql-jsonrpc.md](../../es/protocols/rest-graphql-jsonrpc.md)
 
 Mini-projeto: [`projects/protocols/rest-graphql-jsonrpc`](../../../projects/protocols/rest-graphql-jsonrpc/README.pt-BR.md). Tópicos do quiz: `rest`, `graphql`, `json-rpc-grpc`, `http-semantics`.
 

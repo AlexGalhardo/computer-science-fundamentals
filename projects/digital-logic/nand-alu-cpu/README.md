@@ -1,6 +1,6 @@
 # nand-alu-cpu
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Mini-project MP-DL-2. It teaches **how a computer is built from one gate**. The only primitive in the code is `nand(a, b)`. From it come NOT, AND, OR and XOR, then a multiplexer and a full adder, then an ALU with flags, then memory (latch, flip-flop, register), and finally a 4-bit CPU that runs a program which multiplies two numbers.
 

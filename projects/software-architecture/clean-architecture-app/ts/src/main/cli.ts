@@ -2,6 +2,8 @@
 //     `http.ts` and uses the other controller. `bun run cli add "Buy milk"`.
 // PT: Ponto de entrada do mecanismo de entrega por terminal. Compõe a mesma aplicação que
 //     `http.ts` e usa o outro controller. `bun run cli add "Comprar leite"`.
+// ES: Punto de entrada del mecanismo de entrega por terminal. Compone la misma aplicación que
+//     `http.ts` y usa el otro controller. `bun run cli add "Comprar leche"`.
 
 import { printToTerminal } from "../drivers/system";
 import { composeApplication } from "./composition";

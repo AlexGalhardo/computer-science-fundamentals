@@ -7,6 +7,11 @@
 #     precisam de rede para compilar. O projeto usa apenas a biblioteca padrão. Nada roda como
 #     root: o usuário `lab` é dono do código, e os caches do Go ficam em /tmp para que qualquer
 #     uid consiga rodar os testes.
+# ES: Una imagen sirve para todos los trabajos: balanceador, back end, informe y pruebas. Los
+#     comandos se compilan dentro de la imagen, así que los contenedores arrancan al instante y no
+#     necesitan red para compilar. El proyecto usa solo la biblioteca estándar. Nada corre como
+#     root: el usuario `lab` es dueño del código, y las cachés de Go viven en /tmp para que
+#     cualquier uid pueda ejecutar las pruebas.
 FROM golang:1.27.1-bookworm
 RUN useradd --create-home --uid 1000 lab
 WORKDIR /app

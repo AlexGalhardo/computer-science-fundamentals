@@ -3,6 +3,9 @@ results.md, the loss curve (SVG) and the pictures (PNG).
 
 PT: `python demo.py` roda o experimento inteiro, imprime as tabelas e grava results/: results.md,
 a curva de perda (SVG) e as figuras (PNG).
+
+ES: `python demo.py` ejecuta el experimento completo, imprime las tablas y escribe results/:
+results.md, la curva de pérdida (SVG) y las figuras (PNG).
 """
 
 import os
@@ -34,6 +37,7 @@ MODEL_NAMES = {
 }
 # EN: The image shown to the first layer: the first triangle of the clean test set.
 # PT: A imagem mostrada à primeira camada: o primeiro triângulo do conjunto de teste limpo.
+# ES: La imagen que se muestra a la primera capa: el primer triángulo del conjunto de prueba limpio.
 EXAMPLE_INDEX = CLASSES.index("triangle")
 CONV_VARIANTS = ((1, 0), (1, 1), (2, 0), (2, 1), (3, 2))
 
@@ -43,6 +47,8 @@ def edge_image() -> torch.Tensor:
     #     SOBEL_Y, which makes the two edge maps easy to read.
     # PT: Um quadrado limpo: os lados verticais são achados por SOBEL_X e os horizontais por
     #     SOBEL_Y, o que deixa os dois mapas de borda fáceis de ler.
+    # ES: Un cuadrado limpio: sus lados verticales los encuentra SOBEL_X y los horizontales
+    #     SOBEL_Y, lo que deja los dos mapas de bordes fáciles de leer.
     return draw_shape("square", radius=6.0, thickness=2.0)
 
 
@@ -52,6 +58,9 @@ def convolution_lines() -> list[str]:
 
     PT: MP-AI-8.1 em tabela: para cada stride e padding, o tamanho de saída dado pela fórmula, o
     tamanho que o framework devolve, e a maior diferença entre os dois resultados.
+
+    ES: MP-AI-8.1 en tabla: para cada stride y padding, el tamaño de salida dado por la fórmula, el
+    tamaño que devuelve el framework, y la mayor diferencia entre los dos resultados.
     """
     image = edge_image()
     lines = [
@@ -120,6 +129,8 @@ def write_pictures(directory: Path, experiment: Experiment) -> int:
     """EN: Writes the PNG files and returns the index of the strongest first-layer filter.
 
     PT: Grava os arquivos PNG e devolve o índice do filtro mais forte da primeira camada.
+
+    ES: Escribe los archivos PNG y devuelve el índice del filtro más fuerte de la primera capa.
     """
     image = edge_image()
     write_png(directory / "edge-input.png", upscale(to_grey(image), 12))
@@ -133,6 +144,8 @@ def write_pictures(directory: Path, experiment: Experiment) -> int:
     #     filter with small weights is as visible as one with large weights.
     # PT: Cada filtro é normalizado sozinho (o seu maior peso vira branco ou preto), então um
     #     filtro de pesos pequenos fica tão visível quanto um de pesos grandes.
+    # ES: Cada filtro se normaliza por separado (su mayor peso pasa a ser blanco o negro), así que
+    #     un filtro de pesos pequeños se ve tan bien como uno de pesos grandes.
     filters = model.conv1.weight.detach()[:, 0]
     write_png(
         directory / "filters.png",
@@ -145,6 +158,8 @@ def write_pictures(directory: Path, experiment: Experiment) -> int:
         maps = model.first_layer_maps(example[None])[0]
     # EN: All the maps share one scale here, so a filter that barely reacts looks dark.
     # PT: Todos os mapas usam a mesma escala aqui, então um filtro que quase não reage fica escuro.
+    # ES: Todos los mapas usan la misma escala aquí, así que un filtro que casi no reacciona
+    #     queda oscuro.
     shared = to_grey(maps.flatten(0, 1)).reshape(maps.shape)
     write_png(
         directory / "activation-maps.png",

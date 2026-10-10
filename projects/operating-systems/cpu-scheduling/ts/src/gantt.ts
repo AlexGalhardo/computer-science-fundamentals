@@ -15,6 +15,10 @@ function centre(text: string, width: number): string {
 //     CPU, em ordem. Lê-lo da esquerda para a direita mostra quem esperou por quem, algo que
 //     nenhuma média mostra. Cada unidade de tempo tem três caracteres de largura, e os
 //     intervalos em que a CPU ficou ociosa são desenhados com "-".
+// ES: Un diagrama de Gantt es la planificación dibujada en una línea de tiempo: una barra por
+//     tramo de CPU, en orden. Leerlo de izquierda a derecha muestra quién esperó a quién, algo
+//     que ningún promedio puede mostrar. Cada unidad de tiempo tiene tres caracteres de ancho, y
+//     los huecos en que la CPU estuvo ociosa se dibujan con "-".
 export function renderGantt(slices: readonly Slice[]): string {
 	const bars: Slice[] = [];
 	let cursor = 0;

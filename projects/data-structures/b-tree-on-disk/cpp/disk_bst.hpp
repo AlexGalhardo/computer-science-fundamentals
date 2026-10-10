@@ -24,6 +24,13 @@ namespace btree {
 //     arquivo pelo mesmo pager, que conta as páginas. A busca guarda a última página que leu:
 //     quando o próximo nó está nessa mesma página nenhuma leitura nova é contada, que é a forma
 //     mais justa de cobrar uma ABB paginada.
+// ES: Un árbol binario de búsqueda guardado en el mismo tipo de archivo, para comparar. Cada nodo
+//     es un registro de 32 bytes (clave, valor, izquierda, derecha) y caben 128 registros en una
+//     página, grabados en el orden en que llegaron las claves. Los hijos son números de registro.
+//     El árbol se arma en memoria y se graba de una vez, y las búsquedas después corren contra
+//     el archivo por el mismo pager, que cuenta las páginas. La búsqueda guarda la última página
+//     que leyó: cuando el siguiente nodo está en esa misma página no se cuenta ninguna lectura
+//     nueva, que es la forma más justa de cobrar un ABB paginado.
 class DiskBst {
 public:
 	static constexpr std::size_t kRecordSize = 32;
@@ -38,6 +45,7 @@ public:
 		};
 		// EN: Record numbers start at 1, so 0 can mean "no child".
 		// PT: Os números de registro começam em 1, então 0 pode significar "sem filho".
+		// ES: Los números de registro empiezan en 1, así que 0 puede significar "sin hijo".
 		std::vector<Record> records;
 		records.reserve(keys.size());
 		for (const Key key : keys) {

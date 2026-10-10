@@ -11,6 +11,11 @@
 // nas duas pontas). Suporta: literais, `.`, classes como `[a-z0-9]` e `[^x]`, agrupamento com
 // parênteses, alternância `|`, e as repetições `*`, `+` e `?`. Uma barra invertida torna literal
 // o caractere seguinte.
+//
+// ES: El motor trabaja con bytes y empareja la entrada COMPLETA (como si el patrón estuviera
+// anclado en ambos extremos). Soporta: literales, `.`, clases como `[a-z0-9]` y `[^x]`,
+// agrupación con paréntesis, alternancia `|`, y las repeticiones `*`, `+` y `?`. Una barra
+// invertida vuelve literal el carácter siguiente.
 package regex
 
 import (
@@ -81,6 +86,12 @@ func (e *SyntaxError) Error() string {
 // parser abaixo, e o aninhamento das regras É a precedência: a alternância é analisada primeiro,
 // então fica no topo da árvore e liga menos; a repetição é analisada por último, então se aplica
 // apenas ao único átomo à sua esquerda. É por isso que `ab|cd*` significa `(ab)|(c(d*))`.
+//
+// ES: La gramática de los patrones, del operador más débil al más fuerte. Cada regla es un
+// método del parser de abajo, y el anidamiento de las reglas ES la precedencia: la alternancia
+// se analiza primero, así que queda en lo alto del árbol y enlaza menos; la repetición se
+// analiza al final, así que se aplica solo al único átomo a su izquierda. Por eso `ab|cd*`
+// significa `(ab)|(c(d*))`.
 type parser struct {
 	pattern string
 	pos     int
@@ -205,6 +216,9 @@ func (p *parser) atom() (*Node, error) {
 // bracket inverts it. Inside the brackets only `]`, `\` and a `-` between two bytes are special.
 // PT: Uma classe lista os bytes aceitos um a um ou em intervalos (`a-z`), e `^` logo após o
 // colchete a inverte. Dentro dos colchetes só `]`, `\` e um `-` entre dois bytes são especiais.
+// ES: Una clase lista los bytes aceptados uno a uno o en rangos (`a-z`), y `^` justo después del
+// corchete la invierte. Dentro de los corchetes solo `]`, `\` y un `-` entre dos bytes son
+// especiales.
 func (p *parser) class() (*Node, error) {
 	start := p.pos
 	p.pos++

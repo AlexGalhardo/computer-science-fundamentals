@@ -1,6 +1,6 @@
 # Idempotency and dead-letter queue (MP-MSG-2)
 
-> Versão em português: [docs/pt/messaging/idempotency-dlq.md](../../pt/messaging/idempotency-dlq.md)
+> Versão em português: [docs/pt/messaging/idempotency-dlq.md](../../pt/messaging/idempotency-dlq.md) · Versión en español: [docs/es/messaging/idempotency-dlq.md](../../es/messaging/idempotency-dlq.md)
 
 Mini-project: [`projects/messaging/idempotency-dlq`](../../../projects/messaging/idempotency-dlq/README.md). Quiz topics: `idempotent-consumers`, `ack-retry-dlq`, `delivery-guarantees`, `rabbitmq-exchanges-routing`.
 
@@ -55,7 +55,7 @@ The lesson to keep: a lock around each step is not a lock around the decision.
 
 A failed message is not retried at once. A dependency that is down gains nothing from being called again a millisecond later, and a message that will always fail would spin as fast as the consumer can fail. The wait doubles after each failure:
 
-```
+```text
 wait after failed attempt n = base x 2^(n-1)      base 200 ms: 200, 400, 800 ms
 ```
 

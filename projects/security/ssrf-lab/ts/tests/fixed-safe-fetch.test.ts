@@ -6,6 +6,10 @@
 //     mostrar pelo que cada checagem é responsável. Os únicos hosts envolvidos são os dois
 //     serviços falsos do laboratório; quando um teste precisa de uma resposta de DNS que o
 //     laboratório não tem, ele passa um resolvedor de mentira em vez de tocar em DNS real.
+// ES: Una prueba por capa de `safeFetch`, cada una con las otras capas fuera del camino, para
+//     mostrar de qué es responsable cada comprobación. Los únicos hosts involucrados son los dos
+//     servicios falsos del laboratorio; cuando una prueba necesita una respuesta de DNS que el
+//     laboratorio no tiene, pasa un resolvedor falso en lugar de tocar un DNS real.
 
 import { describe, expect, test } from "bun:test";
 import { loadConfig } from "../src/config";
@@ -72,6 +76,8 @@ describe("checks on the resolved address", () => {
 	//     check, which must refuse them by itself.
 	// PT: Literais de IP não precisam de DNS. Eles entram na lista de permissão aqui só para
 	//     chegar à checagem de endereço, que precisa recusá-los sozinha.
+	// ES: Los literales de IP no necesitan DNS. Entran en la lista de permitidos aquí solo para
+	//     llegar a la comprobación de dirección, que debe rechazarlos por sí sola.
 	test("loopback literals are refused even when allow-listed, IPv4 and IPv6", async () => {
 		const loose = withPolicy({ allowedHosts: ["127.0.0.1", "[::1]"] });
 		expect(await reasonFor("http://127.0.0.1:8080/secret", loose)).toBe("address-not-allowed");
@@ -103,6 +109,9 @@ describe("the connection goes to the address that was validated", () => {
 	// PT: `pinned-name.test` não existe em DNS nenhum. O resolvedor de mentira responde com o
 	//     endereço real do site público falso. A busca só funciona se a conexão foi feita para o
 	//     endereço que o resolvedor deu, sem perguntar ao DNS uma segunda vez.
+	// ES: `pinned-name.test` no existe en ningún DNS. El resolvedor falso responde con la
+	//     dirección real del sitio público falso. La búsqueda solo funciona si la conexión se hizo a la
+	//     dirección que dio el resolvedor, sin preguntar al DNS una segunda vez.
 	test("a name known only to the resolver is fetched, with one lookup per hop", async () => {
 		const realAddresses = await systemResolver(publicHost);
 		const asked: string[] = [];

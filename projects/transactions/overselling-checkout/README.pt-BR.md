@@ -1,6 +1,6 @@
 # overselling-checkout
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um produto tem 10 unidades e 200 pessoas clicam em "comprar" no mesmo instante. Um checkout escrito como "ler o estoque, conferir, gravar" vende muito mais que 10, mesmo dentro de uma transação. Este mini-projeto reproduz o bug com um teste de carga local do k6 contra uma API ElysiaJS com PostgreSQL, e depois o corrige de três jeitos: coluna de versão otimista, `SELECT ... FOR UPDATE`, e `SERIALIZABLE` com nova tentativa.
 

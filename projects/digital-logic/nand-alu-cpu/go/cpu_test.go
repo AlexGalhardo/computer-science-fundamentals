@@ -68,6 +68,10 @@ func TestAssembleRejectsMalformedPrograms(t *testing.T) {
 // precisa ser exatamente o results/trace.txt versionado, o mesmo arquivo com que os testes em
 // TypeScript se comparam, o que prova que as duas implementações concordam instrução por
 // instrução.
+// ES: Criterio de aceptación MP-DL-2.3: el programa versionado multiplica dos números. El trace
+// debe ser exactamente el results/trace.txt versionado, el mismo archivo con el que se comparan
+// las pruebas en TypeScript, lo que demuestra que las dos implementaciones coinciden
+// instrucción por instrucción.
 func TestMultiplyReproducesTheCommittedTrace(t *testing.T) {
 	program, err := Assemble(shared(t, "programs/multiply.asm"))
 	if err != nil {

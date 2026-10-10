@@ -6,6 +6,9 @@
 //     preenchida passo a passo, e depois quantas chamadas cada versão recursiva faz. Ver a
 //     tabela crescer é o jeito mais rápido de enxergar que cada célula é calculada uma vez, a
 //     partir de células que já estão lá.
+// ES: `bun run ts/src/demo.ts` imprime, para un ejemplo pequeño de cada problema, la tabla llenándose
+//     paso a paso, y después cuántas llamadas hace cada versión recursiva. Ver crecer la tabla es la
+//     forma más rápida de notar que cada celda se calcula una vez, a partir de celdas que ya están ahí.
 
 import { coinChangeTable } from "./coin-change";
 import { newCounter } from "./counter";
@@ -63,6 +66,7 @@ function demoCoins(): void {
 	);
 	// EN: One line per step: the table as it is after dp[v] was filled.
 	// PT: Uma linha por passo: a tabela como fica depois que dp[v] foi preenchido.
+	// ES: Una línea por paso: la tabla tal como queda después de llenar dp[v].
 	const final = coinChangeTable(COINS, amount);
 	for (let v = 0; v <= amount; v++) {
 		printRow(

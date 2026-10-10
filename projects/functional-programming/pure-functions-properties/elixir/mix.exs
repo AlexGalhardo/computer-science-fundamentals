@@ -5,6 +5,8 @@ defmodule PureFunctionsProperties.MixProject do
   #     property-testing library is the small one in lib/pure_functions_properties/prop.ex.
   # PT: Sem dependências: o decodificador de JSON e o framework de testes vêm com o Elixir, e a
   #     biblioteca de testes de propriedades é a pequena em lib/pure_functions_properties/prop.ex.
+  # ES: Sin dependencias: el decodificador de JSON y el framework de pruebas vienen con Elixir, y
+  #     la biblioteca de pruebas de propiedades es la pequeña en lib/pure_functions_properties/prop.ex.
   def project do
     [app: :pure_functions_properties, version: "0.1.0", elixir: "~> 1.20", deps: []]
   end

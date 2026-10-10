@@ -7,6 +7,9 @@ import java.util.Objects;
 // PT: Um arcabouço de testes em trinta linhas, para que o projeto não tenha dependência
 //     nenhuma: comparar dois valores, esperar uma exceção, contar os resultados. `finish` dá ao
 //     processo o seu código de saída.
+// ES: Un arnés de pruebas en treinta líneas, para que el proyecto no tenga ninguna dependencia:
+//     comparar dos valores, esperar una excepción, contar los resultados. `finish` le da al
+//     proceso su código de salida.
 final class Check {
   private static int passed;
   private static int failed;

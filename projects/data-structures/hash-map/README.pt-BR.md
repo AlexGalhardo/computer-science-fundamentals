@@ -1,6 +1,6 @@
 # hash-map
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um mapa de espalhamento (hash map) escrito do zero, duas vezes: com **encadeamento separado** (uma lista encadeada por balde) e com **endereçamento aberto** (sondagem linear dentro de um único vetor). Ele ensina como as colisões são resolvidas, por que a remoção no endereçamento aberto precisa de lápides (tombstones) e por que o fator de carga decide a velocidade de uma busca.
 

@@ -1,6 +1,6 @@
 # Travelling salesman
 
-> Versão em português: [docs/pt/algorithms/travelling-salesman.md](../../pt/algorithms/travelling-salesman.md)
+> Versão em português: [docs/pt/algorithms/travelling-salesman.md](../../pt/algorithms/travelling-salesman.md) · Versión en español: [docs/es/algorithms/travelling-salesman.md](../../es/algorithms/travelling-salesman.md)
 
 Mini-project: [`projects/algorithms/travelling-salesman`](../../../projects/algorithms/travelling-salesman/README.md) (MP-ALG-3). Languages: TypeScript and Rust. Quiz: area `algorithms`, topics `backtracking`, `dynamic-programming` and `greedy`.
 

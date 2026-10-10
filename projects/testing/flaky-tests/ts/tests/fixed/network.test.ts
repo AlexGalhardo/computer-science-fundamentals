@@ -13,6 +13,12 @@ import { fetchRate, type Http, RateUnavailableError } from "../../src/rates";
 //     acaso. O que o stub não sabe dizer é se o serviço real ainda responde neste formato. Essa
 //     pergunta é de um teste de integração ou de contrato separado, rodado de propósito, não da
 //     suíte unitária.
+// ES: CORREGIDO (red con stub). Un stub es un sustituto que devuelve una respuesta preparada.
+//     No se abre ningún socket: este archivo se ejecuta en un contenedor sin red alguna. El stub también
+//     hace que la ruta de fallo sea comprobable a pedido. Con el servicio real, un 503 solo aparece por
+//     casualidad. Lo que el stub no sabe decir es si el servicio real todavía responde con este formato. Esa
+//     pregunta le corresponde a una prueba de integración o de contrato aparte, ejecutada a propósito, no a la
+//     suite unitaria.
 const BASE_URL = "http://rates.invalid";
 
 function stub(status: number, body: unknown): { http: Http; urls: string[] } {

@@ -21,6 +21,9 @@ def test_bit_parallel_adder_agrees_with_native_addition_for_all_65536_pairs() ->
     #     over 16 columns of 65,536 bits each produces every sum at once.
     # PT: Critério de aceite MP-DL-1.3, conferido de um segundo modo: uma passada da rede de
     #     portas sobre 16 colunas de 65.536 bits cada produz todas as somas de uma vez.
+    # ES: Criterio de aceptación MP-DL-1.3, comprobado de una segunda manera: una pasada de la
+    #     red de compuertas sobre 16 columnas de 65.536 bits cada una produce todas las sumas
+    #     de una vez.
     results = add_all_pairs(8)
     assert len(results) == 65536
     assert all(results[(a << 8) | b] == a + b for a in range(256) for b in range(256))

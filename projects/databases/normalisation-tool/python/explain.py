@@ -1,6 +1,8 @@
 """EN: Turns the algorithms into a step-by-step explanation, in English or Portuguese.
 
 PT: Transforma os algoritmos em uma explicação passo a passo, em inglês ou português.
+
+ES: Convierte los algoritmos en una explicación paso a paso, en inglés, portugués o español.
 """
 
 from decompose import chase, decompose_bcnf, lost_dependencies, synthesise_3nf
@@ -22,6 +24,8 @@ from normal_forms import LADDER, all_violations, prime_attributes
 #     lets the same steps be explained in either language without touching the algorithms.
 # PT: Toda frase que a ferramenta imprime, nas duas línguas. Manter o texto separado da lógica
 #     permite explicar os mesmos passos em qualquer das línguas sem mexer nos algoritmos.
+# ES: Cada frase que imprime la herramienta, en los tres idiomas. Mantener el texto separado de la
+#     lógica permite explicar los mismos pasos en cualquier idioma sin tocar los algoritmos.
 TEXT: dict[str, dict[str, str]] = {
     "en": {
         "schema": "Relation {name}{attributes}",
@@ -111,11 +115,64 @@ TEXT: dict[str, dict[str, str]] = {
         "preserved": "  toda dependência ainda pode ser verificada dentro de uma única relação.",
         "lost": "  não pode mais ser verificada dentro de uma única relação: {fd}",
     },
+    "es": {
+        "schema": "Relación {name}{attributes}",
+        "fds": "Dependencias funcionales:",
+        "no_fds": "  (ninguna)",
+        "h_cover": "1. Cobertura mínima",
+        "split": "  divide el lado derecho: {before}  produce  {after}",
+        "reduce": "  atributo sobrante a la izquierda: {before}  pasa a ser  {after}",
+        "drop": "  redundante, implicada por las otras: {before}",
+        "cover_same": "  nada que simplificar: el conjunto ya es mínimo.",
+        "cover": "  cobertura mínima: {cover}",
+        "h_keys": "2. Claves candidatas",
+        "mandatory": "  atributos en ningún lado derecho (están en toda clave): {attributes}",
+        "closure": "  {attributes}+ = {result}",
+        "closure_step": "      {fd}  agrega {added}",
+        "closure_key": "      alcanza todos los atributos, así que es clave.",
+        "closure_not_key": "      no alcanza {missing}, así que no es clave.",
+        "keys": "  claves candidatas: {keys}",
+        "prime": "  atributos primos (en alguna clave): {prime}",
+        "non_prime": "  atributos no primos: {attributes}",
+        "h_nf": "3. Forma normal",
+        "ok": "  {form}: ok",
+        "fails": "  {form}: violada",
+        "partial": (
+            "      {fd} es una dependencia parcial: el lado izquierdo es parte de la clave {key}."
+        ),
+        "transitive": (
+            "      {fd}: el lado izquierdo no es superclave y el lado derecho no es primo."
+        ),
+        "determinant": "      {fd}: el determinante no es superclave.",
+        "highest": "  forma normal más alta: {form}",
+        "h_3nf": "4. Descomposición a la 3FN (síntesis)",
+        "group": "  {lhs} determina {rhs}: relación {relation}",
+        "add_key": (
+            "  ninguna relación contiene una clave candidata, la clave {key} pasa a ser relación."
+        ),
+        "has_key": (
+            "  una relación ya contiene una clave candidata: no hace falta una relación extra."
+        ),
+        "removed": "  {relation} está contenida en otra relación y se descarta.",
+        "result": "  resultado: {relations}",
+        "h_bcnf": "5. Descomposición a la FNBC",
+        "bcnf_none": "  la relación ya está en la FNBC: nada que dividir.",
+        "bcnf_step": "  en {relation}, {lhs}+ = {inside}: {lhs} determina atributos sin ser clave.",
+        "bcnf_split": "      divide en {first} y {second}",
+        "chase": "  prueba chase (una fila por relación, 'a' = valor conocido):",
+        "chase_start": "    inicio",
+        "chase_end": "    después de aplicar las dependencias",
+        "lossless": "  existe una fila solo con 'a': la descomposición es sin pérdida.",
+        "lossy": "  ninguna fila tiene solo 'a': la descomposición tiene PÉRDIDA.",
+        "preserved": "  toda dependencia aún puede verificarse dentro de una sola relación.",
+        "lost": "  ya no puede verificarse dentro de una sola relación: {fd}",
+    },
 }
 
 FORM_NAMES = {
     "en": {"1NF": "1NF", "2NF": "2NF", "3NF": "3NF", "BCNF": "BCNF"},
     "pt": {"1NF": "1FN", "2NF": "2FN", "3NF": "3FN", "BCNF": "FNBC"},
+    "es": {"1NF": "1FN", "2NF": "2FN", "3NF": "3FN", "BCNF": "FNBC"},
 }
 
 
@@ -139,6 +196,9 @@ def explain(name: str, attributes: list[str], fds: list[FD], lang: str = "en") -
 
     PT: O raciocínio inteiro para um esquema: cobertura, chaves, forma normal e as duas
     decomposições.
+
+    ES: El razonamiento completo para un esquema: cobertura, claves, forma normal y las dos
+    descomposiciones.
     """
     text = TEXT[lang]
     forms = FORM_NAMES[lang]
@@ -165,6 +225,8 @@ def explain(name: str, attributes: list[str], fds: list[FD], lang: str = "en") -
     #     attributes alone, then each key that was found.
     # PT: Os fechos mostrados são os que uma pessoa calcularia à mão: os atributos obrigatórios
     #     sozinhos, depois cada chave encontrada.
+    # ES: Los cierres mostrados son los que una persona calcularía a mano: los atributos
+    #     obligatorios solos, luego cada clave encontrada.
     shown = [core] if core and core not in keys else []
     for attempt in shown + keys:
         reached = closure(attempt, fds)

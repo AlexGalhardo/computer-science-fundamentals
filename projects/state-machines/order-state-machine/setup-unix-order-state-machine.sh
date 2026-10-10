@@ -3,6 +3,8 @@
 #     is Docker.
 # PT: Constrói, testa e demonstra o mini-projeto order-state-machine. O único requisito é o
 #     Docker.
+# ES: Construye, prueba y demuestra el miniproyecto order-state-machine. El único requisito es
+#     Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -21,5 +23,7 @@ echo "order-state-machine: all tests passed"
 #     languages.
 # PT: A demo conduz um pedido completo e depois um pedido com uma transição rejeitada, nas duas
 #     linguagens.
+# ES: La demo recorre un pedido completo y luego un pedido con una transición rechazada, en los
+#     dos lenguajes.
 docker compose run --rm ts-demo
 docker compose run --rm elixir-demo

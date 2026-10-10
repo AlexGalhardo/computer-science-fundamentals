@@ -8,6 +8,11 @@
 #     falhar e um commit "green" ou "refactor" precisa passar. A checagem de prefixos confia nas
 #     mensagens de commit. Este script prova que as mensagens dizem a verdade.
 #     Ele precisa de git e de um clone completo, além do Docker.
+# ES: Reproduce el kata. Para cada commit de paso, extrae el código exactamente como estaba en ese
+#     commit y ejecuta las pruebas en un contenedor desechable, sin red. Un commit "red" debe
+#     fallar y un commit "green" o "refactor" debe pasar. La comprobación de prefijos confía en los
+#     mensajes de commit. Este script prueba que los mensajes dicen la verdad.
+#     Necesita git y un clon completo, además de Docker.
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot
@@ -26,6 +31,8 @@ foreach ($line in (git log --reverse --format="%h %s" -- .)) {
 	#     so the pipe is made by cmd.exe, which passes the bytes through untouched.
 	# PT: O arquivo é binário. Um pipe do PowerShell 5.1 o recodificaria como texto e o
 	#     corromperia, então o pipe é feito pelo cmd.exe, que repassa os bytes intactos.
+	# ES: El archivo es binario. Un pipe de PowerShell 5.1 lo recodificaría como texto y lo
+	#     corrompería, así que el pipe lo hace cmd.exe, que pasa los bytes intactos.
 	cmd /c "git archive $sha ts | docker run --rm -i --network none $image sh -c `"mkdir /home/bun/kata && cd /home/bun/kata && tar -xf - && cd ts && bun test`" >NUL 2>&1"
 	$actual = if ($LASTEXITCODE -eq 0) { "pass" } else { "fail" }
 	if ($actual -eq $expected) {

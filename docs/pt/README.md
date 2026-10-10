@@ -1,8 +1,8 @@
 # Documentação (Português)
 
-> English version: [docs/en](../en/README.md)
+> English version: [docs/en](../en/README.md) · Versión en español: [docs/es](../es/README.md)
 
-A documentação é organizada por área. Toda página aqui tem uma página equivalente em `docs/en/`. Esta página é gerada por `bun run docs:index`: não edite à mão.
+A documentação é organizada por área. Toda página aqui tem uma página equivalente em `docs/en/` e `docs/es/`. Esta página é gerada por `bun run docs:index`: não edite à mão.
 
 ## Guias
 
@@ -17,7 +17,7 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 
 ## Status por área
 
-3134 de 3384 questões escritas, 85 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
+3384 de 3384 questões escritas, 86 de 86 mini-projetos prontos. O roteiro é o [PLAN.md](../../PLAN.md).
 
 | Área | Tipo | Questões | Revisão cega | Mini-projetos |
 | --- | --- | ---: | --- | --- |
@@ -50,6 +50,6 @@ A documentação é organizada por área. Toda página aqui tem uma página equi
 | Sistemas de arquivos | Teoria e prática | 100/100 | feita | [file-organisation](file-systems/file-organisation.md), [external-sorting](file-systems/external-sorting.md) |
 | Observabilidade | Teoria e prática | 100/100 | feita | [three-signals](observability/three-signals.md), [structured-logs](observability/structured-logs.md), [slo-alert](observability/slo-alert.md), [flame-graph](observability/flame-graph.md) |
 | Blockchain | Teoria e prática | 100/100 | feita | [didactic-blockchain](blockchain/didactic-blockchain.md) |
-| Integração contínua | Teoria e prática | 0/100 |  | ci-pipeline (planejado) |
-| Engenharia de software | Teoria | 0/150 |  | nenhum |
+| Integração contínua | Teoria e prática | 100/100 | feita | [ci-pipeline](continuous-integration/ci-pipeline.md) |
+| Engenharia de software | Teoria | 150/150 | feita | nenhum |
 | Inteligência artificial e LLMs | Teoria e prática | 164/164 | feita | [bpe-tokenizer](artificial-intelligence/bpe-tokenizer.md), [neural-network-from-scratch](artificial-intelligence/neural-network-from-scratch.md), [embeddings-vector-search](artificial-intelligence/embeddings-vector-search.md), [tiny-language-model](artificial-intelligence/tiny-language-model.md), [diffusion-toy](artificial-intelligence/diffusion-toy.md), [pytorch-basics](artificial-intelligence/pytorch-basics.md), [tensorflow-keras-basics](artificial-intelligence/tensorflow-keras-basics.md), [computer-vision-cnn](artificial-intelligence/computer-vision-cnn.md) |

@@ -55,6 +55,10 @@ describe("CPU", () => {
 	//     precisa ser exatamente o results/trace.txt versionado, o mesmo arquivo com que os
 	//     testes em Go se comparam, o que prova que as duas implementações concordam instrução
 	//     por instrução.
+	// ES: Criterio de aceptación MP-DL-2.3: el programa versionado multiplica dos números. El
+	//     trace debe ser exactamente el results/trace.txt versionado, el mismo archivo con el que
+	//     se comparan las pruebas en Go, lo que demuestra que las dos implementaciones coinciden
+	//     instrucción por instrucción.
 	test("multiply.asm computes 3 x 4 = 12 and reproduces the committed trace", () => {
 		const cpu = new Cpu(assemble(MULTIPLY));
 		const trace = cpu.run();

@@ -1,6 +1,6 @@
 # Counter race condition
 
-> Versão em português: [docs/pt/concurrency/counter-race.md](../../pt/concurrency/counter-race.md)
+> Versão em português: [docs/pt/concurrency/counter-race.md](../../pt/concurrency/counter-race.md) · Versión en español: [docs/es/concurrency/counter-race.md](../../es/concurrency/counter-race.md)
 
 Mini-project: [projects/concurrency/counter-race](../../../projects/concurrency/counter-race/README.md) (MP-CONC-1). Languages: Go, Rust, Java, TypeScript, Elixir.
 
@@ -8,7 +8,7 @@ Mini-project: [projects/concurrency/counter-race](../../../projects/concurrency/
 
 `counter++` is not one step. The processor reads the value, adds 1 and writes the result back. When two threads run those three steps at the same time, this can happen:
 
-```
+```text
 thread A            thread B            counter
 read 41                                 41
                     read 41             41

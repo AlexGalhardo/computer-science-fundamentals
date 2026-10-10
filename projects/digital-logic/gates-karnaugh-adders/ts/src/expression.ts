@@ -6,6 +6,9 @@ import { and, type Bit, not, or, xor } from "./gates";
 // PT: Uma expressão é guardada como uma árvore. `A·B + C'` vira um nó OR cujos filhos são um
 //     nó AND e um nó NOT. A árvore tem a mesma forma do circuito: cada nó é uma porta e cada
 //     folha é um fio de entrada ou uma constante.
+// ES: Una expresión se guarda como un árbol. `A·B + C'` se vuelve un nodo OR cuyos hijos son un
+//     nodo AND y un nodo NOT. El árbol tiene la misma forma que el circuito: cada nodo es una
+//     compuerta y cada hoja es un cable de entrada o una constante.
 export type Expression =
 	| { kind: "variable"; name: string }
 	| { kind: "constant"; value: Bit }
@@ -25,6 +28,9 @@ const OTHER_SYMBOLS = new Set(["^", "'", "(", ")"]);
 // PT: O analisador léxico corta o texto em tokens. Uma variável é uma letra seguida de dígitos
 //     opcionais (A, b, X1). Como um nome tem uma única letra, `AB` é lido como duas variáveis
 //     lado a lado, que é como um produto é escrito no papel.
+// ES: El analizador léxico corta el texto en tokens. Una variable es una letra seguida de
+//     dígitos opcionales (A, b, X1). Como un nombre tiene una sola letra, `AB` se lee como dos
+//     variables una al lado de la otra, que es como se escribe un producto en el papel.
 function tokenize(text: string): Token[] {
 	const tokens: Token[] = [];
 	let position = 0;
@@ -68,6 +74,9 @@ function tokenize(text: string): Token[] {
 // PT: Analisador descendente recursivo. Cada função trata um nível de precedência e chama o
 //     próximo, mais forte, de modo que a árvore sai com as prioridades usuais: NOT primeiro,
 //     depois AND, depois XOR, depois OR. Assim, `A + B·C'` é A + (B·(C')).
+// ES: Analizador descendente recursivo. Cada función trata un nivel de precedencia y llama a la
+//     siguiente, más fuerte, de modo que el árbol sale con las prioridades usuales: primero
+//     NOT, luego AND, luego XOR, luego OR. Así, `A + B·C'` es A + (B·(C')).
 class Parser {
 	private position = 0;
 
@@ -142,6 +151,7 @@ class Parser {
 		let expression = this.parsePrimary();
 		// EN: The apostrophe is a postfix NOT and may repeat: A'' is A again.
 		// PT: O apóstrofo é um NOT pós-fixado e pode se repetir: A'' volta a ser A.
+		// ES: El apóstrofo es un NOT posfijo y puede repetirse: A'' vuelve a ser A.
 		while (this.peekSymbol(new Set(["'"]))) {
 			this.position += 1;
 			expression = { kind: "not", operand: expression };
@@ -198,6 +208,8 @@ export function variablesOf(expression: Expression): string[] {
 //     gate applied to the values of its children. `inputs` gives the value on each input wire.
 // PT: Avaliar a árvore é simular o circuito: o valor de um nó é a saída da sua porta aplicada
 //     aos valores dos filhos. `inputs` dá o valor em cada fio de entrada.
+// ES: Evaluar el árbol es simular el circuito: el valor de un nodo es la salida de su compuerta
+//     aplicada a los valores de los hijos. `inputs` da el valor en cada cable de entrada.
 export function evaluate(expression: Expression, inputs: ReadonlyMap<string, Bit>): Bit {
 	switch (expression.kind) {
 		case "constant":
@@ -236,6 +248,9 @@ export function rowInputs(variables: readonly string[], row: number): Bit[] {
 //     are 2^n rows, written in binary counting order, so row k is also minterm k.
 // PT: A tabela-verdade lista a saída para todas as combinações de entrada. Com n variáveis há
 //     2^n linhas, escritas em ordem de contagem binária, então a linha k é também o mintermo k.
+// ES: La tabla de verdad lista la salida para todas las combinaciones de entrada. Con n
+//     variables hay 2^n filas, escritas en orden de conteo binario, así que la fila k es
+//     también el minterm k.
 export function truthTable(expression: Expression, variables: readonly string[] = variablesOf(expression)): TruthTable {
 	const outputs: Bit[] = [];
 	for (let row = 0; row < 2 ** variables.length; row++) {

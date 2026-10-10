@@ -1,6 +1,6 @@
 # mutation-testing
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Two test suites for the same small module, both with **100% line coverage**. One asserts almost nothing, the other asserts exact values. Coverage cannot tell them apart. Mutation testing can: a small mutator, written here in about 100 lines, plants one bug at a time in the module and counts how many of those bugs each suite notices. The weak suite notices 21%, the strong one 95%.
 
@@ -31,7 +31,7 @@ docker compose run --rm coverage-strong    # coverage report of the strong suite
 
 Both coverage commands fail under 100% of lines or functions (`ts/bunfig.toml`). This is the report of the **weak** suite:
 
-```
+```text
 -----------------|---------|---------|-------------------
 File             | % Funcs | % Lines | Uncovered Line #s
 -----------------|---------|---------|-------------------
@@ -57,7 +57,7 @@ How to read it:
 
 - **Killed** means at least one test failed on the mutant: the suite noticed the bug. **Survived** means every test passed: the suite would also pass with that bug in production.
 - The weak suite checks that a price "is a number" and "is positive". Changing 150 cents per kilogram to 151, or `+` to `-`, changes neither, so those mutants live.
-- The one survivor of the strong suite (`>` to `>=` on line 38) is an **equivalent mutant**: for a parcel of exactly 2 kg the extra charge is `(2 - 2) * 150 = 0` either way, so no test can ever see a difference. That is why the score here is the raw one (killed / all mutants) and why 100% is not always reachable.
+- The one survivor of the strong suite (`>` to `>=` on line 45) is an **equivalent mutant**: for a parcel of exactly 2 kg the extra charge is `(2 - 2) * 150 = 0` either way, so no test can ever see a difference. That is why the score here is the raw one (killed / all mutants) and why 100% is not always reachable.
 
 ## The mutator
 
@@ -75,7 +75,7 @@ It is a teaching tool with stated limits: it works on tokens, not on the syntax 
 
 ## Structure
 
-```
+```text
 ts/src/shipping.ts             the module under test
 ts/src/mutator.ts              tokenizer and mutant generator
 ts/src/run-mutation.ts         the mutation run and its report

@@ -7,11 +7,14 @@ import java.util.function.UnaryOperator;
 //     Arrays.sort: being equal to it means ordered and a permutation of the input.
 // PT: Mesmos seis casos da referência em TypeScript, para todo algoritmo. O oráculo é o
 //     Arrays.sort: ser igual a ele significa estar em ordem e ser uma permutação da entrada.
+// ES: Los mismos seis casos de la referencia en TypeScript, para todo algoritmo. El oráculo es
+//     Arrays.sort: ser igual a él significa estar en orden y ser una permutación de la entrada.
 public final class SortsTest {
   private SortsTest() {}
 
   // EN: Linear congruential generator with a fixed seed, so the test is reproducible.
   // PT: Gerador congruente linear com semente fixa, para o teste ser reproduzível.
+  // ES: Generador congruencial lineal con semilla fija, para que la prueba sea reproducible.
   private static int[] randomValues(int n, long seed) {
     int[] values = new int[n];
     long state = seed;

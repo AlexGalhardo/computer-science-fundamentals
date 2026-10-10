@@ -4,6 +4,9 @@
 // PT: DESENHO COM DEFEITO. O caso de uso escreve SQL. A regra de negócio (uma conta por e-mail,
 //     comparado sem diferenciar maiúsculas) está misturada com nomes de tabela e de coluna, e
 //     só pode ser testada por um dublê que reconheça exatamente estes textos SQL.
+// ES: DISEÑO QUE FALLA. El caso de uso escribe SQL. La regla de negocio (una cuenta por correo
+//     electrónico, comparado sin distinguir mayúsculas) está mezclada con nombres de tabla y de
+//     columna, y solo se puede probar con un doble que reconozca exactamente estos textos SQL.
 export interface SqlDatabase {
 	query(sql: string, params: string[]): Array<Record<string, string>>;
 }

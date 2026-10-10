@@ -35,6 +35,11 @@ struct Image {
 	//     descreve: custa o mesmo com 1 ou com 8 trabalhadores. O FNV-1a (aqui misturando um
 	//     pixel inteiro por passo) depende da ordem dos valores, então checksums iguais
 	//     significam imagens iguais, pixel a pixel.
+	// ES: Esta pasada sobre la imagen terminada corre en un hilo, sea cual sea el número de
+	//     trabajadores. Es una parte serial real del programa, del tipo que describe la ley de
+	//     Amdahl: cuesta lo mismo con 1 o con 8 trabajadores. FNV-1a (aquí mezclando un
+	//     píxel entero por paso) depende del orden de los valores, así que checksums iguales
+	//     significan imágenes iguales, píxel a píxel.
 	std::uint64_t checksum() const {
 		std::uint64_t hash = 0xcbf29ce484222325ULL;
 		for (const std::uint32_t pixel : pixels) {
@@ -59,6 +64,13 @@ struct Image {
 //     Este projeto é compilado com -ffp-contract=off. Sem isso o compilador pode fundir
 //     x * y + z em uma única instrução (FMA) com um só arredondamento nas CPUs que a têm, e a
 //     imagem diferiria em alguns pixels das versões em Rust e Go.
+// ES: Tiempo de escape de un punto c: iterar z = z² + c a partir de z = 0 y contar los pasos
+//     hasta |z| > 2. Los puntos dentro del conjunto nunca escapan y cuestan el límite entero,
+//     los puntos lejanos cuestan uno o dos, así que el costo de un píxel varía mil veces a lo
+//     largo de la imagen. El resultado depende solo de c, nunca de otro píxel.
+//     Este proyecto se compila con -ffp-contract=off. Sin eso el compilador puede fusionar
+//     x * y + z en una sola instrucción (FMA) con un solo redondeo en las CPU que la tienen, y
+//     la imagen diferiría en algunos píxeles de las versiones en Rust y Go.
 inline std::uint32_t escape_time(double cx, double cy, std::uint32_t max_iter) {
 	double zx = 0.0;
 	double zy = 0.0;
@@ -83,6 +95,10 @@ inline std::uint32_t escape_time(double cx, double cy, std::uint32_t max_iter) {
 //     iterações gastas. Cada linha pertence a exatamente um trabalhador, então todo pixel tem
 //     um único escritor e nenhuma trava é necessária. As iterações são acumuladas em uma
 //     variável local.
+// ES: Calcula las filas [first_row, last_row) en el búfer de píxeles compartido y devuelve las
+//     iteraciones gastadas. Cada fila pertenece a exactamente un trabajador, así que todo píxel
+//     tiene un único escritor y no se necesita ningún bloqueo. Las iteraciones se acumulan en
+//     una variable local.
 inline std::uint64_t render_rows(std::vector<std::uint32_t>& pixels, std::size_t first_row,
                                  std::size_t last_row, std::size_t side, std::uint32_t max_iter) {
 	const double step = kPlaneSpan / static_cast<double>(side);
@@ -120,6 +136,9 @@ inline Image render_parallel(std::size_t side, std::uint32_t max_iter, unsigned 
 	// PT: Usado só pelo escalonamento dinâmico: a próxima linha que ninguém pegou ainda. Um
 	//     trabalhador livre reserva as próximas linhas com uma única soma atômica, então linhas
 	//     caras e baratas acabam espalhadas por todos os trabalhadores.
+	// ES: Usado solo por la planificación dinámica: la próxima fila que nadie ha tomado todavía.
+	//     Un trabajador libre reserva las siguientes filas con una única suma atómica, así que
+	//     filas caras y baratas terminan repartidas entre todos los trabajadores.
 	std::atomic<std::size_t> next{0};
 	if (schedule == Schedule::Static) {
 		// EN: One big block of rows per worker. The rows in the middle of the image cross the
@@ -128,6 +147,10 @@ inline Image render_parallel(std::size_t side, std::uint32_t max_iter, unsigned 
 		// PT: Um bloco grande de linhas por trabalhador. As linhas do meio da imagem atravessam
 		//     o conjunto e custam muito mais que as do topo e da base, então os trabalhadores
 		//     com os blocos externos terminam cedo e esperam: o speed-up sofre.
+		// ES: Un bloque grande de filas por trabajador. Las filas del medio de la imagen
+		//     atraviesan el conjunto y cuestan mucho más que las de arriba y las de abajo, así
+		//     que los trabajadores con los bloques externos terminan antes y esperan: el
+		//     speed-up sufre.
 		const std::vector<Span> spans = split_static(side, workers);
 		for (unsigned index = 0; index < workers; ++index) {
 			threads.emplace_back([&image, &partials, index, rows = spans[index], side, max_iter] {

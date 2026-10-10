@@ -1,6 +1,6 @@
 # Escalando por núcleos
 
-> English version: [docs/en/parallelism/scaling-by-cores.md](../../en/parallelism/scaling-by-cores.md)
+> English version: [docs/en/parallelism/scaling-by-cores.md](../../en/parallelism/scaling-by-cores.md) · Versión en español: [docs/es/parallelism/scaling-by-cores.md](../../es/parallelism/scaling-by-cores.md)
 
 Área: Paralelismo. Mini-projeto: [projects/parallelism/scaling-by-cores](../../../projects/parallelism/scaling-by-cores/README.pt-BR.md) (MP-PAR-1). Linguagens: Rust, Go, C++.
 
@@ -33,7 +33,7 @@ As duas têm paralelismo de dados: nenhum número e nenhum pixel depende de outr
 
 ## Como o trabalho é dividido
 
-```
+```text
 estático, 4 trabalhadores                    dinâmico, 4 trabalhadores
 
 linhas  0 ..  499 -> trabalhador 0 (barato)  contador compartilhado: próxima linha livre
@@ -100,7 +100,7 @@ As 72 linhas da grade (3 linguagens, sequencial, estático e dinâmico, 1 a 8 tr
 
 Cada célula é `speed-up (eficiência)` para aquela quantidade de trabalhadores. A base é a implementação sequencial da mesma linguagem.
 
-**primes**
+#### primes
 
 | Linguagem | Escalonamento | Sequencial (ms) | 1 | 2 | 4 | 8 | Fração serial ajustada |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -111,7 +111,7 @@ Cada célula é `speed-up (eficiência)` para aquela quantidade de trabalhadores
 | rust | estático | 1388 | 0,89 (89%) | 1,46 (73%) | 2,28 (57%) | 3,31 (41%) | 24,6% |
 | rust | dinâmico | 1388 | 0,75 (75%) | 1,67 (84%) | 2,49 (62%) | 3,07 (38%) | 21,4% |
 
-**mandelbrot**
+#### mandelbrot
 
 | Linguagem | Escalonamento | Sequencial (ms) | 1 | 2 | 4 | 8 | Fração serial ajustada |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |

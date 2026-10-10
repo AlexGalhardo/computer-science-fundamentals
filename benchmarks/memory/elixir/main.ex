@@ -8,6 +8,11 @@
 #     Não existe pausa global: coletar um processo nunca para os outros, e quando um processo
 #     termina seu heap inteiro é liberado de uma vez. Os dados são imutáveis, então uma árvore
 #     é construída de baixo para cima com tuplas e nunca alterada.
+# ES: Carga de memoria en Elixir: `binary-trees` e `idle`. Modelo de la BEAM: un heap privado por
+#     proceso, recolectado por un recolector generacional de copia que corre solo para ese proceso.
+#     No existe pausa global: recolectar un proceso nunca detiene a los demás, y cuando un proceso
+#     termina todo su heap se libera de una vez. Los datos son inmutables, así que un árbol
+#     se construye de abajo hacia arriba con tuplas y nunca se modifica.
 defmodule Main do
   import Bitwise
 
@@ -18,6 +23,7 @@ defmodule Main do
 
   # EN: Walks the whole tree and counts its nodes.
   # PT: Percorre a árvore inteira e conta os nós.
+  # ES: Recorre el árbol completo y cuenta los nodos.
   defp check({nil, nil}), do: 1
   defp check({left, right}), do: 1 + check(left) + check(right)
 

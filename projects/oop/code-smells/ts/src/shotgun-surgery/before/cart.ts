@@ -6,6 +6,10 @@
 //     mostrado" (símbolo, vírgula decimal, ponto a cada três dígitos) nunca ganhou um lugar,
 //     então cada módulo carrega sua cópia, cada uma escrita de um jeito. Trocar a moeda exige
 //     achar e editar as três, e a que for esquecida vira um defeito.
+// ES: MAL OLOR: Cirugía con Escopeta (archivo 1 de 3). La decisión "cómo se muestra el dinero"
+//     (símbolo, coma decimal, punto cada tres dígitos) nunca tuvo un lugar, así que cada módulo
+//     carga su copia, cada una escrita de una manera distinta. Cambiar la moneda exige
+//     encontrar y editar las tres, y la que se olvide se vuelve un defecto.
 export function cartLine(name: string, unitCents: number, quantity: number): string {
 	const cents = unitCents * quantity;
 	const whole = Math.floor(cents / 100)

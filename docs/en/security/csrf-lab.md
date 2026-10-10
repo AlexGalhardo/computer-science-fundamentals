@@ -1,6 +1,6 @@
 # CSRF lab (MP-SEC-3)
 
-> Versão em português: [docs/pt/security/csrf-lab.md](../../pt/security/csrf-lab.md)
+> Versão em português: [docs/pt/security/csrf-lab.md](../../pt/security/csrf-lab.md) · Versión en español: [docs/es/security/csrf-lab.md](../../es/security/csrf-lab.md)
 
 Mini-project: [`projects/security/csrf-lab`](../../../projects/security/csrf-lab/README.md). Quiz topics: `csrf-samesite`, `sessions-cookies`.
 
@@ -10,7 +10,7 @@ Defensive, educational lab. It runs only in Docker, on an internal network with 
 
 A session cookie answers one question: "which logged-in browser is this?". The browser attaches it to every request to the host that set it, whatever page started the request.
 
-```
+```text
 1. user  -> app            POST /login                 app sets the session cookie
 2. user  -> other site     GET  /some-page             (same browser, another tab or a link)
 3. other site's page makes the browser send:

@@ -8,6 +8,11 @@
 //     2. Repesa as contagens para que vizinhos surpreendentes valham mais que os frequentes (PPMI).
 //     3. A linha de uma palavra nessa tabela é o seu vetor. Duas palavras são parecidas quando as
 //        suas linhas apontam na mesma direção (similaridade do cosseno).
+// ES: Vectores de palabras a partir de conteo, sin red neuronal y sin bucle de entrenamiento.
+//     1. Para cada palabra, cuenta qué palabras aparecen cerca de ella (conteos de coocurrencia).
+//     2. Repondera los conteos para que los vecinos sorprendentes valgan más que los frecuentes (PPMI).
+//     3. La fila de una palabra en esa tabla es su vector. Dos palabras son parecidas cuando sus
+//        filas apuntan en la misma dirección (similitud del coseno).
 
 export type Vector = Float64Array;
 
@@ -46,6 +51,8 @@ export function splitSentences(text: string): string[] {
 //     of the sentences, and is the same in TypeScript and in Python.
 // PT: O vocabulário é ordenado para que a numeração das palavras não dependa da ordem das frases,
 //     e seja a mesma em TypeScript e em Python.
+// ES: El vocabulario se ordena para que la numeración de las palabras no dependa del orden de las
+//     frases, y sea la misma en TypeScript y en Python.
 export function buildVocabulary(sentences: readonly (readonly string[])[]): string[] {
 	const words = new Set<string>();
 	for (const sentence of sentences) for (const word of sentence) words.add(word);
@@ -63,6 +70,9 @@ export function indexOf(vocabulary: readonly string[]): Map<string, number> {
 // PT: A tabela de coocorrência. counts[i][j] = quantas vezes a palavra j apareceu a no máximo
 //     `window` posições da palavra i, de qualquer lado. A janela é simétrica, então a tabela
 //     também é: counts[i][j] == counts[j][i].
+// ES: La tabla de coocurrencia. counts[i][j] = cuántas veces apareció la palabra j a lo sumo a
+//     `window` posiciones de la palabra i, de cualquier lado. La ventana es simétrica, así que la
+//     tabla también lo es: counts[i][j] == counts[j][i].
 export function cooccurrence(
 	sentences: readonly (readonly string[])[],
 	index: ReadonlyMap<string, number>,
@@ -104,6 +114,16 @@ export function cooccurrence(
 //     "dog" ao lado de "the" não surpreende (pmi perto de 0). "dog" ao lado de "barn" surpreende
 //     (pmi bem acima de 0). A PPMI guarda só a parte positiva: um par visto menos que o acaso, ou
 //     nunca, recebe 0, porque com um corpus pequeno "nunca vistos juntos" é evidência fraca.
+// ES: ¿Por qué no usar los conteos crudos como vector? Porque "the" queda cerca de casi toda
+//     palabra. Los mayores números de toda fila quedarían en las mismas pocas columnas ("the", "a",
+//     "and"), así que todas las filas apuntarían casi en la misma dirección y toda palabra se
+//     parecería a cualquier otra.
+//     La PMI (información mutua puntual) hace una pregunta mejor: ¿cuántas veces más se encuentran
+//     estas dos palabras de lo que se encontrarían por puro azar, dada la frecuencia de cada una?
+//         pmi(w, c) = log2( P(w, c) / (P(w) * P(c)) ) = log2( cont(w,c) * total / (fila(w) * fila(c)) )
+//     "dog" junto a "the" no sorprende (pmi cerca de 0). "dog" junto a "barn" sorprende (pmi muy
+//     por encima de 0). La PPMI guarda solo la parte positiva: un par visto menos que el azar, o
+//     nunca, recibe 0, porque con un corpus pequeño "nunca vistos juntos" es evidencia débil.
 export function ppmi(counts: readonly Vector[]): Vector[] {
 	const rowSums = counts.map((row) => sum(row));
 	const total = rowSums.reduce((acc, value) => acc + value, 0);
@@ -147,6 +167,11 @@ export function norm(vector: Vector): number {
 //     frequente tem uma linha mais comprida que uma rara, e a divisão remove esse efeito.
 //     Dividir cada vetor pelo próprio comprimento uma vez ("normalizar") faz o cosseno virar um
 //     simples produto escalar depois, e por isso tudo o que este projeto guarda tem comprimento 1.
+// ES: Similitud del coseno = dot(a, b) / (|a| * |b|). Mide el ángulo entre dos vectores e ignora
+//     la longitud: 1 significa misma dirección, 0 significa nada en común. Una palabra frecuente
+//     tiene una fila más larga que una rara, y la división elimina ese efecto.
+//     Dividir cada vector entre su propia longitud una vez ("normalizar") hace que el coseno sea
+//     después un simple producto punto, y por eso todo lo que guarda este proyecto tiene longitud 1.
 export function cosine(a: Vector, b: Vector): number {
 	const lengths = norm(a) * norm(b);
 	return lengths === 0 ? 0 : dot(a, b) / lengths;
@@ -183,6 +208,9 @@ export function vectorOf(model: WordVectors, word: string): Vector | undefined {
 // PT: Vizinhos mais próximos por força bruta: compara a palavra com todas as outras do
 //     vocabulário e guarda as k mais parecidas. Similaridades iguais são ordenadas
 //     alfabeticamente, então a resposta nunca depende do algoritmo de ordenação.
+// ES: Vecinos más cercanos por fuerza bruta: compara la palabra con todas las demás del
+//     vocabulario y guarda las k más parecidas. Las similitudes iguales se ordenan
+//     alfabéticamente, así que la respuesta nunca depende del algoritmo de ordenación.
 export function nearestNeighbours(model: WordVectors, word: string, k: number): Neighbour[] {
 	const query = vectorOf(model, word);
 	if (query === undefined) throw new Error(`"${word}" is not in the vocabulary`);
@@ -209,6 +237,9 @@ export interface GroupPrecision {
 // PT: O teste dos vetores. Ninguém disse ao código que "dog" e "cat" são animais. Se os vizinhos
 //     de "dog" são todos animais, os grupos foram recuperados só a partir dos contextos.
 //     Precisão em k = (vizinhos dentro do grupo) / k, na média das palavras do grupo.
+// ES: La prueba de los vectores. Nadie le dijo al código que "dog" y "cat" son animales. Si los
+//     vecinos de "dog" son todos animales, los grupos se recuperaron solo a partir de los contextos.
+//     Precisión en k = (vecinos dentro del grupo) / k, en promedio sobre las palabras del grupo.
 export function groupPrecision(
 	model: WordVectors,
 	groups: Readonly<Record<string, readonly string[]>>,
@@ -246,6 +277,10 @@ export interface Contrast {
 //     grupo"? Com contagens cruas todo par de palavras parece igual, porque todas as linhas são
 //     dominadas pelas mesmas colunas frequentes. A PPMI empurra palavras sem relação para perto
 //     de 0 e deixa um vão largo.
+// ES: Una segunda forma de mirar los mismos vectores: ¿cuál es la distancia entre "mismo grupo" y
+//     "otro grupo"? Con conteos crudos todo par de palabras parece igual, porque todas las filas
+//     están dominadas por las mismas columnas frecuentes. La PPMI empuja las palabras sin relación
+//     cerca de 0 y deja una brecha amplia.
 export function groupContrast(model: WordVectors, groups: Readonly<Record<string, readonly string[]>>): Contrast {
 	const tagged = Object.entries(groups).flatMap(([group, words]) => words.map((word) => ({ group, word })));
 	let within = 0;

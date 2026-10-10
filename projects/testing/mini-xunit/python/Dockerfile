@@ -2,6 +2,8 @@
 #     tests are run by the framework this project builds, which uses only the standard library.
 # PT: Só o ruff (linter e formatador) é instalado. NÃO há biblioteca de testes nesta imagem: os
 #     testes são rodados pelo framework que este projeto constrói, que usa só a biblioteca padrão.
+# ES: Solo se instala ruff (linter y formateador). NO hay biblioteca de pruebas en esta imagen: las
+#     pruebas las ejecuta el framework que este proyecto construye, que usa solo la biblioteca estándar.
 FROM python:3.14.8-slim-trixie
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN pip install ruff==0.16.10

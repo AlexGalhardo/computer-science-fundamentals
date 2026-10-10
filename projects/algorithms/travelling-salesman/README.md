@@ -1,6 +1,6 @@
 # travelling-salesman
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Four ways to solve the travelling salesman problem (visit every city once and return to the start with the shortest tour): brute force over every order, dynamic programming over subsets (Held-Karp), the greedy nearest-neighbour heuristic and 2-opt local search. The project shows where exhaustive search stops being usable, how far a better exact algorithm pushes that wall, and what a heuristic gives up to answer instantly.
 

@@ -9,6 +9,12 @@
 //     então nunca são usados para decidir. Isto é uma lista de permissão: três tipos são
 //     conhecidos, todo o resto é recusado. Uma aplicação real usaria uma biblioteca de detecção
 //     mantida, com mais formatos.
+// ES: LA CORRECCIÓN, parte 2: el tipo de un archivo lo decide el servidor, a partir de los bytes del
+//     archivo. Muchos formatos empiezan con una secuencia fija de bytes, llamada número mágico o
+//     firma. La cabecera `Content-Type` y la extensión son solo texto escrito por el cliente,
+//     así que nunca se usan para decidir. Esto es una lista de permitidos: tres tipos son
+//     conocidos, todo lo demás se rechaza. Una aplicación real usaría una biblioteca de detección
+//     mantenida, con más formatos.
 
 export const ALLOWED_TYPES = ["image/png", "application/pdf", "text/plain"] as const;
 export type AllowedType = (typeof ALLOWED_TYPES)[number];
@@ -16,6 +22,7 @@ export type AllowedType = (typeof ALLOWED_TYPES)[number];
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] as const;
 // EN: The ASCII characters `%PDF-`.
 // PT: Os caracteres ASCII `%PDF-`.
+// ES: Los caracteres ASCII `%PDF-`.
 const PDF_SIGNATURE = [0x25, 0x50, 0x44, 0x46, 0x2d] as const;
 
 function startsWith(bytes: Uint8Array, signature: readonly number[]): boolean {
@@ -31,6 +38,8 @@ const CARRIAGE_RETURN = 0x0d;
 //     breaks are the only ones a text file needs.
 // PT: Caracteres de controle são os códigos invisíveis abaixo do espaço (e o DEL). Tab e as duas
 //     quebras de linha são os únicos de que um arquivo de texto precisa.
+// ES: Los caracteres de control son los códigos invisibles por debajo del espacio (y el DEL). El tabulador y los dos
+//     saltos de línea son los únicos que necesita un archivo de texto.
 export function hasControlCharacter(text: string, allowLineBreaksAndTabs: boolean): boolean {
 	for (const character of text) {
 		const code = character.codePointAt(0) ?? 0;
@@ -47,6 +56,9 @@ export function hasControlCharacter(text: string, allowLineBreaksAndTabs: boolea
 // PT: Texto puro não tem assinatura, então a regra é a inversa: o conteúdo inteiro precisa
 //     decodificar como UTF-8 e não conter caractere de controle. Arquivos binários falham nisso
 //     quase de imediato.
+// ES: El texto plano no tiene firma, así que la regla es la inversa: todo el contenido debe
+//     decodificarse como UTF-8 y no contener ningún carácter de control. Los archivos binarios fallan en esto
+//     casi de inmediato.
 function isPlainText(bytes: Uint8Array): boolean {
 	let text: string;
 	try {
@@ -63,6 +75,10 @@ function isPlainText(bytes: Uint8Array): boolean {
 // PT: Devolve o tipo que os BYTES dizem, ou `null` quando não correspondem a nada da lista de
 //     permissão. Uma assinatura só diz como um arquivo começa. Ela não prova que o resto do
 //     arquivo é inofensivo, e por isso o download também envia `nosniff` e `attachment` (veja
+//     fixed-app.ts).
+// ES: Devuelve el tipo que dicen los BYTES, o `null` cuando no corresponden a nada de la lista de
+//     permitidos. Una firma solo dice cómo empieza un archivo. No prueba que el resto del
+//     archivo sea inofensivo, y por eso la descarga también envía `nosniff` y `attachment` (ve
 //     fixed-app.ts).
 export function detectType(bytes: Uint8Array): AllowedType | null {
 	if (bytes.byteLength === 0) return null;

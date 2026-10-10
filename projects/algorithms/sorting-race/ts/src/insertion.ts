@@ -8,6 +8,11 @@
 //     direita. O laço interno para no primeiro valor que não é maior, então o custo é
 //     O(n + inversões): linear na entrada ordenada, quadrático na invertida. O `>` estrito
 //     mantém chaves iguais na ordem original, o que torna o algoritmo estável.
+// ES: Insertion sort. Las posiciones 0..i-1 siempre están ordenadas (el invariante del bucle). El
+//     siguiente valor se inserta en ese prefijo desplazando los valores mayores una posición hacia la
+//     derecha. El bucle interno se detiene en el primer valor que no es mayor, así que el costo es
+//     O(n + inversiones): lineal en la entrada ordenada, cuadrático en la invertida. El `>` estricto
+//     mantiene las claves iguales en el orden original, lo que hace estable al algoritmo.
 export function insertionSort(input: readonly number[]): number[] {
 	const a = [...input];
 	for (let i = 1; i < a.length; i++) {

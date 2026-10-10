@@ -3,6 +3,9 @@
 -- PT: Um domínio pequeno compartilhado pelos três estilos de API: um autor tem muitos livros, um
 --     livro tem muitas resenhas. As duas chaves estrangeiras são as "leituras aninhadas" que fazem
 --     os estilos se diferenciarem.
+-- ES: Un dominio pequeño compartido por los tres estilos de API: un autor tiene muchos libros, un
+--     libro tiene muchas reseñas. Las dos claves foráneas son las "lecturas anidadas" que hacen
+--     que los estilos se diferencien.
 DROP TABLE IF EXISTS reviews;
 DROP TABLE IF EXISTS books;
 DROP TABLE IF EXISTS authors;
@@ -36,5 +39,7 @@ CREATE TABLE reviews (
 --     scan the whole table, and the benchmark would measure the missing index, not the API style.
 -- PT: Sem estes índices cada busca de "livros deste autor" ou "resenhas deste livro" varreria a
 --     tabela inteira, e o benchmark mediria o índice que falta, não o estilo de API.
+-- ES: Sin estos índices cada búsqueda de "libros de este autor" o "reseñas de este libro" recorrería
+--     la tabla completa, y el benchmark mediría el índice que falta, no el estilo de API.
 CREATE INDEX books_author_id_idx ON books (author_id);
 CREATE INDEX reviews_book_id_idx ON reviews (book_id);

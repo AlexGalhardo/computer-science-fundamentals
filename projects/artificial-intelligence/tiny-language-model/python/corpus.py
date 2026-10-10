@@ -22,6 +22,19 @@ tipo de linha esconde uma pista vários caracteres atrás:
 - colchetes:    "([x]y){z}"                      o fechamento precisa casar com o que ficou aberto
 
 Um modelo que vê um caractere (o bigrama) não consegue usar essas pistas. Um com atenção consegue.
+
+ES: El texto con el que aprenden los modelos. Se genera aquí, con semilla fija, mediante una
+gramática diminuta.
+
+La gramática se armó para que el carácter anterior NO baste para adivinar el siguiente. Cada
+tipo de línea esconde una pista varios caracteres atrás:
+
+- pronombre:     "ana has a cat. she likes it."   "she" o "he" depende del nombre, 15 atrás
+- concordancia:  "the red cats see a dog."        "see" o "sees" depende de la "s" del sujeto
+- aritmética:    "tom says 4+5=9."                el dígito tras "=" depende de los dos números
+- corchetes:     "([x]y){z}"                      el cierre debe coincidir con lo que quedó abierto
+
+Un modelo que ve un carácter (el bigrama) no puede usar esas pistas. Uno con atención sí.
 """
 
 import random
@@ -48,6 +61,9 @@ MAX_BRACKET_LENGTH = 16
 # PT: Quantas linhas diferentes de cada tipo entram no corpus. A gramática consegue produzir
 #     mais do que isso de cada tipo (576 linhas de pronome, 2560 de concordância, 800 de
 #     aritmética), então sobram linhas e a parte reservada pode ter só linhas nunca treinadas.
+# ES: Cuántas líneas distintas de cada tipo entran en el corpus. La gramática puede producir más
+#     que eso de cada tipo (576 líneas de pronombre, 2560 de concordancia, 800 de aritmética), así
+#     que sobran líneas y la parte reservada puede tener solo líneas nunca entrenadas.
 LINES_PER_KIND = {"pronoun": 400, "agreement": 800, "arithmetic": 500, "brackets": 700}
 HELDOUT_FRACTION = 0.1
 
@@ -68,6 +84,7 @@ class Corpus:
     heldout_lines: list[str]
     # EN: Every character that appears, in sorted order. Its position is the token id.
     # PT: Todo caractere que aparece, em ordem. A posição dele é o id do token.
+    # ES: Todo carácter que aparece, en orden. Su posición es el id del token.
     vocabulary: list[str]
 
     @property
@@ -84,6 +101,8 @@ def lines_to_text(lines: list[str]) -> str:
     #     here", and a model can be asked to write a line by giving it a single "\n".
     # PT: O texto também começa com uma quebra de linha, então "quebra de linha" sempre quer
     #     dizer "uma linha começa aqui", e dá para pedir uma linha ao modelo com um único "\n".
+    # ES: El texto también empieza con un salto de línea, así que "salto de línea" siempre quiere
+    #     decir "aquí empieza una línea", y se le puede pedir una línea al modelo con un solo "\n".
     return "\n" + "\n".join(lines) + "\n"
 
 
@@ -102,6 +121,8 @@ def agreement_line(rng: random.Random) -> str:
     #     carries the final "s".
     # PT: Concordância do inglês: um gato "sees", dois gatos "see". Exatamente uma das duas
     #     palavras leva o "s" final.
+    # ES: Concordancia del inglés: un gato "sees", dos gatos "see". Exactamente una de las dos
+    #     palabras lleva la "s" final.
     plural = rng.random() < 0.5
     subject = rng.choice(NOUNS) + ("s" if plural else "")
     verb = rng.choice(AGREEMENT_VERBS) + ("" if plural else "s")
@@ -143,6 +164,8 @@ def brackets_are_balanced(line: str) -> bool:
     """EN: The classic stack check: every closing bracket must match the last one left open.
 
     PT: A checagem clássica com pilha: todo fechamento precisa casar com o último aberto.
+
+    ES: La comprobación clásica con pila: todo cierre tiene que coincidir con el último abierto.
     """
     closing_of = dict(BRACKET_PAIRS)
     stack: list[str] = []
@@ -167,6 +190,11 @@ def line_kind(line: str) -> str | None:
 
     A demo usa isto para contar quantas das linhas ESCRITAS PELO MODELO estão corretas: pronome
     certo, concordância certa, soma certa, colchetes casados.
+
+    ES: Dice a qué regla de la gramática obedece una línea, o None cuando las rompe todas.
+
+    La demo usa esto para contar cuántas de las líneas ESCRITAS POR EL MODELO son correctas:
+    pronombre correcto, concordancia correcta, suma correcta, corchetes emparejados.
     """
     match = _PRONOUN_RE.fullmatch(line)
     if match:
@@ -176,6 +204,7 @@ def line_kind(line: str) -> str | None:
     if match:
         # EN: Exactly one "s": on the subject (plural) or on the verb (singular).
         # PT: Exatamente um "s": no sujeito (plural) ou no verbo (singular).
+        # ES: Exactamente una "s": en el sujeto (plural) o en el verbo (singular).
         return "agreement" if (match.group(3) == "s") != (match.group(5) == "s") else None
     match = _ARITHMETIC_RE.fullmatch(line)
     if match:
@@ -192,6 +221,9 @@ def agreement_positions(line: str) -> tuple[int, int] | None:
 
     PT: Para uma linha de "concordância" no plural, o índice do "s" que termina o sujeito e o
     índice da última letra do verbo. None para qualquer outra linha.
+
+    ES: Para una línea de "concordancia" en plural, el índice de la "s" que termina el sujeto y el
+    índice de la última letra del verbo. None para cualquier otra línea.
     """
     match = _AGREEMENT_RE.fullmatch(line)
     if not match or match.group(3) != "s" or match.group(5) == "s":
@@ -217,6 +249,16 @@ def generate_corpus(seed: int = CORPUS_SEED) -> Corpus:
     de palavras conhecidas: o modelo viu "ana", "cat" e "she" no treino, mas nunca aquela frase.
 
     Usa-se `random.Random` (e não o NumPy) porque a sequência dele é igual em toda plataforma.
+
+    ES: Arma el corpus: líneas únicas, barajadas, el último 10% reservado.
+
+    La unicidad es lo que vuelve honesto el texto reservado. Una línea entra solo la primera vez
+    que se sortea, así que la lista no tiene repeticiones, y una línea que cae en la parte
+    reservada no puede estar también en la parte de entrenamiento. Las líneas reservadas son,
+    por lo tanto, COMBINACIONES NUEVAS de palabras conocidas: el modelo vio "ana", "cat" y "she"
+    en el entrenamiento, pero nunca esa frase.
+
+    Se usa `random.Random` (y no NumPy) porque su secuencia es igual en toda plataforma.
     """
     rng = random.Random(seed)
     lines: list[str] = []
@@ -240,6 +282,9 @@ def encode(text: str, vocabulary: list[str]) -> np.ndarray:
 
     PT: Tokens no nível do caractere: um id por caractere. Cortar o texto em pedaços maiores é
     assunto de outro mini-projeto (bpe-tokenizer).
+
+    ES: Tokens a nivel de carácter: un id por carácter. Cortar el texto en trozos mayores es tema
+    de otro miniproyecto (bpe-tokenizer).
     """
     index = {char: token_id for token_id, char in enumerate(vocabulary)}
     return np.array([index[char] for char in text], dtype=np.int64)

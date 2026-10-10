@@ -5,6 +5,9 @@ defmodule SlidingWindowMiniTcp.Channel do
 
   PT: Um sentido de um enlace não confiável simulado. Um pacote pode ser perdido, entregue duas
   vezes ou atrasado a ponto de chegar depois de pacotes enviados mais tarde (reordenação).
+
+  ES: Un sentido de un enlace no confiable simulado. Un paquete puede perderse, entregarse dos
+  veces o retrasarse tanto que llegue después de paquetes enviados más tarde (reordenamiento).
   """
 
   defstruct loss: 0.0,
@@ -30,6 +33,11 @@ defmodule SlidingWindowMiniTcp.Channel do
   global escondido: cada chamada devolve o próximo gerador junto com a resposta. Com dados
   imutáveis essa é a única forma de ser aleatório, e o determinismo vem de graça: a mesma
   semente percorre sempre a mesma sequência de estados.
+
+  ES: Construye un canal. El generador aleatorio es un valor guardado dentro de la struct, no un
+  global oculto: cada llamada devuelve el siguiente generador junto con la respuesta. Con datos
+  inmutables esa es la única forma de ser aleatorio, y el determinismo viene gratis: la misma
+  semilla recorre siempre la misma secuencia de estados.
   """
   @spec new(keyword()) :: t()
   def new(opts) do
@@ -44,6 +52,9 @@ defmodule SlidingWindowMiniTcp.Channel do
 
   PT: Entrega um pacote ao canal no tick `now`. Devolve os ticks em que as cópias chegam (uma
   lista vazia é uma perda) e o canal no seu próximo estado.
+
+  ES: Entrega un paquete al canal en el tick `now`. Devuelve los ticks en que llegan las copias
+  (una lista vacía es una pérdida) y el canal en su siguiente estado.
   """
   @spec transmit(t(), non_neg_integer()) :: {[non_neg_integer()], t()}
   def transmit(%__MODULE__{} = channel, now) do

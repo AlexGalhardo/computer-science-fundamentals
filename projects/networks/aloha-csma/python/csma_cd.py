@@ -1,6 +1,8 @@
 """EN: CSMA/CD with binary exponential backoff, the access method of classic Ethernet.
 
 PT: CSMA/CD com recuo binário exponencial, o método de acesso da Ethernet clássica.
+
+ES: CSMA/CD con retroceso binario exponencial, el método de acceso de la Ethernet clásica.
 """
 
 import random
@@ -23,6 +25,8 @@ def backoff_slots(collisions: int, rng: random.Random) -> int:
     """EN: Slots to wait after the n-th collision in a row of the same frame.
 
     PT: Slots de espera depois da n-ésima colisão seguida do mesmo quadro.
+
+    ES: Slots de espera después de la n-ésima colisión seguida de la misma trama.
     """
     # EN: The range doubles with every collision: 0..1, 0..3, 0..7, up to 0..1023. Few
     #     contenders get a short wait, many contenders spread out quickly, and nobody needs to
@@ -30,6 +34,9 @@ def backoff_slots(collisions: int, rng: random.Random) -> int:
     # PT: O intervalo dobra a cada colisão: 0..1, 0..3, 0..7, até 0..1023. Poucos concorrentes
     #     esperam pouco, muitos concorrentes se espalham depressa, e ninguém precisa saber
     #     quantas estações estão disputando.
+    # ES: El intervalo se duplica con cada colisión: 0..1, 0..3, 0..7, hasta 0..1023. Pocos
+    #     competidores esperan poco, muchos competidores se dispersan rápido, y nadie necesita
+    #     saber cuántas estaciones están compitiendo.
     return rng.randrange(2 ** min(collisions, MAX_BACKOFF_EXPONENT))
 
 
@@ -44,6 +51,9 @@ def simulate_csma_cd(
 
     PT: Simula cerca de `frames` tempos de quadro de um cabo compartilhado por `stations`
     estações.
+
+    ES: Simula cerca de `frames` tiempos de trama de un cable compartido por `stations`
+    estaciones.
     """
     # EN: The clock ticks in contention slots. One slot is a round trip on the cable (2 tau),
     #     the time a station needs to be sure that it has the channel or to notice a
@@ -53,6 +63,11 @@ def simulate_csma_cd(
     #     tempo de que uma estação precisa para ter certeza de que tem o canal ou para perceber
     #     uma colisão. Um quadro dura `frame_slots` slots, então uma colisão desperdiça um slot
     #     enquanto um sucesso usa muitos: essa razão é o que torna o CSMA/CD eficiente.
+    # ES: El reloj avanza en slots de contención. Un slot es un viaje de ida y vuelta por el cable
+    #     (2 tau), el tiempo que una estación necesita para estar segura de que tiene el canal o
+    #     para notar una colisión. Una trama dura `frame_slots` slots, así que una colisión
+    #     desperdicia un slot mientras que un éxito usa muchos: esa razón es lo que hace
+    #     eficiente al CSMA/CD.
     horizon = frames * frame_slots
     arrival_rate = load / frame_slots  # new frames per slot, all stations together
 
@@ -79,6 +94,9 @@ def simulate_csma_cd(
         # PT: Escuta de portadora, 1-persistente: uma estação com quadro transmite assim que o
         #     canal fica livre e o seu recuo terminou. Estações que ficaram prontas enquanto
         #     um quadro estava no cabo começam todas juntas quando ele termina.
+        # ES: Escucha de portadora, 1-persistente: una estación con una trama transmite apenas el
+        #     canal queda libre y su retroceso terminó. Las estaciones que quedaron listas mientras
+        #     una trama estaba en el cable empiezan todas juntas cuando esta termina.
         contenders = [s for s in backlogged if ready_at[s] <= now]
 
         if not contenders:
@@ -92,6 +110,8 @@ def simulate_csma_cd(
             #     and stays quiet, so the rest of the frame cannot be damaged.
             # PT: Sozinha no canal: depois do primeiro slot todas as outras ouvem a portadora
             #     e ficam em silêncio, então o resto do quadro não pode ser danificado.
+            # ES: Sola en el canal: después del primer slot todas las demás oyen la portadora
+            #     y se quedan en silencio, así que el resto de la trama no puede dañarse.
             station = contenders[0]
             delivered += 1
             collisions_in_a_row[station] = 0
@@ -104,6 +124,9 @@ def simulate_csma_cd(
         #     at once and back off. Only one slot is lost, not a whole frame time as in ALOHA.
         # PT: Detecção de colisão: as estações percebem a colisão dentro do slot, param na
         #     hora e recuam. Só um slot é perdido, não um tempo de quadro inteiro como no ALOHA.
+        # ES: Detección de colisión: las estaciones notan la colisión dentro del slot, paran de
+        #     inmediato y retroceden. Solo se pierde un slot, no un tiempo de trama entero como en
+        #     ALOHA.
         collisions += 1
         now += 1
         for station in contenders:
@@ -129,6 +152,8 @@ def finish(station: int, queued: list[int], backlogged: set[int]) -> None:
     """EN: Removes the frame at the head of the queue of `station`.
 
     PT: Remove o quadro que está na frente da fila de `station`.
+
+    ES: Quita la trama que está al frente de la cola de `station`.
     """
     queued[station] -= 1
     if queued[station] == 0:

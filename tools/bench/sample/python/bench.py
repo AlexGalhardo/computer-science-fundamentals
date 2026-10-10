@@ -2,6 +2,7 @@
 
 EN: Sums 1..n in two ways and prints one JSON line. Only the work is timed.
 PT: Soma 1..n de duas formas e imprime uma linha JSON. Só o trabalho é cronometrado.
+ES: Suma 1..n de dos formas e imprime una línea JSON. Solo se cronometra el trabajo.
 """
 
 import json
@@ -36,6 +37,7 @@ def main() -> None:
                 "elapsedMs": elapsed_ms,
                 # EN: On Linux, ru_maxrss is already in kibibytes.
                 # PT: No Linux, ru_maxrss já vem em kibibytes.
+                # ES: En Linux, ru_maxrss ya viene en kibibytes.
                 "memoryKb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
                 "language": "python",
                 "implementation": implementation,

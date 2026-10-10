@@ -1,5 +1,6 @@
 # EN: Builds and tests the diffusion-toy mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto diffusion-toy. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto diffusion-toy. El único requisito es Docker.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 
@@ -20,6 +21,8 @@ Write-Output "diffusion-toy: all tests passed"
 #     figures and the tables in ./results.
 # PT: A demo treina a rede, roda o processo direto e o reverso e regrava as figuras e as tabelas
 #     em ./results.
+# ES: La demo entrena la red, ejecuta el proceso directo y el inverso y reescribe las figuras y las
+#     tablas en ./results.
 docker compose run --rm python-demo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Output "diffusion-toy: figures and tables written to results/"

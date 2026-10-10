@@ -9,6 +9,12 @@
 //     agregação, e ler pela chave de novo a partir de 8 tarefas assíncronas dividindo um pool de
 //     8 conexões. O sqlx sempre trabalha por um pool, então as três primeiras fases usam um
 //     pool de exatamente uma conexão.
+// ES: Cliente de base de datos del benchmark en Rust, con sqlx sobre tokio, la biblioteca
+//     asíncrona de base de datos más usada. Las cuatro fases son las mismas en los 7 lenguajes: insertar n
+//     filas una por una, leer cada una por la clave primaria, ejecutar una consulta con filtro y
+//     agregación, y leer por la clave de nuevo desde 8 tareas asíncronas que comparten un pool de
+//     8 conexiones. sqlx siempre trabaja con un pool, así que las tres primeras fases usan un
+//     pool de exactamente una conexión.
 
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Instant;
@@ -57,6 +63,7 @@ async fn read(pool: &PgPool, id: i32) -> Result<i64, sqlx::Error> {
 
 // EN: Reads the ids from, from+step, ... up to n, timing each call.
 // PT: Lê os ids from, from+step, ... até n, cronometrando cada chamada.
+// ES: Lee los ids from, from+step, ... hasta n, cronometrando cada llamada.
 async fn timed_reads(pool: &PgPool, from: i32, n: i32, step: i32) -> Result<Phase, sqlx::Error> {
     let mut phase = Phase::default();
     let start = Instant::now();
@@ -138,6 +145,7 @@ async fn run(n: i32, workers: u32) -> Result<String, sqlx::Error> {
 
     // EN: A pool keeps connections open and lends one to each task that asks.
     // PT: Um pool mantém conexões abertas e empresta uma a cada tarefa que pedir.
+    // ES: Un pool mantiene conexiones abiertas y presta una a cada tarea que la pida.
     let pool = PgPoolOptions::new()
         .max_connections(workers)
         .min_connections(workers)
@@ -177,6 +185,8 @@ async fn run(n: i32, workers: u32) -> Result<String, sqlx::Error> {
 //     15), and VmHWM in /proc/self/status is its peak memory.
 // PT: O /proc/self/stat conta o tempo de CPU do processo em ticks de 1/100 s (campos 14 e 15),
 //     e o VmHWM em /proc/self/status é o pico de memória.
+// ES: /proc/self/stat cuenta el tiempo de CPU del proceso en ticks de 1/100 s (campos 14 y 15),
+//     y VmHWM en /proc/self/status es el pico de memoria.
 fn cpu_ms() -> u64 {
     let stat = std::fs::read_to_string("/proc/self/stat").unwrap_or_default();
     let after_name = stat.rsplit(')').next().unwrap_or("");

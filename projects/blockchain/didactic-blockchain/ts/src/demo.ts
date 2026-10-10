@@ -13,6 +13,10 @@ import { pay, txOutputSchema, type Utxo } from "./transaction";
 //     termina com código diferente de zero quando alguma não vale, então também é o teste de
 //     integração da rede. Os endereços dos nós são validados como endereços locais, e o script
 //     se recusa a rodar se não forem.
+// ES: La demo conduce tres contenedores de nodos por HTTP y comprueba cada afirmación que
+//     imprime. Termina con código distinto de cero cuando alguna no se cumple, así que también
+//     es la prueba de integración de la red. Las direcciones de los nodos se validan como
+//     direcciones locales, y el script se niega a ejecutarse si no lo son.
 const env = z
 	.object({
 		NODES: z.string().default("http://node-a:3000,http://node-b:3000,http://node-c:3000"),
@@ -32,6 +36,8 @@ const resultSchema = z.object({ status: z.string(), reason: z.string().optional(
 //     the coins that node A mines. See the warning in `keys.ts`.
 // PT: Carteiras de brinquedo. A carteira de cada minerador é derivada do nome do nó, então a demo
 //     consegue gastar as moedas que o nó A minera. Veja o aviso em `keys.ts`.
+// ES: Billeteras de juguete. La billetera de cada minero se deriva del nombre del nodo, así que
+//     la demo puede gastar las monedas que mina el nodo A. Ve la advertencia en `keys.ts`.
 const alice = walletFromLabel("miner-node-a");
 const bob = walletFromLabel("bob");
 const carol = walletFromLabel("carol");

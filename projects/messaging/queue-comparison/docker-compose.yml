@@ -6,6 +6,11 @@
 #     internet e nenhuma porta é publicada no host. Todas as credenciais são falsas e existem só
 #     dentro deste laboratório; a API do SQS é o LocalStack, nunca a AWS. Um serviço de teste
 #     depende só do seu broker, então `docker compose run --rm test-kafka` sobe o Kafka e nada mais.
+# ES: Cuatro brokers y una imagen TypeScript. La red es interna: ningún contenedor alcanza internet
+#     y no se publica ningún puerto en el host. Todas las credenciales son falsas y existen solo
+#     dentro de este laboratorio; la API de SQS es LocalStack, nunca AWS. Un servicio de pruebas
+#     depende solo de su broker, así que `docker compose run --rm test-kafka` levanta Kafka y nada
+#     más.
 name: msg-queue-comparison
 
 x-app: &app
@@ -30,6 +35,9 @@ services:
     #     Redis refuses writes when full instead of silently dropping job keys.
     # PT: Sem persistência: os dados do laboratório são descartáveis. `noeviction` é o que o
     #     BullMQ exige, para o Redis recusar escritas quando cheio em vez de apagar chaves de jobs.
+    # ES: Sin persistencia: los datos del laboratorio son desechables. `noeviction` es lo que exige
+    #     BullMQ, para que Redis rechace escrituras cuando está lleno en lugar de borrar claves de
+    #     jobs.
     command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory-policy", "noeviction"]
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -h 127.0.0.1 ping | grep -q PONG"]
@@ -49,6 +57,9 @@ services:
       #     root and can create the Erlang cookie before the broker does, making the broker exit.
       # PT: Uma checagem TCP simples na porta que o cliente usa. O `rabbitmq-diagnostics` rodaria
       #     como root e pode criar o cookie do Erlang antes do broker, fazendo o broker encerrar.
+      # ES: Una verificación TCP simple en el puerto que usa el cliente. `rabbitmq-diagnostics`
+      #     correría como root y puede crear la cookie de Erlang antes que el broker, haciendo que
+      #     el broker termine.
       test: ["CMD", "nc", "-z", "127.0.0.1", "5672"]
       interval: 3s
       timeout: 10s
@@ -61,6 +72,7 @@ services:
     environment:
       # EN: One node in KRaft mode: it is broker and controller at once, with no ZooKeeper.
       # PT: Um nó em modo KRaft: é broker e controller ao mesmo tempo, sem ZooKeeper.
+      # ES: Un nodo en modo KRaft: es broker y controller a la vez, sin ZooKeeper.
       KAFKA_NODE_ID: "1"
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
@@ -75,10 +87,13 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       # EN: A small heap: this machine is shared and the lab moves a few megabytes.
       # PT: Um heap pequeno: a máquina é compartilhada e o laboratório move poucos megabytes.
+      # ES: Un heap pequeño: la máquina es compartida y el laboratorio mueve pocos megabytes.
       KAFKA_HEAP_OPTS: -Xms256m -Xmx256m
     healthcheck:
       # EN: A real client request to the client port, so "healthy" means "answers the protocol".
       # PT: Uma requisição real de cliente na porta dos clientes: "saudável" é "responde ao protocolo".
+      # ES: Una solicitud real de cliente al puerto de los clientes: "saludable" significa "responde
+      #     al protocolo".
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server 127.0.0.1:9092 >/dev/null 2>&1"]
       interval: 5s
       timeout: 15s
@@ -91,6 +106,9 @@ services:
     #     need a real credential and a licence server on the internet, which this lab forbids.
     # PT: 4.14.0 é a última imagem do LocalStack que inicia sem token de conta. As seguintes
     #     exigem uma credencial real e um servidor de licença na internet, o que este laboratório proíbe.
+    # ES: 4.14.0 es la última imagen de LocalStack que inicia sin un token de cuenta. Las
+    #     siguientes exigen una credencial real y un servidor de licencias en internet, lo que este
+    #     laboratorio prohíbe.
     image: &localstack-image localstack/localstack:4.14.0
     environment:
       SERVICES: sqs
@@ -104,6 +122,7 @@ services:
     healthcheck:
       # EN: A real SQS call, not only an open port.
       # PT: Uma chamada SQS real, não apenas uma porta aberta.
+      # ES: Una llamada real a SQS, no solo un puerto abierto.
       test: ["CMD-SHELL", "awslocal sqs list-queues >/dev/null 2>&1"]
       interval: 3s
       timeout: 10s
@@ -113,6 +132,8 @@ services:
 
   # EN: Type check and unit tests. They need no broker, so the container gets no network at all.
   # PT: Checagem de tipos e testes unitários. Não precisam de broker, então o contêiner fica sem rede.
+  # ES: Verificación de tipos y pruebas unitarias. No necesitan ningún broker, así que el
+  #     contenedor se queda sin red.
   ts-test:
     build: ./ts
     image: sef-queue-comparison-ts:local
@@ -170,6 +191,10 @@ services:
     # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
     #     imagem (uid 1000) não conseguiria gravar os resultados. O script de setup exporta
     #     HOST_UID e HOST_GID; no Docker Desktop o padrão funciona.
+    # ES: Se ejecuta como el usuario del host. En Linux la carpeta montada pertenece a ese usuario,
+    #     y el usuario propio de la imagen (uid 1000) no podría escribir los resultados en ella. El
+    #     script de setup exporta HOST_UID y HOST_GID; en Docker Desktop el valor por defecto
+    #     funciona.
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       - .:/project

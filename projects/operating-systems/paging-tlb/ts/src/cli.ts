@@ -4,6 +4,9 @@
 // PT: `bun run src/cli.ts [faults|tlb|all] [--out <dir>]`
 //     `faults` imprime as tabelas de faltas de página (o mesmo texto do programa em Rust). `tlb`
 //     imprime o experimento da TLB. `--out` também grava results.md e results.json.
+// ES: `bun run src/cli.ts [faults|tlb|all] [--out <dir>]`
+//     `faults` imprime las tablas de fallos de página (el mismo texto del programa en Rust). `tlb`
+//     imprime el experimento de la TLB. `--out` también escribe results.md y results.json.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

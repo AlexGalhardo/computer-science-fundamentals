@@ -4,6 +4,9 @@
 // PT: Carga de CPU em uma thread em Rust: `nbody` (ponto flutuante) e `sieve` (inteiros e
 //     memória). A aritmética segue a mesma ordem das outras linguagens, então o checksum é o
 //     mesmo. O Rust compila antes da hora para código de máquina e não tem coletor de lixo.
+// ES: Carga de CPU en un thread en Rust: `nbody` (punto flotante) y `sieve` (enteros y
+//     memoria). La aritmética sigue el mismo orden de los otros lenguajes, así que el checksum es el
+//     mismo. Rust compila por adelantado a código de máquina y no tiene recolector de basura.
 
 use std::f64::consts::PI;
 use std::time::Instant;
@@ -37,6 +40,7 @@ fn body(position: [f64; 3], velocity: [f64; 3], mass: f64) -> Body {
 
 // EN: Sun, Jupiter, Saturn, Uranus and Neptune.
 // PT: Sol, Júpiter, Saturno, Urano e Netuno.
+// ES: Sol, Júpiter, Saturno, Urano y Neptuno.
 fn make_bodies() -> [Body; 5] {
     [
         body([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 1.0),
@@ -111,6 +115,8 @@ fn offset_momentum(bodies: &mut [Body; 5]) {
 //     because the borrow checker forbids aliasing mutable borrows.
 // PT: Um passo de tempo. Usa índices em vez de duas referências mutáveis ao mesmo array, porque
 //     o borrow checker proíbe empréstimos mutáveis que apontam para o mesmo dado.
+// ES: Un paso de tiempo. Usa índices en lugar de dos referencias mutables al mismo arreglo, porque
+//     el borrow checker prohíbe préstamos mutables que apuntan al mismo dato.
 fn advance(bodies: &mut [Body; 5]) {
     for i in 0..bodies.len() {
         for j in (i + 1)..bodies.len() {
@@ -161,6 +167,7 @@ fn nbody(n: usize) -> String {
 
 // EN: Sieve of Eratosthenes. The checksum is "how many primes:the largest one".
 // PT: Crivo de Eratóstenes. O checksum é "quantos primos:o maior deles".
+// ES: Criba de Eratóstenes. El checksum es "cuántos primos:el mayor de ellos".
 fn sieve(n: usize) -> String {
     let mut composite = vec![false; n + 1];
     let mut i = 2;
@@ -186,6 +193,7 @@ fn sieve(n: usize) -> String {
 
 // EN: VmHWM ("high water mark") in /proc/self/status is the peak resident memory, in kibibytes.
 // PT: VmHWM ("marca d'água") em /proc/self/status é o pico de memória residente, em kibibytes.
+// ES: VmHWM ("marca de agua") en /proc/self/status es el pico de memoria residente, en kibibytes.
 fn peak_memory_kb() -> u64 {
     std::fs::read_to_string("/proc/self/status")
         .ok()

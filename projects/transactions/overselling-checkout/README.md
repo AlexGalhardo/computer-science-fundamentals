@@ -1,6 +1,6 @@
 # overselling-checkout
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A product has 10 units and 200 people click "buy" at the same instant. A checkout written as "read the stock, check it, write it" sells far more than 10, even inside a transaction. This mini-project reproduces the bug with a local k6 load test against an ElysiaJS API on PostgreSQL, and then fixes it in three ways: an optimistic version column, `SELECT ... FOR UPDATE`, and `SERIALIZABLE` with retry.
 

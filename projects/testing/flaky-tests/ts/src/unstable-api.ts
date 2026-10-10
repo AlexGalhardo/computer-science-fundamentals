@@ -9,6 +9,12 @@
 //     não pode depender de uma queda real. Ele roda só dentro do docker-compose, em uma rede
 //     interna, sem porta publicada.
 //     A fonte aleatória é um parâmetro, então este arquivo pode ser testado sem aleatoriedade.
+// ES: Un sustituto de "el servicio de alguien más en una red real". Responde el tipo de cambio,
+//     pero una solicitud de cada cuatro falla con 503, como una dependencia real tiene malos
+//     momentos. Los fallos se SIMULAN con un número aleatorio, porque un laboratorio no puede
+//     depender de una caída real. Se ejecuta solo dentro de docker-compose, en una red interna,
+//     sin puerto publicado.
+//     La fuente aleatoria es un parámetro, así que este archivo puede probarse sin aleatoriedad.
 export const FAILURE_RATE = 0.25;
 
 const RATES: Readonly<Record<string, number>> = { "USD-BRL": 5.25, "EUR-BRL": 6.1 };

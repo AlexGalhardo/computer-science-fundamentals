@@ -28,6 +28,10 @@ fn run(source: &str) -> (String, Option<String>) {
 //     (MP-COMP-2) precisa imprimir exatamente o texto do seu arquivo `.out`, que foi produzido
 //     por aquele interpretador. Duas implementações que só compartilham a definição da linguagem
 //     concordando em todos os programas é uma forte evidência de que ambas estão certas.
+// ES: La prueba de aceptación de la máquina virtual: todo programa de ejemplo del intérprete de
+//     árbol (MP-COMP-2) debe imprimir exactamente el texto de su archivo `.out`, que produjo ese
+//     intérprete. Dos implementaciones que solo comparten la definición del lenguaje y coinciden
+//     en todos los programas son una fuerte evidencia de que ambas están correctas.
 #[test]
 fn every_example_program_prints_the_output_of_the_tree_walking_interpreter() {
     let mut checked = 0;
@@ -149,6 +153,9 @@ fn error_of(source: &str) -> String {
 // PT: Os mesmos erros de execução que o interpretador de árvore reporta, com o mesmo texto e a
 //     mesma linha e coluna. A máquina não tem mais a árvore, então as posições vêm da tabela que
 //     o compilador escreveu ao lado das instruções.
+// ES: Los mismos errores de ejecución que reporta el intérprete de árbol, con el mismo texto y la
+//     misma línea y columna. La máquina ya no tiene el árbol, así que las posiciones vienen de la
+//     tabla que el compilador escribió junto a las instrucciones.
 #[test]
 fn run_time_errors_match_the_tree_walking_interpreter() {
     assert_eq!(

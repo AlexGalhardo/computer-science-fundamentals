@@ -15,6 +15,15 @@
 //     redescobrir os grupos só a partir desses contextos. Nada no código dos vetores conhece os
 //     grupos.
 //     `bun run src/generate-corpus.ts` regrava data/corpus.txt e data/queries.txt.
+// ES: El corpus de este proyecto se genera, no se descarga. Ocho grupos de palabras (animales,
+//     comidas, vehículos y así sucesivamente) tienen cada uno sus plantillas de frase y sus
+//     palabras de contexto típicas. Una frase es una plantilla con los huecos rellenados al azar
+//     por un generador con semilla, así que la misma semilla siempre escribe el mismo archivo.
+//     Es la hipótesis distribucional construida a propósito: las palabras de un grupo aparecen en
+//     los mismos contextos ("the ... slept in the barn"), y los vectores de palabras tienen que
+//     redescubrir los grupos solo a partir de esos contextos. Nada en el código de los vectores
+//     conoce los grupos.
+//     `bun run src/generate-corpus.ts` reescribe data/corpus.txt y data/queries.txt.
 
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -201,6 +210,8 @@ export const GROUPS: readonly Group[] = [
 //     groups, so the vectors have to cope with some noise.
 // PT: Texto real não é arrumado: um cachorro pode aparecer ao lado de um ônibus. Uma frase em
 //     cada dez mistura dois grupos, então os vetores precisam lidar com algum ruído.
+// ES: El texto real no está ordenado: un perro puede aparecer junto a un autobús. Una frase de
+//     cada diez mezcla dos grupos, así que los vectores tienen que lidiar con algo de ruido.
 const MIXED_TEMPLATES: readonly string[] = [
 	"people talked about the {x} and the {y}",
 	"nobody noticed the {x} or the {y}",
@@ -219,6 +230,7 @@ function groupByName(name: string): Group {
 
 // EN: The slots are filled from left to right, so the order of the random draws is fixed.
 // PT: As lacunas são preenchidas da esquerda para a direita, então a ordem dos sorteios é fixa.
+// ES: Los huecos se rellenan de izquierda a derecha, así que el orden de los sorteos es fijo.
 function fill(template: string, choose: (slot: string) => string): string {
 	return template.replace(/\{(\w+)\}/g, (_match, slot: string) => choose(slot));
 }
@@ -282,6 +294,9 @@ export function generateCorpus(): string[] {
 // PT: As consultas do experimento de busca são frases novas, de outra semente. Uma consulta
 //     cujas palavras de conteúdo já estão no corpus, em qualquer ordem, é descartada: achar um
 //     vetor idêntico à pergunta é fácil demais para dizer algo sobre o índice.
+// ES: Las consultas del experimento de búsqueda son frases nuevas, de otra semilla. Una consulta
+//     cuyas palabras de contenido ya están en el corpus, en cualquier orden, se descarta: encontrar
+//     un vector idéntico a la pregunta es demasiado fácil para decir algo sobre el índice.
 export function generateQueries(corpus: readonly string[]): string[] {
 	const known = new Set(corpus.map(contentKey));
 	const queries: string[] = [];

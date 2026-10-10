@@ -2,6 +2,8 @@
 #     of docker-compose overrides it to run formatter, vet and tests.
 # PT: Uma imagem faz dois trabalhos: o comando padrão roda o servidor, e o serviço go-test do
 #     docker-compose o troca para rodar formatador, vet e testes.
+# ES: Una imagen hace dos trabajos: el comando por defecto ejecuta el servidor, y el servicio go-test
+#     de docker-compose lo cambia para ejecutar formateador, vet y pruebas.
 FROM golang:1.27.1-bookworm
 WORKDIR /src
 COPY go/ .

@@ -6,6 +6,11 @@
 //     <script>, `BENCH_DATA` (os números, escritos pelo `bun run data`) e `BENCH_CONTENT` (todos
 //     os textos, em inglês e português), e monta a página inteira a partir deles. Não há
 //     framework, etapa de build nem requisição de rede: a página funciona aberta direto do disco.
+// ES: El dashboard de benchmark de los lenguajes. Lee dos globales cargados por etiquetas
+//     <script>, `BENCH_DATA` (los números, escritos por `bun run data`) y `BENCH_CONTENT` (todos
+//     los textos, en inglés, portugués y español), y arma la página completa a partir de ellos.
+//     No hay framework, paso de build ni petición de red: la página funciona abierta directo
+//     desde el disco.
 
 const SVG = "http://www.w3.org/2000/svg";
 const data = window.BENCH_DATA;
@@ -19,12 +24,16 @@ const LANGUAGES = ["cpp", "rust", "go", "java", "ts", "python", "elixir"];
 // PT: As preferências ficam guardadas no navegador. O armazenamento pode estar bloqueado
 //     (janelas privadas, alguns casos de file://), então todo acesso é protegido e a página
 //     funciona sem ele.
+// ES: Las preferencias se guardan en el navegador. El almacenamiento puede estar bloqueado
+//     (ventanas privadas, algunos casos de file://), así que todo acceso está protegido y la
+//     página funciona sin él.
 function remember(key, value) {
 	try {
 		localStorage.setItem(`bench-${key}`, value);
 	} catch {
 		// EN: Storage is unavailable: the choice simply lasts until the page is closed.
 		// PT: Armazenamento indisponível: a escolha simplesmente dura até a página ser fechada.
+		// ES: Almacenamiento no disponible: la elección simplemente dura hasta que se cierra la página.
 	}
 }
 function recall(key) {
@@ -35,8 +44,16 @@ function recall(key) {
 	}
 }
 
+const LOCALES = { en: "en-US", pt: "pt-BR", es: "es-419" };
+const HTML_LANGS = { en: "en", pt: "pt-BR", es: "es" };
+
+function browserLanguage() {
+	const preferred = navigator.language.toLowerCase();
+	return preferred.startsWith("pt") ? "pt" : preferred.startsWith("es") ? "es" : "en";
+}
+
 const state = {
-	lang: recall("lang") ?? (navigator.language.toLowerCase().startsWith("pt") ? "pt" : "en"),
+	lang: recall("lang") ?? browserLanguage(),
 	theme: recall("theme"),
 	visible: new Set(LANGUAGES),
 	endpoint: "echo",
@@ -44,7 +61,7 @@ const state = {
 };
 
 const text = () => content[state.lang];
-const locale = () => (state.lang === "pt" ? "pt-BR" : "en-US");
+const locale = () => LOCALES[state.lang] ?? LOCALES.en;
 const nameOf = (language) => content.languageNames[language] ?? language;
 
 // ---------- small DOM helpers ----------
@@ -73,6 +90,8 @@ function svg(name, attributes, textContent) {
 //     button that opens the explanation of that term, and leaves the rest as plain text.
 // PT: Os textos marcam palavras técnicas como [[id-do-termo|palavras visíveis]]. Isto transforma
 //     cada marca em um botão que abre a explicação do termo, e deixa o resto como texto comum.
+// ES: Los textos marcan palabras técnicas como [[id-del-termino|palabras visibles]]. Esto convierte
+//     cada marca en un botón que abre la explicación del término, y deja el resto como texto común.
 function rich(source) {
 	const fragment = document.createDocumentFragment();
 	const pattern = /\[\[([a-z0-9-]+)\|([^\]]+)\]\]/g;
@@ -94,6 +113,8 @@ function termButton(id, label) {
 	//     explanation even though the floating box is only visual.
 	// PT: A entrada do glossário está sempre na página, então um leitor de tela consegue ler a
 	//     explicação mesmo que a caixa flutuante seja só visual.
+	// ES: La entrada del glosario siempre está en la página, así que un lector de pantalla puede
+	//     leer la explicación aunque la caja flotante sea solo visual.
 	button.setAttribute("aria-describedby", `def-${id}`);
 	return button;
 }
@@ -119,6 +140,7 @@ const UNITS = {
 	ops: (value) => `${number(value, 0)} ops/s`,
 	// EN: Sizes on disk arrive in bytes and are shown in the unit that keeps the number short.
 	// PT: Os tamanhos em disco chegam em bytes e são mostrados na unidade que deixa o número curto.
+	// ES: Los tamaños en disco llegan en bytes y se muestran en la unidad que deja el número corto.
 	size: (value) =>
 		value >= 1024 * 1024
 			? `${number(value / 1024 / 1024, 1)} MiB`
@@ -131,6 +153,8 @@ const UNITS = {
 //     summary, so it should not look more exact than the measurement is.
 // PT: "Cerca de 12 vezes": uma casa decimal para razões pequenas, nenhuma para as grandes. Uma
 //     legenda é um resumo, então não deve parecer mais exata do que a medição é.
+// ES: "Unas 12 veces": un decimal para razones pequeñas, ninguno para las grandes. Una leyenda
+//     es un resumen, así que no debe parecer más exacta de lo que es la medición.
 function ratio(value) {
 	return number(value, value >= 10 ? 0 : 1);
 }
@@ -153,6 +177,8 @@ function tipTextOf(node) {
 //     it can never cause a horizontal scroll on a narrow phone.
 // PT: A caixa é posta embaixo da palavra e depois empurrada para dentro da janela em todos os
 //     lados, então ela nunca causa rolagem horizontal em um celular estreito.
+// ES: La caja se coloca debajo de la palabra y luego se empuja hacia dentro de la ventana por
+//     todos los lados, así que nunca causa desplazamiento horizontal en un celular estrecho.
 function showTip(node) {
 	const message = tipTextOf(node);
 	if (message === "") {
@@ -195,6 +221,8 @@ const tipTarget = (event) => (event.target instanceof Element ? event.target.clo
 //     the browser reports as a click). A click pins the box open and a second click closes it.
 // PT: Três entradas, uma caixa: o mouse (passar por cima), o teclado (foco) e o dedo (toque, que
 //     o navegador informa como clique). Um clique fixa a caixa aberta e um segundo clique a fecha.
+// ES: Tres entradas, una caja: el mouse (pasar por encima), el teclado (foco) y el dedo (toque,
+//     que el navegador informa como clic). Un clic fija la caja abierta y un segundo clic la cierra.
 document.addEventListener("mouseover", (event) => {
 	const node = tipTarget(event);
 	if (node !== null && tipPinned === null) {
@@ -287,6 +315,10 @@ function emptyChart(container) {
 //     barra, então nada precisa ser adivinhado pela cor ou pelo eixo, e o desenho sobrevive a
 //     uma tela de 320 px. A linha fina sobre a barra vai da menor à maior execução: ela mostra
 //     o quanto a medição variou.
+// ES: Barras horizontales, una por lenguaje. Cada fila tiene el nombre y el número escritos
+//     sobre la barra, así que no hay que adivinar nada por el color o por el eje, y el dibujo
+//     sobrevive a una pantalla de 320 px. La línea fina sobre la barra va de la ejecución menor a
+//     la mayor: muestra cuánto varió la medición.
 function drawBars(container, rows, spec) {
 	if (rows.length === 0) {
 		emptyChart(container);
@@ -311,6 +343,7 @@ function drawBars(container, rows, spec) {
 		chart.append(svg("text", { x, y: 12, "text-anchor": "end", class: "chart-soft" }, spec.limit.label));
 		// EN: The limit is marked on each bar only, so it never crosses the numbers written above.
 		// PT: O limite é marcado só em cada barra, então nunca atravessa os números escritos acima.
+		// ES: El límite se marca solo en cada barra, así que nunca cruza los números escritos arriba.
 		rows.forEach((_, index) => {
 			const y = top + index * rowHeight;
 			chart.append(
@@ -377,6 +410,7 @@ function drawBars(container, rows, spec) {
 		}
 		// EN: An invisible rectangle over the whole row is the hover and tap target.
 		// PT: Um retângulo invisível sobre a linha inteira é o alvo do mouse e do toque.
+		// ES: Un rectángulo invisible sobre toda la fila es el objetivo del mouse y del toque.
 		group.append(mark(svg("rect", { x: 0, y, width, height: rowHeight - 4, fill: "transparent" }), row.tip));
 		chart.append(group);
 	});
@@ -389,6 +423,9 @@ function drawBars(container, rows, spec) {
 // PT: Gráfico de latência: três barras por linguagem (p50, p95, p99), da mais clara à mais
 //     forte. A distância entre a primeira e a última barra é a "cauda": o quanto as requisições
 //     azaradas são piores que a típica.
+// ES: Gráfico de latencia: tres barras por lenguaje (p50, p95, p99), de la más clara a la más
+//     fuerte. La distancia entre la primera y la última barra es la "cola": cuánto peores son las
+//     peticiones con mala suerte que la típica.
 function drawPercentiles(container, rows, spec) {
 	if (rows.length === 0) {
 		emptyChart(container);
@@ -445,6 +482,10 @@ function drawPercentiles(container, rows, spec) {
 //     resultado perfeito, "o dobro de workers, o dobro da velocidade", é uma diagonal reta. As
 //     linhas reais se afastam dela, e a distância é o tempo perdido com coordenação e com
 //     hardware compartilhado.
+// ES: Speed-up contra workers. Los dos ejes se duplican en cada paso (1, 2, 4, 8, 16), así que el
+//     resultado perfecto, "el doble de workers, el doble de velocidad", es una diagonal recta.
+//     Las líneas reales se alejan de ella, y la distancia es el tiempo perdido en coordinación y
+//     en hardware compartido.
 function drawSpeedup(container, series, spec) {
 	if (series.length === 0) {
 		emptyChart(container);
@@ -546,6 +587,8 @@ function drawSpeedup(container, series, spec) {
 	//     never hidden under another language's line.
 	// PT: Os pontos são desenhados depois de todas as linhas, com um anel na cor do cartão,
 	//     então um ponto nunca fica escondido sob a linha de outra linguagem.
+	// ES: Los puntos se dibujan después de todas las líneas, con un anillo del color de la tarjeta,
+	//     así un punto nunca queda escondido bajo la línea de otro lenguaje.
 	for (const item of series) {
 		for (const point of item.points) {
 			chart.append(
@@ -1238,6 +1281,8 @@ function sectionHeading(id, title) {
 //     chosen one is marked with aria-pressed, which screen readers announce and the CSS paints.
 // PT: Uma fileira de botões que escolhe uma opção (o tipo de requisição, a fase do banco). A
 //     escolhida é marcada com aria-pressed, que os leitores de tela anunciam e o CSS pinta.
+// ES: Una fila de botones que elige una opción (el tipo de petición, la fase de la base de datos).
+//     La elegida se marca con aria-pressed, que los lectores de pantalla anuncian y el CSS pinta.
 function optionSwitch(key, options, labels) {
 	const group = el("div", "flex flex-wrap items-center gap-2");
 	group.setAttribute("role", "group");
@@ -1310,6 +1355,8 @@ function introSection() {
 	//     readers get the right behaviour for free.
 	// PT: O filtro de linguagens. Checkboxes de verdade dentro de um fieldset: teclado, toque e
 	//     leitores de tela ganham o comportamento certo de graça.
+	// ES: El filtro de lenguajes. Checkboxes de verdad dentro de un fieldset: teclado, toque y
+	//     lectores de pantalla reciben el comportamiento correcto gratis.
 	const filter = el("fieldset", `${CARD} mt-4 bg-card`);
 	filter.id = "language-filter";
 	filter.append(
@@ -1521,7 +1568,7 @@ function redrawAll() {
 function render() {
 	hideTip();
 	redraws.length = 0;
-	document.documentElement.lang = state.lang === "pt" ? "pt-BR" : "en";
+	document.documentElement.lang = HTML_LANGS[state.lang] ?? "en";
 	document.title = text().ui.title;
 	document.getElementById("brand").textContent = text().ui.title;
 	for (const button of document.querySelectorAll("#language-switch button")) {
@@ -1566,6 +1613,8 @@ document.getElementById("theme-toggle").addEventListener("click", (event) => {
 //     instead of shrinking with the drawing. When the window changes width they are redrawn.
 // PT: Os gráficos são desenhados na largura real do cartão, então o texto mantém o tamanho no
 //     celular em vez de encolher com o desenho. Quando a janela muda de largura, são redesenhados.
+// ES: Los gráficos se dibujan al ancho real de su tarjeta, así el texto mantiene su tamaño en el
+//     celular en lugar de encogerse con el dibujo. Cuando la ventana cambia de ancho, se redibujan.
 let lastWidth = window.innerWidth;
 window.addEventListener("resize", () => {
 	if (window.innerWidth !== lastWidth) {

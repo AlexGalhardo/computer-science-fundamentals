@@ -6,6 +6,10 @@
 //     os vizinhos das palavras de teste, a troca do índice e as perguntas de recuperação.
 //     `summarize` guarda só o que precisa ser idêntico em TypeScript e em Python; esse resumo é
 //     comparado com data/expected.json pelas duas suítes de teste.
+// ES: Los tres experimentos del proyecto, ejecutados una vez y compartidos por la demo y las
+//     pruebas: los vecinos de las palabras de prueba, el intercambio del índice y las preguntas de
+//     recuperación. `summarize` guarda solo lo que debe ser idéntico en TypeScript y en Python; ese
+//     resumen lo comparan con data/expected.json las dos suites de pruebas.
 
 import { type DemoQuestion, readGroups, readLines, readPassages, readQuestions } from "./data";
 import {
@@ -40,6 +44,9 @@ export const TOP_PASSAGES = 3;
 // PT: Uma pergunta que não compartilha nenhuma palavra de conteúdo com as passagens que deveria
 //     achar. Ela só pode funcionar pelos vetores de palavras: "drizzle" e "hail" ficam perto de
 //     "rain" e "snow".
+// ES: Una pregunta que no comparte ninguna palabra de contenido con los pasajes que debería
+//     encontrar. Solo puede funcionar a través de los vectores de palabras: "drizzle" y "hail"
+//     están cerca de "rain" y "snow".
 export const RELATED_QUESTION = "Will drizzle or hail come tomorrow?";
 export const RELATED_PASSAGES: readonly string[] = ["p13", "p14", "p15"];
 
@@ -76,6 +83,10 @@ export interface IndexData {
 //     exatamente como o vetor de uma passagem. Os 80 vetores de palavras e as 30 passagens são
 //     poucos para um índice fazer diferença, cerca de 2000 frases bastam para ver a diferença.
 //     As consultas são as 400 frases novas de data/queries.txt.
+// ES: Lo que guarda el índice: un vector por frase del corpus con contenido distinto, construido
+//     exactamente como el vector de un pasaje. Los 80 vectores de palabras y los 30 pasajes son
+//     pocos para que un índice marque diferencia, unas 2000 frases bastan para ver la diferencia.
+//     Las consultas son las 400 frases nuevas de data/queries.txt.
 export function indexData(model: Model, corpus: readonly string[], queries: readonly string[]): IndexData {
 	const distinct = distinctByContent(corpus);
 	return {

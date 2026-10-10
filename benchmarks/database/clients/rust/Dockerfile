@@ -1,5 +1,6 @@
 # EN: Rust database client of the benchmark, built in release mode with the committed Cargo.lock.
 # PT: Cliente de banco em Rust do benchmark, compilado em modo release com o Cargo.lock versionado.
+# ES: Cliente de base de datos en Rust del benchmark, compilado en modo release con el Cargo.lock versionado.
 FROM rust:1.99.0-slim-trixie
 WORKDIR /src
 COPY . .

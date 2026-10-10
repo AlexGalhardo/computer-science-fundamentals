@@ -6,6 +6,10 @@
 #     primeiro compilado em um único arquivo CommonJS (estágio 1, com o Bun como ferramenta de
 #     build). O estágio 2 é a imagem oficial do Node.js LTS com o PM2 fixado, e contém só o arquivo
 #     compilado: a mesma imagem roda `node` sozinho ou `pm2-runtime` em modo cluster, conforme o comando.
+# ES: La imagen de Node.js, en dos etapas. Node ejecuta JavaScript, así que el código TypeScript se
+#     compila primero a un único archivo CommonJS (etapa 1, con Bun como herramienta de build). La
+#     etapa 2 es la imagen oficial de Node.js LTS con PM2 fijado, y contiene solo el archivo
+#     compilado: la misma imagen ejecuta `node` solo o `pm2-runtime` en modo cluster, según el comando.
 FROM oven/bun:1.4.2 AS build
 WORKDIR /app/ts
 COPY ts/package.json ts/bun.lock ./

@@ -1,6 +1,6 @@
 # ALOHA e CSMA/CD
 
-> English version: [docs/en/networks/aloha-csma.md](../../en/networks/aloha-csma.md)
+> English version: [docs/en/networks/aloha-csma.md](../../en/networks/aloha-csma.md) · Versión en español: [docs/es/networks/aloha-csma.md](../../es/networks/aloha-csma.md)
 
 Mini-projeto: [`projects/networks/aloha-csma`](../../../projects/networks/aloha-csma/README.pt-BR.md). Linguagem: Python. Tópico do quiz: `networks` / `medium-access-control`.
 
@@ -22,7 +22,7 @@ O tempo é medido em **tempos de quadro**: um quadro leva 1 unidade. A **carga o
 
 Um quadro que começa no instante t ocupa o canal até t + 1. Ele é destruído por qualquer quadro que tenha começado depois de t - 1 (ainda no ar) ou que comece antes de t + 1. O **período vulnerável** é, portanto, de 2 tempos de quadro. Com tentativas de Poisson, a probabilidade de nenhum outro início em 2 tempos de quadro é e^(-2G), o que dá:
 
-```
+```text
 S = G * e^(-2G)        máximo em G = 0,5:  S = 1/(2e) = 0,184
 ```
 
@@ -32,7 +32,7 @@ S = G * e^(-2G)        máximo em G = 0,5:  S = 1/(2e) = 0,184
 
 Se os quadros só podem começar no início de um slot, dois quadros ou se sobrepõem por inteiro ou não se tocam. O período vulnerável cai pela metade, para 1 tempo de quadro:
 
-```
+```text
 S = G * e^(-G)         máximo em G = 1:  S = 1/e = 0,368
 ```
 

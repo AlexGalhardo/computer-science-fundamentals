@@ -33,6 +33,8 @@ public final class SmellTests {
   //     refactoring: they pass before it and they pass after it.
   // PT: Um método, chamado uma vez por versão. As mesmas verificações são a rede de segurança da
   //     refatoração: passam antes dela e passam depois dela.
+  // ES: Un método, llamado una vez por versión. Las mismas verificaciones son la red de
+  //     seguridad de la refactorización: pasan antes de ella y pasan después de ella.
   private static void primitiveObsession(String version, Signup signup) {
     String name = "primitive obsession, " + version + ": ";
     same(
@@ -85,6 +87,10 @@ public final class SmellTests {
   // PT: O objetivo da refatoração, em forma de teste. Um quarto tipo é escrito aqui mesmo, fora
   //     do código de produção, e o checkout refatorado o atende sem edição alguma. O enum da
   //     outra versão não pode receber uma constante nova de fora.
+  // ES: El objetivo de la refactorización, en forma de test. Un cuarto tipo se escribe aquí
+  //     mismo, fuera del código de producción, y el checkout refactorizado lo atiende sin
+  //     ninguna edición. El enum de la otra versión no puede recibir una constante nueva desde
+  //     afuera.
   private static void newVariant() {
     DeliveryMethod drone =
         new DeliveryMethod() {
@@ -118,6 +124,8 @@ public final class SmellTests {
   //     cannot exist in an invalid state.
   // PT: O que os tipos pequenos acrescentam além do comportamento compartilhado: igualdade por
   //     conteúdo, e um valor que não consegue existir em estado inválido.
+  // ES: Lo que los tipos pequeños aportan además del comportamiento compartido: igualdad por
+  //     contenido, y un valor que no puede existir en un estado inválido.
   private static void smallTypes() {
     check(new Email(" A@B.co ").equals(new Email("a@b.co")), "equal e-mails are equal objects");
     refuses(() -> new Email("nope").value(), "invalid e-mail", "an invalid Email cannot exist");

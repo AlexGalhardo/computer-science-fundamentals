@@ -3,6 +3,8 @@
 #     what came out. The last test interrupts a running pipeline with SIGINT.
 # PT: Testes de integração do msh. Cada teste escreve um pequeno script, executa-o com o msh e
 #     compara o que saiu. O último teste interrompe um pipeline em execução com SIGINT.
+# ES: Pruebas de integración de msh. Cada prueba escribe un script pequeño, lo ejecuta con msh y
+#     compara lo que salió. La última prueba interrumpe un pipeline en ejecución con SIGINT.
 set -u
 
 MSH="${MSH:-./msh}"
@@ -44,6 +46,8 @@ check "pipeline of three commands with <, > and >>" "$(printf '3\nextra')" "$out
 #     happens if the shell closed its own copies of the pipe ends.
 # PT: O head termina depois de três linhas. O seq precisa então morrer de SIGPIPE em vez de
 #     bloquear, o que só acontece se o shell fechou as suas cópias das pontas do pipe.
+# ES: head termina después de tres líneas. seq debe entonces morir por SIGPIPE en lugar de
+#     bloquearse, lo cual solo ocurre si el shell cerró sus propias copias de los extremos del pipe.
 out="$(run "seq 1 100000 | head -n 3 | wc -l")"
 check "a reader that exits early ends the pipeline" "3" "$out"
 
@@ -82,6 +86,10 @@ check "a missing input file gives status 1" "1" "$?"
 #     de processos, cujo id é o pid do msh. Enviar SIGINT ao grupo é o que um terminal faz no
 #     Ctrl-C: o shell e os três processos do pipeline o recebem. O pipeline precisa morrer na
 #     hora, e o shell precisa sobreviver e executar a linha seguinte.
+# ES: Con el control de trabajos activado (set -m), el trabajo en segundo plano obtiene su propio
+#     grupo de procesos, cuyo id es el pid de msh. Enviar SIGINT al grupo es lo que hace una
+#     terminal con Ctrl-C: el shell y los tres procesos del pipeline lo reciben. El pipeline debe
+#     morir de inmediato, y el shell debe sobrevivir y ejecutar la línea siguiente.
 printf '%s\n' "sleep 30 | cat | cat" "echo survived" > "$work/interrupt.msh"
 set -m
 "$MSH" "$work/interrupt.msh" > "$work/interrupt.out" 2> "$work/interrupt.err" &

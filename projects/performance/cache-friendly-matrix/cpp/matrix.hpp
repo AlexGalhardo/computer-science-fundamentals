@@ -11,6 +11,9 @@
 // PT: Três formas de multiplicar duas matrizes n x n. As três fazem exatamente as mesmas n^3
 //     multiplicações e somas, então o Big O é o mesmo. O que muda é a ORDEM em que a memória é
 //     visitada, e só isso torna uma delas várias vezes mais lenta.
+// ES: Tres formas de multiplicar dos matrices n x n. Las tres hacen exactamente las mismas n^3
+//     multiplicaciones y sumas, así que el Big O es el mismo. Lo que cambia es el ORDEN en que se
+//     visita la memoria, y solo eso hace que una de ellas sea varias veces más lenta.
 //
 //     A matriz é guardada por linhas (row-major), como fazem C, C++ e Rust: o elemento (i, j)
 //     fica no índice i * n + j, então uma linha é contígua e uma coluna não. O processador não
@@ -40,6 +43,8 @@ inline constexpr std::size_t kDefaultBlock = 64;
 //     multiply exactly the same matrices and their checksums can be compared.
 // PT: Entrada determinística a partir de uma semente fixa (um gerador congruente linear), para
 //     que C++ e Rust multipliquem exatamente as mesmas matrizes e os checksums sejam comparáveis.
+// ES: Entrada determinista a partir de una semilla fija (un generador congruencial lineal), para
+//     que C++ y Rust multipliquen exactamente las mismas matrices y los checksums sean comparables.
 inline Matrix make_matrix(std::size_t n, std::uint64_t seed) {
 	Matrix values(n * n);
 	std::uint64_t state = seed;
@@ -59,6 +64,11 @@ inline Matrix make_matrix(std::size_t n, std::uint64_t seed) {
 //     descendo uma coluna: o laço interno toca B[0][j], B[1][j], B[2][j]..., a n * 8 bytes um
 //     do outro, uma linha de cache nova a cada passo. Quando uma coluna de B não cabe mais na
 //     cache, quase todo acesso é uma falta.
+// ES: El orden del libro de texto, i-j-k: cada elemento del resultado es el producto escalar de una
+//     fila de A por una columna de B. A se recorre a lo largo de una fila (bien), pero B se recorre
+//     bajando una columna: el bucle interno toca B[0][j], B[1][j], B[2][j]..., a n * 8 bytes uno
+//     del otro, una línea de caché nueva en cada paso. Cuando una columna de B ya no cabe en el
+//     caché, casi todo acceso es un fallo.
 inline Matrix multiply_naive(const Matrix& a, const Matrix& b, std::size_t n) {
 	Matrix c(n * n, 0.0);
 	for (std::size_t i = 0; i < n; ++i) {
@@ -82,6 +92,10 @@ inline Matrix multiply_naive(const Matrix& a, const Matrix& b, std::size_t n) {
 //     linha de cache, fácil de pré-buscar, e simples o bastante para o compilador usar
 //     instruções vetoriais. Isso é localidade espacial: usar o que está ao lado do que acabou
 //     de ser usado.
+// ES: Intercambio de bucles, i-k-j: se intercambian los dos bucles internos y nada más. Ahora el
+//     bucle interno recorre la fila k de B y la fila i de C, ambas contiguas: 8 doubles por línea
+//     de caché, fácil de prebuscar, y lo bastante simple para que el compilador use instrucciones
+//     vectoriales. Eso es localidad espacial: usar lo que está al lado de lo que acaba de usarse.
 inline Matrix multiply_interchanged(const Matrix& a, const Matrix& b, std::size_t n) {
 	Matrix c(n * n, 0.0);
 	for (std::size_t i = 0; i < n; ++i) {
@@ -109,6 +123,13 @@ inline Matrix multiply_interchanged(const Matrix& a, const Matrix& b, std::size_
 //     na memória principal. Isso é localidade temporal: usar de novo, logo, o que acabou de ser
 //     usado. Só com i-k-j, B inteira (n^2 doubles) é varrida uma vez para cada linha i, e uma B
 //     grande é despejada da cache muito antes de a próxima linha voltar a ela.
+// ES: Blocking (también llamado tiling): el mismo trabajo i-k-j, cortado en bloques de
+//     `block` x `block` elementos. Dentro de un bloque el código toca un trozo cuadrado de A, de
+//     B y de C, unos 3 * block^2 * 8 bytes en total, una y otra vez. Cuando eso cabe en un nivel
+//     de caché, el dato se reutiliza mientras todavía está allí, en lugar de buscarse de nuevo en
+//     la memoria principal. Eso es localidad temporal: volver a usar, pronto, lo que acaba de
+//     usarse. Solo con i-k-j, B entera (n^2 doubles) se recorre una vez por cada fila i, y una B
+//     grande es expulsada del caché mucho antes de que la siguiente fila vuelva a ella.
 inline Matrix multiply_blocked(const Matrix& a, const Matrix& b, std::size_t n, std::size_t block) {
 	if (block == 0) {
 		throw std::invalid_argument("block size must be at least 1");
@@ -155,6 +176,8 @@ inline double max_abs_diff(const Matrix& x, const Matrix& y) {
 //     variants, and the two languages, must print the same text.
 // PT: Um resumo curto do resultado: a soma de todos os elementos com três casas decimais. As
 //     três variantes, e as duas linguagens, precisam imprimir o mesmo texto.
+// ES: Un resumen corto del resultado: la suma de todos los elementos con tres decimales. Las
+//     tres variantes, y los dos lenguajes, deben imprimir el mismo texto.
 inline std::string checksum(const Matrix& values) {
 	double sum = 0.0;
 	for (const double value : values) {

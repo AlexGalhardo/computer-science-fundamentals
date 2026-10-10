@@ -17,6 +17,12 @@ use mini_dbms::{
 //     que o arquivo versionado ainda é igual ao que o SQLite responde, então as linhas esperadas
 //     não ficam desatualizadas. O Rust não tem SQLite na biblioteca padrão, e assim o crate
 //     continua sem dependências.
+// ES: El archivo `fixtures/sqlite_cases.tsv` lo escribe `python/make_fixtures.py`, que ejecuta
+//     cada consulta en una base de datos SQLite de verdad y registra las filas que SQLite
+//     devolvió. Esta prueba ejecuta las mismas consultas en el motor en Rust y compara. Una
+//     prueba en Python verifica que el archivo versionado siga siendo igual a lo que SQLite
+//     responde, así que las filas esperadas no quedan desactualizadas. Rust no tiene SQLite en
+//     su biblioteca estándar, y así el crate sigue sin dependencias.
 struct Fixture {
     tables: HashMap<String, Table>,
     types: HashMap<String, Vec<String>>,

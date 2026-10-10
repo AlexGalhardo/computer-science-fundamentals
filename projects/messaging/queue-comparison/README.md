@@ -1,12 +1,12 @@
 # queue-comparison
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 What changes when the same task runs on four different brokers? One "order placed" message triggers one simulated confirmation e-mail, and the same producer and consumer code runs on **BullMQ (Redis)**, **RabbitMQ**, **Kafka** and **SQS (LocalStack)** through one TypeScript interface. The code is the same; the behaviour is not: ordering, what happens when a consumer dies with a message in its hands, and speed all differ, and the tests and the benchmark show how.
 
 Code: MP-MSG-1. Full explanation: [docs/en/messaging/queue-comparison.md](../../../docs/en/messaging/queue-comparison.md). It rebuilds the legacy project `references/projects/message-queues-pubsub` under the rules of this repository.
 
-```
+```text
 producer --send(orders)--> [ BullMQ | RabbitMQ | Kafka | SQS ] --handler(order)--> simulated e-mail
              OrderProducer            QueueAdapter                 OrderConsumer
 ```

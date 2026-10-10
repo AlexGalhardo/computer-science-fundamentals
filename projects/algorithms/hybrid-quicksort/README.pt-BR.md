@@ -1,6 +1,6 @@
 # hybrid-quicksort
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um quicksort com dois botões: a estratégia de pivô (primeiro elemento, aleatório, mediana de três) e o limiar `k` abaixo do qual um trecho é ordenado com insertion sort. O projeto mede o que cada botão muda na prática: o pivô decide se a entrada ordenada é o melhor caso ou o pior caso quadrático, e o limiar reduz o fator constante.
 

@@ -9,6 +9,8 @@ import (
 // which are only blocked behind the cycle.
 // PT: Grafos conhecidos, classificados como documentado: quais processos estão em impasse (em
 // um ciclo) e quais estão apenas bloqueados atrás do ciclo.
+// ES: Grafos conocidos, clasificados como está documentado: qué procesos están en deadlock (en
+// un ciclo) y cuáles solo están bloqueados detrás del ciclo.
 func TestGraphsAreClassifiedAsDocumented(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -61,6 +63,7 @@ func TestResourceHasASingleInstance(t *testing.T) {
 	}
 	// EN: Asking for a resource you already hold, or for a free one, blocks nobody.
 	// PT: Pedir um recurso que você já segura, ou um recurso livre, não bloqueia ninguém.
+	// ES: Pedir un recurso que ya retienes, o uno libre, no bloquea a nadie.
 	g.Request("A", "R")
 	g.Request("A", "free")
 	if got := g.Deadlocked(); got != nil {
@@ -70,6 +73,7 @@ func TestResourceHasASingleInstance(t *testing.T) {
 
 // EN: Textbook states, classified safe or unsafe as documented.
 // PT: Estados de livro, classificados como seguros ou inseguros conforme documentado.
+// ES: Estados de libro de texto, clasificados como seguros o inseguros según está documentado.
 func TestStatesAreClassifiedAsDocumented(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -98,6 +102,8 @@ func TestSingleResourceRequests(t *testing.T) {
 	//     but then neither A (needs 5) nor C (needs 5) fits. Unsafe, so denied.
 	// PT: A pede mais uma unidade: sobram 2 livres, B ainda consegue terminar (precisa de 2) e
 	//     deixa 4, mas depois nem A (precisa de 5) nem C (precisa de 5) cabem. Inseguro, negado.
+	// ES: A pide una unidad más: quedan 2 libres, B todavía puede terminar (necesita 2) y deja 4,
+	//     pero entonces ni A (necesita 5) ni C (necesita 5) caben. Inseguro, así que se deniega.
 	if _, decision := state.Request(0, []int{1}); decision != DeniedUnsafe {
 		t.Errorf("A asks for 1: %v, want denied as unsafe", decision)
 	}
@@ -142,6 +148,7 @@ func TestThreeResourceRequests(t *testing.T) {
 func TestQuizSequences(t *testing.T) {
 	// EN: The quiz lists five orders and only P1, P3, P2, P0 is safe. Check each by replaying it.
 	// PT: O quiz lista cinco ordens, e só P1, P3, P2, P0 é segura. Confere cada uma reexecutando.
+	// ES: El quiz lista cinco órdenes, y solo P1, P3, P2, P0 es segura. Comprueba cada una reproduciéndola.
 	state := QuizState()
 	replay := func(order []int) bool {
 		work := append([]int{}, state.Available...)

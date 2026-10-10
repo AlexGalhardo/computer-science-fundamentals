@@ -1,6 +1,6 @@
 # big-o-lab
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A lab that teaches how to **measure a function and recognise its growth curve**. Six small algorithms, one per class (O(1), O(log n), O(n), O(n log n), O(n²) and O(2ⁿ)), count their own basic operations while the input size doubles. The counts are checked against a closed formula, and a curve-fitting step names the class from the numbers alone.
 

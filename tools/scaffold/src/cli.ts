@@ -1,9 +1,12 @@
 // EN: `bun run new:project <area> <name> --langs ts,go [--out <dir>] [--no-dashboard]`
-//     Creates `projects/<area>/<name>/` with both READMEs, both setup scripts, a docker-compose
+//     Creates `projects/<area>/<name>/` with the three READMEs, both setup scripts, a docker-compose
 //     file, one folder per language and the static dashboard.
 // PT: `bun run new:project <area> <name> --langs ts,go [--out <dir>] [--no-dashboard]`
-//     Cria `projects/<area>/<name>/` com os dois READMEs, os dois scripts de setup, um
+//     Cria `projects/<area>/<name>/` com os três READMEs, os dois scripts de setup, um
 //     docker-compose, uma pasta por linguagem e o dashboard estático.
+// ES: `bun run new:project <area> <name> --langs ts,go [--out <dir>] [--no-dashboard]`
+//     Crea `projects/<area>/<name>/` con los tres READMEs, los dos scripts de setup, un
+//     docker-compose, una carpeta por lenguaje y el dashboard estático.
 
 import { chmodSync, cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -47,6 +50,8 @@ export function scaffold(options: ScaffoldOptions): string {
 		//     package.json), so a new project gets a page that works with neither Node nor a network.
 		// PT: O modelo já traz o `tailwind.css` compilado (veja `build:css` no package.json),
 		//     então um projeto novo recebe uma página que funciona sem Node e sem rede.
+		// ES: La plantilla ya trae el `tailwind.css` compilado (mira `build:css` en package.json),
+		//     así que un proyecto nuevo recibe una página que funciona sin Node y sin red.
 	}
 	return projectDir;
 }

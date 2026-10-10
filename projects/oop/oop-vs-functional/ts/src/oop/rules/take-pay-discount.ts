@@ -8,6 +8,9 @@ import type { DiscountRule } from "../discount-rule";
 // PT: "Leve 3, pague 2": em cada grupo completo de `take` unidades, `take - pay` unidades saem
 //     de graça. Esta foi a última regra acrescentada ao projeto. Nesta versão ela é este único
 //     arquivo novo: nenhum outro arquivo de produção foi tocado (veja a comparação no README).
+// ES: "Lleve 3, pague 2": en cada grupo completo de `take` unidades, `take - pay` unidades salen
+//     gratis. Esta fue la última regla agregada al proyecto. En esta versión es este único
+//     archivo nuevo: no se tocó ningún otro archivo de producción (ve la comparación en el README).
 export class TakePayDiscount implements DiscountRule {
 	readonly #sku: string;
 	readonly #take: number;

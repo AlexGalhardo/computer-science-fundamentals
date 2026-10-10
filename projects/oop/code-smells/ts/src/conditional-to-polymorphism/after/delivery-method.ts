@@ -6,6 +6,10 @@
 //     mais feita. Cada tipo é uma classe que carrega suas três respostas, e o checkout conversa
 //     com esta interface. Um tipo novo é um arquivo novo ao lado dos outros; este arquivo e os
 //     tipos existentes não são abertos.
+// ES: REFACTORIZADO con Reemplazar Condicional por Polimorfismo. La pregunta "¿qué tipo es
+//     este?" ya no se hace. Cada tipo es una clase que carga sus tres respuestas, y el checkout
+//     habla con esta interfaz. Un tipo nuevo es un archivo nuevo junto a los otros; este
+//     archivo y los tipos existentes no se abren.
 export interface DeliveryMethod {
 	readonly name: string;
 	readonly trackingPrefix: string;

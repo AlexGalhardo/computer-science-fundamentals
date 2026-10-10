@@ -1,6 +1,6 @@
 # Tiny language model
 
-> Versão em português: [docs/pt/artificial-intelligence/tiny-language-model.md](../../pt/artificial-intelligence/tiny-language-model.md)
+> Versão em português: [docs/pt/artificial-intelligence/tiny-language-model.md](../../pt/artificial-intelligence/tiny-language-model.md) · Versión en español: [docs/es/artificial-intelligence/tiny-language-model.md](../../es/artificial-intelligence/tiny-language-model.md)
 
 Mini-project MP-AI-4, in [`projects/artificial-intelligence/tiny-language-model`](../../../projects/artificial-intelligence/tiny-language-model). It teaches how a language model predicts the next token, from counting to self-attention. The background is in sections 9 and 10 of the area page: [attention and the transformer](README.md#9-attention-and-the-transformer) and [how a language model predicts and samples](README.md#10-how-a-language-model-predicts-and-samples).
 

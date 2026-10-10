@@ -14,6 +14,13 @@ import type { Counter } from "./counter";
 //     Uma regra gulosa ("maior moeda primeiro") está errada no caso geral: com moedas 1, 3 e 4
 //     ela paga 6 como 4 + 1 + 1, enquanto 3 + 3 usa duas moedas. A recorrência tenta todas as
 //     moedas, então não cai nessa armadilha.
+// ES: Cambio de monedas: el menor número de monedas que suma un monto, con monedas ilimitadas de cada tipo.
+//     Devuelve -1 cuando el monto no se puede formar. coins(v) es la respuesta para el monto v:
+//         coins(0) = 0
+//         coins(v) = 1 + min( coins(v - c) )   sobre toda moneda c <= v
+//     Una regla voraz ("la moneda más grande primero") es incorrecta en el caso general: con monedas
+//     1, 3 y 4 paga 6 como 4 + 1 + 1, mientras que 3 + 3 usa dos monedas. La recurrencia prueba todas
+//     las monedas, así que no cae en esa trampa.
 const IMPOSSIBLE = Number.POSITIVE_INFINITY;
 
 function finish(result: number): number {
@@ -24,6 +31,8 @@ function finish(result: number): number {
 //     amounts are solved over and over.
 // PT: Ingênua: cada chamada se ramifica uma vez por moeda, e o valor encolhe devagar, então os
 //     mesmos valores são resolvidos repetidas vezes.
+// ES: Ingenua: cada llamada se ramifica una vez por moneda, y el monto se reduce despacio, así que
+//     los mismos montos se resuelven una y otra vez.
 export function coinChangeNaive(coins: readonly number[], amount: number, counter: Counter): number {
 	function fewest(v: number): number {
 		counter.calls++;
@@ -43,6 +52,7 @@ export function coinChangeNaive(coins: readonly number[], amount: number, counte
 
 // EN: Memoised: only `amount + 1` distinct subproblems exist.
 // PT: Memoizada: só existem `amount + 1` subproblemas distintos.
+// ES: Memoizada: solo existen `amount + 1` subproblemas distintos.
 export function coinChangeMemo(coins: readonly number[], amount: number, counter: Counter): number {
 	const memo = new Array<number | undefined>(amount + 1);
 	function fewest(v: number): number {
@@ -70,6 +80,8 @@ export function coinChangeMemo(coins: readonly number[], amount: number, counter
 //     which are already final.
 // PT: Tabulada: preenche dp[0], dp[1], ... em ordem crescente. dp[v] só lê valores menores, que
 //     já estão prontos.
+// ES: Tabulada: llena dp[0], dp[1], ... en orden ascendente. dp[v] solo lee montos menores, que
+//     ya están listos.
 export function coinChangeTable(coins: readonly number[], amount: number): number[] {
 	const dp = new Array<number>(amount + 1).fill(IMPOSSIBLE);
 	dp[0] = 0;

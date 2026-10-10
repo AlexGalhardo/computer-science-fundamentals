@@ -4,6 +4,9 @@
 // PT: As mesmas funções de cenário rodam contra as duas versões. Contra a API vulnerável os
 //     testes afirmam que cada falha é observável (MP-SEC-7.1). Contra a corrigida, afirmam que a
 //     mesma tentativa é recusada e que o uso legítimo continua funcionando (MP-SEC-7.2).
+// ES: Las mismas funciones de escenario corren contra las dos versiones. Contra la API vulnerable las
+//     pruebas afirman que cada falla es observable (MP-SEC-7.1). Contra la corregida, afirman que el
+//     mismo intento es rechazado y que el uso legítimo sigue funcionando (MP-SEC-7.2).
 
 import { describe, expect, test } from "bun:test";
 import { ADMIN_REPORT, BOB, ISSUER } from "../src/data";
@@ -106,6 +109,7 @@ describe("fixed API: the same attempts are refused", () => {
 
 	// EN: Two hand-picked malformed values are enough to show the rule. This is not a fuzzer.
 	// PT: Dois valores malformados escolhidos à mão bastam para mostrar a regra. Isto não é um fuzzer.
+	// ES: Dos valores mal formados elegidos a mano bastan para mostrar la regla. Esto no es un fuzzer.
 	test.each(["not-a-token", "only.two"])("the malformed token %p is refused", async (token) => {
 		const lab = createLab("fixed");
 		const answer = await call(lab.app, "/me", { token });
@@ -136,6 +140,8 @@ describe("fixed API: the same attempts are refused", () => {
 //     The fix removes the holes, not the feature.
 // PT: Estes valem nas duas versões: a verificação da assinatura HS256 em si funciona, e o uso
 //     normal funciona. A correção tira os buracos, não a função.
+// ES: Estos valen en las dos versiones: la verificación de la firma HS256 en sí funciona, y el uso
+//     normal funciona. La corrección tapa los agujeros, no la función.
 describe.each<Version>(["vulnerable", "fixed"])("%s API: what must work on both", (version) => {
 	test("a payload changed under the original signature is refused", async () => {
 		const tampered = await tamperWithPayload(createLab(version));

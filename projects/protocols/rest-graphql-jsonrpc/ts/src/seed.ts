@@ -5,6 +5,10 @@
 //     máquina recebe os mesmos 25 autores, 120 livros e 360 resenhas. O resumo de um livro é longo
 //     de propósito: é o campo de que uma tela de listagem não precisa, o que torna o over-fetching
 //     visível no tamanho da resposta.
+// ES: Datos de ejemplo deterministas: sin números aleatorios, así que cada ejecución y cada
+//     máquina recibe los mismos 25 autores, 120 libros y 360 reseñas. El resumen de un libro es largo
+//     a propósito: es el campo que una pantalla de listado no necesita, lo que hace que el over-fetching
+//     sea visible en el tamaño de la respuesta.
 
 export const AUTHOR_COUNT = 25;
 export const BOOK_COUNT = 120;
@@ -76,6 +80,7 @@ export function buildSeed(): Seed {
 			id,
 			// EN: Multiplying by 7 spreads the books over the authors without a visible pattern.
 			// PT: Multiplicar por 7 espalha os livros entre os autores sem um padrão visível.
+			// ES: Multiplicar por 7 reparte los libros entre los autores sin un patrón visible.
 			authorId: ((id * 7) % AUTHOR_COUNT) + 1,
 			title,
 			year: 1990 + ((id * 13) % 35),

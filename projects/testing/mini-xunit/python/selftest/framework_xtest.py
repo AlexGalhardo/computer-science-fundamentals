@@ -17,6 +17,11 @@ from mini_xunit import Failure, TestCase, TestResult, TestSuite, test_method_nam
 #     possível: o objeto de cada teste é OUTRO caso de teste (WasRun), rodado à mão com o seu
 #     próprio TestResult, então as falhas dele ficam dentro daquele resultado e não vazam para a
 #     execução de verdade.
+# ES: EL FRAMEWORK SE PRUEBA A SÍ MISMO. Estas clases extienden el TestCase que están probando, y
+#     las encuentran y ejecutan el mismo descubrimiento y el mismo bucle. El truco que lo hace
+#     posible: el objeto de cada prueba es OTRO caso de prueba (WasRun), ejecutado a mano con su
+#     propio TestResult, así que sus fallos quedan dentro de ese resultado y no se filtran a la
+#     ejecución de verdad.
 
 FIXTURES = Path(__file__).with_name("fixtures.py")
 

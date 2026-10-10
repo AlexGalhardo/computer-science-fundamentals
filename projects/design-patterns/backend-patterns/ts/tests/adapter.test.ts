@@ -7,6 +7,8 @@ describe("adapter: before", () => {
 	// EN: The flaw: the result is the vendor's type, and the caller compares the vendor's text.
 	// PT: O defeito: o resultado é o tipo do fornecedor, e o chamador compara o texto do
 	//     fornecedor.
+	// ES: El defecto: el resultado es el tipo del proveedor, y el llamador compara el texto del
+	//     proveedor.
 	test("the caller receives the vendor's own type and vocabulary", () => {
 		const result = coupledCheckout(new AcmePaySdk(), 2500);
 		expect(result).toEqual({ transactionId: "acme-1", status: "OK" });

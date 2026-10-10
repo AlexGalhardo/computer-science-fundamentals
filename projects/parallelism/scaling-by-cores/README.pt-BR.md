@@ -1,6 +1,6 @@
 # scaling-by-cores
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Quanto um programa acelera com mais núcleos, e por que não de forma linear? Este mini-projeto (MP-PAR-1) roda duas cargas limitadas por CPU, contagem de primos e um render de Mandelbrot, de forma sequencial e com 1, 2, 4 e 8 trabalhadores, em Rust, Go e C++. Ele prova que os resultados paralelos são exatamente os sequenciais, mede speed-up e eficiência, e ajusta a lei de Amdahl às medições para estimar a fração serial.
 
@@ -102,7 +102,7 @@ As 72 linhas da grade (3 linguagens, sequencial, estático e dinâmico, 1 a 8 tr
 
 Cada célula é `speed-up (eficiência)` para aquela quantidade de trabalhadores. A base é a implementação sequencial da mesma linguagem.
 
-**primes**
+#### primes
 
 | Linguagem | Escalonamento | Sequencial (ms) | 1 | 2 | 4 | 8 | Fração serial ajustada |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -113,7 +113,7 @@ Cada célula é `speed-up (eficiência)` para aquela quantidade de trabalhadores
 | rust | estático | 1388 | 0,89 (89%) | 1,46 (73%) | 2,28 (57%) | 3,31 (41%) | 24,6% |
 | rust | dinâmico | 1388 | 0,75 (75%) | 1,67 (84%) | 2,49 (62%) | 3,07 (38%) | 21,4% |
 
-**mandelbrot**
+#### mandelbrot
 
 | Linguagem | Escalonamento | Sequencial (ms) | 1 | 2 | 4 | 8 | Fração serial ajustada |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |

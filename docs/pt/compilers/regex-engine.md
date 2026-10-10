@@ -1,6 +1,6 @@
 # Motor de regex
 
-> English version: [docs/en/compilers/regex-engine.md](../../en/compilers/regex-engine.md)
+> English version: [docs/en/compilers/regex-engine.md](../../en/compilers/regex-engine.md) · Versión en español: [docs/es/compilers/regex-engine.md](../../es/compilers/regex-engine.md)
 
 Mini-projeto MP-COMP-4, em [`projects/compilers/regex-engine`](../../../projects/compilers/regex-engine). Ensina como uma expressão regular vira um autômato. Este é o maquinário por trás de um gerador de analisadores léxicos: o lexer escrito à mão do [MP-COMP-1](mini-language-parser.md) é um autômato desses, codificado manualmente.
 

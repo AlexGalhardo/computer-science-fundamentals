@@ -1,12 +1,12 @@
 # Guia de autoria do quiz
 
-> English version: [docs/en/quiz-authoring.md](../en/quiz-authoring.md)
+> English version: [docs/en/quiz-authoring.md](../en/quiz-authoring.md) · Versión en español: [docs/es/quiz-authoring.md](../es/quiz-authoring.md)
 
 Como escrever uma questão do quiz, e como um lote é aceito. O desenho do quiz está em [quiz.md](quiz.md).
 
 ## Arquivos
 
-```
+```text
 quiz/content/
   areas.json            as 31 áreas (slug, nomes, meta)
   mini-projects.json    os 78 mini-projetos (caminho, status)
@@ -27,7 +27,7 @@ O nome do arquivo é o slug do tópico, e ele precisa existir em `coverage.json`
 	"topics": [
 		{
 			"slug": "asymptotic-notation",
-			"name": { "en": "Asymptotic notation", "pt": "Notação assintótica" },
+			"name": { "en": "Asymptotic notation", "pt": "Notação assintótica", "es": "Notación asintótica" },
 			"source": "USP Algorithm Analysis, part 1",
 			"target": 15
 		}
@@ -56,7 +56,8 @@ Os tópicos e as metas vêm da tabela da área no `PLAN.md`. As metas somam a me
 		"concept": "...",
 		"example": { "kind": "code", "language": "ts", "content": "..." }
 	},
-	"en": { "...": "mesmo formato, mesmo significado" }
+	"en": { "...": "mesmo formato, mesmo significado" },
+	"es": { "...": "mesmo formato, mesmo significado" }
 }
 ```
 
@@ -70,8 +71,8 @@ Os tópicos e as metas vêm da tabela da área no `PLAN.md`. As metas somam a me
 | `alternatives` | exatamente 5, todas diferentes, uma correta |
 | `explanations` | exatamente 5, na mesma ordem: a explicação `i` diz por que a alternativa `i` está certa ou errada |
 | `concept` | a ideia por trás da questão, em duas a quatro frases, legível sem as alternativas |
-| `snippet` | opcional: código ou diagrama em texto que o estudante precisa ler para responder. Aparece junto do enunciado, antes da resposta, e vai para o revisor cego. Presente nos dois idiomas ou em nenhum |
-| `example` | opcional: código (`kind: "code"`, com `language`) ou diagrama em texto (`kind: "diagram"`). Presente nos dois idiomas ou em nenhum |
+| `snippet` | opcional: código ou diagrama em texto que o estudante precisa ler para responder. Aparece junto do enunciado, antes da resposta, e vai para o revisor cego. Presente nos três idiomas ou em nenhum |
+| `example` | opcional: código (`kind: "code"`, com `language`) ou diagrama em texto (`kind: "diagram"`). Presente nos três idiomas ou em nenhum |
 
 ## Como escrever uma boa questão
 
@@ -84,7 +85,49 @@ Os tópicos e as metas vêm da tabela da área no `PLAN.md`. As metas somam a me
 - **Sem pegadinha de redação.** Evite dupla negação, e escreva "NÃO" ou "EXCETO" em maiúsculas quando a questão pede o item errado.
 - **Níveis.** Básico: lembrar e reconhecer uma definição. Intermediário: aplicar o conceito a um caso, calcular, comparar duas ideias. Avançado: combinar conceitos, achar a falha, raciocinar sobre um caso de borda.
 - **Números são conferidos.** Toda resposta calculada é refeita uma segunda vez, e os passos entram na explicação ou no conceito.
-- **Português e inglês dizem a mesma coisa.** Escreva os dois ao mesmo tempo. Mantenha código, identificadores e termos técnicos consagrados idênticos nos dois.
+- **Inglês, português e espanhol dizem a mesma coisa.** Escreva os três ao mesmo tempo. Mantenha código, identificadores e termos técnicos consagrados idênticos nos três.
+
+## Resumo teórico
+
+Cada página de área mostra, abaixo do formulário que começa o quiz, um resumo teórico que o estudante lê antes de responder (pedido do dono, 2026-10-10). Ele fica em `quiz/content/<area>/theory/en.json`, `pt.json` e `es.json`.
+
+```json
+{
+	"area": "big-o",
+	"intro": ["Primeiro parágrafo.", "Segundo parágrafo."],
+	"sections": [
+		{
+			"id": "binary-search",
+			"title": "Busca binária",
+			"blocks": [
+				{ "type": "paragraph", "text": "Numa lista ordenada, abra no **meio**." },
+				{ "type": "callout", "tone": "analogy", "text": "Como abrir um dicionário no meio." }
+			]
+		}
+	]
+}
+```
+
+- Começa com uma introdução (`intro`). O app monta o sumário a partir das seções, e cada entrada aponta para `#<id>`.
+- É completo e escrito para um iniciante, como se o leitor tivesse 10 anos: analogias do dia a dia, frases curtas, toda palavra técnica explicada na primeira vez em que aparece. Todo tópico do `coverage.json` é ensinado por uma seção, e o resumo ensina todas as ideias cobradas nas questões, sem citar as questões.
+- Pelo menos 3 seções. O `id` é um slug em inglês, em kebab-case, único no arquivo.
+- Os três idiomas têm o mesmo esqueleto: os mesmos ids de seção na mesma ordem e, em cada seção, os mesmos tipos de bloco na mesma ordem. Só as palavras mudam.
+
+| Bloco | Campos | Uso |
+| --- | --- | --- |
+| `paragraph` | `text` | texto normal |
+| `heading` | `text` | subtítulo dentro de uma seção |
+| `list` | `items`, `ordered` opcional | passos, propriedades |
+| `table` | `headers`, `rows`, `caption` opcional | comparação lado a lado. Toda linha tem uma célula por cabeçalho |
+| `code` | `language`, `content`, `caption` opcional | um exemplo curto |
+| `diagram` | `content`, `caption` opcional | uma figura desenhada com texto |
+| `callout` | `tone` (`analogy`, `tip`, `warning`, `remember`), `text` | a comparação do dia a dia, um erro comum, a frase para guardar |
+| `chart` | `title`, `unit` opcional, `bars` (`label`, `value`) | um gráfico de barras. Só números exatos ou deriváveis, ou resultados medidos neste repositório |
+| `video` | `title`, `url` (https) | um link para um vídeo, vindo do `REFERENCES.md` ou aberto e confirmado pelo autor. É um link, não um player embutido |
+
+Dentro de qualquer texto quatro marcas são lidas, e nada mais (HTML continua como texto simples): `**negrito**`, `` `código` ``, `[texto](https://...)` e `[[termo|significado]]`, um tooltip que mostra o significado de um termo.
+
+O `bun run quiz:validate <area>` confere o formato e o esqueleto. Resumo ausente é aviso, e erro com `--strict`. A regra contra cópia vale aqui também.
 
 ## Sem cópia
 

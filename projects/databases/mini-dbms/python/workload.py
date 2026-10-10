@@ -1,6 +1,8 @@
 """EN: The benchmark workload, identical to the Rust one so checksums can be compared.
 
 PT: A carga do benchmark, idêntica à do Rust para que os checksums possam ser comparados.
+
+ES: La carga del benchmark, idéntica a la de Rust para que los checksums puedan compararse.
 """
 
 from table import Table
@@ -25,6 +27,12 @@ class Lcg:
     montem exatamente as mesmas tabelas a partir da mesma semente. Inteiros em Python nunca
     estouram, então o resultado é cortado para 64 bits com uma máscara, que é o que o Rust faz
     implicitamente com aritmética de estouro circular.
+
+    ES: Un generador congruencial lineal: un generador de números pseudoaleatorios diminuto. Está
+    escrito a mano, con las mismas constantes de la versión en Rust, para que los dos lenguajes
+    armen exactamente las mismas tablas a partir de la misma semilla. Los enteros de Python
+    nunca se desbordan, así que el resultado se recorta a 64 bits con una máscara, que es lo
+    que Rust hace implícitamente con la aritmética de desbordamiento circular.
     """
 
     def __init__(self, seed: int) -> None:
@@ -47,6 +55,12 @@ def bench_tables(n: int) -> tuple[Table, Table]:
     #     primo e não divide uma potência de dez). Cada linha de R casa com exatamente uma linha
     #     de S, então a junção devolve n linhas. S é embaralhada para que a junção por ordenação
     #     realmente precise ordenar.
+    # ES: R(id, k) y S(k, v), ambas con n filas. R.k es aleatorio en [0, n), así que algunas
+    #     claves se repiten y otras nunca aparecen. S.k toma cada valor de [0, n) exactamente
+    #     una vez, en orden mezclado (i * 7919 + 13 mod n es una permutación porque 7919 es
+    #     primo y no divide una potencia de diez). Cada fila de R coincide con exactamente una
+    #     fila de S, así que el join devuelve n filas. S se mezcla para que el sort-merge
+    #     realmente tenga que ordenar.
     random = Lcg(SEED)
     r = Table(["id", "k"], [(row_id, random.next_below(n)) for row_id in range(n)])
     s = Table(
@@ -63,6 +77,9 @@ def checksum(r: Table, s: Table, pairs: list[tuple[int, int]]) -> str:
     # PT: Um resumo que não depende da ordem dos pares: a quantidade de pares e a soma de
     #     R.id * S.v. Duas implementações que imprimem o mesmo checksum acharam os mesmos
     #     casamentos, seja qual for a ordem em que os acharam.
+    # ES: Un resumen que no depende del orden de los pares: la cantidad de pares y la suma de
+    #     R.id * S.v. Dos implementaciones que imprimen el mismo checksum encontraron las mismas
+    #     coincidencias, sea cual sea el orden en que las encontraron.
     total = 0
     for i, j in pairs:
         total = (total + r.rows[i][0] * s.rows[j][1]) % MODULUS

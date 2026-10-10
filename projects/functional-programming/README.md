@@ -1,6 +1,6 @@
 # Functional programming
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Functional programming builds programs from pure functions and immutable data, pushing side effects to the edges. Code written this way is easier to test, to reason about and to run concurrently, because a function's result depends only on its arguments. Higher-order functions, closures, pattern matching and types such as Option and Result have moved from Haskell and Elixir into TypeScript, Rust and Java.
 

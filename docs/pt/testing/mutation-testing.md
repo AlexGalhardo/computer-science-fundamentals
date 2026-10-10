@@ -1,6 +1,6 @@
 # Teste de mutação (MP-TEST-3)
 
-> English version: [docs/en/testing/mutation-testing.md](../../en/testing/mutation-testing.md)
+> English version: [docs/en/testing/mutation-testing.md](../../en/testing/mutation-testing.md) · Versión en español: [docs/es/testing/mutation-testing.md](../../es/testing/mutation-testing.md)
 
 Mini-projeto: [`projects/testing/mutation-testing`](../../../projects/testing/mutation-testing/README.pt-BR.md). Tópico do quiz: `coverage-mutation`.
 
@@ -10,7 +10,7 @@ A **cobertura** responde "quais linhas os testes executaram?". Ela não responde
 
 O **teste de mutação** faz a segunda pergunta diretamente:
 
-```
+```text
 programa original ---- mutar um token ----> mutante           (a + b  vira  a - b)
                                                |
                                       rodar a suíte de testes
@@ -21,7 +21,7 @@ programa original ---- mutar um token ----> mutante           (a + b  vira  a - 
           a suíte percebeu o bug                    a suíte aceita o bug como correto
 ```
 
-```
+```text
 pontuação de mutação = mutantes mortos / todos os mutantes
 ```
 

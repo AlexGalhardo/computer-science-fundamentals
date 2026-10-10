@@ -6,10 +6,17 @@
 #     Os brokers são testados um por vez e removidos entre um e outro, então a máquina nunca
 #     segura Redis, RabbitMQ, Kafka e LocalStack ao mesmo tempo. Tudo é removido no fim, mesmo
 #     quando um teste falha.
+# ES: Construye y prueba el mini-proyecto queue-comparison. El único requisito es Docker.
+#     Los brokers se prueban uno a la vez y se eliminan entre uno y otro, así que la máquina nunca
+#     sostiene Redis, RabbitMQ, Kafka y LocalStack a la vez. Todo se elimina al final, incluso
+#     cuando una prueba falla.
 # EN: Docker writes its progress to stderr. With "Stop", Windows PowerShell 5.1 turns that into a
 #     terminating error whenever the output is redirected, so failures are checked by exit code.
 # PT: O Docker escreve o progresso em stderr. Com "Stop", o Windows PowerShell 5.1 transforma isso
 #     em erro fatal sempre que a saída é redirecionada, então as falhas são conferidas pelo código de saída.
+# ES: Docker escribe su progreso en stderr. Con "Stop", Windows PowerShell 5.1 lo convierte en un
+#     error fatal siempre que la salida se redirige, así que los fallos se verifican por el código
+#     de salida.
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot

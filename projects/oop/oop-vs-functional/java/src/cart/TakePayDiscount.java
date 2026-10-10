@@ -6,6 +6,9 @@ import java.util.List;
 // PT: "Leve 3, pague 2": em cada grupo completo de `take` unidades, `take - pay` unidades saem
 //     de graça. Esta foi a última regra acrescentada ao projeto. Nesta versão ela é este único
 //     arquivo novo: nenhum outro arquivo de produção foi tocado (veja a comparação no README).
+// ES: "Lleve 3, pague 2": en cada grupo completo de `take` unidades, `take - pay` unidades salen
+//     gratis. Esta fue la última regla agregada al proyecto. En esta versión es este único
+//     archivo nuevo: no se tocó ningún otro archivo de producción (ve la comparación en el README).
 public final class TakePayDiscount implements DiscountRule {
   private final String sku;
   private final int take;

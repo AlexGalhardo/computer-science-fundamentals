@@ -33,6 +33,10 @@ import solid.srp.SrpBefore;
 // PT: Para cada princípio um método descreve o comportamento do módulo e roda duas vezes: na
 //     versão com a violação e na refatorada. As verificações foram escritas para `before` e não
 //     mudaram para `after`, e é isso que faz da segunda versão uma refatoração.
+// ES: Para cada principio un método describe el comportamiento del módulo y se ejecuta dos
+//     veces: en la versión con la violación y en la refactorizada. Las verificaciones se
+//     escribieron para `before` y no cambiaron para `after`, y eso es lo que hace de la segunda
+//     versión una refactorización.
 public final class SolidTest {
   private SolidTest() {}
 
@@ -94,6 +98,7 @@ public final class SolidTest {
 
   // EN: The new requirement of the README, met from outside: no existing class is edited.
   // PT: O requisito novo do README, atendido de fora: nenhuma classe existente é editada.
+  // ES: El requisito nuevo del README, atendido desde fuera: ninguna clase existente se edita.
   private static void ocpExtension() {
     List<OcpAfter.DiscountRule> rules = new ArrayList<>(OcpAfter.DEFAULT_RULES);
     rules.add(new OcpAfter.Rule("student", total -> Math.round(total * 15 / 100.0)));
@@ -133,6 +138,9 @@ public final class SolidTest {
   //     observations as plain values. The expected values are the same for both.
   // PT: As duas versões dão tipos diferentes aos seus catálogos, então esta suíte recebe as
   //     quatro observações como valores simples. Os valores esperados são os mesmos para as duas.
+  // ES: Las dos versiones dan tipos distintos a sus catálogos, así que esta suite recibe las
+  //     cuatro observaciones como valores simples. Los valores esperados son los mismos para las
+  //     dos.
   private static void isp(
       String name,
       String memoryReport,
@@ -164,6 +172,7 @@ public final class SolidTest {
         });
     // EN: The cost of the fat interface: this mistake compiles and is found only at run time.
     // PT: O custo da interface gorda: este erro compila e só é descoberto em execução.
+    // ES: El costo de la interfaz gorda: este error compila y solo se descubre en ejecución.
     Check.fails(
         "isp before: a read-only catalog is accepted by a writer and fails at run time",
         "the CSV catalog is read-only",
@@ -185,6 +194,8 @@ public final class SolidTest {
     //     ProductReader is not a ProductWriter. The mistake above can no longer be written.
     // PT: `IspAfter.increasePrices(IspAfter.createCsvCatalog(CSV), 10)` não compila:
     //     ProductReader não é um ProductWriter. O erro acima não pode mais ser escrito.
+    // ES: `IspAfter.increasePrices(IspAfter.createCsvCatalog(CSV), 10)` no compila:
+    //     ProductReader no es un ProductWriter. El error de arriba ya no se puede escribir.
     Check.equal(
         "isp after: the read-only catalog is not a writer",
         false,
@@ -218,6 +229,7 @@ public final class SolidTest {
 
   // EN: The rule alone, with two lambdas in the place of SMTP and SQL.
   // PT: A regra sozinha, com dois lambdas no lugar do SMTP e do SQL.
+  // ES: La regla sola, con dos lambdas en lugar de SMTP y SQL.
   private static void dipWithoutInfrastructure() {
     List<String> saved = new ArrayList<>();
     List<String> told = new ArrayList<>();

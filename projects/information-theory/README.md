@@ -1,6 +1,6 @@
 # Information theory
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Information theory measures information in bits and proves how far data can be compressed and how reliably it can be sent over a noisy channel. Shannon's entropy sets the limit that Huffman and LZ77 approach, and redundancy added on purpose (parity, CRC, Hamming codes) is what lets networks and disks detect and repair errors. The same ideas explain text encodings such as UTF-8 and base64.
 

@@ -8,6 +8,12 @@
 //     de busca escolhe quais textos entram no prompt.
 //     Um texto vira um vetor pela média dos vetores das suas palavras. A pergunta é transformada
 //     exatamente do mesmo jeito, e as passagens são ordenadas pela similaridade do cosseno com ela.
+// ES: Recuperación: la pregunta elige los pasajes con más probabilidad de responderla. Es la "R"
+//     de RAG (generación aumentada por recuperación): antes de que un modelo de lenguaje responda,
+//     una etapa de búsqueda elige qué textos entran en el prompt.
+//     Un texto se convierte en un vector por el promedio de los vectores de sus palabras. La
+//     pregunta se transforma exactamente de la misma manera, y los pasajes se ordenan por la
+//     similitud del coseno con ella.
 
 import { type Passage, readLines, readPassages } from "./data";
 import {
@@ -44,6 +50,8 @@ export interface Hit {
 //     the words of the passages have a vector too. The questions are never part of the corpus.
 // PT: Os vetores de palavras são aprendidos das frases geradas E das passagens, para que as
 //     palavras das passagens também tenham vetor. As perguntas nunca fazem parte do corpus.
+// ES: Los vectores de palabras se aprenden de las frases generadas Y de los pasajes, para que las
+//     palabras de los pasajes también tengan vector. Las preguntas nunca forman parte del corpus.
 export function trainingSentences(corpus: readonly string[], passages: readonly Passage[]): string[][] {
 	const passageSentences = passages.flatMap((passage) => splitSentences(`${passage.title}. ${passage.text}`));
 	return [...corpus, ...passageSentences].map(tokenize);
@@ -56,6 +64,10 @@ export function trainingSentences(corpus: readonly string[], passages: readonly 
 //     documento corrige isso: idf(palavra) = ln(número de frases / frases que contêm a palavra).
 //     Uma palavra presente em quase toda frase recebe peso perto de 0, uma palavra rara recebe um
 //     peso grande.
+// ES: En un promedio simple, "the" y "of" pesarían tanto como "thunder". La frecuencia inversa de
+//     documento lo corrige: idf(palabra) = ln(número de frases / frases que contienen la palabra).
+//     Una palabra presente en casi toda frase recibe un peso cercano a 0, una palabra rara recibe
+//     un peso grande.
 export function inverseDocumentFrequency(
 	sentences: readonly (readonly string[])[],
 	index: ReadonlyMap<string, number>,
@@ -78,6 +90,10 @@ export function inverseDocumentFrequency(
 //     pareceriam importantes. Um sistema real conta o idf em milhões de documentos. Aqui uma
 //     lista curta de palavras funcionais (uma "stop list") é ignorada quando um texto vira vetor.
 //     As palavras continuam no corpus e ainda participam das contagens de coocorrência.
+// ES: El idf de este proyecto se cuenta en unos pocos miles de frases, donde "how" y "why" son raras
+//     y parecerían importantes. Un sistema real cuenta el idf en millones de documentos. Aquí se
+//     ignora una lista corta de palabras funcionales (una "stop list") cuando un texto se vuelve
+//     vector. Las palabras siguen en el corpus y aún participan en los conteos de coocurrencia.
 export const STOP_WORDS: ReadonlySet<string> = new Set(
 	(
 		"a an the and or but of in on at to for from with by as if then than not no so " +
@@ -96,6 +112,10 @@ export const STOP_WORDS: ReadonlySet<string> = new Set(
 //     cat and the dog") recebem o mesmo vetor, porque uma média esquece a ordem. Esta chave é
 //     igual exatamente para essas frases. O experimento de busca a usa para guardar cada vetor
 //     uma vez só, para que "o vetor mais próximo" nunca seja um empate entre duas cópias.
+// ES: Dos frases con las mismas palabras de contenido en otro orden ("the dog and the cat" y "the
+//     cat and the dog") reciben el mismo vector, porque un promedio olvida el orden. Esta clave es
+//     igual exactamente para esas frases. El experimento de búsqueda la usa para guardar cada
+//     vector una sola vez, de modo que "el vector más cercano" nunca sea un empate entre dos copias.
 export function contentKey(sentence: string): string {
 	return tokenize(sentence)
 		.filter((word) => !STOP_WORDS.has(word))
@@ -135,6 +155,10 @@ export function loadModel(): Model {
 //     Uma palavra fora do vocabulário não tem vetor e é ignorada: um modelo de contagem não sabe
 //     nada sobre uma palavra que nunca viu. A lista de palavras ignoradas é devolvida para que a
 //     linha de comando possa mostrá-la.
+// ES: vector del texto = normaliza( suma, en las palabras, de idf(palabra) * vector(palabra) ).
+//     Una palabra fuera del vocabulario no tiene vector y se ignora: un modelo de conteo no sabe
+//     nada sobre una palabra que nunca vio. La lista de palabras ignoradas se devuelve para que la
+//     línea de comandos pueda mostrarla.
 export function embedText(model: Pick<Model, "words" | "idf">, text: string): Embedding {
 	const total = new Float64Array(model.words.vocabulary.length);
 	const known: string[] = [];

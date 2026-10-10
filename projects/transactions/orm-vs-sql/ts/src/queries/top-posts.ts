@@ -4,6 +4,9 @@
 // PT: Consulta 2, filtro, ordenação e limite. A segunda chave de ordenação (id) importa: sem um
 //     critério de desempate, dois posts com o mesmo número de views poderiam voltar em qualquer
 //     ordem, e as três abordagens poderiam discordar estando todas "certas".
+// ES: Consulta 2, filtro, ordenación y límite. La segunda clave de ordenación (id) importa: sin un
+//     criterio de desempate, dos posts con el mismo número de views podrían volver en cualquier
+//     orden, y los tres enfoques podrían discrepar estando todos "en lo correcto".
 
 import { asc, desc, eq } from "drizzle-orm";
 import { posts } from "../drizzle-schema";

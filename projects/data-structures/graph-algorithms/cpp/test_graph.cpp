@@ -58,6 +58,9 @@ Weight path_cost(const Graph& graph, const std::vector<int>& path) {
 // PT: A mesma suíte roda uma vez por representação. Esse é o sentido de programar contra a
 //     interface Graph: se a lista e a matriz passam em testes idênticos, um algoritmo não
 //     consegue diferenciá-las.
+// ES: La misma suite corre una vez por representación. Ese es el sentido de programar contra la
+//     interfaz Graph: si la lista y la matriz pasan pruebas idénticas, un algoritmo no puede
+//     distinguirlas.
 void suite(Representation representation, const std::string& name) {
 	{
 		const auto graph = make_graph(representation, 5);
@@ -138,6 +141,9 @@ void suite(Representation representation, const std::string& name) {
 // PT: Grafos aleatórios comparam os algoritmos entre si e as duas representações entre si.
 //     Dijkstra e Bellman-Ford são ideias diferentes, então, quando concordam em centenas de
 //     grafos aleatórios, um erro em comum é improvável. O mesmo vale para Prim e Kruskal.
+// ES: Los grafos aleatorios comparan los algoritmos entre sí y las dos representaciones entre sí.
+//     Dijkstra y Bellman-Ford son ideas distintas, así que, cuando coinciden en cientos de
+//     grafos aleatorios, un error común es improbable. Lo mismo vale para Prim y Kruskal.
 void random_tests() {
 	bool paths_agree = true;
 	bool path_costs = true;
@@ -173,6 +179,8 @@ void random_tests() {
 				//     cycle, which is an easy way of generating a random acyclic graph.
 				// PT: Arcos que sempre vão do rótulo menor para o maior não formam ciclo, um
 				//     jeito fácil de gerar um grafo acíclico aleatório.
+				// ES: Los arcos que siempre van de la etiqueta menor a la mayor no forman ciclo,
+				//     una forma fácil de generar un grafo acíclico aleatorio.
 				dag_list.add_arc(std::min(a, b), std::max(a, b), weight);
 				dag_matrix.add_arc(std::min(a, b), std::max(a, b), weight);
 			}
@@ -228,6 +236,9 @@ std::string normalise(std::istream& in) {
 // PT: Os dez casos de referência. A lista de adjacência precisa resolver todos. A matriz resolve
 //     os casos cujo grafo cabe no limite de vértices dela e precisa recusar os outros, pois uma
 //     matriz para 100.000 vértices pediria 10^10 células.
+// ES: Los diez casos de referencia. La lista de adyacencia debe resolverlos todos. La matriz
+//     resuelve los casos cuyo grafo cabe en su límite de vértices y debe rechazar los otros, pues
+//     una matriz para 100,000 vértices pediría 10^10 celdas.
 void reference_cases() {
 	const char* configured = std::getenv("GRAPH_CASES_DIR");
 	const std::string dir = configured != nullptr ? configured : "/cases";

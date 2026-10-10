@@ -12,6 +12,10 @@
 //     de bit e conta, para cada esquema, quantos blocos danificados foram detectados,
 //     corrigidos ou perdidos. `--markdown` imprime só a tabela, e é assim que
 //     results/results.md é gravado.
+// ES: Simulador de ruido. Envía bloques por un canal binario simétrico con varias tasas de
+//     error de bit y cuenta, para cada esquema, cuántos bloques dañados se detectaron,
+//     corrigieron o perdieron. `--markdown` imprime solo la tabla, y así se escribe
+//     results/results.md.
 int main(int argc, char** argv) {
 	constexpr std::uint64_t kBlocks = 200'000;
 	constexpr std::uint64_t kSeed = 2026;

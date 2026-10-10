@@ -2,6 +2,8 @@
 //     standard JSON Schema to validate against. A test fails when the file is out of date.
 // PT: Escreve `schema.json` a partir do schema Zod, para que implementações em outras linguagens
 //     tenham um JSON Schema padrão para validar. Um teste falha quando o arquivo está desatualizado.
+// ES: Escribe `schema.json` a partir del schema Zod, para que las implementaciones en otros lenguajes
+//     tengan un JSON Schema estándar con el cual validar. Una prueba falla cuando el archivo está desactualizado.
 
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";

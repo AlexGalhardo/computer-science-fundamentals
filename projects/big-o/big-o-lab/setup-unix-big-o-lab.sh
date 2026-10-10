@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the big-o-lab mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto big-o-lab. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto big-o-lab. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -16,5 +17,6 @@ echo "big-o-lab: all tests passed"
 
 # EN: The demo prints the tables and rewrites ./results, which the dashboard reads.
 # PT: A demo imprime as tabelas e regrava ./results, que o dashboard lê.
+# ES: La demo imprime las tablas y reescribe ./results, que lee el dashboard.
 docker compose run --rm ts-demo
 echo "big-o-lab: open dashboard/index.html in a browser to see the charts"

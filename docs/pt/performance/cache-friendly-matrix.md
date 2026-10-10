@@ -1,6 +1,6 @@
 # Multiplicação de matrizes amigável à cache (MP-PERF-3)
 
-> English version: [docs/en/performance/cache-friendly-matrix.md](../../en/performance/cache-friendly-matrix.md)
+> English version: [docs/en/performance/cache-friendly-matrix.md](../../en/performance/cache-friendly-matrix.md) · Versión en español: [docs/es/performance/cache-friendly-matrix.md](../../es/performance/cache-friendly-matrix.md)
 
 Mini-projeto: [`projects/performance/cache-friendly-matrix`](../../../projects/performance/cache-friendly-matrix/README.pt-BR.md). Tópicos do quiz: `cpu-cache-locality`, `benchmarking-methodology`.
 
@@ -10,7 +10,7 @@ Multiplicar duas matrizes `n × n` com três laços aninhados é `O(n³)` seja q
 
 ## A hierarquia de memória e a linha de cache
 
-```
+```text
 registradores  <  L1 (dezenas de KiB)  <  L2 (centenas de KiB)  <  L3 (MiB)  <  RAM (GiB)
 mais rápido, menor                                                  mais lento, maior
 ```
@@ -19,7 +19,7 @@ A cache não guarda valores isolados. Ela guarda **linhas** de 64 bytes, então 
 
 Uma matriz é guardada por linhas (row-major): o elemento `(i, j)` fica no índice `i × n + j`.
 
-```
+```text
 percurso por linha:   a[i][0] a[i][1] a[i][2] ... 8 elementos por linha de cache, 1 falta em 8
 percurso por coluna:  b[0][j]            um elemento por linha de cache
                       b[1][j]            n × 8 bytes adiante

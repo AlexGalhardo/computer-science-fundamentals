@@ -1,6 +1,8 @@
 """EN: Functional dependencies: parsing, attribute closure, candidate keys and minimal cover.
 
 PT: Dependências funcionais: leitura, fecho de atributos, chaves candidatas e cobertura mínima.
+
+ES: Dependencias funcionales: lectura, cierre de atributos, claves candidatas y cobertura mínima.
 """
 
 import re
@@ -17,6 +19,9 @@ class FD:
 
     PT: Uma dependência funcional `lhs -> rhs`: duas linhas iguais em todos os atributos de
     `lhs` precisam ser iguais em todos os atributos de `rhs`. `lhs` é chamado de determinante.
+
+    ES: Una dependencia funcional `lhs -> rhs`: dos filas iguales en todos los atributos de
+    `lhs` deben ser iguales en todos los atributos de `rhs`. `lhs` se llama determinante.
     """
 
     lhs: Attributes
@@ -35,6 +40,8 @@ def sort_fds(fds: list[FD] | set[FD]) -> list[FD]:
     # EN: A fixed order makes every run print the same steps, which matters in a teaching tool.
     # PT: Uma ordem fixa faz toda execução imprimir os mesmos passos, o que importa em uma
     #     ferramenta de ensino.
+    # ES: Un orden fijo hace que cada ejecución imprima los mismos pasos, lo cual importa en una
+    #     herramienta de enseñanza.
     return sorted(fds, key=lambda fd: (sorted(fd.lhs), sorted(fd.rhs)))
 
 
@@ -50,6 +57,8 @@ def parse_schema(text: str) -> tuple[str, list[str]]:
     """EN: Reads `R(A, B, C)` and returns the relation name and its attributes, in order.
 
     PT: Lê `R(A, B, C)` e devolve o nome da relação e seus atributos, em ordem.
+
+    ES: Lee `R(A, B, C)` y devuelve el nombre de la relación y sus atributos, en orden.
     """
     match = re.fullmatch(r"\s*(\w+)\s*\((.*)\)\s*", text)
     if match is None:
@@ -68,6 +77,9 @@ def parse_fds(text: str, attributes: list[str] | None = None) -> list[FD]:
 
     PT: Lê dependências escritas como `A, B -> C; C -> D`. Quando os atributos da relação são
     informados, uma dependência que cita um atributo desconhecido é rejeitada.
+
+    ES: Lee dependencias escritas como `A, B -> C; C -> D`. Cuando se indican los atributos de
+    la relación, se rechaza una dependencia que menciona un atributo desconocido.
     """
     fds: list[FD] = []
     for part in text.split(";"):
@@ -91,6 +103,8 @@ def closure_steps(attributes: Attributes | set[str], fds: list[FD]) -> list[tupl
     """EN: The steps of the closure algorithm: which dependency fired and what it added.
 
     PT: Os passos do algoritmo de fecho: qual dependência disparou e o que ela acrescentou.
+
+    ES: Los pasos del algoritmo de cierre: qué dependencia se activó y qué agregó.
     """
     # EN: Start with the given attributes. Whenever the whole left side of a dependency is
     #     already in the set, its right side is determined too, so it is added. Repeat until a
@@ -99,6 +113,10 @@ def closure_steps(attributes: Attributes | set[str], fds: list[FD]) -> list[tupl
     #     já está no conjunto, o lado direito também é determinado, então ele é acrescentado.
     #     Repete até uma passada completa não acrescentar nada. O resultado é tudo o que os
     #     atributos determinam.
+    # ES: Empieza con los atributos dados. Siempre que todo el lado izquierdo de una dependencia
+    #     ya está en el conjunto, su lado derecho también queda determinado, así que se agrega.
+    #     Repite hasta que una pasada completa no agregue nada. El resultado es todo lo que los
+    #     atributos determinan.
     result = set(attributes)
     steps: list[tuple[FD, Attributes]] = []
     changed = True
@@ -117,6 +135,8 @@ def closure(attributes: Attributes | set[str], fds: list[FD]) -> Attributes:
     """EN: The closure X+: every attribute functionally determined by `attributes`.
 
     PT: O fecho X+: todo atributo determinado funcionalmente por `attributes`.
+
+    ES: El cierre X+: todo atributo determinado funcionalmente por `attributes`.
     """
     result = set(attributes)
     for _, added in closure_steps(attributes, fds):
@@ -134,6 +154,9 @@ def mandatory_attributes(relation: Attributes, fds: list[FD]) -> Attributes:
 
     PT: Atributos que não aparecem em nenhum lado direito. Nada os determina, então não podem
     ser deduzidos e precisam pertencer a toda chave candidata.
+
+    ES: Atributos que no aparecen en ningún lado derecho. Nada los determina, así que no se
+    pueden deducir y deben pertenecer a toda clave candidata.
     """
     determined: set[str] = set()
     for fd in fds:
@@ -147,6 +170,9 @@ def candidate_keys(relation: Attributes, fds: list[FD]) -> list[Attributes]:
 
     PT: Todas as chaves candidatas: os conjuntos de atributos cujo fecho é a relação inteira e
     dos quais nenhum atributo pode ser retirado.
+
+    ES: Todas las claves candidatas: los conjuntos de atributos cuyo cierre es la relación
+    completa y de los cuales no se puede quitar ningún atributo.
     """
     # EN: Every key contains the mandatory attributes, so the search only has to decide which
     #     of the other attributes to add. Trying smaller additions first and skipping any set
@@ -157,6 +183,11 @@ def candidate_keys(relation: Attributes, fds: list[FD]) -> list[Attributes]:
     #     conjunto que contém uma chave já encontrada garante que toda chave mantida é
     #     irredutível. A busca é exponencial no pior caso, o que é aceitável para esquemas de
     #     sala de aula.
+    # ES: Toda clave contiene los atributos obligatorios, así que la búsqueda solo tiene que
+    #     decidir cuáles de los otros atributos agregar. Probar primero las adiciones menores y
+    #     saltar todo conjunto que contenga una clave ya encontrada garantiza que toda clave
+    #     conservada es irreducible. La búsqueda es exponencial en el peor caso, lo cual es
+    #     aceptable para esquemas de aula.
     core = mandatory_attributes(relation, fds)
     optional = sorted(relation - core)
     keys: list[Attributes] = []
@@ -179,6 +210,9 @@ def minimal_cover_steps(fds: list[FD]) -> tuple[list[FD], list[CoverStep]]:
 
     PT: Uma cobertura mínima (irredutível) e os passos que a produziram. Cada passo é
     (`split` | `reduce` | `drop`, dependência antes, dependência depois ou None).
+
+    ES: Una cobertura mínima (irreducible) y los pasos que la produjeron. Cada paso es
+    (`split` | `reduce` | `drop`, dependencia antes, dependencia después o None).
     """
     steps: list[CoverStep] = []
 
@@ -186,6 +220,8 @@ def minimal_cover_steps(fds: list[FD]) -> tuple[list[FD], list[CoverStep]]:
     #     `A -> C`, and single right sides make the next two steps simple.
     # PT: Passo 1, um atributo em cada lado direito. `A -> B, C` diz o mesmo que `A -> B` e
     #     `A -> C`, e lados direitos unitários simplificam os dois passos seguintes.
+    # ES: Paso 1, un atributo en cada lado derecho. `A -> B, C` dice lo mismo que `A -> B` y
+    #     `A -> C`, y los lados derechos unitarios simplifican los dos pasos siguientes.
     current: list[FD] = []
     for fd in sort_fds(fds):
         for attribute in sorted(fd.rhs - fd.lhs):
@@ -199,6 +235,8 @@ def minimal_cover_steps(fds: list[FD]) -> tuple[list[FD], list[CoverStep]]:
     #     the remaining ones already determine the right side (their closure contains it).
     # PT: Passo 2, nenhum atributo sobrando no lado esquerdo. Um atributo do lado esquerdo sobra
     #     quando os restantes já determinam o lado direito (o fecho deles o contém).
+    # ES: Paso 2, ningún atributo sobrante en el lado izquierdo. Un atributo del lado izquierdo
+    #     sobra cuando los restantes ya determinan el lado derecho (su cierre lo contiene).
     reduced: list[FD] = []
     for fd in current:
         lhs = set(fd.lhs)
@@ -219,6 +257,9 @@ def minimal_cover_steps(fds: list[FD]) -> tuple[list[FD], list[CoverStep]]:
     #     já a implicam: o fecho do lado esquerdo dela, calculado sem ela, ainda alcança o lado
     #     direito. Elas são testadas uma de cada vez, porque remover uma pode tornar outra
     #     necessária.
+    # ES: Paso 3, ninguna dependencia redundante. Una dependencia es redundante cuando las otras
+    #     ya la implican: el cierre de su lado izquierdo, calculado sin ella, aún alcanza su lado
+    #     derecho. Se prueban de una en una, porque quitar una puede volver necesaria a otra.
     cover = list(reduced)
     for fd in sorted(
         reduced, key=lambda item: (-len(item.lhs), sorted(item.lhs), sorted(item.rhs))
@@ -241,6 +282,10 @@ def equivalent(first: list[FD], second: list[FD]) -> bool:
     PT: Dois conjuntos de dependências são equivalentes quando cada um implica todas as
     dependências do outro. É assim que uma cobertura mínima é conferida: menos dependências,
     mesmo significado.
+
+    ES: Dos conjuntos de dependencias son equivalentes cuando cada uno implica todas las
+    dependencias del otro. Así se verifica una cobertura mínima: menos dependencias, mismo
+    significado.
     """
     return all(fd.rhs <= closure(fd.lhs, second) for fd in first) and all(
         fd.rhs <= closure(fd.lhs, first) for fd in second
@@ -251,6 +296,8 @@ def project_fds(relation: Attributes, fds: list[FD]) -> list[FD]:
     """EN: The dependencies that hold inside a projection of the original relation.
 
     PT: As dependências que valem dentro de uma projeção da relação original.
+
+    ES: Las dependencias que se cumplen dentro de una proyección de la relación original.
     """
     # EN: A dependency of the projection may not be written anywhere: with A -> B and B -> C,
     #     the projection on {A, C} satisfies A -> C. So every subset X of the projection is
@@ -258,6 +305,10 @@ def project_fds(relation: Attributes, fds: list[FD]) -> list[FD]:
     # PT: Uma dependência da projeção pode não estar escrita em lugar nenhum: com A -> B e
     #     B -> C, a projeção sobre {A, C} satisfaz A -> C. Então todo subconjunto X da projeção
     #     é testado, e o que o fecho dele alcança dentro da projeção vira X -> (X+ ∩ R) - X.
+    # ES: Una dependencia de la proyección puede no estar escrita en ningún lugar: con A -> B y
+    #     B -> C, la proyección sobre {A, C} satisface A -> C. Así que se prueba cada
+    #     subconjunto X de la proyección, y lo que su cierre alcanza dentro de la proyección se
+    #     convierte en X -> (X+ ∩ R) - X.
     projected: list[FD] = []
     names = sorted(relation)
     for size in range(1, len(names)):

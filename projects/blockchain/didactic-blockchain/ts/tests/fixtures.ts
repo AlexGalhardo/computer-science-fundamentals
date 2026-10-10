@@ -7,6 +7,8 @@ import { pay } from "../src/transaction";
 // EN: Difficulty 2 (256 attempts per block on average) keeps every test well under a second.
 // PT: Dificuldade 2 (256 tentativas por bloco, em média) mantém cada teste bem abaixo de um
 //     segundo.
+// ES: La dificultad 2 (256 intentos por bloque, en promedio) mantiene cada prueba muy por
+//     debajo de un segundo.
 export const RULES: ChainRules = { difficulty: 2, reward: 50 };
 
 export const alice: Wallet = walletFromLabel("alice");
@@ -31,6 +33,9 @@ export function accept(node: ChainNode, from: Wallet, to: Wallet, value: number,
 // PT: Um pequeno histórico usado por vários testes: 3 blocos minerados e 3 pagamentos.
 //     Bloco 1: Alice minera (50). Bloco 2: Alice paga 20 a Bob com taxa 1, Bob minera.
 //     Bloco 3: Bob paga 5 a Carol e Alice paga 7 a Carol, Alice minera.
+// ES: Un pequeño historial usado por varias pruebas: 3 bloques minados y 3 pagos.
+//     Bloque 1: Alice mina (50). Bloque 2: Alice paga 20 a Bob con comisión 1, Bob mina.
+//     Bloque 3: Bob paga 5 a Carol y Alice paga 7 a Carol, Alice mina.
 export function sampleNode(): ChainNode {
 	const node = newNode("sample");
 	node.mine(alice.publicKey);

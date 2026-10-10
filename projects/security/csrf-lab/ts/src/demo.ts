@@ -11,6 +11,11 @@ import { appUrl, FAKE_USER, FORGED_EMAIL, type LabAppHost, LEGITIMATE_NEW_EMAIL 
 //     mostra apenas o lado do SERVIDOR: o que cada versão faz quando o cookie chega em uma
 //     requisição que o usuário não escreveu. O lado do navegador (o cookie chega a viajar?) é
 //     mostrado pelos testes com Playwright: `docker compose run --rm e2e`.
+// ES: Un paso a paso narrado con `fetch`. Importante: `fetch` en un script NO es un navegador.
+//     No tiene almacén de cookies ni reglas de SameSite, así que esta demo adjunta la cookie a mano y
+//     muestra solo el lado del SERVIDOR: lo que hace cada versión cuando la cookie llega en una
+//     solicitud que el usuario no escribió. El lado del navegador (¿la cookie llega a viajar?) lo
+//     muestran las pruebas con Playwright: `docker compose run --rm e2e`.
 
 const observationsSchema = z.object({ email: z.string() });
 
@@ -25,6 +30,7 @@ function form(fields: Record<string, string>, cookie?: string): RequestInit {
 	}
 	// EN: `redirect: "manual"` keeps the 303 visible instead of silently following it.
 	// PT: `redirect: "manual"` mantém o 303 visível em vez de segui-lo em silêncio.
+	// ES: `redirect: "manual"` mantiene el 303 visible en lugar de seguirlo en silencio.
 	return { method: "POST", headers, body: new URLSearchParams(fields).toString(), redirect: "manual" };
 }
 

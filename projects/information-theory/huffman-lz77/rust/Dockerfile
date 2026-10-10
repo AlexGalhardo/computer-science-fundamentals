@@ -5,6 +5,8 @@ WORKDIR /app
 #     next to the crate.
 # PT: Os testes comparam sua saída com o fixture e a tabela versionados, então os dois são
 #     copiados ao lado do crate.
+# ES: Las pruebas comparan su salida con el fixture y la tabla versionados, así que ambos se
+#     copian junto al crate.
 COPY fixtures ./fixtures
 COPY results ./results
 COPY rust ./rust

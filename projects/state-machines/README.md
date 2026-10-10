@@ -1,6 +1,6 @@
 # State machines
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A state machine describes behaviour as a finite set of states and the transitions between them. It is at once a theoretical model (automata, regular languages, Turing machines and the limits of computation) and a practical design tool: protocols, parsers, user interfaces and business workflows become easier to reason about, and invalid situations become impossible to represent, when the states are made explicit.
 

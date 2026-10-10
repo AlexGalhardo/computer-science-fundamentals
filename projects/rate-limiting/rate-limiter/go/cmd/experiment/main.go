@@ -4,6 +4,8 @@
 // same as in results/burst.md, which the TypeScript version writes.
 // PT: `docker compose run --rm go-test go run ./cmd/experiment`. Os números devem ser os
 // mesmos de results/burst.md, que a versão em TypeScript grava.
+// ES: `docker compose run --rm go-test go run ./cmd/experiment`. Los números deben ser los
+// mismos de results/burst.md, que escribe la versión en TypeScript.
 package main
 
 import (

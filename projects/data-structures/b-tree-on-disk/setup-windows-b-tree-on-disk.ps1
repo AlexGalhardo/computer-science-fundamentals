@@ -1,5 +1,6 @@
 # EN: Builds and tests the b-tree-on-disk mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto b-tree-on-disk. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto b-tree-on-disk. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

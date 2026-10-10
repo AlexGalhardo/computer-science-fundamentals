@@ -1,6 +1,6 @@
 # Diffusion toy
 
-> Versão em português: [docs/pt/artificial-intelligence/diffusion-toy.md](../../pt/artificial-intelligence/diffusion-toy.md)
+> Versão em português: [docs/pt/artificial-intelligence/diffusion-toy.md](../../pt/artificial-intelligence/diffusion-toy.md) · Versión en español: [docs/es/artificial-intelligence/diffusion-toy.md](../../es/artificial-intelligence/diffusion-toy.md)
 
 Mini-project MP-AI-5, in [`projects/artificial-intelligence/diffusion-toy`](../../../projects/artificial-intelligence/diffusion-toy). It teaches how an image model learns to remove noise, on two-dimensional points instead of pixels. The background is section 12 of [the area page](README.md#12-image-generation), with the Gaussian distribution from [section 2](README.md#2-probability-and-statistics) and backpropagation from [section 6](README.md#6-gradient-descent-and-backpropagation).
 

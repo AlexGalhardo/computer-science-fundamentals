@@ -6,6 +6,10 @@
 //     quando a página registra um erro, pede algo que não seja arquivo local, ou não renderiza
 //     nada. Roda dentro da imagem do Playwright com `--network none`, o que prova que
 //     a página não precisa de rede.
+// ES: Abre páginas estáticas directo desde el disco (file://) en un navegador real y falla
+//     cuando la página registra un error, pide algo que no sea un archivo local, o no renderiza
+//     nada. Corre dentro de la imagen de Playwright con `--network none`, lo que prueba que
+//     la página no necesita red.
 
 import { pathToFileURL } from "node:url";
 import { chromium } from "@playwright/test";
@@ -32,6 +36,8 @@ for (const file of process.argv.slice(2)) {
 	//     first frame. What must hold is that the page rendered something and reported no error.
 	// PT: O número de desenhos é só informado: uma página passo a passo pode começar com o
 	//     primeiro quadro vazio. O que precisa valer é a página renderizar algo e não dar erro.
+	// ES: El número de dibujos solo se informa: una página paso a paso puede empezar con el
+	//     primer cuadro vacío. Lo que debe cumplirse es que la página renderice algo y no dé error.
 	const drawings = await page.locator("svg, canvas").count();
 	if ((await page.locator("body").innerText()).trim().length === 0) {
 		problems.push("the page rendered no text");

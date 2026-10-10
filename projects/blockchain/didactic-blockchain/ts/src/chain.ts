@@ -15,6 +15,8 @@ export const DEFAULT_RULES: ChainRules = { difficulty: 3, reward: 50 };
 //     transactions and no proof of work, and it is recognised by its hash.
 // PT: O bloco gênese é o ponto de partida fixo que todo nó já tem. Ele não tem transações nem
 //     prova de trabalho, e é reconhecido pelo seu hash.
+// ES: El bloque génesis es el punto de partida fijo que todo nodo ya tiene. No tiene
+//     transacciones ni prueba de trabajo, y se reconoce por su hash.
 const GENESIS_HEADER = {
 	height: 0,
 	previousHash: "0".repeat(64),
@@ -36,6 +38,11 @@ export type Check = { ok: true } | { ok: false; reason: string };
 //     esforço, não que o conteúdo é honesto. Em caso de sucesso o conjunto UTXO recebido é
 //     atualizado; em caso de falha ele deve ser descartado, pois pode estar atualizado pela
 //     metade (quem chama passa uma cópia).
+// ES: Todas las reglas que un bloque debe cumplir para extender la cadena. Un nodo las ejecuta
+//     todas por su cuenta para cada bloque que recibe: la prueba de trabajo muestra que hubo
+//     esfuerzo, no que el contenido sea honesto. Si tiene éxito, el conjunto UTXO recibido se
+//     actualiza; si falla, debe descartarse, pues puede quedar actualizado a medias (quien
+//     llama pasa una copia).
 export function validateBlock(block: Block, previous: Block, utxo: Utxo, rules: ChainRules): Check {
 	const { header } = block;
 	if (header.height !== previous.header.height + 1) {
@@ -62,6 +69,9 @@ export function validateBlock(block: Block, previous: Block, utxo: Utxo, rules: 
 	// PT: O id de uma transação precisa ser o hash do conteúdo dela. Sem esta checagem alguém
 	//     poderia mudar um valor e manter o id antigo, e a raiz de Merkle, que é construída a
 	//     partir dos ids, continuaria conferindo.
+	// ES: El id de una transacción debe ser el hash de su contenido. Sin esta verificación
+	//     alguien podría cambiar un valor y mantener el id antiguo, y la raíz de Merkle, que se
+	//     construye a partir de los ids, seguiría coincidiendo.
 	if (block.transactions.some((tx) => tx.id !== transactionId(tx))) {
 		return { ok: false, reason: "transaction id does not match its content" };
 	}
@@ -73,6 +83,8 @@ export function validateBlock(block: Block, previous: Block, utxo: Utxo, rules: 
 	//     have the same Merkle root. Rejecting repeated ids closes that ambiguity.
 	// PT: Com a convenção de "duplicar o último nó", as listas [A, B, C] e [A, B, C, C] têm a
 	//     mesma raiz de Merkle. Rejeitar ids repetidos fecha essa ambiguidade.
+	// ES: Con la convención de "duplicar el último nodo", las listas [A, B, C] y [A, B, C, C]
+	//     tienen la misma raíz de Merkle. Rechazar ids repetidos cierra esa ambigüedad.
 	if (new Set(ids).size !== ids.length) {
 		return { ok: false, reason: "block contains the same transaction twice" };
 	}
@@ -84,6 +96,8 @@ export function validateBlock(block: Block, previous: Block, utxo: Utxo, rules: 
 	//     that spends an output already spent by the first one is rejected here too.
 	// PT: As transações comuns são aplicadas uma a uma, então a segunda transação de um bloco
 	//     que gasta uma saída já gasta pela primeira também é rejeitada aqui.
+	// ES: Las transacciones comunes se aplican una a una, así que la segunda transacción de un
+	//     bloque que gasta una salida ya gastada por la primera también se rechaza aquí.
 	let fees = 0;
 	for (const tx of ordinary) {
 		const result = checkTransaction(tx, utxo);
@@ -98,6 +112,9 @@ export function validateBlock(block: Block, previous: Block, utxo: Utxo, rules: 
 	// PT: O único lugar em que moedas são criadas, e o limite é uma regra de validade: um
 	//     minerador com qualquer poder computacional não consegue pagar a si mesmo mais que a
 	//     recompensa mais as taxas.
+	// ES: El único lugar donde se crean monedas, y el límite es una regla de validez: un minero
+	//     con cualquier poder de cómputo no puede pagarse a sí mismo más que la recompensa más
+	//     las comisiones.
 	const created = coinbase.outputs.reduce((sum, output) => sum + output.amount, 0);
 	if (created > rules.reward + fees) {
 		return { ok: false, reason: `coin creation of ${created} exceeds reward plus fees (${rules.reward + fees})` };
@@ -116,6 +133,11 @@ export type ChainCheck = { ok: true; utxo: Utxo } | { ok: false; height: number;
 //     resultante. É isto que torna a adulteração evidente: mude uma transação em qualquer lugar
 //     e a raiz de Merkle do bloco deixa de conferir; conserte a raiz e o hash do bloco muda, o
 //     que quebra a prova de trabalho e a ligação a partir do bloco seguinte.
+// ES: Reejecuta una cadena entera desde el bloque génesis y devuelve el conjunto UTXO
+//     resultante. Esto es lo que vuelve evidente la manipulación: cambia una transacción en
+//     cualquier lugar y la raíz de Merkle del bloque deja de coincidir; arregla la raíz y el
+//     hash del bloque cambia, lo que rompe la prueba de trabajo y el enlace desde el bloque
+//     siguiente.
 export function validateChain(blocks: readonly Block[], rules: ChainRules): ChainCheck {
 	const first = blocks[0];
 	if (first === undefined || first.hash !== GENESIS.hash || headerHash(first.header) !== GENESIS.hash) {

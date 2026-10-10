@@ -11,6 +11,8 @@ pub type Page = [u8; PAGE_SIZE];
 //     layout whatever language or machine wrote it.
 // PT: Os inteiros são guardados em ordem little-endian em posições fixas, então o arquivo tem o
 //     mesmo layout seja qual for a linguagem ou a máquina que o gravou.
+// ES: Los enteros se guardan en orden little-endian en posiciones fijas, así que el archivo tiene
+//     el mismo layout sea cual sea el lenguaje o la máquina que lo grabó.
 pub fn get_u64(page: &Page, offset: usize) -> u64 {
     let mut bytes = [0u8; 8];
     bytes.copy_from_slice(&page[offset..offset + 8]);
@@ -31,6 +33,12 @@ pub fn put_u64(page: &mut Page, offset: usize, value: u64) {
 //     gravam, e conta cada página lida e gravada. Em disco, o número de páginas lidas é o custo
 //     de uma busca, muito mais que as comparações feitas em memória. Não há cache de propósito:
 //     um nó visitado é uma página lida, então o contador mostra a forma real da estrutura.
+// ES: El pager es el único código que toca el archivo. Ve el archivo como un vector de páginas
+//     de 4096 bytes, la unidad que un disco y un sistema operativo realmente leen y graban, y
+//     cuenta cada página leída y grabada. En disco, el número de páginas leídas es el costo de
+//     una búsqueda, mucho más que las comparaciones hechas en memoria. No hay caché a propósito:
+//     un nodo visitado es una página leída, así que el contador muestra la forma real de la
+//     estructura.
 pub struct Pager {
     file: File,
     page_count: PageId,
@@ -83,6 +91,7 @@ impl Pager {
 
     // EN: A new page is simply the next position after the end of the file.
     // PT: Uma página nova é simplesmente a próxima posição depois do fim do arquivo.
+    // ES: Una página nueva es simplemente la siguiente posición después del final del archivo.
     pub fn append(&mut self) -> PageId {
         self.page_count += 1;
         self.page_count - 1

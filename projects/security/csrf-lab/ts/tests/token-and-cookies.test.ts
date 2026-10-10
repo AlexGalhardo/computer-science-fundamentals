@@ -15,6 +15,7 @@ describe("anti-CSRF token", () => {
 		for (const token of tokens) {
 			// EN: 32 random bytes in base64url are 43 characters.
 			// PT: 32 bytes aleatórios em base64url são 43 caracteres.
+			// ES: 32 bytes aleatorios en base64url son 43 caracteres.
 			expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
 		}
 	});

@@ -27,6 +27,7 @@ describe("Title", () => {
 
 	// EN: A value object is compared by what it holds, not by which object it is.
 	// PT: Um objeto de valor é comparado pelo que guarda, não por qual objeto ele é.
+	// ES: Un objeto de valor se compara por lo que guarda, no por qué objeto es.
 	test("two titles with the same text are equal", () => {
 		const first = Title.create("Groceries");
 		const second = Title.create(" Groceries ");

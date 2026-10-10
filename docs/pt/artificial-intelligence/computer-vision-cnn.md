@@ -1,6 +1,6 @@
 # Visão computacional com uma CNN
 
-> English version: [docs/en/artificial-intelligence/computer-vision-cnn.md](../../en/artificial-intelligence/computer-vision-cnn.md)
+> English version: [docs/en/artificial-intelligence/computer-vision-cnn.md](../../en/artificial-intelligence/computer-vision-cnn.md) · Versión en español: [docs/es/artificial-intelligence/computer-vision-cnn.md](../../es/artificial-intelligence/computer-vision-cnn.md)
 
 Mini-projeto MP-AI-8, em [`projects/artificial-intelligence/computer-vision-cnn`](../../../projects/artificial-intelligence/computer-vision-cnn). Ensina como uma rede enxerga: imagens como números, convolução, pooling e filtros aprendidos. A base está na seção 16 da [página da área](README.md#16-visão-computacional). O framework é o PyTorch, apresentado na [seção 14](README.md#14-o-que-um-framework-oferece-pytorch), rodando na CPU.
 

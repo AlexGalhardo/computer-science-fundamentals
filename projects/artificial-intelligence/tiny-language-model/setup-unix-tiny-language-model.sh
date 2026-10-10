@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the tiny-language-model mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto tiny-language-model. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto tiny-language-model. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -12,6 +13,7 @@ fi
 
 # EN: The demo container writes ./results, so it runs with the uid and gid of this user.
 # PT: O container da demo grava ./results, então roda com o uid e o gid deste usuário.
+# ES: El contenedor de la demo escribe ./results, así que se ejecuta con el uid y el gid de este usuario.
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID
@@ -24,5 +26,7 @@ echo "tiny-language-model: all tests passed"
 #     rewrites ./results (results.md, loss-curve.svg, attention.svg).
 # PT: A demo treina o bigrama e o transformer, imprime as tabelas de perda e de amostragem e
 #     regrava ./results (results.md, loss-curve.svg, attention.svg).
+# ES: La demo entrena el bigrama y el transformer, imprime las tablas de pérdida y de muestreo y
+#     reescribe ./results (results.md, loss-curve.svg, attention.svg).
 docker compose run --rm python-demo
 echo "tiny-language-model: tables and figures written to results/"

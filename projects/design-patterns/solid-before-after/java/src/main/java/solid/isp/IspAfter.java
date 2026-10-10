@@ -19,6 +19,12 @@ import solid.isp.Products.Product;
 //     genérico, `<C extends ProductReader & ProductWriter>`: aceita qualquer classe com os dois
 //     papéis e dispensa uma terceira interface. O catálogo CSV não é um escritor, então a
 //     chamada não compila.
+// ES: SEGREGACIÓN DE INTERFACES. Dos interfaces, una por tipo de cliente. Una clase implementa
+//     lo que realmente ofrece, y un método pide el tipo más estrecho que resuelve su trabajo.
+//     Java no tiene un tipo `A & B` para parámetros, así que `increasePrices` usa una cota
+//     genérica, `<C extends ProductReader & ProductWriter>`: acepta cualquier clase con los dos
+//     roles y evita una tercera interfaz. El catálogo CSV no es un escritor, así que la
+//     llamada no compila.
 public final class IspAfter {
   private IspAfter() {}
 

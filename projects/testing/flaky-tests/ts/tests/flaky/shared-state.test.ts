@@ -10,6 +10,11 @@ import { sharedRegistry } from "../../src/invoices";
 //     anterior deixou. O laboratório os roda com `bun test --randomize`, como muitos ambientes
 //     de CI fazem, e aí qualquer outra ordem quebra pelo menos um: só 1 das 6 ordens possíveis
 //     fica verde.
+// ES: INTERMITENTE A PROPÓSITO (causa: estado compartido). Las tres pruebas usan el mismo
+//     registro. Escritas en este orden pasan, porque cada una depende en silencio de lo que dejó la
+//     anterior. El laboratorio las ejecuta con `bun test --randomize`, como hacen muchos entornos
+//     de CI, y entonces cualquier otro orden rompe al menos una: solo 1 de los 6 órdenes posibles
+//     queda en verde.
 test("a new registry has no invoices", () => {
 	expect(sharedRegistry.list()).toHaveLength(0);
 });

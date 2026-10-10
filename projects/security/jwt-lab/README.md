@@ -1,7 +1,7 @@
 # jwt-lab
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
-
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
+>
 > **Security lab, vulnerable on purpose.** The code in `ts/src/vulnerable/` exists only to make a flaw observable inside this lab. Never copy it, import it or deploy it.
 
 A JSON Web Token (JWT) is a signed note that says "this is `bob-fake`, role `user`, valid until 10:15". The server that receives it has no session table to consult: it believes the note if, and only if, the verification is right. This lab shows the common ways that verification goes wrong: accepting unsigned tokens because the token itself said `alg: none`, signing with a word a person chose, and never checking the expiry. Then it fixes each one in a verifier written by hand with `node:crypto`, where every check is a visible, numbered step.
@@ -68,7 +68,7 @@ The container runs `tsc --noEmit` and then `bun test`.
 
 ## A JWT in one minute
 
-```
+```text
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9 . eyJzdWIiOiJib2ItZmFrZSIsInJvbGUiOiJ1c2VyIiwuLi59 . 3q2-7w...
         header                                    payload                                  signature
  {"alg":"HS256","typ":"JWT"}        {"sub":"bob-fake","role":"user","exp":...}     HMAC-SHA256(key, header.payload)

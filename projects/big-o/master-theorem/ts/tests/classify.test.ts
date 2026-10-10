@@ -5,6 +5,7 @@ import { recursionTree, renderTree, treeShape } from "../src/tree";
 
 // EN: Acceptance of MP-BIGO-2.1: one recurrence per case and one that does not fit.
 // PT: Aceite de MP-BIGO-2.1: uma recorrência por caso e uma que não se encaixa.
+// ES: Aceptación de MP-BIGO-2.1: una recurrencia por caso y una que no encaja.
 describe("classifier", () => {
 	test("case 1: Strassen, 7T(n/2) + n^2", () => {
 		const result = classify({ a: 7, b: 2, d: 2 });
@@ -51,6 +52,7 @@ describe("classifier", () => {
 
 	// EN: log_2(8) is exactly 3, even if floating point says 2.9999999999999996.
 	// PT: log_2(8) é exatamente 3, mesmo que o ponto flutuante diga 2.9999999999999996.
+	// ES: log_2(8) es exactamente 3, aunque el punto flotante diga 2.9999999999999996.
 	test("an exact logarithm is not lost to floating point", () => {
 		const result = classify({ a: 8, b: 2, d: 3 });
 		expect(result.criticalExponent).toBe(3);
@@ -83,6 +85,7 @@ describe("recursion tree", () => {
 
 	// EN: The case of the theorem is the shape of the tree.
 	// PT: O caso do teorema é o formato da árvore.
+	// ES: El caso del teorema es la forma del árbol.
 	test("the shape of the tree matches the case", () => {
 		const shape = (a: number, b: number, d: number) =>
 			treeShape(recursionTree(classify({ a, b, d }).recurrence, b ** 5));
@@ -100,6 +103,7 @@ describe("recursion tree", () => {
 
 // EN: Acceptance of MP-BIGO-2.3: one command prints the case.
 // PT: Aceite de MP-BIGO-2.3: um comando imprime o caso.
+// ES: Aceptación de MP-BIGO-2.3: un comando imprime el caso.
 describe("command line", () => {
 	test("prints the case, the solution and the tree", () => {
 		const result = run(["7", "2", "2"]);
@@ -108,6 +112,7 @@ describe("command line", () => {
 		expect(result.output).toContain("case 1");
 		expect(result.output).toContain("T(n) = Θ(n^2.81)");
 		expect(result.output).toContain("recursion tree for n = 16");
+		expect(result.output).toContain("ES: f(n) = n^2 es polinomialmente menor que n^2.81");
 	});
 
 	test("reports when the theorem does not apply", () => {

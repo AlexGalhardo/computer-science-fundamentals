@@ -8,6 +8,11 @@
 //     continua chegando, o navegador apenas se recusa a executá-la. Isso faz da CSP uma segunda
 //     camada (defesa em profundidade), útil no dia em que um bug de codificação escapar, e nunca
 //     um substituto para codificar a saída.
+// ES: Una Content Security Policy (CSP) es una cabecera de respuesta que le dice al navegador desde qué
+//     orígenes puede ejecutar código en esta página. No altera el HTML: el marcado inyectado
+//     sigue llegando, el navegador solo se niega a ejecutarlo. Eso hace de la CSP una segunda
+//     capa (defensa en profundidad), útil el día en que se escape un error de codificación, y nunca
+//     un sustituto de codificar la salida.
 
 // EN: One directive per line:
 //     - default-src 'self': anything not listed below may only come from this same server.
@@ -26,6 +31,15 @@
 //       script.
 //     - form-action 'self': formulários só podem enviar de volta para este servidor.
 //     - frame-ancestors 'none': outros sites não podem colocar esta página dentro de um frame.
+// ES: Una directiva por línea:
+//     - default-src 'self': todo lo que no está listado abajo solo puede venir de este mismo servidor.
+//     - script-src 'self': scripts solo de archivos de este servidor. Como 'unsafe-inline' está
+//       ausente, los bloques <script> en línea y los manejadores en línea como onerror="..." no corren.
+//     - object-src 'none': ningún plugin (<object>, <embed>), una manera antigua de ejecutar código.
+//     - base-uri 'none': ningún elemento <base>, que podría redirigir direcciones relativas de
+//       scripts.
+//     - form-action 'self': los formularios solo pueden enviar de vuelta a este servidor.
+//     - frame-ancestors 'none': otros sitios no pueden poner esta página dentro de un frame.
 export const CSP_DIRECTIVES: Readonly<Record<string, string>> = {
 	"default-src": "'self'",
 	"script-src": "'self'",
@@ -47,6 +61,8 @@ export const CONTENT_SECURITY_POLICY: string = buildContentSecurityPolicy(CSP_DI
 //     text is never reinterpreted as HTML or as a script.
 // PT: `nosniff` impede o navegador de adivinhar o tipo do conteúdo, então uma resposta enviada
 //     como texto puro nunca é reinterpretada como HTML ou como script.
+// ES: `nosniff` impide que el navegador adivine el tipo del contenido, así que una respuesta enviada
+//     como texto plano nunca se reinterpreta como HTML ni como script.
 export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
 	"content-security-policy": CONTENT_SECURITY_POLICY,
 	"x-content-type-options": "nosniff",

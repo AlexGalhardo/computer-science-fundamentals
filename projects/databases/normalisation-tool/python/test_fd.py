@@ -43,6 +43,8 @@ def test_textbook_examples_return_the_documented_keys(example: Example) -> None:
     #     return exactly the candidate keys that the literature documents for it.
     # PT: O critério de aceite de MP-DB-2.1: todo esquema de sala de aula em `examples.py`
     #     precisa devolver exatamente as chaves candidatas que a literatura documenta para ele.
+    # ES: El criterio de aceptación de MP-DB-2.1: todo esquema de aula en `examples.py` debe
+    #     devolver exactamente las claves candidatas que la literatura documenta para él.
     documented = sorted(", ".join(sorted(parse_attributes(key))) for key in example.keys)
     assert keys_of(example.schema, example.fds) == documented
 
@@ -70,6 +72,7 @@ def test_mandatory_attributes_are_those_on_no_right_side() -> None:
 def test_minimal_cover_of_the_classic_example() -> None:
     # EN: Documented result: {A -> BC, B -> C, A -> B, AB -> C} reduces to {A -> B, B -> C}.
     # PT: Resultado documentado: {A -> BC, B -> C, A -> B, AB -> C} se reduz a {A -> B, B -> C}.
+    # ES: Resultado documentado: {A -> BC, B -> C, A -> B, AB -> C} se reduce a {A -> B, B -> C}.
     fds = parse_fds("A -> B, C; B -> C; A -> B; A, B -> C")
     cover = minimal_cover(fds)
     assert [fmt_fd(fd) for fd in cover] == ["A -> B", "B -> C"]

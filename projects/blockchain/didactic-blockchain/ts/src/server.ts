@@ -12,6 +12,10 @@ import { transactionSchema } from "./transaction";
 //     pontos, então não pode ser um nome de host da Internet nem um endereço IP). Esta rede de
 //     brinquedo nunca deve falar com nada fora do laboratório, e a rede do compose é `internal`
 //     como segunda barreira.
+// ES: Un par es siempre una dirección local: loopback o un nombre de servicio de docker-compose
+//     (sin puntos, así que no puede ser un nombre de host de Internet ni una dirección IP).
+//     Esta red de juguete nunca debe hablar con nada fuera del laboratorio, y la red del
+//     compose es `internal` como segunda barrera.
 export const peerUrlSchema = z
 	.string()
 	.regex(/^http:\/\/(127\.0\.0\.1|[a-z0-9-]+):\d{1,5}$/, "peer must be a local URL");
@@ -71,6 +75,10 @@ export function startNode(options: NodeServerOptions): NodeServer {
 	//     já tem responde "known" e não repassa de novo, e é isso que encerra a inundação. Um par
 	//     fora do ar ou lento é pulado: a difusão tolera mensagens perdidas, e um nó que perdeu
 	//     um bloco percebe quando o seguinte chega.
+	// ES: Difusión (gossip): todo lo que este nodo acepta de nuevo, lo reenvía a los pares. Un
+	//     par que ya lo tiene responde "known" y no lo reenvía otra vez, y eso es lo que termina
+	//     la inundación. Un par caído o lento se omite: la difusión tolera mensajes perdidos, y
+	//     un nodo que perdió un bloque lo nota cuando llega el siguiente.
 	async function gossip(path: string, body: unknown): Promise<void> {
 		await Promise.allSettled(
 			peers.map((peer) =>
@@ -89,6 +97,9 @@ export function startNode(options: NodeServerOptions): NodeServer {
 	// PT: Pede a um par a cadeia inteira dele e aplica a regra da cadeia mais longa. A resposta
 	//     passa pelo schema e depois é validada por inteiro em `considerChain`: nunca se confia
 	//     em um par.
+	// ES: Pide a un par su cadena completa y aplica la regla de la cadena más larga. La respuesta
+	//     pasa por el schema y luego se valida entera en `considerChain`: nunca se confía en un
+	//     par.
 	async function syncFrom(peer: string): Promise<boolean> {
 		try {
 			const response = await fetch(`${peer}/chain`, { signal: AbortSignal.timeout(5000) });
@@ -165,6 +176,8 @@ export function startNode(options: NodeServerOptions): NodeServer {
 			//     purpose.
 			// PT: Usado pela demo para cortar e restaurar ligações, que é como ela cria uma
 			//     bifurcação de propósito.
+			// ES: La usa la demo para cortar y restaurar enlaces, que es como crea una bifurcación
+			//     a propósito.
 			case "POST /peers": {
 				const body = await readBody(request, peersMessageSchema);
 				if ("error" in body) {
@@ -199,6 +212,8 @@ export function startNode(options: NodeServerOptions): NodeServer {
 // EN: Configuration comes from environment variables, validated like any other external input.
 // PT: A configuração vem de variáveis de ambiente, validadas como qualquer outra entrada
 //     externa.
+// ES: La configuración viene de variables de entorno, validadas como cualquier otra entrada
+//     externa.
 const envSchema = z.object({
 	NODE_NAME: z
 		.string()
@@ -219,6 +234,8 @@ if (import.meta.main) {
 		//     of the internal network reach it. No port is published on the host.
 		// PT: Dentro do contêiner o nó escuta em todas as interfaces para que os outros
 		//     contêineres da rede interna o alcancem. Nenhuma porta é publicada no host.
+		// ES: Dentro del contenedor el nodo escucha en todas las interfaces para que los otros
+		//     contenedores de la red interna lo alcancen. Ningún puerto se publica en el host.
 		hostname: "0.0.0.0",
 		peers,
 		rules: { ...DEFAULT_RULES, difficulty: env.DIFFICULTY },

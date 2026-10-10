@@ -10,6 +10,12 @@
 //     consulta com filtro e agregação, e ler pela chave de novo a partir de 8 tarefas
 //     assíncronas dividindo um pool de 8 conexões. Uma thread basta aqui: o programa passa o
 //     tempo esperando o banco, e o event loop cuida de muitas esperas ao mesmo tempo.
+// ES: Cliente de base de datos del benchmark en TypeScript, con el cliente PostgreSQL integrado
+//     de Bun (Bun.sql), así que no hay paquete que instalar. Las cuatro fases son las mismas en los 7
+//     lenguajes: insertar n filas una por una, leer cada una por la clave primaria, ejecutar una
+//     consulta con filtro y agregación, y leer por la clave de nuevo desde 8 tareas
+//     asíncronas que comparten un pool de 8 conexiones. Un solo thread basta aquí: el programa pasa el
+//     tiempo esperando a la base de datos, y el event loop se ocupa de muchas esperas a la vez.
 
 import { readFileSync } from "node:fs";
 import { SQL } from "bun";
@@ -31,6 +37,7 @@ function summary(phase: Phase): { ops: number; elapsedMs: number; p50Ms: number;
 
 // EN: Runs fn for every id and records how long each call took.
 // PT: Roda fn para cada id e registra quanto tempo cada chamada levou.
+// ES: Ejecuta fn para cada id y registra cuánto tardó cada llamada.
 async function timed(ids: number[], fn: (i: number) => Promise<void>): Promise<Phase> {
 	const latencies: number[] = [];
 	const start = performance.now();
@@ -83,6 +90,7 @@ const query = await timed(sequence(0, QUERY_OPS - 1, 1), async (i) => {
 
 // EN: A pool keeps connections open and lends one to each query. Here `max` is the pool size.
 // PT: Um pool mantém conexões abertas e empresta uma a cada consulta. Aqui `max` é o tamanho do pool.
+// ES: Un pool mantiene conexiones abiertas y presta una a cada consulta. Aquí `max` es el tamaño del pool.
 const pool = new SQL({ ...options, max: workers });
 await Promise.all(sequence(1, workers, 1).map(() => pool`SELECT 1`));
 const poolStart = performance.now();
@@ -106,6 +114,7 @@ await sql.close();
 
 // EN: CPU time and peak memory of this client process, as counted by the kernel.
 // PT: Tempo de CPU e pico de memória deste processo cliente, contados pelo kernel.
+// ES: Tiempo de CPU y pico de memoria de este proceso cliente, contados por el kernel.
 const usage = process.cpuUsage();
 const peak = /VmHWM:\s+(\d+)/.exec(readFileSync("/proc/self/status", "utf8"));
 console.log(

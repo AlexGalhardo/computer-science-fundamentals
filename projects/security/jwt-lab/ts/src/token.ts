@@ -12,6 +12,9 @@
 // PT: O formato de um JSON Web Token (JWT) e os utilitários neutros que as duas versões
 //     compartilham: codificar, assinar e ler. Nada neste arquivo decide se um token é aceito.
 //     Essa decisão é a lição, e ela mora em `vulnerable/` e `fixed/`.
+// ES: El formato de un JSON Web Token (JWT) y las utilidades neutrales que comparten las dos versiones:
+//     codificar, firmar y leer. Nada en este archivo decide si un token se acepta.
+//     Esa decisión es la lección, y vive en `vulnerable/` y `fixed/`.
 //
 //     Um JWT são três pedaços de texto unidos por pontos:
 //
@@ -31,6 +34,9 @@ export type Role = "user" | "admin";
 // PT: As claims registradas que este laboratório usa (RFC 7519). Tempos são segundos desde 1970
 //     (tempo Unix). sub: de quem o token fala. iss: quem emitiu. aud: para qual serviço ele foi
 //     emitido. iat: quando foi emitido. exp: quando deixa de valer. nbf: não vale antes disso.
+// ES: Los claims registrados que usa este laboratorio (RFC 7519). Los tiempos son segundos desde 1970
+//     (tiempo Unix). sub: de quién habla el token. iss: quién lo emitió. aud: para qué servicio se
+//     emitió. iat: cuándo se emitió. exp: cuándo deja de valer. nbf: no vale antes de eso.
 export interface Claims {
 	sub: string;
 	role: Role;
@@ -43,6 +49,7 @@ export interface Claims {
 
 // EN: HMAC keys are bytes. A text secret is accepted too, because the vulnerable version uses one.
 // PT: Chaves de HMAC são bytes. Um segredo em texto também é aceito, porque a versão vulnerável usa um.
+// ES: Las claves de HMAC son bytes. Un secreto en texto también se acepta, porque la versión vulnerable usa uno.
 export type SigningKey = string | Buffer;
 
 // EN: base64url is base64 with `-` and `_` instead of `+` and `/` and without `=` padding, so
@@ -51,6 +58,9 @@ export type SigningKey = string | Buffer;
 // PT: base64url é base64 com `-` e `_` no lugar de `+` e `/` e sem o preenchimento `=`, então o
 //     resultado cabe em uma URL ou em um cabeçalho HTTP. É uma CODIFICAÇÃO, não criptografia:
 //     qualquer pessoa decodifica, sem chave nenhuma.
+// ES: base64url es base64 con `-` y `_` en lugar de `+` y `/` y sin el relleno `=`, así que el
+//     resultado cabe en una URL o en una cabecera HTTP. Es una CODIFICACIÓN, no cifrado:
+//     cualquier persona la decodifica, sin ninguna clave.
 export function base64UrlEncode(data: string | Buffer): string {
 	return Buffer.from(data).toString("base64url");
 }
@@ -69,12 +79,16 @@ export function encodeJson(value: unknown): string {
 // PT: A assinatura HS256: um HMAC-SHA256 das duas primeiras partes, calculado com a chave
 //     compartilhada. Quem tem a chave produz uma assinatura válida para qualquer payload. Por
 //     isso a chave precisa ser impossível de adivinhar, e nunca pode sair do servidor.
+// ES: La firma HS256: un HMAC-SHA256 de las dos primeras partes, calculado con la clave
+//     compartida. Quien tiene la clave produce una firma válida para cualquier payload. Por
+//     eso la clave debe ser imposible de adivinar, y nunca puede salir del servidor.
 export function hmacSha256(signingInput: string, key: SigningKey): Buffer {
 	return createHmac("sha256", key).update(signingInput).digest();
 }
 
 // EN: What an honest issuer does: build header and payload, sign them, join the three parts.
 // PT: O que um emissor honesto faz: monta cabeçalho e payload, assina, une as três partes.
+// ES: Lo que hace un emisor honesto: arma el encabezado y el payload, firma, une las tres partes.
 export function signHs256(claims: Claims, key: SigningKey): string {
 	const signingInput = `${encodeJson({ alg: "HS256", typ: "JWT" })}.${encodeJson(claims)}`;
 	return `${signingInput}.${base64UrlEncode(hmacSha256(signingInput, key))}`;
@@ -88,6 +102,10 @@ export function signHs256(claims: Claims, key: SigningKey): string {
 //     JWT é legível por quem tiver o token (o usuário, um proxy, um arquivo de log). Nunca
 //     coloque nele uma senha, uma chave de API ou dado privado. Esta função serve para exibição
 //     e para os cenários do laboratório. O resultado nunca deve ser usado para autorizar uma requisição.
+// ES: Lee el payload SIN verificar nada. No necesita clave, y ese es el punto: el payload de un
+//     JWT es legible por quien tenga el token (el usuario, un proxy, un archivo de registro). Nunca
+//     pongas en él una contraseña, una clave de API ni datos privados. Esta función sirve para mostrar
+//     y para los escenarios del laboratorio. El resultado nunca debe usarse para autorizar una solicitud.
 export function readPayloadUnverified(token: string): Record<string, unknown> {
 	const parsed: unknown = JSON.parse(base64UrlDecode(token.split(".")[1] ?? "").toString("utf8"));
 	if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))

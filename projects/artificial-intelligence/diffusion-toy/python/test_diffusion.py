@@ -3,6 +3,9 @@ same function and seeds as the demo, and every test that needs a model shares it
 
 PT: Testes do brinquedo de difusão. A rede é treinada uma vez (fixture de módulo), com a mesma
 função e as mesmas sementes da demo, e todo teste que precisa de um modelo a compartilha.
+
+ES: Pruebas del juguete de difusión. La red se entrena una vez (fixture de módulo), con la misma
+función y las mismas semillas de la demo, y toda prueba que necesita un modelo la comparte.
 """
 
 import math
@@ -58,6 +61,7 @@ def test_schedule_ends_with_almost_no_signal() -> None:
     assert np.all(np.diff(schedule.alpha_bars) < 0)
     # EN: sqrt(alpha_bar_T) multiplies the original point at the last step: under 1% is left.
     # PT: sqrt(alpha_bar_T) multiplica o ponto original no último passo: sobra menos de 1%.
+    # ES: sqrt(alpha_bar_T) multiplica el punto original en el último paso: queda menos de 1%.
     assert math.sqrt(schedule.alpha_bars[-1]) < 0.01
 
 
@@ -67,6 +71,9 @@ def test_step_by_step_agrees_with_the_shortcut() -> None:
     # PT: Dois caminhos diferentes até o passo t, com números aleatórios diferentes: 20000 pontos
     #     andando passo a passo, e 20000 pontos enviados em um salto. As estatísticas têm de
     #     coincidir.
+    # ES: Dos caminos distintos hasta el paso t, con números aleatorios distintos: 20000 puntos
+    #     recorridos paso a paso, y 20000 puntos enviados allí de un salto. Sus estadísticas tienen
+    #     que coincidir.
     schedule = make_schedule()
     start = make_ring(COUNT, seed=5)
     walked = forward_chain(start, schedule, seed=6, keep=(10, 25, 50, 100))
@@ -83,6 +90,8 @@ def test_step_by_step_agrees_with_the_shortcut() -> None:
         #     one coordinate of the ring) + (1 - alpha_bar) x 1 (the noise).
         # PT: O atalho também prevê a variância exata: alpha_bar x 0,5 (a variância de uma
         #     coordenada do anel) + (1 - alpha_bar) x 1 (o ruído).
+        # ES: El atajo también predice la varianza exacta: alpha_bar x 0,5 (la varianza de una
+        #     coordenada del anillo) + (1 - alpha_bar) x 1 (el ruido).
         expected = schedule.alpha_bars[t] * start.var(axis=0) + 1.0 - schedule.alpha_bars[t]
         assert np.allclose(points.var(axis=0), expected, atol=0.05)
 
@@ -103,6 +112,8 @@ def test_last_forward_step_is_indistinguishable_from_gaussian_noise() -> None:
     # EN: The same explicit numbers, so that a reader sees what "indistinguishable" means here.
     # PT: Os mesmos números de forma explícita, para o leitor ver o que "indistinguível" quer
     #     dizer aqui.
+    # ES: Los mismos números de forma explícita, para que el lector vea qué quiere decir
+    #     "indistinguible" aquí.
     assert max(abs(value) for value in report.mean) < 0.03
     assert max(abs(value - 1.0) for value in report.variance) < 0.04
     assert abs(report.xy_correlation) < 0.03
@@ -113,6 +124,8 @@ def test_last_forward_step_is_indistinguishable_from_gaussian_noise() -> None:
     #     true Gaussian sample of the same size passes.
     # PT: As verificações não são cegas: o anel limpo e o anel com ruído pela metade falham
     #     nelas, e uma amostra gaussiana de verdade, do mesmo tamanho, passa.
+    # ES: Las comprobaciones no son ciegas: el anillo limpio y el anillo con ruido a medias las
+    #     fallan, y una muestra gaussiana de verdad, del mismo tamaño, las pasa.
     assert "ks" in gaussian_report(walked[0], start).failures(COUNT)
     assert "variance" in gaussian_report(walked[25], start).failures(COUNT)
     assert "start_correlation" in gaussian_report(walked[25], start).failures(COUNT)
@@ -127,6 +140,9 @@ def test_backpropagation_matches_numerical_gradient() -> None:
     # PT: Verificação do gradiente. Mexa um peso em +h e em -h, meça a perda nas duas vezes, e
     #     (perda_mais - perda_menos) / 2h é a inclinação sem cálculo nenhum. A volta escrita à
     #     mão tem de dar o mesmo número para cada um dos pesos.
+    # ES: Comprobación del gradiente. Mueve un peso en +h y en -h, mide la pérdida las dos veces, y
+    #     (pérdida_más - pérdida_menos) / 2h es la pendiente sin ningún cálculo. La vuelta escrita
+    #     a mano tiene que dar el mismo número para cada uno de los pesos.
     schedule = make_schedule()
     network = make_network((18, 7, 6, 2), seed=4)
     rng = np.random.default_rng(5)
@@ -160,6 +176,7 @@ def test_backpropagation_matches_numerical_gradient() -> None:
 def test_training_lowers_the_loss(trained: Trained) -> None:
     # EN: Answering "no noise at all" (zeros) costs a loss of 1, the variance of the noise.
     # PT: Responder "ruído nenhum" (zeros) custa uma perda de 1, a variância do ruído.
+    # ES: Responder "ningún ruido" (ceros) cuesta una pérdida de 1, la varianza del ruido.
     assert trained.losses[0] < 0.6
     assert trained.losses[-1] < trained.losses[0]
     assert trained.losses[-1] < 0.25
@@ -181,6 +198,7 @@ def test_generated_points_land_on_the_ring(trained: Trained, generated: dict[int
 def test_generated_points_cover_the_whole_ring(generated: dict[int, Array]) -> None:
     # EN: A collapse to one spot of the ring would pass the distance test and fail here.
     # PT: Um colapso em um só ponto do anel passaria no teste de distância e falharia aqui.
+    # ES: Un colapso en un solo punto del anillo pasaría la prueba de distancia y fallaría aquí.
     counts = sector_counts(generated[0])
     assert len(counts) == SECTORS
     assert min(counts) > 0.5 * SAMPLE_COUNT / SECTORS
@@ -198,6 +216,7 @@ def test_generation_is_new_and_repeatable(trained: Trained) -> None:
     assert not np.allclose(first, other)
     # EN: The points are generated, not copied: none of them is a training point.
     # PT: Os pontos são gerados, não copiados: nenhum deles é um ponto do treino.
+    # ES: Los puntos se generan, no se copian: ninguno de ellos es un punto del entrenamiento.
     gaps = np.linalg.norm(first[:, None, :] - trained.data[None, :, :], axis=2).min(axis=1)
     assert gaps.min() > 0.0
 
@@ -227,6 +246,7 @@ def test_demo_writes_the_points_of_several_reverse_steps(trained: Trained, tmp_p
     assert len(KEPT_STEPS) >= 5
     # EN: 300 points and one outline of the ring in each panel.
     # PT: 300 pontos e um contorno do anel em cada painel.
+    # ES: 300 puntos y un contorno del anillo en cada panel.
     assert reverse.count("<circle") == len(KEPT_STEPS) * 301
     assert "nan" not in reverse
     assert (tmp_path / "forward.svg").read_text(encoding="utf-8").count("<circle") == 6 * 301

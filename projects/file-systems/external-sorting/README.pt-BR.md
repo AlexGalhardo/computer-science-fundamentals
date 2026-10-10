@@ -1,6 +1,6 @@
 # external-sorting
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Como ordenar um arquivo maior que a memória, em Rust e em Go. A geração de runs ordena um pedaço do tamanho da memória por vez e o grava como uma run ordenada, e uma intercalação de k caminhos com heap de mínimo junta as runs, em uma passada ou em várias. Um contêiner com 32 MiB de memória ordena um arquivo de 320 MiB, e um benchmark mostra o que o tamanho da run e o fan-in da intercalação fazem com o tempo total.
 

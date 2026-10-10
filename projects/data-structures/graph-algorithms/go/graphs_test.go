@@ -48,6 +48,9 @@ func pathCost(graph Graph, path []int) Weight {
 // PT: A mesma suíte roda uma vez por representação. Esse é o sentido de programar contra a
 // interface Graph: se a lista e a matriz passam em testes idênticos, um algoritmo não consegue
 // diferenciá-las.
+// ES: La misma suite corre una vez por representación. Ese es el sentido de programar contra la
+// interfaz Graph: si la lista y la matriz pasan pruebas idénticas, un algoritmo no puede
+// distinguirlas.
 func TestSuiteOnBothRepresentations(t *testing.T) {
 	for name, representation := range map[string]Representation{"list": List, "matrix": Matrix} {
 		t.Run(name, func(t *testing.T) {
@@ -149,6 +152,9 @@ func TestSuiteOnBothRepresentations(t *testing.T) {
 // PT: Grafos aleatórios comparam os algoritmos entre si e as duas representações entre si.
 // Dijkstra e Bellman-Ford são ideias diferentes, então, quando concordam em centenas de grafos
 // aleatórios, um erro em comum é improvável. O mesmo vale para Prim e Kruskal.
+// ES: Los grafos aleatorios comparan los algoritmos entre sí y las dos representaciones entre
+// sí. Dijkstra y Bellman-Ford son ideas distintas, así que, cuando coinciden en cientos de
+// grafos aleatorios, un error común es improbable. Lo mismo vale para Prim y Kruskal.
 func TestRandomGraphs(t *testing.T) {
 	rng := &random{state: 2024}
 	for round := range 200 {
@@ -175,6 +181,8 @@ func TestRandomGraphs(t *testing.T) {
 				// cycle, which is an easy way of generating a random acyclic graph.
 				// PT: Arcos que sempre vão do rótulo menor para o maior não formam ciclo, um
 				// jeito fácil de gerar um grafo acíclico aleatório.
+				// ES: Los arcos que siempre van de la etiqueta menor a la mayor no forman ciclo,
+				// una forma fácil de generar un grafo acíclico aleatorio.
 				dagList.AddArc(min(a, b), max(a, b), weight)
 				dagMatrix.AddArc(min(a, b), max(a, b), weight)
 			}
@@ -228,6 +236,9 @@ func TestRandomGraphs(t *testing.T) {
 // PT: Os dez casos de referência. A lista de adjacência precisa resolver todos. A matriz resolve
 // os casos cujo grafo cabe no limite de vértices dela e precisa recusar os outros, pois uma
 // matriz para 100.000 vértices pediria 10^10 células.
+// ES: Los diez casos de referencia. La lista de adyacencia debe resolverlos todos. La matriz
+// resuelve los casos cuyo grafo cabe en su límite de vértices y debe rechazar los otros, pues
+// una matriz para 100,000 vértices pediría 10^10 celdas.
 func TestReferenceCases(t *testing.T) {
 	dir := os.Getenv("GRAPH_CASES_DIR")
 	if dir == "" {

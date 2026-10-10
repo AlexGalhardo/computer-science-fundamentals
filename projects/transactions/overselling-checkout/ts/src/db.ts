@@ -4,6 +4,9 @@
 // PT: Schema e funções auxiliares da loja. Um produto com um contador de estoque, e uma linha em
 //     `orders` para cada venda. O número que importa não é o estoque: é quantos pedidos existem.
 //     Vender 25 pedidos de um produto que tinha 10 unidades é vender além do estoque.
+// ES: Schema y funciones auxiliares de la tienda. Un producto con un contador de stock, y una fila en
+//     `orders` por cada venta. El número que importa no es el stock: es cuántos pedidos existen.
+//     Vender 25 pedidos de un producto que tenía 10 unidades es vender más allá del stock.
 
 import { Pool } from "pg";
 
@@ -17,6 +20,10 @@ export const PRODUCT_ID = 1;
 //     De propósito não há `CHECK (stock >= 0)`: o código ingênuo grava um valor absoluto calculado
 //     a partir de uma leitura velha, então o estoque nunca fica negativo e a restrição não
 //     pegaria o bug.
+// ES: `version` la usa solo la estrategia optimista: cuenta cuántas veces se escribió la fila.
+//     A propósito no hay `CHECK (stock >= 0)`: el código ingenuo escribe un valor absoluto calculado
+//     a partir de una lectura vieja, así que el stock nunca queda negativo y la restricción no
+//     atraparía el bug.
 const SCHEMA = [
 	`CREATE TABLE IF NOT EXISTS products (
 		id integer PRIMARY KEY,

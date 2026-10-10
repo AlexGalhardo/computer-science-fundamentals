@@ -2,6 +2,8 @@
 //     numbers as the Markdown file that is committed in results/results.md.
 // PT: `./demo` imprime o benchmark de fragmentação em texto. `./demo --markdown` imprime os mesmos
 //     números como o arquivo Markdown que é versionado em results/results.md.
+// ES: `./demo` imprime el benchmark de fragmentación como texto. `./demo --markdown` imprime los
+//     mismos números como el archivo Markdown que está versionado en results/results.md.
 
 #include <cstdio>
 #include <string>

@@ -3,6 +3,9 @@
 // PT: O estouro da manada dentro do processo: 200 leituras da chave quente são iniciadas antes
 //     de qualquer uma ser aguardada, então todas encontram o cache no mesmo estado, como os
 //     usuários do k6 fazem por HTTP.
+// ES: El stampede dentro del proceso: 200 lecturas de la clave caliente se inician antes de que
+//     se espere a alguna, así que todas encuentran el caché en el mismo estado, como lo hacen
+//     los usuarios de k6 por HTTP.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createLab, type Lab, resetLab } from "../src/app";
@@ -63,6 +66,8 @@ describe("the key expires under load", () => {
 	//     key expires (or comes up for refresh) at least twice while it is being read.
 	// PT: Os leitores chegam em ondas de 50 a cada 20 ms por mais de dois tempos de vida, então
 	//     a chave expira (ou entra em renovação) pelo menos duas vezes enquanto é lida.
+	// ES: Los lectores llegan en oleadas de 50 cada 20 ms durante más de dos tiempos de vida, así
+	//     que la clave expira (o entra en renovación) al menos dos veces mientras se la lee.
 	async function waves(mode: Mode): Promise<HotResult[]> {
 		const pending: Promise<HotResult>[] = [];
 		const end = Date.now() + SETTINGS.ttlMs * 2.5;
@@ -103,6 +108,7 @@ describe("the key expires under load", () => {
 		expect(results.every((result) => result.source === "cache")).toBe(true);
 		// EN: Let the last background refresh finish before the next test resets the lab.
 		// PT: Deixa a última renovação em segundo plano terminar antes de o próximo teste reiniciar o laboratório.
+		// ES: Deja que la última renovación en segundo plano termine antes de que la siguiente prueba reinicie el laboratorio.
 		await sleep(SETTINGS.slowQueryMs + 100);
 	});
 });

@@ -23,6 +23,15 @@ export const emailSchema = z.email().max(254);
 //     Um site real em HTTPS também adiciona `Secure`. O laboratório usa HTTP puro dentro do
 //     Docker, e o navegador se recusa a guardar um cookie `Secure` vindo de HTTP puro, por isso
 //     ele fica de fora aqui.
+// ES: Una cookie de sesión es solo una cabecera de respuesta. Los atributos después del valor son
+//     instrucciones para el navegador:
+//     - `HttpOnly`: los scripts de la página no pueden leerla.
+//     - `Path=/`: envíala a todas las rutas de este host.
+//     - `SameSite`: si debe enviarse en solicitudes que EMPIEZAN en otro sitio. Es el atributo
+//       del que trata este laboratorio. Cuando falta, cada navegador aplica su valor por defecto.
+//     Un sitio real en HTTPS también añade `Secure`. El laboratorio usa HTTP plano dentro de
+//     Docker, y el navegador se niega a guardar una cookie `Secure` que venga de HTTP plano, por eso
+//     queda fuera aquí.
 export function buildSessionCookie(sessionId: string, sameSite: SameSite | null): string {
 	const attributes = [`${SESSION_COOKIE}=${sessionId}`, "Path=/", "HttpOnly"];
 	if (sameSite !== null) {
@@ -35,6 +44,8 @@ export function buildSessionCookie(sessionId: string, sameSite: SameSite | null)
 //     `name=value; other=value`. The server never sees the attributes again, only the values.
 // PT: O navegador devolve todos os cookies do host em um único cabeçalho `Cookie`, no formato
 //     `nome=valor; outro=valor`. O servidor nunca mais vê os atributos, apenas os valores.
+// ES: El navegador devuelve todas las cookies del host en una única cabecera `Cookie`, con el formato
+//     `nombre=valor; otro=valor`. El servidor nunca vuelve a ver los atributos, solo los valores.
 export function readCookie(request: Request, name: string): string | null {
 	const header = request.headers.get("cookie");
 	if (header === null) {
@@ -60,6 +71,10 @@ export function readCookie(request: Request, name: string): string | null {
 //     revela quantos caracteres iniciais estavam certos. `timingSafeEqual` sempre olha todos os
 //     bytes. Ele exige entradas do mesmo tamanho, por isso os dois lados passam antes por um
 //     hash: um resumo SHA-256 sempre tem 32 bytes, qualquer que seja a entrada.
+// ES: Un `===` común entre cadenas se detiene en el primer carácter distinto, así que el tiempo gastado
+//     revela cuántos caracteres iniciales eran correctos. `timingSafeEqual` siempre mira todos los
+//     bytes. Exige entradas del mismo tamaño, por eso los dos lados pasan antes por un
+//     hash: un resumen SHA-256 siempre tiene 32 bytes, sea cual sea la entrada.
 export function constantTimeEqual(left: string, right: string): boolean {
 	const leftDigest = createHash("sha256").update(left).digest();
 	const rightDigest = createHash("sha256").update(right).digest();
@@ -70,6 +85,8 @@ export function constantTimeEqual(left: string, right: string): boolean {
 //     otherwise it could be read by the browser as markup (that flaw is XSS, another lab).
 // PT: Todo texto que veio de uma requisição precisa ser escapado antes de entrar no HTML, senão
 //     o navegador poderia lê-lo como marcação (essa falha é o XSS, assunto de outro laboratório).
+// ES: Todo texto que vino de una solicitud debe escaparse antes de entrar en el HTML, de lo contrario
+//     el navegador podría leerlo como marcado (esa falla es el XSS, tema de otro laboratorio).
 export function escapeHtml(text: string): string {
 	return text
 		.replaceAll("&", "&amp;")
@@ -91,6 +108,8 @@ export function textResponse(text: string, status: number, headers: Record<strin
 //     with a redirect also means that reloading the page does not submit the form again.
 // PT: 303 "See Other" manda o navegador buscar a próxima página com GET. Responder a um POST de
 //     formulário com um redirecionamento também evita que recarregar a página reenvie o formulário.
+// ES: 303 "See Other" manda al navegador buscar la siguiente página con GET. Responder a un POST de
+//     formulario con una redirección también evita que recargar la página reenvíe el formulario.
 export function redirect(location: string, headers: Record<string, string> = {}): Response {
 	return new Response(null, { status: 303, headers: { location, ...headers } });
 }

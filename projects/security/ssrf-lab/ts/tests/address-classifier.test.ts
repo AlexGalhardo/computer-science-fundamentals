@@ -4,6 +4,9 @@
 // PT: Uma tabela de endereços e a classe que cada um precisa receber. O classificador é a regra
 //     que decide onde o servidor pode conectar, então cada faixa fica presa a um exemplo.
 //     Nenhuma rede é usada aqui.
+// ES: Una tabla de direcciones y la clase que debe recibir cada una. El clasificador es la regla
+//     que decide adónde puede conectarse el servidor, así que cada rango queda atado a un ejemplo.
+//     Aquí no se usa ninguna red.
 
 import { describe, expect, test } from "bun:test";
 import { type AddressClass, classifyAddress, isAddressAllowed } from "../src/fixed/fixed-address-classifier";
@@ -23,6 +26,7 @@ const TABLE: ReadonlyArray<readonly [address: string, expected: AddressClass]> =
 	["255.255.255.255", "reserved"],
 	// EN: Just outside the private ranges: the boundaries are where off-by-one mistakes hide.
 	// PT: Logo fora das faixas privadas: é nas bordas que os erros de "um a mais" se escondem.
+	// ES: Justo fuera de los rangos privados: en los bordes se esconden los errores de "uno de más".
 	["172.15.255.255", "public"],
 	["172.32.0.1", "public"],
 	["192.169.0.1", "public"],
@@ -38,6 +42,7 @@ const TABLE: ReadonlyArray<readonly [address: string, expected: AddressClass]> =
 	["2001:db8::1", "public"],
 	// EN: IPv4 addresses wrapped in IPv6: judged by the IPv4 address inside, in both spellings.
 	// PT: Endereços IPv4 embrulhados em IPv6: julgados pelo IPv4 de dentro, nas duas grafias.
+	// ES: Direcciones IPv4 envueltas en IPv6: se juzgan por el IPv4 de dentro, en las dos grafías.
 	["::ffff:127.0.0.1", "loopback"],
 	["::ffff:7f00:1", "loopback"],
 	["::ffff:10.0.0.5", "private"],

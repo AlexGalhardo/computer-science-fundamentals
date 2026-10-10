@@ -1,6 +1,6 @@
 # Mapa de espalhamento do zero
 
-> English version: [docs/en/data-structures/hash-map.md](../../en/data-structures/hash-map.md)
+> English version: [docs/en/data-structures/hash-map.md](../../en/data-structures/hash-map.md) · Versión en español: [docs/es/data-structures/hash-map.md](../../es/data-structures/hash-map.md)
 
 Mini-projeto: [projects/data-structures/hash-map](../../../projects/data-structures/hash-map). Linguagens: C++, Rust, TypeScript. Tópico do quiz: `data-structures` / `hash-tables`.
 
@@ -12,7 +12,7 @@ Um mapa de espalhamento transforma a chave em um índice de vetor com uma funç�
 
 Cada posição (balde) guarda uma lista encadeada com todas as entradas que caíram ali.
 
-```
+```text
 balde 0: (8, h) -> (4, d)
 balde 1: (5, e)
 balde 2: vazio
@@ -29,7 +29,7 @@ Uma colisão só deixa uma lista mais longa. O custo de uma operação é o tama
 
 Toda entrada mora no próprio vetor. Quando a posição dada pelo hash está ocupada, tenta-se a seguinte, depois a seguinte, dando a volta no fim.
 
-```
+```text
 h(k) = k mod 7        inserir 10, 17, 24, 3
 
 índice:  0    1    2    3    4    5    6

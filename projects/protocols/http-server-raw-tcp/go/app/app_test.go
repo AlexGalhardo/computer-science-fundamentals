@@ -66,6 +66,9 @@ func exchange(t *testing.T, addr, raw string) string {
 // PT: Os testes abaixo usam o CLIENTE net/http do próprio Go contra o servidor escrito à mão. É
 //     uma implementação independente do HTTP/1.1: se ele entende as respostas, elas são válidas,
 //     e não apenas coerentes com o nosso próprio parser.
+// ES: Las pruebas de abajo usan el CLIENTE net/http del propio Go contra el servidor escrito a
+//     mano. Es una implementación independiente de HTTP/1.1: si entiende las respuestas, son
+//     válidas, y no solo coherentes con nuestro propio parser.
 
 func get(t *testing.T, client *http.Client, url string) (*http.Response, string) {
 	t.Helper()

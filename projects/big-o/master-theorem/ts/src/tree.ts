@@ -4,6 +4,10 @@
 // PT: A árvore de recursão de T(n) = a * T(n / b) + f(n). Cada chamada é um nó cujo valor é o
 //     trabalho que ela faz fora das chamadas recursivas. Somar os nós nível a nível mostra onde
 //     o custo mora, e é exatamente isso que os três casos do teorema mestre descrevem.
+// ES: El árbol de recursión de T(n) = a * T(n / b) + f(n). Cada llamada es un nodo cuyo valor es
+//     el trabajo que hace fuera de sus llamadas recursivas. Sumar los nodos nivel por nivel
+//     muestra dónde vive el costo, y eso es exactamente lo que describen los tres casos del
+//     teorema maestro.
 
 import type { Recurrence } from "./classify";
 
@@ -23,6 +27,8 @@ export interface Level {
 //     whatever the formula says: the recursion stops there and something still has to answer.
 // PT: f(n) = n^d * (log2 n)^k. Um subproblema de tamanho 1 ou menos é um caso base e custa 1,
 //     diga o que disser a fórmula: a recursão para ali e algo ainda precisa responder.
+// ES: f(n) = n^d * (log2 n)^k. Un subproblema de tamaño 1 o menos es un caso base y cuesta 1,
+//     diga lo que diga la fórmula: la recursión se detiene ahí y algo todavía tiene que responder.
 export function drivingCost(recurrence: Recurrence, size: number): number {
 	if (size <= 1) {
 		return 1;
@@ -34,6 +40,8 @@ export function drivingCost(recurrence: Recurrence, size: number): number {
 //     the size reaches 1, after about log_b n levels.
 // PT: O nível i tem a^i nós de tamanho n / b^i, então custa a^i * f(n / b^i). A árvore termina
 //     quando o tamanho chega a 1, depois de cerca de log_b n níveis.
+// ES: El nivel i tiene a^i nodos de tamaño n / b^i, así que cuesta a^i * f(n / b^i). El árbol
+//     termina cuando el tamaño llega a 1, después de unos log_b n niveles.
 export function recursionTree(recurrence: Recurrence, n: number): Level[] {
 	const levels: Level[] = [];
 	let size = n;
@@ -57,6 +65,9 @@ export type Shape = "leaf-heavy" | "balanced" | "root-heavy";
 // PT: O formato da árvore é o caso do teorema, visto em números: custos que crescem em direção
 //     às folhas (caso 1), ficam iguais (caso 2) ou diminuem a partir da raiz (caso 3).
 //     O nível base fica de fora porque casos base custam 1 em vez de f(1).
+// ES: La forma del árbol es el caso del teorema, visto en números: costos que crecen hacia las
+//     hojas (caso 1), se mantienen iguales (caso 2) o disminuyen desde la raíz (caso 3).
+//     El nivel base queda fuera porque los casos base cuestan 1 en lugar de f(1).
 export function treeShape(levels: Level[]): Shape {
 	const inner = levels.slice(0, -1);
 	const first = inner[0]?.levelCost ?? 0;

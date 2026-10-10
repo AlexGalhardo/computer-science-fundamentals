@@ -1,6 +1,6 @@
 # paging-tlb
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um simulador de paginação. Ele traduz endereços virtuais por meio de uma TLB e de uma tabela de páginas, contando acertos e faltas de TLB e faltas de página, e compara quatro algoritmos de substituição de páginas (FIFO, relógio, LRU e ótimo) em sequências de referências. Ele ensina quanto custa uma tradução, por que a TLB importa, e que a escolha da página a retirar muda o número de faltas de página, até chegar à anomalia de Belady, em que o FIFO tem mais faltas com mais memória.
 
@@ -29,7 +29,7 @@ docker compose run --rm demo
 
 Ela imprime as tabelas de faltas de página e o experimento da TLB, e grava `results/results.md` e `results/results.json`.
 
-```
+```text
 Belady's anomaly
 reference string: 1 2 3 4 1 2 5 1 2 3 4 5
 frames      1    2    3    4    5

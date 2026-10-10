@@ -8,6 +8,11 @@
 //     O pivô é a mediana entre o primeiro, o do meio e o último valor: em entrada ordenada ou
 //     invertida essa é a mediana real, então o benchmark não cai no caso O(n²) que um pivô no
 //     primeiro elemento teria. O mini-projeto `hybrid-quicksort` compara escolhas de pivô.
+// ES: Quicksort. Particiona el tramo alrededor de un pivote (menores a la izquierda, mayores a la derecha)
+//     y ordena cada lado. Todo el trabajo está en la división, y no hay etapa de combinación.
+//     El pivote es la mediana entre el primer valor, el del medio y el último: en entrada ordenada o
+//     invertida esa es la mediana real, así que el benchmark no cae en el caso O(n²) que tendría un pivote
+//     en el primer elemento. El mini-proyecto `hybrid-quicksort` compara elecciones de pivote.
 export function quickSort(input: readonly number[]): number[] {
 	const a = [...input];
 	sortRange(a, 0, a.length - 1);
@@ -26,6 +31,10 @@ function medianOfThree(x: number, y: number, z: number): number {
 //     do lado errado. Ela faz cerca de um terço das trocas do esquema de Lomuto e divide ao meio
 //     um vetor de chaves iguais. O laço faz a recursão no lado menor e itera no lado maior, o
 //     que limita a profundidade da pilha a O(log n) mesmo com pivôs ruins.
+// ES: Partición de Hoare: dos índices avanzan uno hacia el otro e intercambian los pares que están
+//     del lado equivocado. Hace cerca de un tercio de los intercambios del esquema de Lomuto y divide por la mitad
+//     un arreglo de claves iguales. El bucle hace la recursión sobre el lado menor e itera sobre el mayor, lo
+//     que limita la profundidad de la pila a O(log n) incluso con pivotes malos.
 function sortRange(a: number[], from: number, to: number): void {
 	let lo = from;
 	let hi = to;

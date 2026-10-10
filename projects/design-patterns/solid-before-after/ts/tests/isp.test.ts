@@ -14,6 +14,9 @@ const csv = "s1,Cable,1500\ns2,Adapter,3250\n";
 // PT: As duas versões dão tipos diferentes aos seus catálogos, então os testes compartilhados
 //     descrevem o módulo por meio de funções: montar, ler, gravar. As asserções são as mesmas
 //     para as duas.
+// ES: Las dos versiones dan tipos distintos a sus catálogos, así que las pruebas compartidas
+//     describen el módulo mediante funciones: montar, leer, escribir. Las aserciones son las
+//     mismas para las dos.
 interface Scenario {
 	memoryReport(): string;
 	csvReport(): string;
@@ -68,6 +71,7 @@ behaviour("after", {
 describe("isp: what the fat interface costs", () => {
 	// EN: With one wide interface the mistake compiles and is found only when the code runs.
 	// PT: Com uma interface larga o erro compila e só é descoberto quando o código roda.
+	// ES: Con una interfaz ancha el error compila y solo se descubre cuando el código se ejecuta.
 	test("before: a read-only catalog is accepted by a writer and fails at run time", () => {
 		const catalog = before.createCsvCatalog(csv);
 		expect(() => before.increasePrices(catalog, 10)).toThrow("the CSV catalog is read-only");
@@ -77,6 +81,8 @@ describe("isp: what the fat interface costs", () => {
 	//     and uses one; two of the four exist here only to satisfy the type.
 	// PT: Um dublê de teste mostra quem depende de quê. O relatório de `before` exige quatro
 	//     métodos e usa um; dois dos quatro existem aqui só para satisfazer o tipo.
+	// ES: Un doble de prueba muestra quién depende de qué. El informe de `before` exige cuatro
+	//     métodos y usa uno; dos de los cuatro existen aquí solo para satisfacer el tipo.
 	test("before: the double for a report must implement writing it never uses", () => {
 		const double: before.ProductCatalog = {
 			find: () => null,

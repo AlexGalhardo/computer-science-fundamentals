@@ -18,6 +18,14 @@ import { emailShownToTheUser, forgeryScenario, legitimateFormScenario } from "./
 //     - Firefox: envia em um POST cross-site de nível superior.
 //     - WebKit: NÃO envia em um POST cross-site.
 //     - Os três enviam em uma navegação GET cross-site de nível superior (um link seguido).
+// ES: Una cookie SIN el atributo SameSite la trata de forma distinta cada navegador. Estos
+//     son los valores por defecto de los navegadores que vienen en la imagen fijada de Playwright, medidos en este
+//     laboratorio (son el motivo de la regla "nunca dependas del valor por defecto del navegador"):
+//     - Chromium: la trata como `Lax`, pero con una excepción llamada "Lax + POST": mientras la
+//       cookie tiene menos de 2 minutos aún se envía en un POST cross-site de nivel superior.
+//     - Firefox: la envía en un POST cross-site de nivel superior.
+//     - WebKit: NO la envía en un POST cross-site.
+//     - Los tres la envían en una navegación GET cross-site de nivel superior (un enlace seguido).
 function defaultCookieTravelsOnCrossSitePost(browserName: string): boolean {
 	return browserName !== "webkit";
 }
@@ -30,6 +38,7 @@ test.describe("app-vulnerable: the forged request changes the state", () => {
 		expect(result.emailAfter).toBe(FORGED_EMAIL);
 		// EN: The user never submitted the app's form, and yet this is what the profile shows.
 		// PT: O usuário nunca enviou o formulário do app, e mesmo assim é isto que o perfil mostra.
+		// ES: El usuario nunca envió el formulario de la app, y aun así esto es lo que muestra el perfil.
 		expect(await emailShownToTheUser(page, "app-vulnerable")).toBe(FORGED_EMAIL);
 	});
 
@@ -47,6 +56,8 @@ test.describe("app-vulnerable: the forged request changes the state", () => {
 			//     only on this path: the GET forgery above works in this same browser.
 			// PT: O app não fez nada certo aqui. Ele foi salvo pelo padrão deste navegador, e
 			//     só neste caminho: a forja por GET acima funciona neste mesmo navegador.
+			// ES: La app no hizo nada bien aquí. La salvó el valor por defecto de este navegador, y
+			//     solo en este camino: la falsificación por GET de arriba funciona en este mismo navegador.
 			expect(result.attempt).toMatchObject({ hadSessionCookie: false, outcome: "rejected-no-session" });
 			expect(result.emailAfter).toBe(FAKE_USER.initialEmail);
 		}
@@ -60,6 +71,7 @@ test.describe("app-token-only: the token alone refuses the forged POST", () => {
 		if (defaultCookieTravelsOnCrossSitePost(browserName)) {
 			// EN: The cookie arrived, so the server knew who the user was, and still said no.
 			// PT: O cookie chegou, então o servidor sabia quem era o usuário, e mesmo assim disse não.
+			// ES: La cookie llegó, así que el servidor sabía quién era el usuario, y aun así dijo que no.
 			expect(result.attempt).toMatchObject({ hadSessionCookie: true, outcome: "rejected-bad-token" });
 		} else {
 			expect(result.attempt).toMatchObject({ hadSessionCookie: false, outcome: "rejected-no-session" });
@@ -84,6 +96,7 @@ test.describe("app-samesite-only: SameSite=Strict alone keeps the cookie at home
 			expect(result.emailAfter).toBe(FAKE_USER.initialEmail);
 			// EN: The session still exists: the cookie was only withheld from the cross-site request.
 			// PT: A sessão continua existindo: o cookie só foi retido na requisição cross-site.
+			// ES: La sesión sigue existiendo: la cookie solo se retuvo en la solicitud cross-site.
 			expect(await emailShownToTheUser(page, "app-samesite-only")).toBe(FAKE_USER.initialEmail);
 		});
 	}

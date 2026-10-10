@@ -17,6 +17,12 @@ from mini_xunit import TestCase, TestResult, TestSuite
 #     as promessas mais básicas só com `if` e `sys.exit`: um teste que falha é contado como falha,
 #     um que passa não é, e todo teste é contado. Só depois disso a execução dos autotestes
 #     significa alguma coisa.
+# ES: EL PROBLEMA DEL BOOTSTRAP. El framework se prueba con él mismo, y un framework roto
+#     podría reportar sus propias pruebas como aprobadas: si los fallos se tragaran en
+#     silencio, toda autoprueba quedaría "verde". Así que, antes de confiar en él, este archivo
+#     comprueba las promesas más básicas solo con `if` y `sys.exit`: una prueba que falla se cuenta
+#     como fallo, una que pasa no, y toda prueba se cuenta. Solo después de eso la ejecución de
+#     las autopruebas significa algo.
 
 
 class Probe(TestCase):

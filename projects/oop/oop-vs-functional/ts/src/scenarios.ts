@@ -6,6 +6,10 @@
 //     das duas versões em TypeScript, e não entra na comparação. O arquivo é texto digitado por
 //     uma pessoa, então cada linha é conferida aqui, na borda, e uma linha fora do formato
 //     interrompe a execução com o número da linha.
+// ES: Lector del `scenarios.txt` compartido. Es código de apoyo, usado por las pruebas y por la demo
+//     de las dos versiones en TypeScript, y no entra en la comparación. El archivo es texto escrito
+//     por una persona, así que cada línea se verifica aquí, en el borde, y una línea que no siga
+//     el formato detiene la ejecución con su número de línea.
 
 import { readFileSync } from "node:fs";
 

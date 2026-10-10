@@ -14,6 +14,11 @@ import com.google.errorprone.annotations.concurrent.GuardedBy;
  * trava de {@code this} ao entrar e a solta ao sair, mesmo quando uma exceção é lançada. Só uma
  * thread por vez executa os três passos do incremento. A leitura também precisa da trava: sem ela,
  * uma thread pode enxergar um valor antigo.
+ *
+ * <p>ES: Todo objeto Java tiene un lock incorporado (el monitor). Un método {@code synchronized}
+ * toma el lock de {@code this} al entrar y lo suelta al salir, incluso cuando se lanza una
+ * excepción. Solo un thread a la vez ejecuta los tres pasos del incremento. La lectura también
+ * necesita el lock: sin él, un thread puede ver un valor antiguo.
  */
 public final class MutexCounter implements Counter {
   @GuardedBy("this")

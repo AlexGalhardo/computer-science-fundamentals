@@ -9,6 +9,8 @@ import { isValidTour, type Matrix, randomInstance, tourLength } from "../src/ins
 //     heuristic is never longer than the optimum times its factor.
 // PT: Os fatores documentados (veja o README). Em instâncias de até 12 cidades o passeio de cada
 //     heurística nunca é mais longo que o ótimo vezes o seu fator.
+// ES: Los factores documentados (mira el README). En instancias de hasta 12 ciudades el recorrido de cada
+//     heurística nunca es más largo que el óptimo por su factor.
 export const NEAREST_NEIGHBOUR_FACTOR = 1.6;
 export const TWO_OPT_FACTOR = 1.2;
 
@@ -16,6 +18,8 @@ export const TWO_OPT_FACTOR = 1.2;
 //     perimeter: 5 + 5 + 10 + 10 + 10 = 40.
 // PT: Um quadrado de lado 10 com uma cidade no meio da aresta de baixo. O melhor passeio anda
 //     pelo perímetro: 5 + 5 + 10 + 10 + 10 = 40.
+// ES: Un cuadrado de lado 10 con una ciudad en medio de la arista de abajo. El mejor recorrido anda
+//     por el perímetro: 5 + 5 + 10 + 10 + 10 = 40.
 const SQUARE: Matrix = (() => {
 	const cities = [
 		[0, 0],
@@ -51,6 +55,9 @@ describe("exact solvers", () => {
 	// PT: O critério de aceite: força bruta e Held-Karp acham um passeio do mesmo comprimento,
 	//     ótimo, em toda instância de até 10 cidades, e cada passeio tem mesmo esse comprimento.
 	//     A ordem de visita em si pode diferir quando dois passeios empatam, ou pelo sentido.
+	// ES: El criterio de aceptación: la fuerza bruta y Held-Karp hallan un recorrido de la misma longitud,
+	//     óptima, en toda instancia de hasta 10 ciudades, y cada recorrido tiene realmente esa longitud.
+	//     El orden de visita en sí puede diferir cuando dos recorridos empatan, o por el sentido.
 	test("brute force and Held-Karp agree up to 10 cities", () => {
 		for (let n = 2; n <= 10; n++) {
 			for (let seed = 1; seed <= (n <= 8 ? 20 : 4); seed++) {

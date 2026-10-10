@@ -7,6 +7,9 @@ defmodule OrderStateMachineTest do
   # PT: As respostas esperadas vêm direto de `machine.json`, lido de novo aqui, e não do módulo
   #     em teste. O laço abaixo cria então um teste por par (estado, evento): os pares da tabela
   #     devem dar certo, todos os outros devem ser rejeitados.
+  # ES: Las respuestas esperadas vienen directo de `machine.json`, leído de nuevo aquí, y no del
+  #     módulo bajo prueba. El bucle de abajo crea entonces una prueba por par (estado, evento):
+  #     los pares de la tabla deben tener éxito, todos los demás deben rechazarse.
   @table Path.expand("../../machine.json", __DIR__) |> File.read!() |> JSON.decode!()
   @expected Map.new(@table["transitions"], fn row ->
               {{String.to_atom(row["from"]), String.to_atom(row["event"])},

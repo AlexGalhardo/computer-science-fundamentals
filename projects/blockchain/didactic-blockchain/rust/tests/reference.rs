@@ -31,6 +31,8 @@ fn sha256_matches_the_published_test_vectors() {
 //     languages build the same trees and the same header text.
 // PT: Os valores abaixo foram impressos pela referência em TypeScript. Resultados iguais provam
 //     que as duas linguagens montam as mesmas árvores e o mesmo texto de cabeçalho.
+// ES: Los valores de abajo los imprimió la referencia en TypeScript. Resultados iguales prueban
+//     que los dos lenguajes construyen los mismos árboles y el mismo texto de encabezado.
 #[test]
 fn merkle_root_matches_the_typescript_reference() {
     let leaves: Vec<String> = ["a", "b", "c", "d", "e"]

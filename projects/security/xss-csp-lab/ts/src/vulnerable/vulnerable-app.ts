@@ -7,6 +7,10 @@
 //     que o laboratório possa mostrá-las. Nunca o copie, nunca o importe de outro projeto e
 //     nunca o sirva fora da rede Docker interna deste laboratório. A versão segura é
 //     `../fixed/fixed-app.ts`.
+// ES: VULNERABLE A PROPÓSITO. Este archivo contiene fallas de cross-site scripting (XSS) para
+//     que el laboratorio pueda mostrarlas. Nunca lo copies, nunca lo importes desde otro proyecto y
+//     nunca lo sirvas fuera de la red Docker interna de este laboratorio. La versión segura es
+//     `../fixed/fixed-app.ts`.
 // ============================================================================================
 
 import { Elysia } from "elysia";
@@ -24,6 +28,7 @@ function html(body: string, headers: Record<string, string> = {}): Response {
 
 // EN: No validation at all: whatever arrives in the form is taken as it is.
 // PT: Nenhuma validação: o que chegar no formulário é aceito como está.
+// ES: Ninguna validación: lo que llegue en el formulario se acepta tal como está.
 function field(body: unknown, name: string): string {
 	if (typeof body !== "object" || body === null) return "";
 	const value = (body as Record<string, unknown>)[name];
@@ -38,6 +43,10 @@ function field(body: unknown, name: string): string {
 //     strings. O HTML não tem como saber que esses caracteres eram "dados": se o texto contém
 //     `<script>`, o navegador de TODO visitante seguinte enxerga um elemento script e o executa.
 //     Chama-se "armazenado" porque o texto fica no servidor e é servido de novo e de novo.
+// ES: LA FALLA (XSS almacenado). El autor y el mensaje se pegan en el HTML por concatenación de
+//     cadenas. El HTML no tiene cómo saber que esos caracteres eran "datos": si el texto contiene
+//     `<script>`, el navegador de CADA visitante siguiente ve un elemento script y lo ejecuta.
+//     Se llama "almacenado" porque el texto queda en el servidor y se sirve una y otra vez.
 function renderGuestbook(entries: readonly GuestbookEntry[]): string {
 	const items = entries
 		.map(
@@ -65,6 +74,9 @@ ${items}
 // PT: A FALHA (XSS refletido). O termo de busca vem da URL e volta direto para a página. Nada é
 //     armazenado: o script viaja dentro de um link, e quem abrir esse link o executa. `action`
 //     é só o endereço do formulário, uma constante escolhida por este arquivo.
+// ES: LA FALLA (XSS reflejado). El término de búsqueda viene de la URL y vuelve directo a la página. Nada se
+//     almacena: el script viaja dentro de un enlace, y quien abra ese enlace lo ejecuta. `action`
+//     es solo la dirección del formulario, una constante elegida por este archivo.
 function renderSearch(term: string, action: string, banner: string): string {
 	return renderPage({
 		title: "Search",
@@ -84,6 +96,8 @@ function renderSearch(term: string, action: string, banner: string): string {
 //     loads (`vulnerable-dom-client.js`), which runs in the browser.
 // PT: XSS baseado em DOM: o servidor envia uma página inofensiva. A falha está no script que a
 //     página carrega (`vulnerable-dom-client.js`), que roda no navegador.
+// ES: XSS basado en DOM: el servidor envía una página inofensiva. La falla está en el script que la
+//     página carga (`vulnerable-dom-client.js`), que corre en el navegador.
 function renderWelcome(): string {
 	return renderPage({
 		title: "Welcome",
@@ -121,6 +135,14 @@ export function createVulnerableApp(): LabApp {
 			//     ainda pode inserir formulários, links ou textos falsos), navegadores sem suporte a
 			//     CSP ficam sem proteção, e uma única diretiva frouxa como 'unsafe-inline' traz a
 			//     falha de volta. Codifique primeiro.
+			// ES: "Página vulnerable solo con CSP". El error de codificación sigue aquí: la página es la
+			//     misma de /search. La única diferencia es la cabecera Content-Security-Policy. El
+			//     navegador recibe el <script> inyectado y se niega a ejecutarlo porque la política solo
+			//     permite scripts de archivos de este servidor. Esto muestra la CSP funcionando como
+			//     segunda capa. NO es una corrección: el marcado sigue inyectándose (un atacante
+			//     aún puede insertar formularios, enlaces o textos falsos), los navegadores sin soporte de
+			//     CSP quedan sin protección, y una sola directiva laxa como 'unsafe-inline' trae la
+			//     falla de vuelta. Codifica primero.
 			.get("/csp-only/search", ({ query }) =>
 				html(
 					renderSearch(query.q ?? "", "/csp-only/search", `${BANNER} - encoding bug kept, CSP header added`),

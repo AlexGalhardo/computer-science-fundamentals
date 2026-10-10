@@ -7,6 +7,10 @@
 #     base de docs/pt/environment.md. `./lint.sh` só confere, `./lint.sh --fix` reescreve os
 #     arquivos. Precisa só do Docker e das imagens base construídas uma vez (veja o README).
 #     O TypeScript é conferido pelo Biome a partir da raiz: `bunx biome check <esta pasta>`.
+# ES: Ejecuta el formateador y el linter de cada lenguaje de este mini-proyecto, cada uno dentro de
+#     la imagen base de docs/es/environment.md. `./lint.sh` solo comprueba, `./lint.sh --fix`
+#     reescribe los archivos. Solo necesita Docker y las imágenes base construidas una vez (mira el README).
+#     TypeScript lo comprueba Biome desde la raíz: `bunx biome check <esta carpeta>`.
 set -eu
 
 cd "$(dirname "$0")"
@@ -17,12 +21,15 @@ fix="${1:-}"
 
 # EN: Git Bash on Windows rewrites arguments that look like Unix paths. This turns it off.
 # PT: O Git Bash no Windows reescreve argumentos que parecem caminhos Unix. Isto desliga isso.
+# ES: Git Bash en Windows reescribe los argumentos que parecen rutas Unix. Esto lo desactiva.
 export MSYS_NO_PATHCONV=1
 
 # EN: run <network> <image> <folder> <command>. Every step runs with no network, except
 #     Spotless, a Gradle plugin that is downloaded on first use.
 # PT: run <rede> <imagem> <pasta> <comando>. Toda etapa roda sem rede, exceto o Spotless, um
 #     plugin do Gradle que é baixado no primeiro uso.
+# ES: run <red> <imagen> <carpeta> <comando>. Cada paso corre sin red, excepto Spotless, un
+#     plugin de Gradle que se descarga en el primer uso.
 run() {
 	network="$1"
 	image="$2"

@@ -6,6 +6,10 @@
 //     { "jsonrpc": "2.0", "method": "books.get", "params": { "id": 7 }, "id": 1 }.
 //     O HTTP é só o cano. O resultado está no corpo (`result` ou `error`, nunca os dois), então o
 //     status HTTP continua 200 até para "livro não encontrado".
+// ES: El estilo JSON-RPC 2.0. Un endpoint, y el cuerpo nombra un procedimiento y sus parámetros:
+//     { "jsonrpc": "2.0", "method": "books.get", "params": { "id": 7 }, "id": 1 }.
+//     HTTP es solo la tubería. El resultado está en el cuerpo (`result` o `error`, nunca ambos), así que el
+//     estado HTTP sigue siendo 200 incluso para "libro no encontrado".
 
 import { type AnyElysia, Elysia } from "elysia";
 import type { Pool } from "pg";
@@ -27,6 +31,9 @@ import {
 //     predefined. -32000 to -32099 is the range left for the server, used here for "not found".
 // PT: Os códigos de -32768 a -32000 são reservados pela especificação. Os cinco primeiros são
 //     predefinidos. De -32000 a -32099 é a faixa deixada para o servidor, usada aqui para "não
+//     encontrado".
+// ES: Los códigos de -32768 a -32000 están reservados por la especificación. Los cinco primeros están
+//     predefinidos. De -32000 a -32099 es el rango que queda para el servidor, usado aquí para "no
 //     encontrado".
 export const RPC_ERROR = {
 	parseError: -32700,
@@ -63,6 +70,9 @@ const createReviewParams = z.object({ bookId: z.number().int().min(1), review: z
 // PT: A API inteira é esta tabela: um nome de procedimento e uma função. Acrescentar uma
 //     capacidade é acrescentar uma linha, sem URL nem método HTTP para projetar. O custo é que
 //     nada genérico (um cache, um proxy, um navegador) sabe que `books.get` é uma leitura segura.
+// ES: Toda la API es esta tabla: un nombre de procedimiento y una función. Agregar una
+//     capacidad es agregar una fila, sin URL ni método HTTP que diseñar. El costo es que
+//     nada genérico (una caché, un proxy, un navegador) sabe que `books.get` es una lectura segura.
 const METHODS: Record<string, (db: Db, params: unknown) => Promise<unknown>> = {
 	"books.list": (db, params) => listBooks(db, parseInput(pageSchema, params ?? {})),
 	"books.get": (db, params) => getBook(db, parseInput(idParams, params).id),
@@ -85,6 +95,8 @@ function failure(id: RpcId, code: number, message: string): RpcResponse {
 //     tells the server that the client does not want any answer, not even an error.
 // PT: Trata um objeto de requisição. Devolve `null` para uma notificação: uma requisição sem `id`
 //     diz ao servidor que o cliente não quer resposta nenhuma, nem mesmo um erro.
+// ES: Maneja un objeto de petición. Devuelve `null` para una notificación: una petición sin `id`
+//     le dice al servidor que el cliente no quiere ninguna respuesta, ni siquiera un error.
 async function handleOne(db: Db, raw: unknown): Promise<RpcResponse | null> {
 	const parsed = requestSchema.safeParse(raw);
 	if (!parsed.success) {
@@ -123,6 +135,7 @@ export function jsonRpcRoutes(pool: Pool): AnyElysia {
 			} catch {
 				// EN: The body is not JSON at all, so there is no `id` to echo: the answer uses null.
 				// PT: O corpo nem é JSON, então não há `id` para ecoar: a resposta usa null.
+				// ES: El cuerpo ni siquiera es JSON, así que no hay `id` que devolver: la respuesta usa null.
 				return failure(null, RPC_ERROR.parseError, "Parse error");
 			}
 			try {
@@ -140,6 +153,9 @@ export function jsonRpcRoutes(pool: Pool): AnyElysia {
 				// PT: Um lote é um array de requisições em uma única ida e volta HTTP. As
 				//     respostas também voltam em um array, em qualquer ordem, então o cliente as
 				//     casa pelo `id`. Notificações dentro do lote não geram item.
+				// ES: Un lote es un array de peticiones en un único viaje de ida y vuelta HTTP. Las
+				//     respuestas también vuelven en un array, en cualquier orden, así que el cliente las
+				//     empareja por `id`. Las notificaciones dentro del lote no generan elemento.
 				if (payload.length === 0) {
 					return failure(null, RPC_ERROR.invalidRequest, "Invalid Request");
 				}
@@ -159,6 +175,8 @@ export function jsonRpcRoutes(pool: Pool): AnyElysia {
 		//     protocol, not a generic HTTP 400 of the framework.
 		// PT: O corpo é lido como texto cru para que um JSON quebrado vire o erro -32700 do
 		//     protocolo, e não um HTTP 400 genérico do framework.
+		// ES: El cuerpo se lee como texto crudo para que un JSON roto se convierta en el error -32700 del
+		//     protocolo, y no en un HTTP 400 genérico del framework.
 		{ parse: "none" },
 	);
 }

@@ -4,6 +4,9 @@
 // PT: Quatro jeitos de comprar uma unidade. O primeiro é o bug, os outros três são correções. Os
 //     quatro fazem os mesmos passos de negócio (ler o estoque, conferir, pensar, gravar, inserir
 //     o pedido) e diferem só em como protegem o intervalo entre a leitura e a escrita.
+// ES: Cuatro formas de comprar una unidad. La primera es el bug, las otras tres son correcciones. Las
+//     cuatro hacen los mismos pasos de negocio (leer el stock, verificar, pensar, escribir, insertar
+//     el pedido) y difieren solo en cómo protegen el intervalo entre la lectura y la escritura.
 
 import type { Pool, PoolClient } from "pg";
 
@@ -49,6 +52,9 @@ async function insertOrder(client: PoolClient, options: CheckoutOptions, strateg
 // PT: Toda estratégia roda dentro de uma transação, inclusive a ingênua. Este é o ponto do
 //     laboratório: BEGIN e COMMIT dão atomicidade, não isolamento dos outros compradores. Se algo
 //     lançar erro, a transação é desfeita e a conexão volta para o pool.
+// ES: Toda estrategia corre dentro de una transacción, incluida la ingenua. Este es el punto del
+//     laboratorio: BEGIN y COMMIT dan atomicidad, no aislamiento de los otros compradores. Si algo
+//     lanza un error, la transacción se deshace y la conexión vuelve al pool.
 async function inTransaction<T>(pool: Pool, begin: string, work: (client: PoolClient) => Promise<T>): Promise<T> {
 	const client = await pool.connect();
 	try {
@@ -70,6 +76,9 @@ async function inTransaction<T>(pool: Pool, begin: string, work: (client: PoolCl
 // PT: INGÊNUA (o bug). Ler, conferir, gravar. Em READ COMMITTED, vinte compradores podem ler
 //     "stock = 10" no mesmo instante, cada um decide que há estoque, e cada um grava 9 e insere
 //     um pedido. O estoque parece certo e a tabela de pedidos tem linhas demais.
+// ES: INGENUA (el bug). Leer, verificar, escribir. En READ COMMITTED, veinte compradores pueden leer
+//     "stock = 10" en el mismo instante, cada uno decide que hay stock, y cada uno escribe 9 e inserta
+//     un pedido. El stock parece correcto y la tabla de pedidos tiene demasiadas filas.
 async function naive(pool: Pool, options: CheckoutOptions): Promise<Attempt> {
 	return inTransaction(pool, "BEGIN", async (client) => {
 		const read = await client.query<{ stock: number }>("SELECT stock FROM products WHERE id = $1", [
@@ -94,6 +103,10 @@ async function naive(pool: Pool, options: CheckoutOptions): Promise<Attempt> {
 //     e a escrita só vale "se a versão ainda for a que eu li". Quando outro comprador chegou
 //     antes, o UPDATE casa com zero linhas: nada foi gravado, e o comprador recomeça de uma
 //     leitura nova. Os conflitos são detectados no fim em vez de evitados no começo.
+// ES: OPTIMISTA. Nadie queda bloqueado mientras piensa. La lectura también trae un número de versión,
+//     y la escritura solo vale "si la versión sigue siendo la que leí". Cuando otro comprador llegó
+//     antes, el UPDATE coincide con cero filas: no se escribió nada, y el comprador recomienza desde
+//     una lectura nueva. Los conflictos se detectan al final en lugar de evitarse al comienzo.
 async function optimistic(pool: Pool, options: CheckoutOptions): Promise<Attempt> {
 	return inTransaction(pool, "BEGIN", async (client) => {
 		const read = await client.query<{ stock: number; version: number }>(
@@ -124,6 +137,10 @@ async function optimistic(pool: Pool, options: CheckoutOptions): Promise<Attempt
 //     espera na fila no seu próprio SELECT até esta transação terminar, e então lê o estoque
 //     novo. O intervalo entre leitura e escrita fica fechado, ao preço de cada comprador esperar
 //     pelos outros.
+// ES: PESIMISTA. `SELECT ... FOR UPDATE` bloquea la fila ya en la lectura. El siguiente comprador
+//     espera en la fila en su propio SELECT hasta que esta transacción termine, y entonces lee el stock
+//     nuevo. El intervalo entre lectura y escritura queda cerrado, al precio de que cada comprador espere
+//     a los demás.
 async function pessimistic(pool: Pool, options: CheckoutOptions): Promise<Attempt> {
 	return inTransaction(pool, "BEGIN", async (client) => {
 		const read = await client.query<{ stock: number }>("SELECT stock FROM products WHERE id = $1 FOR UPDATE", [
@@ -146,6 +163,9 @@ async function pessimistic(pool: Pool, options: CheckoutOptions): Promise<Attemp
 // PT: SERIALIZABLE. O código é o código ingênuo. Só o BEGIN muda. O PostgreSQL deixa as transações
 //     rodarem e aborta com SQLSTATE 40001 aquela cujo resultado não poderia ter saído de
 //     executá-las uma de cada vez. O porém é o contrato: quem chama PRECISA tentar de novo.
+// ES: SERIALIZABLE. El código es el código ingenuo. Solo cambia el BEGIN. PostgreSQL deja que las
+//     transacciones corran y aborta con SQLSTATE 40001 aquella cuyo resultado no podría haber salido de
+//     ejecutarlas una por una. El inconveniente es el contrato: quien llama DEBE reintentar.
 async function serializable(pool: Pool, options: CheckoutOptions): Promise<Attempt> {
 	try {
 		return await inTransaction(pool, "BEGIN ISOLATION LEVEL SERIALIZABLE", async (client) => {
@@ -184,6 +204,10 @@ const ATTEMPTS: Record<Strategy, (pool: Pool, options: CheckoutOptions) => Promi
 //     aleatória (jitter) evita que os perdedores voltem todos no mesmo instante e colidam de
 //     novo. Depois de `maxAttempts` o comprador recebe um "conflict" honesto em vez de esperar
 //     para sempre.
+// ES: El bucle de reintentos, común a las estrategias que pueden perder un conflicto. La pausa
+//     aleatoria (jitter) evita que los perdedores vuelvan todos en el mismo instante y choquen de
+//     nuevo. Después de `maxAttempts` el comprador recibe un "conflict" honesto en lugar de esperar
+//     para siempre.
 export async function checkout(pool: Pool, strategy: Strategy, options: CheckoutOptions): Promise<CheckoutResult> {
 	for (let attempts = 1; attempts <= options.maxAttempts; attempts += 1) {
 		const outcome = await ATTEMPTS[strategy](pool, options);

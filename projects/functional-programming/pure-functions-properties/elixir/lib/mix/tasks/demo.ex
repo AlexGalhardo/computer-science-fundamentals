@@ -7,6 +7,9 @@ defmodule Mix.Tasks.Demo do
   PT: `mix demo` imprime as três lições do mini-projeto, uma depois da outra. Esta task faz
       parte da casca imperativa: ela imprime, e tudo o que imprime foi calculado por funções
       puras.
+  ES: `mix demo` imprime las tres lecciones del mini-proyecto, una tras otra. Esta task es parte
+      del cascarón imperativo: imprime, y todo lo que imprime fue calculado por funciones
+      puras.
   """
 
   use Mix.Task

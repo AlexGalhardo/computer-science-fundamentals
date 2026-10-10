@@ -6,6 +6,11 @@
 //     referência em TypeScript em `ts/src/`, onde cada um é explicado em detalhe. O que muda
 //     aqui: std::vector<int32_t> é um bloco contíguo, não há verificação de limites nem runtime,
 //     então é o mais perto que a corrida chega do custo do algoritmo puro.
+// ES: Los seis algoritmos de ordenación de la carrera, en C++. Mismos algoritmos y mismas
+//     decisiones que la referencia en TypeScript en `ts/src/`, donde cada uno se explica en
+//     detalle. Lo que cambia aquí: std::vector<int32_t> es un bloque contiguo, no hay
+//     verificación de límites ni runtime, así que es lo más cerca que la carrera llega del costo
+//     del algoritmo puro.
 #pragma once
 
 #include <algorithm>
@@ -23,6 +28,7 @@ using SortFunction = Values (*)(const Values&);
 
 // EN: Swap out-of-order neighbours. Stop when a pass makes no swap.
 // PT: Troca vizinhos fora de ordem. Para quando uma passada não faz trocas.
+// ES: Intercambia vecinos desordenados. Se detiene cuando una pasada no hace intercambios.
 inline Values bubble_sort(const Values& values) {
 	Values a = values;
 	for (std::size_t end = a.size(); end > 1; --end) {
@@ -42,6 +48,7 @@ inline Values bubble_sort(const Values& values) {
 
 // EN: Insert each value into the sorted prefix, shifting the larger values right.
 // PT: Insere cada valor no prefixo ordenado, deslocando os maiores para a direita.
+// ES: Inserta cada valor en el prefijo ordenado, desplazando los mayores hacia la derecha.
 inline Values insertion_sort(const Values& values) {
 	Values a = values;
 	for (std::size_t i = 1; i < a.size(); ++i) {
@@ -58,6 +65,7 @@ inline Values insertion_sort(const Values& values) {
 
 // EN: `<=` takes the left value on a tie, which keeps the merge stable.
 // PT: `<=` pega o valor da esquerda no empate, o que mantém a intercalação estável.
+// ES: `<=` toma el valor de la izquierda en el empate, lo que mantiene la mezcla estable.
 inline void merge_range(Values& a, Values& buffer, std::size_t lo, std::size_t hi) {
 	if (hi - lo < 2) {
 		return;
@@ -81,6 +89,7 @@ inline void merge_range(Values& a, Values& buffer, std::size_t lo, std::size_t h
 
 // EN: Split in half, sort each half, merge. One buffer is reused by every merge.
 // PT: Divide ao meio, ordena cada metade, intercala. Um buffer é reusado em toda intercalação.
+// ES: Divide a la mitad, ordena cada mitad, mezcla. Un búfer se reutiliza en cada mezcla.
 inline Values merge_sort(const Values& values) {
 	Values a = values;
 	Values buffer(a.size());
@@ -96,6 +105,8 @@ inline std::int32_t median_of_three(std::int32_t x, std::int32_t y, std::int32_t
 //     stack at O(log n).
 // PT: Partição de Hoare. Fazer a recursão no lado menor e o laço no maior mantém a pilha em
 //     O(log n).
+// ES: Partición de Hoare. Hacer la recursión sobre el lado menor y el bucle sobre el mayor
+//     mantiene la pila en O(log n).
 inline void quick_range(Values& a, std::ptrdiff_t lo, std::ptrdiff_t hi) {
 	while (lo < hi) {
 		const std::int32_t pivot = median_of_three(a[lo], a[lo + (hi - lo) / 2], a[hi]);
@@ -126,6 +137,7 @@ inline void quick_range(Values& a, std::ptrdiff_t lo, std::ptrdiff_t hi) {
 
 // EN: Quicksort with the median of three as the pivot.
 // PT: Quicksort com a mediana de três como pivô.
+// ES: Quicksort con la mediana de tres como pivote.
 inline Values quick_sort(const Values& values) {
 	Values a = values;
 	quick_range(a, 0, static_cast<std::ptrdiff_t>(a.size()) - 1);
@@ -154,6 +166,7 @@ inline void sift_down(Values& a, std::size_t start, std::size_t size) {
 
 // EN: Build a max-heap inside the vector, then move the maximum to the end n - 1 times.
 // PT: Constrói um max-heap dentro do vetor e move o máximo para o fim n - 1 vezes.
+// ES: Construye un max-heap dentro del vector y mueve el máximo al final n - 1 veces.
 inline Values heap_sort(const Values& values) {
 	Values a = values;
 	const std::size_t n = a.size();
@@ -171,6 +184,8 @@ inline Values heap_sort(const Values& values) {
 //     no comparison between values. Valid for integers from 0 to 2^31 - 1.
 // PT: Radix sort LSD na base 256: quatro passadas estáveis de contagem, uma por byte da chave,
 //     sem comparar valores. Válido para inteiros de 0 a 2^31 - 1.
+// ES: Radix sort LSD en base 256: cuatro pasadas estables de conteo, una por byte de la clave,
+//     sin comparar valores. Válido para enteros de 0 a 2^31 - 1.
 inline Values radix_sort(const Values& values) {
 	Values source = values;
 	Values target(source.size());
@@ -202,6 +217,8 @@ inline const std::array<std::pair<std::string, SortFunction>, 6> kSorts{{
 
 // EN: Same order-sensitive digest in every language: h = (h * 31 + v) mod 1,000,000,007.
 // PT: Mesmo resumo sensível à ordem em toda linguagem: h = (h * 31 + v) mod 1.000.000.007.
+// ES: El mismo resumen sensible al orden en todo lenguaje:
+//     h = (h * 31 + v) mod 1.000.000.007.
 inline std::string checksum(const Values& values) {
 	std::int64_t digest = 0;
 	for (const std::int32_t value : values) {

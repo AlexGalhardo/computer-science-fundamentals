@@ -1,6 +1,6 @@
 # Results: sorting-lower-bound (Python)
 
-Generated at 2026-10-07T22:49:59+00:00 with `docker compose run --rm python-demo` (Python 3.14.8, image python:3.14.8-slim-trixie).
+Generated at 2026-10-10T10:17:13+00:00 with `docker compose run --rm python-demo` (Python 3.14.8, image python:3.14.8-slim-trixie).
 Comparisons are counted by a key class that overloads the comparison operators, so the built-in `sorted` is measured too. Every number is a count, not a time.
 
 ## Every permutation of small inputs

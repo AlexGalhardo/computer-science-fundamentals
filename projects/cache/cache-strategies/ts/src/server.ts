@@ -2,6 +2,8 @@
 //     start the write-behind flusher and listen.
 // PT: Ponto de entrada do contêiner da API: validar o ambiente, conectar, criar a tabela, ligar
 //     o descarregador do write-behind e escutar.
+// ES: Punto de entrada del contenedor de la API: validar el entorno, conectar, crear la tabla,
+//     iniciar el vaciador del write-behind y escuchar.
 
 import { createApp, createLab, resetLab } from "./app";
 import { Cache } from "./cache";
@@ -19,6 +21,9 @@ await resetLab(lab);
 // PT: O "behind" do write-behind: um temporizador que manda as escritas pendentes para o banco.
 //     Uma descarga que falha é registrada e tentada de novo no próximo ciclo, porque o lote foi
 //     devolvido à fila.
+// ES: El "behind" del write-behind: un temporizador que envía las escrituras pendientes a la
+//     base de datos. Un vaciado que falla se registra y se reintenta en el siguiente ciclo,
+//     porque el lote se devolvió a la cola.
 setInterval(() => {
 	lab.store.flush().catch((error: unknown) => console.error("write-behind flush failed:", error));
 }, config.FLUSH_INTERVAL_MS);

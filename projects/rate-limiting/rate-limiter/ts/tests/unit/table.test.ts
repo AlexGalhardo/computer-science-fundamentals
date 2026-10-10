@@ -14,6 +14,11 @@ import { ALGORITHMS } from "../../src/limiter";
 //     `atMs` da linha, passado como argumento, então nada aqui espera nem depende da velocidade
 //     da máquina. Os testes em Go leem o mesmo arquivo, o que prova que as duas implementações
 //     decidem igual.
+// ES: Pruebas guiadas por tabla. Cada fila de `cases/cases.json` es una línea de tiempo: "una
+//     solicitud llega en este milisegundo, y debe ser admitida (o rechazada)". El reloj es el
+//     `atMs` de la fila, pasado como argumento, así que nada aquí espera ni depende de la
+//     velocidad de la máquina. Las pruebas en Go leen el mismo archivo, lo que demuestra que las
+//     dos implementaciones deciden igual.
 const cases = loadCases(join(import.meta.dir, "..", "..", "..", "cases", "cases.json"));
 
 describe("table of allowed and rejected requests over time", () => {
@@ -46,6 +51,7 @@ describe("leaky bucket as a queue: when each admitted request leaves", () => {
 		const departures: number[] = [];
 		// EN: An irregular flood: several requests per millisecond, then gaps.
 		// PT: Uma enxurrada irregular: várias requisições por milissegundo, depois intervalos.
+		// ES: Una avalancha irregular: varias solicitudes por milisegundo, luego pausas.
 		for (let time = 0; time < 5000; time += time % 700 < 80 ? 1 : 37) {
 			const departAt = bucket.schedule(time);
 			if (departAt !== null) {

@@ -16,6 +16,8 @@ namespace forg {
 //     searching. Without it "Recife", "RECIFE" and "recife " would be three different keys.
 // PT: A forma canônica de uma chave: uma única grafia combinada, aplicada antes de gravar e
 //     antes de buscar. Sem ela, "Recife", "RECIFE" e "recife " seriam três chaves diferentes.
+// ES: La forma canónica de una clave: una única grafía combinada, aplicada antes de escribir y
+//     antes de buscar. Sin ella, "Recife", "RECIFE" y "recife " serían tres claves distintas.
 inline std::string canonical(const std::string& text) {
 	std::size_t start = 0;
 	std::size_t end = text.size();
@@ -38,6 +40,9 @@ inline std::string canonical(const std::string& text) {
 // PT: O arquivo de dados junto com os seus índices: um índice primário por id e dois índices
 //     secundários, por cidade e por ano. Os índices ficam na memória enquanto os arquivos estão
 //     abertos e são gravados em disco por close().
+// ES: El archivo de datos junto con sus índices: un índice primario por id y dos índices
+//     secundarios, por ciudad y por año. Los índices quedan en memoria mientras los archivos
+//     están abiertos y close() los escribe en disco.
 class Database {
 public:
 	explicit Database(const std::string& directory)
@@ -48,6 +53,9 @@ public:
 		// PT: Os índices em disco só são aceitos quando o indicador de desatualizado está
 		//     limpo. Se a última sessão terminou sem close(), o indicador continua ligado e
 		//     tudo é reconstruído a partir do arquivo de dados, a única fonte da verdade.
+		// ES: Los índices en disco solo se aceptan cuando el indicador de desactualizado está
+		//     limpio. Si la última sesión terminó sin close(), el indicador sigue activado y
+		//     todo se reconstruye a partir del archivo de datos, la única fuente de la verdad.
 		const bool loaded = primary_.from_bytes(read_whole_file(path("primary.idx"))) &&
 		                    by_city_.from_bytes(read_whole_file(path("city.sec")),
 		                                        read_whole_file(path("city.lst"))) &&
@@ -79,6 +87,10 @@ public:
 	// PT: A remoção mexe só no arquivo de dados e no índice primário. As listas secundárias
 	//     continuam com a chave primária do registro removido, e as buscas abaixo a descartam
 	//     quando o índice primário não conhece mais essa chave. É o ganho da ligação tardia.
+	// ES: La eliminación toca solo el archivo de datos y el índice primario. Las listas
+	//     secundarias conservan la clave primaria del registro eliminado, y las búsquedas de
+	//     abajo la descartan cuando el índice primario ya no conoce esa clave. Es la ganancia
+	//     del enlace tardío (late binding).
 	bool remove(std::uint32_t id) {
 		const std::optional<std::uint32_t> rrn = primary_.find(id);
 		if (!rrn.has_value()) {
@@ -118,6 +130,9 @@ public:
 	// PT: A busca sem índice: ler todos os slots do arquivo e ficar com os registros que
 	//     atendem. É a referência com que as buscas por índice são comparadas, e o seu custo é
 	//     o número de slots do arquivo, qualquer que seja o número de resultados.
+	// ES: La búsqueda sin índice: leer todos los slots del archivo y quedarse con los registros
+	//     que cumplen. Es la referencia con la que se comparan las búsquedas por índice, y su
+	//     costo es el número de slots del archivo, sea cual sea el número de resultados.
 	template <typename Predicate>
 	std::vector<Record> scan(Predicate matches) {
 		std::vector<Record> found;
@@ -158,6 +173,9 @@ private:
 	// PT: Antes da primeira alteração de uma sessão, o indicador do arquivo de índice é ligado
 	//     em disco. Se o programa morrer antes de close(), a próxima sessão encontra o
 	//     indicador e sabe que os arquivos de índice não correspondem aos dados.
+	// ES: Antes de la primera modificación de una sesión, el indicador del archivo de índice se
+	//     activa en disco. Si el programa muere antes de close(), la próxima sesión encuentra el
+	//     indicador y sabe que los archivos de índice no corresponden a los datos.
 	void mark_stale() {
 		if (!stale_on_disk_) {
 			write_whole_file(path("primary.idx"), PrimaryIndex().to_bytes(true));
@@ -185,6 +203,9 @@ private:
 	// PT: Das chaves primárias aos registros: cada chave passa pelo índice primário para achar
 	//     o RRN, e então um slot é lido. Uma chave que não existe mais, ou cujo registro não tem
 	//     mais o valor buscado (o id foi reutilizado com outros dados), é ignorada.
+	// ES: De las claves primarias a los registros: cada clave pasa por el índice primario para
+	//     encontrar el RRN, y luego se lee un slot. Una clave que ya no existe, o cuyo registro
+	//     ya no tiene el valor buscado (el id se reutilizó con otros datos), se ignora.
 	template <typename Predicate>
 	std::vector<Record> fetch(const std::vector<std::uint32_t>& ids, Predicate still_matches) {
 		std::vector<Record> found;

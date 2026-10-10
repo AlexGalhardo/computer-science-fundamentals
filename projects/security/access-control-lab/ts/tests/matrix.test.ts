@@ -6,6 +6,10 @@
 //     e cada célula é um status HTTP esperado. Os testes são gerados das tabelas abaixo, então
 //     adicionar um papel ou uma rota é adicionar uma linha ou uma coluna, e uma célula esquecida
 //     não compila. Todas as colunas miram a fatura 1001, que pertence à alice-fake (a "owner").
+// ES: La matriz de pruebas de autorización. Las filas son quien llama, las columnas son lo que intentan,
+//     y cada celda es un estado HTTP esperado. Las pruebas se generan de las tablas de abajo, así que
+//     agregar un rol o una ruta es agregar una fila o una columna, y una celda olvidada
+//     no compila. Todas las columnas apuntan a la factura 1001, que pertenece a alice-fake (la "owner").
 
 import { describe, expect, test } from "bun:test";
 import { ALICE_INVOICE_ID, createStore, TOKENS } from "../src/data";
@@ -34,6 +38,7 @@ type Matrix = Record<Actor, Record<Operation, number>>;
 
 // EN: 401 = we do not know who you are. 403 = we know, and the answer is no. 200 = allowed.
 // PT: 401 = não sabemos quem você é. 403 = sabemos, e a resposta é não. 200 = permitido.
+// ES: 401 = no sabemos quién eres. 403 = sabemos, y la respuesta es no. 200 = permitido.
 const FIXED: Matrix = {
 	anonymous: { read: 401, update: 401, delete: 401, list: 401, "admin route": 401 },
 	owner: { read: 200, update: 200, delete: 200, list: 200, "admin route": 403 },
@@ -47,6 +52,9 @@ const FIXED: Matrix = {
 // PT: A mesma matriz para a API vulnerável. Compare as duas tabelas: a autenticação funciona nas
 //     duas (a linha anonymous é idêntica), e todas as outras células são 200, porque "logado" é
 //     a única pergunta que a API vulnerável faz.
+// ES: La misma matriz para la API vulnerable. Compara las dos tablas: la autenticación funciona en las
+//     dos (la fila anonymous es idéntica), y todas las demás celdas son 200, porque "con sesión iniciada" es
+//     la única pregunta que hace la API vulnerable.
 const VULNERABLE: Matrix = {
 	anonymous: { read: 401, update: 401, delete: 401, list: 401, "admin route": 401 },
 	owner: { read: 200, update: 200, delete: 200, list: 200, "admin route": 200 },
@@ -67,6 +75,7 @@ for (const version of ["fixed", "vulnerable"] as const) {
 				test(`${actor} x ${operation} -> ${expected}`, async () => {
 					// EN: One fresh lab per cell, so a delete in one cell cannot change another.
 					// PT: Um laboratório novo por célula, então um delete em uma célula não muda outra.
+					// ES: Un laboratorio nuevo por celda, así que un delete en una celda no cambia otra.
 					const lab = createLab(version);
 					const { path, ...options } = OPERATIONS[operation];
 					const result = await call(lab.app, path, { ...options, token: ACTORS[actor] });
@@ -74,6 +83,7 @@ for (const version of ["fixed", "vulnerable"] as const) {
 
 					// EN: A refusal must also leave the record untouched and say nothing about it.
 					// PT: Uma recusa também precisa deixar o registro intacto e não dizer nada sobre ele.
+					// ES: Un rechazo también debe dejar el registro intacto y no decir nada sobre él.
 					if (expected !== 200) {
 						expect(lab.store.invoices.get(ALICE_INVOICE_ID)?.memo).toBe(ORIGINAL_MEMO);
 						expect(JSON.stringify(result.body)).not.toContain("alice");
@@ -86,6 +96,7 @@ for (const version of ["fixed", "vulnerable"] as const) {
 
 // EN: A 200 on the list is not enough: what matters is which invoices come back.
 // PT: Um 200 na lista não basta: o que importa é quais faturas voltam.
+// ES: Un 200 en el listado no basta: lo que importa es qué facturas vuelven.
 describe("authorisation matrix: what the list contains on the fixed API", () => {
 	const VISIBLE: Record<Actor, number[]> = {
 		anonymous: [],
@@ -105,6 +116,9 @@ describe("authorisation matrix: what the list contains on the fixed API", () => 
 // PT: Negar por padrão, conferido contra o próprio roteador: toda rota registrada no app
 //     corrigido precisa recusar um chamador anônimo. Uma rota criada depois sem verificação
 //     quebra este teste.
+// ES: Negar por defecto, comprobado contra el propio enrutador: toda ruta registrada en la app
+//     corregida debe rechazar a un llamador anónimo. Una ruta creada después sin verificación
+//     rompe esta prueba.
 describe("deny by default", () => {
 	test("every registered route of the fixed API answers 401 without a session", async () => {
 		const app = createFixedApp(createStore());

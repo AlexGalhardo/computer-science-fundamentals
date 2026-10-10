@@ -2,6 +2,8 @@
 //     one JSON line. Only the work is timed, not the start-up of the runtime.
 // PT: Menor programa que respeita o contrato de benchmark: soma 1..n de duas formas e imprime
 //     uma linha JSON. Só o trabalho é cronometrado, não a inicialização do runtime.
+// ES: El programa más pequeño que respeta el contrato de benchmark: suma 1..n de dos formas e imprime
+//     una línea JSON. Solo se cronometra el trabajo, no el arranque del runtime.
 
 const [implementation = "sum-loop", size = "1000"] = process.argv.slice(2);
 const n = Number(size);

@@ -1,6 +1,6 @@
 # Ordenação externa
 
-> English version: [docs/en/file-systems/external-sorting.md](../../en/file-systems/external-sorting.md)
+> English version: [docs/en/file-systems/external-sorting.md](../../en/file-systems/external-sorting.md) · Versión en español: [docs/es/file-systems/external-sorting.md](../../es/file-systems/external-sorting.md)
 
 Mini-projeto: [projects/file-systems/external-sorting](../../../projects/file-systems/external-sorting). Linguagens: Rust, Go. Tópico do quiz: `file-systems` / `external-sorting`.
 
@@ -12,7 +12,7 @@ A ordenação externa por intercalação cumpre duas promessas: o uso de memóri
 
 ## Fase 1: geração de runs
 
-```
+```text
 arquivo de entrada: [ ....... 320 MiB, em qualquer ordem ....... ]
                        |          |          |               |
                     lê 8 MiB   lê 8 MiB   lê 8 MiB   ...   lê o resto
@@ -28,7 +28,7 @@ Número de runs = teto(tamanho do arquivo / tamanho da run), com uma a mais ou a
 
 ## Fase 2: intercalação de k caminhos com heap
 
-```
+```text
 run-0:  apple  fig    pear  ...        heap de números de runs, ordenado
 run-1:  banana grape  plum  ...   -->  pela linha atual de cada run       -->  saída
 run-2:  cherry kiwi   lime  ...        (topo = menor linha atual)
@@ -40,7 +40,7 @@ Cada run é lida do início ao fim pelo seu próprio buffer, e só uma linha de 
 
 A intercalação lê no máximo `fan-in` runs por vez. Com mais runs do que isso, uma passada junta grupos de `fan-in` runs em runs maiores, e a passada seguinte junta essas:
 
-```
+```text
 41 runs, fan-in 8:   41  -->  6  -->  1        2 passadas de intercalação
 48 runs, fan-in 2:   48 -> 24 -> 12 -> 6 -> 3 -> 2 -> 1      6 passadas de intercalação
 ```

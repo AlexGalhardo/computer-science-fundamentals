@@ -8,6 +8,11 @@
 // chave primária, rodar uma consulta com filtro e agregação, e ler pela chave de novo a
 // partir de 8 goroutines dividindo um pool de 8 conexões. Cada operação é uma ida e volta ao
 // banco, então o tempo é principalmente do driver e da rede, não da linguagem.
+// ES: Cliente de base de datos del benchmark en Go, con pgx, el driver de PostgreSQL más usado.
+// Cuatro fases, las mismas en los 7 lenguajes: insertar n filas una por una, leer cada fila por la
+// clave primaria, ejecutar una consulta con filtro y agregación, y leer por la clave de nuevo
+// desde 8 goroutines que comparten un pool de 8 conexiones. Cada operación es un viaje de ida y vuelta a la
+// base de datos, así que el tiempo es principalmente del driver y de la red, no del lenguaje.
 package main
 
 import (
@@ -49,6 +54,7 @@ func (p phase) json() string {
 
 // EN: Runs fn for every i in ids and records how long each call took.
 // PT: Roda fn para cada i em ids e registra quanto tempo cada chamada levou.
+// ES: Ejecuta fn para cada i en ids y registra cuánto tardó cada llamada.
 func timed(ids []int, fn func(i int) error) (phase, error) {
 	result := phase{Ops: len(ids), latencies: make([]float64, 0, len(ids))}
 	start := time.Now()
@@ -128,6 +134,9 @@ func run(n, workers int) (map[string]phase, int64, error) {
 	// PT: Um pool mantém conexões abertas e empresta uma a quem pedir. Abrir uma conexão é
 	// lento, então dividir algumas é como programas de verdade falam com um banco a partir de
 	// muitas tarefas.
+	// ES: Un pool mantiene conexiones abiertas y presta una a quien la pida. Abrir una conexión es
+	// lento, así que compartir unas pocas es como los programas de verdad hablan con una base de datos desde
+	// muchas tareas.
 	config, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		return nil, 0, fmt.Errorf("pool config: %w", err)
@@ -192,6 +201,7 @@ func main() {
 
 	// EN: CPU time and peak memory of this client process, as counted by the kernel.
 	// PT: Tempo de CPU e pico de memória deste processo cliente, contados pelo kernel.
+	// ES: Tiempo de CPU y pico de memoria de este proceso cliente, contados por el kernel.
 	var usage syscall.Rusage
 	_ = syscall.Getrusage(syscall.RUSAGE_SELF, &usage)
 	cpuMs := float64(usage.Utime.Nano()+usage.Stime.Nano()) / 1e6

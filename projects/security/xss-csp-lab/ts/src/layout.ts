@@ -6,6 +6,10 @@
 //     sem nenhuma alteração, então quem chama é responsável pelo que vai nele. O app corrigido
 //     só passa texto que passou por `escapeHtml`; o app vulnerável passa o texto cru do usuário,
 //     e essa diferença é o laboratório inteiro.
+// ES: El esqueleto de página compartido por las dos apps. `body` se escribe en la página como HTML,
+//     sin ningún cambio, así que quien llama es responsable de lo que va en él. La app corregida
+//     solo pasa texto que pasó por `escapeHtml`; la app vulnerable pasa el texto crudo del usuario,
+//     y esa diferencia es todo el laboratorio.
 
 export interface PageParts {
 	title: string;
@@ -18,6 +22,8 @@ export interface PageParts {
 //     That is what allows a strict Content Security Policy later.
 // PT: Nenhum <script> inline e nenhum <style> inline: todo script é um arquivo do mesmo
 //     servidor. É isso que permite uma Content Security Policy rígida depois.
+// ES: Ningún <script> en línea y ningún <style> en línea: todo script es un archivo del mismo
+//     servidor. Eso es lo que permite después una Content Security Policy estricta.
 export function renderPage(page: PageParts): string {
 	const scripts = (page.scripts ?? []).map((src) => `<script src="${src}"></script>`).join("\n");
 	return `<!doctype html>

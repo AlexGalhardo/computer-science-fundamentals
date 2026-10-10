@@ -12,6 +12,14 @@
 //! que falha é um `bool` que o compilador pede para você olhar (`#[must_use]`). A arena é
 //! simulada nas duas linguagens: uma alocação é um deslocamento e um tamanho, e nenhum byte
 //! real é tocado.
+//!
+//! ES: Los mismos asignadores de cpp/allocator.hpp, en Rust.
+//!
+//! Los algoritmos son idénticos, y el benchmark imprime la misma tabla. Lo que cambia es el
+//! vocabulario: la clase abstracta se vuelve un trait, `std::optional` se vuelve `Option`, y una
+//! liberación que falla es un `bool` que el compilador te pide revisar (`#[must_use]`). La arena
+//! es simulada en ambos lenguajes: una asignación es un desplazamiento y un tamaño, y no se toca
+//! ningún byte real.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -37,6 +45,9 @@ impl Stats {
     ///
     /// PT: Fragmentação externa: a parte da memória livre que NÃO está na maior lacuna. 0
     /// significa um bloco livre só, e um valor perto de 1 significa muitas lacunas pequenas.
+    ///
+    /// ES: Fragmentación externa: la parte de la memoria libre que NO está en el hueco más grande.
+    /// 0 significa un solo bloque libre, y un valor cercano a 1 significa muchos huecos pequeños.
     pub fn external_fragmentation(&self) -> f64 {
         let free = self.free_bytes();
         if free == 0 {
@@ -49,6 +60,8 @@ impl Stats {
     /// EN: Internal fragmentation: bytes reserved inside blocks that nobody asked for.
     ///
     /// PT: Fragmentação interna: bytes reservados dentro dos blocos que ninguém pediu.
+    ///
+    /// ES: Fragmentación interna: bytes reservados dentro de los bloques que nadie pidió.
     pub fn internal_fragmentation(&self) -> usize {
         self.used - self.requested
     }
@@ -91,6 +104,9 @@ struct Block {
 ///
 /// PT: Alocador de lista livre: blocos em ordem de endereço, cada um livre ou em uso. O first
 /// fit pega a primeira lacuna grande o bastante, o best fit a menor, o worst fit a maior.
+///
+/// ES: Asignador de lista libre: bloques en orden de dirección, cada uno libre o en uso. First
+/// fit toma el primer hueco lo bastante grande, best fit el más pequeño, worst fit el más grande.
 pub struct ListAllocator {
     arena: usize,
     fit: Fit,
@@ -157,6 +173,8 @@ impl Allocator for ListAllocator {
         //     in the list as a smaller hole right after it.
         // PT: Divide a lacuna: a primeira parte vira o bloco novo, e o resto, se houver, fica na
         //     lista como uma lacuna menor logo depois dele.
+        // ES: Divide el hueco: la primera parte se convierte en el bloque nuevo y el resto, si lo
+        //     hay, queda en la lista como un hueco más pequeño justo después.
         let offset = self.blocks[index].offset;
         let leftover = self.blocks[index].size - size;
         self.blocks[index] = Block {
@@ -195,6 +213,9 @@ impl Allocator for ListAllocator {
         //     become one hole that can serve a large request again.
         // PT: Coalescência: funde com um vizinho livre de cada lado, para que lacunas vizinhas
         //     virem uma lacuna só, capaz de atender de novo a um pedido grande.
+        // ES: Fusión (coalescing): se fusiona con un vecino libre a cualquiera de los dos lados,
+        //     para que los huecos adyacentes se conviertan en uno solo, capaz de atender de nuevo
+        //     una solicitud grande.
         if index + 1 < self.blocks.len() && self.blocks[index + 1].free {
             self.blocks[index].size += self.blocks[index + 1].size;
             self.blocks.remove(index + 1);
@@ -246,6 +267,11 @@ impl Allocator for ListAllocator {
 /// blocos maiores são divididos em metades, e um bloco liberado se funde com seu companheiro,
 /// que fica em `deslocamento XOR tamanho`. A divisão e a fusão rápidas são pagas com
 /// fragmentação interna.
+///
+/// ES: Sistema buddy: todo bloque es una potencia de dos. La solicitud se redondea hacia arriba,
+/// los bloques mayores se dividen por la mitad, y un bloque liberado se fusiona con su compañero,
+/// que está en `desplazamiento XOR tamaño`. Dividir y fusionar rápido se paga con fragmentación
+/// interna.
 pub struct BuddyAllocator {
     arena: usize,
     min_order: u32,
@@ -294,6 +320,8 @@ impl Allocator for BuddyAllocator {
         // EN: Split down to the wanted size, leaving the upper half (the buddy) free each time.
         // PT: Divide até o tamanho desejado, deixando a metade de cima (o companheiro) livre a
         //     cada vez.
+        // ES: Divide hasta el tamaño deseado, dejando libre cada vez la mitad superior (el
+        //     compañero).
         while order > wanted {
             order -= 1;
             self.free[order as usize].insert(offset + (1 << order));
@@ -309,6 +337,7 @@ impl Allocator for BuddyAllocator {
         let mut offset = offset;
         // EN: Coalescing: while the buddy is free, take it off its list and merge upwards.
         // PT: Coalescência: enquanto o companheiro está livre, ele sai da lista e a fusão sobe.
+        // ES: Fusión (coalescing): mientras el compañero esté libre, sale de su lista y la fusión sube.
         while order < self.max_order {
             let buddy = offset ^ (1 << order);
             if !self.free[order as usize].remove(&buddy) {
@@ -357,6 +386,9 @@ impl Allocator for BuddyAllocator {
 ///
 /// PT: Gerador congruente linear, idêntico ao do C++, para que as duas linguagens executem a
 /// mesma sequência de pedidos.
+///
+/// ES: Generador congruencial lineal, idéntico al de C++, para que ambos lenguajes ejecuten la
+/// misma secuencia de solicitudes.
 pub struct Lcg {
     state: u32,
 }
@@ -441,6 +473,10 @@ pub fn make_allocators(arena: usize) -> Vec<Box<dyn Allocator>> {
 /// PT: O benchmark: a cada passo, aloca um tamanho aleatório (55% das vezes) ou libera um bloco
 /// vivo aleatório. A arena enche, e daí em diante os pedidos falham quando nenhuma lacuna é
 /// grande o bastante.
+///
+/// ES: El benchmark: en cada paso asigna un tamaño aleatorio (el 55% de las veces) o libera un
+/// bloque vivo al azar. La arena se llena, y desde entonces las solicitudes fallan cuando ningún
+/// hueco es lo bastante grande.
 pub fn run_workload(allocator: &mut dyn Allocator, workload: &Workload) -> WorkloadResult {
     let mut random = Lcg::new(workload.seed);
     let mut live: Vec<usize> = Vec::new();
@@ -564,6 +600,8 @@ mod tests {
     //     freeing everything in random order leaves a single free block.
     // PT: O teste aleatório dos critérios de aceite: dois blocos vivos nunca se sobrepõem, e
     //     liberar tudo em ordem aleatória deixa um único bloco livre.
+    // ES: La prueba aleatorizada de los criterios de aceptación: ningún par de bloques vivos se
+    //     superpone nunca, y liberar todo en orden aleatorio deja un único bloque libre.
     #[test]
     fn random_operations_never_overlap_and_everything_coalesces() {
         let arena = 1 << 14;

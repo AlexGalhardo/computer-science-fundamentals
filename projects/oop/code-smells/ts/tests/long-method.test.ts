@@ -13,6 +13,7 @@ const book = { name: "book", unitCents: 4000, quantity: 1 };
 
 // EN: The same tests run on both versions. They are the safety net of the refactoring.
 // PT: Os mesmos testes rodam nas duas versões. Eles são a rede de segurança da refatoração.
+// ES: Los mismos tests corren en ambas versiones. Son la red de seguridad de la refactorización.
 describe.each(versions)("long method, %s", (_name, formatReceipt) => {
 	test("a plain order pays shipping", () => {
 		expect(formatReceipt({ customer: "Ana", items: [pens, book] })).toBe(
@@ -60,6 +61,7 @@ describe.each(versions)("long method, %s", (_name, formatReceipt) => {
 
 // EN: What the refactoring bought: a rule can now be tested without building a receipt.
 // PT: O que a refatoração comprou: uma regra agora pode ser testada sem montar um recibo.
+// ES: Lo que la refactorización compró: una regla ahora puede probarse sin armar un recibo.
 describe("long method, only possible after", () => {
 	test("the shipping rule alone", () => {
 		expect(after.shippingCents(9999)).toBe(1500);

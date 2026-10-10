@@ -5,6 +5,10 @@
 //     conferem estes valores, então a tabela do README é sustentada por um teste e não por uma
 //     única execução de sorte. `null` significa "sem garantia para nenhum lado": o teste só
 //     registra o que observou.
+// ES: Lo que garantiza cada broker en los dos experimentos de comportamiento. Las pruebas de
+//     integración verifican estos valores, así que la tabla del README está respaldada por una
+//     prueba y no por una única ejecución afortunada. `null` significa "sin garantía en ningún
+//     sentido": la prueba solo registra lo que observó.
 
 import type { BrokerName } from "./queue";
 

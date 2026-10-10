@@ -7,6 +7,9 @@ use crate::{DecodeError, read_length};
 // PT: Até onde para trás uma repetição pode começar, e que comprimento pode ter. O deslocamento
 //     ocupa 2 bytes e o comprimento 1 byte, então um token (deslocamento, comprimento, literal)
 //     ocupa 4 bytes.
+// ES: Hasta dónde hacia atrás puede empezar una repetición, y qué longitud puede tener. El
+//     desplazamiento ocupa 2 bytes y la longitud 1 byte, así que un token (desplazamiento,
+//     longitud, literal) ocupa 4 bytes.
 pub const WINDOW: usize = 4096;
 pub const MAX_LENGTH: usize = 255;
 pub const MIN_LENGTH: usize = 3;
@@ -16,6 +19,8 @@ pub const TOKEN_LEN: usize = 4;
 //     `literal`". Offset 0 and length 0 mean "nothing to copy, just the literal".
 // PT: Um passo da saída: "copie `length` bytes começando `offset` bytes atrás, depois escreva
 //     `literal`". Deslocamento 0 e comprimento 0 significam "nada a copiar, só o literal".
+// ES: Un paso de la salida: "copia `length` bytes empezando `offset` bytes atrás, luego escribe
+//     `literal`". Desplazamiento 0 y longitud 0 significan "nada que copiar, solo el literal".
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Token {
     pub offset: u16,
@@ -37,6 +42,13 @@ pub struct Token {
 //     Os candidatos são testados do mais próximo ao mais distante e uma repetição mais longa
 //     vence, então em caso de empate fica a mais próxima. A versão em Python segue a mesma regra
 //     e produz os mesmos tokens.
+// ES: LZ77 usa los datos ya vistos como diccionario. En cada posición busca el tramo más largo,
+//     que empiece dentro de la ventana detrás de ella, que sea igual a los bytes que vienen.
+//     Buscar en todas las posiciones de la ventana sería lento, así que un índice recuerda
+//     dónde empezó cada grupo de 3 bytes: toda repetición de 3 bytes o más debe empezar en uno
+//     de esos lugares. Los candidatos se prueban del más cercano al más lejano y una repetición
+//     más larga gana, así que en caso de empate se queda la más cercana. La versión en Python
+//     sigue la misma regla y produce los mismos tokens.
 pub fn tokenize(data: &[u8]) -> Vec<Token> {
     let mut tokens = Vec::new();
     let mut index: HashMap<[u8; 3], Vec<usize>> = HashMap::new();
@@ -45,6 +57,7 @@ pub fn tokenize(data: &[u8]) -> Vec<Token> {
     while position < data.len() {
         // EN: Every token ends with a literal, so the match must leave one byte for it.
         // PT: Todo token termina com um literal, então a repetição precisa deixar um byte para ele.
+        // ES: Todo token termina con un literal, así que la repetición debe dejarle un byte.
         let limit = MAX_LENGTH.min(data.len() - position - 1);
         let mut best_length = 0;
         let mut best_offset = 0;
@@ -60,6 +73,9 @@ pub fn tokenize(data: &[u8]) -> Vec<Token> {
                 // PT: A comparação pode passar de `position`: a cópia pode se sobrepor aos bytes
                 //     que ela mesma está produzindo, e é assim que uma sequência longa é
                 //     codificada.
+                // ES: La comparación puede pasar de `position`: la copia puede superponerse a los
+                //     bytes que ella misma está produciendo, y así se codifica una secuencia
+                //     larga.
                 let mut length = 0;
                 while length < limit && data[start + length] == data[position + length] {
                     length += 1;
@@ -82,6 +98,7 @@ pub fn tokenize(data: &[u8]) -> Vec<Token> {
 
         // EN: Every position that was just consumed becomes a possible start of a later match.
         // PT: Cada posição recém-consumida vira um possível início de uma repetição futura.
+        // ES: Cada posición recién consumida se vuelve un posible inicio de una repetición futura.
         for start in position..=position + best_length {
             if start + MIN_LENGTH <= data.len() {
                 let key = [data[start], data[start + 1], data[start + 2]];
@@ -95,6 +112,7 @@ pub fn tokenize(data: &[u8]) -> Vec<Token> {
 
 // EN: File format: 8 bytes with the original size, then 4 bytes per token.
 // PT: Formato do arquivo: 8 bytes com o tamanho original, depois 4 bytes por token.
+// ES: Formato del archivo: 8 bytes con el tamaño original, luego 4 bytes por token.
 pub fn encode(data: &[u8]) -> Vec<u8> {
     let tokens = tokenize(data);
     let mut out = Vec::with_capacity(8 + tokens.len() * TOKEN_LEN);
@@ -111,6 +129,8 @@ pub fn encode(data: &[u8]) -> Vec<u8> {
 //     much faster than compression.
 // PT: Decodificar não exige busca nem índice: só copia. É por isso que a descompressão do LZ77
 //     é muito mais rápida que a compressão.
+// ES: Decodificar no exige búsqueda ni índice: solo copia. Por eso la descompresión de LZ77 es
+//     mucho más rápida que la compresión.
 pub fn expand(tokens: &[Token]) -> Result<Vec<u8>, DecodeError> {
     let mut out: Vec<u8> = Vec::new();
     for token in tokens {
@@ -122,6 +142,8 @@ pub fn expand(tokens: &[Token]) -> Result<Vec<u8>, DecodeError> {
         //     this same loop has just written.
         // PT: Um byte por vez de propósito: com comprimento > deslocamento a cópia lê bytes que
         //     este mesmo laço acabou de escrever.
+        // ES: Un byte a la vez a propósito: con longitud > desplazamiento la copia lee bytes que
+        //     este mismo bucle acaba de escribir.
         for _ in 0..token.length {
             out.push(out[out.len() - offset]);
         }
@@ -173,6 +195,7 @@ mod tests {
     fn a_run_becomes_one_overlapping_token() {
         // EN: 'a', then "copy 8 bytes from 1 back", then the final literal.
         // PT: 'a', depois "copie 8 bytes de 1 atrás", depois o literal final.
+        // ES: 'a', luego "copia 8 bytes desde 1 atrás", luego el literal final.
         assert_eq!(
             tokenize(b"aaaaaaaaaa"),
             [token(0, 0, b'a'), token(1, 8, b'a')]

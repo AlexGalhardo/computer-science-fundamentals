@@ -1,6 +1,6 @@
 # lru-bloom-trie
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Three small structures that sit behind everyday systems, written in TypeScript and in Go: an **LRU cache** with O(1) `get` and `put` (what a cache does when it is full), a **Bloom filter** with configurable size and number of hashes (a membership test in a few bits per key, with false positives and no false negatives), and a **trie** (prefix search, as in autocomplete).
 

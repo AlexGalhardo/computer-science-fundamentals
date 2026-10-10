@@ -11,6 +11,13 @@
 //     tabela Markdown e falha a menos que a variante em blocos seja pelo menos 2 vezes mais
 //     rápida que a ingênua.
 //     `cache-friendly-matrix sweep <n>` mede a variante em blocos com vários tamanhos de bloco.
+// ES: Tres modos, los mismos del programa en C++.
+//     `cache-friendly-matrix <naive|interchanged|blocked-B> <n>` multiplica dos matrices n x n
+//     e imprime una línea JSON en el contrato de benchmark.
+//     `cache-friendly-matrix speedup <n>` mide las tres variantes sobre la misma entrada, imprime
+//     una tabla Markdown y falla a menos que la variante por bloques sea al menos 2 veces más
+//     rápida que la ingenua.
+//     `cache-friendly-matrix sweep <n>` mide la variante por bloques con varios tamaños de bloque.
 
 use std::fs;
 use std::process::ExitCode;
@@ -61,6 +68,9 @@ fn multiply(implementation: &str, a: &[f64], b: &[f64], n: usize) -> Result<Vec<
 // PT: Uma multiplicação pequena leva poucos milissegundos, pouco para confiar em uma execução só,
 //     então ela é repetida e a mediana é informada. Uma grande leva segundos e roda uma vez: o
 //     runner de benchmark repete o processo inteiro de qualquer forma e informa a dispersão.
+// ES: Una multiplicación pequeña toma pocos milisegundos, poco para confiar en una sola ejecución,
+//     así que se repite y se informa la mediana. Una grande toma segundos y corre una vez: el
+//     runner de benchmark repite el proceso completo de todos modos e informa la dispersión.
 fn repetitions_for(n: usize) -> usize {
     if n <= 512 { 5 } else { 1 }
 }
@@ -90,6 +100,7 @@ fn measure(
 
 // EN: VmHWM in /proc/self/status is the peak resident memory of the process in kibibytes.
 // PT: VmHWM em /proc/self/status é o pico de memória residente do processo em kibibytes.
+// ES: VmHWM en /proc/self/status es el pico de memoria residente del proceso en kibibytes.
 fn peak_memory_kb() -> u64 {
     fs::read_to_string("/proc/self/status")
         .ok()

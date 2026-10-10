@@ -39,6 +39,11 @@ type stats struct {
 // ordenada. As linhas não são copiadas para ordenar: ordena-se um índice de pares (início,
 // tamanho), ao custo de 8 bytes por linha. Uma linha cortada pelo fim do buffer é levada para o
 // começo do próximo. A entrada é lida uma única vez, do início ao fim.
+// ES: Fase 1, generación de runs. Un buffer de `runBytes` es el único trozo grande de memoria:
+// se llena desde el archivo, las líneas dentro de él se ordenan y se escriben como una run
+// ordenada. Las líneas no se copian para ordenar: se ordena un índice de pares (inicio,
+// tamaño), al costo de 8 bytes por línea. Una línea cortada por el final del buffer se lleva al
+// comienzo del siguiente. La entrada se lee una sola vez, de principio a fin.
 func generateRuns(input, tmp string, runBytes int) (runs []string, lines uint64, err error) {
 	if runBytes < 64 || runBytes > 1<<31 {
 		return nil, 0, errors.New("run size must be between 64 bytes and 2 GiB")
@@ -123,6 +128,10 @@ func writeRun(path string, index []uint64, lineOf func(uint64) []byte) error {
 // run vem cada candidato, e compara a linha atual dessas runs. A menor linha atual está sempre
 // na posição 0. Quando duas linhas são iguais, ganha a run de menor número, o que mantém a
 // intercalação estável: linhas iguais saem na ordem das runs.
+// ES: Un heap binario de mínimo con números de runs. El heap no guarda las líneas, solo de qué
+// run viene cada candidato, y compara la línea actual de esas runs. La menor línea actual está
+// siempre en la posición 0. Cuando dos líneas son iguales, gana la run de menor número, lo que
+// mantiene la mezcla estable: las líneas iguales salen en el orden de las runs.
 type runHeap struct {
 	items []int
 }
@@ -149,6 +158,9 @@ func (h *runHeap) peek() (int, bool) {
 // PT: A linha da run do topo mudou (a próxima linha dessa run foi lida), então ela desce até
 // que os dois filhos sejam maiores. Isso custa cerca de log2(k) comparações, contra as k - 1 de
 // olhar todas as runs.
+// ES: La línea de la run de la cima cambió (se leyó la siguiente línea de esa run), así que
+// desciende hasta que los dos hijos sean mayores. Esto cuesta unas log2(k) comparaciones,
+// contra las k - 1 de mirar todas las runs.
 func (h *runHeap) topChanged(lines [][]byte) {
 	h.siftDown(0, lines)
 }
@@ -156,6 +168,7 @@ func (h *runHeap) topChanged(lines [][]byte) {
 // EN: The run at the top ended: the last item takes its place and sinks.
 //
 // PT: A run do topo acabou: o último item toma o lugar dela e desce.
+// ES: La run de la cima se acabó: el último elemento toma su lugar y desciende.
 func (h *runHeap) removeTop(lines [][]byte) {
 	last := len(h.items) - 1
 	h.items[0] = h.items[last]
@@ -192,6 +205,9 @@ func (h *runHeap) siftDown(at int, lines [][]byte) {
 // PT: Fase 2, a intercalação de k caminhos. Cada run é lida em sequência pelo seu próprio
 // buffer, e só uma linha de cada run fica na memória. O heap diz qual run tem a menor linha:
 // essa linha é gravada, a próxima linha da mesma run é lida, e o heap é consertado.
+// ES: Fase 2, la mezcla de k vías. Cada run se lee en secuencia por su propio buffer, y solo
+// una línea de cada run queda en memoria. El heap dice qué run tiene la menor línea: esa línea
+// se escribe, se lee la siguiente línea de la misma run y se repara el heap.
 func mergeRuns(inputs []string, output string, bufferBytes int) (written uint64, err error) {
 	readers := make([]*bufio.Reader, len(inputs))
 	lines := make([][]byte, len(inputs))
@@ -248,6 +264,9 @@ func mergeRuns(inputs []string, output string, bufferBytes int) (written uint64,
 // PT: Toda a memória da intercalação são os seus buffers: um por run de entrada mais um para a
 // saída. Com um orçamento fixo, um fan-in maior significa buffers menores, então cada recarga
 // traz menos dados. Em um disco magnético cada recarga é também um seek.
+// ES: Toda la memoria de la mezcla son sus buffers: uno por run de entrada más uno para la
+// salida. Con un presupuesto fijo, un fan-in mayor significa buffers menores, así que cada
+// recarga trae menos datos. En un disco magnético cada recarga es también un seek.
 func mergeBufferBytes(cfg config) int {
 	return max(cfg.runBytes/(cfg.fanIn+1), 4096)
 }
@@ -275,6 +294,11 @@ func moveFile(from, to string) error {
 // de até `fanIn` runs em runs maiores, até sobrar uma. Uma passada lê e grava cada linha uma
 // vez, então o número de passadas, teto(log na base fanIn do número de runs), é o que a
 // configuração realmente muda. As runs intercaladas são apagadas assim que consumidas.
+// ES: Ordenación externa por mezcla. Después de la generación de runs, cada pasada junta
+// grupos de hasta `fanIn` runs en runs mayores, hasta que queda una. Una pasada lee y escribe
+// cada línea una vez, así que el número de pasadas, techo(log en base fanIn del número de
+// runs), es lo que la configuración realmente cambia. Las runs mezcladas se borran en cuanto
+// se consumen.
 func externalSort(input, output, tmp string, cfg config) (stats, error) {
 	if cfg.fanIn < 2 {
 		return stats{}, errors.New("fan-in must be at least 2")
@@ -293,6 +317,9 @@ func externalSort(input, output, tmp string, cfg config) (stats, error) {
 	//
 	// PT: Go tem coletor de lixo: o buffer das runs não é mais referenciado, e esta chamada o
 	// coleta e devolve as suas páginas ao sistema antes de os buffers da intercalação serem criados.
+	// ES: Go tiene recolector de basura: el buffer de las runs ya no se referencia, y esta
+	// llamada lo recolecta y devuelve sus páginas al sistema antes de que se creen los buffers
+	// de la mezcla.
 	debug.FreeOSMemory()
 
 	started = time.Now()
@@ -347,6 +374,9 @@ func milliseconds(since time.Time) float64 {
 // PT: A ferramenta errada, mantida para comparação: carregar o arquivo inteiro e ordenar na
 // memória. Ela precisa de memória proporcional ao arquivo e, sob o limite de memória da
 // demonstração, é morta pelo sistema.
+// ES: La herramienta equivocada, conservada para comparar: cargar el archivo entero y ordenar
+// en memoria. Necesita memoria proporcional al archivo y, bajo el límite de memoria de la
+// demostración, el sistema la mata.
 func inMemorySort(input, output string) (uint64, error) {
 	data, err := os.ReadFile(input)
 	if err != nil {

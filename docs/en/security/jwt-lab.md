@@ -1,6 +1,6 @@
 # JWT lab: the common mistakes of token validation (MP-SEC-7)
 
-> Versão em português: [docs/pt/security/jwt-lab.md](../../pt/security/jwt-lab.md)
+> Versão em português: [docs/pt/security/jwt-lab.md](../../pt/security/jwt-lab.md) · Versión en español: [docs/es/security/jwt-lab.md](../../es/security/jwt-lab.md)
 
 Mini-project: [`projects/security/jwt-lab`](../../../projects/security/jwt-lab/README.md). Quiz topics: `jwt-oauth-oidc`, `authentication`.
 
@@ -10,7 +10,7 @@ This is a defensive lab. It runs only in Docker, on an internal network, in memo
 
 A JSON Web Token is three base64url texts joined by dots:
 
-```
+```text
 base64url(header) . base64url(payload) . base64url(signature)
 ```
 

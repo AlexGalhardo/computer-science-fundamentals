@@ -6,6 +6,10 @@
 //     `results/comparison.md`. Só o código de produção do carrinho é medido: testes, o leitor de
 //     cenários e as demos ficam de fora, assim como comentários e linhas em branco. Um teste
 //     falha quando a tabela versionada deixa de bater com o código.
+// ES: `bun run compare` mide las cuatro implementaciones e imprime la tabla Markdown versionada en
+//     `results/comparison.md`. Solo se mide el código de producción del carrito: las pruebas, el
+//     lector de escenarios y las demos quedan fuera, igual que los comentarios y las líneas en
+//     blanco. Una prueba falla cuando la tabla versionada deja de coincidir con el código.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -86,6 +90,8 @@ export function measure(): Measure[] {
 		//     inside its module.
 		// PT: Os tipos também são contados em linhas sem a indentação, porque o Elixir declara
 		//     `@type` indentado dentro do módulo.
+		// ES: Los tipos también se cuentan en líneas sin la indentación, porque Elixir declara
+		//     `@type` indentado dentro del módulo.
 		const lines = files
 			.flatMap((file) => readFileSync(file, "utf8").split(/\r?\n/))
 			.map((line) => line.trim())

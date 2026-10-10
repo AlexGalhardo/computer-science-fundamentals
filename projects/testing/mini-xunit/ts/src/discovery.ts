@@ -9,6 +9,10 @@ import { TestCase, type TestClass, TestSuite } from "./xunit";
 //     importado, e toda classe exportada por ele que estende TestCase vira uma suíte. Ninguém
 //     mantém uma lista de testes à mão, então um teste novo não pode ser esquecido. Uma convenção
 //     de nomes é tudo de que um framework precisa para achar os testes.
+// ES: Descubrimiento entre archivos: todo archivo llamado `*.xunit.ts` dentro de una carpeta se
+//     importa, y toda clase que exporta y extiende TestCase se convierte en una suite. Nadie
+//     mantiene una lista de pruebas a mano, así que una prueba nueva no se puede olvidar. Una
+//     convención de nombres es todo lo que un framework necesita para encontrar las pruebas.
 export const TEST_FILE_PATTERN = "**/*.xunit.ts";
 
 function isTestClass(value: unknown): value is TestClass {
@@ -21,6 +25,7 @@ export async function discover(directory: string): Promise<TestSuite> {
 	const suite = new TestSuite();
 	// EN: Sorted, so the tests run in the same order on every machine.
 	// PT: Ordenado, para os testes rodarem na mesma ordem em qualquer máquina.
+	// ES: Ordenado, para que las pruebas se ejecuten en el mismo orden en cualquier máquina.
 	for (const file of files.sort()) {
 		const exported: Record<string, unknown> = await import(file);
 		for (const value of Object.values(exported)) {

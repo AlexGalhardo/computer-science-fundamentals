@@ -2,6 +2,8 @@
 #     does not download them again and the versions are exactly the committed ones.
 # PT: As dependências são instaladas a partir do lockfile em uma camada própria, então editar o
 #     código não as baixa de novo e as versões são exatamente as versionadas.
+# ES: Las dependencias se instalan desde el lockfile en una capa propia, así que editar el
+#     código no las descarga de nuevo y las versiones son exactamente las versionadas.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock ./

@@ -2,6 +2,8 @@
 //     happens, without knowing who they are. A new reaction is one more subscription.
 // PT: OBSERVER. O sujeito mantém uma lista de ouvintes e avisa todos quando algo acontece, sem
 //     saber quem são. Uma reação nova é mais uma inscrição.
+// ES: OBSERVER. El sujeto mantiene una lista de oyentes y avisa a todos cuando algo ocurre, sin
+//     saber quiénes son. Una reacción nueva es una suscripción más.
 export type Listener<E> = (event: E) => void;
 
 export class EventBus<E> {
@@ -12,6 +14,9 @@ export class EventBus<E> {
 	// PT: Inscrever devolve a função que cancela a inscrição. Um ouvinte que vive menos que o
 	//     barramento precisa chamá-la, ou o barramento o mantém alcançável para sempre
 	//     (vazamento do ouvinte esquecido).
+	// ES: Suscribirse devuelve la función que cancela la suscripción. Un oyente que vive menos
+	//     que el bus necesita llamarla, o el bus lo mantiene alcanzable para siempre (fuga del
+	//     oyente olvidado).
 	subscribe(listener: Listener<E>): () => void {
 		this.listeners.push(listener);
 		return () => {
@@ -27,6 +32,10 @@ export class EventBus<E> {
 	//     estava inscrito quando ele ocorreu, mesmo que ouvintes se inscrevam ou cancelem
 	//     durante a entrega. E cada ouvinte fica isolado: um que lança exceção não interrompe
 	//     os outros, e os erros voltam para quem publicou em vez de se perderem.
+	// ES: Dos protecciones. El bucle recorre una fotografía de la lista, así que recibe el evento
+	//     quien estaba suscrito cuando ocurrió, aunque haya oyentes que se suscriban o cancelen
+	//     durante la entrega. Y cada oyente queda aislado: uno que lanza una excepción no
+	//     interrumpe a los otros, y los errores vuelven a quien publicó en lugar de perderse.
 	publish(event: E): Error[] {
 		const errors: Error[] = [];
 		for (const listener of [...this.listeners]) {
@@ -51,6 +60,7 @@ export interface OrderPaid {
 
 // EN: The order only announces what happened. It has no idea which reactions exist.
 // PT: O pedido só anuncia o que aconteceu. Ele não sabe quais reações existem.
+// ES: El pedido solo anuncia lo que ocurrió. No sabe qué reacciones existen.
 export class Order {
 	private paid = false;
 

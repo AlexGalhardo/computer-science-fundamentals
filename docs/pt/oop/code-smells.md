@@ -1,6 +1,6 @@
 # Catálogo executável de maus cheiros de código
 
-> English version: [docs/en/oop/code-smells.md](../../en/oop/code-smells.md)
+> English version: [docs/en/oop/code-smells.md](../../en/oop/code-smells.md) · Versión en español: [docs/es/oop/code-smells.md](../../es/oop/code-smells.md)
 
 Mini-projeto MP-OOP-2, em [`projects/oop/code-smells`](../../../projects/oop/code-smells). Ele ensina a reconhecer maus cheiros comuns e a removê-los. Linguagens: TypeScript e Java.
 

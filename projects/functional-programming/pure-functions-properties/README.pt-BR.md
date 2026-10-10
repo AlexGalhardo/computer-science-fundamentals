@@ -1,6 +1,6 @@
 # pure-functions-properties
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A mesma pequena base de código em TypeScript e Elixir. Ensina **por que código puro é fácil de testar e o que os testes baseados em propriedades encontram**: uma regra escrita de forma impura e de forma pura, uma propriedade que pega um erro que os testes com exemplos deixam passar e o reduz à menor entrada, e um pipeline montado pela composição de funções puras.
 
@@ -18,7 +18,7 @@ Explicação completa: [docs/pt/functional-programming/pure-functions-properties
 
 A propriedade de ida e volta falha nele. Com a semente padrão (42), as duas linguagens informam a mesma coisa:
 
-```
+```text
 round trip, buggy decoder: FAILED on run 1 (seed 42)
   original counterexample: "aaaaaaaaaccccccccbbbbbbbbbb"
   shrunk in 6 steps to:   "aaaaaaaaaa"

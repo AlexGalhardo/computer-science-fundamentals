@@ -12,6 +12,9 @@ use crate::chunk::Chunk;
 // PT: Um valor cabe em poucos bytes e é barato de copiar: números, booleanos e `nil` ficam
 //     guardados direto, e strings e funções são compartilhadas por um ponteiro com contagem de
 //     referências (`Rc`), então empilhar um deles nunca copia o texto nem o código.
+// ES: Un valor cabe en pocos bytes y es barato de copiar: números, booleanos y `nil` se guardan
+//     directamente, y las strings y funciones se comparten mediante un puntero con conteo de
+//     referencias (`Rc`), así que apilar uno de ellos nunca copia el texto ni el código.
 #[derive(Debug, Clone)]
 pub enum Value {
     Nil,
@@ -32,6 +35,8 @@ impl Value {
 //     the very same closure object.
 // PT: Valores de tipos diferentes nunca são iguais, e duas funções são iguais apenas quando são
 //     exatamente o mesmo objeto closure.
+// ES: Valores de tipos distintos nunca son iguales, y dos funciones son iguales solo cuando son
+//     exactamente el mismo objeto closure.
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -71,6 +76,8 @@ pub struct UpvalueRef {
 //     script). It is immutable and exists once, however many times the function is called.
 // PT: Uma função compilada: o que o compilador produz para um `fn` (e para o script de nível
 //     superior). É imutável e existe uma única vez, não importa quantas vezes a função é chamada.
+// ES: Una función compilada: lo que el compilador produce para un `fn` (y para el script de nivel
+//     superior). Es inmutable y existe una sola vez, no importa cuántas veces se llame la función.
 #[derive(Debug)]
 pub struct Function {
     pub name: String,
@@ -88,6 +95,11 @@ pub struct Function {
 //     posição está prestes a sumir, o valor se muda para dentro do próprio upvalue (`Closed`).
 //     Toda closure que capturou a variável compartilha este mesmo objeto, então todas continuam
 //     vendo a mesma variável.
+// ES: Una variable capturada. Mientras la función que la declaró sigue corriendo, la variable
+//     vive en una posición de la pila y el upvalue solo apunta a ella (`Open`). Cuando esa
+//     posición está a punto de desaparecer, el valor se muda al interior del propio upvalue
+//     (`Closed`). Toda closure que capturó la variable comparte este mismo objeto, así que todas
+//     siguen viendo la misma variable.
 #[derive(Debug)]
 pub enum Upvalue {
     Open(usize),

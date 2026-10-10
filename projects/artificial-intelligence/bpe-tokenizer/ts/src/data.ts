@@ -4,6 +4,9 @@
 // PT: O corpus, o texto de amostra e a tabela esperada ficam em ../data, compartilhados pelas
 //     implementações em TypeScript e em Python. No Docker a pasta é montada e DATA_DIR aponta
 //     para ela.
+// ES: El corpus, el texto de muestra y la tabla esperada están en ../data, compartidos por las
+//     implementaciones en TypeScript y en Python. En Docker la carpeta se monta y DATA_DIR apunta
+//     a ella.
 
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";

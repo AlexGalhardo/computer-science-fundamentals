@@ -11,6 +11,10 @@ defmodule Scenarios do
   #     {nome, carrinho, esperado}: o carrinho é montado com as funções públicas de Cart, e o
   #     esperado tem o mesmo formato que Cart.price/1 devolve, então um teste os compara com um
   #     único ==.
+  # ES: Este módulo no entra en la comparación. Transforma el archivo de texto en una lista de
+  #     {nombre, carrito, esperado}: el carrito se arma con las funciones públicas de Cart, y lo
+  #     esperado tiene el mismo formato que devuelve Cart.price/1, así que una prueba los compara
+  #     con un solo ==.
 
   @file_path Path.expand("../../scenarios.txt", __DIR__)
 
@@ -29,6 +33,7 @@ defmodule Scenarios do
 
   # EN: Groups the lines: a "scenario" line closes the group before it and opens a new one.
   # PT: Agrupa as linhas: uma linha "scenario" fecha o grupo anterior e abre um novo.
+  # ES: Agrupa las líneas: una línea "scenario" cierra el grupo anterior y abre uno nuevo.
   defp chunk("scenario " <> _ = line, acc), do: {:cont, Enum.reverse(acc), [line]}
   defp chunk(line, acc), do: {:cont, [line | acc]}
 

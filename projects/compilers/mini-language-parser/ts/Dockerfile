@@ -2,6 +2,9 @@
 #     `examples/`. There is no dependency to install: lexer and parser use only the language.
 # PT: O contexto de build é a pasta do projeto, porque os testes leem os programas de exemplo em
 #     `examples/`. Não há dependência a instalar: lexer e parser usam apenas a linguagem.
+# ES: El contexto de build es la carpeta del proyecto, porque las pruebas leen los programas de
+#     ejemplo en `examples/`. No hay dependencias que instalar: el lexer y el parser usan solo el
+#     lenguaje.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY examples ./examples

@@ -6,6 +6,9 @@ import type { User, Users } from "./users";
 // PT: DECORATOR. Cada recurso é uma classe que implementa `Users` e embrulha outro `Users`.
 //     Como embrulho e embrulhado têm a mesma interface, os recursos são combinados na montagem
 //     dos objetos, em qualquer ordem, e cada um é escrito uma única vez.
+// ES: DECORATOR. Cada funcionalidad es una clase que implementa `Users` y envuelve otro `Users`.
+//     Como envoltorio y envuelto tienen la misma interfaz, las funcionalidades se combinan al
+//     montar los objetos, en cualquier orden, y cada una se escribe una sola vez.
 export class Logged implements Users {
 	constructor(
 		private readonly inner: Users,
@@ -40,6 +43,9 @@ export class Cached implements Users {
 	// PT: Um decorador é um subtipo do que embrulha, então precisa manter o contrato: uma
 	//     leitura depois de uma escrita devolve o que foi escrito. Sem esta linha o cache
 	//     serviria dados antigos.
+	// ES: Un decorador es un subtipo de lo que envuelve, así que debe mantener el contrato: una
+	//     lectura después de una escritura devuelve lo que se escribió. Sin esta línea la caché
+	//     serviría datos antiguos.
 	save(user: User): void {
 		this.inner.save(user);
 		this.seen.delete(user.id);

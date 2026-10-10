@@ -1,6 +1,6 @@
 # NGINX against Caddy
 
-> Versão em português: [docs/pt/load-balancing/nginx-vs-caddy.md](../../pt/load-balancing/nginx-vs-caddy.md)
+> Versão em português: [docs/pt/load-balancing/nginx-vs-caddy.md](../../pt/load-balancing/nginx-vs-caddy.md) · Versión en español: [docs/es/load-balancing/nginx-vs-caddy.md](../../es/load-balancing/nginx-vs-caddy.md)
 
 Mini-project: [projects/load-balancing/nginx-vs-caddy](../../../projects/load-balancing/nginx-vs-caddy/README.md) (MP-LB-1). Languages: configuration files and TypeScript.
 
@@ -26,7 +26,7 @@ NGINX and Caddy both answer these questions, with different words and, more impo
 
 The lab makes `api-3` answer in 40 ms and the others in 10 ms, and keeps 30 requests in flight. Least connections keeps about 10 on each instance. An instance holding 10 requests of 10 ms finishes 1000 per second, and one holding 10 requests of 40 ms finishes 250 per second:
 
-```
+```text
 rate     = in flight / time per request
 api-1    = 10 / 0.010 s = 1000 requests/s
 api-2    = 10 / 0.010 s = 1000 requests/s

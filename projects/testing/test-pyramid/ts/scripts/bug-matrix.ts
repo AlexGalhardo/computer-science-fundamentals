@@ -10,6 +10,10 @@ import { SEEDED_BUGS, type SeededBug } from "../src/seeded-bugs";
 //     suíte ficou vermelha. Nada na tabela é escrito à mão: uma célula diz FAIL só quando a
 //     suíte realmente terminou com erro. A primeira linha (sem bug) também é o relatório de
 //     custo: quantos testes cada suíte tem e quanto tempo leva.
+// ES: La demo de este mini-proyecto. Ejecuta cada suite contra cada bug sembrado e imprime qué
+//     suite se puso roja. Nada en la tabla se escribe a mano: una celda dice FAIL solo cuando la
+//     suite realmente terminó con error. La primera fila (sin bug) es también el informe de
+//     costo: cuántas pruebas tiene cada suite y cuánto tarda.
 interface Suite {
 	name: "unit" | "integration" | "regression" | "smoke" | "e2e";
 	command: string[];
@@ -42,6 +46,9 @@ const SUITES: readonly Suite[] = [
 // PT: O servidor está "pronto" quando a porta responde qualquer coisa, até um erro. A prontidão
 //     não pode depender de /health, ou o bug semeado de fumaça seria pego por este script em
 //     vez de pela suíte de fumaça.
+// ES: El servidor está "listo" cuando el puerto responde cualquier cosa, incluso un error. La
+//     disponibilidad no puede depender de /health, o el bug sembrado de humo sería atrapado por este
+//     script en lugar de por la suite de humo.
 async function waitForServer(): Promise<void> {
 	for (let attempt = 0; attempt < 100; attempt++) {
 		try {
@@ -58,6 +65,8 @@ async function waitForServer(): Promise<void> {
 //     "1 failed" (Playwright), so one pattern counts the tests of both.
 // PT: Os dois executores terminam com um resumo como "9 pass" / "1 fail" (bun test) ou
 //     "3 passed" / "1 failed" (Playwright), então um padrão conta os testes dos dois.
+// ES: Los dos ejecutores terminan con un resumen como "9 pass" / "1 fail" (bun test) o
+//     "3 passed" / "1 failed" (Playwright), así que un patrón cuenta las pruebas de ambos.
 function countTests(output: string): number {
 	const count = (word: string): number => Number(output.match(new RegExp(`(\\d+) ${word}`))?.[1] ?? 0);
 	return count("pass") + count("fail");
@@ -131,6 +140,8 @@ function report(runs: Run[]): string {
 //     by the suite of its own level. If that stops being true, the demo itself fails.
 // PT: A lição que a tabela precisa mostrar: sem bug tudo fica verde, e cada bug é pego pela
 //     suíte do seu próprio nível. Se isso deixar de ser verdade, a própria demo falha.
+// ES: La lección que la tabla debe mostrar: sin bug todo queda verde, y cada bug lo atrapa la
+//     suite de su propio nivel. Si eso deja de ser verdad, la propia demo falla.
 function problems(runs: Run[]): string[] {
 	const found: string[] = [];
 	for (const run of runs) {
@@ -164,6 +175,8 @@ mkdirSync(resultsDir, { recursive: true });
 //     a different uid): replacing a file needs write access to the folder, not to the file.
 // PT: O arquivo antigo é removido antes porque pode pertencer a outro usuário (uma execução
 //     anterior com outro uid): substituir um arquivo exige escrita na pasta, não no arquivo.
+// ES: El archivo antiguo se elimina antes porque puede pertenecer a otro usuario (una ejecución
+//     anterior con otro uid): reemplazar un archivo requiere escritura en la carpeta, no en el archivo.
 const target = join(resultsDir, "bug-matrix.md");
 rmSync(target, { force: true });
 writeFileSync(target, markdown);

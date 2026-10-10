@@ -36,6 +36,7 @@ test("weights 3, 2, 1 promise one half, one third and one sixth", () => {
 
 // EN: The worked example of the README: 10, 10 and 40 ms give 4 : 4 : 1.
 // PT: O exemplo resolvido do README: 10, 10 e 40 ms dão 4 : 4 : 1.
+// ES: El ejemplo resuelto del README: 10, 10 y 40 ms dan 4 : 4 : 1.
 test("least connections shares follow the inverse of the service time", () => {
 	const expected = expectedFromServiceTimes([10, 10, 40]);
 	expect(expected[0]).toBeCloseTo(4 / 9);

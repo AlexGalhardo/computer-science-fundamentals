@@ -1,6 +1,6 @@
 # Ferramenta de normalização (MP-DB-2)
 
-> English version: [docs/en/databases/normalisation-tool.md](../../en/databases/normalisation-tool.md)
+> English version: [docs/en/databases/normalisation-tool.md](../../en/databases/normalisation-tool.md) · Versión en español: [docs/es/databases/normalisation-tool.md](../../es/databases/normalisation-tool.md)
 
 Código: [projects/databases/normalisation-tool](../../../projects/databases/normalisation-tool). Linguagem: Python.
 
@@ -16,7 +16,7 @@ docker compose run --rm explain --lang pt
 
 `X -> Y` vale quando duas linhas iguais em `X` são sempre iguais em `Y`. O **fecho** `X+` é tudo o que `X` determina. O algoritmo começa com `X` e vai acrescentando o lado direito de toda dependência cujo lado esquerdo já está dentro, até nada mudar.
 
-```
+```text
 F = { A -> B, B -> C, CD -> E }
 
 {A}+ :  {A}  --A->B-->  {A, B}  --B->C-->  {A, B, C}      (CD -> E precisa de D: para)
@@ -57,7 +57,7 @@ A 1FN é pressuposta, porque trata de valores atômicos, o que dependências nã
 
 **FNBC por divisão.** Enquanto uma relação tiver um determinante `X` que não é chave, divide em `X+` e o resto mais `X`. O resultado é sempre sem perda, mas uma dependência pode se perder. O caso clássico:
 
-```
+```text
 AULA(aluno, disciplina, professor)
   aluno, disciplina -> professor        professor -> disciplina
 
@@ -71,7 +71,7 @@ Essa é a troca entre as duas formas: a 3FN sempre consegue manter as dependênc
 
 Uma decomposição é sem perda quando juntar os pedaços devolve exatamente a relação original, sem linhas inventadas. O chase confere isso com uma tabela pequena: uma linha por pedaço, `a` onde o pedaço tem o atributo e um `b` único onde não tem.
 
-```
+```text
 R(A, B, C) com A -> B, pedaços {A, B} e {A, C}
 
 início           A -> B: as linhas são iguais em A, então precisam ser iguais em B

@@ -13,6 +13,8 @@ def random_table(generator: random.Random, rows: int) -> Table:
     # EN: Small value ranges on purpose, so equal values and duplicate projected rows are common.
     # PT: Faixas pequenas de valores de propósito, para que valores iguais e linhas projetadas
     #     repetidas sejam comuns.
+    # ES: Rangos pequeños de valores a propósito, para que los valores iguales y las filas
+    #     proyectadas repetidas sean comunes.
     table = Table(["id", "name", "score"])
     for row_id in range(rows):
         table.insert((row_id, generator.choice(NAMES), generator.randrange(0, 8)))
@@ -36,6 +38,9 @@ def test_selection_and_projection_equal_sqlite_on_random_tables() -> None:
     # PT: O motor e o SQLite recebem as mesmas linhas e a mesma consulta, e precisam devolver o
     #     mesmo multiconjunto de linhas. As linhas são comparadas ordenadas, porque nenhum dos
     #     dois lados promete uma ordem.
+    # ES: El motor y SQLite reciben las mismas filas y la misma consulta, y deben devolver el
+    #     mismo multiconjunto de filas. Las filas se comparan ordenadas, porque ninguno de los
+    #     dos lados promete un orden.
     generator = random.Random(2026)
     projections = [["id", "name", "score"], ["name"], ["score"], ["score", "name"]]
     for _ in range(40):

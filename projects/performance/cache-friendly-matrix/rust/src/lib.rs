@@ -10,6 +10,9 @@
 // PT: Três formas de multiplicar duas matrizes n x n, as mesmas da versão em C++. As três fazem
 //     exatamente as mesmas n^3 multiplicações e somas, então o Big O é o mesmo. O que muda é a
 //     ORDEM em que a memória é visitada.
+// ES: Tres formas de multiplicar dos matrices n x n, las mismas de la versión en C++. Las tres
+//     hacen exactamente las mismas n^3 multiplicaciones y sumas, así que el Big O es el mismo. Lo
+//     que cambia es el ORDEN en que se visita la memoria.
 //
 //     A matriz é um slice plano guardado por linhas (row-major): o elemento (i, j) fica no
 //     índice i * n + j, então uma linha é contígua e uma coluna não. O processador busca a
@@ -25,6 +28,9 @@ pub const DEFAULT_BLOCK: usize = 64;
 // PT: Entrada determinística a partir de uma semente fixa (um gerador congruente linear),
 //     idêntica à do C++, para que as duas linguagens multipliquem as mesmas matrizes e os
 //     checksums sejam comparáveis.
+// ES: Entrada determinista a partir de una semilla fija (un generador congruencial lineal),
+//     idéntica a la de C++, para que los dos lenguajes multipliquen las mismas matrices y los
+//     checksums sean comparables.
 pub fn make_matrix(n: usize, seed: u64) -> Vec<f64> {
     let mut state = seed;
     (0..n * n)
@@ -43,6 +49,9 @@ pub fn make_matrix(n: usize, seed: u64) -> Vec<f64> {
 // PT: A ordem do livro-texto, i-j-k: cada elemento do resultado é o produto escalar de uma linha
 //     de A por uma coluna de B. B é percorrida descendo uma coluna: b[0][j], b[1][j],
 //     b[2][j]..., a n * 8 bytes um do outro, uma linha de cache nova a cada passo.
+// ES: El orden del libro de texto, i-j-k: cada elemento del resultado es el producto escalar de una
+//     fila de A por una columna de B. B se recorre bajando una columna: b[0][j], b[1][j],
+//     b[2][j]..., a n * 8 bytes uno del otro, una línea de caché nueva en cada paso.
 pub fn multiply_naive(a: &[f64], b: &[f64], n: usize) -> Vec<f64> {
     let mut c = vec![0.0; n * n];
     for i in 0..n {
@@ -65,6 +74,10 @@ pub fn multiply_naive(a: &[f64], b: &[f64], n: usize) -> Vec<f64> {
 //     agora anda ao longo da linha k de B e da linha i de C, ambas contíguas (localidade
 //     espacial). Pegar as duas linhas como slices também deixa o compilador remover as
 //     checagens de limite e usar instruções vetoriais.
+// ES: Intercambio de bucles, i-k-j: se intercambian los dos bucles internos y nada más. El bucle
+//     interno ahora recorre la fila k de B y la fila i de C, ambas contiguas (localidad espacial).
+//     Tomar las dos filas como slices también permite al compilador eliminar las comprobaciones de
+//     límites y usar instrucciones vectoriales.
 pub fn multiply_interchanged(a: &[f64], b: &[f64], n: usize) -> Vec<f64> {
     let mut c = vec![0.0; n * n];
     for i in 0..n {
@@ -89,6 +102,11 @@ pub fn multiply_interchanged(a: &[f64], b: &[f64], n: usize) -> Vec<f64> {
 //     3 * block^2 * 8 bytes, repetidas vezes. Quando isso cabe em um nível de cache, o dado é
 //     reutilizado enquanto ainda está lá (localidade temporal), em vez de ser buscado de novo
 //     na memória principal.
+// ES: Blocking (tiling): el mismo trabajo i-k-j, cortado en bloques de `block` x `block`
+//     elementos. Dentro de un bloque el código toca un trozo cuadrado de A, de B y de C, unos
+//     3 * block^2 * 8 bytes, una y otra vez. Cuando eso cabe en un nivel de caché, el dato se
+//     reutiliza mientras todavía está allí (localidad temporal), en lugar de buscarse de nuevo
+//     en la memoria principal.
 pub fn multiply_blocked(a: &[f64], b: &[f64], n: usize, block: usize) -> Vec<f64> {
     assert!(block > 0, "block size must be at least 1");
     let mut c = vec![0.0; n * n];
@@ -132,6 +150,8 @@ pub fn max_abs_diff(x: &[f64], y: &[f64]) -> f64 {
 //     variants, and the two languages, must print the same text.
 // PT: Um resumo curto do resultado: a soma de todos os elementos com três casas decimais. As
 //     três variantes, e as duas linguagens, precisam imprimir o mesmo texto.
+// ES: Un resumen corto del resultado: la suma de todos los elementos con tres decimales. Las
+//     tres variantes, y los dos lenguajes, deben imprimir el mismo texto.
 pub fn checksum(values: &[f64]) -> String {
     let mut sum = 0.0;
     for value in values {
@@ -147,6 +167,10 @@ pub fn checksum(values: &[f64]) -> String {
 //     uma tolerância de ponto flutuante. Localidade: a ordem ingênua precisa ser claramente mais
 //     lenta que a trocada, conferido como razão entre tempos com um limite muito abaixo do que
 //     normalmente se mede.
+// ES: Dos tipos de prueba, como en C++. Corrección: las tres variantes dan la misma matriz dentro
+//     de una tolerancia de punto flotante. Localidad: el orden ingenuo debe ser claramente más
+//     lento que el intercambiado, verificado como razón entre tiempos con un límite muy por debajo
+//     de lo que normalmente se mide.
 #[cfg(test)]
 mod tests {
     use super::*;

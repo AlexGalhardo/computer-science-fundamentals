@@ -1,6 +1,6 @@
 # paging-tlb
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A paging simulator. It translates virtual addresses through a TLB and a page table, counting TLB hits, TLB misses and page faults, and it compares four page replacement algorithms (FIFO, clock, LRU and optimal) on reference strings. It teaches what a translation costs, why the TLB matters, and that the choice of the page to evict changes the number of page faults, up to Belady's anomaly, where FIFO faults more with more memory.
 
@@ -29,7 +29,7 @@ docker compose run --rm demo
 
 It prints the page-fault tables and the TLB experiment and writes `results/results.md` and `results/results.json`.
 
-```
+```text
 Belady's anomaly
 reference string: 1 2 3 4 1 2 5 1 2 3 4 5
 frames      1    2    3    4    5

@@ -4,6 +4,9 @@
 // PT: MP-SEC-6.1, a comparação de armazenamento. Dois usuários falsos escolhem a mesma senha
 //     falsa e os testes olham o que cada esquema grava na tabela, depois a verificação e a
 //     atualização de um hash antigo no login. Nada aqui tenta descobrir uma senha.
+// ES: MP-SEC-6.1, la comparación de almacenamiento. Dos usuarios falsos eligen la misma contraseña
+//     falsa y las pruebas miran lo que cada esquema escribe en la tabla, luego la verificación y la
+//     actualización de un hash antiguo en el inicio de sesión. Nada aquí intenta descubrir una contraseña.
 
 import { describe, expect, test } from "bun:test";
 import { SHARED_FAKE_PASSWORD } from "../src/data";

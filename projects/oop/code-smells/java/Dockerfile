@@ -8,6 +8,11 @@
 #     e todo aviso de lint é erro. A última etapa do build é um teste negativo: o javac precisa
 #     RECUSAR negative/SwappedArguments.java, e o build falha se ele for aceito. Os testes depois
 #     rodam sem rede.
+# ES: Gradle en una imagen fijada verifica el formato con Spotless (google-java-format) mientras
+#     se construye la imagen, que es el único paso que necesita red. El código se compila con
+#     javac y toda advertencia de lint es un error. El último paso del build es un test negativo:
+#     javac debe RECHAZAR negative/SwappedArguments.java, y el build falla si lo acepta. Los
+#     tests después se ejecutan sin red.
 FROM gradle:9.8.0-jdk25
 WORKDIR /app
 COPY . .

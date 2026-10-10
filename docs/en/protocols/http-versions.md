@@ -1,6 +1,6 @@
 # HTTP/1.1, HTTP/2 and HTTP/3 (MP-PROTO-2)
 
-> Versão em português: [docs/pt/protocols/http-versions.md](../../pt/protocols/http-versions.md)
+> Versão em português: [docs/pt/protocols/http-versions.md](../../pt/protocols/http-versions.md) · Versión en español: [docs/es/protocols/http-versions.md](../../es/protocols/http-versions.md)
 
 Mini-project: [`projects/protocols/http-versions`](../../../projects/protocols/http-versions/README.md). Quiz topics: `http2`, `http3-quic`, `tls-handshake`.
 
@@ -50,7 +50,7 @@ Every port uses TLS, with `tls internal` in the Caddyfile: Caddy creates its own
 
 `tc netem` is the network emulator of the Linux kernel. `caddy/entrypoint.sh` attaches it to the outgoing interface of the Caddy container and selects packets by **source port**, so one server offers the three conditions at once:
 
-```
+```text
 prio qdisc (3 bands)
   band 1                              ports 80xx   untouched
   band 2  netem delay 50ms            ports 81xx   filter: sport & 0xfffc == 8100

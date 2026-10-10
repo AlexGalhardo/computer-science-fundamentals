@@ -1,6 +1,6 @@
 # Máquina de estados de pedido
 
-> English version: [docs/en/state-machines/order-state-machine.md](../../en/state-machines/order-state-machine.md)
+> English version: [docs/en/state-machines/order-state-machine.md](../../en/state-machines/order-state-machine.md) · Versión en español: [docs/es/state-machines/order-state-machine.md](../../es/state-machines/order-state-machine.md)
 
 Mini-projeto MP-FSM-1, em [`projects/state-machines/order-state-machine`](../../../projects/state-machines/order-state-machine). Ensina como estados e transições explícitos eliminam situações inválidas. Linguagens: TypeScript e Elixir.
 

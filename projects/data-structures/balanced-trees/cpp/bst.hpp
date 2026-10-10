@@ -19,6 +19,11 @@ namespace trees {
 //     para a direita, e uma chave nova vira folha onde a busca por ela termina. Nada controla a
 //     forma: ela depende só da ordem de chegada. Chaves que chegam já ordenadas vão sempre para
 //     o mesmo lado e a árvore degenera em uma lista encadeada, com altura n e operações O(n).
+// ES: Árbol binario de búsqueda sin balanceo. Las claves menores van a la izquierda y las mayores
+//     a la derecha, y una clave nueva se vuelve hoja donde termina la búsqueda de ella. Nada
+//     controla la forma: depende solo del orden de llegada. Las claves que llegan ya ordenadas van
+//     siempre al mismo lado y el árbol degenera en una lista enlazada, con altura n y operaciones
+//     O(n).
 class Bst final : public SearchTree {
 public:
 	Bst() = default;
@@ -31,6 +36,9 @@ public:
 	// PT: Tudo aqui é laço, não recursão, inclusive o destrutor. Uma árvore degenerada com
 	//     100.000 nós tem 100.000 níveis de profundidade, e uma chamada de função por nível
 	//     estouraria a pilha de chamadas.
+	// ES: Todo aquí es un bucle, no recursión, incluido el destructor. Un árbol degenerado con
+	//     100,000 nodos tiene 100,000 niveles de profundidad, y una llamada de función por nivel
+	//     desbordaría la pila de llamadas.
 	~Bst() override {
 		std::vector<Node*> pending;
 		if (root_ != nullptr) {
@@ -55,6 +63,8 @@ public:
 	//     the left or right field of each node on the way down.
 	// PT: `link` aponta para o ponteiro que deve receber o nó novo: primeiro a raiz, depois o
 	//     campo esquerdo ou direito de cada nó no caminho de descida.
+	// ES: `link` apunta al puntero que debe recibir el nodo nuevo: primero la raíz, luego el
+	//     campo izquierdo o derecho de cada nodo en el camino de descenso.
 	bool insert(Key key) override {
 		Node** link = &root_;
 		while (*link != nullptr) {
@@ -77,6 +87,10 @@ public:
 	//     substituído por esse filho. Um nó com dois filhos fica no lugar e recebe a chave do
 	//     seu sucessor em-ordem (a menor chave da subárvore direita), e o sucessor, que tem no
 	//     máximo um filho, é o nó realmente desligado.
+	// ES: Tres casos. Un nodo sin hijos simplemente se desenlaza. Un nodo con un hijo se reemplaza
+	//     por ese hijo. Un nodo con dos hijos se queda en su lugar y recibe la clave de su sucesor
+	//     en orden (la menor clave del subárbol derecho), y el sucesor, que tiene como máximo un
+	//     hijo, es el nodo que realmente se desenlaza.
 	bool remove(Key key) override {
 		Node** link = &root_;
 		while (*link != nullptr && (*link)->key != key) {
@@ -137,6 +151,8 @@ public:
 	//     it has to visit the keys in strictly increasing order.
 	// PT: A única invariante desta árvore é a ordem, e o percurso em-ordem é o teste: ele
 	//     precisa visitar as chaves em ordem estritamente crescente.
+	// ES: La única invariante de este árbol es el orden, y el recorrido en orden es la prueba:
+	//     debe visitar las claves en orden estrictamente creciente.
 	std::string check() const override {
 		std::vector<const Node*> stack;
 		const Node* node = root_;

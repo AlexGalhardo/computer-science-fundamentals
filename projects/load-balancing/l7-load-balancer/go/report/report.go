@@ -35,6 +35,10 @@ type Run struct {
 // PT: Uma execução em máquina compartilhada prova pouco, então nenhum número da tabela é uma
 // medição única. Uma diferença menor que a distância entre o mínimo e o máximo não é um
 // resultado.
+//
+// ES: Una ejecución en una máquina compartida prueba poco, así que ningún número de la tabla es
+// una medición única. Una diferencia menor que la distancia entre el mínimo y el máximo no es un
+// resultado.
 type Spread struct {
 	Median float64 `json:"median"`
 	Min    float64 `json:"min"`

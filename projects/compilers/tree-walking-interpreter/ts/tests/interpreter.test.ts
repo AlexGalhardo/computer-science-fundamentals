@@ -17,6 +17,9 @@ const output = (source: string): string[] => {
 // PT: A suíte de exemplos. Todo `examples/<nome>.mini` tem um `examples/<nome>.out` com o texto
 //     exato que deve imprimir. A máquina virtual de bytecode do MP-COMP-3 é testada contra os
 //     mesmos pares, e é assim que as duas implementações são mantidas de acordo.
+// ES: La suite de ejemplos. Todo `examples/<nombre>.mini` tiene un `examples/<nombre>.out` con el
+//     texto exacto que debe imprimir. La máquina virtual de bytecode del MP-COMP-3 se prueba
+//     contra los mismos pares, y así se mantiene de acuerdo a las dos implementaciones.
 const examples = join(import.meta.dir, "..", "..", "examples");
 const programs = readdirSync(examples).filter((name) => name.endsWith(".mini"));
 
@@ -137,6 +140,8 @@ test("a syntax error stops the program before anything runs", () => {
 //     and a line that fails must not destroy what earlier lines defined.
 // PT: O REPL é uma sessão que recebe uma linha por vez. O estado precisa sobreviver entre as
 //     linhas, e uma linha que falha não pode destruir o que as linhas anteriores definiram.
+// ES: El REPL es una sesión que recibe una línea a la vez. El estado debe sobrevivir entre las
+//     líneas, y una línea que falla no puede destruir lo que las líneas anteriores definieron.
 test("REPL session: a function defined on one line is called on a later one", () => {
 	const session = new Session();
 	const line = (source: string): string[] => {

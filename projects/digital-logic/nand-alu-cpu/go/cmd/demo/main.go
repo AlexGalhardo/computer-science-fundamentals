@@ -5,6 +5,8 @@
 //
 // PT: Com RESULTS_DIR definida ele também grava results/trace.txt, o arquivo com que as duas
 // suítes de teste se comparam. A saída precisa ser idêntica à da demo em TypeScript.
+// ES: Con RESULTS_DIR definida también escribe results/trace.txt, el archivo con el que se
+// comparan las dos suites de prueba. La salida debe ser idéntica a la de la demo en TypeScript.
 package main
 
 import (

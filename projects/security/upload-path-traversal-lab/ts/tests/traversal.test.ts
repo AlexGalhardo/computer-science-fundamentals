@@ -8,6 +8,11 @@
 //     (MP-SEC-8.1). Contra a corrigida, afirmam que a mesma tentativa é bloqueada (MP-SEC-8.2).
 //     Cada teste ganha a própria pasta temporária, e o arquivo lido "de fora" é um segredo falso
 //     criado pelo próprio laboratório.
+// ES: Path traversal, del lado de la lectura y del lado de la escritura. Las mismas funciones de escenario corren
+//     contra las dos versiones. Contra la API vulnerable las pruebas afirman que la falla es observable
+//     (MP-SEC-8.1). Contra la corregida, afirman que el mismo intento es bloqueado (MP-SEC-8.2).
+//     Cada prueba recibe su propia carpeta temporal, y el archivo leído "desde fuera" es un secreto falso
+//     creado por el propio laboratorio.
 
 import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
@@ -36,6 +41,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 //     container, where it always works, so these tests are skipped only on a Windows host.
 // PT: Criar um link simbólico exige uma permissão especial no Windows. O laboratório roda em um
 //     contêiner Linux, onde sempre funciona, então estes testes são pulados só em um host Windows.
+// ES: Crear un enlace simbólico exige un permiso especial en Windows. El laboratorio corre en un
+//     contenedor Linux, donde siempre funciona, así que estas pruebas se omiten solo en un host Windows.
 const NO_SYMLINKS = process.platform === "win32";
 
 describe("vulnerable API: the flaw is observable", () => {
@@ -101,6 +108,7 @@ describe("fixed API: the same attempts are blocked", () => {
 
 			// EN: The original name survives only as a label, reduced to its last segment.
 			// PT: O nome original sobrevive só como rótulo, reduzido ao último segmento.
+			// ES: El nombre original sobrevive solo como etiqueta, reducido al último segmento.
 			const back = await download(lab, TOKENS.bob, referenceOf(write.attempt));
 			expect(back.text).toBe(PLANTED_CONTENT);
 			expect(back.headers.get("content-disposition")).toBe(
@@ -130,6 +138,8 @@ describe("fixed API: downloads go by id through the index", () => {
 	// EN: Hand-picked malformed references. Each one fails the UUID shape before any path exists.
 	// PT: Referências malformadas escolhidas à mão. Cada uma falha no formato de UUID antes de
 	//     existir qualquer caminho.
+	// ES: Referencias mal formadas elegidas a mano. Cada una falla en el formato de UUID antes de
+	//     que exista cualquier ruta.
 	test.each(["report.txt", SECRET_FILE_NAME, ""])("the reference %p is refused with 400", async (reference) => {
 		const read = await withLab("fixed", (lab) => download(lab, TOKENS.bob, reference));
 		expect(read.status).toBe(400);

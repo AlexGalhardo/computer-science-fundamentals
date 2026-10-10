@@ -10,6 +10,9 @@ import { loadScenarios } from "../src/scenarios";
 // PT: `Object.freeze` faz qualquer escrita no objeto lançar TypeError (módulos rodam em modo
 //     estrito). Congelar todos os níveis da entrada transforma "esta função não altera seus
 //     argumentos" de promessa em algo que o teste consegue observar.
+// ES: `Object.freeze` hace que cualquier escritura en el objeto lance TypeError (los módulos
+//     corren en modo estricto). Congelar todos los niveles de la entrada convierte "esta función
+//     no modifica sus argumentos" de una promesa en algo que la prueba puede observar.
 function deepFreeze<T>(value: T): T {
 	if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
 		Object.freeze(value);
@@ -64,6 +67,9 @@ describe("the functional version mutates no input", () => {
 // PT: O contraste. Com objetos, `add` não devolve nada e altera o carrinho no lugar: toda
 //     variável que aponta para o carrinho enxerga a linha nova. Com funções, o valor antigo
 //     continua lá depois da "alteração".
+// ES: El contraste. Con objetos, `add` no devuelve nada y modifica el carrito en el mismo lugar:
+//     toda variable que apunta al carrito ve la línea nueva. Con funciones, el valor antiguo
+//     sigue ahí después del "cambio".
 describe("objects change in place, values do not", () => {
 	test("a second reference to the object cart sees the added line", () => {
 		const cart = new Cart();

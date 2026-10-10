@@ -1,6 +1,6 @@
 # Estratégias de cache e estouro da manada (MP-CACHE-1)
 
-> English version: [docs/en/cache/cache-strategies.md](../../en/cache/cache-strategies.md)
+> English version: [docs/en/cache/cache-strategies.md](../../en/cache/cache-strategies.md) · Versión en español: [docs/es/cache/cache-strategies.md](../../es/cache/cache-strategies.md)
 
 Mini-projeto: [`projects/cache/cache-strategies`](../../../projects/cache/cache-strategies/README.pt-BR.md). Tópicos do quiz: `caching-strategies`, `consistency-trade-offs`, `stampede-penetration-avalanche`, `invalidation-ttl`.
 
@@ -14,7 +14,7 @@ Toda estratégia de cache é uma resposta a uma pergunta: **em uma escrita, quem
 
 As três estratégias do mini-projeto leem do mesmo jeito, chamado de carga preguiçosa (lazy loading):
 
-```
+```text
 valor = GET product:7              acerto -> responde
                                    falha  -> SELECT no PostgreSQL
                                              SET product:7 valor PX <tempo de vida>
@@ -37,7 +37,7 @@ A escrita apaga a chave em vez de gravar o valor novo. Dois escritores que grava
 
 Sobra uma corrida, e os testes a repetem passo a passo:
 
-```
+```text
 leitor:   GET  -> falha
 leitor:   SELECT -> preço antigo
 escritor: UPDATE preço novo (commit)

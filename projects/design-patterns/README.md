@@ -1,6 +1,6 @@
 # Design patterns and SOLID
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Design patterns are named solutions to design problems that keep coming back, and the SOLID principles are five rules of thumb for keeping classes and modules easy to change. Together they give a shared vocabulary (Strategy, Adapter, Observer, dependency inversion) for discussing design, and the judgement to see when a pattern pays for itself and when it is only ceremony.
 

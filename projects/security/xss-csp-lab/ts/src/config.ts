@@ -3,6 +3,9 @@
 // PT: A mesma imagem roda os dois apps. `APP_VERSION` escolhe qual, e o Zod rejeita qualquer
 //     outro valor na inicialização, então um erro de digitação nunca sobe o app errado em
 //     silêncio.
+// ES: La misma imagen ejecuta las dos apps. `APP_VERSION` elige cuál, y Zod rechaza cualquier
+//     otro valor al iniciar, así que un error de escritura nunca levanta la app equivocada en
+//     silencio.
 
 import { z } from "zod";
 

@@ -1,6 +1,6 @@
 # Embeddings e busca vetorial
 
-> English version: [docs/en/artificial-intelligence/embeddings-vector-search.md](../../en/artificial-intelligence/embeddings-vector-search.md)
+> English version: [docs/en/artificial-intelligence/embeddings-vector-search.md](../../en/artificial-intelligence/embeddings-vector-search.md) · Versión en español: [docs/es/artificial-intelligence/embeddings-vector-search.md](../../es/artificial-intelligence/embeddings-vector-search.md)
 
 Mini-projeto MP-AI-3, em [`projects/artificial-intelligence/embeddings-vector-search`](../../../projects/artificial-intelligence/embeddings-vector-search). Ensina como o significado vira um vetor e como vetores parecidos são encontrados. A base está na seção 8 da [página da área](README.md#8-embeddings-e-similaridade), com o produto escalar e o cosseno da [seção 3](README.md#3-vetores-e-matrizes) e a etapa de recuperação da [seção 11](README.md#11-uso-de-llms).
 

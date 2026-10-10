@@ -1,12 +1,12 @@
 # idempotency-dlq
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How does a consumer survive messages that arrive twice and messages that can never be processed? Brokers deliver **at least once**, so duplicates are normal, and one bad message retried forever can stop a queue. This mini-project shows the damage first (a consumer with no protection credits an account 2.5 times too much), then the two standard defences: an **idempotency key store** written in the same transaction as the effect, and **retry with exponential backoff** ending in a **dead-letter queue**.
 
 Code: MP-MSG-2. Full explanation: [docs/en/messaging/idempotency-dlq.md](../../../docs/en/messaging/idempotency-dlq.md).
 
-```
+```text
 publisher --> [work] --> consumer --ok--> ack
                 ^           |
                 |           +--failed, attempts left--> [retry.N]  waits base x 2^(N-1)
@@ -49,7 +49,7 @@ The malformed message is a **permanent** failure, so it is dead-lettered on sigh
 
 Go, printed by `docker compose run --rm go-demo`:
 
-```
+```text
 store          deliveries    effects    balance
 none                 2494       2494    2494.00
 racy                 2494       1019    1019.00

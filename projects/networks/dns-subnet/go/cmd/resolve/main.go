@@ -43,6 +43,8 @@ func run(roots string, port uint16, args []string) error {
 	//     what an earlier one learned.
 	// PT: Um resolvedor e um cache para a execução inteira, de modo que uma pergunta
 	//     posterior aproveita o que uma anterior aprendeu.
+	// ES: Un resolvedor y una caché para toda la ejecución, de modo que una pregunta
+	//     posterior aproveche lo que aprendió una anterior.
 	r := resolver.New(hints, port, resolver.NewCache(nil))
 	r.Trace = func(step resolver.Step) {
 		indent := strings.Repeat("    ", step.Depth)

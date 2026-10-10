@@ -4,6 +4,9 @@
 // PT: As mesmas funções de cenário rodam contra as duas versões. Contra a API vulnerável os
 //     testes afirmam que a falha é observável (MP-SEC-4.1). Contra a corrigida, afirmam que a
 //     mesma tentativa é recusada e que o uso legítimo continua funcionando (MP-SEC-4.2).
+// ES: Las mismas funciones de escenario corren contra las dos versiones. Contra la API vulnerable las
+//     pruebas afirman que la falla es observable (MP-SEC-4.1). Contra la corregida, afirman que el
+//     mismo intento es rechazado y que el uso legítimo sigue funcionando (MP-SEC-4.2).
 
 import { describe, expect, test } from "bun:test";
 import { ALICE_INVOICE_ID, BOB_INVOICE_ID, MISSING_INVOICE_ID, TOKENS } from "../src/data";
@@ -90,6 +93,7 @@ describe("fixed API: the same attempts are blocked", () => {
 
 // EN: Normal use must work on both versions: the fix removes the hole, not the feature.
 // PT: O uso normal precisa funcionar nas duas versões: a correção tira o buraco, não a função.
+// ES: El uso normal debe funcionar en las dos versiones: la corrección tapa el agujero, no la función.
 describe.each<Version>(["vulnerable", "fixed"])("%s API: normal use works", (version) => {
 	test("the owner reads, updates, lists and deletes her invoice, and the admin uses the admin route", async () => {
 		const lab = createLab(version);
@@ -108,6 +112,7 @@ describe.each<Version>(["vulnerable", "fixed"])("%s API: normal use works", (ver
 describe("fixed API: input validation with Zod", () => {
 	// EN: Two hand-picked malformed ids are enough to show the rule. This is not a fuzzer.
 	// PT: Dois ids malformados escolhidos à mão bastam para mostrar a regra. Isto não é um fuzzer.
+	// ES: Dos ids mal formados elegidos a mano bastan para mostrar la regla. Esto no es un fuzzer.
 	test.each(["abc", "1e3"])("the id %p is refused with 400", async (rawId) => {
 		const result = await call(createLab("fixed").app, `/invoices/${rawId}`, { token: TOKENS.alice });
 		expect(result.status).toBe(400);

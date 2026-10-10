@@ -4,6 +4,9 @@
 // PT: Funções de banco compartilhadas pelos dois serviços. Cada serviço tem o SEU banco: o serviço
 //     de pedidos não consegue ler a tabela de pagamentos e vice-versa. Essa separação é o que
 //     torna o problema deste laboratório real, porque nenhuma transação única cobre os dois.
+// ES: Funciones de base de datos compartidas por los dos servicios. Cada servicio tiene SU base de datos: el
+//     servicio de pedidos no puede leer la tabla de pagos y viceversa. Esa separación es lo que
+//     hace real el problema de este laboratorio, porque ninguna transacción única cubre a los dos.
 
 import { Pool, type PoolClient } from "pg";
 
@@ -13,6 +16,9 @@ import { Pool, type PoolClient } from "pg";
 // PT: As duas tabelas de que todo serviço precisa para falar com o broker com segurança. `outbox`
 //     guarda os eventos esperando publicação. `processed_messages` lembra os ids dos eventos já
 //     tratados, para uma mensagem reentregue ser reconhecida.
+// ES: Las dos tablas que todo servicio necesita para hablar con el broker con seguridad. `outbox`
+//     guarda los eventos esperando publicación. `processed_messages` recuerda los ids de los eventos ya
+//     tratados, para que un mensaje reentregado sea reconocido.
 export const MESSAGING_SCHEMA = [
 	`CREATE TABLE IF NOT EXISTS outbox (
 		id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -43,6 +49,8 @@ export async function migrate(pool: Pool, statements: string[]): Promise<void> {
 //     throws. Everything `work` writes through `client` becomes visible together or not at all.
 // PT: Roda `work` em uma transação em uma conexão: COMMIT se retornar, ROLLBACK se lançar erro.
 //     Tudo que `work` grava por `client` fica visível junto ou não fica.
+// ES: Ejecuta `work` en una transacción en una conexión: COMMIT si retorna, ROLLBACK si lanza un error.
+//     Todo lo que `work` escribe por `client` se vuelve visible junto o no se vuelve visible.
 export async function inTransaction<T>(pool: Pool, work: (client: PoolClient) => Promise<T>): Promise<T> {
 	const client = await pool.connect();
 	try {

@@ -11,6 +11,11 @@ import java.util.List;
 //     herda `withdraw`, uma promessa que não consegue cumprir, e responde com
 //     UnsupportedOperationException. O JDK tem a mesma ferida: uma List não modificável ainda
 //     tem `add`. Daí em diante todo cliente precisa perguntar o tipo concreto antes de chamar.
+// ES: ROMPE EL PRINCIPIO DE SUSTITUCIÓN DE LISKOV. Una cuenta a plazo fijo "es una" cuenta, así
+//     que hereda `withdraw`, una promesa que no puede cumplir, y responde con
+//     UnsupportedOperationException. El JDK tiene la misma herida: una List no modificable
+//     todavía tiene `add`. Desde entonces todo cliente debe preguntar el tipo concreto antes de
+//     llamar.
 public final class LspBefore {
   private LspBefore() {}
 

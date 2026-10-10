@@ -16,6 +16,15 @@
 #       81xx  NETEM_LATENCY       (por exemplo "delay 50ms")
 #       82xx  NETEM_LATENCY_LOSS  (por exemplo "delay 50ms loss 2%")
 #     Isso exige a capability NET_ADMIN, dada a este único contêiner no docker-compose.yml.
+# ES: Modela el tráfico de salida de este contenedor y luego inicia Caddy. `tc netem` es el
+#     emulador de red de Linux: retrasa o descarta paquetes cuando salen de la interfaz.
+#     Modelar el lado del servidor importa porque es en ese sentido que viajan las 200 imágenes.
+#     El tráfico se separa por el puerto de ORIGEN, así que un contenedor sirve las tres
+#     condiciones al mismo tiempo:
+#       80xx  intacto
+#       81xx  NETEM_LATENCY       (por ejemplo "delay 50ms")
+#       82xx  NETEM_LATENCY_LOSS  (por ejemplo "delay 50ms loss 2%")
+#     Esto exige la capability NET_ADMIN, dada a este único contenedor en docker-compose.yml.
 set -eu
 
 DEV=eth0
@@ -26,6 +35,9 @@ DEV=eth0
 # PT: Com segmentation offload o kernel entrega ao netem um "pacote" grande que é dividido
 #     depois, então um descarte jogaria fora vários segmentos TCP de uma vez. Desligar faz um
 #     descarte significar um pacote real, tanto para TCP quanto para QUIC.
+# ES: Con segmentation offload el kernel le entrega a netem un "paquete" grande que se divide
+#     después, así que un descarte tiraría varios segmentos TCP de una vez. Desactivarlo hace
+#     que un descarte signifique un paquete real, tanto para TCP como para QUIC.
 ethtool -K "$DEV" tso off gso off gro off >/dev/null
 
 # EN: A `prio` qdisc with three bands. The priomap sends everything to band 1 (untouched) unless
@@ -36,6 +48,11 @@ ethtool -K "$DEV" tso off gso off gro off >/dev/null
 #     que um filtro diga o contrário. As faixas 2 e 3 recebem um netem cada. Os filtros u32 casam
 #     a porta de origem com a máscara 0xfffc: 8100 a 8103 e 8200 a 8203. O mesmo filtro casa TCP
 #     e UDP, porque ambos guardam a porta de origem nos dois primeiros bytes do cabeçalho.
+# ES: Una qdisc `prio` con tres bandas. El priomap manda todo a la banda 1 (intacta), a menos
+#     que un filtro diga lo contrario. Las bandas 2 y 3 reciben un netem cada una. Los filtros
+#     u32 coinciden con el puerto de origen con la máscara 0xfffc: 8100 a 8103 y 8200 a 8203. El
+#     mismo filtro sirve para TCP y UDP, porque ambos guardan el puerto de origen en los dos
+#     primeros bytes de su cabecera.
 tc qdisc replace dev "$DEV" root handle 1: prio bands 3 priomap 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 # shellcheck disable=SC2086 # the netem arguments are meant to be split into words
 tc qdisc add dev "$DEV" parent 1:2 handle 20: netem $NETEM_LATENCY

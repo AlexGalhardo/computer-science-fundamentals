@@ -1,6 +1,6 @@
 # Mini language: lexer and parser
 
-> Versão em português: [docs/pt/compilers/mini-language-parser.md](../../pt/compilers/mini-language-parser.md)
+> Versão em português: [docs/pt/compilers/mini-language-parser.md](../../pt/compilers/mini-language-parser.md) · Versión en español: [docs/es/compilers/mini-language-parser.md](../../es/compilers/mini-language-parser.md)
 
 Mini-project MP-COMP-1, in [`projects/compilers/mini-language-parser`](../../../projects/compilers/mini-language-parser). It teaches how source text becomes tokens and then a tree. The grammar of the language and its example programs are in the README of the mini-project.
 

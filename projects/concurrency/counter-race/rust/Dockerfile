@@ -3,6 +3,9 @@
 # PT: O contexto de build é a pasta do mini-projeto, então o mesmo arquivo serve ao docker
 #     compose e ao runner de benchmark. Tudo é compilado no build, então o contêiner não
 #     precisa de rede.
+# ES: El contexto de build es la carpeta del mini-proyecto, así que el mismo archivo sirve a docker
+#     compose y al runner de benchmark. Todo se compila en el build, así que el contenedor no
+#     necesita red.
 FROM rust:1.99.0-slim-trixie
 RUN rustup component add rustfmt clippy
 WORKDIR /src

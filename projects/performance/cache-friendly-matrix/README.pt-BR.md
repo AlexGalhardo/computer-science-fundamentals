@@ -1,6 +1,6 @@
 # cache-friendly-matrix
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Três formas de multiplicar duas matrizes, em C++ e em Rust: a ordem do livro-texto (i-j-k), os mesmos laços trocados (i-k-j), e uma versão em blocos. As três fazem exatamente as mesmas `n³` multiplicações e somas e devolvem a mesma matriz, bit a bit. A única diferença é a ordem em que a memória é visitada, e só isso torna a ordem do livro-texto várias vezes mais lenta. A lição: o Big O conta operações, e o processador também cobra por onde o dado está.
 

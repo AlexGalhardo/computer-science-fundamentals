@@ -7,6 +7,10 @@
 //     `steps.js`, e reproduz a inserção de uma sequência fixa de chaves um quadro por vez. Cada
 //     quadro é uma foto completa da árvore, então voltar é tão fácil quanto avançar. Não há
 //     etapa de build nem requisição de rede: a página funciona aberta direto do disco.
+// ES: Visualizador de rotaciones. Lee `window.TREE_STEPS`, escrito por `tree_demo steps` en
+//     `steps.js`, y reproduce la inserción de una secuencia fija de claves un cuadro a la vez.
+//     Cada cuadro es una foto completa del árbol, así que retroceder es tan fácil como avanzar.
+//     No hay paso de build ni petición de red: la página funciona abierta directo desde el disco.
 
 const SVG = "http://www.w3.org/2000/svg";
 const STEP_X = 44;
@@ -52,6 +56,10 @@ function countOf(tree) {
 //     a sua profundidade. Como uma árvore de busca mantém as chaves em-ordem, elas aparecem
 //     sempre ordenadas da esquerda para a direita, e uma rotação aparece como dois nós trocando
 //     de nível enquanto todo nó fica na mesma coluna.
+// ES: Layout. La posición horizontal de un nodo es su lugar en el recorrido en orden, y la
+//     vertical es su profundidad. Como un árbol de búsqueda mantiene las claves en orden, siempre
+//     aparecen ordenadas de izquierda a derecha, y una rotación aparece como dos nodos que
+//     cambian de nivel mientras todo nodo queda en la misma columna.
 function layout(tree) {
 	const placed = [];
 	let column = 0;
@@ -71,6 +79,7 @@ function layout(tree) {
 
 // EN: The key named by the label ("rotate left at 20", "insert 55") is the node to highlight.
 // PT: A chave citada no rótulo ("rotate left at 20", "insert 55") é o nó a destacar.
+// ES: La clave citada en la etiqueta ("rotate left at 20", "insert 55") es el nodo a resaltar.
 function highlightedKeys(label) {
 	if (label.startsWith("recolour")) {
 		return (label.match(/\d+/g) ?? []).map(Number);
@@ -164,6 +173,8 @@ function drawTree(container, frame, treeName) {
 		//     height). A value of +2 or -2 is the imbalance the next rotation repairs.
 		// PT: Embaixo de cada nó da AVL vai o seu fator de balanceamento (altura direita menos
 		//     altura esquerda). Um valor +2 ou -2 é o desequilíbrio que a próxima rotação conserta.
+		// ES: Debajo de cada nodo del AVL va su factor de balance (altura derecha menos
+		//     altura izquierda). Un valor +2 o -2 es el desequilibrio que la próxima rotación arregla.
 		if (treeName !== "red-black") {
 			const unbalanced = Math.abs(balance) > 1;
 			chart.append(

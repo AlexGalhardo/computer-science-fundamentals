@@ -8,6 +8,10 @@ import { StoredUsers, type User } from "./users";
 //     é uma subclasse. Dois recursos já pedem três classes, e a terceira repete o código do
 //     cache. Com n recursos a conta é 2^n - 1, e a ordem de empilhamento fica congelada na
 //     hierarquia de classes.
+// ES: DISEÑO QUE FALLA. Cada funcionalidad opcional es una subclase, así que cada combinación
+//     también es una subclase. Dos funcionalidades ya piden tres clases, y la tercera repite el
+//     código de la caché. Con n funcionalidades la cuenta es 2^n - 1, y el orden de
+//     apilamiento queda congelado en la jerarquía de clases.
 export class LoggedUsers extends StoredUsers {
 	readonly lines: string[] = [];
 

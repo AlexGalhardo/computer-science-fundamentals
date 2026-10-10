@@ -18,6 +18,8 @@ describe("command: before", () => {
 	//     mean editing the cart, because the operations are not objects.
 	// PT: O defeito: não existe refazer nem como acrescentar uma operação de fora. As duas coisas
 	//     exigiriam editar o carrinho, porque as operações não são objetos.
+	// ES: El defecto: no existe rehacer ni forma de añadir una operación desde fuera. Ambas cosas
+	//     exigirían editar el carrito, porque las operaciones no son objetos.
 	test("the cart offers nothing to redo and nothing to extend", () => {
 		expect(Object.getOwnPropertyNames(SwitchCart.prototype).sort()).toEqual([
 			"add",

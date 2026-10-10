@@ -3,6 +3,9 @@
 // PT: Este arquivo NÃO pode compilar. O Dockerfile roda o javac nele e falha o build se o javac
 //     o aceitar. É a prova de que tipos pequenos transformam um argumento trocado em erro de
 //     compilação.
+// ES: Este archivo NO debe compilar. El Dockerfile ejecuta javac sobre él y hace fallar el build
+//     si javac lo acepta. Es la prueba de que los tipos pequeños convierten un argumento
+//     intercambiado en un error de compilación.
 final class SwappedArguments {
   private SwappedArguments() {}
 

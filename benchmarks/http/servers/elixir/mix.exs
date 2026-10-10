@@ -17,6 +17,7 @@ defmodule Server.MixProject do
 
   # EN: Exact versions, and mix.lock pins every transitive package too.
   # PT: Versões exatas, e o mix.lock fixa também todo pacote transitivo.
+  # ES: Versiones exactas, y mix.lock fija también todo paquete transitivo.
   defp deps do
     [
       {:bandit, "1.12.5"},

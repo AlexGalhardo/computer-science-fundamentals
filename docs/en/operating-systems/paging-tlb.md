@@ -1,6 +1,6 @@
 # Paging and TLB simulator
 
-> Versão em português: [docs/pt/operating-systems/paging-tlb.md](../../pt/operating-systems/paging-tlb.md)
+> Versão em português: [docs/pt/operating-systems/paging-tlb.md](../../pt/operating-systems/paging-tlb.md) · Versión en español: [docs/es/operating-systems/paging-tlb.md](../../es/operating-systems/paging-tlb.md)
 
 Mini-project: [`projects/operating-systems/paging-tlb`](../../../projects/operating-systems/paging-tlb/). Plan item: MP-OS-2. Quiz topic: `operating-systems` / `memory-management`.
 
@@ -12,7 +12,7 @@ With virtual memory a program uses virtual addresses, and the hardware translate
 
 A virtual address is split in two: the high bits are the page number and the low bits are the offset. The page number is replaced by a frame number and the offset is copied.
 
-```
+```text
 page size 4096:  20500 = 5 × 4096 + 20   ->  page 5, offset 20
 page 5 is in frame 3                     ->  3 × 4096 + 20 = 12308
 ```
@@ -44,7 +44,7 @@ Totals: 2 TLB hits, 6 TLB misses, 5 page faults.
 
 The TLB is always consulted. On a hit one memory access follows, and on a miss the page table is read first:
 
-```
+```text
 EAT = h × (tlb + mem) + (1 − h) × (tlb + levels × mem + mem)
 h = 0.8, tlb = 10 ns, mem = 100 ns, 1 level:  0.8 × 110 + 0.2 × 210 = 130 ns
 ```

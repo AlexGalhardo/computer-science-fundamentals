@@ -2,11 +2,15 @@
 //     that turns it into a JSON response. It contains no token logic.
 // PT: Um pequeno encanamento HTTP compartilhado: um erro que carrega um código de status, e a
 //     função que o transforma em uma resposta JSON. Não contém nenhuma lógica de token.
+// ES: Una pequeña tubería HTTP compartida: un error que lleva un código de estado, y la
+//     función que lo transforma en una respuesta JSON. No contiene ninguna lógica de token.
 
 // EN: The three refusals of this lab. 400: the request is malformed. 401: we do not know who you
 //     are (no token, or a token we do not accept). 403: we know who you are and the answer is no.
 // PT: As três recusas deste laboratório. 400: a requisição está malformada. 401: não sabemos quem
 //     você é (sem token, ou um token que não aceitamos). 403: sabemos quem você é e a resposta é não.
+// ES: Los tres rechazos de este laboratorio. 400: la solicitud está mal formada. 401: no sabemos quién
+//     eres (sin token, o un token que no aceptamos). 403: sabemos quién eres y la respuesta es no.
 export type RefusalStatus = 400 | 401 | 403;
 
 export class HttpError extends Error {
@@ -25,6 +29,9 @@ export class HttpError extends Error {
 // PT: O corpo de uma recusa é só um código curto. Um token rejeitado sempre recebe o mesmo
 //     `invalid_token`, seja qual for o motivo: dizer a um estranho "a assinatura estava certa e
 //     a audiência errada" seria uma dica de graça. O motivo exato vai para o log do servidor.
+// ES: El cuerpo de un rechazo es solo un código corto. Un token rechazado siempre recibe el mismo
+//     `invalid_token`, sea cual sea el motivo: decirle a un extraño "la firma era correcta y
+//     la audiencia incorrecta" sería una pista gratis. El motivo exacto va al registro del servidor.
 export function toErrorResponse(error: unknown): Response | undefined {
 	if (!(error instanceof HttpError)) return undefined;
 	return Response.json({ error: error.message }, { status: error.status });
@@ -34,6 +41,8 @@ export function toErrorResponse(error: unknown): Response | undefined {
 //     missing or has another shape.
 // PT: Lê o token de `Authorization: Bearer <token>`. Devolve null quando o cabeçalho não existe
 //     ou tem outro formato.
+// ES: Lee el token de `Authorization: Bearer <token>`. Devuelve null cuando la cabecera no existe
+//     o tiene otro formato.
 export function bearerToken(request: Request): string | null {
 	const header = request.headers.get("authorization");
 	if (header === null || !header.startsWith("Bearer ")) return null;

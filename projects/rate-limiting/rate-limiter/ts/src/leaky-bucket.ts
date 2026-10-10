@@ -17,6 +17,12 @@ import { assertConfig, type LimiterConfig, type RateLimiter } from "./limiter";
 //     NÃO é atendida na hora: ela espera a água à sua frente vazar. Seja qual for o formato da
 //     entrada, a saída nunca é mais rápida que a taxa de vazão: entra uma rajada, sai um fluxo
 //     uniforme.
+// ES: Leaky bucket (balde con fuga), como cola (un modelador de tráfico). Las solicitudes caen en
+//     un balde que guarda como máximo `limit` de ellas y gotea a un ritmo constante, `limit` cada
+//     `windowMs`. Una solicitud que encuentra el balde lleno se rechaza. Una solicitud admitida
+//     NO se atiende al instante: espera a que gotee el agua que tiene delante. Sea cual sea la
+//     forma de la entrada, la salida nunca es más rápida que el ritmo de goteo: entra una ráfaga,
+//     sale un flujo uniforme.
 //
 //     Compare com o token bucket do mesmo tamanho. Os dois admitem as mesmas requisições (um
 //     token bucket cheio e um leaky bucket vazio são imagens espelhadas). A diferença é o que
@@ -28,6 +34,8 @@ export class LeakyBucket implements RateLimiter {
 	//     `windowMs` credits and each millisecond leaks `limit` credits. Integers only.
 	// PT: Nível de água nas mesmas unidades de "crédito" do token bucket: uma requisição vale
 	//     `windowMs` créditos e cada milissegundo vaza `limit` créditos. Só inteiros.
+	// ES: Nivel de agua en las mismas unidades de "crédito" del token bucket: una solicitud vale
+	//     `windowMs` créditos y cada milisegundo gotean `limit` créditos. Solo enteros.
 	private level = 0;
 	private lastMs = 0;
 
@@ -53,6 +61,9 @@ export class LeakyBucket implements RateLimiter {
 		// PT: A espera é o tempo que a água já presente no balde leva para vazar. Como o nível
 		//     sobe uma requisição por vez, duas saídas nunca ficam mais próximas que
 		//     `windowMs / limit`: esse espaçamento é a suavização.
+		// ES: La espera es el tiempo que tarda en gotear el agua que ya está en el balde. Como el nivel
+		//     sube una solicitud a la vez, dos salidas nunca quedan más cerca que `windowMs / limit`:
+		//     ese espaciado es el suavizado.
 		const waitMs = Math.ceil(this.level / limit);
 		this.level += windowMs;
 		return nowMs + waitMs;

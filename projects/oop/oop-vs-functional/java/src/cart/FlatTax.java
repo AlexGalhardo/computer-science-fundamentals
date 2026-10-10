@@ -4,6 +4,9 @@
 // PT: A alíquota vem em pontos-base (825 = 8,25%) para que todo número continue inteiro. Somar
 //     meia unidade antes da divisão inteira arredonda meio centavo para cima. O produto é feito
 //     em long para que um carrinho grande não estoure o int.
+// ES: La tasa viene en puntos base (825 = 8,25%) para que todo número siga siendo entero. Sumar
+//     media unidad antes de la división entera redondea medio centavo hacia arriba. El producto se
+//     calcula en long para que un carrito grande no desborde el int.
 public final class FlatTax implements TaxPolicy {
   private final int basisPoints;
 

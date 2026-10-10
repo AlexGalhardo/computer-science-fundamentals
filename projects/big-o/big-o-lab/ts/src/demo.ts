@@ -2,6 +2,9 @@
 //     Markdown (for people), JSON (for tools) and a script (for the static dashboard).
 // PT: `bun run demo` roda o laboratório, imprime uma tabela por amostra e grava os resultados em
 //     Markdown (para pessoas), JSON (para ferramentas) e um script (para o dashboard estático).
+// ES: `bun run demo` ejecuta el laboratorio, imprime una tabla por muestra y escribe los
+//     resultados como Markdown (para personas), JSON (para herramientas) y un script (para el
+//     dashboard estático).
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -87,6 +90,7 @@ function main(): void {
 		repetitions: REPETITIONS,
 		// EN: Times only mean something next to the machine that produced them.
 		// PT: Tempos só significam algo ao lado da máquina que os produziu.
+		// ES: Los tiempos solo significan algo junto a la máquina que los produjo.
 		machine: {
 			CPU: cpus()[0]?.model ?? "unknown",
 			"logical cores": String(cpus().length),
@@ -105,12 +109,14 @@ function main(): void {
 
 	// EN: Infinity is not valid JSON, so a curve that does not fit is stored as null.
 	// PT: Infinity não é JSON válido, então uma curva que não se ajusta é gravada como null.
+	// ES: Infinity no es JSON válido, así que una curva que no se ajusta se guarda como null.
 	const json = JSON.stringify(results, (_key, value) => (value === Number.POSITIVE_INFINITY ? null : value), "\t");
 	const directory = resolve(process.env.RESULTS_DIR ?? join(import.meta.dir, "..", "..", "results"));
 	mkdirSync(directory, { recursive: true });
 	writeFileSync(join(directory, "results.json"), `${json}\n`);
 	// EN: A page opened from disk cannot fetch a JSON file, but it can load a script.
 	// PT: Uma página aberta do disco não consegue buscar um arquivo JSON, mas consegue carregar um script.
+	// ES: Una página abierta desde el disco no puede pedir un archivo JSON, pero sí puede cargar un script.
 	writeFileSync(join(directory, "results.js"), `window.BIG_O_LAB_RESULTS = ${json};\n`);
 	writeFileSync(join(directory, "results.md"), renderMarkdown(results));
 	console.log(`\nresults written to ${directory}`);

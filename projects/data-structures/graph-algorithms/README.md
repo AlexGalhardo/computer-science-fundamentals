@@ -1,6 +1,6 @@
 # graph-algorithms
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 One small graph library, written in C++ and in Go, with two interchangeable representations (adjacency list and adjacency matrix) and the classic algorithms on top of them: Dijkstra, Bellman-Ford, topological sort, Prim and Kruskal. It teaches that the algorithm depends on the graph interface, not on how the graph is stored, and what each representation costs.
 

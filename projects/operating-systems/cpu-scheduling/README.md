@@ -1,6 +1,6 @@
 # cpu-scheduling
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A CPU scheduling simulator. It runs the same set of processes under five policies (FCFS, shortest job first, round-robin, priority and multilevel feedback queue), draws the Gantt chart of each one and compares average waiting, turnaround and response time. It teaches that no policy wins every metric: what is best for the average is unfair to someone, and what answers fast finishes late.
 
@@ -29,7 +29,7 @@ docker compose run --rm demo
 
 It prints the Gantt chart of a five-process example under every policy and the comparison table on three generated workloads, and writes `results/results.md`, `results/results.json` and `results/results.js`. Then open `dashboard/index.html` straight from disk: the page draws the same Gantt charts and the tables, with no server and no network.
 
-```
+```text
 RR(q=4)
 |     A     |     B     |     C     |     D     |     A     |  E  |     C     |D |C |
 0           4           8           12          16          20    22          26 27 28

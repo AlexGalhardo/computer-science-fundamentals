@@ -16,6 +16,8 @@ describe("encapsulation", () => {
 	//     show that even a caller that cheats cannot reach the array inside the cart.
 	// PT: `lines()` entrega uma cópia. O cast tira o `readonly` do tipo de propósito, para mostrar
 	//     que nem quem trapaceia alcança o array de dentro do carrinho.
+	// ES: `lines()` entrega una copia. El cast quita el `readonly` del tipo a propósito, para
+	//     mostrar que ni siquiera quien hace trampa alcanza el array de dentro del carrito.
 	test("changing the list returned by lines() does not change the cart", () => {
 		const cart = new Cart();
 		cart.add(new CartLine("PEN", 250, 4));
@@ -33,6 +35,9 @@ describe("polymorphism", () => {
 	// PT: Os tipos do TypeScript são estruturais: qualquer objeto com os dois métodos é um
 	//     DiscountRule, sem classe e sem `implements`. O carrinho não o distingue das regras
 	//     que já existem.
+	// ES: Los tipos de TypeScript son estructurales: cualquier objeto con los dos métodos es un
+	//     DiscountRule, sin clase y sin `implements`. El carrito no lo distingue de las reglas que
+	//     ya existen.
 	test("the cart accepts a rule it has never seen", () => {
 		const oneCentOff: DiscountRule = {
 			discountCents: () => 1,

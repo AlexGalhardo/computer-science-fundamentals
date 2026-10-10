@@ -1,6 +1,6 @@
 # Regex engine
 
-> Versão em português: [docs/pt/compilers/regex-engine.md](../../pt/compilers/regex-engine.md)
+> Versão em português: [docs/pt/compilers/regex-engine.md](../../pt/compilers/regex-engine.md) · Versión en español: [docs/es/compilers/regex-engine.md](../../es/compilers/regex-engine.md)
 
 Mini-project MP-COMP-4, in [`projects/compilers/regex-engine`](../../../projects/compilers/regex-engine). It teaches how a regular expression becomes an automaton. This is the machinery behind a lexer generator: the hand-written lexer of [MP-COMP-1](mini-language-parser.md) is such an automaton coded by hand.
 

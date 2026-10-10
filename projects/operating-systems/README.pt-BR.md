@@ -1,6 +1,6 @@
 # Sistemas operacionais
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um sistema operacional é o programa que divide uma máquina entre muitos programas: dá a cada processo a ilusão de ter sua própria CPU e memória, intermedeia o acesso a arquivos e dispositivos e impede que os programas prejudiquem uns aos outros. Entender processos, escalonamento, memória virtual, sistemas de arquivos e deadlocks explica a maior parte do comportamento, e dos problemas de desempenho, de software real.
 

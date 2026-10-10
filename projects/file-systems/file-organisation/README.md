@@ -1,6 +1,6 @@
 # file-organisation
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How records, free space and indexes live inside files, written in C++ and in Rust. A data file of fixed-length records with a header gives direct access by relative record number (RRN) and reuses deleted slots through a free list kept inside the file. A primary index and two secondary indexes with inverted lists answer searches without scanning the file. Run-length encoding and Huffman coding compress the data file and report the ratio.
 

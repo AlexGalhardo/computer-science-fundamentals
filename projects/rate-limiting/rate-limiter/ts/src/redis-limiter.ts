@@ -11,6 +11,10 @@ import type { LimiterConfig } from "./limiter";
 //     um contador guardado na memória de cada uma deixaria N instâncias admitirem N vezes o
 //     limite. Por isso o estado mora em um único lugar compartilhado, o Redis, e a decisão
 //     inteira ("ler, comparar, escrever") roda lá como um único script Lua atômico.
+// ES: El limitador distribuido. Varias instancias de la aplicación están detrás de un balanceador,
+//     y un contador guardado en la memoria de cada una dejaría que N instancias admitan N veces
+//     el límite. Por eso el estado vive en un único lugar compartido, Redis, y la decisión
+//     entera ("leer, comparar, escribir") corre allí como un único script Lua atómico.
 
 export const STRATEGIES = ["fixed-window", "token-bucket", "naive"] as const;
 export type Strategy = (typeof STRATEGIES)[number];
@@ -31,6 +35,8 @@ export interface RedisCommands {
 //     like any external input before the application trusts it.
 // PT: O que um script devolve atravessa a rede e vem de outro programa, então é verificado como
 //     qualquer entrada externa antes que a aplicação confie nele.
+// ES: Lo que devuelve un script atraviesa la red y viene de otro programa, así que se verifica
+//     como cualquier entrada externa antes de que la aplicación confíe en ello.
 const replySchema = z.tuple([z.number().int(), z.number().int(), z.number().int()]);
 
 const LUA_DIR = join(import.meta.dir, "..", "..", "lua");
@@ -55,6 +61,7 @@ export class RedisLimiter {
 	async hit(strategy: Strategy, clientKey: string): Promise<Decision> {
 		// EN: The strategy is part of the key, so the three strategies never share a counter.
 		// PT: A estratégia faz parte da chave, então as três estratégias nunca dividem um contador.
+		// ES: La estrategia es parte de la clave, así que las tres estrategias nunca comparten un contador.
 		const key = `rate:${strategy}:${clientKey}`;
 		if (strategy === "naive") {
 			return this.naive(key);
@@ -71,6 +78,10 @@ export class RedisLimiter {
 	//     que evita mandar o código-fonte a cada requisição. O cache de scripts do Redis é
 	//     volátil: um reinício ou um failover o esvazia e o servidor responde NOSCRIPT. O
 	//     cliente então carrega o script de novo e repete a chamada.
+	// ES: El script se envía una vez (SCRIPT LOAD) y luego se llama por su SHA1 con EVALSHA, lo
+	//     que evita mandar el código fuente en cada solicitud. La caché de scripts de Redis es
+	//     volátil: un reinicio o un failover la vacía y el servidor responde NOSCRIPT. El
+	//     cliente entonces carga el script de nuevo y repite la llamada.
 	private async runScript(strategy: Exclude<Strategy, "naive">, key: string): Promise<unknown> {
 		const args = ["1", key, String(this.config.limit), String(this.config.windowMs)];
 		const sha = this.shaByStrategy.get(strategy) ?? (await this.load(strategy));
@@ -98,6 +109,10 @@ export class RedisLimiter {
 	//     fixa, mas em comandos separados enviados pela aplicação. Entre o GET e o INCR, qualquer
 	//     outra requisição (desta instância ou de outra) pode ler o mesmo valor antigo, e todas
 	//     decidem "abaixo do limite". Cada comando é atômico; a sequência não é.
+	// ES: INCORRECTO A PROPÓSITO, se conserva para mostrar el bug. La misma lógica del script de
+	//     ventana fija, pero en comandos separados enviados por la aplicación. Entre el GET y el
+	//     INCR, cualquier otra solicitud (de esta instancia o de otra) puede leer el mismo valor
+	//     viejo, y todas deciden "por debajo del límite". Cada comando es atómico; la secuencia no.
 	private async naive(key: string): Promise<Decision> {
 		const { limit, windowMs } = this.config;
 		const stored = z

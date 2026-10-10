@@ -6,10 +6,14 @@ import { ALGORITHMS, type Algorithm, countFaults } from "./replacement";
 // PT: A sequência de referências usada na maioria dos livros de sistemas operacionais para
 //     comparar algoritmos de substituição. Com 3 molduras ela dá 15 faltas no FIFO, 12 no LRU e
 //     9 no ótimo.
+// ES: La cadena de referencias usada en la mayoría de los libros de sistemas operativos para
+//     comparar algoritmos de reemplazo. Con 3 marcos da 15 fallos en FIFO, 12 en LRU y 9 en el
+//     óptimo.
 export const CLASSIC = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1];
 
 // EN: The string on which Belady found that FIFO can fault MORE when it gets MORE memory.
 // PT: A sequência em que Belady descobriu que o FIFO pode ter MAIS faltas ao receber MAIS memória.
+// ES: La cadena en la que Belady descubrió que FIFO puede tener MÁS fallos al recibir MÁS memoria.
 export const BELADY = [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5];
 
 export const SEED = 2026;
@@ -46,6 +50,10 @@ export function faultTable(trace: number[], frames: number[], algorithms: readon
 //     pequeno de páginas (localidade de referência). O traço gerado imita isso com uma janela
 //     "quente" de 16 páginas, que recebe 95% dos acessos e se move de vez em quando. Sem
 //     localidade, nem a TLB nem a própria paginação funcionariam bem.
+// ES: Los programas no tocan la memoria al azar: durante un tiempo se quedan dentro de un
+//     conjunto pequeño de páginas (localidad de referencia). La traza generada lo imita con una
+//     ventana "caliente" de 16 páginas, que recibe el 95% de los accesos y se mueve de vez en
+//     cuando. Sin localidad, ni la TLB ni la propia paginación funcionarían bien.
 export function generateAddresses(count: number, seed: number): number[] {
 	let state = seed >>> 0;
 	const between = (low: number, high: number): number => {

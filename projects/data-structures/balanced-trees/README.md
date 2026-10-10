@@ -1,6 +1,6 @@
 # balanced-trees
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Three search trees with the same interface, written in C++ and in Java: an unbalanced binary search tree, an AVL tree and a red-black tree. It teaches how an unbalanced tree degenerates into a list when the keys arrive sorted, and how rotations prevent it. A static page replays the insertion of a fixed sequence and shows every rotation.
 

@@ -2,6 +2,8 @@
 #     does not download them again and the versions are exactly the committed ones.
 # PT: As dependências são instaladas a partir do lockfile em uma camada própria, então editar o
 #     código não as baixa de novo e as versões são exatamente as versionadas.
+# ES: Las dependencias se instalan desde el lockfile en su propia capa, así que editar el
+#     código no las descarga de nuevo y las versiones son exactamente las versionadas.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock ./
@@ -13,5 +15,7 @@ COPY --chown=bun:bun . .
 #     is meaningful. On a developer machine that test is skipped.
 # PT: Avisa a suíte de testes que ela roda dentro do contêiner do laboratório, onde o teste de
 #     "sem acesso externo" faz sentido. Na máquina do desenvolvedor esse teste é pulado.
+# ES: Avisa a la suite de pruebas que corre dentro del contenedor del laboratorio, donde la prueba de
+#     "sin acceso externo" tiene sentido. En la máquina del desarrollador esa prueba se omite.
 ENV LAB_IN_DOCKER=1
 CMD ["sh", "-c", "bun run typecheck && bun test"]

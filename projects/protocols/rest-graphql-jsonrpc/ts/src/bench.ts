@@ -4,6 +4,9 @@
 // PT: O benchmark: `docker compose run --rm bench`. Para uma leitura de lista, uma de detalhe e
 //     uma aninhada ele mede, por estilo, as idas e voltas HTTP, os bytes dos corpos, os comandos
 //     SQL e a latência. Depois mede a requisição N+1 com e sem lote, e grava results/.
+// ES: El benchmark: `docker compose run --rm bench`. Para una lectura de lista, una de detalle y
+//     una anidada mide, por estilo, los viajes de ida y vuelta HTTP, los bytes de los cuerpos, los
+//     comandos SQL y la latencia. Luego mide la petición N+1 con y sin lote, y escribe results/.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -53,6 +56,11 @@ try {
 		//     pagam a compilação JIT e a abertura de conexões). Dentro de uma rodada os estilos se
 		//     revezam chamada a chamada, então um momento lento da máquina atinge os três e não
 		//     só um.
+		// ES: Comparar cosas iguales. Los tres estilos golpean el mismo servidor y las mismas filas, una
+		//     llamada a la vez, después de un calentamiento que se descarta (las primeras llamadas
+		//     pagan la compilación JIT y la apertura de conexiones). Dentro de una ronda los estilos se
+		//     turnan llamada a llamada, así que un momento lento de la máquina afecta a los tres y no
+		//     solo a uno.
 		for (let warm = 0; warm < WARMUP; warm += 1) {
 			for (const style of STYLES) {
 				await read.run(clients[style]);
@@ -77,6 +85,8 @@ try {
 			//     is enough for them.
 			// PT: Requisições, bytes e comandos não variam entre chamadas, então uma chamada
 			//     medida basta para eles.
+			// ES: Las peticiones, los bytes y los comandos no varían entre llamadas, así que una llamada
+			//     medida les basta.
 			const client = createClient(style, app.baseUrl);
 			await read.run(client);
 			const meter = client.meter;

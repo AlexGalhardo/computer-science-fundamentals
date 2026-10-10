@@ -8,6 +8,9 @@ import type { Clock, IdGenerator } from "../use-cases/ports";
 // PT: O relógio de verdade e os ids aleatórios de verdade. Têm uma linha cada, e estão aqui
 //     fora porque são a parte que não dá para prever. Os testes plugam um relógio fixo e um
 //     contador nas mesmas portas.
+// ES: El reloj de verdad y los ids aleatorios de verdad. Tienen una línea cada uno, y están aquí
+//     afuera porque son la parte que no se puede predecir. Las pruebas conectan un reloj fijo y
+//     un contador a los mismos puertos.
 export class SystemClock implements Clock {
 	now(): Date {
 		return new Date();
@@ -22,6 +25,7 @@ export class UuidIdGenerator implements IdGenerator {
 
 // EN: The terminal driver: the only place that writes to the real standard output.
 // PT: O driver de terminal: o único lugar que escreve na saída padrão de verdade.
+// ES: El driver de terminal: el único lugar que escribe en la salida estándar de verdad.
 export function printToTerminal(result: CliResult): void {
 	for (const line of result.stdout) {
 		console.log(line);

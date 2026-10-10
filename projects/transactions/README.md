@@ -1,6 +1,6 @@
 # Transactions
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A transaction groups several operations so that they succeed or fail together and do not corrupt each other when they run at the same time. ACID, isolation levels, locking, multiversion concurrency and the write-ahead log are how databases keep that promise, and sagas, the outbox pattern and idempotency are how applications keep it across services, where one database transaction is no longer available.
 

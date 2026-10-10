@@ -7,6 +7,10 @@
 #     fixada do Playwright) carrega a página, roda o script dela, que chama as outras rotas com
 #     fetch(), e imprime o DOM final. O script então procura os resultados nesse DOM.
 #     Uso: browser-check.sh http://server:8080
+# ES: Comprueba el servidor con un navegador de verdad. Chromium headless (ya presente en la
+#     imagen fijada de Playwright) carga la página, ejecuta su script, que llama a las otras
+#     rutas con fetch(), e imprime el DOM final. El script luego busca los resultados en ese DOM.
+#     Uso: browser-check.sh http://server:8080
 set -eu
 
 BASE="${1:-http://server:8080}"
@@ -29,6 +33,8 @@ fi
 #     are done before the DOM is printed.
 # PT: --virtual-time-budget faz o navegador esperar os temporizadores e as requisições de rede
 #     da página terminarem antes de o DOM ser impresso.
+# ES: --virtual-time-budget hace que el navegador espere a que terminen los temporizadores y las
+#     peticiones de red de la página antes de imprimir el DOM.
 DOM="$(HOME=/tmp "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=15000 --dump-dom "$BASE/" 2>/dev/null)"
 
 failures=0

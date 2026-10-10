@@ -15,6 +15,13 @@ import { z } from "zod";
 //       modo flaky: 50 execuções de cada teste intermitente, e cada um precisa falhar ao menos uma vez
 //       modo fixed: 500 execuções de cada teste corrigido, e nenhum pode falhar nem uma vez
 //     Toda execução usa `--randomize`, então a ordem dos testes dentro de um arquivo também muda.
+// ES: Una ejecución de una prueba intermitente no prueba nada: pasa la mayoría de las veces. La
+//     única forma de ver la intermitencia es repetir. Este script ejecuta cada archivo de prueba
+//     muchas veces, cada vez en un proceso nuevo (así nada se arrastra de una ejecución a la
+//     siguiente), y cuenta los fallos.
+//       modo flaky: 50 ejecuciones de cada prueba intermitente, y cada una debe fallar al menos una vez
+//       modo fixed: 500 ejecuciones de cada prueba corregida, y ninguna puede fallar ni una vez
+//     Toda ejecución usa `--randomize`, así que el orden de las pruebas dentro de un archivo también cambia.
 const MODES = ["flaky", "fixed"] as const;
 const modeSchema = z.enum(MODES);
 type Mode = z.infer<typeof modeSchema>;
@@ -56,6 +63,8 @@ if (import.meta.main) {
 	//     cause are still consecutive, one after the other.
 	// PT: As quatro causas são repetidas lado a lado para a demo ficar curta. As execuções de uma
 	//     mesma causa continuam consecutivas, uma depois da outra.
+	// ES: Las cuatro causas se repiten lado a lado para que la demo sea corta. Las ejecuciones de una
+	//     misma causa siguen siendo consecutivas, una tras otra.
 	const failures = await Promise.all(CAUSES.map((cause) => failuresOf(`tests/${mode}/${cause}.test.ts`, plan.runs)));
 	const seconds = ((performance.now() - started) / 1000).toFixed(1);
 
@@ -84,6 +93,8 @@ if (import.meta.main) {
 	//     needs write access to the folder, not to the file.
 	// PT: Remover antes de escrever: o arquivo antigo pode ser de outro usuário, e substituir um
 	//     arquivo exige escrita na pasta, não no arquivo.
+	// ES: Eliminar antes de escribir: el archivo antiguo puede ser de otro usuario, y reemplazar un
+	//     archivo requiere escritura en la carpeta, no en el archivo.
 	const reportFile = join(resultsDir, `${mode}-runs.md`);
 	rmSync(reportFile, { force: true });
 	writeFileSync(reportFile, report);

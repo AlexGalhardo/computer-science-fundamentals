@@ -8,6 +8,9 @@ import { RequestCounter as GlobalCounter, RateLimiter as GlobalRateLimiter } fro
 // PT: Estes dois testes rodam nesta ordem, no mesmo processo, e o segundo só passa porque o
 //     primeiro rodou antes. Essa dependência de ordem é o estado compartilhado escondido.
 //     Não "conserte": ela é a lição, e `after` mostra o desenho que a remove.
+// ES: Estas dos pruebas se ejecutan en este orden, en el mismo proceso, y la segunda solo pasa
+//     porque la primera se ejecutó antes. Esa dependencia de orden es el estado compartido
+//     oculto. No la "arregles": es la lección, y `after` muestra el diseño que la elimina.
 describe("singleton: before", () => {
 	test("two limiters that look independent share one hidden counter", () => {
 		const login = new GlobalRateLimiter(3);
@@ -19,6 +22,7 @@ describe("singleton: before", () => {
 
 		// EN: `search` was never used, and nothing in its constructor mentions `login`.
 		// PT: `search` nunca foi usado, e nada em seu construtor menciona `login`.
+		// ES: `search` nunca se usó, y nada en su constructor menciona `login`.
 		expect(search.allow("10.0.0.1")).toBe(false);
 	});
 

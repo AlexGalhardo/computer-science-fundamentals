@@ -16,6 +16,12 @@ use crate::value::{Function, Value};
 //     ADD". O número que algumas instruções carregam é um índice (uma constante, uma posição de
 //     variável) ou a posição da instrução para onde saltar. Toda instrução tem o mesmo tamanho
 //     pequeno, então uma função é um vetor plano que a máquina lê da esquerda para a direita.
+// ES: El conjunto de instrucciones de una máquina de pila. Ninguna instrucción nombra sus
+//     operandos: un operador los desapila y apila el resultado, así que `1 + 2` es "apila 1,
+//     apila 2, ADD". El número que llevan algunas instrucciones es un índice (una constante, una
+//     posición de variable) o la posición de la instrucción a la que saltar. Toda instrucción
+//     tiene el mismo tamaño pequeño, así que una función es un vector plano que la máquina lee de
+//     izquierda a derecha.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Op {
     /// Push `constants[n]`.
@@ -69,6 +75,8 @@ pub enum Op {
 //     of each one (same index), and the two tables the instructions point into.
 // PT: Um chunk é o corpo compilado de uma função: as instruções, a posição no código-fonte de
 //     cada uma (mesmo índice), e as duas tabelas para as quais as instruções apontam.
+// ES: Un chunk es el cuerpo compilado de una función: las instrucciones, la posición en el código
+//     fuente de cada una (mismo índice), y las dos tablas a las que apuntan las instrucciones.
 #[derive(Debug, Default)]
 pub struct Chunk {
     pub code: Vec<Op>,
@@ -124,6 +132,10 @@ fn operand(op: Op) -> (&'static str, Option<u32>) {
 //     de cada instrução, sua linha no código-fonte (`|` quando é a mesma da linha acima), seu
 //     nome e seu operando, com um comentário dizendo a que o operando se refere. Funções
 //     aninhadas vêm depois da função que as cria.
+// ES: El desensamblador convierte un chunk de vuelta en texto que una persona puede leer: el
+//     índice de cada instrucción, su línea en el código fuente (`|` cuando es la misma de la
+//     línea de arriba), su nombre y su operando, con un comentario que dice a qué se refiere el
+//     operando. Las funciones anidadas vienen después de la función que las crea.
 pub fn disassemble(function: &Function, global_names: &[String]) -> String {
     let mut out = String::new();
     write_function(&mut out, function, global_names);

@@ -4,6 +4,9 @@
 // PT: O runner. Para cada alvo ele sobe um contêiner da imagem da linguagem, e dentro dele o
 //     hyperfine roda o comando várias vezes. Medir dentro do contêiner deixa o custo de subir o
 //     Docker fora dos números.
+// ES: El runner. Para cada objetivo levanta un contenedor de la imagen del lenguaje, y dentro de él
+//     hyperfine ejecuta el comando varias veces. Medir dentro del contenedor deja el costo de levantar
+//     Docker fuera de los números.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -20,6 +23,8 @@ const HYPERFINE_VOLUME = "sef-hyperfine";
 //     CPU time (user plus system) and peak resident memory.
 // PT: O hyperfine 2 exporta, por comando, um resumo de cada métrica que amostrou: tempo de
 //     relógio, tempo de CPU (usuário mais sistema) e pico de memória residente.
+// ES: hyperfine 2 exporta, por comando, un resumen de cada métrica que muestreó: tiempo de
+//     reloj, tiempo de CPU (usuario más sistema) y pico de memoria residente.
 const metric = z.object({ mean: z.number(), stddev: z.number().nullable(), min: z.number(), max: z.number() });
 const hyperfineExportSchema = z.object({
 	results: z
@@ -49,6 +54,9 @@ export function loadConfig(projectDir: string): BenchConfig {
 // PT: O hyperfine é um binário estático. Ele é copiado uma vez para um volume nomeado, e esse
 //     volume é montado como somente leitura em todo contêiner de linguagem, então nenhuma
 //     imagem de linguagem precisa instalá-lo.
+// ES: hyperfine es un binario estático. Se copia una vez a un volumen con nombre, y ese
+//     volumen se monta como solo lectura en todo contenedor de lenguaje, así que ninguna
+//     imagen de lenguaje necesita instalarlo.
 function prepareHyperfine(repoRoot: string): void {
 	docker(["build", "-q", "-f", "docker/bench.Dockerfile", "-t", HYPERFINE_IMAGE, "docker"], { cwd: repoRoot });
 	docker(["run", "--rm", "-v", `${HYPERFINE_VOLUME}:/opt/hyperfine`, HYPERFINE_IMAGE, "--version"]);
@@ -70,6 +78,8 @@ function imageOf(target: BenchTarget, config: BenchConfig, projectDir: string): 
 //     outside the machine by accident.
 // PT: `--network none`: um benchmark não precisa de rede, e sem ela não alcança nada fora da
 //     máquina por acidente.
+// ES: `--network none`: un benchmark no necesita red, y sin ella no alcanza nada fuera de la
+//     máquina por accidente.
 function inContainer(image: string, projectDir: string, script: string): string {
 	return docker([
 		"run",
@@ -96,6 +106,8 @@ function measure(image: string, projectDir: string, config: BenchConfig, item: B
 	//     runs once more to print its own contract line (measured section and memory).
 	// PT: Um contêiner faz os dois trabalhos: o hyperfine mede o processo inteiro, depois o
 	//     programa roda mais uma vez para imprimir a própria linha do contrato (trecho medido e memória).
+	// ES: Un contenedor hace los dos trabajos: hyperfine mide el proceso completo, luego el
+	//     programa corre una vez más para imprimir su propia línea del contrato (tramo medido y memoria).
 	const quoted = item.command.replaceAll("'", "'\\''");
 	const hyperfine = `/opt/hyperfine/hyperfine --style none --runs ${config.runs} --warmup ${config.warmup} --export-json ${exportFile} '${quoted}' >/dev/null`;
 	const output = inContainer(image, projectDir, `${hyperfine} && ${item.command}`);
@@ -186,6 +198,8 @@ export function runBenchmark(options: RunOptions): BenchReport {
 	//     written as a script that the dashboard loads with a plain <script> tag.
 	// PT: Uma página aberta do disco (file://) não consegue buscar um arquivo JSON, então os
 	//     mesmos dados também são escritos como um script que o dashboard carrega com <script>.
+	// ES: Una página abierta desde el disco (file://) no puede obtener un archivo JSON, así que los
+	//     mismos datos también se escriben como un script que el dashboard carga con <script>.
 	writeFileSync(join(outDir, "results.js"), `window.BENCH_RESULTS = ${json};\n`);
 	return report;
 }

@@ -11,6 +11,12 @@
 // tenta outro. Este pacote mantém cada um desses passos em seu próprio arquivo, para que
 // possam ser lidos um de cada vez: pool.go (quem são os back ends), strategy.go (a escolha),
 // proxy.go (encaminhar e tentar de novo) e health.go (descobrir quem está vivo).
+//
+// ES: Un balanceador de carga hace cuatro cosas en cada solicitud: elige un back end,
+// reenvía la solicitud, copia la respuesta de vuelta y, cuando el back end falla, decide si
+// prueba otro. Este paquete mantiene cada uno de esos pasos en su propio archivo, para que
+// puedan leerse de a uno: pool.go (quiénes son los back ends), strategy.go (la elección),
+// proxy.go (reenviar y reintentar) y health.go (descubrir quién está vivo).
 package balancer
 
 import (
@@ -27,6 +33,9 @@ import (
 //
 // PT: Os campos são atômicos porque cada requisição roda em sua própria goroutine, e muitas
 // delas leem e alteram o mesmo back end no mesmo instante.
+//
+// ES: Los campos son atómicos porque cada solicitud corre en su propia goroutine, y muchas
+// de ellas leen y modifican el mismo back end en el mismo instante.
 type Backend struct {
 	URL *url.URL
 
@@ -62,6 +71,11 @@ type Pool struct {
 // morto é removido pela primeira verificação de saúde ou pela primeira requisição que
 // falhar. Começar não saudável seria mais seguro e mais lento: nada é atendido até a
 // primeira rodada de verificações passar.
+//
+// ES: Empezar sano es una elección: el balanceador puede atender de inmediato, y un back end
+// caído lo saca la primera verificación de salud o la primera solicitud que falle. Empezar no
+// sano sería más seguro y más lento: no se atiende nada hasta que pase la primera ronda de
+// verificaciones.
 func NewPool(addresses []string) (*Pool, error) {
 	if len(addresses) == 0 {
 		return nil, errors.New("at least one back end is required")

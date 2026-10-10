@@ -13,6 +13,11 @@ package nandcpu
 // R' = 0 leva Q a 0, e com as duas em 1 o laço mantém o que tinha. O valor zero desta struct
 // teria Q = Q' = 0, que nenhum latch real mantém, então os latches são criados com NewSRLatch,
 // no estado de reset.
+// ES: La memoria aparece cuando la salida de una compuerta vuelve a su propia entrada:
+// Q = NAND(S', Q') y Q' = NAND(R', Q). Las entradas son activas en nivel BAJO: S' = 0 lleva Q
+// a 1, R' = 0 lleva Q a 0, y con las dos en 1 el lazo mantiene lo que tenía. El valor cero de
+// esta struct tendría Q = Q' = 0, que ningún latch real mantiene, así que los latches se crean
+// con NewSRLatch, en el estado de reset.
 type SRLatch struct {
 	Q    Bit
 	QBar Bit
@@ -30,6 +35,8 @@ func NewSRLatch() SRLatch {
 //
 // PT: Um laço não tem "primeira" porta, então as duas portas são recalculadas até as saídas
 // pararem de mudar, que é o que o circuito real faz ao se acomodar.
+// ES: Un lazo no tiene una "primera" compuerta, así que las dos compuertas se recalculan hasta
+// que las salidas dejan de cambiar, que es lo que hace el circuito real al asentarse.
 func (l *SRLatch) Update(setBar, resetBar Bit) {
 	for pass := 0; pass < 4; pass++ {
 		nextQ := Nand(setBar, l.QBar)
@@ -51,6 +58,9 @@ func (l *SRLatch) Update(setBar, resetBar Bit) {
 // PT: Duas NANDs na frente do latch SR tornam impossível a combinação proibida (set e reset
 // juntos). Enquanto enable vale 1, Q acompanha D. Quando enable vai a 0, as duas entradas
 // internas viram 1 e Q é mantido.
+// ES: Dos NAND delante del latch SR hacen imposible la combinación prohibida (set y reset
+// juntos). Mientras enable vale 1, Q sigue a D. Cuando enable pasa a 0, las dos entradas
+// internas pasan a 1 y Q se mantiene.
 type DLatch struct {
 	latch SRLatch
 }
@@ -83,6 +93,10 @@ func (l *DLatch) Update(data, enable Bit) {
 // clock vale 0 o mestre acompanha D e o escravo está fechado. Quando o clock sobe o mestre se
 // fecha, congelando o valor que D tinha naquele instante, e o escravo se abre e o mostra.
 // Mudanças de D com o clock em 1 não vão a lugar nenhum.
+// ES: Son dos latches D en secuencia con habilitaciones opuestas (maestro-esclavo). Mientras el
+// clock vale 0 el maestro sigue a D y el esclavo está cerrado. Cuando el clock sube el maestro
+// se cierra, congelando el valor que D tenía en ese instante, y el esclavo se abre y lo
+// muestra. Los cambios de D con el clock en 1 no van a ninguna parte.
 type DFlipFlop struct {
 	master DLatch
 	slave  DLatch
@@ -119,6 +133,9 @@ func (f *DFlipFlop) Pulse(data Bit) {
 // PT: O clock nunca para, então um bit que deve manter o valor precisa de um jeito de ignorar o
 // pulso: um multiplexador realimenta o bit atual quando load vale 0 e deixa o bit novo entrar
 // quando load vale 1.
+// ES: El clock nunca se detiene, así que un bit que debe conservar su valor necesita una forma
+// de ignorar el pulso: un multiplexor realimenta el bit actual cuando load vale 0 y deja
+// entrar el bit nuevo cuando load vale 1.
 func (f *DFlipFlop) PulseIf(data, load Bit) {
 	f.Pulse(Mux(load, f.Q(), data))
 }

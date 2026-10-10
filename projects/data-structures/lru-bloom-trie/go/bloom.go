@@ -21,6 +21,11 @@ var ErrInvalidBloom = errors.New("size and hash count must be positive integers"
 // consulta confere os mesmos k bits. Se algum deles é 0, a chave nunca foi adicionada. Se todos
 // são 1, a chave foi adicionada, ou outras chaves ligaram por acaso esses mesmos bits: isso é
 // um falso positivo. Falso negativo é impossível, porque os bits nunca são desligados.
+// ES: Responde "¿esta clave está aquí?" usando pocos bits por clave en lugar de guardar las
+// claves. Agregar una clave enciende k bits elegidos por k funciones de dispersión, y la
+// consulta revisa los mismos k bits. Si alguno de ellos es 0, la clave nunca fue agregada. Si
+// todos son 1, la clave fue agregada, u otras claves encendieron por casualidad esos mismos
+// bits: eso es un falso positivo. Un falso negativo es imposible, porque los bits nunca se apagan.
 type BloomFilter struct {
 	sizeInBits uint64
 	hashCount  uint64
@@ -45,6 +50,8 @@ func NewBloomFilter(sizeInBits, hashCount int) (*BloomFilter, error) {
 // m = -n ln p / (ln 2)^2 and the best number of hashes is k = (m / n) ln 2.
 // PT: Para n chaves e uma taxa de falsos positivos p desejada, o melhor número de bits é
 // m = -n ln p / (ln 2)^2 e o melhor número de funções é k = (m / n) ln 2.
+// ES: Para n claves y una tasa de falsos positivos p deseada, el mejor número de bits es
+// m = -n ln p / (ln 2)^2 y el mejor número de funciones es k = (m / n) ln 2.
 func OptimalBloomFilter(expectedKeys int, falsePositiveRate float64) (*BloomFilter, error) {
 	size := math.Ceil(-float64(expectedKeys) * math.Log(falsePositiveRate) / (math.Ln2 * math.Ln2))
 	hashes := math.Max(1, math.Round(size/float64(expectedKeys)*math.Ln2))
@@ -63,6 +70,10 @@ func (f *BloomFilter) HashCount() int { return int(f.hashCount) }
 // PT: As k posições saem de um único hash FNV-1a de 64 bits partido em duas metades: a posição
 // i é h1 + i * h2. Esse truque de "hash duplo" se comporta como k funções independentes e custa
 // uma passada pela chave em vez de k. O h2 é tornado ímpar para nunca ser zero.
+// ES: Las k posiciones salen de un único hash FNV-1a de 64 bits partido en dos mitades: la
+// posición i es h1 + i * h2. Este truco de "hash doble" se comporta como k funciones
+// independientes y cuesta una pasada por la clave en lugar de k. h2 se vuelve impar para
+// nunca ser cero.
 func (f *BloomFilter) hashes(key string) (first, second uint64) {
 	hasher := fnv.New64a()
 	_, _ = hasher.Write([]byte(key)) // the hash.Hash contract says Write never returns an error
@@ -74,6 +85,8 @@ func (f *BloomFilter) hashes(key string) (first, second uint64) {
 // characters still differ in every bit of both halves.
 // PT: Embaralhamento final (o finalizador do SplitMix64), para que chaves que diferem só nos
 // últimos caracteres ainda difiram em todos os bits das duas metades.
+// ES: Mezcla final (el finalizador de SplitMix64), para que claves que difieren solo en los
+// últimos caracteres aún difieran en todos los bits de las dos mitades.
 func mix(x uint64) uint64 {
 	x ^= x >> 30
 	x *= 0xbf58476d1ce4e5b9
@@ -110,6 +123,8 @@ func (f *BloomFilter) MightContain(key string) bool {
 // bits that are all 1, so the expected rate is (1 - e^(-kn/m))^k.
 // PT: Depois de n chaves, um bit qualquer ainda vale 0 com probabilidade e^(-kn/m). Um falso
 // positivo precisa de k bits todos valendo 1, então a taxa esperada é (1 - e^(-kn/m))^k.
+// ES: Después de n claves, un bit cualquiera aún vale 0 con probabilidad e^(-kn/m). Un falso
+// positivo necesita k bits todos valiendo 1, así que la tasa esperada es (1 - e^(-kn/m))^k.
 func (f *BloomFilter) ExpectedFalsePositiveRate(insertedKeys int) float64 {
 	k := float64(f.hashCount)
 	return math.Pow(1-math.Exp(-k*float64(insertedKeys)/float64(f.sizeInBits)), k)

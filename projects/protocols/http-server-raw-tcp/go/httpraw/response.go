@@ -59,6 +59,7 @@ func bodyAllowed(method string, status int) bool {
 func writeResponse(w *bufio.Writer, method string, resp Response, keepAlive bool) error {
 	// EN: The status line: VERSION SP CODE SP REASON, then CRLF.
 	// PT: A linha de status: VERSÃO SP CÓDIGO SP MOTIVO, e depois CRLF.
+	// ES: La línea de estado: VERSIÓN SP CÓDIGO SP MOTIVO, y luego CRLF.
 	if _, err := fmt.Fprintf(w, "HTTP/1.1 %d %s\r\n", resp.Status, StatusText(resp.Status)); err != nil {
 		return err
 	}
@@ -79,6 +80,12 @@ func writeResponse(w *bufio.Writer, method string, resp Response, keepAlive bool
 	//       Transfer-Encoding: chunked  o tamanho ainda não é conhecido, então o corpo vai em
 	//                                   pedaços, cada um anunciando o próprio tamanho
 	//     Enviar os dois seria uma contradição, então exatamente um é definido aqui.
+	// ES: El receptor necesita saber dónde termina el cuerpo, porque la conexión sigue abierta
+	//     para la siguiente petición. Hay dos formas de decirlo:
+	//       Content-Length: N           el tamaño se conoce antes de enviar el primer byte
+	//       Transfer-Encoding: chunked  el tamaño aún no se conoce, así que el cuerpo va en
+	//                                   trozos, cada uno anunciando su propio tamaño
+	//     Enviar ambos sería una contradicción, así que aquí se define exactamente uno.
 	delete(header, "content-length")
 	delete(header, "transfer-encoding")
 	delete(header, "connection")
@@ -111,6 +118,7 @@ func writeResponse(w *bufio.Writer, method string, resp Response, keepAlive bool
 	}
 	// EN: The empty line that ends the header section.
 	// PT: A linha vazia que encerra a seção de cabeçalhos.
+	// ES: La línea vacía que termina la sección de cabeceras.
 	if _, err := w.WriteString("\r\n"); err != nil {
 		return err
 	}
@@ -133,6 +141,10 @@ func writeResponse(w *bufio.Writer, method string, resp Response, keepAlive bool
 	//     Um pedaço de tamanho zero, seguido de uma linha vazia, encerra o corpo:
 	//         5\r\nhello\r\n   6\r\n world\r\n   0\r\n\r\n
 	//     Cada pedaço é enviado na hora, então o cliente recebe as partes conforme são feitas.
+	// ES: Codificación chunked. Cada trozo es: el tamaño en HEXADECIMAL, CRLF, los bytes, CRLF.
+	//     Un trozo de tamaño cero, seguido de una línea vacía, termina el cuerpo:
+	//         5\r\nhello\r\n   6\r\n world\r\n   0\r\n\r\n
+	//     Cada trozo se envía al instante, así que el cliente recibe las partes a medida que se hacen.
 	writeChunk := func(piece []byte) error {
 		if len(piece) == 0 {
 			// An empty chunk would be read as the end of the body.

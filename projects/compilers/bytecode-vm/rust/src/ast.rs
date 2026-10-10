@@ -4,6 +4,9 @@
 //     emits, so the virtual machine can say where a run-time error happened.
 // PT: Onde um token foi encontrado no código-fonte. O compilador o copia ao lado de cada instrução
 //     que emite, para que a máquina virtual consiga dizer onde um erro de execução aconteceu.
+// ES: Dónde se encontró un token en el código fuente. El compilador lo copia junto a cada
+//     instrucción que emite, para que la máquina virtual pueda decir dónde ocurrió un error de
+//     ejecución.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Pos {
     pub line: u32,
@@ -45,6 +48,9 @@ pub enum BinaryOp {
 // PT: A mesma árvore que o parser em TypeScript do MP-COMP-1 constrói: parênteses e ponto e
 //     vírgula desaparecem, e cada nó guarda a posição do token que o define (o operador de uma
 //     expressão binária, o nome de uma variável, o `(` de uma chamada).
+// ES: El mismo árbol que construye el parser en TypeScript del MP-COMP-1: paréntesis y punto y
+//     coma desaparecen, y cada nodo guarda la posición del token que lo define (el operador de
+//     una expresión binaria, el nombre de una variable, el `(` de una llamada).
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Literal(Literal, Pos),

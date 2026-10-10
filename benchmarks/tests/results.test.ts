@@ -4,6 +4,9 @@
 // PT: Confere os resultados versionados sem rodar nada: toda carga tem uma linha para cada uma
 //     das sete linguagens, todo checksum concorda entre as linguagens, toda linha amostrada
 //     informa sua dispersão, e os dados do dashboard foram construídos a partir destes arquivos.
+// ES: Comprueba los resultados versionados sin ejecutar nada: toda carga tiene una fila para cada
+//     uno de los siete lenguajes, todo checksum coincide entre los lenguajes, toda fila muestreada
+//     informa su dispersión, y los datos del dashboard se construyeron a partir de estos archivos.
 
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
@@ -56,6 +59,8 @@ describe.each(WORKLOADS)("%s results", (workload) => {
 			// EN: In concurrency each language names its own mechanism, so rows are grouped by size only.
 			// PT: Na concorrência cada linguagem dá nome ao próprio mecanismo, então as linhas são
 			//     agrupadas só pelo tamanho.
+			// ES: En la concurrencia cada lenguaje nombra su propio mecanismo, así que las filas se
+			//     agrupan solo por el tamaño.
 			const key =
 				workload === "concurrency"
 					? String(row.n)

@@ -13,6 +13,10 @@ import (
 // máquina. `(a*)*b` não consegue casar n letras a. O casador por backtracking precisa pelo menos
 // dobrar seu trabalho a cada letra a mais (exponencial), enquanto os autômatos fazem o mesmo
 // trabalho por letra qualquer que seja n (linear).
+// ES: El caso patológico, medido en pasos en lugar de segundos para que la prueba no dependa de
+// la máquina. `(a*)*b` no logra emparejar n letras a. El emparejador por backtracking debe al
+// menos duplicar su trabajo con cada letra más (exponencial), mientras que los autómatas hacen
+// el mismo trabajo por letra sea cual sea n (lineal).
 func TestAutomataStayLinearWhereBacktrackingIsExponential(t *testing.T) {
 	compiled, err := New("(a*)*b")
 	if err != nil {

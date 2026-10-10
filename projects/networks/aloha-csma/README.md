@@ -1,6 +1,6 @@
 # aloha-csma
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How stations share one channel without a coordinator. Three simulators in Python, standard library only: pure ALOHA, slotted ALOHA and CSMA/CD with binary exponential backoff. The mini-project reproduces the two famous peaks (18.4% and 36.8%) and shows why listening to the channel and aborting collisions changes everything.
 

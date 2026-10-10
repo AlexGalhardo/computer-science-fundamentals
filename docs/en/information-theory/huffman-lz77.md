@@ -1,6 +1,6 @@
 # Huffman and LZ77 (MP-INFO-1)
 
-> Versão em português: [docs/pt/information-theory/huffman-lz77.md](../../pt/information-theory/huffman-lz77.md)
+> Versão em português: [docs/pt/information-theory/huffman-lz77.md](../../pt/information-theory/huffman-lz77.md) · Versión en español: [docs/es/information-theory/huffman-lz77.md](../../es/information-theory/huffman-lz77.md)
 
 Code: [projects/information-theory/huffman-lz77](../../../projects/information-theory/huffman-lz77). Languages: Rust and Python.
 
@@ -19,7 +19,7 @@ Compression works by removing **redundancy**, and there are two different kinds 
 
 For a file, the order-0 entropy is
 
-```
+```text
 H = sum over the byte values that appear of  p * log2(1 / p)      p = count / total
 ```
 
@@ -29,7 +29,7 @@ It is the average number of bits per byte that a symbol-by-symbol code needs at 
 
 ## Huffman: short codes for frequent symbols
 
-```
+```text
 counts: A=5  B=2  C=1  D=1
 
 1. join the two lightest:  C(1) + D(1)  -> node 2
@@ -55,7 +55,7 @@ counts: A=5  B=2  C=1  D=1
 
 The output is a list of tokens `(offset, length, literal)`: copy `length` bytes starting `offset` bytes back, then write one literal byte.
 
-```
+```text
 input:   a b c d e f a b c d e f X
 tokens:  (0,0,a) (0,0,b) (0,0,c) (0,0,d) (0,0,e) (0,0,f) (6,6,X)
                                                            |

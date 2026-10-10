@@ -1,6 +1,6 @@
 # Big O e análise de algoritmos
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A análise de algoritmos é a ferramenta para prever como o custo de um programa cresce com o tamanho da entrada, antes de executá-lo. Ela fornece o vocabulário (O, Ω, Θ), as técnicas (contagem de operações, recorrências, análise amortizada) e os limites (cotas inferiores, P e NP) em que todas as outras áreas deste repositório se apoiam quando dizem que algo é rápido ou lento.
 

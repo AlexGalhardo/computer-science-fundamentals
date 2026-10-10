@@ -10,6 +10,12 @@ PT: O psycopg é o driver PostgreSQL mais usado em Python. As quatro fases são 
     com filtro e agregação, e ler pela chave de novo a partir de 8 threads dividindo um pool de
     8 conexões. Threads funcionam bem aqui mesmo com a GIL: enquanto uma thread espera o banco
     ela solta a trava, e esperar é a maior parte do que este programa faz.
+ES: psycopg es el driver de PostgreSQL más usado en Python. Las cuatro fases son las mismas en los 7
+    lenguajes: insertar n filas una por una, leer cada una por la clave primaria, ejecutar una
+    consulta con filtro y agregación, y leer por la clave de nuevo desde 8 threads que comparten un
+    pool de 8 conexiones. Los threads funcionan bien aquí incluso con el GIL: mientras un thread
+    espera a la base de datos suelta el candado, y esperar es la mayor parte de lo que hace este
+    programa.
 """
 
 import json
@@ -31,6 +37,7 @@ TABLE = "items_python"
 def timed(ids: range, fn: Callable[[int], int]) -> tuple[dict[str, float], list[float], int]:
     # EN: Runs fn for every id, records how long each call took and adds up what it returned.
     # PT: Roda fn para cada id, registra quanto tempo cada chamada levou e soma o que ela devolveu.
+    # ES: Ejecuta fn para cada id, registra cuánto tardó cada llamada y suma lo que devolvió.
     latencies = []
     total = 0
     start = time.perf_counter()
@@ -99,6 +106,7 @@ def main() -> None:
 
         # EN: A pool keeps connections open and lends one to each thread that asks.
         # PT: Um pool mantém conexões abertas e empresta uma a cada thread que pedir.
+        # ES: Un pool mantiene conexiones abiertas y presta una a cada thread que la pida.
         with ConnectionPool(
             conninfo, min_size=workers, max_size=workers, kwargs={"autocommit": True}
         ) as pool:
@@ -129,6 +137,7 @@ def main() -> None:
 
     # EN: CPU time and peak memory of this client process, as counted by the kernel.
     # PT: Tempo de CPU e pico de memória deste processo cliente, contados pelo kernel.
+    # ES: Tiempo de CPU y pico de memoria de este proceso cliente, contados por el kernel.
     usage = resource.getrusage(resource.RUSAGE_SELF)
     print(
         json.dumps(

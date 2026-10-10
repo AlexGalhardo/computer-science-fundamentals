@@ -1,6 +1,6 @@
 # Tree-walking interpreter
 
-> Versão em português: [docs/pt/compilers/tree-walking-interpreter.md](../../pt/compilers/tree-walking-interpreter.md)
+> Versão em português: [docs/pt/compilers/tree-walking-interpreter.md](../../pt/compilers/tree-walking-interpreter.md) · Versión en español: [docs/es/compilers/tree-walking-interpreter.md](../../es/compilers/tree-walking-interpreter.md)
 
 Mini-project MP-COMP-2, in [`projects/compilers/tree-walking-interpreter`](../../../projects/compilers/tree-walking-interpreter). It teaches how a syntax tree is executed: environments, scopes and closures. The language is the one defined in [MP-COMP-1](mini-language-parser.md).
 

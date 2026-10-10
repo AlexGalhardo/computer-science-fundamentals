@@ -9,6 +9,11 @@
 #     falhar e um commit "green" ou "refactor" precisa passar. A checagem de prefixos confia nas
 #     mensagens de commit. Este script prova que as mensagens dizem a verdade.
 #     Ele precisa de git e de um clone completo, além do Docker.
+# ES: Reproduce el kata. Para cada commit de paso, extrae el código exactamente como estaba en ese
+#     commit y ejecuta las pruebas en un contenedor desechable, sin red. Un commit "red" debe
+#     fallar y un commit "green" o "refactor" debe pasar. La comprobación de prefijos confía en los
+#     mensajes de commit. Este script prueba que los mensajes dicen la verdad.
+#     Necesita git y un clon completo, además de Docker.
 set -eu
 
 cd "$(dirname "$0")"

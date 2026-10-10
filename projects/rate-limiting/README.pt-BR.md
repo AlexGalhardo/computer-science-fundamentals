@@ -1,6 +1,6 @@
 # Limitação de taxa
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A limitação de taxa restringe quantas requisições um cliente pode fazer em um período, para proteger um serviço de sobrecarga, abuso e uso injusto. Os algoritmos (janela fixa, janela deslizante, token bucket, leaky bucket) diferem em como tratam rajadas e em quanto estado exigem, e executá-los em vários servidores levanta questões de atomicidade. A outra metade do assunto é o cliente: o status 429, os cabeçalhos de retentativa e o backoff.
 

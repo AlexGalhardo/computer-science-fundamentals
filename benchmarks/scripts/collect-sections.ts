@@ -9,6 +9,12 @@
 //     informa, sem a inicialização) uma vez só. O speed-up precisa desse tempo, e uma amostra é
 //     ruidosa demais em uma máquina compartilhada. Este script roda cada caso da grade várias
 //     vezes em um contêiner e guarda todos os tempos de trecho em `results/sections.json`.
+// ES: `bun run sections <carga>` cubre una brecha del runner compartido. El runner cronometra
+//     el proceso completo varias veces, pero lee la sección medida (el tiempo que informa el
+//     propio programa, sin el arranque) una sola vez. El speed-up necesita ese tiempo, y una
+//     muestra es demasiado ruidosa en una máquina compartida. Este script ejecuta cada caso de la
+//     grilla varias veces en un contenedor y guarda todos los tiempos de sección en
+//     `results/sections.json`.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -36,6 +42,7 @@ for (const target of config.targets) {
 				const command = fill(target.command, implementation, n, variant);
 				// EN: One warm-up run is thrown away, like in the runner, then `runs` are kept.
 				// PT: Uma execução de aquecimento é descartada, como no runner, e `runs` são mantidas.
+				// ES: Una ejecución de calentamiento se descarta, como en el runner, y se conservan `runs`.
 				const script = `${command} >/dev/null; i=0; while [ $i -lt ${runs} ]; do ${command}; i=$((i+1)); done`;
 				const output = mustRun([
 					"docker",

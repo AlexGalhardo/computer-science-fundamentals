@@ -13,6 +13,14 @@
 //     outra requisição. O trabalho de CPU roda nas carregadoras, um pool com uma thread por
 //     núcleo.
 //     Protocolo (o mesmo nas 7 linguagens): GET /health, POST /echo, GET /primes?limit=N.
+// ES: Servidor HTTP del benchmark en Java, con el servidor que viene en el JDK
+//     (com.sun.net.httpserver) y Jackson, la biblioteca de JSON más usada, porque el JDK no
+//     tiene parser de JSON.
+//     Modelo: un thread virtual por petición. El handler es código bloqueante común. Cuando
+//     espera la red, la JVM estaciona el thread virtual y el thread portador (del SO) atiende
+//     otra petición. El trabajo de CPU corre en los portadores, un pool con un thread por
+//     núcleo.
+//     Protocolo (el mismo en los 7 lenguajes): GET /health, POST /echo, GET /primes?limit=N.
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -51,6 +59,7 @@ public final class Main {
 
   // EN: The CPU-bound endpoint: count the primes up to limit by trial division.
   // PT: O endpoint preso à CPU: conta os primos até limit por divisão por tentativa.
+  // ES: El endpoint limitado por CPU: cuenta los primos hasta limit por división de prueba.
   private static int countPrimes(int limit) {
     int count = 0;
     for (int k = 2; k <= limit; k++) {
@@ -83,6 +92,8 @@ public final class Main {
   //     JSON library and the HTTP stack, not a copy of bytes.
   // PT: O endpoint de eco interpreta o corpo JSON e o serializa de novo, então mede a
   //     biblioteca de JSON e a pilha HTTP, não uma cópia de bytes.
+  // ES: El endpoint de eco interpreta el cuerpo JSON y lo serializa de nuevo, así que mide la
+  //     biblioteca de JSON y la pila HTTP, no una copia de bytes.
   private static void echo(HttpExchange exchange) throws IOException {
     if (!exchange.getRequestMethod().equals("POST")) {
       send(exchange, 404, "text/plain", "not found".getBytes(StandardCharsets.UTF_8));
@@ -143,6 +154,7 @@ public final class Main {
     server.createContext("/primes", Main::primes);
     // EN: This one line is the whole concurrency model: every request gets a new virtual thread.
     // PT: Esta linha é o modelo de concorrência inteiro: cada requisição ganha uma virtual thread.
+    // ES: Esta línea es todo el modelo de concurrencia: cada petición recibe un thread virtual.
     server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
     server.start();
   }

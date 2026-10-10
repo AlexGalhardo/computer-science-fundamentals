@@ -10,6 +10,13 @@
 //     Modelo do C++: uma thread do sistema operacional por worker (std::thread). O kernel as
 //     escalona nos núcleos, e o único estado compartilhado é um contador atômico que diz qual
 //     é o próximo pedaço, então threads ociosas sempre acham trabalho (escalonamento dinâmico).
+// ES: Carga de paralelismo: cuenta los primos por debajo de n por división de prueba, con el
+//     rango cortado en 256 pedazos repartidos entre `workers` threads. La respuesta nunca
+//     depende del número de workers, así que el resultado paralelo se puede comparar con el
+//     secuencial. Modelo de C++: un thread del sistema operativo por worker (std::thread). El
+//     kernel los planifica en los núcleos, y el único estado compartido es un contador atómico que
+//     dice cuál es el siguiente pedazo, así que los threads ociosos siempre encuentran trabajo
+//     (planificación dinámica).
 
 #include <sys/resource.h>
 
@@ -39,6 +46,8 @@ bool is_prime(long k) {
 //     not equal in work, which is why they are handed out one by one instead of in fixed blocks.
 // PT: O pedaço c cobre [c*n/256, (c+1)*n/256). Números maiores custam mais para testar, então
 //     os pedaços não têm o mesmo trabalho, e por isso são entregues um a um, não em blocos fixos.
+// ES: El pedazo c cubre [c*n/256, (c+1)*n/256). Los números mayores cuestan más de probar, así que
+//     los pedazos no tienen el mismo trabajo, y por eso se entregan uno a uno, no en bloques fijos.
 long count_chunk(long chunk, long n) {
 	long count = 0;
 	for (long k = chunk * n / CHUNKS; k < (chunk + 1) * n / CHUNKS; k++) {
@@ -56,6 +65,7 @@ long count_primes(long n, int workers) {
 			long local = 0;
 			// EN: fetch_add hands out each chunk exactly once, with no lock.
 			// PT: O fetch_add entrega cada pedaço exatamente uma vez, sem trava.
+			// ES: fetch_add entrega cada pedazo exactamente una vez, sin candado.
 			for (long chunk = next.fetch_add(1); chunk < CHUNKS; chunk = next.fetch_add(1)) {
 				local += count_chunk(chunk, n);
 			}
@@ -81,6 +91,8 @@ int main(int argc, char** argv) {
 	//     what a parallel program pays.
 	// PT: O trecho cronometrado inclui criar e aguardar as threads: esse custo faz parte do que
 	//     um programa paralelo paga.
+	// ES: El tramo cronometrado incluye crear y esperar los threads: ese costo es parte de lo que
+	//     paga un programa paralelo.
 	const auto start = std::chrono::steady_clock::now();
 	const long total = count_primes(n, workers);
 	const std::chrono::duration<double, std::milli> elapsed =

@@ -11,6 +11,10 @@ import { checkSteps, parseLog } from "../scripts/history";
 //     passo. Ele permite conferir o ritmo onde o histórico do git não está disponível, por
 //     exemplo em um clone raso feito por um job de CI. O script de setup confere também o
 //     histórico vivo sempre que consegue.
+// ES: HISTORY.txt es una instantánea del `git log` real de esta carpeta, versionada junto con el paso
+//     a paso. Permite comprobar el ritmo donde el historial de git no está disponible, por
+//     ejemplo en un clon superficial hecho por un job de CI. El script de setup comprueba también el
+//     historial vivo siempre que puede.
 test("the committed snapshot of the real history follows the rhythm", () => {
 	const snapshot = readFileSync(join(import.meta.dir, "..", "HISTORY.txt"), "utf8");
 	const steps = parseLog(snapshot);

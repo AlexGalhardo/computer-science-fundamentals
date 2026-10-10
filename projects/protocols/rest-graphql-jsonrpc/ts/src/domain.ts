@@ -4,6 +4,9 @@
 // PT: O domínio, escrito uma vez e usado pelos três estilos de API. REST, GraphQL e JSON-RPC são
 //     apenas três formas de transportar as mesmas chamadas sobre HTTP: nenhum deles é dono das
 //     regras. É isso que permite que uma única suíte de testes de comportamento passe nos três.
+// ES: El dominio, escrito una vez y usado por los tres estilos de API. REST, GraphQL y JSON-RPC son
+//     solo tres formas de transportar las mismas llamadas sobre HTTP: ninguno es dueño de las
+//     reglas. Eso es lo que permite que una única suite de pruebas de comportamiento pase en los tres.
 
 import { z } from "zod";
 import type { Db } from "./db";
@@ -59,6 +62,9 @@ export const idSchema = z.coerce.number().int().min(1);
 // PT: As duas formas de uma chamada falhar por um motivo causado pelo cliente. Cada estilo as
 //     traduz para o seu vocabulário: REST em 404 e 422, GraphQL em um item de `errors` com um
 //     código, JSON-RPC em um objeto de erro com um código numérico.
+// ES: Las dos formas en que una llamada puede fallar por un motivo causado por el cliente. Cada estilo las
+//     traduce a su vocabulario: REST a 404 y 422, GraphQL a un elemento de `errors` con un
+//     código, JSON-RPC a un objeto de error con un código numérico.
 export type DomainErrorKind = "not-found" | "invalid";
 
 export class DomainError extends Error {
@@ -112,6 +118,8 @@ export async function listBooksOfAuthor(db: Db, authorId: number): Promise<Book[
 //     memory afterwards. They are what the loader of the GraphQL layer calls to fix N+1.
 // PT: As versões em lote: um comando para muitas chaves (`= ANY($1)`), com as linhas agrupadas em
 //     memória depois. São elas que o loader da camada GraphQL chama para corrigir o N+1.
+// ES: Las versiones por lote: un comando para muchas claves (`= ANY($1)`), con las filas agrupadas en
+//     memoria después. Son las que llama el loader de la capa GraphQL para corregir el N+1.
 export async function findAuthorsByIds(db: Db, ids: readonly number[]): Promise<Map<number, Author>> {
 	const rows = await db.query(authorSchema, "SELECT id, name, country, bio FROM authors WHERE id = ANY($1::int[])", [
 		[...ids],

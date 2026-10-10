@@ -2,6 +2,8 @@
 //     so they are tested without a database.
 // PT: Pequenas funções de estatística e de Markdown para o relatório do benchmark. São funções
 //     puras, então são testadas sem banco de dados.
+// ES: Pequeñas funciones de estadística y de Markdown para el informe del benchmark. Son funciones
+//     puras, así que se prueban sin base de datos.
 
 import { APPROACHES, type Approach } from "./context";
 
@@ -23,6 +25,9 @@ export function stddev(values: number[]): number {
 // PT: Percentil pelo método do posto mais próximo: ordenar e pegar o valor na posição p% da
 //     lista. p95 = "95% das chamadas foram pelo menos tão rápidas quanto isto", o que descreve a
 //     cauda lenta que a média esconde.
+// ES: Percentil por el método del rango más cercano: ordenar y tomar el valor en la posición p% de la
+//     lista. p95 = "el 95% de las llamadas fueron al menos así de rápidas", lo que describe la
+//     cola lenta que el promedio esconde.
 export function percentile(values: number[], p: number): number {
 	if (values.length === 0) {
 		return 0;
@@ -67,7 +72,7 @@ export function latencyRows(samples: Map<string, Record<Approach, number[][]>>):
 	return rows;
 }
 
-export type Language = "en" | "pt";
+export type Language = "en" | "pt" | "es";
 
 function table(header: string[], lines: (string | number)[][]): string {
 	return [
@@ -78,10 +83,12 @@ function table(header: string[], lines: (string | number)[][]): string {
 }
 
 export function renderLatency(rows: LatencyRow[], language: Language): string {
-	const header =
-		language === "en"
-			? ["Query", "Approach", "Mean (ms)", "± between rounds", "p50 (ms)", "p95 (ms)", "Times raw SQL"]
-			: ["Consulta", "Abordagem", "Média (ms)", "± entre rodadas", "p50 (ms)", "p95 (ms)", "Vezes o SQL puro"];
+	const headers: Record<Language, string[]> = {
+		en: ["Query", "Approach", "Mean (ms)", "± between rounds", "p50 (ms)", "p95 (ms)", "Times raw SQL"],
+		pt: ["Consulta", "Abordagem", "Média (ms)", "± entre rodadas", "p50 (ms)", "p95 (ms)", "Vezes o SQL puro"],
+		es: ["Consulta", "Enfoque", "Media (ms)", "± entre rondas", "p50 (ms)", "p95 (ms)", "Veces el SQL puro"],
+	};
+	const header = headers[language];
 	return table(
 		header,
 		rows.map((row) => [
@@ -105,10 +112,19 @@ export interface NPlusOneRow {
 }
 
 export function renderNPlusOne(rows: NPlusOneRow[], language: Language): string {
-	const header =
-		language === "en"
-			? ["Approach", "Statements, N+1", "Statements, fix", "Time, N+1 (ms)", "Time, fix (ms)", "Speed-up"]
-			: ["Abordagem", "Comandos, N+1", "Comandos, correção", "Tempo, N+1 (ms)", "Tempo, correção (ms)", "Ganho"];
+	const headers: Record<Language, string[]> = {
+		en: ["Approach", "Statements, N+1", "Statements, fix", "Time, N+1 (ms)", "Time, fix (ms)", "Speed-up"],
+		pt: ["Abordagem", "Comandos, N+1", "Comandos, correção", "Tempo, N+1 (ms)", "Tempo, correção (ms)", "Ganho"],
+		es: [
+			"Enfoque",
+			"Sentencias, N+1",
+			"Sentencias, corrección",
+			"Tiempo, N+1 (ms)",
+			"Tiempo, corrección (ms)",
+			"Mejora",
+		],
+	};
+	const header = headers[language];
 	return table(
 		header,
 		rows.map((row) => [

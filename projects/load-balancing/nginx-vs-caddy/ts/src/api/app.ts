@@ -8,6 +8,10 @@ import { z } from "zod";
 //     que é o que "instâncias idênticas atrás de um balanceador de carga" significa. Toda
 //     resposta leva o nome da instância no cabeçalho `X-Instance`, então o cliente consegue
 //     contar qual instância o proxy escolheu sem perguntar nada ao proxy.
+// ES: El back end del laboratorio. Tres contenedores ejecutan este mismo código y solo difieren en
+//     el nombre, que es lo que significa "instancias idénticas detrás de un balanceador de carga".
+//     Cada respuesta lleva el nombre de la instancia en el encabezado `X-Instance`, así que el
+//     cliente puede contar qué instancia eligió el proxy sin preguntarle nada al proxy.
 
 export type OutageMode = "crash" | "freeze";
 
@@ -38,6 +42,8 @@ export function createApp(instance: string, hooks: AppHooks): App {
 	//     accepted, but no answer comes. A proxy can only find out with a timeout.
 	// PT: Um processo congelado é o tipo ruim de falha: a porta está aberta e as conexões são
 	//     aceitas, mas nenhuma resposta chega. Um proxy só descobre com um timeout.
+	// ES: Un proceso congelado es el tipo malo de falla: el puerto está abierto y las conexiones se
+	//     aceptan, pero no llega ninguna respuesta. Un proxy solo lo descubre con un timeout.
 	const waitWhileFrozen = async (): Promise<void> => {
 		const remaining = frozenUntil - hooks.now();
 		if (remaining > 0) {
@@ -91,6 +97,8 @@ export function createApp(instance: string, hooks: AppHooks): App {
 				//     the lab makes one instance slower than the others.
 				// PT: O atraso artificial representa trabalho real (uma consulta, um cálculo). É
 				//     assim que o laboratório deixa uma instância mais lenta que as outras.
+				// ES: El retraso artificial representa trabajo real (una consulta, un cálculo). Así es
+				//     como el laboratorio hace que una instancia sea más lenta que las otras.
 				served += 1;
 				if (delayMs > 0) {
 					await hooks.sleep(delayMs);

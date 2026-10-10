@@ -6,6 +6,10 @@
 #     `@playwright/test`. O Bun é copiado para instalar as dependências e para rodar a loja
 #     dentro deste mesmo contêiner quando a matriz de bugs é produzida. Só a imagem tem cerca de
 #     dois gigabytes: parte do custo do topo da pirâmide.
+# ES: Imagen de Playwright con Chromium ya instalado, fijada en la misma versión del paquete
+#     `@playwright/test`. Bun se copia para instalar las dependencias y para ejecutar la tienda
+#     dentro de este mismo contenedor cuando se produce la matriz de bugs. Solo la imagen pesa cerca de
+#     dos gigabytes: parte del costo de la cima de la pirámide.
 FROM mcr.microsoft.com/playwright:v1.63.0-noble
 COPY --from=oven/bun:1.4.2 /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app

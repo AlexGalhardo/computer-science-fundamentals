@@ -15,6 +15,8 @@ describe("validation of machine.json", () => {
 	//     the result would depend on which row the code happens to read first.
 	// PT: Dois destinos para o mesmo par (estado, evento) tornariam a máquina não determinística:
 	//     o resultado dependeria de qual linha o código lesse primeiro.
+	// ES: Dos destinos para el mismo par (estado, evento) volverían no determinista a la máquina:
+	//     el resultado dependería de qué fila lea primero el código.
 	test("a second transition for the same (state, event) pair is refused", () => {
 		const table = rawTable();
 		const transitions = [...(table.transitions as unknown[]), { from: "created", event: "pay", to: "shipped" }];

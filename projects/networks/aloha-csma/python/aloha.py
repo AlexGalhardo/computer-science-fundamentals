@@ -1,6 +1,8 @@
 """EN: Pure and slotted ALOHA: the theoretical throughput and a simulation of each.
 
 PT: ALOHA puro e slotted ALOHA: a vazão teórica e uma simulação de cada um.
+
+ES: ALOHA puro y slotted ALOHA: el rendimiento teórico y una simulación de cada uno.
 """
 
 import math
@@ -14,6 +16,10 @@ import random
 #     transmitido. A carga oferecida G é o número médio de tentativas de transmissão por tempo
 #     de quadro, somando quadros novos e retransmissões. A vazão S é o número médio de quadros
 #     que passam por tempo de quadro, ou seja, a fração do canal que faz trabalho útil.
+# ES: El tiempo se mide en tiempos de trama: toda trama tarda exactamente 1 unidad en
+#     transmitirse. La carga ofrecida G es el número medio de intentos de transmisión por tiempo
+#     de trama, sumando tramas nuevas y retransmisiones. El rendimiento S es el número medio de
+#     tramas que pasan por tiempo de trama, es decir, la fracción del canal que hace trabajo útil.
 
 PURE_PEAK = 1 / (2 * math.e)
 SLOTTED_PEAK = 1 / math.e
@@ -24,6 +30,9 @@ def pure_aloha_theory(load: float) -> float:
 
     PT: S = G * e^(-2G). Um quadro sobrevive se ninguém mais começa em uma janela de 2 tempos
     de quadro.
+
+    ES: S = G * e^(-2G). Una trama sobrevive si nadie más empieza en una ventana de 2 tiempos
+    de trama.
     """
     return load * math.exp(-2 * load)
 
@@ -32,6 +41,8 @@ def slotted_aloha_theory(load: float) -> float:
     """EN: S = G * e^(-G). With slots the vulnerable window shrinks to 1 frame time.
 
     PT: S = G * e^(-G). Com slots a janela vulnerável encolhe para 1 tempo de quadro.
+
+    ES: S = G * e^(-G). Con slots la ventana vulnerable se reduce a 1 tiempo de trama.
     """
     return load * math.exp(-load)
 
@@ -40,11 +51,15 @@ def simulate_pure_aloha(load: float, frames: int, rng: random.Random) -> float:
     """EN: Simulated throughput of pure ALOHA with `frames` transmission attempts.
 
     PT: Vazão simulada do ALOHA puro com `frames` tentativas de transmissão.
+
+    ES: Rendimiento simulado del ALOHA puro con `frames` intentos de transmisión.
     """
     # EN: Stations transmit whenever they want, so attempts form a Poisson process: the gaps
     #     between consecutive starts are exponential with mean 1/G.
     # PT: As estações transmitem quando querem, então as tentativas formam um processo de
     #     Poisson: os intervalos entre inícios consecutivos são exponenciais com média 1/G.
+    # ES: Las estaciones transmiten cuando quieren, así que los intentos forman un proceso de
+    #     Poisson: los intervalos entre inicios consecutivos son exponenciales con media 1/G.
     gaps = [rng.expovariate(load) for _ in range(frames + 1)]
 
     # EN: A frame that starts at t occupies [t, t + 1). It collides with the previous frame if
@@ -55,6 +70,10 @@ def simulate_pure_aloha(load: float, frames: int, rng: random.Random) -> float:
     #     começou menos de 1 tempo de quadro antes, e com o seguinte se ele começa menos de 1
     #     tempo de quadro depois. Os dois intervalos precisam ser de pelo menos 1: esse é o
     #     período vulnerável de 2 tempos de quadro.
+    # ES: Una trama que empieza en t ocupa [t, t + 1). Colisiona con la trama anterior si esta
+    #     empezó hace menos de 1 tiempo de trama, y con la siguiente si esta empieza dentro de
+    #     menos de 1 tiempo de trama. Los dos intervalos deben ser de al menos 1: ese es el
+    #     período vulnerable de 2 tiempos de trama.
     successes = sum(1 for i in range(frames) if gaps[i] >= 1 and gaps[i + 1] >= 1)
     elapsed = sum(gaps[:frames])
     return successes / elapsed
@@ -65,6 +84,9 @@ def poisson(mean: float, rng: random.Random) -> int:
 
     PT: Número de eventos de um processo de Poisson de taxa `mean` dentro de uma unidade de
     tempo.
+
+    ES: Número de eventos de un proceso de Poisson de tasa `mean` dentro de una unidad de
+    tiempo.
     """
     count = 0
     clock = rng.expovariate(mean)
@@ -78,6 +100,8 @@ def simulate_slotted_aloha(load: float, slots: int, rng: random.Random) -> float
     """EN: Simulated throughput of slotted ALOHA over `slots` slots of one frame time each.
 
     PT: Vazão simulada do slotted ALOHA em `slots` slots de um tempo de quadro cada.
+
+    ES: Rendimiento simulado del slotted ALOHA en `slots` slots de un tiempo de trama cada uno.
     """
     # EN: A station that wants to transmit waits for the next slot boundary. Frames in the same
     #     slot overlap completely, frames in different slots do not touch. A slot is useful only
@@ -85,5 +109,8 @@ def simulate_slotted_aloha(load: float, slots: int, rng: random.Random) -> float
     # PT: Uma estação que quer transmitir espera o início do próximo slot. Quadros no mesmo slot
     #     se sobrepõem por inteiro, quadros em slots diferentes não se tocam. Um slot só é útil
     #     quando exatamente uma estação o escolheu.
+    # ES: Una estación que quiere transmitir espera el inicio del siguiente slot. Las tramas en el
+    #     mismo slot se superponen por completo, las tramas en slots distintos no se tocan. Un slot
+    #     solo es útil cuando exactamente una estación lo eligió.
     successes = sum(1 for _ in range(slots) if poisson(load, rng) == 1)
     return successes / slots

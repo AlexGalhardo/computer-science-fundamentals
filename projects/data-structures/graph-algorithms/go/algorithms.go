@@ -18,6 +18,8 @@ var ErrCycle = errors.New("the graph has a cycle")
 // Following it backwards rebuilds the path.
 // PT: Previous[v] é o vértice que vem logo antes de v no melhor caminho achado, ou -1. Segui-lo
 // de trás para a frente reconstrói o caminho.
+// ES: Previous[v] es el vértice que viene justo antes de v en el mejor camino hallado, o -1.
+// Seguirlo de atrás hacia adelante reconstruye el camino.
 type PathResult struct {
 	Distance      []Weight
 	Previous      []int
@@ -62,6 +64,10 @@ type distanceItem struct {
 // arcos que saem dele. Um heap de mínimo entrega esse vértice em O(log n). A escolha gulosa só
 // é segura quando nenhum peso é negativo, pois aí um caminho mais longo nunca fica mais barato
 // depois. Com um arco negativo a função se recusa a rodar.
+// ES: Voraz: siempre finaliza el vértice no finalizado de menor distancia conocida y relaja los
+// arcos que salen de él. Un heap de mínimo entrega ese vértice en O(log n). La elección voraz
+// solo es segura cuando ningún peso es negativo, pues entonces un camino más largo nunca se
+// vuelve más barato después. Con un arco negativo la función se niega a correr.
 func Dijkstra(graph Graph, source int) (PathResult, error) {
 	result := newPathResult(graph.VertexCount(), source)
 	heap := newMinHeap(func(a, b distanceItem) bool { return a.distance < b.distance })
@@ -72,6 +78,8 @@ func Dijkstra(graph Graph, source int) (PathResult, error) {
 		// They are skipped instead of being removed from the middle of the heap.
 		// PT: O heap pode guardar entradas velhas de um vértice cuja distância melhorou depois.
 		// Elas são puladas em vez de serem removidas do meio do heap.
+		// ES: El heap puede guardar entradas viejas de un vértice cuya distancia mejoró después.
+		// Se saltan en lugar de quitarlas de en medio del heap.
 		if item.distance > result.Distance[item.vertex] {
 			continue
 		}
@@ -99,6 +107,10 @@ func Dijkstra(graph Graph, source int) (PathResult, error) {
 // basta para fechar todas as distâncias, mesmo com pesos negativos. Se mais uma rodada ainda
 // melhora algo, há um ciclo de peso total negativo alcançável e "mais curto" perde o sentido:
 // dar outra volta no ciclo sempre custa menos.
+// ES: Un camino mínimo tiene como máximo V - 1 arcos, así que relajar todos los arcos V - 1 veces
+// basta para cerrar todas las distancias, incluso con pesos negativos. Si una ronda más aún
+// mejora algo, hay un ciclo de peso total negativo alcanzable y "más corto" pierde el sentido:
+// dar otra vuelta al ciclo siempre cuesta menos.
 func BellmanFord(graph Graph, source int) PathResult {
 	vertices := graph.VertexCount()
 	result := newPathResult(vertices, source)
@@ -141,6 +153,11 @@ type TopologicalOrder struct {
 // mínimo, então o menor rótulo sai sempre primeiro. Um vértice que está em um ciclo, ou que
 // depende de um, nunca fica pronto. Então, quando a ordem sai menor que V, o grafo tem ciclo:
 // HasCycle avisa, e Order guarda só os vértices que puderam ser ordenados.
+// ES: Un vértice puede listarse cuando todos sus prerrequisitos ya lo fueron, es decir, cuando
+// su cuenta de arcos de entrada llega a cero. Los vértices listos esperan en un heap de mínimo,
+// así que la menor etiqueta sale siempre primero. Un vértice que está en un ciclo, o que depende
+// de uno, nunca queda listo. Entonces, cuando el orden sale menor que V, el grafo tiene ciclo:
+// HasCycle avisa, y Order guarda solo los vértices que pudieron ordenarse.
 func TopologicalSort(graph Graph) TopologicalOrder {
 	vertices := graph.VertexCount()
 	incoming := make([]int, vertices)
@@ -181,6 +198,10 @@ func TopologicalSort(graph Graph) TopologicalOrder {
 // distância dele já é final e uma passada pelos arcos basta: O(V + E), com pesos negativos
 // permitidos. Muitos problemas de programação dinâmica são este algoritmo disfarçado: estados
 // são vértices e escolhas são arcos.
+// ES: En el orden topológico todo arco apunta hacia adelante, así que al llegar a un vértice su
+// distancia ya es final y una pasada por los arcos basta: O(V + E), con pesos negativos
+// permitidos. Muchos problemas de programación dinámica son este algoritmo disfrazado: los
+// estados son vértices y las elecciones son arcos.
 func DagShortestPaths(graph Graph, source int) (PathResult, error) {
 	sorted := TopologicalSort(graph)
 	if sorted.HasCycle {
@@ -210,6 +231,9 @@ func DagShortestPaths(graph Graph, source int) (PathResult, error) {
 // PT: Uma árvore geradora liga todos os vértices com V - 1 arestas e nenhum ciclo. A mínima tem
 // o menor peso total. Connected é false quando o grafo tem mais de um componente, caso em que
 // não existe árvore geradora.
+// ES: Un árbol generador conecta todos los vértices con V - 1 aristas y ningún ciclo. El mínimo
+// tiene el menor peso total. Connected es false cuando el grafo tiene más de un componente, caso
+// en que no existe árbol generador.
 type SpanningTree struct {
 	Total     Weight
 	Edges     []Arc
@@ -222,6 +246,8 @@ type SpanningTree struct {
 // candidate edges.
 // PT: A cada passo ele acrescenta a aresta mais leve que sai da árvore, tirada de um heap de
 // mínimo de arestas candidatas.
+// ES: En cada paso agrega la arista más liviana que sale del árbol, sacada de un heap de mínimo
+// de aristas candidatas.
 func Prim(graph Graph, start int) SpanningTree {
 	vertices := graph.VertexCount()
 	var tree SpanningTree
@@ -258,6 +284,9 @@ func Prim(graph Graph, start int) SpanningTree {
 // PT: Find devolve o representante de um conjunto e achata o caminho na passagem (compressão de
 // caminho). Unite pendura a árvore mais rasa na mais funda (união por rank). Juntas, as duas
 // técnicas deixam as operações quase O(1).
+// ES: Find devuelve el representante de un conjunto y aplana el camino al pasar (compresión de
+// camino). Unite cuelga el árbol más bajo del más hondo (unión por rank). Juntas, las dos
+// técnicas dejan las operaciones casi O(1).
 type UnionFind struct {
 	parent []int
 	rank   []int
@@ -305,6 +334,9 @@ func (u *UnionFind) Unite(a, b int) bool {
 // PT: Ele olha as arestas da mais leve para a mais pesada e fica com uma aresta sempre que as
 // duas pontas ainda estão em componentes diferentes. O union-find responde essa pergunta, e uma
 // aresta cujas pontas já estão ligadas fecharia um ciclo, então é pulada.
+// ES: Mira las aristas de la más liviana a la más pesada y se queda con una arista siempre que
+// sus dos extremos aún están en componentes distintos. El union-find responde esa pregunta, y
+// una arista cuyos extremos ya están conectados cerraría un ciclo, así que se salta.
 func Kruskal(graph Graph) SpanningTree {
 	vertices := graph.VertexCount()
 	var edges []Arc

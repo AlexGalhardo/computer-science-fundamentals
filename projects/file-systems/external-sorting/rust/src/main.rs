@@ -9,6 +9,8 @@ use external_sorting::sorter::{Config, external_sort, in_memory_sort};
 const MIB: u64 = 1024 * 1024;
 // EN: Under a container memory limit, written data is forced to disk every 4 MiB (see LineWriter).
 // PT: Sob um limite de memória do contêiner, os dados gravados são forçados para o disco a cada 4 MiB (veja LineWriter).
+// ES: Bajo un límite de memoria del contenedor, los datos escritos se fuerzan a disco cada 4 MiB
+//     (véase LineWriter).
 const SYNC_MIB: u64 = 4;
 
 fn fail(message: String) -> io::Error {
@@ -22,6 +24,7 @@ fn number(text: Option<&String>, what: &str) -> io::Result<u64> {
 
 // EN: The output is accepted only if it is in order and has the same lines as the input.
 // PT: A saída só é aceita se estiver em ordem e tiver as mesmas linhas da entrada.
+// ES: La salida solo se acepta si está en orden y tiene las mismas líneas que la entrada.
 fn check_output(input: &Digest, output: &Path) -> io::Result<Digest> {
     let (digest, sorted) = inspect(output)?;
     if !sorted {
@@ -41,6 +44,10 @@ fn check_output(input: &Digest, output: &Path) -> io::Result<Digest> {
 // PT: `bench <fanin-K> <run-Nk> <linhas>`: uma linha da grade de benchmark. A entrada é gerada
 //     uma vez por contêiner e reaproveitada pelas execuções seguintes, então o processo medido é
 //     a ordenação. A última linha impressa segue o contrato de benchmark do repositório.
+// ES: `bench <fanin-K> <run-Nk> <líneas>`: una fila de la grilla de benchmark. La entrada se
+//     genera una vez por contenedor y se reutiliza en las ejecuciones siguientes, así que el
+//     proceso medido es la ordenación. La última línea impresa sigue el contrato de benchmark
+//     del repositorio.
 fn bench(args: &[String]) -> io::Result<()> {
     let implementation = args
         .first()
@@ -125,6 +132,11 @@ fn cgroup(file: &str) -> String {
 //     pico de memória residente do processo não ficou abaixo do limite. O docker-compose dá ao
 //     contêiner esse mesmo limite, sem swap, então um programa que precisasse de mais memória
 //     seria morto pelo núcleo em vez de terminar.
+// ES: `limit-check <MiB>`: la prueba de aceptación del límite de memoria. Genera un archivo
+//     diez veces mayor que el límite, ordena con runs de un cuarto del límite, comprueba la
+//     salida y falla si el pico de memoria residente del proceso no quedó por debajo del
+//     límite. El docker-compose le da al contenedor ese mismo límite, sin swap, así que un
+//     programa que necesitara más memoria sería matado por el kernel en lugar de terminar.
 fn limit_check(args: &[String]) -> io::Result<()> {
     let limit_mib = number(args.first(), "limit in MiB")?;
     set_sync_every(SYNC_MIB * MIB);
@@ -191,6 +203,8 @@ fn limit_check(args: &[String]) -> io::Result<()> {
 //     container limit this process is expected to be killed (exit code 137).
 // PT: `in-memory-check <MiB>`: o mesmo arquivo, carregado inteiro e ordenado na memória. Sob o
 //     limite do contêiner, espera-se que este processo seja morto (código de saída 137).
+// ES: `in-memory-check <MiB>`: el mismo archivo, cargado entero y ordenado en memoria. Bajo el
+//     límite del contenedor, se espera que este proceso sea matado (código de salida 137).
 fn in_memory_check(args: &[String]) -> io::Result<()> {
     let limit_mib = number(args.first(), "limit in MiB")?;
     set_sync_every(SYNC_MIB * MIB);

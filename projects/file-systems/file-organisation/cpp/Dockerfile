@@ -2,6 +2,9 @@
 #     build context is the project folder, because a test compares the demo with results/demo.md.
 # PT: GCC em uma imagem fixada, mais o clang-format para a checagem de formato rodar com os
 #     testes. O contexto de build é a pasta do projeto, porque um teste compara a demo com results/demo.md.
+# ES: GCC en una imagen fijada, más clang-format para que la comprobación de formato se ejecute
+#     con las pruebas. El contexto de build es la carpeta del proyecto, porque una prueba compara
+#     la demo con results/demo.md.
 FROM gcc:16.2.0-trixie
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends clang-format \

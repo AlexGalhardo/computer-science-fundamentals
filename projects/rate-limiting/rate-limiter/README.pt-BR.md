@@ -1,6 +1,6 @@
 # rate-limiter
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 "No máximo 10 requisições por segundo" parece uma regra só, mas cinco algoritmos a aplicam de cinco jeitos diferentes, e a diferença só aparece quando o tráfego chega em rajadas. Este mini-projeto implementa janela fixa, janela deslizante (log e contador), token bucket e leaky bucket em memória, entrega a todos o mesmo tráfego e desenha o que cada um deixa passar. Depois leva o limitador para o Redis, onde duas instâncias da aplicação compartilham um contador por meio de um script Lua atômico, e mostra a corrida que aparece sem ele.
 
@@ -57,7 +57,7 @@ O script constrói as imagens e roda três suítes de teste: os algoritmos em me
 ./experiment-windows.ps1        # Windows
 ```
 
-Um comando: ele roda o experimento e regrava `results/burst.json`, `results/burst.md`, `results/burst.svg` e `results/burst.pt-BR.svg`. O gráfico é um arquivo SVG puro, sem script e sem referência externa, então abre do disco em qualquer navegador. O experimento é uma simulação com relógio injetado: leva milissegundos, não envia nada a lugar nenhum e dá os mesmos números em qualquer máquina. Um teste falha quando `results/` está desatualizado.
+Um comando: ele roda o experimento e regrava `results/burst.json`, `results/burst.md`, `results/burst.svg`, `results/burst.pt-BR.svg` e `results/burst.es.svg`. O gráfico é um arquivo SVG puro, sem script e sem referência externa, então abre do disco em qualquer navegador. O experimento é uma simulação com relógio injetado: leva milissegundos, não envia nada a lugar nenhum e dá os mesmos números em qualquer máquina. Um teste falha quando `results/` está desatualizado.
 
 A implementação em Go imprime a mesma tabela: `docker compose run --rm go-test go run ./cmd/experiment`.
 

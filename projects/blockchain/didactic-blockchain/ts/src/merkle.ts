@@ -10,6 +10,12 @@ import { sha256Hex } from "./hash";
 //     então o cabeçalho tem tamanho fixo e ainda assim depende de todas as transações.
 //     Convenção usada aqui (a mesma do Bitcoin): um nível com número ímpar de nós duplica o
 //     último. Um pai é o hash dos textos hexadecimais dos dois filhos concatenados.
+// ES: Un árbol de Merkle resume una lista de ids de transacción en un único hash, la raíz. Cada
+//     nivel aplica hash a los nodos de dos en dos hasta que queda uno. Solo la raíz va al
+//     encabezado del bloque, así que el encabezado tiene tamaño fijo y aun así depende de todas
+//     las transacciones. Convención usada aquí (la misma de Bitcoin): un nivel con número
+//     impar de nodos duplica el último. Un padre es el hash de los textos hexadecimales de sus
+//     dos hijos concatenados.
 function nextLevel(level: readonly string[]): string[] {
 	const parents: string[] = [];
 	for (let i = 0; i < level.length; i += 2) {
@@ -44,6 +50,10 @@ export interface ProofStep {
 //     raiz: um hash por nível, ou seja, cerca de log2(n) hashes para n transações. É o que
 //     permite a um cliente leve conferir que uma transação está em um bloco guardando apenas os
 //     cabeçalhos.
+// ES: Una prueba de inclusión (rama de Merkle) es la lista de hermanos en el camino de una hoja
+//     hasta la raíz: un hash por nivel, es decir, unos log2(n) hashes para n transacciones. Es
+//     lo que permite a un cliente ligero comprobar que una transacción está en un bloque
+//     guardando solo los encabezados.
 export function merkleProof(leaves: readonly string[], index: number): ProofStep[] {
 	if (!Number.isInteger(index) || index < 0 || index >= leaves.length) {
 		throw new RangeError(`leaf index ${index} is outside the list of ${leaves.length} leaves`);

@@ -16,6 +16,10 @@ pub const DYNAMIC_CHUNK: u64 = 10_000;
 //     os resultados parciais dos trabalhadores podem ser somados em qualquer ordem e
 //     agrupamento e o total é sempre o mesmo. Por isso a resposta paralela é exatamente igual
 //     à sequencial.
+// ES: El resultado es un par de enteros. La suma de enteros es asociativa y conmutativa, así
+//     que los resultados parciales de los trabajadores pueden sumarse en cualquier orden y
+//     agrupación y el total es siempre el mismo. Por eso la respuesta paralela es exactamente
+//     igual a la secuencial.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct PrimeStats {
     pub count: u64,
@@ -40,6 +44,11 @@ impl PrimeStats {
 //     sqrt(n) / 2 divisões, enquanto a maioria dos compostos sai depois de poucas. Números
 //     maiores são, portanto, mais caros, o que faz blocos iguais de números serem quantidades
 //     desiguais de trabalho.
+// ES: División de prueba por impares hasta la raíz cuadrada. Es deliberadamente simple y
+//     limitada por CPU, y el costo depende del valor: probar que n es primo toma unas
+//     sqrt(n) / 2 divisiones, mientras que la mayoría de los compuestos salen después de pocas.
+//     Los números mayores son, por tanto, más caros, lo que hace que bloques iguales de números
+//     sean cantidades desiguales de trabajo.
 pub fn is_prime(n: u64) -> bool {
     if n < 2 {
         return false;
@@ -66,6 +75,9 @@ pub fn is_prime(n: u64) -> bool {
 // PT: A unidade de trabalho comum a todas as versões: percorrer um intervalo e acumular em
 //     uma variável local. Nada aqui é compartilhado entre threads, então esta função é a mesma
 //     no código sequencial e no paralelo.
+// ES: La unidad de trabajo común a todas las versiones: recorrer un intervalo y acumular en
+//     una variable local. Nada aquí se comparte entre hilos, así que esta función es la misma
+//     en el código secuencial y en el paralelo.
 pub fn count_range(range: Range<u64>) -> PrimeStats {
     let mut stats = PrimeStats::default();
     for n in range {
@@ -95,6 +107,11 @@ pub fn count_parallel(limit: u64, workers: usize, schedule: Schedule) -> PrimeSt
     //     trabalhador devolve o seu próprio parcial: nenhum contador compartilhado é escrito
     //     no laço quente, o que evita tanto a corrida de dados quanto a disputa de linha de
     //     cache (compartilhamento verdadeiro ou falso).
+    // ES: Fork-join. `thread::scope` crea los trabajadores y espera a que todos terminen antes
+    //     de retornar, así que los resultados parciales están completos cuando se leen. Cada
+    //     trabajador devuelve su propio parcial: ningún contador compartido se escribe
+    //     en el bucle caliente, lo que evita tanto la condición de carrera como la disputa de
+    //     línea de caché (compartido verdadero o falso).
     let partials: Vec<PrimeStats> = match schedule {
         Schedule::Static => thread::scope(|scope| {
             let handles: Vec<_> = split_static(total, workers)
@@ -115,6 +132,10 @@ pub fn count_parallel(limit: u64, workers: usize, schedule: Schedule) -> PrimeSt
             //     pegou ainda". O `fetch_add` é atômico, então dois trabalhadores nunca
             //     recebem o mesmo pedaço. Ele é tocado uma vez a cada 10 000 números, e não a
             //     cada número, então o custo de compartilhá-lo fica diluído.
+            // ES: El único estado compartido es este contador: "el próximo número que nadie ha
+            //     tomado todavía". `fetch_add` es atómico, así que dos trabajadores nunca
+            //     reciben la misma porción. Se toca una vez cada 10 000 números, y no en cada
+            //     número, así que el costo de compartirlo queda diluido.
             let next = AtomicU64::new(0);
             thread::scope(|scope| {
                 let handles: Vec<_> = (0..workers)
@@ -142,6 +163,7 @@ pub fn count_parallel(limit: u64, workers: usize, schedule: Schedule) -> PrimeSt
     };
     // EN: The reduction: combine one partial result per worker into the final answer.
     // PT: A redução: combinar um resultado parcial por trabalhador na resposta final.
+    // ES: La reducción: combinar un resultado parcial por trabajador en la respuesta final.
     partials
         .into_iter()
         .fold(PrimeStats::default(), PrimeStats::merge)
@@ -182,6 +204,10 @@ mod tests {
     //     os dois escalonamentos, o resultado paralelo é exatamente o sequencial. Os limites
     //     incluem casos com menos números que trabalhadores e um limite que não é múltiplo do
     //     pedaço.
+    // ES: La prueba de aceptación del mini-proyecto: para toda cantidad de trabajadores y para
+    //     las dos planificaciones, el resultado paralelo es exactamente el secuencial. Los
+    //     límites incluyen casos con menos números que trabajadores y un límite que no es
+    //     múltiplo de la porción.
     #[test]
     fn parallel_equals_sequential() {
         for limit in [0, 1, 2, 3, 10, 9_999, 10_000, 10_001, 123_457] {

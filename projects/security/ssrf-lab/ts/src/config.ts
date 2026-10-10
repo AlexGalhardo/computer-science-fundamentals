@@ -2,6 +2,8 @@
 //     are the service names of docker-compose: both hosts exist only inside this lab.
 // PT: Variáveis de ambiente são entrada externa, então são validadas na borda. Os padrões são os
 //     nomes dos serviços do docker-compose: os dois hosts só existem dentro deste laboratório.
+// ES: Las variables de entorno son entrada externa, así que se validan en el borde. Los valores por defecto son los
+//     nombres de los servicios de docker-compose: los dos hosts solo existen dentro de este laboratorio.
 
 import { z } from "zod";
 
@@ -25,6 +27,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 //     look for this exact text in a response to decide whether something leaked.
 // PT: O segredo falso do serviço interno. Ele é claramente falso de propósito, e os testes
 //     procuram exatamente este texto em uma resposta para decidir se algo vazou.
+// ES: El secreto falso del servicio interno. Es claramente falso a propósito, y las pruebas
+//     buscan exactamente este texto en una respuesta para decidir si algo se filtró.
 export const FAKE_INTERNAL_TOKEN = "FAKE-INTERNAL-TOKEN-not-real";
 
 const portSchema = z.coerce.number().int().min(1).max(65535).default(8080);

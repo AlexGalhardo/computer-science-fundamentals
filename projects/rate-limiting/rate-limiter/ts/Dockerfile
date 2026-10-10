@@ -8,6 +8,11 @@
 #     imagem espelha a pasta, então os mesmos caminhos relativos funcionam dentro e fora do Docker.
 #     As dependências são instaladas a partir do lockfile em uma camada própria: editar o código
 #     não as baixa de novo, e as versões são exatamente as versionadas.
+# ES: El contexto de build es la carpeta del miniproyecto, no `ts/`, porque las pruebas también
+#     leen `cases/` (la tabla compartida con Go), `lua/` (los scripts de Redis) y `results/`. La
+#     imagen refleja la carpeta, así que las mismas rutas relativas funcionan dentro y fuera de Docker.
+#     Las dependencias se instalan desde el lockfile en una capa propia: editar el código no las
+#     descarga de nuevo, y las versiones son exactamente las versionadas.
 FROM oven/bun:1.4.2
 WORKDIR /app/ts
 RUN chown -R bun:bun /app

@@ -2,6 +2,8 @@
 //     when any import points outward, which is what makes the build fail.
 // PT: `bun run check:layers [pasta src]`. Mostra uma linha por camada e termina com código 1
 //     quando algum import aponta para fora, que é o que faz o build falhar.
+// ES: `bun run check:layers [carpeta src]`. Muestra una línea por capa y termina con código 1
+//     cuando algún import apunta hacia afuera, que es lo que hace fallar el build.
 
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";

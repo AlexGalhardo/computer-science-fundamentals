@@ -1,6 +1,6 @@
 # Balanceamento de carga
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um balanceador de carga distribui requisições entre vários servidores para que um serviço aguente mais tráfego do que uma máquina e sobreviva à perda de uma delas. O tema cobre onde o balanceamento acontece (camada de transporte ou de aplicação), como um servidor é escolhido (round robin, menos conexões, hashing), como servidores mortos são detectados e evitados, e os papéis relacionados de proxy reverso, terminação TLS e gateway de API.
 

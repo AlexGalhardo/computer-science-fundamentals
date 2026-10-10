@@ -20,6 +20,8 @@ test("the four implementations are measured", () => {
 //     table is not regenerated (`docker compose run --rm compare`), this test fails.
 // PT: A tabela do README vem de `results/comparison.md`. Se o código mudar e a tabela não for
 //     regenerada (`docker compose run --rm compare`), este teste falha.
+// ES: La tabla del README viene de `results/comparison.md`. Si el código cambia y la tabla no se
+//     regenera (`docker compose run --rm compare`), esta prueba falla.
 test("the committed results/comparison.md is up to date", () => {
 	const committed = readFileSync(new URL("../../results/comparison.md", import.meta.url), "utf8");
 	expect(committed.replaceAll("\r\n", "\n")).toBe(comparisonTable());

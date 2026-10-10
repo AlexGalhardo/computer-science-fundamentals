@@ -1,6 +1,6 @@
 # Laboratório de SSRF (MP-SEC-5)
 
-> English version: [docs/en/security/ssrf-lab.md](../../en/security/ssrf-lab.md)
+> English version: [docs/en/security/ssrf-lab.md](../../en/security/ssrf-lab.md) · Versión en español: [docs/es/security/ssrf-lab.md](../../es/security/ssrf-lab.md)
 
 Mini-projeto: [`projects/security/ssrf-lab`](../../../projects/security/ssrf-lab/README.pt-BR.md). Tópicos do quiz: `ssrf-path-traversal-upload`, `owasp-threat-modelling`.
 
@@ -68,7 +68,7 @@ Uma função de cenário pede aos dois apps as mesmas quatro prévias: um artigo
 | --- | --- |
 | MP-SEC-5.1 funcionalidade vulnerável e serviço interno falso em redes internas; um teste alcança o serviço interno pela funcionalidade | `tests/scenario.test.ts`, bloco vulnerável: a URL direta e o redirecionamento respondem `200` com o token falso na prévia, e o contador interno subiu 2. `tests/network-isolation.test.ts`: uma requisição a `http://example.com` falha de dentro do contêiner. O `docker-compose.yml` não publica porta e as duas redes são `internal: true` |
 | MP-SEC-5.2 a correção barra o mesmo teste, inclusive por redirecionamento, e o uso normal funciona | `tests/scenario.test.ts`, bloco corrigido: as duas tentativas respondem `403` (`host-not-allowed`), o contador interno não se moveu, o artigo público e o redirecionamento público continuam respondendo `200`. Terceiro bloco: com o nome interno colocado por engano na lista de permissão, as duas tentativas respondem `403` (`address-not-allowed`) e o contador continua parado. `tests/address-classifier.test.ts`: tabela de endereços IPv4 e IPv6. `tests/fixed-safe-fetch.test.ts`: esquema, credenciais, lista de permissão, literais de loopback, resolvedor de mentira respondendo endereços internos, conexão fixada, limite de redirecionamentos, limite de tamanho, tempo limite, validação Zod |
-| MP-SEC-5.3 definição de pronto | Scripts de setup, demo, os dois READMEs com "Por que a falha acontece", "Como prevenir" e "O que não funciona como correção", e esta página nos dois idiomas |
+| MP-SEC-5.3 definição de pronto | Scripts de setup, demo, os três READMEs com "Por que a falha acontece", "Como prevenir" e "O que não funciona como correção", e esta página nos três idiomas |
 
 ## Como rodar
 

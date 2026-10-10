@@ -1,6 +1,6 @@
 # Hybrid quicksort
 
-> Versão em português: [docs/pt/algorithms/hybrid-quicksort.md](../../pt/algorithms/hybrid-quicksort.md)
+> Versão em português: [docs/pt/algorithms/hybrid-quicksort.md](../../pt/algorithms/hybrid-quicksort.md) · Versión en español: [docs/es/algorithms/hybrid-quicksort.md](../../es/algorithms/hybrid-quicksort.md)
 
 Mini-project: [`projects/algorithms/hybrid-quicksort`](../../../projects/algorithms/hybrid-quicksort/README.md) (MP-ALG-4). Languages: C++ and Rust. Quiz: area `algorithms`, topic `quicksort`.
 

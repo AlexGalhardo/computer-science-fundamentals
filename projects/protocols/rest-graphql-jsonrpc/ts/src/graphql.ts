@@ -8,6 +8,11 @@
 //     tem um preço mostrado aqui: um resolver que busca uma linha é chamado uma vez por item de
 //     uma lista, que é o problema N+1. `/graphql-naive` deixa o problema, `/graphql` o corrige
 //     com agrupamento em lote.
+// ES: El estilo GraphQL. Un endpoint, un schema tipado, y el CLIENTE lista los campos que quiere. El
+//     servidor recorre la consulta campo por campo y llama a un resolver para cada uno. Esa libertad
+//     tiene un precio que se muestra aquí: un resolver que busca una fila se llama una vez por elemento de
+//     una lista, que es el problema N+1. `/graphql-naive` deja el problema, `/graphql` lo corrige
+//     con agrupación en lotes.
 
 import { type AnyElysia, Elysia } from "elysia";
 import { buildSchema, GraphQLError, graphql } from "graphql";
@@ -37,6 +42,8 @@ import { BatchLoader } from "./loader";
 //     `books` always answers a list with no null inside.
 // PT: O schema é o contrato. `!` significa não nulo: `book(id: 999)` pode responder null, enquanto
 //     `books` sempre responde uma lista sem null dentro.
+// ES: El schema es el contrato. `!` significa no nulo: `book(id: 999)` puede responder null, mientras que
+//     `books` siempre responde una lista sin null dentro.
 export const SCHEMA_SDL = `
 type Author {
 	id: Int!
@@ -99,6 +106,8 @@ interface Context {
 //     client would read rows cached for another.
 // PT: Os loaders são criados por requisição. O cache deles não pode viver mais que a requisição,
 //     ou um cliente leria linhas guardadas para outro.
+// ES: Los loaders se crean por petición. Su caché no puede vivir más que la petición,
+//     o un cliente leería filas guardadas para otro.
 function createLoaders(db: Db): Loaders {
 	return {
 		author: new BatchLoader<number, Author | null>(
@@ -118,6 +127,9 @@ function createLoaders(db: Db): Loaders {
 // PT: O graphql-js resolve um campo lendo a propriedade de mesmo nome no objeto pai, e a chama
 //     quando é uma função. Então um "nó" é a linha do banco mais uma função por relação. Campos
 //     escalares (title, year) não precisam de código nenhum.
+// ES: graphql-js resuelve un campo leyendo la propiedad del mismo nombre en el objeto padre, y la llama
+//     cuando es una función. Entonces un "nodo" es la fila de la base de datos más una función por relación. Los campos
+//     escalares (title, year) no necesitan código alguno.
 type Resolver<T> = (args: unknown, context: Context) => Promise<T>;
 
 interface AuthorNode extends Author {
@@ -145,6 +157,9 @@ function bookNode(book: Book): BookNode {
 		// PT: A linha em que o N+1 nasce ou é evitado. Para uma lista de 100 livros esta função
 		//     roda 100 vezes. Sem loaders são 100 `SELECT ... WHERE id = $1`. Com loaders as 100
 		//     chamadas só registram uma chave, e um único `WHERE id = ANY(...)` responde todas.
+		// ES: La línea donde el N+1 nace o se evita. Para una lista de 100 libros esta función
+		//     se ejecuta 100 veces. Sin loaders son 100 `SELECT ... WHERE id = $1`. Con loaders las 100
+		//     llamadas solo registran una clave, y un único `WHERE id = ANY(...)` responde a todas.
 		author: async (_args, context) => {
 			const author =
 				context.loaders === null
@@ -164,6 +179,8 @@ function bookNode(book: Book): BookNode {
 //     response, and by convention a machine-readable code goes in `extensions.code`.
 // PT: O GraphQL não tem códigos de status próprios. Um erro é um item na lista `errors` da
 //     resposta, e por convenção um código legível por máquina vai em `extensions.code`.
+// ES: GraphQL no tiene códigos de estado propios. Un error es un elemento en la lista `errors` de la
+//     respuesta, y por convención un código legible por máquina va en `extensions.code`.
 const CODE_OF = { "not-found": "NOT_FOUND", invalid: "BAD_USER_INPUT" } as const;
 
 async function translate<T>(run: () => Promise<T>): Promise<T> {
@@ -228,6 +245,9 @@ export function graphqlRoutes(pool: Pool): AnyElysia {
 			// PT: Repare no que NÃO acontece abaixo: nenhum código de status é escolhido. Pela
 			//     convenção usual de GraphQL sobre HTTP uma requisição bem formada responde 200
 			//     mesmo quando a operação falhou, e o cliente precisa olhar dentro de `errors`.
+			// ES: Fíjate en lo que NO ocurre abajo: no se elige ningún código de estado. Por la
+			//     convención usual de GraphQL sobre HTTP una petición bien formada responde 200
+			//     incluso cuando la operación falló, y el cliente debe mirar dentro de `errors`.
 			const result = await graphql({
 				schema,
 				source: parsed.data.query,

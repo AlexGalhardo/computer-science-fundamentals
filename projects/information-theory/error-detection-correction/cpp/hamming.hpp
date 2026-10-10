@@ -10,12 +10,15 @@
 // PT: Códigos que consertam erros em vez de apenas percebê-los. O preço é mais redundância:
 //     as palavras válidas precisam estar longe o bastante umas das outras para que uma
 //     palavra danificada continue mais perto da original do que de qualquer outra válida.
+// ES: Códigos que arreglan errores en lugar de solo notarlos. El precio es más redundancia: las
+//     palabras válidas deben estar lo bastante lejos unas de otras para que una palabra dañada
+//     siga más cerca de la original que de cualquier otra válida.
 namespace edc {
 
 enum class Outcome {
-	kClean,      // EN: no error seen. PT: nenhum erro visto.
-	kCorrected,  // EN: one bit was repaired. PT: um bit foi consertado.
-	kDetected,   // EN: error seen, cannot repair. PT: erro visto, sem conserto.
+	kClean,      // EN: no error seen. PT: nenhum erro visto. ES: ningún error visto.
+	kCorrected,  // EN: one bit was repaired. PT: um bit foi consertado. ES: un bit reparado.
+	kDetected,   // EN: error seen, cannot repair. PT: erro visto, sem conserto. ES: sin arreglo.
 };
 
 struct Decoded {
@@ -39,6 +42,12 @@ struct Decoded {
 //     p1 cobre 1,3,5,7; p2 cobre 2,3,6,7; p4 cobre 4,5,6,7. Cada grupo tem paridade par.
 //     Neste arquivo a posição n fica no bit n-1 de um byte, e d1 é o bit alto do nibble de
 //     dados, então o nibble 1011 significa d1 d2 d3 d4 = 1 0 1 1.
+// ES: Hamming(7,4). Las posiciones se numeran de 1 a 7. Las posiciones 1, 2 y 4 (las potencias
+//     de dos) guardan bits de paridad, y las demás guardan los 4 bits de datos (ve el cuadro
+//     de arriba). El bit de paridad p_k cubre toda posición cuyo número tiene el bit k
+//     encendido: p1 cubre 1,3,5,7; p2 cubre 2,3,6,7; p4 cubre 4,5,6,7. Cada grupo tiene
+//     paridad par. En este archivo la posición n queda en el bit n-1 de un byte, y d1 es el
+//     bit alto del nibble de datos, así que el nibble 1011 significa d1 d2 d3 d4 = 1 0 1 1.
 
 // EN: The syndrome is the XOR of the numbers of all positions that hold a 1. With the layout
 //     above it is 0 for every valid word. Flipping the bit at position n changes it by
@@ -46,6 +55,10 @@ struct Decoded {
 // PT: A síndrome é o XOR dos números de todas as posições que guardam um 1. Com a disposição
 //     acima ela vale 0 para toda palavra válida. Inverter o bit da posição n a altera em
 //     exatamente n, então depois de um único erro a síndrome é a posição do bit errado.
+// ES: El síndrome es el XOR de los números de todas las posiciones que guardan un 1. Con la
+//     disposición de arriba vale 0 para toda palabra válida. Invertir el bit de la posición n
+//     lo altera exactamente en n, así que después de un único error el síndrome es la posición
+//     del bit incorrecto.
 constexpr unsigned hamming_syndrome(std::uint8_t word) {
 	unsigned syndrome = 0;
 	for (unsigned position = 1; position <= 7; ++position) {
@@ -84,6 +97,10 @@ constexpr std::uint8_t hamming74_data(std::uint8_t word) {
 //     isso sempre conserta a palavra. Com dois erros a síndrome é o XOR de duas posições,
 //     que indica um terceiro bit, inocente: o decodificador o inverte e entrega dados
 //     errados sem saber. Distância mínima 3 corrige um erro ou detecta dois, nunca os dois.
+// ES: El decodificador confía en el síndrome e invierte la posición que indica. Con un error
+//     esto siempre arregla la palabra. Con dos errores el síndrome es el XOR de dos posiciones,
+//     que señala un tercer bit, inocente: el decodificador lo invierte y entrega datos
+//     incorrectos sin saberlo. Distancia mínima 3 corrige un error o detecta dos, nunca ambos.
 constexpr Decoded hamming74_decode(std::uint8_t word) {
 	const unsigned syndrome = hamming_syndrome(word);
 	if (syndrome == 0) {
@@ -107,6 +124,10 @@ constexpr Decoded hamming74_decode(std::uint8_t word) {
 //     duplo. Um bit a mais guarda a paridade dos outros sete, o que eleva a distância mínima
 //     de 3 para 4. O decodificador passa a ter duas pistas: a síndrome diz onde, e a paridade
 //     global diz se o número de bits invertidos é ímpar ou par (veja o quadro acima).
+// ES: Hamming extendido (8,4), también llamado SECDED: corrige error simple, detecta error
+//     doble. Un bit más guarda la paridad de los otros siete, lo que eleva la distancia mínima
+//     de 3 a 4. El decodificador pasa a tener dos pistas: el síndrome dice dónde, y la paridad
+//     global dice si el número de bits invertidos es impar o par (ve el cuadro de arriba).
 constexpr std::uint8_t hamming84_encode(std::uint8_t nibble) {
 	const std::uint8_t word = hamming74_encode(nibble);
 	const unsigned overall = static_cast<unsigned>(std::popcount(word)) & 1U;
@@ -132,6 +153,9 @@ constexpr Decoded hamming84_decode(std::uint8_t word) {
 // PT: Código de repetição (3,1): envie cada bit três vezes e deixe a maioria decidir. Ele
 //     também corrige um erro por bloco, mas envia 3 bits por bit de dados, enquanto o
 //     Hamming(7,4) envia 1,75. Dois erros em um bloco fazem a maioria errar.
+// ES: Código de repetición (3,1): envía cada bit tres veces y deja que la mayoría decida.
+//     También corrige un error por bloque, pero envía 3 bits por bit de datos, mientras que
+//     Hamming(7,4) envía 1.75. Dos errores en un bloque hacen que la mayoría se equivoque.
 constexpr std::uint8_t repetition3_encode(std::uint8_t bit) {
 	return (bit & 1U) != 0 ? 0b111 : 0b000;
 }
@@ -144,6 +168,7 @@ constexpr Decoded repetition3_decode(std::uint8_t block) {
 
 /// EN: Bits of a word as text, position 1 first. PT: Bits da palavra como texto, posição 1
 /// primeiro.
+/// ES: Bits de la palabra como texto, posición 1 primero.
 inline std::string positions_text(std::uint8_t word, int bits) {
 	std::string text;
 	for (int position = 0; position < bits; ++position) {

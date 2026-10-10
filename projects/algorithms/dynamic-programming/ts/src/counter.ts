@@ -4,6 +4,9 @@
 // PT: Um contador de chamadas passado às versões recursivas. O tempo de relógio depende da
 //     máquina, mas o número de chamadas é uma propriedade do algoritmo: é o mesmo em qualquer
 //     computador e mostra exatamente quanto trabalho repetido a memoização remove.
+// ES: Un contador de llamadas que se pasa a las versiones recursivas. El tiempo de reloj depende de
+//     la máquina, pero el número de llamadas es una propiedad del algoritmo: es el mismo en cualquier
+//     computadora y muestra exactamente cuánto trabajo repetido elimina la memoización.
 export interface Counter {
 	calls: number;
 }
@@ -18,6 +21,9 @@ export function newCounter(): Counter {
 // PT: Gerador de Lehmer (estado * 48271 mod 2^31 - 1). O produto fica abaixo de 2^53, então os
 //     numbers comuns de JavaScript o calculam de forma exata e o Python produz a mesma
 //     sequência. Assim as duas linguagens montam instâncias aleatórias idênticas da mesma semente.
+// ES: Generador de Lehmer (estado * 48271 mod 2^31 - 1). El producto queda por debajo de 2^53, así
+//     que los numbers comunes de JavaScript lo calculan de forma exacta y Python produce la misma
+//     secuencia. Así los dos lenguajes construyen instancias aleatorias idénticas con la misma semilla.
 export function lehmer(seed: number): () => number {
 	let state = (seed % 2147483646) + 1;
 	return () => {

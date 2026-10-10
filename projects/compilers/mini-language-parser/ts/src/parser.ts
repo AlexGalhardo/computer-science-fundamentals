@@ -14,6 +14,9 @@ export interface ParseResult {
 // PT: Lançada para abandonar o comando em análise assim que se sabe que ele está errado. É
 //     capturada em `declaration`, que não registra nada novo (o erro foi registrado na criação)
 //     e ressincroniza. Ela nunca sai deste módulo.
+// ES: Se lanza para abandonar el comando en análisis apenas se sabe que está mal. Se captura en
+//     `declaration`, que no registra nada nuevo (el error se registró al crearla) y
+//     resincroniza. Nunca sale de este módulo.
 class ParseAbort extends Error {}
 
 // EN: Binding power of each infix operator: the higher the number, the tighter the operator holds
@@ -22,6 +25,9 @@ class ParseAbort extends Error {}
 // PT: Força de ligação de cada operador infixo: quanto maior o número, mais forte o operador
 //     segura seus operandos. `*` (7) liga mais forte que `+` (6), então `1 + 2 * 3` agrupa como
 //     `1 + (2 * 3)`. Esta tabela é toda a definição de precedência da linguagem.
+// ES: Fuerza de enlace de cada operador infijo: cuanto mayor el número, más fuerte el operador
+//     sujeta a sus operandos. `*` (7) enlaza más fuerte que `+` (6), así que `1 + 2 * 3` agrupa
+//     como `1 + (2 * 3)`. Esta tabla es toda la definición de precedencia del lenguaje.
 const BINDING_POWER: Partial<Record<TokenType, number>> = {
 	EQUAL: 1,
 	OR: 2,
@@ -45,6 +51,8 @@ const UNARY_POWER = 8;
 //     them (or until just after a `;`), because that is a place where it knows where it is again.
 // PT: Tokens que só podem começar um comando. Depois de um erro o parser pula a entrada até um
 //     deles (ou até logo depois de um `;`), porque ali ele volta a saber onde está.
+// ES: Tokens que solo pueden comenzar un comando. Después de un error el parser salta la entrada
+//     hasta uno de ellos (o hasta justo después de un `;`), porque ahí vuelve a saber dónde está.
 const STATEMENT_START: ReadonlySet<TokenType> = new Set(["LET", "FN", "IF", "WHILE", "RETURN", "PRINT"]);
 
 class Parser {
@@ -101,6 +109,10 @@ class Parser {
 	//     depois, o que produziria uma cascata de erros falsos. Por isso os tokens até a próxima
 	//     fronteira de comando são descartados e a análise recomeça dali: cada erro real gera
 	//     uma mensagem, e um arquivo com dois erros reporta os dois em uma única execução.
+	// ES: Recuperación en modo pánico. Un error suele confundir al parser sobre todo lo que viene
+	//     después, lo que produciría una cascada de errores falsos. Por eso los tokens hasta la
+	//     próxima frontera de comando se descartan y el análisis recomienza desde ahí: cada error
+	//     real genera un mensaje, y un archivo con dos errores reporta ambos en una sola ejecución.
 	private synchronise(): void {
 		// The offending token may itself have been the `;` that ends the broken statement.
 		if (this.current > 0 && this.tokens[this.current - 1]?.type === "SEMICOLON") {
@@ -127,6 +139,7 @@ class Parser {
 			} else if (this.check("RIGHT_BRACE")) {
 				// EN: A `}` that closes nothing would stop `synchronise` forever: step over it.
 				// PT: Um `}` que não fecha nada pararia o `synchronise` para sempre: passe por ele.
+				// ES: Un `}` que no cierra nada detendría `synchronise` para siempre: pasa por encima.
 				this.advance();
 			}
 		}
@@ -212,6 +225,9 @@ class Parser {
 	//     Requiring the braces removes the classic "dangling else" ambiguity from the grammar.
 	// PT: O `else` sempre pertence ao `if` mais próximo, e os dois ramos precisam ser blocos entre
 	//     chaves. Exigir as chaves elimina da gramática a ambiguidade clássica do "else pendente".
+	// ES: El `else` siempre pertenece al `if` más cercano, y las dos ramas deben ser bloques entre
+	//     llaves. Exigir las llaves elimina de la gramática la ambigüedad clásica del "else
+	//     colgante".
 	private ifStatement(): Stmt {
 		const keyword = this.advance();
 		const condition = this.expression();
@@ -257,6 +273,16 @@ class Parser {
 	//                                     direita e `a = b = 1` vira `a = (b = 1)`.
 	//     Um laço e uma tabela substituem uma regra de gramática e uma função por nível de
 	//     precedência.
+	// ES: Análisis de Pratt (escalada de precedencia). Lee un operando y sigue absorbiendo
+	//     operadores infijos mientras enlacen más fuerte que `minPower`, la fuerza del operador
+	//     que espera a la izquierda. Para leer el operando derecho la función se llama a sí misma
+	//     con la fuerza del operador recién leído:
+	//       asociativo a la izquierda (`-`): pasa la misma fuerza, así que un operador igual NO
+	//                                        continúa a la derecha y `8 - 3 - 2` es `(8 - 3) - 2`;
+	//       asociativo a la derecha (`=`):   pasa fuerza - 1, así que un operador igual continúa
+	//                                        a la derecha y `a = b = 1` es `a = (b = 1)`.
+	//     Un bucle y una tabla reemplazan una regla de gramática y una función por nivel de
+	//     precedencia.
 	private expression(minPower = 0): Expr {
 		let left = this.prefix();
 		for (;;) {
@@ -272,6 +298,7 @@ class Parser {
 			} else if (operator.type === "EQUAL") {
 				// EN: Only a name can be assigned to. `1 = 2` and `a + b = 3` are rejected here.
 				// PT: Só um nome pode receber atribuição. `1 = 2` e `a + b = 3` são rejeitados aqui.
+				// ES: Solo un nombre puede recibir una asignación. `1 = 2` y `a + b = 3` se rechazan aquí.
 				if (left.kind !== "Variable") {
 					throw this.fail(operator, "the left side of '=' must be a variable name");
 				}
@@ -301,6 +328,9 @@ class Parser {
 	// PT: O que pode começar uma expressão: um literal, um nome, uma expressão entre parênteses
 	//     ou um operador prefixo. Os parênteses não deixam nó algum: apenas reiniciam a
 	//     precedência em zero.
+	// ES: Lo que puede comenzar una expresión: un literal, un nombre, una expresión entre
+	//     paréntesis o un operador prefijo. Los paréntesis no dejan ningún nodo: solo reinician la
+	//     precedencia en cero.
 	private prefix(): Expr {
 		const token = this.advance();
 		const at = { line: token.line, column: token.column };
@@ -336,6 +366,9 @@ class Parser {
 // PT: Todo o front end em uma chamada: texto para tokens, tokens para árvore. Erros léxicos e
 //     sintáticos voltam juntos, ordenados por posição, e `program` contém todo comando que foi
 //     analisado corretamente.
+// ES: Todo el front end en una llamada: texto a tokens, tokens a árbol. Los errores léxicos y
+//     sintácticos vuelven juntos, ordenados por posición, y `program` contiene todo comando que
+//     se analizó correctamente.
 export function parse(source: string): ParseResult {
 	const lexed = tokenize(source);
 	const parser = new Parser(lexed.tokens);

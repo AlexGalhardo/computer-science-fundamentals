@@ -6,6 +6,10 @@
 //     escrito pelo runner de benchmark em `../results/results.js`, e desenha speed-up ou
 //     eficiência contra o número de trabalhadores, uma linha por linguagem, ao lado da linha
 //     ideal. Não há etapa de build nem requisição de rede: a página funciona aberta do disco.
+// ES: Dashboard estático del mini-proyecto scaling-by-cores. Lee `window.BENCH_RESULTS`,
+//     escrito por el runner de benchmark en `../results/results.js`, y dibuja speed-up o
+//     eficiencia contra el número de trabajadores, una línea por lenguaje, junto a la línea
+//     ideal. No hay paso de build ni petición de red: la página funciona abierta desde el disco.
 
 const SVG = "http://www.w3.org/2000/svg";
 const COLOURS = ["#2563eb", "#dc2626", "#16a34a", "#d97706"];
@@ -51,6 +55,9 @@ function splitImplementation(implementation) {
 // PT: Speed-up é o tempo sequencial dividido pelo tempo paralelo, e eficiência é o speed-up
 //     por trabalhador. O programa sequencial foi medido uma vez por quantidade de
 //     trabalhadores, então a base é a média dessas linhas.
+// ES: Speed-up es el tiempo secuencial dividido por el tiempo paralelo, y eficiencia es el
+//     speed-up por trabajador. El programa secuencial se midió una vez por cantidad de
+//     trabajadores, así que la base es la media de esas filas.
 function seriesOf(rows, workload, schedule) {
 	const selected = rows.filter((row) => splitImplementation(row.implementation).workload === workload);
 	return unique(selected.map((row) => row.language)).map((language) => {
@@ -73,6 +80,8 @@ function seriesOf(rows, workload, schedule) {
 //     distances on the axis then mean "twice the hardware".
 // PT: O eixo de trabalhadores é logarítmico na base 2, porque as quantidades dobram
 //     (1, 2, 4, 8): distâncias iguais no eixo passam a significar "o dobro de hardware".
+// ES: El eje de trabajadores es logarítmico en base 2, porque las cantidades se duplican
+//     (1, 2, 4, 8): distancias iguales en el eje pasan a significar "el doble de hardware".
 function drawChart(container, series, metric) {
 	container.replaceChildren();
 	const workers = unique(series.flatMap((item) => item.points.map((point) => point.workers))).sort((a, b) => a - b);

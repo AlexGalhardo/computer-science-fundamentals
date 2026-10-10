@@ -7,6 +7,10 @@ defmodule PureFunctionsProperties.Prop do
       aleatório puro, alguns geradores de valores que também sabem reduzir, e o laço `check/3`.
       Ela existe para mostrar como a técnica funciona; um projeto real usaria uma biblioteca
       como a StreamData.
+  ES: Una biblioteca de pruebas basadas en propiedades en unas 150 líneas: un generador
+      aleatorio puro, algunos generadores de valores que también saben reducir, y el bucle
+      `check/3`. Existe para mostrar cómo funciona la técnica; un proyecto real usaría una
+      biblioteca como StreamData.
   """
 
   import Bitwise
@@ -20,6 +24,10 @@ defmodule PureFunctionsProperties.Prop do
         próxima_semente}`. `shrink` lista versões mais simples de um valor, a mais simples
         primeiro; é ele que transforma uma falha aleatória grande em uma pequena, que uma
         pessoa consegue ler.
+    ES: Un generador es un par de funciones puras. `generate` transforma una semilla en `{valor,
+        siguiente_semilla}`. `shrink` lista versiones más simples de un valor, la más simple
+        primero; es lo que convierte un fallo aleatorio grande en uno pequeño, que una
+        persona puede leer.
     """
     @enforce_keys [:generate, :shrink]
     defstruct [:generate, :shrink]
@@ -37,6 +45,12 @@ defmodule PureFunctionsProperties.Prop do
   #     teste. A fórmula é o mesmo gerador congruente linear da versão em TypeScript, então as
   #     duas linguagens sorteiam os mesmos números. Só os 16 bits altos são usados porque os
   #     bits baixos desse tipo de gerador se repetem rápido.
+  # ES: El generador aleatorio es una función pura. Todo su estado es un número de 32 bits, la
+  #     semilla, que entra como argumento y sale, actualizada, junto al valor. Nada queda
+  #     escondido en un proceso, así que la misma semilla siempre repite la misma ejecución de la
+  #     prueba. La fórmula es el mismo generador congruencial lineal de la versión en TypeScript,
+  #     así que los dos lenguajes sortean los mismos números. Solo se usan los 16 bits altos
+  #     porque los bits bajos de este tipo de generador se repiten rápido.
   def next_seed(seed), do: rem(seed * 1_664_525 + 1_013_904_223, 4_294_967_296)
 
   def random_int(seed, low, high) do
@@ -49,6 +63,9 @@ defmodule PureFunctionsProperties.Prop do
   # PT: Inteiros são reduzidos em direção a zero (ou ao limite mais próximo de zero): primeiro
   #     o próprio alvo, depois valores que cortam a distância pela metade, então a busca leva
   #     poucos passos.
+  # ES: Los enteros se reducen hacia cero (o hacia el límite más cercano a cero): primero
+  #     el propio objetivo, luego valores que recortan la distancia a la mitad, así la búsqueda
+  #     toma pocos pasos.
   def int(low, high) do
     target = 0 |> max(low) |> min(high)
 
@@ -63,6 +80,7 @@ defmodule PureFunctionsProperties.Prop do
 
   # EN: Picks one of a fixed list of values. An earlier position counts as simpler.
   # PT: Escolhe um valor de uma lista fixa. Uma posição anterior conta como mais simples.
+  # ES: Elige un valor de una lista fija. Una posición anterior cuenta como más simple.
   def one_of(values) do
     %Gen{
       generate: fn seed ->
@@ -79,6 +97,9 @@ defmodule PureFunctionsProperties.Prop do
   # PT: Uma tupla de tamanho fixo de geradores independentes. `Enum.map_reduce/3` conduz a
   #     semente por eles: cada gerador recebe a semente deixada pelo anterior. A tupla é
   #     reduzida uma posição por vez.
+  # ES: Una tupla de tamaño fijo de generadores independientes. `Enum.map_reduce/3` conduce la
+  #     semilla a través de ellos: cada generador recibe la semilla que dejó el anterior. La tupla
+  #     se reduce una posición a la vez.
   def tuple(gens) do
     %Gen{
       generate: fn seed ->
@@ -116,6 +137,9 @@ defmodule PureFunctionsProperties.Prop do
   # PT: Os candidatos de uma lista, em ordem: remover a primeira ou a segunda metade, remover
   #     um elemento, e então simplificar um elemento. Listas mais curtas vêm antes porque um
   #     contraexemplo mais curto é o maior ganho.
+  # ES: Los candidatos de una lista, en orden: quitar la primera o la segunda mitad, quitar
+  #     un elemento, y luego simplificar un elemento. Las listas más cortas van antes porque un
+  #     contraejemplo más corto es la mayor ganancia.
   defp shrink_list(items, shrink_item) do
     half = div(length(items), 2)
     halves = if length(items) > 1, do: [Enum.drop(items, half), Enum.take(items, half)], else: []
@@ -140,6 +164,12 @@ defmodule PureFunctionsProperties.Prop do
   #     Escolher o que o gerador produz faz parte de escrever uma propriedade. O texto é
   #     reduzido como uma lista de caracteres, mais um candidato que troca todas as ocorrências
   #     de um caractere pelo primeiro do alfabeto, o que mantém a sequência inteira e a
+  #     simplifica.
+  # ES: Arma un texto a partir de secuencias del mismo carácter, porque el codec bajo prueba solo
+  #     falla en secuencias largas, y un texto uniformemente aleatorio casi nunca tiene una.
+  #     Elegir lo que produce el generador forma parte de escribir una propiedad. El texto se
+  #     reduce como una lista de caracteres, más un candidato que cambia todas las apariciones
+  #     de un carácter por el primero del alfabeto, lo que mantiene la secuencia entera y la
   #     simplifica.
   def run_string(alphabet, max_runs, max_run_length) do
     letters = String.graphemes(alphabet)
@@ -173,6 +203,9 @@ defmodule PureFunctionsProperties.Prop do
   PT: Gera `runs` valores, um depois do outro a partir da mesma cadeia de sementes, e para no
       primeiro que torna a propriedade falsa. Devolve `{:ok, runs}` ou `{:error, falha}`, dados
       comuns, então um teste pode fazer asserções sobre o próprio contraexemplo.
+  ES: Genera `runs` valores, uno tras otro a partir de la misma cadena de semillas, y se detiene
+      en el primero que vuelve falsa la propiedad. Devuelve `{:ok, runs}` o `{:error, fallo}`,
+      datos comunes, así que una prueba puede hacer aserciones sobre el propio contraejemplo.
   """
   def check(gen, property, opts \\ []) do
     seed = Keyword.get(opts, :seed, 42)
@@ -183,6 +216,8 @@ defmodule PureFunctionsProperties.Prop do
   #     the arguments of the next call.
   # PT: O laço é uma função recursiva de cauda: a semente e o contador "mutáveis" são apenas
   #     os argumentos da próxima chamada.
+  # ES: El bucle es una función recursiva de cola: la semilla y el contador "mutables" son solo
+  #     los argumentos de la siguiente llamada.
   defp run(_gen, _property, _first_seed, _seed, run, runs) when run > runs, do: {:ok, runs}
 
   defp run(gen, property, first_seed, seed, run, runs) do
@@ -205,6 +240,10 @@ defmodule PureFunctionsProperties.Prop do
   #     propriedade e recomece a partir dele, até nenhum candidato falhar. Só funciona porque a
   #     propriedade é pura: executá-la de novo em um candidato não pode ser afetado pelas
   #     execuções anteriores.
+  # ES: Reducir es una búsqueda voraz: toma el primer candidato más simple que todavía rompe la
+  #     propiedad y vuelve a empezar desde él, hasta que ningún candidato falle. Solo funciona
+  #     porque la propiedad es pura: ejecutarla de nuevo con un candidato no puede verse afectado
+  #     por las ejecuciones anteriores.
   defp shrink_failure(gen, property, value, steps) do
     case Enum.drop_while(gen.shrink.(value), property) do
       [] -> {value, steps}

@@ -23,6 +23,17 @@ package regex
 // cortar a sequência em pedaços são tentadas antes de desistir: cerca de 2^n tentativas. Os
 // autômatos nunca fazem isso, porque um conjunto de estados não pode conter o mesmo estado duas
 // vezes.
+//
+// ES: Así funcionan muchas bibliotecas populares de regex. Para emparejar un nodo hace una
+// elección (seguir esta rama de la alternancia, repetir una vez más) y continúa con el resto del
+// patrón; cuando el resto falla, vuelve atrás y prueba la otra elección. `rest` es la
+// continuación: "lo que aún debe emparejar después de este nodo, desde la posición i".
+//
+// El peligro es que la misma posición de la entrada se explore una y otra vez por cadenas
+// distintas de elecciones. Para `(a*)*b` contra una secuencia de n letras a y ninguna b, se
+// prueban todas las formas de cortar la secuencia en pedazos antes de rendirse: cerca de 2^n
+// intentos. Los autómatas nunca hacen eso, porque un conjunto de estados no puede contener el
+// mismo estado dos veces.
 func BacktrackMatch(node *Node, input string) (matched bool, steps int) {
 	matched = backtrack(node, input, 0, &steps, func(i int) bool { return i == len(input) })
 	return matched, steps
@@ -47,6 +58,9 @@ func backtrack(node *Node, input string, i int, steps *int, rest func(int) bool)
 		//     iteration that consumed nothing is not repeated, or `(a*)*` would loop for ever.
 		// PT: Guloso: tente primeiro mais uma repetição, e só depois tente parar aqui. Uma
 		//     iteração que não consumiu nada não é repetida, senão `(a*)*` entraria em laço
+		//     infinito.
+		// ES: Codicioso: prueba primero una repetición más, y solo después prueba detenerte aquí.
+		//     Una iteración que no consumió nada no se repite, o `(a*)*` entraría en un bucle
 		//     infinito.
 		star := &Node{Kind: Star, Left: node.Left}
 		again := backtrack(node.Left, input, i, steps, func(j int) bool {

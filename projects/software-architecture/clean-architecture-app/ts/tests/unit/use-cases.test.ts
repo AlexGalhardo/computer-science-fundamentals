@@ -6,6 +6,11 @@
 //     exercitada aqui, e olhe os imports: nenhum framework web, nenhum driver de banco, nenhuma
 //     variável de ambiente. O contêiner de teste não tem rede nenhuma (veja docker-compose.yml),
 //     então estes testes não alcançariam um banco nem por acidente. Rodam em milissegundos.
+// ES: EL OBJETIVO DE LA ARQUITECTURA, COMO UN ARCHIVO DE PRUEBAS. Cada regla de negocio de la
+//     aplicación se ejercita aquí, y mira los imports: ningún framework web, ningún driver de
+//     base de datos, ninguna variable de entorno. El contenedor de pruebas no tiene red alguna
+//     (mira docker-compose.yml), así que estas pruebas no alcanzarían una base de datos ni por
+//     accidente. Corren en milisegundos.
 
 import { beforeEach, describe, expect, test } from "bun:test";
 import { InMemoryNoteRepository } from "../../src/adapters/in-memory-note-repository";
@@ -66,6 +71,7 @@ describe("ListNotes", () => {
 		expect(notes.map((note) => note.title)).toEqual(["First", "Second"]);
 		// EN: The output is a DTO: the title is a string, not the `Title` object of the domain.
 		// PT: A saída é um DTO: o título é uma string, não o objeto `Title` do domínio.
+		// ES: La salida es un DTO: el título es un string, no el objeto `Title` del dominio.
 		expect(typeof notes[0]?.title).toBe("string");
 	});
 });

@@ -14,6 +14,9 @@ import type { Kind } from "../src/conditional-to-polymorphism/before/kind";
 // PT: As duas versões dão nome a um tipo de entrega de formas diferentes: uma string antes, um
 //     objeto depois. `M` é esse identificador, e a suíte recebe os três identificadores mais a
 //     função em teste.
+// ES: Las dos versiones nombran un tipo de entrega de formas distintas: un string antes, un
+//     objeto después. `M` es ese identificador, y la suite recibe los tres identificadores más
+//     la función bajo prueba.
 interface Version<M> {
 	standard: M;
 	express: M;
@@ -55,6 +58,10 @@ suite<DeliveryMethod>("after", {
 //     código de produção, e o checkout refatorado o atende sem edição alguma. A versão com
 //     condicionais não pode ser estendida de fora: o tipo novo chega ao fim da primeira cadeia e
 //     lança erro.
+// ES: El objetivo de la refactorización, en forma de test. Un cuarto tipo se escribe aquí
+//     mismo, fuera del código de producción, y el checkout refactorizado lo atiende sin
+//     ninguna edición. La versión con condicionales no puede extenderse desde afuera: el tipo
+//     nuevo llega al final de la primera cadena y lanza un error.
 describe("conditional to polymorphism, adding a variant", () => {
 	class Drone implements DeliveryMethod {
 		readonly name = "drone";

@@ -8,6 +8,11 @@
 //     no mutante, também passariam nesse bug de verdade. Este arquivo produz os mutantes. Ele
 //     não precisa de parser: uma lista de tokens basta para achar operadores e números e para
 //     deixar comentários e strings em paz.
+// ES: Un mutante es una copia del programa con UN cambio pequeño, del tipo de descuido que comete un
+//     programador: `<` por `<=`, `+` por `-`, 30 por 31. Si las pruebas siguen pasando en el
+//     mutante, también pasarían con ese bug de verdad. Este archivo produce los mutantes. No
+//     necesita parser: una lista de tokens basta para encontrar operadores y números y para
+//     dejar en paz los comentarios y las strings.
 export interface Mutant {
 	id: number;
 	line: number;
@@ -34,6 +39,12 @@ interface Token {
 //     Limites conhecidos deste tokenizador minúsculo: ele não distingue um genérico `<T>` de uma
 //     comparação, uma expressão regular de uma divisão, nem um menos unário de uma subtração.
 //     O módulo sob teste evita essas formas. Uma ferramenta de verdade trabalha na árvore sintática.
+// ES: El orden de las alternativas importa: los tokens más largos van primero, así `>=` se lee como
+//     un token y no como `>` seguido de `=`. Los comentarios, strings, identificadores y operadores
+//     compuestos como `=>`, `++` y `+=` se reconocen solo para saltárselos.
+//     Límites conocidos de este tokenizador minúsculo: no distingue un genérico `<T>` de una
+//     comparación, una expresión regular de una división, ni un menos unario de una resta.
+//     El módulo bajo prueba evita esas formas. Una herramienta de verdad trabaja sobre el árbol sintáctico.
 const TOKEN =
 	/\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`|=>|\+\+|--|[+\-*/]=|===|!==|==|!=|<=|>=|&&|\|\||[A-Za-z_$][\w$]*|\d+(?:\.\d+)?|[<>+\-*/!]|\s+|./g;
 
@@ -41,6 +52,8 @@ const TOKEN =
 //     boundary by one (`<` becomes `<=`), which is exactly the off-by-one mistake.
 // PT: Cada operador é trocado pelo vizinho mais próximo. Os operadores relacionais deslocam o
 //     limite em um (`<` vira `<=`), que é exatamente o erro de "um a mais ou um a menos".
+// ES: Cada operador se cambia por su vecino más cercano. Los operadores relacionales desplazan el
+//     límite en uno (`<` se vuelve `<=`), que es exactamente el error de "uno de más o uno de menos".
 const OPERATOR_SWAPS: Readonly<Record<string, string>> = {
 	"+": "-",
 	"-": "+",
@@ -72,6 +85,7 @@ function replacementFor(token: string): { replacement: string; kind: Mutant["kin
 	}
 	// EN: A constant becomes its successor: enough to move a threshold or change a price.
 	// PT: Uma constante vira a sua sucessora: o bastante para deslocar um limite ou mudar um preço.
+	// ES: Una constante se vuelve su sucesora: lo bastante para desplazar un límite o cambiar un precio.
 	if (NUMBER.test(token)) {
 		return { replacement: String(Number(token) + 1), kind: "constant" };
 	}

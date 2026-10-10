@@ -1,6 +1,8 @@
 """EN: `python demo.py` prints the Python tables and writes them to results/results-python.md.
 
 PT: `python demo.py` imprime as tabelas do Python e as grava em results/results-python.md.
+
+ES: `python demo.py` imprime las tablas de Python y las escribe en results/results-python.md.
 """
 
 import math
@@ -37,7 +39,12 @@ def _table(rows: list[Row], total: int) -> list[str]:
 
 
 def render_markdown(generated_at: str) -> str:
-    """EN: Builds the whole report as Markdown. PT: Monta o relatório inteiro em Markdown."""
+    """EN: Builds the whole report as Markdown.
+
+    PT: Monta o relatório inteiro em Markdown.
+
+    ES: Arma el informe completo en Markdown.
+    """
     lines = [
         "# Results: sorting-lower-bound (Python)",
         "",
@@ -79,7 +86,12 @@ def render_markdown(generated_at: str) -> str:
 
 
 def main() -> None:
-    """EN: Prints the report and saves it. PT: Imprime o relatório e o salva."""
+    """EN: Prints the report and saves it.
+
+    PT: Imprime o relatório e o salva.
+
+    ES: Imprime el informe y lo guarda.
+    """
     markdown = render_markdown(datetime.now(UTC).isoformat(timespec="seconds"))
     print(markdown)
     directory = Path(os.environ.get("RESULTS_DIR", Path(__file__).parent.parent / "results"))

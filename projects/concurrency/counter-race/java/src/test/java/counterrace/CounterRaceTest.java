@@ -12,6 +12,8 @@ public final class CounterRaceTest {
   //     10 times and the bug must show in at least 9 of them.
   // PT: Uma corrida é questão de probabilidade, então uma execução não prova nada. O experimento
   //     é repetido 10 vezes e o bug precisa aparecer em pelo menos 9 delas.
+  // ES: Una carrera es cuestión de probabilidad, así que una ejecución no prueba nada. El
+  //     experimento se repite 10 veces y el bug debe aparecer en al menos 9 de ellas.
   private static void buggyCounterLosesUpdates() throws InterruptedException {
     int lostRuns = 0;
     for (int run = 1; run <= 10; run++) {
@@ -33,6 +35,8 @@ public final class CounterRaceTest {
   // EN: A fix is only a fix if it is right every time: 100 runs in a row, each exactly 1,000,000.
   // PT: Uma correção só é correção se acerta sempre: 100 execuções seguidas, cada uma com
   //     exatamente 1.000.000.
+  // ES: Una corrección solo es corrección si acierta siempre: 100 ejecuciones seguidas, cada una
+  //     con exactamente 1,000,000.
   private static void fixedCountersAreExact(int runs) throws InterruptedException {
     for (String variant : CounterRace.VARIANTS.subList(1, CounterRace.VARIANTS.size())) {
       for (int run = 1; run <= runs; run++) {

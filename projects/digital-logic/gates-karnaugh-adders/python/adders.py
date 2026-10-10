@@ -8,6 +8,11 @@ PT: A mesma rede de portas de `ts/src/adders.ts`, mas cada fio carrega uma colun
     `logic.py`). Rodar o somador de 8 bits UMA vez sobre as 16 colunas de entrada soma,
     portanto, os 65.536 pares de entrada ao mesmo tempo: 8 estágios de 5 portas, 40 operações
     de porta no total.
+
+ES: La misma red de compuertas de `ts/src/adders.ts`, pero cada cable lleva una columna entera
+    (véase `logic.py`). Ejecutar el sumador de 8 bits UNA vez sobre las 16 columnas de entrada
+    suma, por tanto, los 65.536 pares de entrada al mismo tiempo: 8 etapas de 5 compuertas, 40
+    operaciones de compuerta en total.
 """
 
 from logic import variable_column
@@ -30,6 +35,8 @@ def ripple_carry_adder(a: list[int], b: list[int], carry_in: int = 0) -> tuple[l
 
     EN: The carry-out of each stage is the carry-in of the next, more significant one.
     PT: O vai-um de saída de cada estágio é o vai-um de entrada do seguinte, mais significativo.
+    ES: El acarreo de salida de cada etapa es el acarreo de entrada de la siguiente, más
+        significativa.
     """
     if len(a) != len(b):
         raise ValueError("both operands must have the same number of bits")
@@ -60,6 +67,10 @@ def add_all_pairs(width: int = 8) -> list[int]:
     PT: As 2 x width entradas são as variáveis de uma grande tabela-verdade com 2^(2 x width)
         linhas, na ordem A(msb)..A(lsb), B(msb)..B(lsb), então a linha r é o par a = r >> width,
         b = r & (2^width - 1). As saídas são width + 1 colunas: os bits de soma e o vai-um.
+    ES: Las 2 x width entradas son las variables de una gran tabla de verdad con 2^(2 x width)
+        filas, en el orden A(msb)..A(lsb), B(msb)..B(lsb), así que la fila r es el par
+        a = r >> width, b = r & (2^width - 1). Las salidas son width + 1 columnas: los bits de
+        suma y el acarreo.
     """
     count = 2 * width
     # Index 0 of each list must be the least significant bit, which is the LAST variable.

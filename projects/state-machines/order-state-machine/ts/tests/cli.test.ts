@@ -26,6 +26,13 @@ describe("command line", () => {
 		expect(result.output).toContain("usage:");
 	});
 
+	test("the final state is described in English, Portuguese and Spanish", () => {
+		const output = main(["pay", "ship", "deliver"]).output;
+		expect(output).toContain("EN: delivered to the customer");
+		expect(output).toContain("PT: entregue ao cliente");
+		expect(output).toContain("ES: entregado al cliente");
+	});
+
 	test("the demo shows a full order and a rejected transition", () => {
 		const result = main(["demo"]);
 		expect(result.exitCode).toBe(0);

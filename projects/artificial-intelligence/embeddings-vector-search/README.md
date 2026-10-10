@@ -1,6 +1,6 @@
 # embeddings-vector-search
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 It teaches **how meaning becomes a vector and how similar vectors are found**. Word vectors are built by counting which words appear near each other in a corpus generated for the project, with no neural network. The nearest neighbours of a word turn out to be the words of its group. A brute-force search is compared with a random-plane index (LSH) that makes far fewer comparisons and is sometimes wrong. And a question retrieves the passages most likely to answer it, which is the search step of RAG.
 

@@ -1,7 +1,7 @@
 # passwords-sessions-lab
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
-
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
+>
 > **Security lab, vulnerable on purpose.** The code in `ts/src/vulnerable/` exists only to make flaws observable inside this lab. Never copy it, import it or deploy it.
 
 How passwords should be stored and how a login should be protected. The lab has two parts. The first one stores the same fake password with four schemes (plain text, MD5, salted SHA-256 and Argon2id), shows what each one writes in the table and measures how many hashes per second each one computes. The second one is a small login API in two versions: the vulnerable one has no attempt limit, keeps the same session id across the login (session fixation), sends a cookie with no protective attribute and tells an unknown user from a wrong password; the fixed one closes each of those.

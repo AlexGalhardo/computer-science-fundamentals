@@ -4,6 +4,7 @@ from __future__ import annotations
 
 # EN: A cart with a 10% discount from 100 upwards.
 # PT: Um carrinho com 10% de desconto a partir de 100.
+# ES: Un carrito con 10% de descuento a partir de 100.
 
 
 class Cart:

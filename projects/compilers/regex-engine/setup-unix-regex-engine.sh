@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the regex-engine mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto regex-engine. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto regex-engine. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"

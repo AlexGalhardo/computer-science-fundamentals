@@ -8,6 +8,9 @@ from logic import all_ones, parse, truth_table, variable_column, variables_of
 # PT: Critério de aceite MP-DL-1.1, na sintaxe do Python. São as mesmas 20 funções e as mesmas
 #     colunas de saída escritas à mão usadas nos testes em TypeScript: linha 00...0 primeiro,
 #     primeira variável como bit mais significativo.
+# ES: Criterio de aceptación MP-DL-1.1, en la sintaxis de Python. Son las mismas 20 funciones y
+#     las mismas columnas de salida escritas a mano usadas en las pruebas en TypeScript: primero
+#     la fila 00...0, primera variable como bit más significativo.
 HAND_WRITTEN: list[tuple[str, tuple[str, ...] | None, str]] = [
     ("~A", None, "10"),
     ("A & B", None, "0001"),

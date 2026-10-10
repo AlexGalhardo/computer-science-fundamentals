@@ -1,6 +1,6 @@
 # tdd-kata
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 The multi-currency money kata, done with test-driven development, where the deliverable is the **git history**: 27 commits that alternate a failing test (red), the smallest change that makes it pass (green) and a clean-up with every test passing (refactor). The final code is about 90 lines. What is worth studying is the order in which they were written.
 
@@ -110,7 +110,7 @@ The to-do list ([`TODO.md`](TODO.md)) changes along the same commits: an idea th
 
 ## Structure
 
-```
+```text
 ts/src/money.ts            Money, Sum and the Expression interface
 ts/src/bank.ts             exchange rates and reduce
 ts/tests/money.test.ts     the tests of the kata

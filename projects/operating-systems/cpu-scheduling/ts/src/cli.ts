@@ -6,6 +6,10 @@
 //     `gantt` imprime o gráfico de Gantt do exemplo em cada política. `compare` imprime a tabela
 //     de médias nas cargas geradas. `--out` também grava results.md, results.json e results.js
 //     (o último alimenta o dashboard estático).
+// ES: `bun run src/cli.ts [gantt|compare|all] [--out <dir>]`
+//     `gantt` imprime el diagrama de Gantt del ejemplo en cada política. `compare` imprime la
+//     tabla de promedios en las cargas generadas. `--out` también escribe results.md, results.json
+//     y results.js (el último alimenta el dashboard estático).
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -35,6 +39,7 @@ if (outDir !== undefined) {
 	writeFileSync(join(outDir, "results.json"), `${json}\n`);
 	// EN: A page opened from disk (file://) cannot fetch a JSON file, but it can load a script.
 	// PT: Uma página aberta do disco (file://) não consegue buscar um JSON, mas consegue carregar um script.
+	// ES: Una página abierta desde el disco (file://) no puede obtener un JSON, pero sí puede cargar un script.
 	writeFileSync(join(outDir, "results.js"), `window.SCHED_RESULTS = ${json};\n`);
 	console.log(`results written to ${outDir}`);
 }

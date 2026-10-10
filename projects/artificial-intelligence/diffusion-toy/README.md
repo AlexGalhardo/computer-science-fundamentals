@@ -1,6 +1,6 @@
 # diffusion-toy
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 It teaches **how an image model learns to remove noise**, on two-dimensional points instead of pixels. The "image" is one point on a ring. A forward process adds Gaussian noise step by step until the ring has become pure noise, a small network written by hand with NumPy (no deep learning framework) learns to predict the noise that was added, and generation starts from pure noise and removes a little of it 100 times, until the points are back on the ring. It is the method of "Denoising Diffusion Probabilistic Models" (Ho, Jain and Abbeel, 2020) made small enough to plot every step.
 

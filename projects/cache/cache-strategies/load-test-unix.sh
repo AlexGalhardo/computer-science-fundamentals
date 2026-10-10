@@ -9,12 +9,18 @@
 #     e latência: três estratégias vezes três tempos de vida. A etapa de relatório confere os
 #     critérios de aceite e reescreve results/ e as tabelas dos dois READMEs.
 #     Uso: ./load-test-unix.sh [rodadas]      (padrão 3, cerca de 6 minutos)
+# ES: La prueba de carga, con k6 contra la API local. Primero el stampede: 300 lectores de una
+#     clave caliente, sin protección, con bloqueo y con renovación anticipada. Después tasa de
+#     aciertos y latencia: tres estrategias por tres tiempos de vida. El paso de reporte
+#     verifica los criterios de aceptación y reescribe results/ y las tablas de los tres README.
+#     Uso: ./load-test-unix.sh [rondas]       (por defecto 3, unos 6 minutos)
 set -eu
 
 cd "$(dirname "$0")"
 
 # EN: Containers that write into this folder run as the current user (see docker-compose.yml).
 # PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+# ES: Los contenedores que escriben en esta carpeta se ejecutan como el usuario actual (ver docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID
@@ -24,6 +30,7 @@ trap 'docker compose down -v --remove-orphans' EXIT
 
 # EN: The k6 image runs as an unprivileged user, so the folder must be writable by anyone.
 # PT: A imagem do k6 roda como usuário sem privilégios, então a pasta precisa ser gravável por todos.
+# ES: La imagen de k6 se ejecuta como usuario sin privilegios, así que la carpeta debe ser escribible por todos.
 mkdir -p k6-results
 rm -f k6-results/*.json
 chmod a+rwx k6-results

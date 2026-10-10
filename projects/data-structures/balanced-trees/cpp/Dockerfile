@@ -1,5 +1,6 @@
 # EN: GCC on a pinned image, plus clang-format so the format check runs with the tests.
 # PT: GCC em uma imagem fixada, mais o clang-format para a checagem de formato rodar com os testes.
+# ES: GCC en una imagen fijada, más clang-format para que la revisión de formato corra con las pruebas.
 FROM gcc:16.2.0-trixie
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends cmake clang-format \

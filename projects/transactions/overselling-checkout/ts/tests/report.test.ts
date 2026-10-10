@@ -58,10 +58,11 @@ test("rounds are aggregated with mean and spread", () => {
 	expect(rows[0]?.rejectedRate).toBeCloseTo(0.95, 5);
 });
 
-test("the table is rendered in both languages and injected between the markers", () => {
+test("the table is rendered in the three languages and injected between the markers", () => {
 	const rows = aggregate(COMPLETE);
 	expect(renderTable(rows, "en")).toContain("| `naive` | 1 | **20** |");
 	expect(renderTable(rows, "pt")).toContain("| Estratégia |");
+	expect(renderTable(rows, "es")).toContain("| Estrategia |");
 	expect(injectTable("a\n<!-- results:start -->\nold\n<!-- results:end -->\nb", "T")).toBe(
 		"a\n<!-- results:start -->\nT\n<!-- results:end -->\nb",
 	);

@@ -1,6 +1,6 @@
 # Lógica digital
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Lógica digital é o nível em que a computação se torna física: números em binário, funções booleanas, portas lógicas e os circuitos feitos com elas, primeiro combinacionais (somadores, multiplexadores) e depois sequenciais (flip-flops, registradores, contadores). Construir um somador e depois uma pequena CPU a partir de portas mostra que um computador é uma pilha de ideias simples, cada uma feita com a anterior.
 

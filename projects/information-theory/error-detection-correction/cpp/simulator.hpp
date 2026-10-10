@@ -17,6 +17,9 @@ namespace edc {
 //     gives the same numbers on every machine and compiler. Never use it for security.
 // PT: Um gerador pseudoaleatório minúsculo (xorshift64*), escrito à mão para que a simulação
 //     dê os mesmos números em qualquer máquina e compilador. Nunca o use para segurança.
+// ES: Un generador pseudoaleatorio diminuto (xorshift64*), escrito a mano para que la
+//     simulación dé los mismos números en cualquier máquina y compilador. Nunca lo uses para
+//     seguridad.
 class Rng {
 public:
 	explicit Rng(std::uint64_t seed) : state_(seed == 0 ? 1 : seed) {}
@@ -40,6 +43,10 @@ private:
 //     erro de bit (BER), independentemente dos outros. É o modelo mais simples de ruído e
 //     aquele em que os códigos de Hamming são analisados. Canais reais costumam produzir
 //     rajadas, o que este modelo não faz.
+// ES: El canal binario simétrico: cada bit se invierte con la misma probabilidad, la tasa de
+//     error de bit (BER), de forma independiente de los demás. Es el modelo de ruido más
+//     simple y aquel en el que se analizan los códigos de Hamming. Los canales reales suelen
+//     producir ráfagas, lo que este modelo no hace.
 class BinarySymmetricChannel {
 public:
 	BinarySymmetricChannel(double bit_error_rate, std::uint64_t seed)
@@ -76,6 +83,7 @@ public:
 private:
 	// EN: A uniform 64-bit number is below p * 2^64 with probability p.
 	// PT: Um número uniforme de 64 bits fica abaixo de p * 2^64 com probabilidade p.
+	// ES: Un número uniforme de 64 bits queda por debajo de p * 2^64 con probabilidad p.
 	static std::uint64_t to_threshold(double bit_error_rate) {
 		if (bit_error_rate <= 0.0 || bit_error_rate >= 1.0) {
 			return 0;
@@ -96,6 +104,10 @@ private:
 //     detected:  o receptor percebeu o erro e pediria retransmissão.
 //     corrected: o receptor consertou o bloco e entregou os dados certos.
 //     missed:    o receptor entregou dados errados achando que estavam certos. O pior caso.
+// ES: Qué pasó con los bloques de un esquema con una tasa de error de bit.
+//     detected:  el receptor notó el error y pediría retransmisión.
+//     corrected: el receptor arregló el bloque y entregó los datos correctos.
+//     missed:    el receptor entregó datos incorrectos creyendo que eran correctos. El peor caso.
 struct Tally {
 	std::string scheme;
 	int block_bits = 0;
@@ -114,6 +126,7 @@ inline constexpr std::size_t kFramePayload = 32;
 
 // EN: Detection only. A block is one data byte plus its parity bit, 9 bits on the wire.
 // PT: Só detecção. Um bloco é um byte de dados mais seu bit de paridade, 9 bits no canal.
+// ES: Solo detección. Un bloque es un byte de datos más su bit de paridad, 9 bits en el canal.
 inline Tally simulate_parity(double ber, std::uint64_t blocks, std::uint64_t seed) {
 	Tally tally{"Parity bit", 9, 8, ber, blocks};
 	Rng payload(seed + 1);
@@ -138,6 +151,9 @@ inline Tally simulate_parity(double ber, std::uint64_t blocks, std::uint64_t see
 // PT: Só detecção, em quadros de 32 bytes aleatórios seguidos do campo de verificação.
 //     `check_bytes` é 2 para o checksum da Internet e 4 para o CRC-32. O receptor recalcula a
 //     verificação sobre os dados recebidos e compara com o campo de verificação recebido.
+// ES: Solo detección, en tramas de 32 bytes aleatorios seguidos del campo de verificación.
+//     `check_bytes` es 2 para el checksum de Internet y 4 para CRC-32. El receptor recalcula la
+//     verificación sobre los datos recibidos y la compara con el campo de verificación recibido.
 inline Tally simulate_frames(bool use_crc, double ber, std::uint64_t blocks, std::uint64_t seed) {
 	const std::size_t check_bytes = use_crc ? 4 : 2;
 	const int bits = static_cast<int>((kFramePayload + check_bytes) * 8);
@@ -177,6 +193,9 @@ inline Tally simulate_frames(bool use_crc, double ber, std::uint64_t blocks, std
 // PT: Correção. Um bloco carrega um bit (repetição) ou um nibble (Hamming). O resultado é
 //     julgado comparando o que o decodificador entrega com o que foi enviado, o que só uma
 //     simulação consegue fazer: o receptor real nunca sabe que deixou passar um erro.
+// ES: Corrección. Un bloque lleva un bit (repetición) o un nibble (Hamming). El resultado se
+//     juzga comparando lo que entrega el decodificador con lo que se envió, lo que solo una
+//     simulación puede hacer: el receptor real nunca sabe que dejó pasar un error.
 enum class Corrector { kRepetition3, kHamming74, kHamming84 };
 
 inline Tally simulate_corrector(Corrector code, double ber, std::uint64_t blocks,

@@ -1,6 +1,6 @@
 # Testing
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Automated testing is how a team knows that the software still works after each change. The subject covers the levels of tests (unit, integration, end-to-end), the techniques for writing them (test doubles, test-driven development, property-based and mutation testing) and their failure modes, such as flaky tests and coverage numbers that prove nothing. Good tests are what make refactoring and continuous delivery safe.
 

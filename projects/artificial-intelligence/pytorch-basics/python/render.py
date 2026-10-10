@@ -1,6 +1,8 @@
 """EN: A loss chart with several curves, written as SVG text with no plotting library.
 
 PT: Um gráfico de perda com várias curvas, escrito como texto SVG sem biblioteca de gráficos.
+
+ES: Un gráfico de pérdida con varias curvas, escrito como texto SVG sin biblioteca de gráficos.
 """
 
 COLOURS = ["#2563eb", "#ea580c", "#16a34a"]

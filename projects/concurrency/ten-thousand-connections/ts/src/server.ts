@@ -9,6 +9,9 @@ Bun.serve({
 	// PT: Por padrão o Bun fecha uma conexão que fica em silêncio por 10 segundos. O /delay
 	//     mantém uma requisição aberta por até um minuto de propósito, então o tempo limite de
 	//     inatividade é desligado.
+	// ES: Por defecto Bun cierra una conexión que se queda en silencio por 10 segundos. /delay
+	//     mantiene una solicitud abierta hasta por un minuto a propósito, así que el tiempo límite
+	//     de inactividad se desactiva.
 	idleTimeout: 0,
 	fetch: handle,
 });

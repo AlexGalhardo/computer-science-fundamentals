@@ -4,6 +4,9 @@
 // PT: DESENHO COM DEFEITO. O pedido conhece todas as reações ao próprio pagamento. Cada reação
 //     nova (pontos de fidelidade, métricas, nota fiscal) é mais uma linha dentro de `pay`,
 //     então a regra de negócio muda por motivos que não têm relação com pagar.
+// ES: DISEÑO QUE FALLA. El pedido conoce todas las reacciones a su propio pago. Cada reacción
+//     nueva (puntos de fidelidad, métricas, factura) es una línea más dentro de `pay`, así que
+//     la regla de negocio cambia por motivos que no tienen relación con pagar.
 export class Order {
 	readonly effects: string[] = [];
 	private paid = false;

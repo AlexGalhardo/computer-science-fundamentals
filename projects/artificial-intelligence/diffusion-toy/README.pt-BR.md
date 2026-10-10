@@ -1,6 +1,6 @@
 # diffusion-toy
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Ensina **como um modelo de imagens aprende a remover ruído**, com pontos de duas dimensões no lugar de pixels. A "imagem" é um ponto sobre um anel. Um processo direto soma ruído gaussiano passo a passo até o anel virar ruído puro, uma rede pequena escrita à mão com NumPy (sem framework de deep learning) aprende a prever o ruído que foi somado, e a geração parte de ruído puro e tira um pouco dele 100 vezes, até os pontos voltarem para o anel. É o método de "Denoising Diffusion Probabilistic Models" (Ho, Jain e Abbeel, 2020) em um tamanho que permite desenhar cada passo.
 

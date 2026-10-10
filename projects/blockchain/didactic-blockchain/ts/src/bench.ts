@@ -13,6 +13,10 @@ import { sha256Hex } from "./hash";
 //     blocos são minerados nela. Mais blocos nas dificuldades baixas não custam nada e deixam a
 //     média mais estável. Cada linha é cronometrada PASSES vezes e a mediana é informada junto
 //     com a faixa, porque outros programas dividem a máquina.
+// ES: La cuadrícula medida por los dos lenguajes: dificultad (dígitos hexadecimales cero) y
+//     cuántos bloques se minan en ella. Más bloques en las dificultades bajas no cuestan nada y
+//     dejan el promedio más estable. Cada fila se cronometra PASSES veces y se informa la
+//     mediana junto con el rango, porque otros programas comparten la máquina.
 export const GRID: ReadonlyArray<readonly [difficulty: number, blocks: number]> = [
 	[1, 40000],
 	[2, 4000],
@@ -53,6 +57,10 @@ export type Bench = z.infer<typeof benchSchema>;
 //     o tempo por bloco. Os cabeçalhos são fixos (dependem só da dificuldade e do número do
 //     bloco) e são montados antes de o relógio começar, então as tentativas são idênticas em
 //     toda execução e nas duas linguagens. Só o tempo depende da máquina.
+// ES: Mina `blocks` encabezados distintos con una dificultad e informa el promedio de intentos
+//     y el tiempo por bloque. Los encabezados son fijos (dependen solo de la dificultad y del
+//     número del bloque) y se arman antes de que empiece el reloj, así que los intentos son
+//     idénticos en cada ejecución y en los dos lenguajes. Solo el tiempo depende de la máquina.
 export function measure(difficulty: number, blocks: number, passes = 1): Row {
 	const merkleRoot = sha256Hex("bench");
 	const headers = Array.from({ length: blocks }, (_, height) => ({
@@ -97,6 +105,10 @@ if (import.meta.main) {
 	// PT: Aquecimento, descartado. Um motor de JavaScript começa interpretando o código e só
 	//     depois compila o laço quente, então sem isto as primeiras linhas pagariam pelo início
 	//     lento e as razões de tempo pareceriam menores que as razões de trabalho.
+	// ES: Calentamiento, descartado. Un motor de JavaScript empieza interpretando el código y
+	//     solo después compila el bucle caliente, así que sin esto las primeras filas pagarían
+	//     el arranque lento y las razones de tiempo parecerían menores que las razones de
+	//     trabajo.
 	measure(3, 250);
 	const cpu = cpus();
 	const bench: Bench = {

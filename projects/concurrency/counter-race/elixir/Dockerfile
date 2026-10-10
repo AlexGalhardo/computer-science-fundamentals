@@ -2,6 +2,8 @@
 #     benchmark runner. The project has no dependency, so nothing is downloaded.
 # PT: O contexto de build é a pasta do mini-projeto, então o mesmo arquivo serve ao docker
 #     compose e ao runner de benchmark. O projeto não tem dependências, então nada é baixado.
+# ES: El contexto de build es la carpeta del mini-proyecto, así que el mismo archivo sirve a docker
+#     compose y al runner de benchmark. El proyecto no tiene dependencias, así que no se descarga nada.
 FROM elixir:1.20.4-otp-28-slim
 WORKDIR /src
 COPY elixir/ .

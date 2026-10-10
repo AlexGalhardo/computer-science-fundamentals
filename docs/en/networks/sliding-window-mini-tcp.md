@@ -1,6 +1,6 @@
 # Sliding window and a mini TCP
 
-> Versão em português: [docs/pt/networks/sliding-window-mini-tcp.md](../../pt/networks/sliding-window-mini-tcp.md)
+> Versão em português: [docs/pt/networks/sliding-window-mini-tcp.md](../../pt/networks/sliding-window-mini-tcp.md) · Versión en español: [docs/es/networks/sliding-window-mini-tcp.md](../../es/networks/sliding-window-mini-tcp.md)
 
 Mini-project: [`projects/networks/sliding-window-mini-tcp`](../../../projects/networks/sliding-window-mini-tcp/README.md). Languages: Go and Elixir. Quiz topics: `networks` / `data-link-layer` and `networks` / `transport-layer`.
 

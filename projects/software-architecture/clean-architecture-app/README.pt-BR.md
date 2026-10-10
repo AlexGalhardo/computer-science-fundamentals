@@ -1,6 +1,6 @@
 # clean-architecture-app
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um aplicativo de notas construído nos quatro círculos da Arquitetura Limpa, mais uma raiz de composição. Ele ensina uma ideia: **as dependências de código-fonte apontam só para dentro**, então as regras de negócio não sabem nada sobre o framework web, o terminal ou o banco. Os mesmos casos de uso são alcançados por HTTP (ElysiaJS) e por linha de comando, e guardados em memória ou no PostgreSQL, e três coisas são conferidas por um programa e não por um diagrama: nenhuma camada interna importa uma externa, os casos de uso são testados sem banco e sem servidor HTTP, e trocar o repositório muda apenas a raiz de composição.
 
@@ -28,7 +28,7 @@ O script constrói uma imagem, roda os testes de unidade em um contêiner sem re
 
 ## As camadas
 
-```
+```text
 ts/src/
   entities/     Note, Title, erros de domínio, Result      não importa nada além de si mesma
   use-cases/    CreateNote, ListNotes, UpdateNote,         importa entities
@@ -60,7 +60,7 @@ ts/src/
 docker compose run --rm ts-test bun run check:layers
 ```
 
-```
+```text
 ok   entities   4 files, 0 violations
 ok   use-cases  6 files, 0 violations
 ok   adapters   3 files, 0 violations
@@ -72,7 +72,7 @@ dependency rule holds: every import points inward
 
 A verificação lê todos os imports de `ts/src/`, incluindo `import type`, reexportações e imports dinâmicos. Um arquivo pode importar da própria camada e das camadas que estão dentro dela. As duas camadas internas não podem importar pacote nenhum, e os adaptadores só o Zod. O comando termina com código 1 no primeiro import para fora, e faz parte do comando padrão do contêiner de teste, então um import desses quebra o build. Experimente: acrescente `import type { HttpResponse } from "../adapters/note-http-controller";` em `ts/src/use-cases/create-note.ts` e rode os testes de novo.
 
-```
+```text
 FAIL use-cases  6 files, 1 violations
 use-cases/create-note.ts:1 imports "../adapters/note-http-controller": "use-cases" is an inner layer and cannot import from "adapters"
 
@@ -163,7 +163,7 @@ docker compose down -v
 
 Um comando: ele sobe o PostgreSQL e a API HTTP, depois cria uma nota no terminal, lê essa nota por HTTP, cria outra por HTTP, lista as duas no terminal, e mostra a mesma regra respondida em dois vocabulários:
 
-```
+```text
 == 4. One rule, two vocabularies: a repeated title is 409 over HTTP and exit code 1 in the terminal
 $ POST /notes {"title":"Written over HTTP"}
 409 {"error":"duplicate-title","message":"a note titled \"Written over HTTP\" already exists"}

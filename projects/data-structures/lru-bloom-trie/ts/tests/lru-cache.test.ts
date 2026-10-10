@@ -9,6 +9,10 @@ import { random } from "../src/words";
 //     vetor mantido em ordem de uso. Ele custa O(n) por operação e é fácil de confiar, que é
 //     justamente para o que um modelo serve. A cache de verdade precisa se comportar igual e
 //     ser O(1).
+// ES: Modelo de referencia: el mismo comportamiento escrito de la forma más obvia, con un único
+//     arreglo mantenido en orden de uso. Cuesta O(n) por operación y es fácil de confiar, que es
+//     justamente para lo que sirve un modelo. La caché de verdad debe comportarse igual y
+//     ser O(1).
 class ModelCache {
 	private entries: [number, number][] = [];
 
@@ -67,6 +71,9 @@ test("an invalid capacity is refused", () => {
 // PT: Teste de propriedade: para cada capacidade de 1 a 8, milhares de gets e puts aleatórios
 //     rodam na cache e no modelo. O valor devolvido, a chave descartada e a ordem inteira das
 //     chaves precisam ser iguais depois de cada operação.
+// ES: Prueba de propiedad: para cada capacidad de 1 a 8, miles de gets y puts aleatorios
+//     corren en la caché y en el modelo. El valor devuelto, la clave descartada y el orden entero
+//     de las claves deben ser iguales después de cada operación.
 test("eviction order matches the reference model", () => {
 	for (let capacity = 1; capacity <= 8; capacity++) {
 		const cache = new LruCache<number, number>(capacity);

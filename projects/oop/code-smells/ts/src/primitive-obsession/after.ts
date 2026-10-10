@@ -12,6 +12,12 @@ import type { Accounts } from "./contract";
 //     tipos diferentes para o compilador. O TypeScript compara tipos pela forma, e duas classes
 //     com uma string pública seriam intercambiáveis; um membro privado torna cada classe
 //     compatível só consigo mesma.
+// ES: REFACTORIZADO con tipos pequeños (objetos de valor). El constructor es privado y `parse`
+//     es la única entrada, así que un Email que existe es un correo válido y normalizado: la
+//     regla se escribe una vez y nadie la verifica de nuevo. El campo privado también hace de
+//     las dos clases tipos distintos para el compilador. TypeScript compara los tipos por su
+//     forma, y dos clases con un string público serían intercambiables; un miembro privado
+//     hace que cada clase sea compatible solo consigo misma.
 export class Email {
 	readonly #value: string;
 
@@ -67,6 +73,8 @@ export interface Account {
 //     is a compile error: see the type test in tests/primitive-obsession.test.ts.
 // PT: A assinatura agora diz o que é cada argumento. Passar um Phone onde se espera um Email é
 //     erro de compilação: veja o teste de tipos em tests/primitive-obsession.test.ts.
+// ES: La firma ahora dice qué es cada argumento. Pasar un Phone donde se espera un Email es un
+//     error de compilación: mira el test de tipos en tests/primitive-obsession.test.ts.
 export function createAccount(name: string, email: Email, phone: Phone): Account {
 	return { name, email, phone };
 }

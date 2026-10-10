@@ -1,6 +1,6 @@
 # mini-language-parser
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 O front end de uma pequena linguagem de programação, escrito à mão. Ensina **como o código-fonte vira tokens e depois uma árvore**: um lexer que lê caracteres e produz tokens com linha e coluna, e um parser (descida recursiva para os comandos, análise de Pratt para as expressões) que produz uma árvore sintática abstrata e reporta todos os erros de sintaxe de um arquivo em uma única execução.
 

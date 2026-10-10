@@ -6,6 +6,10 @@
 //     correção: a decisão "o servidor pode conectar ali?" é tomada sobre o endereço NUMÉRICO que
 //     a conexão realmente vai usar, nunca sobre o texto da URL. Um nome pode ser escrito de
 //     muitas formas e pode resolver para qualquer coisa; o endereço é onde o socket conecta.
+// ES: Clasifica una dirección IP por el tipo de red a la que pertenece. Este es el corazón de la
+//     corrección: la decisión "¿puede el servidor conectarse allí?" se toma sobre la dirección NUMÉRICA que
+//     la conexión realmente va a usar, nunca sobre el texto de la URL. Un nombre puede escribirse de
+//     muchas formas y puede resolver a cualquier cosa; la dirección es donde se conecta el socket.
 
 import { isIPv4, isIPv6 } from "node:net";
 
@@ -30,6 +34,8 @@ function parseIpv4(text: string): number[] | null {
 	//     address never get here as text: the URL parser has already normalised them.
 	// PT: `isIPv4` aceita só a forma canônica, quatro números decimais. Outras grafias de um
 	//     endereço nunca chegam aqui como texto: o parser de URL já as normalizou.
+	// ES: `isIPv4` acepta solo la forma canónica, cuatro números decimales. Otras grafías de una
+	//     dirección nunca llegan aquí como texto: el parser de URL ya las normalizó.
 	return isIPv4(text) ? text.split(".").map(Number) : null;
 }
 
@@ -47,6 +53,9 @@ function classifyIpv4(octets: readonly number[]): AddressClass {
 	// PT: 100.64.0.0/10 é espaço de endereços compartilhado (NAT de operadora), 192.0.0.0/24 é
 	//     guardado para atribuições de protocolo, 224.0.0.0/4 é multicast e 240.0.0.0/4 é
 	//     reservado, o que inclui o endereço de broadcast 255.255.255.255.
+	// ES: 100.64.0.0/10 es espacio de direcciones compartido (NAT de operador), 192.0.0.0/24 está
+	//     reservado para asignaciones de protocolo, 224.0.0.0/4 es multicast y 240.0.0.0/4 está
+	//     reservado, lo que incluye la dirección de broadcast 255.255.255.255.
 	if (a === 100 && b >= 64 && b <= 127) return "reserved";
 	if (a === 192 && b === 0 && c === 0) return "reserved";
 	if (a >= 224) return "reserved";
@@ -58,6 +67,10 @@ function classifyIpv4(octets: readonly number[]): AddressClass {
 	//     privadas, então contam como públicas aqui. O laboratório usa 203.0.113.0/24 no lugar da
 	//     internet: ela nunca é roteada na internet real. Uma lista de permissão de produção pode
 	//     recusar essas faixas também, já que nenhum site real mora nelas.
+	// ES: Los rangos de documentación (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24) no son
+	//     privados, así que cuentan como públicos aquí. El laboratorio usa 203.0.113.0/24 en lugar de
+	//     internet: nunca se enruta en la internet real. Una lista de permitidos de producción puede
+	//     rechazar también esos rangos, ya que ningún sitio real vive en ellos.
 	return "public";
 }
 
@@ -67,9 +80,13 @@ function classifyIpv4(octets: readonly number[]): AddressClass {
 // PT: Um endereço IPv6 são oito grupos de 16 bits. A forma em texto tem dois atalhos que precisam
 //     ser desfeitos antes de comparar qualquer coisa: `::` representa uma sequência de grupos
 //     zero, e os dois últimos grupos podem ser escritos como um endereço IPv4 com pontos.
+// ES: Una dirección IPv6 son ocho grupos de 16 bits. La forma en texto tiene dos atajos que hay que
+//     deshacer antes de comparar cualquier cosa: `::` representa una secuencia de grupos
+//     cero, y los dos últimos grupos pueden escribirse como una dirección IPv4 con puntos.
 function parseIpv6(text: string): number[] | null {
 	// EN: A zone index ("%eth0") only says which interface to use, it is not part of the address.
 	// PT: Um índice de zona ("%eth0") só diz qual interface usar, não faz parte do endereço.
+	// ES: Un índice de zona ("%eth0") solo dice qué interfaz usar, no forma parte de la dirección.
 	let source = text.split("%")[0] ?? "";
 	if (!isIPv6(source)) {
 		return null;
@@ -108,6 +125,10 @@ function classifyIpv6(groups: readonly number[]): AddressClass {
 	//     IPv4-mapeada (::ffff:a.b.c.d) e o prefixo NAT64 (64:ff9b::/96). A conexão termina no
 	//     endereço IPv4 de dentro, então é ele que deve ser julgado. Esquecer disso é um furo
 	//     clássico: ::ffff:127.0.0.1 é loopback vestido de IPv6.
+	// ES: Algunas direcciones IPv6 son solo un envoltorio alrededor de una dirección IPv4: la forma
+	//     IPv4 mapeada (::ffff:a.b.c.d) y el prefijo NAT64 (64:ff9b::/96). La conexión termina en la
+	//     dirección IPv4 de dentro, así que es ella la que debe juzgarse. Olvidar esto es un fallo
+	//     clásico: ::ffff:127.0.0.1 es loopback vestido de IPv6.
 	const isMapped = g0 === 0 && g1 === 0 && g2 === 0 && g3 === 0 && g4 === 0 && g5 === 0xffff;
 	const isNat64 = g0 === 0x64 && g1 === 0xff9b && g2 === 0 && g3 === 0 && g4 === 0 && g5 === 0;
 	if (isMapped || isNat64) return classifyIpv4(embeddedIpv4(g6, g7));
@@ -130,6 +151,8 @@ export function classifyAddress(address: string): AddressClass {
 //     would let through whatever the list forgot.
 // PT: A regra é uma lista de permissão de UMA classe: só "public" passa. Listar o que é proibido
 //     deixaria passar tudo o que a lista esqueceu.
+// ES: La regla es una lista de permitidos de UNA clase: solo "public" pasa. Listar lo que está prohibido
+//     dejaría pasar todo lo que la lista olvidó.
 export function isAddressAllowed(address: string): boolean {
 	return classifyAddress(address) === "public";
 }

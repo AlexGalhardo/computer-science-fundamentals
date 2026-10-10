@@ -1,6 +1,6 @@
 # Rate limiter algorithms (MP-RL-1)
 
-> Versão em português: [docs/pt/rate-limiting/rate-limiter.md](../../pt/rate-limiting/rate-limiter.md)
+> Versão em português: [docs/pt/rate-limiting/rate-limiter.md](../../pt/rate-limiting/rate-limiter.md) · Versión en español: [docs/es/rate-limiting/rate-limiter.md](../../es/rate-limiting/rate-limiter.md)
 
 Mini-project: [`projects/rate-limiting/rate-limiter`](../../../projects/rate-limiting/rate-limiter/README.md). Quiz topics: `fixed-window`, `sliding-window`, `token-bucket`, `leaky-bucket`, `redis-distributed`, `http-429-and-backoff`.
 
@@ -59,7 +59,7 @@ Behind a load balancer, a limiter kept in the memory of each instance lets N ins
 
 The obvious code is wrong:
 
-```
+```text
 instance A: GET rate:alice   -> 49
 instance B: GET rate:alice   -> 49      (A has not written yet)
 instance A: 49 < 50, INCR    -> 50
@@ -90,7 +90,7 @@ Redis (`redis:8.10.2-alpine`) and the two instances talk on an internal docker-c
 | --- | --- |
 | MP-RL-1.1 fixed window, sliding window, token bucket and leaky bucket in memory, each passing a table-driven test of allowed and rejected requests over time | `docker compose run --rm ts-test` and `docker compose run --rm go-test`: both read `cases/cases.json` (15 timelines, 3 per algorithm; the sliding window has two variants, log and counter) |
 | MP-RL-1.2 two instances together never allow more than the limit under concurrent load | `docker compose run --rm distributed-test`: exactly 50 of 400 concurrent requests admitted, five rounds, and the naive version exceeds the limit |
-| MP-RL-1.3 chart of accepted requests over time for the algorithms with the same traffic | `./experiment-unix.sh` (or `.ps1`) writes `results/burst.svg` and `results/burst.pt-BR.svg` from `results/burst.json`; a test fails when the committed results are out of date |
+| MP-RL-1.3 chart of accepted requests over time for the algorithms with the same traffic | `./experiment-unix.sh` (or `.ps1`) writes `results/burst.svg`, `results/burst.pt-BR.svg` and `results/burst.es.svg` from `results/burst.json`; a test fails when the committed results are out of date |
 
 ## Run
 

@@ -7,6 +7,10 @@ package deadlock
 // PT: Os exemplos documentados. Eles ficam no pacote, não nos testes, para que os testes e o
 // programa de demonstração usem exatamente os mesmos dados. Cada um está resolvido à mão em
 // docs/pt/operating-systems/deadlock-mini-shell.md.
+//
+// ES: Los ejemplos documentados. Viven en el paquete, no en las pruebas, para que las pruebas y
+// el programa de demostración usen exactamente los mismos datos. Cada uno está resuelto a mano
+// en docs/es/operating-systems/deadlock-mini-shell.md.
 
 // mustHold builds the fixed examples below. Each resource appears once in them, so there is no
 // conflict to report and the unchecked assignment is enough.

@@ -17,6 +17,14 @@ devolve.
 Os testes em Rust leem esse arquivo, porque o Rust não tem SQLite na biblioteca padrão. O SQLite
 é a referência: as linhas esperadas nunca são digitadas à mão, são o que o `sqlite3` respondeu.
 Rode com `python make_fixtures.py` depois de mudar as tabelas ou as consultas abaixo.
+
+ES: Escribe `fixtures/sqlite_cases.tsv`: tablas pequeñas, consultas y las filas que SQLite
+devuelve.
+
+Las pruebas en Rust leen este archivo, porque Rust no tiene SQLite en su biblioteca estándar.
+SQLite es la referencia: las filas esperadas nunca se escriben a mano, son lo que respondió
+`sqlite3`. Ejecútalo con `python make_fixtures.py` después de cambiar las tablas o las
+consultas de abajo.
 """
 
 import sqlite3
@@ -31,6 +39,9 @@ Row = tuple[int | str, ...]
 #     department with no employees (dno 40), so joins have rows that must NOT appear.
 # PT: Dados fictícios de propósito: um empregado cujo departamento não existe (dno 50) e um
 #     departamento sem empregados (dno 40), para que as junções tenham linhas que NÃO devem
+#     aparecer.
+# ES: Datos ficticios a propósito: un empleado cuyo departamento no existe (dno 50) y un
+#     departamento sin empleados (dno 40), para que los joins tengan filas que NO deben
 #     aparecer.
 TABLES: dict[str, tuple[list[Column], list[Row]]] = {
     "emp": (
@@ -104,6 +115,9 @@ def query_sql(query: Query) -> tuple[str, list[int | str]]:
     # PT: Nomes de tabela e coluna vêm das constantes acima, nunca de entrada do usuário. A
     #     constante comparada ainda passa por um marcador `?`, que é o hábito que evita injeção
     #     de SQL em código real.
+    # ES: Los nombres de tabla y columna vienen de las constantes de arriba, nunca de entrada del
+    #     usuario. La constante comparada igualmente pasa por un marcador `?`, que es el hábito
+    #     que evita la inyección SQL en código real.
     _, table, column, op, constant, projection, distinct = query
     selected = "*" if projection is None else ", ".join(projection)
     sql = f"SELECT {'DISTINCT ' if distinct else ''}{selected} FROM {table}"

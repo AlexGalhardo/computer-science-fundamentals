@@ -1,6 +1,6 @@
 # Laboratório de Big O
 
-> English version: [docs/en/big-o/big-o-lab.md](../../en/big-o/big-o-lab.md)
+> English version: [docs/en/big-o/big-o-lab.md](../../en/big-o/big-o-lab.md) · Versión en español: [docs/es/big-o/big-o-lab.md](../../es/big-o/big-o-lab.md)
 
 Mini-projeto MP-BIGO-1, em [`projects/big-o/big-o-lab`](../../../projects/big-o/big-o-lab). Ele ensina a medir uma função e reconhecer sua curva de crescimento.
 

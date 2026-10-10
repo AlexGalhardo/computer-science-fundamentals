@@ -3,6 +3,8 @@
 #     The test passes only when the program fails with the refusal message.
 # PT: Roda o laboratório com um alvo que NÃO é local e confere que ele se recusa a começar.
 #     O teste só passa quando o programa falha com a mensagem de recusa.
+# ES: Ejecuta el laboratorio con un destino que NO es local y verifica que se niega a arrancar.
+#     La prueba solo pasa cuando el programa falla con el mensaje de rechazo.
 set -u
 
 echo "running the lab with NGINX_URL=$NGINX_URL (must be refused)"

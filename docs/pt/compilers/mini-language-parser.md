@@ -1,6 +1,6 @@
 # Mini linguagem: lexer e parser
 
-> English version: [docs/en/compilers/mini-language-parser.md](../../en/compilers/mini-language-parser.md)
+> English version: [docs/en/compilers/mini-language-parser.md](../../en/compilers/mini-language-parser.md) · Versión en español: [docs/es/compilers/mini-language-parser.md](../../es/compilers/mini-language-parser.md)
 
 Mini-projeto MP-COMP-1, em [`projects/compilers/mini-language-parser`](../../../projects/compilers/mini-language-parser). Ensina como o código-fonte vira tokens e depois uma árvore. A gramática da linguagem e seus programas de exemplo estão no README do mini-projeto.
 

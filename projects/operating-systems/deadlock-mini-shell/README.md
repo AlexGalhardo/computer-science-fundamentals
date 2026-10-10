@@ -1,6 +1,6 @@
 # deadlock-mini-shell
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Two small programs about processes and the resources they share. The first, in Go, finds deadlocks in a resource allocation graph and applies the banker's algorithm to decide whether a state is safe. The second, in C++, is a mini shell that runs pipelines with `fork`, `exec`, `pipe` and `dup2`, supports redirection and survives Ctrl-C. Together they teach how processes are created and connected, and what goes wrong when they wait for each other.
 
@@ -31,7 +31,7 @@ docker compose run --rm shell-demo    # runs cpp/demo.msh in the mini shell
 docker compose run --rm shell         # an interactive mini shell (leave with exit or Ctrl-D)
 ```
 
-```
+```text
 textbook, 7 processes  DEADLOCK     deadlocked: D, E, G    blocked behind the cycle: B
 single resource        safe         one safe sequence: P1, P2, P0
   P0 asks for 1 unit                   denied: the resulting state would be unsafe

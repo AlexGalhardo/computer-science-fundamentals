@@ -10,6 +10,11 @@ PT: Modelo do Python: contagem de referências mais um coletor de ciclos. Todo o
     zero, então uma árvore descartada é liberada na hora, sem esperar um coletor. O custo é
     pago em toda atribuição (a contagem é atualizada a cada vez) e em memória (cada nó é um
     objeto completo com cabeçalho). Um coletor separado procura só ciclos de referências.
+ES: Modelo de Python: conteo de referencias más un recolector de ciclos. Todo objeto guarda cuántas
+    referencias apuntan a él, y se libera en el momento en que ese conteo llega a cero, así que un
+    árbol descartado se libera al instante, sin esperar a un recolector. El costo se paga en cada
+    asignación (el conteo se actualiza cada vez) y en memoria (cada nodo es un objeto completo con
+    encabezado). Un recolector aparte busca solo ciclos de referencias.
 """
 
 import json
@@ -29,6 +34,7 @@ def make(depth: int) -> tuple[Node, Node]:
 def check(node: tuple[Node, Node]) -> int:
     # EN: Walks the whole tree and counts its nodes.
     # PT: Percorre a árvore inteira e conta os nós.
+    # ES: Recorre el árbol completo y cuenta los nodos.
     left, right = node
     if left is None or right is None:
         return 1

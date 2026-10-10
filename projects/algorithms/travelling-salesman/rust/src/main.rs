@@ -2,6 +2,8 @@
 //     JSON line in the benchmark contract. The checksum is the length of the tour found.
 // PT: `travelling-salesman <resolvedor> <n>` resolve a instância de n cidades (semente 1) e
 //     imprime uma linha JSON no contrato de benchmark. O checksum é o comprimento do passeio.
+// ES: `travelling-salesman <resolvedor> <n>` resuelve la instancia de n ciudades (semilla 1) e
+//     imprime una línea JSON en el contrato de benchmark. El checksum es la longitud del recorrido.
 
 use std::fs;
 use std::process::ExitCode;
@@ -13,6 +15,8 @@ use travelling_salesman::{
 
 // EN: Brute force gives up after 12 seconds and reports "timeout", the same cap as in TypeScript.
 // PT: A força bruta desiste após 12 segundos e informa "timeout", o mesmo limite do TypeScript.
+// ES: La fuerza bruta se rinde tras 12 segundos e informa "timeout", el mismo límite que
+//     TypeScript.
 const BRUTE_FORCE_DEADLINE: Duration = Duration::from_secs(12);
 const MAX_CITIES: usize = 2000;
 const SEED: u64 = 1;
@@ -20,6 +24,7 @@ const SOLVERS: [&str; 4] = ["brute-force", "held-karp", "nearest-neighbour", "tw
 
 // EN: VmHWM in /proc/self/status is the peak resident memory of the process in kibibytes.
 // PT: VmHWM em /proc/self/status é o pico de memória residente do processo em kibibytes.
+// ES: VmHWM en /proc/self/status es el pico de memoria residente del proceso en kibibytes.
 fn peak_memory_kb() -> u64 {
     fs::read_to_string("/proc/self/status")
         .ok()

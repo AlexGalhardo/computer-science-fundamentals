@@ -6,6 +6,10 @@
 //     escrito pela demo em `../results/results.js`, e desenha um gráfico de Gantt por política
 //     e a tabela de comparação. Não há etapa de build nem requisição de rede: a página funciona
 //     aberta direto do disco.
+// ES: Página estática del simulador de planificación de CPU. Lee `window.SCHED_RESULTS`,
+//     escrito por la demo en `../results/results.js`, y dibuja un diagrama de Gantt por política
+//     más la tabla de comparación. No hay paso de build ni petición de red: la página funciona
+//     abierta directamente desde el disco.
 
 const SVG = "http://www.w3.org/2000/svg";
 const COLOURS = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#4b5563"];
@@ -39,6 +43,8 @@ function element(name, className, text) {
 //     across the policies and see where it was moved to.
 // PT: Cada processo mantém a mesma cor em todos os gráficos, então o olho consegue acompanhar um
 //     processo entre as políticas e ver para onde ele foi movido.
+// ES: Cada proceso mantiene el mismo color en todos los diagramas, así el ojo puede seguir un
+//     proceso a través de las políticas y ver adónde fue movido.
 function drawGantt(schedule, colourOf) {
 	const end = schedule.slices.reduce((latest, slice) => Math.max(latest, slice.end), 1);
 	const scale = (WIDTH - 2 * PAD) / end;

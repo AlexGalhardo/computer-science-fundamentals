@@ -6,6 +6,10 @@
 //     código as duas versões têm, e uma saída que as duas versões produzem. Os tamanhos mostram
 //     que remover um mau cheiro raramente encurta o código. Ele deixa cada parte menor e a põe
 //     onde uma mudança vai procurá-la.
+// ES: `bun run demo` imprime el catálogo: para cada mal olor, cuántos archivos y líneas de
+//     código tienen las dos versiones, y una salida que ambas versiones producen. Los tamaños
+//     muestran que eliminar un mal olor rara vez acorta el código. Deja cada parte más pequeña
+//     y la pone donde un cambio va a buscarla.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -31,6 +35,8 @@ interface Size {
 
 // EN: A version is `before.ts` or a `before/` folder. Comments and blank lines are not counted.
 // PT: Uma versão é `before.ts` ou uma pasta `before/`. Comentários e linhas em branco não contam.
+// ES: Una versión es `before.ts` o una carpeta `before/`. Los comentarios y las líneas en blanco
+//     no cuentan.
 function sizeOf(smell: string, version: string): Size {
 	const base = fileURLToPath(new URL(`./${smell}/${version}`, import.meta.url));
 	const single = `${base}.ts`;

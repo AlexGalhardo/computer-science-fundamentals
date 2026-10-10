@@ -6,6 +6,9 @@ import { defineConfig, devices } from "@playwright/test";
 // PT: Os testes de navegador rodam dentro do docker-compose contra os serviços `vulnerable` e
 //     `fixed`. Um worker e nenhum paralelismo: o livro de visitas guarda as entradas em memória,
 //     então os testes de um mesmo app não podem se intercalar.
+// ES: Las pruebas de navegador corren dentro de docker-compose contra los servicios `vulnerable` y
+//     `fixed`. Un worker y ningún paralelismo: el libro de visitas guarda las entradas en memoria,
+//     así que las pruebas de una misma app no pueden entrelazarse.
 export default defineConfig({
 	testDir: "tests/e2e",
 	testMatch: "**/*.e2e.ts",

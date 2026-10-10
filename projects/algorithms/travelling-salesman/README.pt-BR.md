@@ -1,6 +1,6 @@
 # travelling-salesman
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Quatro formas de resolver o problema do caixeiro-viajante (visitar cada cidade uma vez e voltar ao início com o passeio mais curto): força bruta sobre todas as ordens, programação dinâmica sobre subconjuntos (Held-Karp), a heurística gulosa do vizinho mais próximo e a busca local 2-opt. O projeto mostra onde a busca exaustiva deixa de ser usável, até onde um algoritmo exato melhor empurra esse muro, e do que uma heurística abre mão para responder na hora.
 

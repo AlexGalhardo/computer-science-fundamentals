@@ -1,6 +1,6 @@
 # backend-patterns
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Dez padrões de projeto em situações de back-end nas quais eles se pagam. Cada padrão tem uma pasta com **o desenho com defeito** (`before.ts`), **a versão com o padrão** (`after.ts`) e testes que rodam os dois, para que o problema apareça antes da solução. Ensina **qual dor cada padrão remove** e, no caso do Singleton, por que o padrão é a dor.
 
@@ -61,7 +61,7 @@ docker compose run --rm ts-demo
 
 Mostra um cenário por padrão, executado nos dois desenhos:
 
-```
+```text
 strategy
   before: throws "unknown shipping kind: drone"
   after:  drone shipping added from outside: total 15300 cents

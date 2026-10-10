@@ -1,6 +1,6 @@
 # Parallelism
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Parallelism is running computations at the same time on several cores, vector lanes or machines to finish sooner. Processors stopped getting faster one core at a time, so speed now comes from dividing work well. Amdahl's law, false sharing and memory bandwidth explain why doubling the cores rarely doubles the speed, and how to get closer to it.
 

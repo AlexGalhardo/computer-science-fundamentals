@@ -1,6 +1,6 @@
 # SQL injection lab (MP-SEC-1)
 
-> Versão em português: [docs/pt/security/sql-injection-lab.md](../../pt/security/sql-injection-lab.md)
+> Versão em português: [docs/pt/security/sql-injection-lab.md](../../pt/security/sql-injection-lab.md) · Versión en español: [docs/es/security/sql-injection-lab.md](../../es/security/sql-injection-lab.md)
 
 Mini-project: [`projects/security/sql-injection-lab`](../../../projects/security/sql-injection-lab/README.md). Quiz topics: `injection`, `owasp-threat-modelling`.
 
@@ -51,7 +51,7 @@ One scenario function makes the same five requests to both apps: a valid login, 
 | MP-SEC-1.1 internal network, fake data, no outside access | `tests/network-isolation.test.ts`: a request to `http://example.com` fails from inside the container. `docker-compose.yml` publishes no port and its only network is `internal: true` |
 | MP-SEC-1.2 the vulnerable version has both flaws | `tests/scenario.test.ts`, vulnerable block: the tautology answers `200` with a logged-in user, and the `UNION` search returns the three fake secrets |
 | MP-SEC-1.3 the fixed version blocks them and normal use works | `tests/scenario.test.ts`, fixed block: the tautology answers `422`, the `UNION` search answers `200` with zero rows, a valid login and a normal search still work. Two tests call the parameterised queries directly, without validation, and get the same safe result. `tests/least-privilege.test.ts`: `lab_readonly` gets SQLSTATE `42501` when reading `secrets` or writing |
-| MP-SEC-1.4 documentation | Both READMEs have "Why the flaw happens", "How to prevent it" and "What does not work as a fix" |
+| MP-SEC-1.4 documentation | The three READMEs have "Why the flaw happens", "How to prevent it" and "What does not work as a fix" |
 
 ## Run
 

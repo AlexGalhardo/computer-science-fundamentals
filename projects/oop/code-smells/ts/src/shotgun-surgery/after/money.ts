@@ -3,6 +3,9 @@
 // PT: REFATORADO. A decisão agora tem um lugar. Símbolo, vírgula decimal e agrupamento moram
 //     nesta função e em nenhum outro lugar, então trocar a moeda é uma edição neste único
 //     arquivo.
+// ES: REFACTORIZADO. La decisión ahora tiene un lugar. Símbolo, coma decimal y agrupación
+//     viven en esta función y en ningún otro lugar, así que cambiar la moneda es una edición en
+//     este único archivo.
 export function formatMoney(cents: number): string {
 	const whole = Math.floor(cents / 100)
 		.toString()

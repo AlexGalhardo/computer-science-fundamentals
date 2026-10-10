@@ -6,6 +6,10 @@
 //     corpos se atraindo por n passos de tempo) e o `sieve` é pesado em inteiros e memória (o
 //     crivo de Eratóstenes até n). Toda linguagem escreve a aritmética na mesma ordem, então
 //     todas imprimem o mesmo checksum.
+// ES: Carga de CPU en un thread. Dos núcleos de cálculo: `nbody` es pesado en punto flotante (cinco
+//     cuerpos que se atraen durante n pasos de tiempo) y `sieve` es pesado en enteros y memoria (la
+//     criba de Eratóstenes hasta n). Todo lenguaje escribe la aritmética en el mismo orden, así que
+//     todos imprimen el mismo checksum.
 
 #include <sys/resource.h>
 
@@ -29,6 +33,7 @@ struct Body {
 
 // EN: Sun, Jupiter, Saturn, Uranus and Neptune, in astronomical units, years and solar masses.
 // PT: Sol, Júpiter, Saturno, Urano e Netuno, em unidades astronômicas, anos e massas solares.
+// ES: Sol, Júpiter, Saturno, Urano y Neptuno, en unidades astronómicas, años y masas solares.
 std::vector<Body> make_bodies() {
 	return {
 	    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, SOLAR_MASS},
@@ -49,6 +54,7 @@ std::vector<Body> make_bodies() {
 
 // EN: Gives the sun the opposite of the total momentum, so the system as a whole stands still.
 // PT: Dá ao sol o oposto do momento total, para que o sistema como um todo fique parado.
+// ES: Le da al sol el opuesto del momento total, para que el sistema como un todo quede quieto.
 void offset_momentum(std::vector<Body>& bodies) {
 	double px = 0.0, py = 0.0, pz = 0.0;
 	for (const Body& b : bodies) {
@@ -65,6 +71,8 @@ void offset_momentum(std::vector<Body>& bodies) {
 //     then every body moves with its new velocity. The inner loop is pure floating point.
 // PT: Um passo de tempo: cada par de corpos se atrai (lei da gravitação de Newton), depois cada
 //     corpo anda com a nova velocidade. O laço interno é ponto flutuante puro.
+// ES: Un paso de tiempo: cada par de cuerpos se atrae (ley de gravitación de Newton), luego cada
+//     cuerpo avanza con la nueva velocidad. El bucle interno es punto flotante puro.
 void advance(std::vector<Body>& bodies) {
 	const std::size_t count = bodies.size();
 	for (std::size_t i = 0; i < count; i++) {
@@ -93,6 +101,7 @@ void advance(std::vector<Body>& bodies) {
 
 // EN: Total energy (kinetic minus potential). It should barely change, so it is a good checksum.
 // PT: Energia total (cinética menos potencial). Ela quase não deve mudar, então é um bom checksum.
+// ES: Energía total (cinética menos potencial). Casi no debe cambiar, así que es un buen checksum.
 double energy(const std::vector<Body>& bodies) {
 	double e = 0.0;
 	for (std::size_t i = 0; i < bodies.size(); i++) {
@@ -124,6 +133,8 @@ std::string nbody(long n) {
 //     is prime. The checksum is "how many primes:the largest one".
 // PT: Crivo de Eratóstenes: risca os múltiplos de cada primo até sqrt(n). O que sobra é primo.
 //     O checksum é "quantos primos:o maior deles".
+// ES: Criba de Eratóstenes: tacha los múltiplos de cada primo hasta sqrt(n). Lo que queda es primo.
+//     El checksum es "cuántos primos:el mayor de ellos".
 std::string sieve(long n) {
 	std::vector<unsigned char> composite(static_cast<std::size_t>(n) + 1, 0);
 	for (long i = 2; i * i <= n; i++) {
@@ -151,6 +162,8 @@ int main(int argc, char** argv) {
 
 	// EN: Only the kernel is timed. Start-up and argument parsing stay outside.
 	// PT: Só o núcleo é cronometrado. A inicialização e a leitura dos argumentos ficam de fora.
+	// ES: Solo el núcleo se cronometra. La inicialización y la lectura de los argumentos quedan
+	// fuera.
 	const auto start = std::chrono::steady_clock::now();
 	const std::string checksum = implementation == "sieve" ? sieve(n) : nbody(n);
 	const std::chrono::duration<double, std::milli> elapsed =
@@ -158,6 +171,7 @@ int main(int argc, char** argv) {
 
 	// EN: On Linux, ru_maxrss is the peak resident memory of the process, in kibibytes.
 	// PT: No Linux, ru_maxrss é o pico de memória residente do processo, em kibibytes.
+	// ES: En Linux, ru_maxrss es el pico de memoria residente del proceso, en kibibytes.
 	rusage usage{};
 	getrusage(RUSAGE_SELF, &usage);
 	std::printf(

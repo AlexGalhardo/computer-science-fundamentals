@@ -14,6 +14,14 @@
 //     então nenhum arquivo de outro usuário aparece na árvore de trabalho (no Linux, um
 //     contêiner que escreve em uma pasta montada precisa do uid do usuário do host).
 //     A imagem traz Node.js e npm (não o Bun), por isso o npm é usado aqui.
+// ES: `bun run test:dashboard` ejecuta las pruebas de Playwright del dashboard en dos contenedores
+//     de la imagen fijada de Playwright. El primero, con red, instala el `@playwright/test` exacto
+//     del lockfile en un volumen de Docker. El segundo ejecuta las pruebas con `--network none`: si
+//     la página necesitara algo de internet, no tendría cómo conseguirlo.
+//     Los dos contenedores montan el repositorio como solo lectura y escriben solo en el volumen,
+//     así ningún archivo de otro usuario aparece en el árbol de trabajo (en Linux, un
+//     contenedor que escribe en una carpeta montada necesita el uid del usuario del host).
+//     La imagen trae Node.js y npm (no Bun), por eso aquí se usa npm.
 
 import { join } from "node:path";
 import { benchmarksDir } from "./lib";
@@ -22,6 +30,8 @@ import { benchmarksDir } from "./lib";
 //     only work with the Playwright release they were built for.
 // PT: A imagem e o pacote npm precisam ter a mesma versão: os navegadores dentro da imagem só
 //     funcionam com a versão do Playwright para a qual foram construídos.
+// ES: La imagen y el paquete npm deben tener la misma versión: los navegadores dentro de la imagen
+//     solo funcionan con la versión de Playwright para la que fueron construidos.
 const IMAGE = "mcr.microsoft.com/playwright:v1.63.0-noble";
 const WORK = "sef-bd-playwright-work:/work";
 const tests = join(benchmarksDir, "dashboard", "tests");

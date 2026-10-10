@@ -3,6 +3,9 @@
 // PT: Uma camada fina sobre o RabbitMQ (AMQP). Uma exchange do tipo topic chamada `events` recebe
 //     todos os eventos. Cada serviço é dono de uma fila durável ligada às routing keys que lhe
 //     interessam.
+// ES: Una capa fina sobre RabbitMQ (AMQP). Un exchange de tipo topic llamado `events` recibe
+//     todos los eventos. Cada servicio es dueño de una cola durable ligada a las routing keys que le
+//     interesan.
 
 import { type ChannelModel, type ConfirmChannel, connect } from "amqplib";
 import { type DomainEvent, eventSchema, ROUTING_KEYS } from "./events";
@@ -40,6 +43,9 @@ export async function connectBroker(url: string): Promise<Broker> {
 		// PT: Confirmação de publicação: a promise só resolve quando o broker diz "recebi". Sem a
 		//     confirmação, uma mensagem enviada logo antes de uma falha de rede seria contada
 		//     como publicada e perdida em silêncio.
+		// ES: Confirmación de publicación: la promise solo se resuelve cuando el broker dice "recibí". Sin la
+		//     confirmación, un mensaje enviado justo antes de un fallo de red se contaría
+		//     como publicado y se perdería en silencio.
 		publish: async (event) => {
 			channel.publish(EXCHANGE, ROUTING_KEYS[event.type], Buffer.from(JSON.stringify(event)), {
 				persistent: true,
@@ -55,6 +61,9 @@ export async function connectBroker(url: string): Promise<Broker> {
 		// PT: A confirmação manual dá entrega at-least-once. A mensagem só é confirmada depois de
 		//     o handler terminar. Se o serviço morrer no meio, o broker entrega a mensagem de
 		//     novo, e é por isso que todo handler precisa ser idempotente.
+		// ES: La confirmación manual da entrega at-least-once. El mensaje solo se confirma después de que
+		//     el manejador termina. Si el servicio muere a la mitad, el broker entrega el mensaje de
+		//     nuevo, y por eso todo manejador debe ser idempotente.
 		subscribe: async (queue, routingKeys, handler) => {
 			await channel.assertQueue(queue, { durable: true });
 			for (const key of routingKeys) {
@@ -77,6 +86,8 @@ export async function connectBroker(url: string): Promise<Broker> {
 					//     of being redelivered forever (a real system would use a dead-letter queue).
 					// PT: Uma mensagem malformada nunca vai ficar válida, então é descartada em vez
 					//     de ser reentregue para sempre (um sistema real usaria uma dead-letter queue).
+					// ES: Un mensaje malformado nunca se volverá válido, así que se descarta en lugar
+					//     de reentregarse para siempre (un sistema real usaría una dead-letter queue).
 					console.error(`${queue}: dropping a malformed message`);
 					channel.nack(message, false, false);
 					return;

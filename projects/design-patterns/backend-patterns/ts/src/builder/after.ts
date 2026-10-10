@@ -12,6 +12,8 @@ export interface HttpRequest {
 //     and `build` is the single door through which a request comes to exist.
 // PT: BUILDER. Cada valor chega por um método com nome, os opcionais simplesmente não são
 //     chamados, e `build` é a única porta pela qual uma requisição passa a existir.
+// ES: BUILDER. Cada valor llega por un método con nombre, los opcionales simplemente no se
+//     llaman, y `build` es la única puerta por la que una petición llega a existir.
 export class RequestBuilder {
 	private body: string | undefined;
 	private headers: string[] = [];
@@ -63,6 +65,9 @@ export class RequestBuilder {
 	// PT: As regras que cruzam campos são verificadas aqui, quando todos os dados são conhecidos,
 	//     então uma requisição inválida nunca chega a existir. Os cabeçalhos são copiados e
 	//     congelados: o produto não pode ficar ligado ao builder, que pode continuar em uso.
+	// ES: Las reglas que cruzan campos se verifican aquí, cuando todos los datos son conocidos,
+	//     así que una petición inválida nunca llega a existir. Las cabeceras se copian y se
+	//     congelan: el producto no puede quedar ligado al builder, que puede seguir en uso.
 	build(): HttpRequest {
 		if (this.method === "POST" && this.body === undefined) {
 			throw new Error("a POST request needs a body");

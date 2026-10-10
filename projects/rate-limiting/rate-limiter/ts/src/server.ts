@@ -9,6 +9,9 @@ import { RedisLimiter } from "./redis-limiter";
 // PT: Uma instância da aplicação. O docker-compose sobe duas a partir da mesma imagem, as duas
 //     apontando para o mesmo Redis. Variáveis de ambiente são entrada externa, então passam por
 //     um schema e o processo se recusa a subir com um valor inválido.
+// ES: Una instancia de la aplicación. docker-compose levanta dos a partir de la misma imagen, las
+//     dos apuntando al mismo Redis. Las variables de entorno son entrada externa, así que pasan
+//     por un schema y el proceso se niega a arrancar con un valor inválido.
 const env = z
 	.object({
 		REDIS_URL: z.string().url(),

@@ -12,6 +12,13 @@
 #        compartilhando um Redis, e um teste que envia requisições concorrentes às duas. Elas se
 #        falam em uma rede interna: nenhum contêiner alcança a internet e nenhuma porta é
 #        publicada no host, então a carga só consegue atingir os dois serviços deste laboratório.
+# ES: Tres grupos de servicios.
+#     1. `ts-test` y `go-test`: los algoritmos en memoria. Sin red alguna.
+#     2. `experiment`: el experimento de ráfaga, escribe `results/`. Sin red alguna.
+#     3. `redis`, `limiter-a`, `limiter-b` y `distributed-test`: dos instancias de la aplicación
+#        compartiendo un Redis, y una prueba que envía solicitudes concurrentes a las dos. Se
+#        hablan en una red interna: ningún contenedor llega a internet y no se publica ningún
+#        puerto en el host, así que la carga solo puede alcanzar los dos servicios de este laboratorio.
 name: rl-rate-limiter
 
 x-ts: &ts
@@ -24,6 +31,8 @@ x-ts: &ts
 #     one window, so "exactly 50 admitted" is a fact, not a matter of timing.
 # PT: Uma janela longa de propósito: 50 requisições por minuto. O teste concorrente inteiro cabe
 #     em uma janela, então "exatamente 50 admitidas" é um fato, não uma questão de tempo.
+# ES: Una ventana larga a propósito: 50 solicitudes por minuto. Toda la prueba concurrente cabe
+#     en una ventana, así que "exactamente 50 admitidas" es un hecho, no una cuestión de tiempo.
 x-limits: &limits
   LIMIT: "50"
   WINDOW_MS: "60000"
@@ -66,6 +75,9 @@ services:
     # PT: Roda como o usuário do host. No Linux a pasta montada pertence a ele, e o usuário da
     #     própria imagem não conseguiria gravar os resultados. O script de setup exporta
     #     HOST_UID e HOST_GID; no Docker Desktop o padrão funciona.
+    # ES: Corre como el usuario del host. En Linux la carpeta montada pertenece a ese usuario, y
+    #     el usuario propio de la imagen no podría escribir los resultados en ella. El script de
+    #     setup exporta HOST_UID y HOST_GID; en Docker Desktop el valor por defecto funciona.
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       - .:/project
@@ -74,9 +86,11 @@ services:
     image: redis:8.10.2-alpine
     # EN: A cache of counters: nothing is written to disk.
     # PT: Um cache de contadores: nada é gravado em disco.
+    # ES: Una caché de contadores: no se escribe nada en disco.
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     # EN: The check goes through TCP on the real port, the same way the application connects.
     # PT: A verificação passa por TCP na porta real, do mesmo jeito que a aplicação se conecta.
+    # ES: La verificación pasa por TCP en el puerto real, igual que se conecta la aplicación.
     healthcheck:
       test: ["CMD", "redis-cli", "-h", "127.0.0.1", "-p", "6379", "ping"]
       interval: 1s

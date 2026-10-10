@@ -151,6 +151,12 @@ func sample(r *rand.Rand, node *Node, out *strings.Builder) {
 // precisam receber do AFN, do AFD e do casador por backtracking a mesma resposta que recebem da
 // biblioteca padrão. A semente é fixa, então uma falha é reproduzível. `(?s)` faz o ponto do
 // `regexp` casar qualquer byte, como aqui, e `^(?:...)$` pede o casamento da entrada inteira.
+// ES: La prueba diferencial. El propio paquete `regexp` de Go es el oráculo: 1.000 casos
+// generados (patrones aleatorios, la mitad de las entradas construidas para emparejar y la mitad
+// puramente aleatorias) deben recibir del AFN, del AFD y del emparejador por backtracking la
+// misma respuesta que reciben de la biblioteca estándar. La semilla es fija, así que un fallo es
+// reproducible. `(?s)` hace que el punto de `regexp` empareje cualquier byte, como aquí, y
+// `^(?:...)$` pide el emparejamiento de la entrada completa.
 func TestAgreesWithStandardLibraryOn1000GeneratedCases(t *testing.T) {
 	r := rand.New(rand.NewPCG(2026, 4))
 	const patterns, inputsPerPattern = 200, 5
@@ -205,6 +211,9 @@ func TestAgreesWithStandardLibraryOn1000GeneratedCases(t *testing.T) {
 // PT: A construção de Thompson acrescenta no máximo dois estados por nó da árvore, então o AFN
 // cresce linearmente com o padrão. Os números abaixo foram contados a partir das regras, não a
 // partir da saída.
+// ES: La construcción de Thompson agrega como máximo dos estados por nodo del árbol, así que el
+// AFN crece linealmente con el patrón. Los números de abajo se contaron a partir de las reglas,
+// no a partir de la salida.
 func TestAutomataSizes(t *testing.T) {
 	cases := []struct {
 		pattern          string
@@ -241,6 +250,9 @@ func TestAutomataSizes(t *testing.T) {
 // PT: O padrão "o 14º byte a partir do fim é um a" precisa de um AFD que lembre os últimos 14
 // bytes: 2^14 estados. A construção precisa parar com um erro em vez de usar toda a memória,
 // enquanto o AFN, que tem apenas algumas dezenas de estados, continua respondendo.
+// ES: El patrón "el byte 14 desde el final es una a" necesita un AFD que recuerde los últimos 14
+// bytes: 2^14 estados. La construcción debe detenerse con un error en lugar de usar toda la
+// memoria, mientras que el AFN, que tiene solo unas pocas decenas de estados, sigue respondiendo.
 func TestExponentialDFAIsRefused(t *testing.T) {
 	pattern := "(a|b)*a" + strings.Repeat("(a|b)", 13)
 	if _, err := New(pattern); err == nil {

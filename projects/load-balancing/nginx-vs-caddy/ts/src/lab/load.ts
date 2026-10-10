@@ -2,6 +2,8 @@
 //     need more than totals: which instance answered, and when.
 // PT: Dois geradores de carga pequenos. Eles guardam uma amostra por requisição, porque os
 //     experimentos precisam de mais que totais: qual instância respondeu, e quando.
+// ES: Dos generadores de carga pequeños. Guardan una muestra por solicitud, porque los
+//     experimentos necesitan más que totales: qué instancia respondió, y cuándo.
 
 export interface Sample {
 	/** Position of the request in the order of sending, from 0. */
@@ -55,6 +57,10 @@ export interface ClosedLoopOptions {
 //     quando a anterior foi respondida. O número de requisições em andamento é constante, então
 //     um back end lento recebe menos requisições por segundo. É o modelo por trás das fatias
 //     esperadas do least connections.
+// ES: Lazo cerrado: un número fijo de trabajadores, y cada uno solo envía la siguiente solicitud
+//     cuando se respondió la anterior. El número de solicitudes en curso es constante, así que un
+//     back end lento recibe menos solicitudes por segundo. Es el modelo detrás de las partes
+//     esperadas del least connections.
 export async function closedLoop(options: ClosedLoopOptions): Promise<Sample[]> {
 	const samples: Sample[] = [];
 	const origin = performance.now();
@@ -93,6 +99,9 @@ export interface OpenLoopResult {
 //     não, como usuários independentes. Um laço fechado desaceleraria quando o sistema falha e
 //     esconderia a falha. Este continua chegando, então toda requisição perdida ou atrasada é
 //     contada.
+// ES: Lazo abierto: las solicitudes salen a un ritmo fijo, se hayan respondido o no las anteriores,
+//     como usuarios independientes. Un lazo cerrado se desaceleraría cuando el sistema falla y
+//     ocultaría la falla. Este sigue llegando, así que toda solicitud perdida o retrasada se cuenta.
 export async function openLoop(options: OpenLoopOptions): Promise<OpenLoopResult> {
 	const pending: Promise<Sample>[] = [];
 	const intervalMs = 1000 / options.ratePerSecond;

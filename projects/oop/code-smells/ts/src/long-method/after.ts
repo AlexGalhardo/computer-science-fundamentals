@@ -6,6 +6,9 @@ import type { FormatReceipt, Order, OrderItem } from "./contract";
 // PT: REFATORADO com Extrair Método. Cada bloco da versão longa virou uma função cujo nome diz o
 //     que o comentário dizia. `formatReceipt` agora se lê como um resumo, e cada regra pode ser
 //     chamada, e testada, sozinha.
+// ES: REFACTORIZADO con Extraer Método. Cada bloque de la versión larga se volvió una función
+//     cuyo nombre dice lo que decía el comentario. `formatReceipt` ahora se lee como un
+//     resumen, y cada regla puede llamarse, y probarse, sola.
 
 const FREE_SHIPPING_FROM_CENTS = 10000;
 const SHIPPING_CENTS = 1500;

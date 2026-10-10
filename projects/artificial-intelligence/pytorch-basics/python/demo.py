@@ -9,6 +9,12 @@ results/.
 
 `results.md`, `loss.csv` e `loss-curve.svg` são determinísticos (sementes fixas). `timing.md`
 guarda tempos de relógio, que mudam de máquina para máquina e de execução para execução.
+
+ES: `python demo.py` comprueba los gradientes, entrena la red, compara las dos versiones y escribe
+todo en results/.
+
+`results.md`, `loss.csv` y `loss-curve.svg` son deterministas (semillas fijas). `timing.md` guarda
+tiempos de reloj, que cambian de una máquina a otra y de una ejecución a otra.
 """
 
 import os
@@ -46,6 +52,9 @@ def train_from_scratch_weights() -> Run:
     """EN: PyTorch starting from the very weights MP-AI-2 starts with (its seed 7), in 64 bits.
 
     PT: O PyTorch partindo exatamente dos pesos com que o MP-AI-2 começa (a semente 7 dele), em
+    64 bits.
+
+    ES: PyTorch partiendo exactamente de los pesos con que empieza MP-AI-2 (su semilla 7), en
     64 bits.
     """
     model = copy_scratch_weights(MLP(2, [8, 8, 1], seed=MOONS_SEED))
@@ -200,6 +209,8 @@ def render_timing(measurement: Measurement, copied: Run) -> str:
     #     weights must be the same curve.
     # PT: As perdas feitas à mão da execução medida e as perdas do PyTorch a partir dos mesmos
     #     pesos iniciais precisam ser a mesma curva.
+    # ES: Las pérdidas hechas a mano de la ejecución medida y las pérdidas de PyTorch a partir de
+    #     los mismos pesos iniciales tienen que ser la misma curva.
     curve_gap = largest_gap(measurement.scratch_losses, copied.losses[:epochs])
     lines = [
         "# Timing: from scratch against PyTorch",

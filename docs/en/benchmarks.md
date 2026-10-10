@@ -1,6 +1,6 @@
 # Benchmarks
 
-> Versão em português: [docs/pt/benchmarks.md](../pt/benchmarks.md)
+> Versão em português: [docs/pt/benchmarks.md](../pt/benchmarks.md) · Versión en español: [docs/es/benchmarks.md](../es/benchmarks.md)
 
 One contract and one runner for every benchmark of the repository, so a result in C++ and a result in Python can sit in the same table. Rules: [.claude/rules/load-tests.md](../../.claude/rules/load-tests.md).
 

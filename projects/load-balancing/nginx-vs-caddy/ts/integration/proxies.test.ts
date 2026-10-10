@@ -13,6 +13,8 @@ import {
 //     (`docker compose run --rm lab-test`), on the internal network.
 // PT: Estes testes precisam da pilha inteira, então rodam só dentro do docker-compose
 //     (`docker compose run --rm lab-test`), na rede interna.
+// ES: Estas pruebas necesitan la pila completa, así que corren solo dentro de docker-compose
+//     (`docker compose run --rm lab-test`), en la red interna.
 
 const config = loadConfig(process.env);
 const PROXIES: ProxyName[] = ["nginx", "caddy"];
@@ -41,6 +43,8 @@ for (const proxy of PROXIES) {
 //     hashed, so two clients of the same /24 network always share a server.
 // PT: O detalhe documentado do NGINX: só os três primeiros octetos de um endereço IPv4 entram
 //     no hash, então dois clientes da mesma rede /24 sempre dividem um servidor.
+// ES: El detalle documentado de NGINX: solo los tres primeros octetos de una dirección IPv4
+//     entran en el hash, así que dos clientes de la misma red /24 siempre comparten un servidor.
 test("nginx: ip_hash sends a whole /24 network to one instance", async () => {
 	for (let network = 0; network < 40; network++) {
 		const instances = new Set<string | null>();
@@ -56,6 +60,7 @@ test("nginx: ip_hash sends a whole /24 network to one instance", async () => {
 
 // EN: A shorter failure run than the one of the report: the failure lasts 3 s inside 7 s.
 // PT: Uma execução de falha mais curta que a do relatório: a falha dura 3 s dentro de 7 s.
+// ES: Una ejecución de falla más corta que la del informe: la falla dura 3 s dentro de 7 s.
 const quick: FailureOptions = {
 	ratePerSecond: 100,
 	durationMs: 7000,

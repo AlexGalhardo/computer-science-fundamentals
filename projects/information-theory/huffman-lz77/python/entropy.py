@@ -12,6 +12,11 @@ from collections import Counter
 #     valor, e não o que vem antes dele. O resultado é o número médio de bits por byte que
 #     qualquer código símbolo a símbolo (como Huffman) precisa no mínimo. Vai de 0 (um único
 #     valor) a 8 (os 256 valores igualmente frequentes).
+# ES: Entropía de Shannon de orden 0, H = suma de p * log2(1/p) sobre los valores de byte que
+#     aparecen. "Orden 0" significa que cada byte se mira por separado: solo importa la
+#     frecuencia del valor, y no lo que viene antes. El resultado es el número promedio de bits
+#     por byte que cualquier código símbolo a símbolo (como Huffman) necesita como mínimo. Va de
+#     0 (un único valor) a 8 (los 256 valores igualmente frecuentes).
 def bits_per_byte(data: bytes) -> float:
     if not data:
         return 0.0
@@ -20,5 +25,8 @@ def bits_per_byte(data: bytes) -> float:
 
 
 def bound_bytes(data: bytes) -> float:
-    """EN: The entropy bound for the whole input, in bytes. PT: O limite para a entrada toda."""
+    """EN: The entropy bound for the whole input, in bytes.
+    PT: O limite para a entrada toda.
+    ES: El límite para toda la entrada.
+    """
     return bits_per_byte(data) * len(data) / 8

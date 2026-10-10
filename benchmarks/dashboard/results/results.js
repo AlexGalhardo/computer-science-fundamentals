@@ -1,5 +1,5 @@
 window.BENCH_DATA = {
-	"generatedAt": "2026-10-08T00:33:34.382Z",
+	"generatedAt": "2026-10-10T09:28:07.747Z",
 	"languages": [
 		"cpp",
 		"rust",

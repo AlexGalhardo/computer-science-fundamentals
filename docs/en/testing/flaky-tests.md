@@ -1,6 +1,6 @@
 # Flaky test lab (MP-TEST-4)
 
-> Versão em português: [docs/pt/testing/flaky-tests.md](../../pt/testing/flaky-tests.md)
+> Versão em português: [docs/pt/testing/flaky-tests.md](../../pt/testing/flaky-tests.md) · Versión en español: [docs/es/testing/flaky-tests.md](../../es/testing/flaky-tests.md)
 
 Mini-project: [`projects/testing/flaky-tests`](../../../projects/testing/flaky-tests/README.md). Quiz topics: `flaky-tests`, `test-doubles`, `unit-tests-isolation`.
 

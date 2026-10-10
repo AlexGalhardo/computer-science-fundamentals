@@ -5,6 +5,10 @@ doing what was written by hand.
 PT: A mesma rede, três formas de obter os seus gradientes: a retropropagação escrita à mão do
 MP-AI-2, o `backward()` do PyTorch e o gradiente numérico. Se as três concordam, o framework está
 fazendo o que foi escrito à mão.
+
+ES: La misma red, tres formas de obtener sus gradientes: la retropropagación escrita a mano de
+MP-AI-2, el `backward()` de PyTorch y el gradiente numérico. Si las tres coinciden, el framework
+está haciendo lo que se escribió a mano.
 """
 
 from dataclasses import dataclass
@@ -25,6 +29,8 @@ def copy_scratch_weights(scratch: MLP) -> MoonsNet:
     """EN: A PyTorch network with exactly the weights of a from-scratch network.
 
     PT: Uma rede do PyTorch com exatamente os pesos de uma rede feita à mão.
+
+    ES: Una red de PyTorch con exactamente los pesos de una red hecha a mano.
     """
     # EN: Python floats have 64 bits and PyTorch uses 32 bits by default. `.double()` turns
     #     the parameters into 64-bit floats, so both networks compute with the same precision
@@ -32,12 +38,17 @@ def copy_scratch_weights(scratch: MLP) -> MoonsNet:
     # PT: Os floats do Python têm 64 bits e o PyTorch usa 32 bits por padrão. O `.double()`
     #     transforma os parâmetros em floats de 64 bits, então as duas redes calculam com a
     #     mesma precisão e a comparação pode ser apertada.
+    # ES: Los floats de Python tienen 64 bits y PyTorch usa 32 bits por defecto. `.double()`
+    #     convierte los parámetros en floats de 64 bits, así que las dos redes calculan con la
+    #     misma precisión y la comparación puede ser ajustada.
     model = MoonsNet().double()
     linears = [model.hidden1, model.hidden2, model.output]
     # EN: Writing into a parameter is not part of the computation, so it is done under
     #     `no_grad`. Row i of the weight matrix is neuron i of the from-scratch layer.
     # PT: Escrever em um parâmetro não faz parte do cálculo, então é feito sob `no_grad`. A
     #     linha i da matriz de pesos é o neurônio i da camada feita à mão.
+    # ES: Escribir en un parámetro no forma parte del cálculo, así que se hace bajo `no_grad`. La
+    #     fila i de la matriz de pesos es la neurona i de la capa hecha a mano.
     with torch.no_grad():
         for linear, layer in zip(linears, scratch.layers, strict=True):
             weights = [[weight.data for weight in neuron.weights] for neuron in layer.neurons]
@@ -53,6 +64,9 @@ def flatten(pairs: list[tuple[torch.Tensor, torch.Tensor]]) -> list[float]:
 
     PT: Os tensores (peso, viés) de cada camada como uma lista só, na ordem que o MP-AI-2 usa:
     camada por camada, neurônio por neurônio, os pesos do neurônio e depois o seu viés.
+
+    ES: Los tensores (peso, sesgo) de cada capa como una sola lista, en el orden que usa MP-AI-2:
+    capa por capa, neurona por neurona, los pesos de la neurona y luego su sesgo.
     """
     values: list[float] = []
     for weight, bias in pairs:
@@ -97,6 +111,12 @@ def numerical_gradients(
     Não usa cálculo nenhum, só a definição de inclinação: mexe um peso e vê como a perda se move.
     É lento (duas passadas de ida por parâmetro) e um pouco impreciso, então nunca é usado para
     treinar, só para conferir os outros dois.
+
+    ES: Diferencias centradas, (L(w + h) - L(w - h)) / 2h, un parámetro a la vez.
+
+    No usa ningún cálculo, solo la definición de pendiente: mueve un peso y ve cómo se mueve la
+    pérdida. Es lento (dos pasadas de ida por parámetro) y un poco impreciso, así que nunca se usa
+    para entrenar, solo para comprobar los otros dos.
     """
     loss_fn = nn.BCEWithLogitsLoss()
     pairs: list[tuple[torch.Tensor, torch.Tensor]] = []
@@ -109,6 +129,8 @@ def numerical_gradients(
                 #     the parameter itself.
                 # PT: `view(-1)` enxerga a mesma memória como uma lista plana, então escrever
                 #     nela muda o próprio parâmetro.
+                # ES: `view(-1)` ve la misma memoria como una lista plana, así que escribir en
+                #     ella cambia el propio parámetro.
                 flat, flat_slope = parameter.view(-1), slope.view(-1)
                 for index in range(flat.numel()):
                     original = flat[index].item()
@@ -129,7 +151,12 @@ def largest_gap(left: list[float], right: list[float]) -> float:
 
 @dataclass
 class GradientCheck:
-    """EN: The three gradients of one network. PT: Os três gradientes de uma mesma rede."""
+    """EN: The three gradients of one network.
+
+    PT: Os três gradientes de uma mesma rede.
+
+    ES: Los tres gradientes de una misma red.
+    """
 
     points: int
     scratch_loss: float
@@ -145,6 +172,9 @@ def check_gradients(seed: int = MOONS_SEED) -> GradientCheck:
 
     PT: Constrói a rede 2-8-8-1 do MP-AI-2 com a semente dada, copia-a para o PyTorch e calcula
     o gradiente da perda nos 80 pontos de treino das três formas.
+
+    ES: Construye la red 2-8-8-1 de MP-AI-2 con la semilla dada, la copia en PyTorch y calcula el
+    gradiente de la pérdida en los 80 puntos de entrenamiento de las tres maneras.
     """
     torch.set_num_threads(THREADS)
     points, labels = moons_train()

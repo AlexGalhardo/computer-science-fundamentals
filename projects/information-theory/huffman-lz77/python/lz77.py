@@ -5,6 +5,9 @@ from huffman import DecodeError
 # PT: Até onde para trás uma repetição pode começar, e que comprimento pode ter. O deslocamento
 #     ocupa 2 bytes e o comprimento 1 byte, então um token (deslocamento, comprimento, literal)
 #     ocupa 4 bytes.
+# ES: Hasta dónde hacia atrás puede empezar una repetición, y qué longitud puede tener. El
+#     desplazamiento ocupa 2 bytes y la longitud 1 byte, así que un token (desplazamiento,
+#     longitud, literal) ocupa 4 bytes.
 WINDOW = 4096
 MAX_LENGTH = 255
 MIN_LENGTH = 3
@@ -14,6 +17,8 @@ TOKEN_LEN = 4
 #     `literal`". Offset 0 and length 0 mean "nothing to copy, just the literal".
 # PT: Um passo da saída: "copie `length` bytes começando `offset` bytes atrás, depois escreva
 #     `literal`". Deslocamento 0 e comprimento 0 significam "nada a copiar, só o literal".
+# ES: Un paso de la salida: "copia `length` bytes empezando `offset` bytes atrás, luego escribe
+#     `literal`". Desplazamiento 0 y longitud 0 significan "nada que copiar, solo el literal".
 Token = tuple[int, int, int]
 
 
@@ -31,6 +36,13 @@ Token = tuple[int, int, int]
 #     Os candidatos são testados do mais próximo ao mais distante e uma repetição mais longa
 #     vence, então em caso de empate fica a mais próxima. A versão em Rust segue a mesma regra
 #     e produz os mesmos tokens.
+# ES: LZ77 usa los datos ya vistos como diccionario. En cada posición busca el tramo más largo,
+#     que empiece dentro de la ventana detrás de ella, que sea igual a los bytes que vienen.
+#     Buscar en todas las posiciones de la ventana sería lento, así que un índice recuerda
+#     dónde empezó cada grupo de 3 bytes: toda repetición de 3 bytes o más debe empezar en uno
+#     de esos lugares. Los candidatos se prueban del más cercano al más lejano y una repetición
+#     más larga gana, así que en caso de empate se queda la más cercana. La versión en Rust
+#     sigue la misma regla y produce los mismos tokens.
 def tokenize(data: bytes) -> list[Token]:
     tokens: list[Token] = []
     index: dict[bytes, list[int]] = {}
@@ -39,6 +51,7 @@ def tokenize(data: bytes) -> list[Token]:
     while position < len(data):
         # EN: Every token ends with a literal, so the match must leave one byte for it.
         # PT: Todo token termina com um literal, então a repetição precisa deixar um byte para ele.
+        # ES: Todo token termina con un literal, así que la repetición debe dejarle un byte.
         limit = min(MAX_LENGTH, len(data) - position - 1)
         best_length = 0
         best_offset = 0
@@ -52,6 +65,9 @@ def tokenize(data: bytes) -> list[Token]:
                 # PT: A comparação pode passar de `position`: a cópia pode se sobrepor aos bytes
                 #     que ela mesma está produzindo, e é assim que uma sequência longa é
                 #     codificada.
+                # ES: La comparación puede pasar de `position`: la copia puede superponerse a los
+                #     bytes que ella misma está produciendo, y así se codifica una secuencia
+                #     larga.
                 length = 0
                 while length < limit and data[start + length] == data[position + length]:
                     length += 1
@@ -65,6 +81,7 @@ def tokenize(data: bytes) -> list[Token]:
 
         # EN: Every position that was just consumed becomes a possible start of a later match.
         # PT: Cada posição recém-consumida vira um possível início de uma repetição futura.
+        # ES: Cada posición recién consumida se vuelve un posible inicio de una repetición futura.
         for start in range(position, position + best_length + 1):
             if start + MIN_LENGTH <= len(data):
                 index.setdefault(data[start : start + MIN_LENGTH], []).append(start)
@@ -74,6 +91,7 @@ def tokenize(data: bytes) -> list[Token]:
 
 # EN: File format: 8 bytes with the original size, then 4 bytes per token.
 # PT: Formato do arquivo: 8 bytes com o tamanho original, depois 4 bytes por token.
+# ES: Formato del archivo: 8 bytes con el tamaño original, luego 4 bytes por token.
 def encode(data: bytes) -> bytes:
     out = bytearray(len(data).to_bytes(8, "little"))
     for offset, length, literal in tokenize(data):
@@ -87,6 +105,8 @@ def encode(data: bytes) -> bytes:
 #     much faster than compression.
 # PT: Decodificar não exige busca nem índice: só copia. É por isso que a descompressão do LZ77
 #     é muito mais rápida que a compressão.
+# ES: Decodificar no exige búsqueda ni índice: solo copia. Por eso la descompresión de LZ77 es
+#     mucho más rápida que la compresión.
 def expand(tokens: list[Token]) -> bytes:
     out = bytearray()
     for offset, length, literal in tokens:
@@ -96,6 +116,8 @@ def expand(tokens: list[Token]) -> bytes:
         #     this same loop has just written.
         # PT: Um byte por vez de propósito: com comprimento > deslocamento a cópia lê bytes que
         #     este mesmo laço acabou de escrever.
+        # ES: Un byte a la vez a propósito: con longitud > desplazamiento la copia lee bytes que
+        #     este mismo bucle acaba de escribir.
         for _ in range(length):
             out.append(out[-offset])
         out.append(literal)

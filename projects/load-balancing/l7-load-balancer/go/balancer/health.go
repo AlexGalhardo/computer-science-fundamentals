@@ -18,6 +18,11 @@ import (
 // sucedida fica em rotação por até um intervalo (vezes FailAfter), a não ser que uma
 // requisição com falha o remova antes. Um intervalo menor encontra falhas mais cedo e custa
 // mais sondas.
+//
+// ES: El intervalo es el precio de la detección. Un back end que muere justo después de una
+// sonda exitosa permanece en rotación hasta por un intervalo (por FailAfter), a menos que una
+// solicitud fallida lo saque antes. Un intervalo menor encuentra fallas antes y cuesta más
+// sondas.
 type Checker struct {
 	Pool     *Pool
 	Path     string
@@ -78,6 +83,8 @@ func (c *Checker) CheckOnce(ctx context.Context) {
 // process can accept connections and still be unable to answer.
 // PT: Vivo significa "responde 200 no caminho de saúde a tempo". Uma porta aberta não basta:
 // um processo pode aceitar conexões e ainda assim não conseguir responder.
+// ES: Vivo significa "responde 200 en la ruta de salud a tiempo". Un puerto abierto no basta:
+// un proceso puede aceptar conexiones y aun así no poder responder.
 func (c *Checker) probe(ctx context.Context, backend *Backend) bool {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, backend.URL.String()+c.Path, http.NoBody)
 	if err != nil {
@@ -95,6 +102,8 @@ func (c *Checker) probe(ctx context.Context, backend *Backend) bool {
 // end that answers one probe in two would otherwise enter and leave the rotation forever.
 // PT: Exigir vários resultados seguidos antes de mudar o estado evita o flapping: um back end
 // que responde uma sonda em cada duas entraria e sairia da rotação para sempre.
+// ES: Exigir varios resultados seguidos antes de cambiar el estado evita el flapping: un back
+// end que responde una sonda de cada dos entraría y saldría de la rotación para siempre.
 func (c *Checker) record(index int, backend *Backend, alive bool) {
 	count := &c.counts[index]
 	if alive {

@@ -1,6 +1,6 @@
 # ten-thousand-connections
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 O mesmo pequeno servidor HTTP escrito três vezes: em um event loop (TypeScript no Bun), com uma goroutine por conexão (Go) e com um processo da BEAM por conexão (Elixir). Depois, um cenário local do k6 abre 10.000 conexões contra cada um, mantém todas abertas e ociosas por 30 segundos e mede quanta memória cada conexão custa e se o servidor continua respondendo rápido enquanto isso.
 
@@ -85,7 +85,7 @@ O segundo comando roda o k6 contra um servidor por vez e escreve [results/result
 
 A linha do tempo de uma execução:
 
-```
+```text
 0s          10s                                  40s
 hold  |-- 10.000 conexões abrem, 500 por vez, e cada uma fica aberta por 30 s --|
 echo            |-- 50 POST /echo por segundo durante 12 s, latência registrada --|

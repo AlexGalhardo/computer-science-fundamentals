@@ -18,6 +18,8 @@ import { newEvent } from "../src/shared/events";
 //     containers, and the tests talk to them from the outside.
 // PT: Testes de ponta a ponta: os dois serviços, seus dois bancos e o broker são contêineres de
 //     verdade, e os testes falam com eles de fora.
+// ES: Pruebas de extremo a extremo: los dos servicios, sus dos bases de datos y el broker son contenedores de
+//     verdad, y las pruebas hablan con ellos desde afuera.
 const config = loadConfig();
 const lab: Lab = { orderServiceUrl: config.ORDER_SERVICE_URL, paymentServiceUrl: config.PAYMENT_SERVICE_URL };
 let broker: Broker;
@@ -71,6 +73,8 @@ describe("crash injected between the database write and the publish", () => {
 		//     nothing will ever move this order out of PENDING.
 		// PT: A escrita sobreviveu à queda, o evento não: nenhum pagamento foi criado e nada
 		//     jamais vai tirar este pedido de PENDING.
+		// ES: La escritura sobrevivió a la caída, el evento no: no se creó ningún pago y nada
+		//     sacará jamás este pedido de PENDING.
 		expect(outcome.order?.status).toBe("PENDING");
 		expect(outcome.payment).toBeNull();
 	}, 90_000);
@@ -99,6 +103,8 @@ describe("idempotency", () => {
 		//     crash or a relay that died before marking the row as published.
 		// PT: O mesmo evento, com o mesmo id, três vezes: o que um broker faz depois de uma queda
 		//     do consumidor ou de um relay que morreu antes de marcar a linha como publicada.
+		// ES: El mismo evento, con el mismo id, tres veces: lo que hace un broker después de una caída
+		//     del consumidor o de un relay que murió antes de marcar la fila como publicada.
 		await broker.publish(event);
 		await broker.publish(event);
 		await broker.publish(event);
@@ -120,6 +126,8 @@ describe("idempotency", () => {
 		//     with the order that already exists.
 		// PT: A nova tentativa até leva um id de pedido diferente: a chave decide, e a resposta é
 		//     200 com o pedido que já existe.
+		// ES: El reintento incluso lleva un id de pedido diferente: la clave decide, y la respuesta es
+		//     200 con el pedido que ya existe.
 		const second = crypto.randomUUID();
 		expect(await postOrder(lab, { ...request, orderId: second }, key)).toBe(200);
 		expect(await getOrder(lab, second)).toBeNull();

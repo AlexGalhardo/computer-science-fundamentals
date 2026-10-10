@@ -20,6 +20,8 @@ describe("comparison counters", () => {
 	//     sort, heapsort and quicksort never fall below lg(n!).
 	// PT: Aceite de MP-BIGO-3.2: em 1.000 entradas aleatórias, as comparações contadas de merge
 	//     sort, heapsort e quicksort nunca ficam abaixo de lg(n!).
+	// ES: Aceptación de MP-BIGO-3.2: en 1,000 entradas aleatorias, las comparaciones contadas de
+	//     merge sort, heapsort y quicksort nunca quedan por debajo de lg(n!).
 	test("counted comparisons never fall below lg(n!) on 1,000 random inputs", () => {
 		expect(report.inputs).toBe(1000);
 		const rows = report.rows.filter((row) => COMPARISON_NAMES.includes(row.algorithm));
@@ -34,6 +36,8 @@ describe("comparison counters", () => {
 	//     least ceil(lg n!). A single lucky input may need fewer comparisons, and it does.
 	// PT: O que o teorema realmente promete, conferido em todas as permutações: o pior caso é
 	//     pelo menos ceil(lg n!). Uma entrada de sorte pode precisar de menos comparações, e precisa.
+	// ES: Lo que el teorema realmente promete, comprobado en todas las permutaciones: el peor caso
+	//     es al menos ceil(lg n!). Una entrada con suerte puede necesitar menos comparaciones, y las necesita.
 	test("worst case over all permutations is at or above the bound", () => {
 		for (const n of [2, 3, 4, 5, 6, 7]) {
 			for (const row of exhaustive(n)) {
@@ -50,6 +54,8 @@ describe("sorts without comparisons", () => {
 	//     zero element comparisons, in the same table.
 	// PT: Aceite de MP-BIGO-3.3: counting sort e radix sort ordenam as mesmas entradas com
 	//     zero comparações entre elementos, na mesma tabela.
+	// ES: Aceptación de MP-BIGO-3.3: counting sort y radix sort ordenan las mismas entradas con
+	//     cero comparaciones entre elementos, en la misma tabla.
 	test("counting and radix sort are in the same table, sorted, with zero comparisons", () => {
 		for (const name of ["counting sort", "radix sort"]) {
 			const row = report.rows.find((item) => item.algorithm === name);

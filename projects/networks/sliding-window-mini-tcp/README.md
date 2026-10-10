@@ -1,6 +1,6 @@
 # sliding-window-mini-tcp
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How reliability is built on top of a channel that loses, duplicates and reorders packets. The mini-project has two parts:
 

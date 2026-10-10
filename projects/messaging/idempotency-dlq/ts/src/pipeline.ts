@@ -10,6 +10,8 @@
 //
 // PT: O lado do RabbitMQ: a topologia das filas, o publicador e o consumidor com retentativa,
 //     backoff e dead-lettering (o desenho acima mostra o caminho de uma mensagem).
+// ES: El lado de RabbitMQ: la topología de las colas, el publicador y el consumidor con reintento,
+//     backoff y dead-lettering (el dibujo de arriba muestra el camino de un mensaje).
 
 import { type ChannelModel, type ConfirmChannel, type ConsumeMessage, connect } from "amqplib";
 import { backoffDelay, type Payment, paymentSchema } from "./core";
@@ -61,6 +63,8 @@ export async function declareTopology(channel: ConfirmChannel, names: Topology, 
 	//     exchange and lands in the dead-letter queue, where a person can inspect it.
 	// PT: Uma mensagem rejeitada sem requeue sai da fila de trabalho pela dead-letter exchange e
 	//     cai na dead-letter queue, onde uma pessoa pode inspecioná-la.
+	// ES: Un mensaje rechazado sin requeue sale de la cola de trabajo por su dead-letter exchange
+	//     y cae en la dead-letter queue, donde una persona puede inspeccionarlo.
 	await channel.assertQueue(names.work, {
 		durable: true,
 		deadLetterExchange: names.deadExchange,
@@ -77,6 +81,11 @@ export async function declareTopology(channel: ConfirmChannel, names: Topology, 
 	//     fila, então misturar esperas de 100 ms e 400 ms em uma fila prenderia a curta atrás da
 	//     longa. Uma fila por atraso mantém cada espera exata. Ninguém consome estas filas:
 	//     quando o TTL acaba, a mensagem volta por dead-letter para a exchange de trabalho.
+	// ES: Una cola de espera por cada paso del backoff. RabbitMQ solo expira mensajes en la
+	//     cabeza de una cola, así que mezclar esperas de 100 ms y 400 ms en una sola cola dejaría
+	//     la corta detrás de la larga. Una cola por retraso mantiene cada espera exacta. Nadie
+	//     consume estas colas: cuando termina el TTL, el mensaje vuelve por dead-letter al
+	//     exchange de trabajo.
 	for (let attempt = 1; attempt < policy.maxAttempts; attempt += 1) {
 		await channel.assertQueue(names.retry(attempt), {
 			durable: true,
@@ -88,6 +97,9 @@ export async function declareTopology(channel: ConfirmChannel, names: Topology, 
 			// PT: Sem isto, a mensagem manteria a routing key com que foi publicada (o nome da
 			//     fila de espera), não casaria com nenhum binding da exchange de trabalho e
 			//     seria descartada em silêncio.
+			// ES: Sin esto, el mensaje conservaría la routing key con la que se publicó (el nombre
+			//     de la cola de espera), no coincidiría con ningún binding del exchange de trabajo
+			//     y se descartaría en silencio.
 			deadLetterRoutingKey: WORK_KEY,
 		});
 	}
@@ -162,6 +174,8 @@ export async function startConsumer(connection: ChannelModel, options: ConsumerO
 			//     It goes straight to the dead-letter queue, without spending attempts.
 			// PT: Falha permanente: o payload é inválido e será inválido em toda retentativa.
 			//     Vai direto para a dead-letter queue, sem gastar tentativas.
+			// ES: Fallo permanente: el payload es inválido y lo será en cada reintento. Va directo a
+			//     la dead-letter queue, sin gastar intentos.
 			stats.deadLettered += 1;
 			channel.nack(message, false, false);
 			return;
@@ -192,6 +206,10 @@ export async function startConsumer(connection: ChannelModel, options: ConsumerO
 			//     levando o número da tentativa. Ela é confirmada pelo broker ANTES de a
 			//     original receber ack, então uma queda no meio duplica a mensagem em vez de
 			//     perdê-la. Duplicatas não são problema: o handler é idempotente.
+			// ES: Reintentar después, no ahora: la copia va a la cola de espera de este intento,
+			//     llevando el número del intento. El broker la confirma ANTES de que el original
+			//     reciba ack, así que una caída en medio duplica el mensaje en lugar de perderlo.
+			//     Los duplicados no son un problema: el handler es idempotente.
 			channel.sendToQueue(names.retry(attempt), message.content, {
 				persistent: true,
 				messageId: id,
@@ -207,6 +225,8 @@ export async function startConsumer(connection: ChannelModel, options: ConsumerO
 			//     the broker does when a consumer dies holding a message.
 			// PT: O efeito foi confirmado e o ack se "perdeu". O requeue faz o papel do que o
 			//     broker faz quando um consumidor morre segurando uma mensagem.
+			// ES: El efecto está confirmado y el ack se "perdió". El requeue hace el papel de lo que
+			//     hace el broker cuando un consumidor muere sosteniendo un mensaje.
 			channel.nack(message, false, true);
 			return;
 		}

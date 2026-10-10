@@ -4,6 +4,9 @@
 // PT: Calculadora de sub-redes IPv4. Um endereço é um número de 32 bits, um prefixo /n diz que os
 //     primeiros n bits identificam a rede e os 32 - n bits restantes identificam a máquina dentro
 //     dela. Tudo o que vem abaixo é aritmética de bits sobre esse único número.
+// ES: Calculadora de subredes IPv4. Una dirección es un número de 32 bits, un prefijo /n dice que
+//     los primeros n bits nombran la red y los 32 - n bits restantes nombran el host dentro de
+//     ella. Todo lo que viene abajo es aritmética de bits sobre ese único número.
 
 export interface Subnet {
 	/** The address as given, for example 192.168.10.77. */
@@ -34,6 +37,8 @@ export function parseIpv4(text: string): number {
 		//     operators work on signed 32-bit integers, so 192 << 24 is negative.
 		// PT: Multiplicar em vez de deslocar mantém o número positivo. Em JavaScript os operadores
 		//     de bits trabalham com inteiros de 32 bits com sinal, então 192 << 24 é negativo.
+		// ES: Multiplicar en lugar de desplazar mantiene el número positivo. En JavaScript los
+		//     operadores de bits trabajan con enteros de 32 bits con signo, así que 192 << 24 es negativo.
 		value = value * 256 + octet;
 	}
 	return value;
@@ -55,6 +60,9 @@ export function maskOf(prefix: number): number {
 	// PT: Duas armadilhas do JavaScript em uma linha. O número de posições de um deslocamento é
 	//     tomado módulo 32, então deslocar 32 não faz nada e o /0 precisa de um caso próprio. E o
 	//     resultado de << tem sinal, então >>> 0 o transforma de volta em número sem sinal.
+	// ES: Dos trampas de JavaScript en una línea. El número de posiciones de un desplazamiento se
+	//     toma módulo 32, así que desplazar 32 no hace nada y el /0 necesita un caso propio. Y el
+	//     resultado de << tiene signo, así que >>> 0 lo convierte de nuevo en un número sin signo.
 	return prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
 }
 
@@ -72,6 +80,8 @@ export function describe(cidr: string): Subnet {
 	//     inverted mask sets every host bit: that is the broadcast address.
 	// PT: O E lógico com a máscara zera os bits de máquina: esse é o endereço da rede. O OU com a
 	//     máscara invertida liga todos os bits de máquina: esse é o endereço de broadcast.
+	// ES: El Y lógico con la máscara pone en cero los bits de host: esa es la dirección de la red. El
+	//     O con la máscara invertida enciende todos los bits de host: esa es la dirección de broadcast.
 	const network = (address & mask) >>> 0;
 	const broadcast = (network | ~mask) >>> 0;
 	const size = 2 ** (32 - prefix);
@@ -82,6 +92,9 @@ export function describe(cidr: string): Subnet {
 	// PT: Normalmente o primeiro e o último endereço do bloco são reservados (rede e broadcast), o
 	//     que deixa size - 2 máquinas. Duas exceções: um /31 é um enlace ponto a ponto em que os
 	//     dois endereços são utilizáveis (RFC 3021), e um /32 é uma única máquina.
+	// ES: Normalmente la primera y la última dirección del bloque están reservadas (red y
+	//     broadcast), lo que deja size - 2 hosts. Dos excepciones: un /31 es un enlace punto a
+	//     punto en el que ambas direcciones son utilizables (RFC 3021), y un /32 es un único host.
 	const reserved = prefix >= 31 ? 0 : 1;
 	return {
 		address: formatIpv4(address),
@@ -110,6 +123,7 @@ export function split(cidr: string, newPrefix: number): string[] {
 	}
 	// EN: Each extra bit in the prefix halves the block, so k extra bits give 2^k subnets.
 	// PT: Cada bit a mais no prefixo divide o bloco ao meio, então k bits a mais dão 2^k sub-redes.
+	// ES: Cada bit extra en el prefijo divide el bloque a la mitad, así que k bits extra dan 2^k subredes.
 	const count = 2 ** (newPrefix - subnet.prefix);
 	if (count > 1024) {
 		throw new Error(`splitting /${subnet.prefix} into /${newPrefix} would give ${count} subnets`);

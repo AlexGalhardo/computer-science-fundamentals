@@ -1,6 +1,6 @@
 # csrf-lab
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A browser attaches cookies to a request because of where the request **goes**, not because of which page asked for it. So a page on another site can make a logged-in browser send a request to your app, and the app sees a valid session. This is cross-site request forgery (CSRF). This lab shows it with real browsers: a fake "profile" app whose e-mail is changed by a second local origin, and then the same attempt refused by an anti-CSRF token, an explicit `SameSite` cookie and "state changes only through POST".
 

@@ -1,6 +1,6 @@
 # Queue, pub/sub and backpressure (MP-MSG-3)
 
-> Versão em português: [docs/pt/messaging/pubsub-backpressure.md](../../pt/messaging/pubsub-backpressure.md)
+> Versão em português: [docs/pt/messaging/pubsub-backpressure.md](../../pt/messaging/pubsub-backpressure.md) · Versión en español: [docs/es/messaging/pubsub-backpressure.md](../../es/messaging/pubsub-backpressure.md)
 
 Mini-project: [`projects/messaging/pubsub-backpressure`](../../../projects/messaging/pubsub-backpressure/README.md). Quiz topics: `queue-pubsub-stream`, `rabbitmq-exchanges-routing`, `backpressure`, `sqs-sns`.
 
@@ -48,7 +48,7 @@ The lab starts with 3,000 queued messages and a slow consumer. Without prefetch 
 
 GenStage builds the same idea into the protocol between stages. Data flows downstream, **demand flows upstream**:
 
-```
+```text
 producer  <---- "send me 10" ----  consumer
 producer  ----- 10 events ------>  consumer
 ```

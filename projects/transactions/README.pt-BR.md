@@ -1,6 +1,6 @@
 # Transações
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Uma transação agrupa várias operações para que tenham sucesso ou falhem juntas e não corrompam umas às outras quando executam ao mesmo tempo. ACID, níveis de isolamento, travas, concorrência multiversão e o log de escrita antecipada são como os bancos cumprem essa promessa, e sagas, o padrão outbox e a idempotência são como as aplicações a cumprem entre serviços, onde uma única transação de banco já não está disponível.
 

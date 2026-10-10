@@ -2,6 +2,8 @@
 //     check and the detection of the type from the leading bytes.
 // PT: Os dois blocos puros da correção, testados sozinhos, sem HTTP: a verificação de caminho
 //     canônico e a detecção do tipo pelos primeiros bytes.
+// ES: Los dos bloques puros de la corrección, probados por separado, sin HTTP: la verificación de ruta
+//     canónica y la detección del tipo por los primeros bytes.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";

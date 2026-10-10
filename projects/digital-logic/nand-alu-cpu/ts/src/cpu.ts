@@ -31,6 +31,11 @@ export interface TraceEntry extends CpuState {
 //     registrador de saída OUT e 16 células de memória. Tudo entre os registradores é lógica
 //     combinacional feita de NANDs. As únicas coisas dadas de graça são o clock e o conteúdo
 //     da ROM.
+// ES: Una máquina de acumulador de 4 bits. Todo su estado vive en registros hechos de
+//     flip-flops de NAND: el contador de programa PC, el acumulador A, las flags Z y C, el
+//     registro de salida OUT y 16 celdas de memoria. Todo lo que hay entre los registros es
+//     lógica combinacional hecha de NAND. Lo único que se da gratis son el clock y el contenido
+//     de la ROM.
 export class Cpu {
 	private readonly rom: Word[];
 	private readonly pc = new Register(DATA_WIDTH);
@@ -46,6 +51,8 @@ export class Cpu {
 		}
 		// EN: Unused ROM positions hold HLT, so a program that runs past its end stops.
 		// PT: As posições não usadas da ROM guardam HLT, então um programa que passa do fim para.
+		// ES: Las posiciones sin usar de la ROM guardan HLT, así que un programa que pasa del
+		//     final se detiene.
 		this.rom = Array.from({ length: PROGRAM_SIZE }, (_, address) =>
 			toWord(program[address] ?? OPCODES.HLT << 4, 8),
 		);
@@ -70,6 +77,11 @@ export class Cpu {
 	//     uma palavra da ROM), decodificação (o opcode liga uma de 16 linhas, e ORs dessas linhas
 	//     são os sinais de controle), execução (a ALU calcula) e a escolha do próximo PC. Só
 	//     então vem o pulso de clock, e todos os registradores capturam a entrada na mesma borda.
+	// ES: Un ciclo de clock. Primero se asienta la parte combinacional: búsqueda (el PC
+	//     selecciona una palabra de la ROM), decodificación (el opcode enciende una de 16 líneas,
+	//     y las OR de esas líneas son las señales de control), ejecución (la ALU calcula) y la
+	//     elección del siguiente PC. Solo entonces llega el pulso de clock, y todos los
+	//     registros capturan la entrada en el mismo flanco.
 	step(): { address: number; instruction: number; halted: boolean } {
 		const pc = this.pc.read();
 		const instruction = muxTree(pc, this.rom);
@@ -79,6 +91,7 @@ export class Cpu {
 
 		// EN: Control signals. Each one answers a yes/no question about the instruction.
 		// PT: Sinais de controle. Cada um responde a uma pergunta de sim ou não sobre a instrução.
+		// ES: Señales de control. Cada una responde a una pregunta de sí o no sobre la instrucción.
 		const loadA = orAll(
 			is(OPCODES.LDI),
 			is(OPCODES.LDA),
@@ -113,6 +126,9 @@ export class Cpu {
 		//     `useA` is 0, so every write to A goes through the ALU and updates the flags.
 		// PT: Caminho de dados. Uma carga é "0 + operando": as portas AND zeram a primeira entrada
 		//     da ALU quando `useA` vale 0, então toda escrita em A passa pela ALU e atualiza as flags.
+		// ES: Camino de datos. Una carga es "0 + operando": las compuertas AND ponen en cero la
+		//     primera entrada de la ALU cuando `useA` vale 0, así que toda escritura en A pasa
+		//     por la ALU y actualiza las flags.
 		const accumulator = this.a.read();
 		const fromRam = muxTree(
 			operand,
@@ -129,6 +145,9 @@ export class Cpu {
 		// PT: A borda do clock. Todas as entradas foram calculadas acima a partir dos valores
 		//     ANTIGOS dos registradores, então a ordem destas chamadas não importa: é uma
 		//     atualização simultânea.
+		// ES: El flanco del clock. Todas las entradas se calcularon arriba a partir de los valores
+		//     ANTIGUOS de los registros, así que el orden de estas llamadas no importa: es una
+		//     actualización simultánea.
 		this.ram.forEach((cell, address) => {
 			cell.pulse(accumulator, writeLine[address] ?? 0);
 		});
@@ -159,6 +178,9 @@ export class Cpu {
 //     can be compared byte for byte: both must print exactly results/trace.txt.
 // PT: O trace é texto puro com colunas fixas, para que as implementações em Go e em TypeScript
 //     possam ser comparadas byte a byte: as duas precisam imprimir exatamente results/trace.txt.
+// ES: El trace es texto plano con columnas fijas, para que las implementaciones en Go y en
+//     TypeScript puedan compararse byte a byte: las dos deben imprimir exactamente
+//     results/trace.txt.
 export function formatTrace(trace: readonly TraceEntry[]): string {
 	const pad = (value: number | string, width: number): string => String(value).padStart(width);
 	const lines = ["step  pc  instr    A     dec  Z C  m0  m1  m2  out"];

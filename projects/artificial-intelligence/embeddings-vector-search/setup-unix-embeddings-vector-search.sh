@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the embeddings-vector-search mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto embeddings-vector-search. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto embeddings-vector-search. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -12,6 +13,7 @@ fi
 
 # EN: The demo containers write ./results, so they run with the uid and gid of this user.
 # PT: Os containers das demos gravam ./results, então rodam com o uid e o gid deste usuário.
+# ES: Los contenedores de las demos escriben ./results, así que se ejecutan con el uid y el gid de este usuario.
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID
@@ -25,10 +27,13 @@ echo "embeddings-vector-search: all tests passed"
 #     rewrite ./results.
 # PT: As demos imprimem os vizinhos, a troca do índice e as passagens recuperadas, e regravam
 #     ./results.
+# ES: Las demos imprimen los vecinos, el intercambio del índice y los pasajes recuperados, y
+#     reescriben ./results.
 docker compose run --rm ts-demo
 docker compose run --rm python-demo
 echo "embeddings-vector-search: tables written to results/"
 
 # EN: The search command prints the passages retrieved for any question.
 # PT: O comando de busca imprime as passagens recuperadas para qualquer pergunta.
+# ES: El comando de búsqueda imprime los pasajes recuperados para cualquier pregunta.
 docker compose run --rm ts-search "How do I bake a loaf of bread?"

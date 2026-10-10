@@ -1,6 +1,6 @@
 # Didactic blockchain
 
-> Versão em português: [docs/pt/blockchain/didactic-blockchain.md](../../pt/blockchain/didactic-blockchain.md)
+> Versão em português: [docs/pt/blockchain/didactic-blockchain.md](../../pt/blockchain/didactic-blockchain.md) · Versión en español: [docs/es/blockchain/didactic-blockchain.md](../../es/blockchain/didactic-blockchain.md)
 
 Mini-project: [`projects/blockchain/didactic-blockchain`](../../../projects/blockchain/didactic-blockchain/README.md) (MP-CHAIN-1). Languages: TypeScript and Rust. Quiz: area `blockchain`, topics `hash-functions`, `digital-signatures-and-keys`, `transactions-and-unspent-outputs`, `blocks-chain-and-merkle-trees`, `proof-of-work-and-difficulty`, `double-spending-and-confirmations`, `network-and-consensus` and `incentives-and-mining`. Source: Nakamoto, "Bitcoin: A Peer-to-Peer Electronic Cash System" (2008).
 
@@ -16,7 +16,7 @@ The answer has four parts, and the mini-project builds each one.
 
 A cryptographic hash gives a fixed-size fingerprint of any data, and changing one bit of the data changes the whole fingerprint. Three uses of it, stacked:
 
-```
+```text
 transaction id = hash(inputs and outputs of the transaction)
 Merkle root    = hash of the ids, in pairs, level by level
 block hash     = hash(height | previous block hash | Merkle root | time | difficulty | nonce)
@@ -73,7 +73,7 @@ Nodes gossip: what a node newly accepts, it forwards to its peers. Two miners ca
 
 The demo creates a fork on purpose by cutting the links between the nodes:
 
-```
+```text
             partition                      links restored
 A, B:  ... - 3 - 4a - 5a          ->   A, B, C:  ... - 3 - 4a - 5a - 6
 C:     ... - 3 - 4c (pays Carol)                 4c abandoned, its payment is pending again

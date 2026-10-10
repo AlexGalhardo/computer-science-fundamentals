@@ -98,6 +98,11 @@ fn is_letter(c: char) -> bool {
 //     comentários e espaços não produzem nada. A única diferença é o tratamento de erros: este
 //     front end para no primeiro erro, porque reportar vários erros é a lição do MP-COMP-1, não
 //     deste projeto.
+// ES: Las mismas reglas del lexer en TypeScript: emparejamiento más largo para operadores (`<=`
+//     antes que `<`), la palabra completa se lee antes de compararla con la tabla de palabras
+//     clave, los comentarios y espacios no producen nada. La única diferencia es el manejo de
+//     errores: este front end se detiene en el primer error, porque reportar varios errores es
+//     la lección del MP-COMP-1, no de este proyecto.
 pub fn tokenize(source: &str) -> Result<Vec<Token>, SyntaxError> {
     let chars: Vec<char> = source.chars().collect();
     let at = |index: usize| chars.get(index).copied().unwrap_or('\0');

@@ -5,6 +5,10 @@
 //     confere os critérios de aceite no caminho: sem proteção cada expiração precisa custar
 //     centenas de consultas ao banco, e com a trava ou a renovação antecipada precisa custar
 //     exatamente uma.
+// ES: Convierte los resúmenes de k6 de la prueba de carga en las tablas de resultados
+//     versionadas, y verifica los criterios de aceptación en el camino: sin protección cada
+//     expiración debe costar cientos de consultas a la base de datos, y con el bloqueo o la
+//     renovación anticipada debe costar exactamente una.
 
 import { z } from "zod";
 import { MODES, type Mode } from "./stampede";
@@ -12,6 +16,7 @@ import { STRATEGIES, type Strategy } from "./strategies";
 
 // EN: The summaries are files written by another tool, so they are validated like any input.
 // PT: Os resumos são arquivos escritos por outra ferramenta, então são validados como qualquer entrada.
+// ES: Los resúmenes son archivos escritos por otra herramienta, así que se validan como cualquier entrada.
 const count = z.number().int().min(0);
 const amount = z.number().min(0);
 
@@ -67,7 +72,7 @@ export const summarySchema = z.discriminatedUnion("experiment", [stampedeSchema,
 export type StampedeSummary = z.infer<typeof stampedeSchema>;
 export type HitRateSummary = z.infer<typeof hitRateSchema>;
 export type Summary = z.infer<typeof summarySchema>;
-export type Language = "en" | "pt";
+export type Language = "en" | "pt" | "es";
 
 /** "Hundreds" in the acceptance criterion: the smallest unprotected burst that still counts. */
 export const HERD_THRESHOLD = 100;
@@ -110,6 +115,8 @@ function mean(values: number[]): number {
 //     is noise, not a result.
 // PT: Desvio padrão amostral. Uma diferença entre duas linhas menor que essa dispersão é ruído,
 //     não resultado.
+// ES: Desviación estándar muestral. Una diferencia entre dos filas menor que esta dispersión es
+//     ruido, no un resultado.
 function stddev(values: number[]): number {
 	if (values.length < 2) {
 		return 0;
@@ -182,6 +189,8 @@ export function aggregateHitRate(summaries: Summary[]): HitRateRow[] {
 //     test showed what the lesson claims.
 // PT: Os critérios de aceite em código. Devolve uma frase por violação, vazio quando o teste de
 //     carga mostrou o que a lição afirma.
+// ES: Los criterios de aceptación como código. Devuelve una frase por cada violación, vacío
+//     cuando la prueba de carga mostró lo que afirma la lección.
 export function violations(summaries: Summary[]): string[] {
 	const problems: string[] = [];
 	for (const mode of MODES) {
@@ -236,30 +245,40 @@ function range(min: number, max: number, language: Language): string {
 }
 
 export function renderStampedeTable(rows: StampedeRow[], language: Language): string {
-	const header =
-		language === "en"
-			? [
-					"Protection",
-					"Rounds",
-					"Expiries",
-					"Database queries",
-					"Queries per expiry (median)",
-					"Queries per expiry (range)",
-					"p95 latency, ms (mean ± sd)",
-					"Slowest request (ms)",
-				]
-			: [
-					"Proteção",
-					"Rodadas",
-					"Expirações",
-					"Consultas ao banco",
-					"Consultas por expiração (mediana)",
-					"Consultas por expiração (faixa)",
-					"Latência p95, ms (média ± dp)",
-					"Requisição mais lenta (ms)",
-				];
+	const headers: Record<Language, string[]> = {
+		en: [
+			"Protection",
+			"Rounds",
+			"Expiries",
+			"Database queries",
+			"Queries per expiry (median)",
+			"Queries per expiry (range)",
+			"p95 latency, ms (mean ± sd)",
+			"Slowest request (ms)",
+		],
+		pt: [
+			"Proteção",
+			"Rodadas",
+			"Expirações",
+			"Consultas ao banco",
+			"Consultas por expiração (mediana)",
+			"Consultas por expiração (faixa)",
+			"Latência p95, ms (média ± dp)",
+			"Requisição mais lenta (ms)",
+		],
+		es: [
+			"Protección",
+			"Rondas",
+			"Expiraciones",
+			"Consultas a la base de datos",
+			"Consultas por expiración (mediana)",
+			"Consultas por expiración (rango)",
+			"Latencia p95, ms (media ± de)",
+			"Solicitud más lenta (ms)",
+		],
+	};
 	return table(
-		header,
+		headers[language],
 		rows.map((row) => [
 			`\`${row.mode}\``,
 			row.rounds,
@@ -274,34 +293,46 @@ export function renderStampedeTable(rows: StampedeRow[], language: Language): st
 }
 
 export function renderHitRateTable(rows: HitRateRow[], language: Language): string {
-	const header =
-		language === "en"
-			? [
-					"Strategy",
-					"Time to live",
-					"Rounds",
-					"Hit rate (mean ± sd)",
-					"Read median (ms)",
-					"Read p95, ms (mean ± sd)",
-					"Write median (ms)",
-					"Write p95 (ms)",
-					"DB reads per 1000 requests",
-					"DB writes per 1000 requests",
-				]
-			: [
-					"Estratégia",
-					"Tempo de vida",
-					"Rodadas",
-					"Taxa de acerto (média ± dp)",
-					"Leitura, mediana (ms)",
-					"Leitura p95, ms (média ± dp)",
-					"Escrita, mediana (ms)",
-					"Escrita p95 (ms)",
-					"Leituras no banco por 1000 requisições",
-					"Escritas no banco por 1000 requisições",
-				];
+	const headers: Record<Language, string[]> = {
+		en: [
+			"Strategy",
+			"Time to live",
+			"Rounds",
+			"Hit rate (mean ± sd)",
+			"Read median (ms)",
+			"Read p95, ms (mean ± sd)",
+			"Write median (ms)",
+			"Write p95 (ms)",
+			"DB reads per 1000 requests",
+			"DB writes per 1000 requests",
+		],
+		pt: [
+			"Estratégia",
+			"Tempo de vida",
+			"Rodadas",
+			"Taxa de acerto (média ± dp)",
+			"Leitura, mediana (ms)",
+			"Leitura p95, ms (média ± dp)",
+			"Escrita, mediana (ms)",
+			"Escrita p95 (ms)",
+			"Leituras no banco por 1000 requisições",
+			"Escritas no banco por 1000 requisições",
+		],
+		es: [
+			"Estrategia",
+			"Tiempo de vida",
+			"Rondas",
+			"Tasa de aciertos (media ± de)",
+			"Lectura, mediana (ms)",
+			"Lectura p95, ms (media ± de)",
+			"Escritura, mediana (ms)",
+			"Escritura p95 (ms)",
+			"Lecturas en la base de datos por 1000 solicitudes",
+			"Escrituras en la base de datos por 1000 solicitudes",
+		],
+	};
 	return table(
-		header,
+		headers[language],
 		rows.map((row) => [
 			`\`${row.strategy}\``,
 			`${row.ttlMs} ms`,
@@ -388,6 +419,8 @@ Numbers depend on the machine, and they are noisy: the runs are short and the ma
 //     without touching the text around it.
 // PT: Os READMEs guardam cada tabela entre dois comentários HTML, então o relatório consegue
 //     trocá-la sem tocar no texto em volta.
+// ES: Los README guardan cada tabla entre dos comentarios HTML, así que el reporte puede
+//     reemplazarla sin tocar el texto que la rodea.
 export function injectTable(readme: string, name: string, tableText: string): string {
 	const start = `<!-- ${name}:start -->`;
 	const end = `<!-- ${name}:end -->`;

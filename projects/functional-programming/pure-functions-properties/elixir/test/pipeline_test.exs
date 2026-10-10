@@ -25,6 +25,8 @@ defmodule PureFunctionsProperties.PipelineTest do
     #     TypeScript tests read, so both implementations are held to the same answer.
     # PT: Os pedidos e o relatório esperado vêm de cases.json, o mesmo arquivo que os testes
     #     em TypeScript leem, então as duas implementações são cobradas pela mesma resposta.
+    # ES: Los pedidos y el reporte esperado vienen de cases.json, el mismo archivo que leen las
+    #     pruebas en TypeScript, así que las dos implementaciones deben dar la misma respuesta.
     test "the sales report matches the shared expected result" do
       %{top: top, orders: orders, expected: expected} = shared()
       assert Pipeline.sales_report(orders, top) == expected
@@ -82,6 +84,9 @@ defmodule PureFunctionsProperties.PipelineTest do
     #     any: the full report adds up to the paid lines, for any list of orders.
     # PT: Agrupar e ordenar podem mover dinheiro entre linhas, mas não podem criar nem perder
     #     nenhum: o relatório completo soma o mesmo que as linhas pagas, para qualquer lista
+    #     de pedidos.
+    # ES: Agrupar y ordenar pueden mover dinero entre líneas, pero no pueden crear ni perder
+    #     ninguno: el reporte completo suma lo mismo que las líneas pagadas, para cualquier lista
     #     de pedidos.
     test "the full report adds up to the paid lines" do
       property = fn generated ->

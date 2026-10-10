@@ -1,6 +1,6 @@
 # dynamic-programming
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Três problemas clássicos (mochila 0-1, maior subsequência comum e troco), cada um resolvido três vezes: com recursão pura, com a mesma recursão mais um cache (memoização) e com laços que preenchem uma tabela (tabulação). As três versões calculam a mesma recorrência. O que muda é quantas vezes o mesmo subproblema é resolvido, e um contador de chamadas torna isso visível.
 

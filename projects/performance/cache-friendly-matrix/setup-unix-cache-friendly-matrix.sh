@@ -3,6 +3,8 @@
 #     For the demo, run `docker compose run --rm cpp-speedup` (see the README).
 # PT: Constrói e testa o mini-projeto cache-friendly-matrix. O único requisito é o Docker.
 #     Para a demonstração, rode `docker compose run --rm cpp-speedup` (veja o README).
+# ES: Construye y prueba el miniproyecto cache-friendly-matrix. El único requisito es Docker.
+#     Para la demostración, ejecuta `docker compose run --rm cpp-speedup` (ver el README).
 set -eu
 
 cd "$(dirname "$0")"

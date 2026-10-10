@@ -8,6 +8,8 @@ defmodule CounterRaceTest do
   # EN: A fix is only a fix if it is right every time: 100 runs in a row, each exactly 1,000,000.
   # PT: Uma correção só é correção se acerta sempre: 100 execuções seguidas, cada uma com
   #     exatamente 1.000.000.
+  # ES: Una corrección solo es corrección si acierta siempre: 100 ejecuciones seguidas, cada una con
+  #     exactamente 1,000,000.
   @tag timeout: 900_000
   test "the actor counter is exact in 100 consecutive runs" do
     runs = String.to_integer(System.get_env("FIXED_RUNS", "100"))
@@ -23,6 +25,8 @@ defmodule CounterRaceTest do
   #     in two messages brings the lost update back.
   # PT: O ator protege cada mensagem, não uma sequência de mensagens. Ler e depois gravar em
   #     duas mensagens traz a atualização perdida de volta.
+  # ES: El actor protege cada mensaje, no una secuencia de mensajes. Leer y luego escribir en
+  #     dos mensajes trae de vuelta la actualización perdida.
   @tag timeout: 300_000
   test "get followed by set loses updates even with an actor" do
     final = CounterRace.run(:get_then_set, @workers, @per_worker)

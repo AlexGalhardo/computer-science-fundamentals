@@ -15,6 +15,7 @@ describe("instrumented samples", () => {
 
 	// EN: Acceptance of MP-BIGO-1.1: the counted operations equal the closed formula.
 	// PT: Aceite de MP-BIGO-1.1: as operações contadas são iguais à fórmula fechada.
+	// ES: Aceptación de MP-BIGO-1.1: las operaciones contadas son iguales a la fórmula cerrada.
 	for (const sample of SAMPLES) {
 		test(`${sample.id}: operation counts match the closed formula`, () => {
 			for (const n of sample.sizes) {
@@ -32,6 +33,7 @@ describe("instrumented samples", () => {
 
 	// EN: The merge sort formula also holds when n is not a power of two.
 	// PT: A fórmula do merge sort também vale quando n não é potência de dois.
+	// ES: La fórmula del merge sort también vale cuando n no es potencia de dos.
 	test("linearithmic: the formula holds for every n from 1 to 200", () => {
 		const sample = SAMPLES.find((item) => item.id === "linearithmic");
 		for (let n = 1; n <= 200; n++) {
@@ -46,6 +48,7 @@ describe("instrumented samples", () => {
 
 // EN: A counter is only worth trusting if the algorithm around it is right.
 // PT: Um contador só merece confiança se o algoritmo ao redor dele estiver certo.
+// ES: Un contador solo merece confianza si el algoritmo que lo rodea es correcto.
 describe("the samples compute the right answer", () => {
 	const run = (id: string, input: number[]): number => {
 		const sample = SAMPLES.find((item) => item.id === id);

@@ -2,6 +2,9 @@
 //     point at the services of docker-compose, with obviously fake lab credentials.
 // PT: Variáveis de ambiente são entrada externa, então são validadas na borda. Os padrões apontam
 //     para os serviços do docker-compose, com credenciais de laboratório claramente falsas.
+// ES: Las variables de entorno son entrada externa, así que se validan en el borde. Los valores
+//     por defecto apuntan a los servicios de docker-compose, con credenciales de laboratorio
+//     claramente falsas.
 
 import { resolve } from "node:path";
 import { z } from "zod";
@@ -14,6 +17,9 @@ const LOOPBACK = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 // PT: Este projeto envia milhares de mensagens o mais rápido que consegue, então nunca pode
 //     apontar para o broker de outra pessoa. Um host só é aceito quando é o loopback ou um nome
 //     simples de serviço do docker-compose (sem ponto, logo não é domínio público nem IP).
+// ES: Este proyecto envía miles de mensajes lo más rápido que puede, así que nunca debe apuntar al
+//     broker de otra persona. Un host solo se acepta cuando es el loopback o un nombre simple de
+//     servicio de docker-compose (sin punto, por lo tanto no es un dominio público ni una IP).
 export function isLocalHost(host: string): boolean {
 	return LOOPBACK.has(host) || /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i.test(host);
 }
@@ -43,6 +49,7 @@ const envSchema = z.object({
 	SQS_ENDPOINT: localUrl(["http:"]).default("http://localstack:4566"),
 	// EN: LocalStack accepts any credentials. These are fake on purpose and never reach AWS.
 	// PT: O LocalStack aceita qualquer credencial. Estas são falsas de propósito e nunca chegam à AWS.
+	// ES: LocalStack acepta cualquier credencial. Estas son falsas a propósito y nunca llegan a AWS.
 	AWS_REGION: z.string().min(1).default("us-east-1"),
 	AWS_ACCESS_KEY_ID: z.string().min(1).default("fake-lab-access-key"),
 	AWS_SECRET_ACCESS_KEY: z.string().min(1).default("fake-lab-secret-key"),

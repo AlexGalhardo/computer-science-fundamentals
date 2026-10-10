@@ -4,6 +4,9 @@
 // PT: `docker compose run --rm report`. Lê os resumos brutos do k6 em `k6-results/` (ignorada pelo
 //     git), grava um resumo Markdown por cenário em `results/` mais a tabela dos dois READMEs, e
 //     termina com erro quando as execuções não mostraram o que a lição afirma.
+// ES: `docker compose run --rm report`. Lee los resúmenes brutos de k6 en `k6-results/` (ignorada
+//     por git), escribe un resumen Markdown por escenario en `results/` más la tabla de los README,
+//     y termina con error cuando las ejecuciones no mostraron lo que afirma la lección.
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -63,6 +66,7 @@ writeFileSync(join(resultsDir, "results.md"), renderResults(summaries, environme
 for (const [file, language] of [
 	["README.md", "en"],
 	["README.pt-BR.md", "pt"],
+	["README.es.md", "es"],
 ] as const) {
 	const path = join(env.PROJECT_DIR, file);
 	writeFileSync(path, injectTable(readFileSync(path, "utf8"), renderOverview(summaries, language)));

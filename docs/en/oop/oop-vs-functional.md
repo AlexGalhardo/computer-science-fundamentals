@@ -1,6 +1,6 @@
 # Same domain with objects and with functions
 
-> Versão em português: [docs/pt/oop/oop-vs-functional.md](../../pt/oop/oop-vs-functional.md)
+> Versão em português: [docs/pt/oop/oop-vs-functional.md](../../pt/oop/oop-vs-functional.md) · Versión en español: [docs/es/oop/oop-vs-functional.md](../../es/oop/oop-vs-functional.md)
 
 Mini-project MP-OOP-1, in [`projects/oop/oop-vs-functional`](../../../projects/oop/oop-vs-functional). It teaches what changes when the same rules are written with objects or with functions. Languages: Java, TypeScript and Elixir.
 

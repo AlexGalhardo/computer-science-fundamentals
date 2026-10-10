@@ -6,6 +6,9 @@ import { NoTax, type TaxPolicy } from "./tax-policy";
 //     other class may then trust any CartLine it receives without checking it again.
 // PT: Uma linha se valida no construtor, então uma linha inválida nunca chega a existir. Todas
 //     as outras classes podem confiar em qualquer CartLine que recebem, sem conferir de novo.
+// ES: Una línea se valida en el constructor, así que una línea inválida nunca llega a existir.
+//     Todas las demás clases pueden confiar en cualquier CartLine que reciban, sin verificarla
+//     de nuevo.
 export class CartLine {
 	readonly sku: string;
 	readonly unitPriceCents: number;
@@ -42,6 +45,10 @@ export interface Receipt {
 //     alterar o carrinho é pelos seus métodos, e a única forma de saber o total é pedir que o
 //     carrinho o calcule ("tell, don't ask"). O carrinho é mutável: `add` altera este mesmo
 //     objeto.
+// ES: El carrito es dueño de su estado. Los campos son privados (`#`), así que la única forma de
+//     modificar el carrito es mediante sus métodos, y la única forma de conocer el total es pedirle
+//     al carrito que lo calcule ("tell, don't ask"). El carrito es mutable: `add` modifica este
+//     mismo objeto.
 export class Cart {
 	readonly #lines: CartLine[] = [];
 	readonly #rules: DiscountRule[] = [];
@@ -63,6 +70,8 @@ export class Cart {
 	//     does not change the cart.
 	// PT: Sai uma cópia, nunca o array interno. Quem alterar a lista devolvida não altera o
 	//     carrinho.
+	// ES: Sale una copia, nunca el array interno. Quien modifique la lista devuelta no modifica el
+	//     carrito.
 	lines(): readonly CartLine[] {
 		return [...this.#lines];
 	}
@@ -73,6 +82,9 @@ export class Cart {
 	// PT: O carrinho conhece só as duas interfaces. Cada objeto de regra responde a
 	//     `discountCents` e a `describe` do seu jeito (polimorfismo), então este laço nunca muda
 	//     quando uma regra é adicionada. Uma regra nunca tira mais do que resta a pagar.
+	// ES: El carrito conoce solo las dos interfaces. Cada objeto de regla responde a
+	//     `discountCents` y a `describe` a su manera (polimorfismo), así que este ciclo nunca cambia
+	//     cuando se agrega una regla. Una regla nunca quita más de lo que queda por pagar.
 	checkout(): Receipt {
 		const subtotalCents = this.#lines.reduce((sum, line) => sum + line.totalCents(), 0);
 		const discounts: AppliedDiscount[] = [];

@@ -6,6 +6,10 @@
 //     conexões compartilhado e conta os comandos enviados. A contagem volta para o cliente no
 //     cabeçalho de resposta `x-db-queries`, e é assim que os testes enxergam o problema N+1 em
 //     vez de adivinhá-lo pela latência.
+// ES: Acceso a la base de datos con un contador. Cada petición recibe su propio `Db`, que envuelve el pool de
+//     conexiones compartido y cuenta los comandos enviados. El conteo vuelve al cliente en el
+//     encabezado de respuesta `x-db-queries`, y así es como las pruebas ven el problema N+1 en
+//     lugar de adivinarlo por la latencia.
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -24,6 +28,8 @@ export class Db {
 	//     Values always travel as parameters ($1, $2), never inside the SQL text.
 	// PT: As linhas vêm de fora do sistema de tipos, então cada consulta indica o schema Zod das
 	//     suas linhas. Os valores sempre viajam como parâmetros ($1, $2), nunca dentro do texto SQL.
+	// ES: Las filas vienen de fuera del sistema de tipos, así que cada consulta indica el schema Zod de
+	//     sus filas. Los valores siempre viajan como parámetros ($1, $2), nunca dentro del texto SQL.
 	async query<T>(rowSchema: z.ZodType<T>, text: string, params: readonly unknown[] = []): Promise<T[]> {
 		this.queries += 1;
 		const result = await this.pool.query(text, [...params]);
@@ -39,6 +45,8 @@ export function createPool(databaseUrl: string): Pool {
 //     test can assert on exact titles and the benchmark always reads the same rows.
 // PT: Apaga, recria e preenche as tabelas com os mesmos dados determinísticos todas as vezes,
 //     então um teste pode conferir títulos exatos e o benchmark sempre lê as mesmas linhas.
+// ES: Borra, recrea y llena las tablas con los mismos datos deterministas cada vez,
+//     así una prueba puede verificar títulos exactos y el benchmark siempre lee las mismas filas.
 export async function resetDatabase(pool: Pool): Promise<void> {
 	const schema = readFileSync(join(import.meta.dir, "..", "sql", "schema.sql"), "utf8");
 	const seed = buildSeed();
@@ -50,6 +58,8 @@ export async function resetDatabase(pool: Pool): Promise<void> {
 		//     statement instead of one INSERT per row.
 		// PT: `unnest` transforma um array por coluna em linhas, então cada tabela é preenchida
 		//     por um único comando em vez de um INSERT por linha.
+		// ES: `unnest` convierte un array por columna en filas, así cada tabla se llena
+		//     con un solo comando en lugar de un INSERT por fila.
 		await client.query(
 			"INSERT INTO authors (id, name, country, bio) SELECT * FROM unnest($1::int[], $2::text[], $3::text[], $4::text[])",
 			[

@@ -2,6 +2,8 @@
 //     three passages most similar to the question, with their cosine scores.
 // PT: `bun run src/cli.ts "sua pergunta"` constrói os vetores de palavras a partir do corpus e
 //     imprime as três passagens mais parecidas com a pergunta, com as suas notas de cosseno.
+// ES: `bun run src/cli.ts "tu pregunta"` construye los vectores de palabras a partir del corpus y
+//     imprime los tres pasajes más parecidos a la pregunta, con sus puntuaciones de coseno.
 
 import { embedText, loadModel, type Model, retrieve } from "./retrieval";
 
@@ -14,6 +16,7 @@ export function describe(model: Model, question: string, top: number = DEFAULT_T
 		`words used: ${embedding.known.join(" ") || "(none)"}`,
 		// EN: A word the corpus never showed has no vector, so it cannot help the search.
 		// PT: Uma palavra que o corpus nunca mostrou não tem vetor, então não ajuda na busca.
+		// ES: Una palabra que el corpus nunca mostró no tiene vector, así que no ayuda en la búsqueda.
 		`not in the vocabulary: ${embedding.unknown.join(" ") || "(none)"}`,
 		`compared with ${model.passages.length} passages by brute force`,
 		"",

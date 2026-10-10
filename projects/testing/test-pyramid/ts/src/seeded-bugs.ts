@@ -8,6 +8,10 @@ import { z } from "zod";
 //     Há um por nível da pirâmide, ligado pela variável de ambiente SEEDED_BUG. Com "none" a
 //     aplicação está correta. O valor vem de fora do programa, então é validado: um erro de
 //     digitação falha de forma visível em vez de rodar o código correto em silêncio.
+// ES: Un bug sembrado es un defecto plantado a propósito, para ver qué suite de pruebas lo nota.
+//     Hay uno por nivel de la pirámide, activado por la variable de entorno SEEDED_BUG. Con "none" la
+//     aplicación está correcta. El valor viene de fuera del programa, así que se valida: un error de
+//     tipeo falla de forma visible en lugar de ejecutar el código correcto en silencio.
 export const SEEDED_BUGS = ["none", "unit", "integration", "e2e", "smoke", "regression"] as const;
 
 const seededBugSchema = z.enum(SEEDED_BUGS);

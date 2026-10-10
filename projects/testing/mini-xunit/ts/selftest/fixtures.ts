@@ -6,6 +6,9 @@ import { TestCase } from "../src/xunit";
 // PT: Casos de teste usados como OBJETOS de estudo pelos autotestes. Eles não são testes do
 //     framework, então moram em um arquivo que a descoberta não pega (não se chama `*.xunit.ts`).
 //     Cada um registra em `log` o que aconteceu com ele.
+// ES: Casos de prueba usados como OBJETOS de estudio por las autopruebas. No son pruebas del
+//     framework, así que viven en un archivo que el descubrimiento no toma (no se llama `*.xunit.ts`).
+//     Cada uno registra en `log` lo que le ocurrió.
 export class WasRun extends TestCase {
 	log = "";
 
@@ -56,6 +59,7 @@ export class BrokenSetUp extends TestCase {
 
 // EN: Every instance gets a number. If two tests shared one instance, they would share it.
 // PT: Cada instância recebe um número. Se dois testes dividissem uma instância, dividiriam o número.
+// ES: Cada instancia recibe un número. Si dos pruebas compartieran una instancia, compartirían el número.
 export class Counted extends TestCase {
 	static created = 0;
 	static seen: number[] = [];

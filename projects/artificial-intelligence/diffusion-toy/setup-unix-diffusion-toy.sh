@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the diffusion-toy mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto diffusion-toy. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto diffusion-toy. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -12,6 +13,7 @@ fi
 
 # EN: The demo container writes ./results, so it runs with the uid and gid of this user.
 # PT: O container da demo grava ./results, então roda com o uid e o gid deste usuário.
+# ES: El contenedor de la demo escribe ./results, así que se ejecuta con el uid y el gid de este usuario.
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID
@@ -24,5 +26,7 @@ echo "diffusion-toy: all tests passed"
 #     figures and the tables in ./results.
 # PT: A demo treina a rede, roda o processo direto e o reverso e regrava as figuras e as tabelas
 #     em ./results.
+# ES: La demo entrena la red, ejecuta el proceso directo y el inverso y reescribe las figuras y las
+#     tablas en ./results.
 docker compose run --rm python-demo
 echo "diffusion-toy: figures and tables written to results/"

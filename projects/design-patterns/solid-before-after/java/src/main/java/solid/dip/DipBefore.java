@@ -14,6 +14,9 @@ import solid.dip.Infrastructure.SqlOrderTable;
 // PT: QUEBRA O PRINCÍPIO DA INVERSÃO DE DEPENDÊNCIA. A regra de negócio (alto nível) cria e
 //     chama o cliente SMTP e a tabela SQL (baixo nível) pelo nome. A regra não roda sem eles,
 //     não pode ser testada com outra coisa, e muda sempre que um deles é substituído.
+// ES: ROMPE EL PRINCIPIO DE INVERSIÓN DE DEPENDENCIAS. La regla de negocio (alto nivel) crea y
+//     llama al cliente SMTP y a la tabla SQL (bajo nivel) por su nombre. La regla no funciona
+//     sin ellos, no se puede probar con otra cosa, y cambia cada vez que se sustituye uno.
 public final class DipBefore {
   private DipBefore() {}
 

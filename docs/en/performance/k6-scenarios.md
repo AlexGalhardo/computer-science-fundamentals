@@ -1,6 +1,6 @@
 # Load test scenarios with k6 (MP-PERF-2)
 
-> Versão em português: [docs/pt/performance/k6-scenarios.md](../../pt/performance/k6-scenarios.md)
+> Versão em português: [docs/pt/performance/k6-scenarios.md](../../pt/performance/k6-scenarios.md) · Versión en español: [docs/es/performance/k6-scenarios.md](../../es/performance/k6-scenarios.md)
 
 Mini-project: [`projects/performance/k6-scenarios`](../../../projects/performance/k6-scenarios/README.md). Quiz topics: `load-test-types`, `k6-fundamentals`, `database-performance`, `capacity-planning-queueing`, `latency-throughput-percentiles`.
 
@@ -8,7 +8,7 @@ Mini-project: [`projects/performance/k6-scenarios`](../../../projects/performanc
 
 `GET /products/:id` borrows one connection from a pool, runs a query that takes 20 ms in PostgreSQL, and gives the connection back. The pool has **2 connections**.
 
-```
+```text
 request -> [ queue for a connection ] -> [ connection 1 ] -> PostgreSQL (20 ms)
                                          [ connection 2 ] -> PostgreSQL (20 ms)
 ```

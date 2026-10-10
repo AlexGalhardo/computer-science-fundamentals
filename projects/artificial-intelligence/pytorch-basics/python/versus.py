@@ -1,6 +1,8 @@
 """EN: From scratch against the framework: lines of code, training time and the machine.
 
 PT: Feito à mão contra o framework: linhas de código, tempo de treinamento e a máquina.
+
+ES: Hecho a mano frente al framework: líneas de código, tiempo de entrenamento y la máquina.
 """
 
 import ast
@@ -30,6 +32,10 @@ HERE = Path(__file__).resolve().parent
 # PT: Os arquivos que implementam a diferenciação automática, a rede e o laço de treinamento em
 #     cada versão. O gerador do conjunto de dados é compartilhado e não conta em nenhuma. O
 #     PyTorch não tem arquivo de diferenciação automática: é a parte que o framework traz.
+# ES: Los archivos que implementan la diferenciación automática, la red y el bucle de
+#     entrenamiento en cada versión. El generador del conjunto de datos es compartido y no cuenta en
+#     ninguna. PyTorch no tiene archivo de diferenciación automática: es la parte que trae el
+#     framework.
 SCRATCH_FILES = {
     "Automatic differentiation": ["scratch/engine.py"],
     "Network": ["scratch/nn.py"],
@@ -55,6 +61,12 @@ def count_code_lines(source: str) -> int:
     Os comentários didáticos deste repositório são longos, então contar todas as linhas mediria
     os comentários. O tokenizador diz quais linhas têm um token de verdade, e a árvore sintática
     diz quais strings são docstrings.
+
+    ES: Líneas que contienen código: no vacías, no solo comentario, no parte de un docstring.
+
+    Los comentarios didácticos de este repositorio son largos, así que contar todas las líneas
+    mediría los comentarios. El tokenizador dice qué líneas tienen un token de verdad, y el árbol
+    sintáctico dice qué strings son docstrings.
     """
     ignored = {
         tokenize.COMMENT,
@@ -89,7 +101,12 @@ def count_files(names: list[str]) -> int:
 
 @dataclass
 class Timing:
-    """EN: Wall-clock seconds of several runs. PT: Segundos de relógio de várias execuções."""
+    """EN: Wall-clock seconds of several runs.
+
+    PT: Segundos de relógio de várias execuções.
+
+    ES: Segundos de reloj de varias ejecuciones.
+    """
 
     seconds: list[float]
 
@@ -119,6 +136,8 @@ def train_scratch(epochs: int) -> list[float]:
     """EN: The from-scratch training of MP-AI-2, for a given number of epochs.
 
     PT: O treinamento feito à mão do MP-AI-2, por um número dado de épocas.
+
+    ES: El entrenamiento hecho a mano de MP-AI-2, durante un número dado de épocas.
     """
     points, labels = moons_train()
     model = MLP(2, [8, 8, 1], seed=MOONS_SEED)
@@ -130,6 +149,9 @@ class Measurement:
     """EN: Both timings, and the losses of the from-scratch run so the demo can reuse them.
 
     PT: As duas medições, e as perdas da execução feita à mão para a demo reaproveitar.
+
+    ES: Las dos mediciones, y las pérdidas de la ejecución hecha a mano para que la demo las
+    reaproveche.
     """
 
     epochs: int
@@ -146,6 +168,10 @@ def measure(runs: int, epochs: int) -> Measurement:
     PT: Mede o mesmo trabalho nas duas versões: construir a rede 2-8-8-1 e treiná-la por
     `epochs` épocas nos 80 pontos de treino. Uma execução do PyTorch é descartada antes, porque
     a primeira chamada paga por um trabalho de inicialização que não é treinamento.
+
+    ES: Mide el mismo trabajo en las dos versiones: construir la red 2-8-8-1 y entrenarla durante
+    `epochs` épocas con los 80 puntos de entrenamiento. Una ejecución de PyTorch se descarta antes,
+    porque la primera llamada paga un trabajo de inicialización que no es entrenamiento.
     """
     train_moons(epochs=epochs)
     losses: list[float] = []
@@ -162,6 +188,8 @@ def measure(runs: int, epochs: int) -> Measurement:
 #     not the 120 of the full training. Both versions are timed on the same 20.
 # PT: A versão feita à mão precisa de segundos para poucas épocas, então a medição usa 20
 #     épocas e não as 120 do treinamento completo. As duas versões são medidas nas mesmas 20.
+# ES: La versión hecha a mano necesita segundos para pocas épocas, así que la medición usa 20
+#     épocas y no las 120 del entrenamiento completo. Las dos versiones se miden en las mismas 20.
 TIMING_RUNS = 5
 TIMING_EPOCHS = 20
 

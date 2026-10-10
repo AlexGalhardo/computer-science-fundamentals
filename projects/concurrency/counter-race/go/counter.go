@@ -22,6 +22,10 @@ type Counter interface {
 // PT: `c.n++` parece um passo só, mas o processador faz três: lê n, soma 1, grava n de volta.
 // Duas goroutines podem ler 41, somar 1 e gravar 42. Um incremento se perde.
 // Isso se chama atualização perdida, e só aparece quando o tempo dá azar.
+//
+// ES: `c.n++` parece un solo paso, pero el procesador hace tres: lee n, suma 1, escribe n de
+// vuelta. Dos goroutines pueden leer 41, sumar 1 y escribir 42. Un incremento se pierde.
+// Esto se llama actualización perdida, y solo aparece cuando el tiempo da mala suerte.
 type BuggyCounter struct {
 	n int64
 }
@@ -41,6 +45,10 @@ func (c *BuggyCounter) Value() int64 { return c.n }
 // PT: Os três passos do incremento formam uma seção crítica. O mutex deixa só uma goroutine
 // por vez lá dentro, então ninguém lê um valor que está a ponto de ser sobrescrito.
 // O preço: as goroutines fazem fila, e cada lock e unlock custa tempo.
+//
+// ES: Los tres pasos del incremento forman una sección crítica. El mutex deja solo una goroutine
+// a la vez adentro, así nadie lee un valor que está a punto de ser sobrescrito.
+// El precio: las goroutines hacen fila, y cada lock y unlock cuesta tiempo.
 type MutexCounter struct {
 	mu sync.Mutex
 	n  int64
@@ -70,6 +78,11 @@ func (c *MutexCounter) Value() int64 {
 // Nenhum outro núcleo consegue entrar no meio, então não é preciso trava. Atômicos servem
 // para uma variável. Quando duas variáveis precisam mudar juntas, o mutex continua sendo
 // a ferramenta certa.
+//
+// ES: El procesador tiene una instrucción que lee, suma y escribe como un paso indivisible.
+// Ningún otro núcleo puede meterse en el medio, así que no hace falta un lock. Los atómicos sirven
+// para una variable. Cuando dos variables deben cambiar juntas, el mutex sigue siendo
+// la herramienta correcta.
 type AtomicCounter struct {
 	n atomic.Int64
 }
@@ -89,6 +102,10 @@ func (c *AtomicCounter) Value() int64 { return c.n.Load() }
 // PT: Uma goroutine é dona do número. Todas as outras mandam mensagens a ela por um canal.
 // A dona trata uma mensagem por vez, então as somas ficam naturalmente em fila.
 // É o lema do Go: não se comunique compartilhando memória, compartilhe memória se comunicando.
+//
+// ES: Una goroutine es dueña del número. Todas las demás le envían mensajes por un canal.
+// La dueña atiende un mensaje a la vez, así que las sumas quedan naturalmente en fila.
+// Es el lema de Go: no te comuniques compartiendo memoria, comparte memoria comunicándote.
 type ChannelCounter struct {
 	incs  chan struct{}
 	reads chan chan int64
@@ -109,6 +126,7 @@ func NewChannelCounter() *ChannelCounter {
 func (c *ChannelCounter) own() {
 	// EN: `n` is a local variable of this goroutine: no other goroutine can even name it.
 	// PT: `n` é uma variável local desta goroutine: nenhuma outra consegue sequer citá-la.
+	// ES: `n` es una variable local de esta goroutine: ninguna otra puede siquiera nombrarla.
 	var n int64
 	for {
 		select {
@@ -143,6 +161,9 @@ func (c *ChannelCounter) Close() { close(c.done) }
 //
 // PT: Todas as goroutines esperam em um portão de largada e saem juntas. Sem o portão, a
 // primeira poderia terminar antes de a última começar, e o bug ficaria escondido.
+//
+// ES: Todas las goroutines esperan en una puerta de salida y salen juntas. Sin la puerta, la
+// primera podría terminar antes de que la última empiece, y el bug quedaría escondido.
 func Run(c Counter, workers, perWorker int) int64 {
 	var wg sync.WaitGroup
 	gate := make(chan struct{})

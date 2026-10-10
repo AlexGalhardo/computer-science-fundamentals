@@ -8,6 +8,11 @@
 //     recursão tem sempre cerca de log2(n) níveis e cada nível intercala n valores: O(n log n)
 //     para qualquer ordem de entrada. O preço é o buffer auxiliar de n valores. Um único buffer
 //     é alocado uma vez e reaproveitado por todas as intercalações, em vez de um vetor por chamada.
+// ES: Merge sort, de arriba hacia abajo. Divide el tramo a la mitad, ordena cada mitad y mezcla las
+//     dos mitades ordenadas. La división es por posición, nunca por valor, así que el árbol de
+//     recursión siempre tiene cerca de log2(n) niveles y cada nivel mezcla n valores: O(n log n)
+//     para cualquier orden de entrada. El precio es el búfer auxiliar de n valores. Un único búfer
+//     se asigna una vez y se reaprovecha en todas las mezclas, en lugar de un arreglo por llamada.
 export function mergeSort(input: readonly number[]): number[] {
 	const a = [...input];
 	const buffer = new Array<number>(a.length);
@@ -31,6 +36,9 @@ function sortRange(a: number[], buffer: number[], lo: number, hi: number): void 
 // PT: O menor valor restante é sempre a cabeça de uma das duas metades. No empate vence a
 //     metade esquerda (`<=`), porque os valores dela vinham antes na entrada: é isso que mantém
 //     a ordenação estável.
+// ES: El menor valor restante siempre es la cabeza de una de las dos mitades. En el empate gana la
+//     mitad izquierda (`<=`), porque sus valores venían antes en la entrada: eso es lo que mantiene
+//     estable la ordenación.
 function merge(a: number[], buffer: number[], lo: number, mid: number, hi: number): void {
 	let i = lo;
 	let j = mid;

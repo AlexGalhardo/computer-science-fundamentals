@@ -36,6 +36,11 @@ fn invalid(message: &str) -> io::Error {
 //     run ordenada. As linhas não são copiadas para ordenar: ordena-se um índice de pares
 //     (início, tamanho), ao custo de 8 bytes por linha. Uma linha cortada pelo fim do buffer é
 //     levada para o começo do próximo. A entrada é lida uma única vez, do início ao fim.
+// ES: Fase 1, generación de runs. Un buffer de `run_bytes` es el único trozo grande de memoria:
+//     se llena desde el archivo, las líneas dentro de él se ordenan y se escriben como una run
+//     ordenada. Las líneas no se copian para ordenar: se ordena un índice de pares (inicio,
+//     tamaño), al costo de 8 bytes por línea. Una línea cortada por el final del buffer se
+//     lleva al comienzo del siguiente. La entrada se lee una sola vez, de principio a fin.
 pub fn generate_runs(
     input: &Path,
     tmp: &Path,
@@ -107,6 +112,11 @@ pub fn generate_runs(
 //     run vem cada candidato, e compara a linha atual dessas runs. A menor linha atual está
 //     sempre na posição 0. Quando duas linhas são iguais, ganha a run de menor número, o que
 //     mantém a intercalação estável: linhas iguais saem na ordem das runs.
+// ES: Un heap binario de mínimo con números de runs. El heap no guarda las líneas, solo de qué
+//     run viene cada candidato, y compara la línea actual de esas runs. La menor línea actual
+//     está siempre en la posición 0. Cuando dos líneas son iguales, gana la run de menor
+//     número, lo que mantiene la mezcla estable: las líneas iguales salen en el orden de las
+//     runs.
 pub struct RunHeap {
     items: Vec<usize>,
 }
@@ -138,12 +148,16 @@ impl RunHeap {
     // PT: A linha da run do topo mudou (a próxima linha dessa run foi lida), então ela desce
     //     até que os dois filhos sejam maiores. Isso custa cerca de log2(k) comparações, contra
     //     as k - 1 de olhar todas as runs.
+    // ES: La línea de la run de la cima cambió (se leyó la siguiente línea de esa run), así que
+    //     desciende hasta que los dos hijos sean mayores. Esto cuesta unas log2(k)
+    //     comparaciones, contra las k - 1 de mirar todas las runs.
     pub fn top_changed(&mut self, lines: &[Vec<u8>]) {
         self.sift_down(0, lines);
     }
 
     // EN: The run at the top ended: the last item takes its place and sinks.
     // PT: A run do topo acabou: o último item toma o lugar dela e desce.
+    // ES: La run de la cima se acabó: el último elemento toma su lugar y desciende.
     pub fn remove_top(&mut self, lines: &[Vec<u8>]) {
         let last = self.items.len() - 1;
         self.items.swap(0, last);
@@ -179,6 +193,9 @@ impl RunHeap {
 // PT: Fase 2, a intercalação de k caminhos. Cada run é lida em sequência pelo seu próprio
 //     buffer, e só uma linha de cada run fica na memória. O heap diz qual run tem a menor
 //     linha: essa linha é gravada, a próxima linha da mesma run é lida, e o heap é consertado.
+// ES: Fase 2, la mezcla de k vías. Cada run se lee en secuencia por su propio buffer, y solo
+//     una línea de cada run queda en memoria. El heap dice qué run tiene la menor línea: esa
+//     línea se escribe, se lee la siguiente línea de la misma run y se repara el heap.
 pub fn merge_runs(inputs: &[PathBuf], output: &Path, buffer_bytes: usize) -> io::Result<u64> {
     let mut readers = Vec::with_capacity(inputs.len());
     let mut lines: Vec<Vec<u8>> = vec![Vec::new(); inputs.len()];
@@ -212,6 +229,9 @@ pub fn merge_runs(inputs: &[PathBuf], output: &Path, buffer_bytes: usize) -> io:
 // PT: Toda a memória da intercalação são os seus buffers: um por run de entrada mais um para a
 //     saída. Com um orçamento fixo, um fan-in maior significa buffers menores, então cada
 //     recarga traz menos dados. Em um disco magnético cada recarga é também um seek.
+// ES: Toda la memoria de la mezcla son sus buffers: uno por run de entrada más uno para la
+//     salida. Con un presupuesto fijo, un fan-in mayor significa buffers menores, así que cada
+//     recarga trae menos datos. En un disco magnético cada recarga es también un seek.
 pub fn merge_buffer_bytes(config: &Config) -> usize {
     (config.run_bytes / (config.fan_in + 1)).max(4096)
 }
@@ -232,6 +252,11 @@ fn move_file(from: &Path, to: &Path) -> io::Result<()> {
 //     de até `fan_in` runs em runs maiores, até sobrar uma. Uma passada lê e grava cada linha
 //     uma vez, então o número de passadas, teto(log na base fan_in do número de runs), é o que
 //     a configuração realmente muda. As runs intercaladas são apagadas assim que consumidas.
+// ES: Ordenación externa por mezcla. Después de la generación de runs, cada pasada junta grupos
+//     de hasta `fan_in` runs en runs mayores, hasta que queda una. Una pasada lee y escribe cada
+//     línea una vez, así que el número de pasadas, techo(log en base fan_in del número de
+//     runs), es lo que la configuración realmente cambia. Las runs mezcladas se borran en
+//     cuanto se consumen.
 pub fn external_sort(
     input: &Path,
     output: &Path,
@@ -291,6 +316,9 @@ pub fn external_sort(
 // PT: A ferramenta errada, mantida para comparação: carregar o arquivo inteiro e ordenar na
 //     memória. Ela precisa de memória proporcional ao arquivo e, sob o limite de memória da
 //     demonstração, é morta pelo sistema.
+// ES: La herramienta equivocada, conservada para comparar: cargar el archivo entero y ordenar
+//     en memoria. Necesita memoria proporcional al archivo y, bajo el límite de memoria de la
+//     demostración, el sistema la mata.
 pub fn in_memory_sort(input: &Path, output: &Path) -> io::Result<u64> {
     let bytes = std::fs::read(input)?;
     let mut lines: Vec<&[u8]> = bytes.split(|&byte| byte == b'\n').collect();

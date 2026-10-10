@@ -13,6 +13,10 @@ import {
 // PT: Uma carteira é um par de chaves. A chave privada assina, a pública confere, e a pública
 //     também é o "endereço" ao qual as saídas ficam presas. O algoritmo é o Ed25519 do módulo
 //     padrão `node:crypto` (o Bitcoin usa ECDSA sobre secp256k1; a ideia é a mesma).
+// ES: Una billetera es un par de claves. La clave privada firma, la pública verifica, y la
+//     pública también es la "dirección" a la que quedan atadas las salidas. El algoritmo es
+//     Ed25519 del módulo estándar `node:crypto` (Bitcoin usa ECDSA sobre secp256k1; la idea es
+//     la misma).
 export interface Wallet {
 	/** Raw 32-byte Ed25519 public key, in hexadecimal. */
 	publicKey: string;
@@ -22,6 +26,8 @@ export interface Wallet {
 // EN: DER headers that wrap a raw 32-byte Ed25519 key (PKCS#8 for private, SPKI for public).
 // PT: Cabeçalhos DER que embrulham uma chave Ed25519 crua de 32 bytes (PKCS#8 para a privada,
 //     SPKI para a pública).
+// ES: Encabezados DER que envuelven una clave Ed25519 cruda de 32 bytes (PKCS#8 para la
+//     privada, SPKI para la pública).
 const PKCS8_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
 const SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 const PUBLIC_KEY_HEX = /^[0-9a-f]{64}$/;
@@ -34,6 +40,11 @@ const PUBLIC_KEY_HEX = /^[0-9a-f]{64}$/;
 //     rótulo público ("alice", "miner-a"), então qualquer pessoa que leia este arquivo consegue
 //     recriá-la. É de propósito: a demo e os testes precisam das mesmas carteiras em toda
 //     execução e em todo nó, e não existe chave nem moeda real em lugar nenhum deste projeto.
+// ES: CLAVES DE JUGUETE, NUNCA LAS USES FUERA DE ESTE LABORATORIO. La clave privada se deriva de
+//     una etiqueta pública ("alice", "miner-a"), así que cualquiera que lea este archivo puede
+//     recrearla. Es a propósito: la demo y las pruebas necesitan las mismas billeteras en cada
+//     ejecución y en cada nodo, y no existe ninguna clave ni moneda real en ningún lugar de
+//     este proyecto.
 export function walletFromLabel(label: string): Wallet {
 	const seed = createHash("sha256").update(`didactic-blockchain toy key: ${label}`).digest();
 	const privateKey = createPrivateKey({ key: Buffer.concat([PKCS8_PREFIX, seed]), format: "der", type: "pkcs8" });
@@ -49,6 +60,9 @@ export function sign(wallet: Wallet, message: string): string {
 //     malformed key or signature is simply "not valid", never an exception for the caller.
 // PT: A verificação só precisa de dados públicos: a mensagem, a assinatura e a chave pública.
 //     Uma chave ou assinatura malformada é apenas "inválida", nunca uma exceção para quem chama.
+// ES: La verificación solo necesita datos públicos: el mensaje, la firma y la clave pública.
+//     Una clave o firma malformada es simplemente "inválida", nunca una excepción para quien
+//     llama.
 export function verify(publicKey: string, message: string, signature: string): boolean {
 	if (!PUBLIC_KEY_HEX.test(publicKey)) {
 		return false;

@@ -10,6 +10,9 @@ import { CSP_VIOLATION_COUNTER, domScenario, reflectedScenario, storedScenario }
 // PT: Testes de navegador, em um Chromium de verdade, dentro da rede do laboratório. Os mesmos
 //     cenários rodam contra os dois apps: no vulnerável o código injetado roda, no corrigido
 //     ele é exibido como texto e o uso comum continua funcionando.
+// ES: Pruebas de navegador, en un Chromium de verdad, dentro de la red del laboratorio. Los mismos
+//     escenarios corren contra las dos apps: en la vulnerable el código inyectado corre, en la corregida
+//     se muestra como texto y el uso común sigue funcionando.
 
 const targets = loadLabTargets(process.env);
 
@@ -82,6 +85,8 @@ test.describe("fixed app: the same attempts are shown as text", () => {
 		//     it run: the policy blocks injected code without breaking the application.
 		// PT: O script da página vem de um arquivo do mesmo servidor, então `script-src 'self'` o
 		//     deixa rodar: a política bloqueia código injetado sem quebrar a aplicação.
+		// ES: El script de la página viene de un archivo del mismo servidor, así que `script-src 'self'` lo
+		//     deja correr: la política bloquea el código inyectado sin romper la aplicación.
 		const dom = await domScenario(page, targets.fixed, FAKE_AUTHOR);
 		expect(dom.visibleText).toContain(FAKE_AUTHOR);
 		expect(dom.cspViolations).toBe(0);
@@ -98,6 +103,11 @@ test.describe("fixed app: the same attempts are shown as text", () => {
 //     navegador se recusa a executá-la (uma violação é reportada e a marca continua desligada).
 //     Leia as duas asserções juntas: a CSP reduziu o dano, não removeu o bug. É por isso que o
 //     app corrigido codifica a saída primeiro e usa a CSP só como rede de segurança.
+// ES: CSP como segunda capa. Esta ruta de la app vulnerable mantiene el error de codificación y solo
+//     añade la cabecera de la política. El marcado SÍ se inyecta (injectedElements es 1), y el
+//     navegador se niega a ejecutarlo (se reporta una violación y la marca sigue desactivada).
+//     Lee las dos aserciones juntas: la CSP redujo el daño, no eliminó el error. Por eso la
+//     app corregida codifica primero la salida y usa la CSP solo como red de seguridad.
 test.describe("vulnerable page with CSP only: defence in depth", () => {
 	test("the inline script is injected but the policy blocks it", async ({ page }) => {
 		const seen = await reflectedScenario(page, `${targets.vulnerable}/csp-only/search`, SCRIPT_INPUT);

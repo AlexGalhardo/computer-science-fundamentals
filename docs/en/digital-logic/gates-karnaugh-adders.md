@@ -1,6 +1,6 @@
 # Logic gates, Karnaugh and adders
 
-> Versão em português: [docs/pt/digital-logic/gates-karnaugh-adders.md](../../pt/digital-logic/gates-karnaugh-adders.md)
+> Versão em português: [docs/pt/digital-logic/gates-karnaugh-adders.md](../../pt/digital-logic/gates-karnaugh-adders.md) · Versión en español: [docs/es/digital-logic/gates-karnaugh-adders.md](../../es/digital-logic/gates-karnaugh-adders.md)
 
 Mini-project MP-DL-1, in [`projects/digital-logic/gates-karnaugh-adders`](../../../projects/digital-logic/gates-karnaugh-adders). It teaches how a Boolean function becomes a circuit: from an expression to a truth table, from a truth table to the smallest expression, and from gates to a circuit that adds.
 

@@ -3,6 +3,9 @@
 //     database".
 // PT: O PostgreSQL é a fonte da verdade: uma tabela `products` pequena. Todo comando enviado a
 //     ele é contado, porque a lição inteira é medida em "quantas vezes incomodamos o banco".
+// ES: PostgreSQL es la fuente de la verdad: una tabla `products` pequeña. Cada sentencia que se
+//     le envía se cuenta, porque toda la lección se mide en "cuántas veces molestamos a la base
+//     de datos".
 
 import { Pool } from "pg";
 import { z } from "zod";
@@ -66,6 +69,9 @@ export class Database {
 	// PT: O `pg_sleep` deixa a consulta tão cara quanto o experimento pedir. Uma consulta cara de
 	//     verdade seguraria a conexão do mesmo jeito: o pool tem 20 conexões, então 300 falhas
 	//     simultâneas fazem fila por elas. Essa fila é o estouro da manada.
+	// ES: `pg_sleep` vuelve la consulta tan costosa como pida el experimento. Una consulta costosa
+	//     de verdad retendría la conexión de la misma manera: el pool tiene 20 conexiones, así que
+	//     300 fallos simultáneos hacen cola por ellas. Esa cola es el stampede.
 	async readProduct(id: number, costMs = 0): Promise<Product | null> {
 		this.counters.reads += 1;
 		const result = await this.pool.query<Product>(
@@ -89,6 +95,8 @@ export class Database {
 	//     the reason this strategy is cheap for the database.
 	// PT: A descarga do write-behind: muitos produtos em UM comando e uma única viagem. O lote é
 	//     o motivo de essa estratégia ser barata para o banco.
+	// ES: El vaciado del write-behind: muchos productos en UNA sola sentencia y un solo viaje de
+	//     ida y vuelta. El lote es la razón de que esta estrategia sea barata para la base de datos.
 	async writePrices(products: Product[]): Promise<number> {
 		if (products.length === 0) {
 			return 0;

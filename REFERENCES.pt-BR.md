@@ -1,6 +1,6 @@
 # Referências
 
-> English version: [REFERENCES.md](REFERENCES.md)
+> English version: [REFERENCES.md](REFERENCES.md) · Versión en español: [REFERENCES.es.md](REFERENCES.es.md)
 
 As principais fontes para estudar e se aprofundar em cada área deste repositório, agrupadas por área na mesma ordem do índice de áreas do [PLAN.md](PLAN.md).
 

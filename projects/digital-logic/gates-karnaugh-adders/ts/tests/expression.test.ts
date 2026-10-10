@@ -8,6 +8,10 @@ import { and, type Bit, nand, nor, not, or, xnor, xor } from "../src/gates";
 // PT: Critério de aceite MP-DL-1.1. Estas 20 tabelas foram escritas à mão, linha a linha, antes
 //     de o simulador rodar. `outputs` é a coluna de saída lida da linha 00...0 à linha 11...1,
 //     com a primeira variável como bit mais significativo. O gerador precisa reproduzir todas.
+// ES: Criterio de aceptación MP-DL-1.1. Estas 20 tablas se escribieron a mano, fila por fila,
+//     antes de ejecutar el simulador. `outputs` es la columna de salida leída de la fila 00...0
+//     a la fila 11...1, con la primera variable como bit más significativo. El generador debe
+//     reproducirlas todas.
 const HAND_WRITTEN: { expression: string; variables?: string[]; outputs: string }[] = [
 	{ expression: "A'", outputs: "10" },
 	{ expression: "A·B", outputs: "0001" },
@@ -47,6 +51,9 @@ describe("truth tables from expressions", () => {
 	//     every theorem of Boolean algebra into something that can be checked, not just trusted.
 	// PT: Duas expressões são equivalentes exatamente quando as suas colunas de saída são iguais.
 	//     Isso transforma cada teorema da álgebra booleana em algo que se confere, não só se aceita.
+	// ES: Dos expresiones son equivalentes exactamente cuando sus columnas de salida son iguales.
+	//     Esto convierte cada teorema del álgebra booleana en algo que se comprueba, no solo se
+	//     acepta.
 	test("theorems of Boolean algebra hold row by row", () => {
 		const column = (text: string): string => truthTable(parse(text), ["A", "B", "C"]).outputs.join("");
 		const theorems: [string, string][] = [

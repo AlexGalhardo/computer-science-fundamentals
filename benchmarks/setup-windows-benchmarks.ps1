@@ -10,6 +10,12 @@
 #     números só significam algo em uma máquina sem outras cargas.
 #     Uso: .\setup-windows-benchmarks.ps1            tudo
 #          .\setup-windows-benchmarks.ps1 -Quick     pula as medições, só constrói e testa
+# ES: Reproduce la suite completa de benchmark de los lenguajes: construye todas las imágenes,
+#     comprueba que las implementaciones coinciden, ejecuta las ocho cargas, regenera los
+#     resultados y los datos del dashboard, y prueba el dashboard. Requisitos: Docker y Bun.
+#     Tarda cerca de una hora, y los números solo significan algo en una máquina sin otras cargas.
+#     Uso: .\setup-windows-benchmarks.ps1            todo
+#          .\setup-windows-benchmarks.ps1 -Quick     omite las mediciones, solo construye y prueba
 param([switch]$Quick)
 
 $ErrorActionPreference = "Stop"
@@ -31,6 +37,11 @@ foreach ($tool in "docker", "bun") {
 #     um registro de erro, e com "Stop" isso abortaria o script em uma mensagem de progresso
 #     inofensiva, então a preferência é afrouxada enquanto o programa roda e a saída dele é
 #     repassada como texto.
+# ES: Ejecuta un paso y detiene el script si falla. El éxito lo decide solo el código de salida.
+#     Windows PowerShell 5.1 convierte cada línea que un programa nativo escribe en stderr en un
+#     registro de error, y con "Stop" eso abortaría el script por un mensaje de progreso
+#     inofensivo, así que la preferencia se relaja mientras el programa corre y su salida se
+#     pasa como texto.
 function Invoke-Step {
 	param([string]$Title, [scriptblock]$Step)
 	Write-Output "== $Title"
@@ -69,6 +80,7 @@ try {
 finally {
 	# EN: Whatever happens, leave no container, network or volume of the two compose stacks behind.
 	# PT: Aconteça o que acontecer, não deixa contêiner, rede ou volume das duas pilhas compose para trás.
+	# ES: Pase lo que pase, no deja contenedor, red ni volumen de las dos pilas compose atrás.
 	foreach ($stack in @(@("http", "tools"), @("database", "clients"))) {
 		Push-Location $stack[0]
 		try { docker compose --profile $stack[1] down -v --remove-orphans 2>$null | Out-Null } catch { } finally { Pop-Location }

@@ -9,6 +9,10 @@ import { isAccepted, shippingCents } from "../../src/shipping";
 //     relatório de cobertura diz 100%. Mas veja o que eles afirmam: que um resultado é um
 //     número, que é positivo, que algo é lançado. Eles rodam o código sem conferir o que ele
 //     calcula. A cobertura mede quais linhas foram executadas, não se alguém olhou o resultado.
+// ES: LA SUITE DÉBIL. Juntas, estas pruebas ejecutan todas las líneas de shipping.ts, así que el
+//     informe de cobertura dice 100%. Pero mira lo que afirman: que un resultado es un
+//     número, que es positivo, que algo se lanza. Ejecutan el código sin comprobar lo que
+//     calcula. La cobertura mide qué líneas se ejecutaron, no si alguien miró el resultado.
 
 test("a light local parcel has a positive price", () => {
 	expect(shippingCents({ weightKg: 1, distanceKm: 10, express: false })).toBeGreaterThan(0);

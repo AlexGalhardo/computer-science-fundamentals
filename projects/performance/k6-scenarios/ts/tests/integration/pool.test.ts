@@ -4,6 +4,9 @@
 // PT: Testes contra um PostgreSQL de verdade (o serviço `db` do docker-compose). Eles mostram o
 //     gargalo em miniatura, sem k6: as mesmas requisições, o mesmo tempo de consulta, e só o
 //     tamanho do pool muda quanto o lote demora.
+// ES: Pruebas contra un PostgreSQL de verdad (el servicio `db` de docker-compose). Muestran el
+//     cuello de botella en miniatura, sin k6: las mismas solicitudes, el mismo tiempo de consulta, y
+//     solo el tamaño del pool cambia cuánto tarda el lote.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import type { Pool } from "pg";
@@ -50,6 +53,9 @@ test("findProduct reads a seeded product and returns undefined for an unknown id
 // PT: Seis requisições de 100 ms cada. Com uma conexão elas rodam uma depois da outra (cerca de
 //     600 ms). Com seis conexões rodam lado a lado (cerca de 100 ms). A consulta não ficou mais
 //     rápida: a espera por uma conexão desapareceu.
+// ES: Seis solicitudes de 100 ms cada una. Con una conexión corren una tras otra (unos 600 ms). Con
+//     seis conexiones corren en paralelo (unos 100 ms). La consulta no se volvió más rápida: la
+//     espera por una conexión desapareció.
 test("a small pool makes concurrent requests wait in line", async () => {
 	const batch = (shared: Pool): Promise<unknown> =>
 		Promise.all(Array.from({ length: 6 }, (_, index) => findProduct(shared, index + 1, 100, 5_000)));

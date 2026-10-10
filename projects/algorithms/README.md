@@ -1,6 +1,6 @@
 # Algorithms
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Algorithms are the step-by-step methods for solving a problem: sorting, searching, finding the shortest path, choosing the best combination. Studying them teaches a small set of design techniques (divide and conquer, greedy choice, dynamic programming, backtracking) that turn problems that look impossible at scale into programs that finish.
 

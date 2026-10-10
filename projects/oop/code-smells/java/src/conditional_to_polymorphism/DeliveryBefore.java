@@ -5,6 +5,10 @@
 //     entrega é esta?" é feita em três métodos. Um tipo novo exige um ramo novo em cada um
 //     deles, e um ramo esquecido só é achado quando a última linha lança exceção em tempo de
 //     execução.
+// ES: MAL OLOR: una cadena de condicionales sobre un código de tipo. La pregunta "¿qué tipo de
+//     entrega es esta?" se hace en tres métodos. Un tipo nuevo exige una rama nueva en cada uno
+//     de ellos, y una rama olvidada solo se descubre cuando la última línea lanza una excepción
+//     en tiempo de ejecución.
 public final class DeliveryBefore {
   private DeliveryBefore() {}
 

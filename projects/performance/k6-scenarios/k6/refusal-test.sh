@@ -3,6 +3,8 @@
 #     to start. The test passes only when every run fails with the refusal message.
 # PT: Roda cada um dos quatro cenários com um alvo que NÃO é local e confere que o k6 se recusa a
 #     começar. O teste só passa quando toda execução falha com a mensagem de recusa.
+# ES: Ejecuta cada uno de los cuatro escenarios con un destino que NO es local y comprueba que k6 se
+#     niega a empezar. La prueba solo pasa cuando toda ejecución falla con el mensaje de rechazo.
 set -u
 
 for scenario in load stress spike soak; do

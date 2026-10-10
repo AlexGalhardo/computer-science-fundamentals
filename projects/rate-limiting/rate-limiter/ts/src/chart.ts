@@ -9,6 +9,10 @@ import { type Language, labelOf, TEXTS } from "./report";
 //     script, sem fonte ou imagem buscada em lugar nenhum. Ele abre do disco em qualquer
 //     navegador e aparece dentro do README. São "pequenos múltiplos": um painel por algoritmo,
 //     todos com os mesmos eixos, empilhados para o olho comparar o mesmo instante de cima a baixo.
+// ES: El gráfico es un archivo SVG escrito como texto puro: sin biblioteca de gráficos, sin
+//     script, sin fuente ni imagen traída de ningún lado. Se abre desde el disco en cualquier
+//     navegador y aparece dentro del README. Son "pequeños múltiplos": un panel por algoritmo,
+//     todos con los mismos ejes, apilados para que el ojo compare el mismo instante de arriba abajo.
 
 const WIDTH = 920;
 const LEFT = 24;
@@ -57,6 +61,7 @@ export function renderChart(result: ExperimentResult, language: Language): strin
 		`<title>${escapeXml(text.title ?? "")}</title>`,
 		// EN: A solid background, so the chart stays readable on a dark page.
 		// PT: Um fundo sólido, para o gráfico continuar legível em uma página escura.
+		// ES: Un fondo sólido, para que el gráfico siga siendo legible en una página oscura.
 		`<rect width="${WIDTH}" height="${height}" fill="#ffffff"/>`,
 		`<text x="${LEFT}" y="28" font-size="17" font-weight="600" fill="${INK}">${escapeXml(text.title ?? "")}</text>`,
 		`<text x="${LEFT}" y="48" font-size="11.5" fill="${MUTED}">${escapeXml(text.subtitle ?? "")}</text>`,
@@ -65,6 +70,8 @@ export function renderChart(result: ExperimentResult, language: Language): strin
 	// EN: Phase names sit once at the top; their limits run through every panel as thin lines.
 	// PT: Os nomes das fases ficam uma vez no topo; seus limites atravessam todos os painéis
 	//     como linhas finas.
+	// ES: Los nombres de las fases aparecen una vez arriba; sus límites cruzan todos los paneles
+	//     como líneas finas.
 	for (const phase of result.phases) {
 		out.push(
 			`<text x="${round(x(phase.fromMs) + 4)}" y="${TOP - 34}" font-size="11" font-weight="600" fill="${MUTED}">${escapeXml(phase.label[language])}</text>`,
@@ -90,6 +97,8 @@ export function renderChart(result: ExperimentResult, language: Language): strin
 		//     visible is what the algorithm rejected.
 		// PT: Atrás das barras coloridas, o tráfego oferecido em cinza: o cinza que continua
 		//     visível é o que o algoritmo rejeitou.
+		// ES: Detrás de las barras de color, el tráfico ofrecido en gris: el gris que sigue
+		//     visible es lo que el algoritmo rechazó.
 		for (let bin = 0; bin < bins; bin++) {
 			const offered = result.offered.perBin[bin] ?? 0;
 			const count = series.perBin[bin] ?? 0;

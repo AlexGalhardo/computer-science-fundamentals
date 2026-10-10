@@ -4,6 +4,9 @@
 // PT: Uma única suíte de testes de protocolo para os três servidores. Ela não sabe nada sobre a
 //     linguagem atrás de cada endereço: só fala HTTP. Se os três passam, um cliente não
 //     consegue distingui-los, e é isso que torna o teste de carga uma comparação justa.
+// ES: Una única suite de pruebas de protocolo para los tres servidores. No sabe nada sobre el
+//     lenguaje detrás de cada dirección: solo habla HTTP. Si los tres pasan, un cliente no
+//     puede distinguirlos, y eso es lo que hace de la prueba de carga una comparación justa.
 
 import { beforeAll, describe, expect, test } from "bun:test";
 import { isLocalTarget } from "../load/target.js";
@@ -18,6 +21,7 @@ interface Stats {
 
 // EN: A response body is external input: its shape is checked before it is trusted.
 // PT: O corpo de uma resposta é entrada externa: o formato é conferido antes de confiar nele.
+// ES: El cuerpo de una respuesta es entrada externa: su formato se verifica antes de confiar en él.
 function parseStats(value: unknown): Stats {
 	if (typeof value !== "object" || value === null) {
 		throw new Error("stats is not an object");
@@ -32,6 +36,7 @@ function parseStats(value: unknown): Stats {
 for (const target of targets) {
 	// EN: The same rule as the load test: this suite only talks to local services.
 	// PT: A mesma regra do teste de carga: esta suíte só fala com serviços locais.
+	// ES: La misma regla de la prueba de carga: esta suite solo habla con servicios locales.
 	if (!isLocalTarget(target)) {
 		throw new Error(`refusing to test ${target}: only local targets are allowed`);
 	}
@@ -39,6 +44,7 @@ for (const target of targets) {
 	describe(target, () => {
 		// EN: The servers start at the same time as this suite, so it waits until each one answers.
 		// PT: Os servidores sobem junto com esta suíte, então ela espera até cada um responder.
+		// ES: Los servidores arrancan al mismo tiempo que esta suite, así que espera hasta que cada uno responda.
 		beforeAll(async () => {
 			for (let attempt = 0; attempt < 60; attempt++) {
 				const up = await fetch(`${target}/health`).then(
@@ -103,6 +109,8 @@ for (const target of targets) {
 		//     time would need 150 seconds. A concurrent one needs about half a second.
 		// PT: 300 requisições que esperam 500 ms cada. Um servidor que tratasse uma conexão por
 		//     vez precisaria de 150 segundos. Um servidor concorrente precisa de meio segundo.
+		// ES: 300 solicitudes que esperan 500 ms cada una. Un servidor que atendiera una conexión a la
+		//     vez necesitaría 150 segundos. Un servidor concurrente necesita medio segundo.
 		test("300 delayed requests are served at the same time", async () => {
 			const start = performance.now();
 			const responses = await Promise.all(

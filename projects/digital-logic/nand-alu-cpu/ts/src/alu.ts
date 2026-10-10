@@ -8,6 +8,9 @@ export const WIDTH = 4;
 // PT: Somador completo em 9 NANDs. São duas XORs em sequência (soma = A xor B xor Cin) que
 //     expõem as suas NANDs internas compartilhadas: esses dois sinais são exatamente (A·B)' e
 //     (Cin·(A xor B))', e mais uma NAND os transforma no vai-um A·B + Cin·(A xor B).
+// ES: Sumador completo en 9 NAND. Son dos XOR en secuencia (suma = A xor B xor Cin) que
+//     exponen sus NAND internas compartidas: esas dos señales son exactamente (A·B)' y
+//     (Cin·(A xor B))', y una NAND más las transforma en el acarreo A·B + Cin·(A xor B).
 export function fullAdder(a: Bit, b: Bit, carryIn: Bit): { sum: Bit; carry: Bit } {
 	const sharedAB = nand(a, b);
 	const partial = nand(nand(a, sharedAB), nand(b, sharedAB));
@@ -18,6 +21,7 @@ export function fullAdder(a: Bit, b: Bit, carryIn: Bit): { sum: Bit; carry: Bit 
 
 // EN: The four operations, chosen by two control wires (op1 op0).
 // PT: As quatro operações, escolhidas por dois fios de controle (op1 op0).
+// ES: Las cuatro operaciones, elegidas por dos cables de control (op1 op0).
 export const ALU_OPERATIONS = { ADD: 0b00, SUB: 0b01, AND: 0b10, OR: 0b11 } as const;
 export type AluOperation = keyof typeof ALU_OPERATIONS;
 
@@ -50,6 +54,16 @@ export interface AluOutput {
 //       de entrada, o +1.
 //     - O estouro (overflow) é o vai-um que entra no bit de sinal ser diferente do que sai dele.
 //     - Vai-um e estouro só fazem sentido em ADD e SUB, então são forçados a 0 em AND e OR.
+// ES: La ALU calcula todas las operaciones al mismo tiempo y un multiplexor elige un resultado,
+//     que es como funciona el hardware: no existe el "if", solo cables que se seleccionan o se
+//     ignoran.
+//     - La resta reutiliza el sumador: X - Y = X + Y' + 1. Las compuertas XOR invierten Y cuando
+//       `subtract` vale 1 (XOR con 1 invierte, XOR con 0 deja pasar) y el mismo cable es el
+//       acarreo de entrada, el +1.
+//     - El desbordamiento (overflow) es que el acarreo que entra al bit de signo sea distinto
+//       del que sale de él.
+//     - Acarreo y desbordamiento solo tienen sentido en ADD y SUB, así que se fuerzan a 0 en
+//       AND y OR.
 export function alu(x: Word, y: Word, op1: Bit, op0: Bit): AluOutput {
 	const arithmetic = not(op1);
 	const subtract = and(arithmetic, op0);

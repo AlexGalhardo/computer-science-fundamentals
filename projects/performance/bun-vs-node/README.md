@@ -1,6 +1,6 @@
 # bun-vs-node
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 The same HTTP API, written once, served in three ways: by Bun, by a single Node.js process, and by Node.js under PM2 cluster mode with four workers. A local k6 scenario loads a CPU-bound endpoint and an I/O-bound endpoint on each setup, and a report turns the runs into a table of requests per second, p95 latency and memory. The lesson is that throughput depends on two separate things: how fast the runtime executes your code, and how many processes the process model lets you use.
 

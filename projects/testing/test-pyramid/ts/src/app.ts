@@ -13,6 +13,9 @@ const PUBLIC_DIR = join(import.meta.dir, "..", "public");
 // PT: Tudo que chega no corpo de uma requisição é não confiável, então é conferido contra um
 //     esquema antes de qualquer uso. O relato de bug #23 (uma quantidade negativa baixando o
 //     total) foi corrigido pelo `positive()` aqui, e a suíte de regressão o mantém corrigido.
+// ES: Todo lo que llega en el cuerpo de una solicitud no es confiable, así que se verifica contra un
+//     esquema antes de cualquier uso. El reporte de bug #23 (una cantidad negativa bajando el
+//     total) se corrigió con `positive()` aquí, y la suite de regresión lo mantiene corregido.
 const addToCartSchema = z.object({
 	productId: z.string().min(1),
 	quantity: z.number().int().positive().max(99),
@@ -76,6 +79,9 @@ function staticFile(name: string, contentType: string): Response {
 // PT: A aplicação é uma função de Request para Response que recebe o repositório como argumento
 //     (injeção de dependência). O servidor a entrega ao `Bun.serve`, e um teste de integração a
 //     chama direto com um repositório em um banco em memória: mesmo código, sem socket.
+// ES: La aplicación es una función de Request a Response que recibe el repositorio como argumento
+//     (inyección de dependencias). El servidor se la entrega a `Bun.serve`, y una prueba de integración la
+//     llama directamente con un repositorio en una base de datos en memoria: mismo código, sin socket.
 export function createApp(repository: CartRepository): Handler {
 	const route = async (request: Request): Promise<Response> => {
 		const { pathname } = new URL(request.url);
@@ -84,6 +90,7 @@ export function createApp(repository: CartRepository): Handler {
 			case "GET /health":
 				// EN: Health asks the database a real question, so "up" means "able to serve".
 				// PT: O health faz uma pergunta real ao banco, então "no ar" significa "capaz de atender".
+				// ES: El health le hace una pregunta real a la base de datos, así que "en línea" significa "capaz de atender".
 				repository.list();
 				return json({ status: "ok" });
 			case "GET /api/products":
@@ -105,6 +112,9 @@ export function createApp(repository: CartRepository): Handler {
 				// PT: BUG SEMEADO "e2e": a página é instruída a não redesenhar o carrinho após um
 				//     clique. O servidor e o banco seguem corretos. Só um navegador de verdade
 				//     mostra a página desatualizada.
+				// ES: BUG SEMBRADO "e2e": a la página se le indica que no redibuje el carrito tras un
+				//     clic. El servidor y la base de datos siguen correctos. Solo un navegador de verdad
+				//     muestra la página desactualizada.
 				return new Response(`window.SHOP_CONFIG = ${JSON.stringify({ refreshAfterAdd: !bugIs("e2e") })};\n`, {
 					headers: { "content-type": "text/javascript; charset=utf-8" },
 				});

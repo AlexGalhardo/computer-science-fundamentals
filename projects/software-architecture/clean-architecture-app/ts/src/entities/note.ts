@@ -6,6 +6,10 @@
 //     mesmo que não existisse web, terminal nem banco: uma nota tem título, um corpo limitado,
 //     e nunca é modificada antes de ter sido criada. Olhe os imports: só arquivos desta mesma
 //     pasta. Nada aqui pode quebrar porque um framework foi atualizado.
+// ES: CAPA MÁS INTERNA: entidades. Esta carpeta guarda las reglas que valdrían para una nota
+//     aunque no existiera web, terminal ni base de datos: una nota tiene título, un cuerpo
+//     limitado, y nunca se modifica antes de haber sido creada. Mira los imports: solo archivos
+//     de esta misma carpeta. Nada aquí puede romperse porque se actualizó un framework.
 
 import type { DomainError } from "./errors";
 import { err, ok, type Result } from "./result";
@@ -34,6 +38,10 @@ export interface NoteChanges {
 //     O objeto em si é imutável: `edit` devolve uma nova `Note`, então nunca existe uma nota que
 //     falhou na validação pela metade, e um repositório pode entregar as suas notas sem medo de
 //     que sejam alteradas pelas costas.
+// ES: Una entidad tiene una identidad (`id`) que sigue siendo la misma mientras sus atributos
+//     cambian. El objeto en sí es inmutable: `edit` devuelve una nueva `Note`, así que nunca
+//     existe una nota que falló la validación a medias, y un repositorio puede entregar sus
+//     notas sin miedo de que las cambien a sus espaldas.
 export class Note {
 	private constructor(
 		readonly id: string,
@@ -47,6 +55,9 @@ export class Note {
 	//     that comes from the database passes through the same rules as data typed by a user.
 	// PT: A mesma fábrica serve a uma nota nova e a uma nota lida do armazenamento, então o dado
 	//     que vem do banco passa pelas mesmas regras que o dado digitado por um usuário.
+	// ES: La misma fábrica sirve para una nota nueva y para una nota leída del almacenamiento, así
+	//     que el dato que viene de la base de datos pasa por las mismas reglas que el dato escrito
+	//     por un usuario.
 	static create(props: NoteProps): Result<Note, DomainError> {
 		const title = Title.create(props.title);
 		if (!title.ok) {
@@ -65,6 +76,8 @@ export class Note {
 	//     depend on the machine clock, and its tests would give a different result every run.
 	// PT: A hora atual chega como parâmetro. Uma entidade que chamasse `new Date()` dependeria do
 	//     relógio da máquina, e os seus testes dariam um resultado diferente a cada execução.
+	// ES: La hora actual llega como parámetro. Una entidad que llamara a `new Date()` dependería
+	//     del reloj de la máquina, y sus pruebas darían un resultado distinto en cada ejecución.
 	edit(changes: NoteChanges, now: Date): Result<Note, DomainError> {
 		return Note.create({
 			id: this.id,

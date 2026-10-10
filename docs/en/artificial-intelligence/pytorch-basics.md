@@ -1,6 +1,6 @@
 # PyTorch basics
 
-> Versão em português: [docs/pt/artificial-intelligence/pytorch-basics.md](../../pt/artificial-intelligence/pytorch-basics.md)
+> Versão em português: [docs/pt/artificial-intelligence/pytorch-basics.md](../../pt/artificial-intelligence/pytorch-basics.md) · Versión en español: [docs/es/artificial-intelligence/pytorch-basics.md](../../es/artificial-intelligence/pytorch-basics.md)
 
 Mini-project MP-AI-6, in [`projects/artificial-intelligence/pytorch-basics`](../../../projects/artificial-intelligence/pytorch-basics). It teaches what a deep learning framework does for you, by redoing [neural-network-from-scratch](neural-network-from-scratch.md) (MP-AI-2) with PyTorch. The background is in section [14](README.md#14-what-a-framework-gives-you-pytorch) of the area page.
 
@@ -70,11 +70,11 @@ numerical gradient = (loss(w + h) - loss(w - h)) / 2h        with h = 0.000001
 
 | Parameter | Hand-written backpropagation | PyTorch `backward()` | Numerical |
 | --- | ---: | ---: | ---: |
-| `hidden1` w[0][0] | -0.060789 | -0.060789 | -0.060789 |
-| `hidden1` w[0][1] | 0.012666 | 0.012666 | 0.012666 |
+| `hidden1` `w[0][0]` | -0.060789 | -0.060789 | -0.060789 |
+| `hidden1` `w[0][1]` | 0.012666 | 0.012666 | 0.012666 |
 | `hidden1` b[0] | -0.049645 | -0.049645 | -0.049645 |
-| `hidden1` w[1][0] | -0.133021 | -0.133021 | -0.133021 |
-| `hidden1` w[1][1] | 0.010081 | 0.010081 | 0.010081 |
+| `hidden1` `w[1][0]` | -0.133021 | -0.133021 | -0.133021 |
+| `hidden1` `w[1][1]` | 0.010081 | 0.010081 | 0.010081 |
 | `hidden1` b[1] | -0.105778 | -0.105778 | -0.105778 |
 
 Over all 105 gradients, PyTorch and the hand-written backpropagation differ by less than 1e-12, and PyTorch and the numerical gradient by less than 1e-8. The first two are the same algorithm, so they agree to the last digits. The numerical one is an approximation, so it agrees a little less. A sign error in a single weight would show up as a difference thousands of times above the tolerance, and a test checks that too.

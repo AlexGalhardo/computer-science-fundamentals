@@ -1,6 +1,6 @@
 # gates-karnaugh-adders
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Mini-project MP-DL-1. It teaches **how a Boolean function becomes a circuit**, in three steps: an expression is parsed and simulated with gates to produce its truth table, a truth table is minimised by the Quine-McCluskey method (the Karnaugh map done as a table), and gates are wired into a half adder, a full adder and an 8-bit ripple-carry adder that really adds.
 

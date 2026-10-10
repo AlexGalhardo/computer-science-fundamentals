@@ -1,6 +1,6 @@
 # Brinquedo de difusão
 
-> English version: [docs/en/artificial-intelligence/diffusion-toy.md](../../en/artificial-intelligence/diffusion-toy.md)
+> English version: [docs/en/artificial-intelligence/diffusion-toy.md](../../en/artificial-intelligence/diffusion-toy.md) · Versión en español: [docs/es/artificial-intelligence/diffusion-toy.md](../../es/artificial-intelligence/diffusion-toy.md)
 
 Mini-projeto MP-AI-5, em [`projects/artificial-intelligence/diffusion-toy`](../../../projects/artificial-intelligence/diffusion-toy). Ensina como um modelo de imagens aprende a remover ruído, com pontos de duas dimensões no lugar de pixels. A base está na seção 12 da [página da área](README.md#12-geração-de-imagens), com a distribuição gaussiana da [seção 2](README.md#2-probabilidade-e-estatística) e a retropropagação da [seção 6](README.md#6-descida-do-gradiente-e-retropropagação).
 

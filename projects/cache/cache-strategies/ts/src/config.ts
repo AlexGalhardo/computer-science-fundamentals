@@ -2,6 +2,9 @@
 //     point at the services of docker-compose, with obviously fake lab credentials.
 // PT: Variáveis de ambiente são entrada externa, então são validadas na borda. Os padrões apontam
 //     para os serviços do docker-compose, com credenciais de laboratório claramente falsas.
+// ES: Las variables de entorno son entrada externa, así que se validan en el borde. Los valores
+//     por defecto apuntan a los servicios de docker-compose, con credenciales de laboratorio
+//     claramente falsas.
 
 import { resolve } from "node:path";
 import { z } from "zod";
@@ -16,6 +19,9 @@ const envSchema = z.object({
 	// PT: De quanto em quanto tempo a fila do write-behind é descarregada no PostgreSQL. É também
 	//     a quantidade de trabalho confirmado que se perde se o Redis morrer: tudo o que foi
 	//     escrito desde a última descarga.
+	// ES: Cada cuánto se vacía la cola del write-behind hacia PostgreSQL. Es también la cantidad
+	//     de trabajo confirmado que se pierde si Redis muere: todo lo escrito desde el último
+	//     vaciado.
 	FLUSH_INTERVAL_MS: z.coerce.number().int().min(10).max(60_000).default(200),
 	/** Folder of the mini-project, where `results/`, `k6-results/` and the READMEs live. */
 	PROJECT_DIR: z
@@ -41,6 +47,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 //     changes them between runs, through `POST /admin/reset`, without restarting the API.
 // PT: Os botões de um experimento. Não são variáveis de ambiente porque o teste de carga os muda
 //     entre as execuções, por `POST /admin/reset`, sem reiniciar a API.
+// ES: Los controles de un experimento. No son variables de entorno porque la prueba de carga
+//     los cambia entre ejecuciones, mediante `POST /admin/reset`, sin reiniciar la API.
 export const settingsSchema = z.object({
 	/** Number of rows in `products`. */
 	products: z.number().int().min(1).max(10_000).default(200),

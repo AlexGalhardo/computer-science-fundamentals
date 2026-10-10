@@ -7,6 +7,11 @@
 //     a mesma tentativa é bloqueada e que o uso legítimo continua funcionando. Os últimos blocos
 //     cobrem o que só a API corrigida tem: fim do bloqueio, expirações, validação e a
 //     atualização do hash.
+// ES: MP-SEC-6.2. Las mismas funciones de escenario corren contra las dos versiones. Contra la API
+//     vulnerable las pruebas afirman que cada falla es observable. Contra la corregida, afirman que
+//     el mismo intento es bloqueado y que el uso legítimo sigue funcionando. Los últimos bloques
+//     cubren lo que solo tiene la API corregida: fin del bloqueo, expiraciones, validación y la
+//     actualización del hash.
 
 import { describe, expect, test } from "bun:test";
 import { ALICE, BOB, CAROL, UNKNOWN_USERNAMES, WRONG_PASSWORDS } from "../src/data";
@@ -84,6 +89,7 @@ describe("fixed API: the same attempts are blocked", () => {
 		expect(cookie?.attributes.has("domain")).toBe(false);
 		// EN: 32 random bytes in base64url are 43 characters.
 		// PT: 32 bytes aleatórios em base64url são 43 caracteres.
+		// ES: 32 bytes aleatorios en base64url son 43 caracteres.
 		expect(cookie?.value).toMatch(/^[A-Za-z0-9_-]{43}$/);
 	});
 
@@ -141,6 +147,7 @@ describe("fixed API: the same attempts are blocked", () => {
 
 // EN: Normal use must work on both versions: the fix removes the holes, not the login.
 // PT: O uso normal precisa funcionar nas duas versões: a correção tira os buracos, não o login.
+// ES: El uso normal debe funcionar en las dos versiones: la corrección tapa los agujeros, no el inicio de sesión.
 describe.each<Version>(["vulnerable", "fixed"])("%s API: normal use works", (version) => {
 	test("bob-fake logs in and is recognised, a wrong password and a missing session are refused", async () => {
 		const normal = await normalUse(await createLab(version));
@@ -240,6 +247,7 @@ describe("fixed API: session timeouts", () => {
 describe("fixed API: input validation with Zod", () => {
 	// EN: A few hand-picked malformed bodies are enough to show the rule. This is not a fuzzer.
 	// PT: Alguns corpos malformados escolhidos à mão bastam para mostrar a regra. Isto não é um fuzzer.
+	// ES: Algunos cuerpos mal formados elegidos a mano bastan para mostrar la regla. Esto no es un fuzzer.
 	test.each([
 		["a missing password", { username: ALICE.username }],
 		["an unknown field", { username: ALICE.username, password: ALICE.password, admin: true }],

@@ -1,6 +1,6 @@
 # Detecção e correção de erros (MP-INFO-2)
 
-> English version: [docs/en/information-theory/error-detection-correction.md](../../en/information-theory/error-detection-correction.md)
+> English version: [docs/en/information-theory/error-detection-correction.md](../../en/information-theory/error-detection-correction.md) · Versión en español: [docs/es/information-theory/error-detection-correction.md](../../es/information-theory/error-detection-correction.md)
 
 Código: [projects/information-theory/error-detection-correction](../../../projects/information-theory/error-detection-correction). Linguagem: C++.
 
@@ -26,7 +26,7 @@ Em geral, detectar d erros exige distância d + 1, e corrigir d erros exige dist
 
 **CRC-32.** A mensagem é um polinômio com coeficientes 0 e 1, e o CRC é o resto da sua divisão por um gerador fixo de grau 32. A subtração é XOR, então a divisão é feita de deslocamentos e XORs:
 
-```
+```text
 1101000 | 1011        mensagem 1101, gerador 1011 (grau 3), três zeros acrescentados
 1011
 ----
@@ -52,7 +52,7 @@ Um CRC protege apenas contra acidentes. Qualquer pessoa pode recalculá-lo, ent�
 
 **Hamming(7,4).** Quatro bits de dados e três de paridade, dispostos de modo que as verificações de paridade apontem para o bit errado:
 
-```
+```text
 posição    1   2   3   4   5   6   7
 conteúdo   p1  p2  d1  p4  d2  d3  d4
 

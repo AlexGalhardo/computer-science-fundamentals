@@ -8,6 +8,10 @@ import { createInvoiceRegistry, type InvoiceRegistry } from "../../src/invoices"
 //     nova. Cada teste agora monta tudo de que precisa e não deixa nada para trás, então os
 //     testes passam em qualquer ordem, sozinhos ou juntos. Eles também são rodados com
 //     `--randomize`, para provar isso.
+// ES: CORREGIDO (aislamiento). El `beforeEach` le da a cada prueba un registro nuevecito, un fixture
+//     nuevo. Cada prueba ahora arma todo lo que necesita y no deja nada atrás, así que las
+//     pruebas pasan en cualquier orden, solas o juntas. También se ejecutan con
+//     `--randomize`, para demostrarlo.
 let registry: InvoiceRegistry;
 
 beforeEach(() => {

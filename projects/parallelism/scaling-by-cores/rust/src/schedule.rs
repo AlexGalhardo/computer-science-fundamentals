@@ -11,6 +11,11 @@ use std::ops::Range;
 //     com um bloco barato termina cedo e fica ocioso. `Dynamic` deixa cada trabalhador buscar
 //     o próximo pedaço pequeno quando fica livre: um pouco de coordenação por pedaço, e a
 //     carga se equilibra sozinha.
+// ES: Dos formas de repartir un bucle entre trabajadores. `Static` corta los ítems en un bloque
+//     contiguo por trabajador antes de cualquier ejecución: coordinación cero, pero el
+//     trabajador con un bloque barato termina antes y queda ocioso. `Dynamic` deja que cada
+//     trabajador tome la siguiente porción pequeña cuando queda libre: algo de coordinación por
+//     porción, y la carga se equilibra sola.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Schedule {
     Static,
@@ -25,6 +30,10 @@ pub enum Schedule {
 //     máximo um. Os primeiros `total % workers` intervalos ficam com os itens que sobram, então
 //     nada se perde quando a divisão não é exata. Cada item pertence a exatamente um
 //     intervalo: é isso que deixa os trabalhadores rodarem sem travas.
+// ES: Divide `total` ítems en `workers` intervalos contiguos cuyos tamaños difieren en como
+//     máximo uno. Los primeros `total % workers` intervalos se quedan con los ítems que sobran,
+//     así que nada se pierde cuando la división no es exacta. Cada ítem pertenece a exactamente
+//     un intervalo: eso es lo que deja a los trabajadores correr sin bloqueos.
 pub fn split_static(total: u64, workers: usize) -> Vec<Range<u64>> {
     let workers = workers.max(1) as u64;
     let base = total / workers;

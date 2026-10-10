@@ -4,6 +4,9 @@
 // PT: Uma instrução é um byte: o nibble alto é o código da operação (opcode) e o nibble baixo é
 //     o operando, que é uma constante, um endereço de memória ou um destino de salto.
 //     O montador só traduz nomes para esses números; a CPU nunca vê texto.
+// ES: Una instrucción es un byte: el nibble alto es el código de operación (opcode) y el nibble
+//     bajo es el operando, que es una constante, una dirección de memoria o un destino de salto.
+//     El ensamblador solo traduce nombres a esos números; la CPU nunca ve texto.
 export const OPCODES = {
 	NOP: 0x0, // do nothing
 	LDI: 0x1, // A <- n
@@ -37,6 +40,10 @@ function isMnemonic(text: string): text is Mnemonic {
 // PT: Duas passadas, como em todo montador. A primeira só conta as instruções para descobrir o
 //     endereço de cada rótulo; a segunda emite os bytes, trocando cada rótulo pelo seu endereço.
 //     É isso que permite a um salto citar um rótulo definido mais abaixo.
+// ES: Dos pasadas, como en todo ensamblador. La primera solo cuenta las instrucciones para
+//     descubrir la dirección de cada etiqueta; la segunda emite los bytes, cambiando cada
+//     etiqueta por su dirección. Eso es lo que permite que un salto cite una etiqueta definida
+//     más abajo.
 export function assemble(source: string): number[] {
 	const labels = new Map<string, number>();
 	const statements: { line: number; mnemonic: string; operand: string | undefined }[] = [];

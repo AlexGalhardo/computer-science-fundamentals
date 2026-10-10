@@ -1,6 +1,6 @@
 # dining-philosophers
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Cinco filósofos sentam a uma mesa redonda com cinco garfos, um entre cada par. Para comer, um filósofo precisa dos dois garfos ao seu lado. Se os cinco pegarem o garfo da esquerda no mesmo instante, cada um espera para sempre pelo garfo da direita, que está na mão do vizinho. Isso é um deadlock. Este mini-projeto constrói a mesa que congela, em Go e em Java, mostra como ler o thread dump do programa congelado e depois a corrige de duas formas: ordenação de travas e um garçom (um semáforo).
 
@@ -72,7 +72,7 @@ docker compose run --rm java-demo
 
 Cada estratégia janta por 3 segundos. Saída versionada em [results/demo-go.txt](results/demo-go.txt) e [results/demo-java.txt](results/demo-java.txt):
 
-```
+```text
 strategy deadlock   meals per philosopher
 naive    true       [0 0 0 0 0]
 ordered  false      [189 377 754 2266 191]

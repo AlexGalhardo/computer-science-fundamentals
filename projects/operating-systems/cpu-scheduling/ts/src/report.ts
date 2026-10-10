@@ -20,6 +20,8 @@ export const WORKLOAD_SIZE = 200;
 //     priorities do not follow the arrival order, so every policy draws a different chart.
 // PT: Um exemplo pequeno, que dá para acompanhar à mão. B e E são curtos, C é longo, e as
 //     prioridades não seguem a ordem de chegada, então cada política desenha um gráfico diferente.
+// ES: Un ejemplo pequeño que se puede seguir a mano. B y E son cortos, C es largo, y las
+//     prioridades no siguen el orden de llegada, así que cada política dibuja un diagrama distinto.
 export const EXAMPLE: Process[] = [
 	{ id: "A", arrival: 0, burst: 8, priority: 3 },
 	{ id: "B", arrival: 1, burst: 4, priority: 1 },
@@ -30,6 +32,7 @@ export const EXAMPLE: Process[] = [
 
 // EN: Policies are created fresh for every run because a policy object may keep state.
 // PT: As políticas são criadas de novo a cada execução porque um objeto de política pode guardar estado.
+// ES: Las políticas se crean de nuevo en cada ejecución porque un objeto de política puede guardar estado.
 export function policies(): Policy[] {
 	return [fcfs(), sjf(), roundRobin(4), priority(), mlfq(2, 3)];
 }

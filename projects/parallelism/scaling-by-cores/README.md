@@ -1,6 +1,6 @@
 # scaling-by-cores
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How much faster does a program get with more cores, and why not linearly? This mini-project (MP-PAR-1) runs two CPU-bound workloads, prime counting and a Mandelbrot render, sequentially and with 1, 2, 4 and 8 workers, in Rust, Go and C++. It proves that the parallel results are exactly the sequential ones, measures speed-up and efficiency, and fits Amdahl's law to the measurements to estimate the serial fraction.
 
@@ -102,7 +102,7 @@ All 72 rows of the grid (3 languages, sequential, static and dynamic, 1 to 8 wor
 
 Each cell is `speed-up (efficiency)` for that number of workers. The baseline is the sequential implementation of the same language.
 
-**primes**
+#### primes
 
 | Language | Schedule | Sequential (ms) | 1 | 2 | 4 | 8 | Fitted serial fraction |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -113,7 +113,7 @@ Each cell is `speed-up (efficiency)` for that number of workers. The baseline is
 | rust | static | 1388 | 0.89 (89%) | 1.46 (73%) | 2.28 (57%) | 3.31 (41%) | 24.6% |
 | rust | dynamic | 1388 | 0.75 (75%) | 1.67 (84%) | 2.49 (62%) | 3.07 (38%) | 21.4% |
 
-**mandelbrot**
+#### mandelbrot
 
 | Language | Schedule | Sequential (ms) | 1 | 2 | 4 | 8 | Fitted serial fraction |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |

@@ -7,6 +7,9 @@ import { join } from "node:path";
 // PT: `programs/` e `results/` são compartilhadas pelas implementações em Go e em TypeScript,
 //     então ficam um nível acima de `ts/`. Dentro da imagem Docker elas são copiadas ao lado de
 //     `src/`. Este auxiliar encontra um arquivo compartilhado nos dois arranjos.
+// ES: `programs/` y `results/` las comparten las implementaciones en Go y en TypeScript, así
+//     que quedan un nivel por encima de `ts/`. Dentro de la imagen Docker se copian junto a
+//     `src/`. Este auxiliar encuentra un archivo compartido en los dos arreglos.
 export function readSharedFile(relativePath: string): string {
 	const candidates = [join(import.meta.dir, "..", relativePath), join(import.meta.dir, "..", "..", relativePath)];
 	const found = candidates.find((candidate) => existsSync(candidate));

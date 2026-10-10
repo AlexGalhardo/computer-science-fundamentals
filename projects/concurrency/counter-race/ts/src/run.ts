@@ -16,6 +16,9 @@ export function runCounter(variant: Variant, workers: number, perWorker: number)
 	// PT: Na variante "message" esta variável comum é o contador. Só a thread principal a
 	//     enxerga, e o event loop trata uma mensagem por vez, então os incrementos nunca se
 	//     sobrepõem. A thread principal faz o papel de dona (um ator com caixa de mensagens).
+	// ES: En la variante "message" esta variable común es el contador. Solo el thread principal
+	//     la ve, y el event loop atiende un mensaje a la vez, así que los incrementos nunca se
+	//     superponen. El thread principal hace el papel de dueño (un actor con buzón de mensajes).
 	let owned = 0;
 	let ready = 0;
 	let done = 0;
@@ -46,6 +49,8 @@ export function runCounter(variant: Variant, workers: number, perWorker: number)
 					//     comes after all of its "inc" messages.
 					// PT: As mensagens de um worker chegam na ordem em que foram enviadas, então o
 					//     "done" dele vem depois de todas as suas mensagens "inc".
+					// ES: Los mensajes de un worker llegan en el orden en que se enviaron, así que su
+					//     "done" viene después de todos sus mensajes "inc".
 					done += 1;
 					if (done === workers) {
 						finish();

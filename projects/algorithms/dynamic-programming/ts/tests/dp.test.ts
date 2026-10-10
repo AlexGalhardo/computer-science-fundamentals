@@ -41,6 +41,7 @@ describe("known answers", () => {
 		expect(coinChangeTable([1, 3, 4], 6)).toEqual([0, 1, 2, 1, 1, 2, 2]);
 		// EN: 7 cannot be made with coins of 2 and 4: every sum of them is even.
 		// PT: 7 não pode ser formado com moedas de 2 e 4: toda soma delas é par.
+		// ES: 7 no se puede formar con monedas de 2 y 4: toda suma de ellas es par.
 		expect(coinChangeNaive([2, 4], 7, newCounter())).toBe(-1);
 		expect(coinChangeMemo([2, 4], 7, newCounter())).toBe(-1);
 		expect(coinChangeTab([2, 4], 7)).toBe(-1);
@@ -51,6 +52,8 @@ describe("known answers", () => {
 //     the same answer. The naive version is the specification, the other two are optimisations.
 // PT: O critério de aceite: em 200 casos aleatórios de cada problema as três versões devolvem a
 //     mesma resposta. A versão ingênua é a especificação, as outras duas são otimizações.
+// ES: El criterio de aceptación: en 200 casos aleatorios de cada problema las tres versiones devuelven la
+//     misma respuesta. La versión ingenua es la especificación, las otras dos son optimizaciones.
 describe(`three versions agree on ${CASES} random cases`, () => {
 	test("knapsack", () => {
 		for (let seed = 1; seed <= CASES; seed++) {

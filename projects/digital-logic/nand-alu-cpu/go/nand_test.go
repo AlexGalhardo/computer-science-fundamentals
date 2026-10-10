@@ -24,6 +24,8 @@ func cost(run func()) int {
 // columns are the textbook ones, for inputs 00, 01, 10, 11.
 // PT: Critério de aceite MP-DL-2.1: toda porta derivada coincide com a sua tabela-verdade. As
 // colunas esperadas são as dos livros, para as entradas 00, 01, 10, 11.
+// ES: Criterio de aceptación MP-DL-2.1: toda compuerta derivada coincide con su tabla de
+// verdad. Las columnas esperadas son las de los libros, para las entradas 00, 01, 10, 11.
 func TestDerivedGatesMatchTheirTruthTables(t *testing.T) {
 	gates := []struct {
 		name string

@@ -1,6 +1,6 @@
 # Redes
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Redes de computadores são as camadas de protocolos que movem bytes entre máquinas: dos sinais em um fio, passando por quadros, pacotes e rotas, até conexões confiáveis e as aplicações construídas sobre elas. Quase todo programa hoje conversa com outro, então saber o que TCP, IP, DNS e Ethernet realmente garantem é o que separa adivinhar de diagnosticar.
 

@@ -12,6 +12,13 @@
 //       sistema operacional e sua biblioteca C (glibc), de que todas as linguagens aqui dependem.
 //     A diferença entre as duas colunas é a lição: um artefato pequeno pode precisar de um
 //     runtime grande. Os tamanhos são exatos, não amostrados, então não há dispersão a informar.
+// ES: Recolector de la carga de tamaño del binario (`bun run binary-size`). Para el mismo programa
+//     pequeño (el de `cpu-single`) mide dos tamaños en disco, en bytes:
+//     - artefacto: lo que el build produce a partir de tu código (un ejecutable, un jar, un bundle);
+//     - runtime: lo que más tiene que estar en la máquina para que el artefacto corra, sin contar
+//       el sistema operativo y su biblioteca C (glibc), de la que dependen todos los lenguajes aquí.
+//     La diferencia entre las dos columnas es la lección: un artefacto pequeño puede necesitar un
+//     runtime grande. Los tamaños son exactos, no muestreados, así que no hay dispersión que informar.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -29,6 +36,8 @@ interface Recipe {
 //     glibc (libc, libm, the loader) and the kernel's virtual library.
 // PT: Soma as bibliotecas compartilhadas que o executável carrega, deixando de fora as que
 //     pertencem à glibc (libc, libm, o carregador) e a biblioteca virtual do kernel.
+// ES: Suma las bibliotecas compartidas que carga el ejecutable, dejando fuera las que pertenecen
+//     a glibc (libc, libm, el cargador) y la biblioteca virtual del kernel.
 const SHARED_LIBS = `ldd /opt/bench/main 2>/dev/null | awk '$3 ~ /^\\// {print $3}' | grep -Ev '/(libc|libm|libdl|libpthread|librt)\\.so' | xargs -r -n1 readlink -f | xargs -r stat -c %s | awk '{s+=$1} END {print s+0}'`;
 
 const RECIPES: Record<Language, Recipe> = {

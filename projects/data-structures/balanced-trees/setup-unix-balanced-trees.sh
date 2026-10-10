@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the balanced-trees mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto balanced-trees. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto balanced-trees. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"

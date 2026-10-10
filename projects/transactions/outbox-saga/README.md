@@ -1,12 +1,12 @@
 # outbox-saga
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How do two services stay consistent when each has its own database and no transaction can cover both? This mini-project runs an order service and a payment service, each with its own PostgreSQL, talking through RabbitMQ. It shows the **dual-write bug** (commit to the database, then publish: a crash in between loses the event), fixes it with a **transactional outbox**, makes the consumers **idempotent**, and finishes the business flow as a **saga with compensation**: a failed payment cancels the order.
 
 Code: MP-TX-4. Full explanation: [docs/en/transactions/outbox-saga.md](../../../docs/en/transactions/outbox-saga.md).
 
-```
+```text
 client -> order-service --(orders-db: orders + outbox)--> relay --> RabbitMQ --> payment-service --(payments-db)
               ^                                                                        |
               +----------- PaymentCompleted / PaymentFailed <--- relay <--- outbox ----+

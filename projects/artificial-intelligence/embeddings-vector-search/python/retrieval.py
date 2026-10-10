@@ -9,6 +9,13 @@ PT: Recuperação: a pergunta escolhe as passagens com mais chance de respondê-
 busca escolhe quais textos entram no prompt.
 Um texto vira um vetor pela média dos vetores das suas palavras. A pergunta é transformada
 exatamente do mesmo jeito, e as passagens são ordenadas pela similaridade do cosseno com ela.
+
+ES: Recuperación: la pregunta elige los pasajes con más probabilidad de responderla. Es la "R" de
+RAG (generación aumentada por recuperación): antes de que un modelo de lenguaje responda, una
+etapa de búsqueda elige qué textos entran en el prompt.
+Un texto se convierte en un vector por el promedio de los vectores de sus palabras. La pregunta se
+transforma exactamente de la misma manera, y los pasajes se ordenan por la similitud del coseno
+con ella.
 """
 
 import json
@@ -35,6 +42,10 @@ from embeddings import (
 #     pareceriam importantes. Um sistema real conta o idf em milhões de documentos. Aqui uma
 #     lista curta de palavras funcionais (uma "stop list") é ignorada quando um texto vira vetor.
 #     As palavras continuam no corpus e ainda participam das contagens de coocorrência.
+# ES: El idf de este proyecto se cuenta en unos pocos miles de frases, donde "how" y "why" son raras
+#     y parecerían importantes. Un sistema real cuenta el idf en millones de documentos. Aquí se
+#     ignora una lista corta de palabras funcionales (una "stop list") cuando un texto se vuelve
+#     vector. Las palabras siguen en el corpus y aún participan en los conteos de coocurrencia.
 STOP_LIST = (
     "a an the and or but of in on at to for from with by as if then than not no so "
     "is are was were be been do does did has have had can will would should "
@@ -94,6 +105,10 @@ def content_key(sentence: str) -> str:
     PT: Duas frases com as mesmas palavras de conteúdo em outra ordem recebem o mesmo vetor,
     porque uma média esquece a ordem. Esta chave é igual exatamente para essas frases. O
     experimento de busca a usa para guardar cada vetor uma vez só.
+
+    ES: Dos frases con las mismas palabras de contenido en otro orden reciben el mismo vector,
+    porque un promedio olvida el orden. Esta clave es igual exactamente para esas frases. El
+    experimento de búsqueda la usa para guardar cada vector una sola vez.
     """
     return " ".join(sorted(word for word in tokenize(sentence) if word not in STOP_WORDS))
 
@@ -112,6 +127,9 @@ def training_sentences(corpus: list[str], passages: list[Passage]) -> list[list[
 
     PT: Os vetores de palavras são aprendidos das frases geradas E das passagens, para que as
     palavras das passagens também tenham vetor. As perguntas nunca fazem parte do corpus.
+
+    ES: Los vectores de palabras se aprenden de las frases generadas Y de los pasajes, para que las
+    palabras de los pasajes también tengan vector. Las preguntas nunca forman parte del corpus.
     """
     passage_sentences = [
         sentence
@@ -129,6 +147,10 @@ def inverse_document_frequency(sentences: list[list[str]], index: dict[str, int]
     PT: Numa média simples, "the" pesaria tanto quanto "thunder".
     idf(palavra) = ln(número de frases / frases que contêm a palavra): perto de 0 para uma
     palavra presente em quase toda frase, grande para uma palavra rara.
+
+    ES: En un promedio simple, "the" pesaría tanto como "thunder".
+    idf(palabra) = ln(número de frases / frases que contienen la palabra): cerca de 0 para una
+    palabra presente en casi toda frase, grande para una palabra rara.
     """
     containing = [0] * len(index)
     for sentence in sentences:
@@ -147,6 +169,11 @@ def embed_text(words: WordVectors, idf: Matrix, text: str) -> Embedding:
     Uma palavra fora do vocabulário não tem vetor e é ignorada: um modelo de contagem não sabe
     nada sobre uma palavra que nunca viu. Com NumPy a soma é um produto: os pesos das palavras
     vezes as linhas das palavras.
+
+    ES: vector del texto = normaliza( suma, en las palabras, de idf(palabra) * vector(palabra) ).
+    Una palabra fuera del vocabulario no tiene vector y se ignora: un modelo de conteo no sabe nada
+    sobre una palabra que nunca vio. Con NumPy la suma es un producto: los pesos de las palabras
+    por las filas de las palabras.
     """
     content = [word for word in tokenize(text) if word not in STOP_WORDS]
     known = [word for word in content if word in words.index]
@@ -182,6 +209,10 @@ def retrieve(model: Model, question: str, k: int) -> list[tuple[Passage, float]]
     PT: As k passagens mais parecidas com a pergunta, a melhor primeiro. `passage_matrix @ query`
     é a nota de todas as passagens de uma vez. Notas iguais mantêm a ordem do arquivo (uma
     ordenação estável).
+
+    ES: Los k pasajes más parecidos a la pregunta, el mejor primero. `passage_matrix @ query` es la
+    puntuación de todos los pasajes a la vez. Las puntuaciones iguales mantienen el orden del
+    archivo (una ordenación estable).
     """
     scores = model.passage_matrix @ embed(model, question).vector
     order = sorted(range(len(model.passages)), key=lambda position: -float(scores[position]))

@@ -15,6 +15,12 @@
 //     Suportado: palavras, aspas simples e duplas (sem escapes dentro), `|`, `<`, `>`, `>>` e
 //     comentários com `#`. Não suportado, de propósito: variáveis, curingas, `&&` e jobs em
 //     segundo plano.
+// ES: El parser del mini shell. Convierte una línea de comandos en un pipeline: una lista de
+//     comandos, cada uno con sus argumentos y sus redirecciones opcionales. No sabe nada sobre
+//     procesos, así que se puede probar sin ejecutar nada.
+//     Soportado: palabras, comillas simples y dobles (sin escapes dentro), `|`, `<`, `>`, `>>` y
+//     comentarios con `#`. No soportado, a propósito: variables, globbing, `&&` y trabajos en
+//     segundo plano.
 
 struct Command {
 	std::vector<std::string> argv;
@@ -43,6 +49,9 @@ struct Token {
 //     argument can contain spaces or a `|` that must not be taken as an operator.
 // PT: Primeira passada: de caracteres para tokens. As aspas colam caracteres em uma só palavra,
 //     e é assim que um argumento pode conter espaços ou um `|` que não deve ser tratado como
+//     operador.
+// ES: Primera pasada: de caracteres a tokens. Las comillas pegan caracteres en una sola palabra,
+//     y así es como un argumento puede contener espacios o un `|` que no debe tomarse como
 //     operador.
 inline bool tokenize(const std::string& line, std::vector<Token>& tokens, std::string& error) {
 	std::string word;
@@ -96,6 +105,8 @@ inline bool tokenize(const std::string& line, std::vector<Token>& tokens, std::s
 //     one, and a redirection operator takes the following word as its file name.
 // PT: Segunda passada: de tokens para comandos. Um `|` fecha o comando atual e começa o
 //     seguinte, e um operador de redirecionamento usa a palavra seguinte como nome do arquivo.
+// ES: Segunda pasada: de tokens a comandos. Un `|` cierra el comando actual y empieza el
+//     siguiente, y un operador de redirección toma la palabra siguiente como nombre de archivo.
 inline Parsed parse_line(const std::string& line) {
 	Parsed parsed;
 	std::vector<Token> tokens;

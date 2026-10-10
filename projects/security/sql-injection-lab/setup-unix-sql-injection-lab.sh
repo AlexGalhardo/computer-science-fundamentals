@@ -5,6 +5,9 @@
 # PT: Constrói e testa o mini-projeto sql-injection-lab. O único requisito é o Docker.
 #     Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
 #     Para a demo narrada, rode: docker compose run --rm demo
+# ES: Construye y prueba el miniproyecto sql-injection-lab. El único requisito es Docker.
+#     Los contenedores y volúmenes se eliminan al final, incluso cuando una prueba falla.
+#     Para la demo narrada, ejecuta: docker compose run --rm demo
 set -eu
 
 cd "$(dirname "$0")"

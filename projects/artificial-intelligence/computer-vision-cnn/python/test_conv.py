@@ -1,6 +1,8 @@
 """EN: Tests of the hand-written convolution and of the image code (MP-AI-8.1).
 
 PT: Testes da convolução escrita à mão e do código de imagens (MP-AI-8.1).
+
+ES: Pruebas de la convolución escrita a mano y del código de imágenes (MP-AI-8.1).
 """
 
 import struct
@@ -23,6 +25,7 @@ def test_hand_convolution_with_an_edge_filter_equals_the_framework() -> None:
     assert torch.allclose(by_hand, by_framework, atol=1e-5)
     # EN: The comparison would be empty if the edge map were all zeros.
     # PT: A comparação seria vazia se o mapa de bordas fosse todo zero.
+    # ES: La comparación sería vacía si el mapa de bordes fuera todo cero.
     assert float(by_hand.abs().max()) > 1.0
 
 
@@ -61,6 +64,8 @@ def test_the_filter_is_not_flipped() -> None:
     #     code flipped the filter (the convolution of mathematics), the copy would be upright.
     # PT: Um pixel claro copia o filtro para a saída de cabeça para baixo e espelhado. Se o
     #     código espelhasse o filtro (a convolução da matemática), a cópia sairia em pé.
+    # ES: Un píxel claro copia el filtro en la salida boca abajo y reflejado. Si el código reflejara
+    #     el filtro (la convolución de las matemáticas), la copia saldría derecha.
     image = torch.zeros(5, 5)
     image[2, 2] = 1.0
     kernel = torch.arange(1.0, 10.0).reshape(3, 3)
@@ -104,6 +109,7 @@ def test_rotating_an_image_matches_drawing_the_rotated_shape() -> None:
     drawn = draw_shape("cross", thickness=2.0, angle_degrees=30.0)
     # EN: Bilinear interpolation blurs a little, so the two are close, not identical.
     # PT: A interpolação bilinear borra um pouco, então as duas são próximas, não idênticas.
+    # ES: La interpolación bilineal difumina un poco, así que las dos son cercanas, no idénticas.
     assert float((rotated - drawn).abs().mean()) < 0.03
     assert float((upright[0, 0] - drawn).abs().mean()) > 0.1
 
@@ -120,6 +126,7 @@ def test_png_writer_produces_a_valid_greyscale_file() -> None:
     rows = zlib.decompress(data[41 : 41 + length])
     # EN: 6 rows of 1 filter byte + 6 pixels. The first pixel is black, the fourth is mid grey.
     # PT: 6 linhas de 1 byte de filtro + 6 pixels. O primeiro pixel é preto, o quarto é cinza.
+    # ES: 6 filas de 1 byte de filtro + 6 píxeles. El primer píxel es negro, el cuarto es gris.
     assert len(rows) == 6 * 7
     assert rows[1] == 0
     assert rows[4] == 128

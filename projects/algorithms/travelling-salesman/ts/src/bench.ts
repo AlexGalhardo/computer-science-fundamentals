@@ -5,6 +5,10 @@
 //     imprime uma linha JSON no contrato de benchmark. O checksum é o comprimento do passeio
 //     encontrado: os dois resolvedores exatos precisam imprimir o mesmo valor, as heurísticas
 //     podem imprimir um valor maior.
+// ES: `bun run ts/src/bench.ts <resolvedor> <n>` resuelve la instancia de n ciudades (semilla 1) e
+//     imprime una línea JSON en el contrato de benchmark. El checksum es la longitud del recorrido
+//     encontrado: los dos solucionadores exactos deben imprimir el mismo valor, las heurísticas
+//     pueden imprimir un valor mayor.
 
 import { bruteForce } from "./brute-force";
 import { HELD_KARP_MAX_CITIES, heldKarp } from "./held-karp";
@@ -15,6 +19,8 @@ import { type Matrix, randomInstance } from "./instance";
 //     row of 14 cities would take minutes and 16 cities would take days.
 // PT: A força bruta desiste após 12 segundos e informa "timeout". Sem esse limite uma única
 //     linha de 14 cidades levaria minutos e 16 cidades levariam dias.
+// ES: La fuerza bruta se rinde tras 12 segundos e informa "timeout". Sin ese límite una sola
+//     fila de 14 ciudades tardaría minutos y 16 ciudades tardarían días.
 const BRUTE_FORCE_DEADLINE_MS = 12_000;
 const MAX_CITIES = 2000;
 const SEED = 1;

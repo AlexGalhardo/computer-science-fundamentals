@@ -22,6 +22,10 @@ test("poolCapacity is connections divided by the time each request holds one", (
 // PT: O desenho da demonstração, conferido como aritmética. Todo cenário pede mais do que o pool
 //     pequeno consegue atender (então precisa falhar antes da correção) e no máximo 60% do que o
 //     pool grande consegue atender (então passa depois da correção com folga, mesmo em máquina com ruído).
+// ES: El diseño de la demostración, verificado como aritmética. Todo escenario pide más de lo que el
+//     pool pequeño puede atender (así que debe fallar antes de la corrección) y como máximo el 60% de
+//     lo que puede atender el pool grande (así que pasa después de la corrección con holgura, incluso
+//     en una máquina con ruido).
 test("every scenario is above the capacity of the small pool and well below the large one", () => {
 	for (const scenario of SCENARIOS) {
 		const peak = peakRate(PROFILES[scenario]);
@@ -78,6 +82,7 @@ test("loopback and the docker-compose service name are local", () => {
 
 // EN: Each of these is a way a host that is not local could slip past a careless check.
 // PT: Cada um destes é um jeito de um host não local passar por uma verificação descuidada.
+// ES: Cada uno de estos es una forma en que un host no local pasa una verificación descuidada.
 test("everything else is refused", () => {
 	for (const target of [
 		"https://example.com",

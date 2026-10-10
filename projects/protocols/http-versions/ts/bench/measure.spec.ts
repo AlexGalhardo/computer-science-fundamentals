@@ -4,6 +4,9 @@
 // PT: A medição: `docker compose run --rm bench`. Carrega a página BENCH_RUNS vezes em cada uma
 //     das nove portas e grava a tabela e as cascatas em results/. Roda sob o runner do Playwright
 //     só para reaproveitar o carregador de TypeScript e o Chromium dele.
+// ES: La medición: `docker compose run --rm bench`. Carga la página BENCH_RUNS veces en cada
+//     uno de los nueve puertos y escribe la tabla y las cascadas en results/. Corre bajo el
+//     runner de Playwright solo para reutilizar su cargador de TypeScript y su Chromium.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -27,6 +30,8 @@ test("measure the total load time per protocol and condition", async () => {
 	//     handshakes of the server are slower than the rest.
 	// PT: Uma carga de aquecimento por porta, descartada: a primeira abertura do navegador e os
 	//     primeiros handshakes do servidor são mais lentos que o resto.
+	// ES: Una carga de calentamiento por puerto, descartada: la primera apertura del navegador y
+	//     los primeros handshakes del servidor son más lentos que el resto.
 	const browser = await launchBrowser(launch);
 	const version = browser.version();
 	for (const target of grid) {
@@ -41,6 +46,10 @@ test("measure the total load time per protocol and condition", async () => {
 	//     em cache e a conexão é aberta do zero: o teste confere que o navegador realmente gastou
 	//     tempo conectando. As nove portas se revezam dentro de cada rodada, então um momento
 	//     lento da máquina atinge todas e não só uma.
+	// ES: Comparar cosas iguales. Cada carga medida usa un contexto NUEVO del navegador, así que
+	//     nada está en caché y la conexión se abre desde cero: la prueba comprueba que el
+	//     navegador realmente gastó tiempo conectando. Los nueve puertos se turnan dentro de cada
+	//     ronda, así que un momento lento de la máquina los afecta a todos y no solo a uno.
 	const runs = new Map<number, PageLoad[]>(grid.map((target) => [target.port, []]));
 	for (let round = 0; round < settings.BENCH_RUNS; round += 1) {
 		for (const target of grid) {
@@ -103,6 +112,7 @@ test("measure the total load time per protocol and condition", async () => {
 	writeFileSync(join(resultsDir, "results.json"), `${JSON.stringify(data)}\n`);
 	// EN: The same data as a script, so the static dashboard works when opened from disk.
 	// PT: Os mesmos dados como script, para o dashboard estático funcionar aberto direto do disco.
+	// ES: Los mismos datos como script, para que el dashboard estático funcione abierto desde el disco.
 	writeFileSync(join(resultsDir, "results.js"), `window.HTTP_VERSIONS_RESULTS = ${JSON.stringify(data)};\n`);
 	console.log(report);
 });

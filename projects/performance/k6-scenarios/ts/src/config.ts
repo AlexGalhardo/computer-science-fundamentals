@@ -2,6 +2,9 @@
 //     point at the services of docker-compose, with obviously fake lab credentials.
 // PT: Variáveis de ambiente são entrada externa, então são validadas na borda. Os padrões apontam
 //     para os serviços do docker-compose, com credenciais de laboratório claramente falsas.
+// ES: Las variables de entorno son entrada externa, así que se validan en el borde. Los valores por
+//     defecto apuntan a los servicios de docker-compose, con credenciales de laboratorio claramente
+//     falsas.
 
 import { z } from "zod";
 
@@ -12,6 +15,8 @@ const envSchema = z.object({
 	//     number: the load test runs again with POOL_SIZE=20 and nothing else changed.
 	// PT: O GARGALO. Duas conexões é o "antes" da lição. A correção é este único número: o teste
 	//     de carga roda de novo com POOL_SIZE=20 e nada mais muda.
+	// ES: EL CUELLO DE BOTELLA. Dos conexiones es el "antes" de la lección. La corrección es este
+	//     único número: la prueba de carga corre de nuevo con POOL_SIZE=20 y nada más cambia.
 	POOL_SIZE: z.coerce.number().int().min(1).max(90).default(2),
 	/** How long the query of every request takes in the database, standing in for real work. */
 	QUERY_MS: z.coerce.number().int().min(0).max(1_000).default(20),

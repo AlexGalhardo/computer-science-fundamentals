@@ -2,6 +2,9 @@
 //     reads. This file is the whole tokenizer: training, encoding and decoding.
 // PT: Byte-pair encoding (BPE), o algoritmo que transforma texto nos tokens que um modelo de
 //     linguagem lê. Este arquivo é o tokenizador inteiro: treino, codificação e decodificação.
+// ES: Byte-pair encoding (BPE), el algoritmo que convierte el texto en los tokens que lee un modelo
+//     de lenguaje. Este archivo es el tokenizador completo: entrenamiento, codificación y
+//     decodificación.
 
 // EN: Every text in UTF-8 is a sequence of bytes, and a byte has 256 possible values. Starting
 //     from bytes (and not from letters) means the base vocabulary has exactly 256 tokens and no
@@ -9,6 +12,9 @@
 // PT: Todo texto em UTF-8 é uma sequência de bytes, e um byte tem 256 valores possíveis. Partir
 //     de bytes (e não de letras) faz o vocabulário base ter exatamente 256 tokens, e nenhum texto
 //     é "desconhecido": um acento são 2 bytes e um emoji são 4, mas continuam sendo bytes.
+// ES: Todo texto en UTF-8 es una secuencia de bytes, y un byte tiene 256 valores posibles. Partir
+//     de bytes (y no de letras) hace que el vocabulario base tenga exactamente 256 tokens, y ningún
+//     texto es "desconocido": un acento son 2 bytes y un emoji son 4, pero siguen siendo bytes.
 export const BASE_VOCABULARY = 256;
 
 /** One learned rule: the pair (left, right) becomes the new token `id`. */
@@ -36,6 +42,8 @@ export function textToBytes(text: string): number[] {
 //     counted twice. The key packs the two ids in one number so a Map can count them.
 // PT: Conta todos os pares de vizinhos, inclusive os sobrepostos: em "aaa" o par (a, a) é
 //     contado duas vezes. A chave empacota os dois ids em um número para o Map poder contar.
+// ES: Cuenta todos los pares de vecinos, incluidos los que se solapan: en "aaa" el par (a, a) se
+//     cuenta dos veces. La clave empaqueta los dos ids en un número para que el Map pueda contar.
 const PAIR_BASE = 1_000_000;
 
 export function countPairs(ids: readonly number[]): Map<number, number> {
@@ -53,6 +61,9 @@ export function countPairs(ids: readonly number[]): Map<number, number> {
 // PT: O par mais frequente vence. O empate é decidido pelo menor id da esquerda e depois pelo
 //     menor id da direita. A regra em si não importa, mas precisa estar escrita: sem ela duas
 //     implementações (TypeScript e Python aqui) aprenderiam vocabulários diferentes.
+// ES: El par más frecuente gana. El empate lo decide el menor id de la izquierda y luego el menor
+//     id de la derecha. La regla en sí no importa, pero tiene que estar escrita: sin ella dos
+//     implementaciones (TypeScript y Python aquí) aprenderían vocabularios distintos.
 export function mostFrequentPair(counts: Map<number, number>): { left: number; right: number; count: number } | null {
 	let bestKey = -1;
 	let bestCount = 0;
@@ -72,6 +83,9 @@ export function mostFrequentPair(counts: Map<number, number>): { left: number; r
 //     replacement the scan jumps over both items, so "aaa" with the pair (a, a) becomes "Xa".
 // PT: Troca toda ocorrência do par pelo novo id, varrendo da esquerda para a direita. Depois de
 //     uma troca a varredura pula os dois itens, então "aaa" com o par (a, a) vira "Xa".
+// ES: Reemplaza cada aparición del par por el nuevo id, recorriendo de izquierda a derecha. Después
+//     de un reemplazo el recorrido salta los dos elementos, así que "aaa" con el par (a, a) se
+//     convierte en "Xa".
 export function mergePair(ids: readonly number[], left: number, right: number, id: number): number[] {
 	const merged: number[] = [];
 	let index = 0;
@@ -95,6 +109,10 @@ export function mergePair(ids: readonly number[], left: number, right: number, i
 //     um token novo. Cada volta acrescenta exatamente um token, então o tamanho do vocabulário é
 //     256 + fusões. O treino para antes quando nenhum par aparece duas vezes: fundir um par
 //     visto uma vez não comprime nada.
+// ES: Entrenar es un bucle de tres pasos: contar los pares, elegir el más frecuente y fusionarlo
+//     en un token nuevo. Cada vuelta añade exactamente un token, así que el tamaño del vocabulario
+//     es 256 + fusiones. El entrenamiento se detiene antes cuando ningún par aparece dos veces:
+//     fusionar un par visto una sola vez no comprime nada.
 export function train(corpus: string, mergeCount: number): Tokenizer {
 	let ids = textToBytes(corpus);
 	const merges: Merge[] = [];
@@ -120,6 +138,9 @@ export function train(corpus: string, mergeCount: number): Tokenizer {
 // PT: Codificar um texto novo repete as fusões na ordem em que foram aprendidas. A ordem
 //     importa: uma fusão posterior pode ser feita sobre o token criado por uma anterior.
 //     `limit` usa só as primeiras fusões, e é assim que a demo simula vocabulários menores.
+// ES: Codificar un texto nuevo repite las fusiones en el orden en que se aprendieron. El orden
+//     importa: una fusión posterior puede hacerse sobre el token creado por una anterior.
+//     `limit` usa solo las primeras fusiones, y así es como la demo simula vocabularios menores.
 export function encode(tokenizer: Tokenizer, text: string, limit: number = tokenizer.merges.length): number[] {
 	let ids = textToBytes(text);
 	for (const merge of tokenizer.merges.slice(0, limit)) {
@@ -135,6 +156,9 @@ export function encode(tokenizer: Tokenizer, text: string, limit: number = token
 //     UTF-8. Nothing is lost on the way, so decode(encode(text)) is always the original text.
 // PT: Decodificar é uma consulta: cada id devolve os seus bytes, os bytes são juntados e lidos
 //     como UTF-8. Nada se perde no caminho, então decode(encode(texto)) é sempre o texto original.
+// ES: Decodificar es una consulta: cada id devuelve sus bytes, los bytes se unen y se leen como
+//     UTF-8. No se pierde nada en el camino, así que decode(encode(texto)) siempre es el texto
+//     original.
 export function tokenBytes(tokenizer: Tokenizer, ids: readonly number[]): Uint8Array {
 	const bytes: number[] = [];
 	for (const id of ids) {
@@ -158,6 +182,10 @@ export function decode(tokenizer: Tokenizer, ids: readonly number[]): string {
 //     inteiro: os 4 bytes de um emoji podem ficar divididos entre dois tokens. Por isso um token
 //     sozinho é mostrado como texto só quando os seus bytes são UTF-8 válido por si sós, e em
 //     hexadecimal caso contrário.
+// ES: Un token es una secuencia de bytes, y una secuencia de bytes no siempre es un carácter
+//     completo: los 4 bytes de un emoji pueden quedar repartidos entre dos tokens. Por eso un token
+//     solo se muestra como texto cuando sus bytes son UTF-8 válido por sí solos, y en hexadecimal
+//     en caso contrario.
 const strictDecoder = new TextDecoder("utf-8", { fatal: true });
 
 export function hex(bytes: Uint8Array): string {
@@ -186,6 +214,9 @@ export interface TableRow {
 // PT: O experimento da demo: os mesmos dois textos codificados com um número crescente de
 //     fusões. Um treino basta, porque um tokenizador com 50 fusões são as 50 primeiras fusões do
 //     tokenizador com 300.
+// ES: El experimento de la demo: los mismos dos textos codificados con un número creciente de
+//     fusiones. Basta un entrenamiento, porque un tokenizador con 50 fusiones son las 50 primeras
+//     fusiones del tokenizador con 300.
 export function tokenCountTable(
 	tokenizer: Tokenizer,
 	corpus: string,
@@ -204,5 +235,7 @@ export function tokenCountTable(
 //     twice any more, so 300 is the largest round number of merges it supports.
 // PT: O corpus é pequeno de propósito (cerca de 3 kB), e depois de umas 360 fusões nenhum par
 //     aparece mais duas vezes, então 300 é o maior número redondo de fusões que ele comporta.
+// ES: El corpus es pequeño a propósito (unos 3 kB), y tras unas 360 fusiones ningún par vuelve a
+//     aparecer dos veces, así que 300 es el mayor número redondo de fusiones que admite.
 export const TABLE_STEPS = [0, 10, 25, 50, 100, 200, 300] as const;
 export const DEFAULT_MERGES = 300;

@@ -2,6 +2,9 @@
 //     broker, one broker after the other, prints the tables and rewrites `results/results.md`.
 // PT: `bun run demo`: roda os dois experimentos de comportamento e o benchmark de vazão em cada
 //     broker, um broker depois do outro, mostra as tabelas e reescreve `results/results.md`.
+// ES: `bun run demo`: ejecuta los dos experimentos de comportamiento y el benchmark de throughput
+//     en cada broker, un broker después del otro, imprime las tablas y reescribe
+//     `results/results.md`.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, release, totalmem } from "node:os";
@@ -70,4 +73,6 @@ writeFileSync(join(resultsDir, "results.json"), `${JSON.stringify({ environment,
 console.log(`written to ${join(resultsDir, "results.md")}`);
 // EN: Client libraries keep sockets open; the work is done, so the process ends here.
 // PT: As bibliotecas cliente mantêm sockets abertos; o trabalho terminou, então o processo acaba aqui.
+// ES: Las bibliotecas cliente mantienen sockets abiertos; el trabajo terminó, así que el proceso
+//     acaba aquí.
 process.exit(0);

@@ -2,6 +2,8 @@
 #     implementations. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto scaling-by-cores e depois roda uma demonstração curta das
 #     três implementações. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto scaling-by-cores y luego ejecuta una demostración corta de
+#     las tres implementaciones. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot
@@ -24,6 +26,8 @@ Write-Output "scaling-by-cores: all tests passed"
 #     and elapsedMs should drop.
 # PT: Demonstração: a mesma imagem de Mandelbrot com 1 e com 8 trabalhadores. O checksum não
 #     pode mudar, e o elapsedMs deve cair.
+# ES: Demostración: la misma imagen de Mandelbrot con 1 y con 8 trabajadores. El checksum no
+#     puede cambiar, y elapsedMs debe bajar.
 foreach ($workers in 1, 8) {
 	Write-Output "mandelbrot-dynamic, 1,000,000 pixels, $workers worker(s):"
 	docker compose run --rm rust-test target/release/scaling-by-cores mandelbrot-dynamic 1000000 $workers

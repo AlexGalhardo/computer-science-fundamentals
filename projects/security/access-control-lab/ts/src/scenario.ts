@@ -6,6 +6,10 @@
 //     as duas versões da API. Os testes afirmam o que aconteceu e a demo imprime. As requisições
 //     são montadas em memória e entregues direto ao app (`app.handle`): nada sai do processo, e
 //     o único "alvo" que existe é este laboratório.
+// ES: Los escenarios del laboratorio. Cada función es un intento, escrito una vez y ejecutado contra
+//     las dos versiones de la API. Las pruebas afirman lo que ocurrió y la demo lo imprime. Las solicitudes
+//     se arman en memoria y se entregan directo a la app (`app.handle`): nada sale del proceso, y
+//     el único "objetivo" que existe es este laboratorio.
 
 import { ALICE_INVOICE_ID, createStore, type Store, TOKENS } from "./data";
 import { createFixedApp, type FixedAppOptions } from "./fixed/fixed-app";
@@ -36,6 +40,7 @@ export interface Observation {
 
 // EN: A fresh lab: a new in-memory store and one of the two apps on top of it.
 // PT: Um laboratório novo: um armazenamento em memória novo e um dos dois apps em cima dele.
+// ES: Un laboratorio nuevo: un almacenamiento en memoria nuevo y una de las dos apps sobre él.
 export function createLab(version: Version, options: FixedAppOptions = {}): Lab {
 	const store = createStore();
 	const app = version === "vulnerable" ? createVulnerableApp(store) : createFixedApp(store, options);
@@ -60,6 +65,7 @@ export async function call(app: LabApp, path: string, options: CallOptions = {})
 	} catch {
 		// EN: Not JSON (for example the framework's plain-text 404): keep the text as it is.
 		// PT: Não é JSON (por exemplo o 404 em texto puro do framework): mantém o texto como está.
+		// ES: No es JSON (por ejemplo el 404 en texto plano del framework): mantiene el texto como está.
 	}
 	return { status: response.status, body };
 }
@@ -68,6 +74,7 @@ const TARGET = `/invoices/${ALICE_INVOICE_ID}`;
 
 // EN: bob-fake is logged in as himself and only changes the number in the URL to alice's.
 // PT: bob-fake está logado como ele mesmo e só troca o número na URL para o da alice.
+// ES: bob-fake inició sesión como él mismo y solo cambia el número en la URL por el de alice.
 export function readOtherUsersInvoice(lab: Lab): Promise<Observation> {
 	return call(lab.app, TARGET, { token: TOKENS.bob });
 }
@@ -83,6 +90,8 @@ export const TAMPERED_MEMO = "changed by bob-fake";
 //     so the test sees what really happened to the record.
 // PT: O mesmo truque em uma rota de escrita. `memoAfter` é lido do armazenamento, não da
 //     resposta, então o teste vê o que realmente aconteceu com o registro.
+// ES: El mismo truco en una ruta de escritura. `memoAfter` se lee del almacenamiento, no de la
+//     respuesta, así que la prueba ve lo que realmente ocurrió con el registro.
 export async function updateOtherUsersInvoice(lab: Lab): Promise<WriteAttempt> {
 	const attempt = await call(lab.app, TARGET, { token: TOKENS.bob, method: "PATCH", body: { memo: TAMPERED_MEMO } });
 	return { attempt, memoAfter: lab.store.invoices.get(ALICE_INVOICE_ID)?.memo };
@@ -124,6 +133,8 @@ export interface AdminRouteAttempt {
 //     route anyway by typing its address.
 // PT: bob-fake é um usuário comum. O menu dele não mostra o link de admin, e ele chama a rota de
 //     admin mesmo assim, digitando o endereço.
+// ES: bob-fake es un usuario común. Su menú no muestra el enlace de admin, y él llama a la ruta de
+//     admin de todos modos, escribiendo la dirección.
 export async function callAdminRouteAsRegularUser(lab: Lab): Promise<AdminRouteAttempt> {
 	const me = await call(lab.app, "/me", { token: TOKENS.bob });
 	const menu = typeof me.body === "object" && me.body !== null && "menu" in me.body ? me.body.menu : undefined;
@@ -145,6 +156,8 @@ export const OWNER_MEMO = "updated by alice-fake";
 //     keep working: the owner handles her own invoice and the admin uses the admin route.
 // PT: Uma correção que bloqueia todo mundo não é correção. Este cenário é o uso legítimo que
 //     precisa continuar funcionando: a dona mexe na própria fatura e a admin usa a rota de admin.
+// ES: Una corrección que bloquea a todo el mundo no es corrección. Este escenario es el uso legítimo que
+//     debe seguir funcionando: la dueña toca su propia factura y la admin usa la ruta de admin.
 export async function normalUse(lab: Lab): Promise<NormalUse> {
 	const ownerReads = await call(lab.app, TARGET, { token: TOKENS.alice });
 	const ownerUpdates = await call(lab.app, TARGET, {

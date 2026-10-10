@@ -3,6 +3,8 @@
 #     The test passes only when k6 fails with the refusal message.
 # PT: Roda o script de carga com um alvo que NÃO é local e confere que o k6 se recusa a começar.
 #     O teste só passa quando o k6 falha com a mensagem de recusa.
+# ES: Ejecuta el script de carga con un destino que NO es local y comprueba que k6 se niega a empezar.
+#     La prueba solo pasa cuando k6 falla con el mensaje de rechazo.
 set -u
 
 echo "running k6 with TARGET=$TARGET (must be refused)"

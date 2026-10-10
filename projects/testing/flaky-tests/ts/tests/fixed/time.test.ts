@@ -8,6 +8,10 @@ import { createSession, FakeClock, isExpired, SESSION_TTL_MS } from "../../src/s
 //     teste, então o valor esperado é uma constante. O limite da regra (expirada exatamente aos
 //     30 minutos, nem um milissegundo antes) pode ser conferido com precisão, o que nenhum teste
 //     no relógio real consegue fazer.
+// ES: CORREGIDO (reloj falso). La prueba es dueña del tiempo. Existe un único "ahora", elegido por la
+//     prueba, así que el valor esperado es una constante. El límite de la regla (expirada exactamente a los
+//     30 minutos, ni un milisegundo antes) se puede comprobar con precisión, algo que ninguna prueba
+//     con el reloj real logra hacer.
 const START = Date.UTC(2026, 0, 15, 12, 0, 0);
 
 test("a new session expires 30 minutes from now", () => {

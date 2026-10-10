@@ -30,6 +30,8 @@ func main() {
 			// what it is waiting for and the stack that led there.
 			// PT: O perfil de goroutines é o thread dump do Go: um bloco por goroutine, com o
 			// que ela está esperando e a pilha que a levou até ali.
+			// ES: El perfil de goroutines es el thread dump de Go: un bloque por goroutine, con
+			// lo que está esperando y la pila que la llevó hasta ahí.
 			if err := pprof.Lookup("goroutine").WriteTo(os.Stdout, 2); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)

@@ -17,6 +17,11 @@ from pathlib import Path
 #       TestResult  o coletor: quantos rodaram, quais falharam e por quê
 #       TestSuite   uma lista de coisas que sabem rodar (testes ou outras suítes)
 #       asserções   métodos que lançam quando uma expectativa não é atendida
+# ES: Un framework xUnit entero sin biblioteca de pruebas: solo clases, excepciones y un bucle.
+#       TestCase    una prueba: un nombre, un método con ese nombre y un fixture alrededor
+#       TestResult  el recolector: cuántas se ejecutaron, cuáles fallaron y por qué
+#       TestSuite   una lista de cosas que saben ejecutarse (pruebas u otras suites)
+#       aserciones  métodos que lanzan cuando no se cumple una expectativa
 
 FRAMEWORK_DIR = Path(__file__).resolve().parent
 
@@ -39,6 +44,9 @@ def location_of(error: BaseException) -> str:
     # PT: O local de uma falha é o quadro mais profundo do traceback que NÃO está dentro do
     #     framework. Uma asserção lança de dentro do `assert_equal`, neste arquivo, mas o que o
     #     leitor precisa é da linha do teste que a chamou.
+    # ES: El lugar de un fallo es el marco más profundo del traceback que NO está dentro del
+    #     framework. Una aserción lanza desde dentro de `assert_equal`, en este archivo, pero lo que
+    #     el lector necesita es la línea de la prueba que la llamó.
     for frame in reversed(traceback.extract_tb(error.__traceback__)):
         file = Path(frame.filename).resolve()
         if FRAMEWORK_DIR in file.parents:
@@ -77,6 +85,8 @@ class TestCase:
     #     override them. The defaults do nothing.
     # PT: A fixture: o `set_up` monta o que o teste precisa, o `tear_down` limpa. As subclasses os
     #     sobrescrevem. Os padrões não fazem nada.
+    # ES: El fixture: `set_up` arma lo que la prueba necesita, `tear_down` limpia. Las subclases los
+    #     sobrescriben. Los valores por defecto no hacen nada.
     def set_up(self) -> None:
         pass
 
@@ -101,6 +111,13 @@ class TestCase:
         #         não consegue parar os testes que vêm depois
         #     O método a chamar é procurado pelo nome em tempo de execução com `getattr`
         #     (Pluggable Selector): é assim que uma classe guarda vários testes.
+        # ES: El Template Method en el corazón de xUnit: set_up, el método de prueba, tear_down,
+        #     siempre en ese orden. Dos detalles importan:
+        #       - `tear_down` va en un `finally`, así que se ejecuta incluso cuando la prueba falla
+        #       - una excepción se CAPTURA y se registra, nunca se relanza, así que una prueba que
+        #         falla no puede detener las pruebas que vienen después
+        #     El método a llamar se busca por nombre en tiempo de ejecución con `getattr`
+        #     (Pluggable Selector): así es como una clase guarda varias pruebas.
         result.test_started()
         try:
             self.set_up()
@@ -118,6 +135,8 @@ class TestCase:
     #     arrived, because that is the first thing the reader of a red test wants to know.
     # PT: Uma asserção é só um `if` que lança. A mensagem diz o que era esperado e o que chegou,
     #     porque é a primeira coisa que o leitor de um teste vermelho quer saber.
+    # ES: Una aserción es solo un `if` que lanza. El mensaje dice qué se esperaba y qué llegó,
+    #     porque es lo primero que quiere saber quien lee una prueba en rojo.
     def assert_equal(self, actual: object, expected: object) -> None:
         if actual != expected:
             raise AssertionFailure(f"expected {expected!r} but got {actual!r}")
@@ -147,6 +166,9 @@ def test_method_names(test_class: type[TestCase]) -> list[str]:
     #     test. `dir` already includes the methods inherited from parent classes, and sorts them.
     # PT: Descoberta dentro de uma classe: todo atributo chamável cujo nome começa com "test_" é
     #     um teste. O `dir` já inclui os métodos herdados das classes mães, e os ordena.
+    # ES: Descubrimiento dentro de una clase: todo atributo invocable cuyo nombre empieza con
+    #     "test_" es una prueba. `dir` ya incluye los métodos heredados de las clases madre, y los
+    #     ordena.
     return [
         name
         for name in dir(test_class)
@@ -159,6 +181,8 @@ class TestSuite:
     #     outside they look the same (the Composite pattern).
     # PT: Qualquer coisa com `run(result)` pode entrar em uma suíte: um teste sozinho ou outra
     #     suíte. Por fora eles têm a mesma cara (o padrão Composite).
+    # ES: Cualquier cosa con `run(result)` puede entrar en una suite: una prueba sola u otra
+    #     suite. Por fuera se ven iguales (el patrón Composite).
     def __init__(self) -> None:
         self.tests: list[TestCase | TestSuite] = []
 
@@ -168,6 +192,8 @@ class TestSuite:
         #     cannot see attributes changed by another test.
         # PT: UMA INSTÂNCIA NOVA POR MÉTODO DE TESTE, então cada teste parte de uma fixture nova
         #     e não enxerga atributos alterados por outro teste.
+        # ES: UNA INSTANCIA NUEVA POR MÉTODO DE PRUEBA, así cada prueba parte de un fixture
+        #     nuevo y no ve atributos modificados por otra prueba.
         suite = cls()
         for name in test_method_names(test_class):
             suite.add(test_class(name))

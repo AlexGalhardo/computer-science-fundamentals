@@ -6,6 +6,10 @@
 //     tem o que deixa os testes interessantes: limites (0, 2, 30 kg e 100 km), aritmética e uma
 //     opção. O mutador reescreve ESTE arquivo, um operador ou uma constante por vez, e faz uma
 //     única pergunta à suíte de testes: "você percebeu?".
+// ES: El módulo bajo prueba: el precio de un envío, en centavos. Es pequeño a propósito, pero
+//     tiene lo que vuelve interesantes las pruebas: límites (0, 2, 30 kg y 100 km), aritmética y una
+//     opción. El mutador reescribe ESTE archivo, un operador o una constante a la vez, y le hace una
+//     única pregunta a la suite de pruebas: "¿lo notaste?".
 export interface Parcel {
 	weightKg: number;
 	distanceKm: number;
@@ -35,6 +39,9 @@ export function shippingCents(parcel: Parcel): number {
 	// PT: Um mutante equivalente mora na próxima linha. Trocar `>` por `>=` só importa para um
 	//     pacote de exatamente 2 kg, e para esse pacote o extra é (2 - 2) * 150 = 0 dos dois
 	//     jeitos. O programa se comporta igual, então nenhum teste jamais mata esse mutante.
+	// ES: Un mutante equivalente vive en la línea siguiente. Cambiar `>` por `>=` solo importa para un
+	//     paquete de exactamente 2 kg, y para ese paquete el extra es (2 - 2) * 150 = 0 de las dos
+	//     formas. El programa se comporta igual, así que ninguna prueba mata jamás a ese mutante.
 	if (parcel.weightKg > FREE_WEIGHT_KG) {
 		cents = cents + (parcel.weightKg - FREE_WEIGHT_KG) * CENTS_PER_EXTRA_KG;
 	}

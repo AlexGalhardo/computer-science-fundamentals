@@ -2,6 +2,8 @@
 //     prints one JSON line in the benchmark contract. Only the sort is timed.
 // PT: `sorting-race <algoritmo> <variante> <n>` lê `data/<variante>-<n>.txt`, ordena e imprime
 //     uma linha JSON no contrato de benchmark. Só a ordenação é cronometrada.
+// ES: `sorting-race <algoritmo> <variante> <n>` lee `data/<variante>-<n>.txt`, ordena e imprime
+//     una línea JSON en el contrato de benchmark. Solo se cronometra la ordenación.
 
 use std::fs;
 use std::process::ExitCode;
@@ -13,6 +15,7 @@ const VARIANTS: [&str; 3] = ["random", "sorted", "reversed"];
 
 // EN: The file is external input: a line that is not an integer from 0 to 2^31 - 1 is an error.
 // PT: O arquivo é entrada externa: uma linha que não é um inteiro de 0 a 2^31 - 1 é um erro.
+// ES: El archivo es entrada externa: una línea que no es un entero de 0 a 2^31 - 1 es un error.
 fn read_values(path: &str, expected: usize) -> Result<Vec<i32>, String> {
     let text = fs::read_to_string(path).map_err(|error| format!("{path}: {error}"))?;
     let values = text
@@ -39,6 +42,8 @@ fn read_values(path: &str, expected: usize) -> Result<Vec<i32>, String> {
 //     process in kibibytes. Reading it avoids a dependency just to call getrusage.
 // PT: VmHWM ("marca d'água") em /proc/self/status é o pico de memória residente do processo em
 //     kibibytes. Ler esse arquivo evita uma dependência só para chamar getrusage.
+// ES: VmHWM ("marca de agua") en /proc/self/status es el pico de memoria residente del proceso en
+//     kibibytes. Leer ese archivo evita una dependencia solo para llamar a getrusage.
 fn peak_memory_kb() -> u64 {
     fs::read_to_string("/proc/self/status")
         .ok()
@@ -71,6 +76,8 @@ fn run(args: &[String]) -> Result<String, String> {
     //     minimum is the measurement least disturbed by other programs on the machine.
     // PT: Até 5 execuções enquanto o total fica abaixo de 300 ms, e a mais rápida é informada: o
     //     mínimo é a medida menos perturbada por outros programas na máquina.
+    // ES: Hasta 5 ejecuciones mientras el total se mantiene por debajo de 300 ms, y se informa la
+    //     más rápida: el mínimo es la medida menos perturbada por otros programas en la máquina.
     let mut sorted = Vec::new();
     let mut elapsed_ms = f64::INFINITY;
     let mut spent_ms = 0.0;

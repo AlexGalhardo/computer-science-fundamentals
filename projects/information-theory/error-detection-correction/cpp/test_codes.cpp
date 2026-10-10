@@ -37,6 +37,7 @@ void test_parity() {
 
 	// EN: One flipped bit always changes the parity; two flipped bits never do.
 	// PT: Um bit invertido sempre muda a paridade; dois bits invertidos nunca mudam.
+	// ES: Un bit invertido siempre cambia la paridad; dos bits invertidos nunca la cambian.
 	bool singles_caught = true;
 	bool doubles_missed = true;
 	for (int a = 0; a < 8; ++a) {
@@ -58,6 +59,7 @@ void test_checksum() {
 
 	// EN: Data followed by its checksum adds up to 0xFFFF, so the checksum of the whole is 0.
 	// PT: Os dados seguidos do checksum somam 0xFFFF, então o checksum do conjunto é 0.
+	// ES: Los datos seguidos del checksum suman 0xFFFF, así que el checksum del conjunto es 0.
 	std::vector<std::uint8_t> frame = data;
 	frame.push_back(0x22);
 	frame.push_back(0x0D);
@@ -73,6 +75,7 @@ void test_checksum() {
 
 	// EN: The weakness of a sum: swapping two words changes the data but not the total.
 	// PT: A fraqueza de uma soma: trocar duas palavras muda os dados, mas não o total.
+	// ES: La debilidad de una suma: intercambiar dos palabras cambia los datos, pero no el total.
 	std::vector<std::uint8_t> swapped = {0xF2, 0x03, 0x00, 0x01, 0xF4, 0xF5, 0xF6, 0xF7};
 	check(edc::internet_checksum(swapped) == 0x220D, "checksum misses swapped words");
 	check(edc::crc32(swapped) != edc::crc32(data), "CRC-32 detects swapped words");
@@ -87,6 +90,8 @@ void test_crc32() {
 	//     the nine ASCII characters "123456789".
 	// PT: O valor de conferência padrão: todo CRC-32 (IEEE 802.3) correto dá 0xCBF43926 para
 	//     os nove caracteres ASCII "123456789".
+	// ES: El valor de verificación estándar: todo CRC-32 (IEEE 802.3) correcto da 0xCBF43926 para
+	//     los nueve caracteres ASCII "123456789".
 	const auto digits = bytes_of("123456789");
 	check(edc::crc32(digits) == 0xCBF43926U, "CRC-32 of 123456789 (table)");
 	check(edc::crc32_bitwise(digits) == 0xCBF43926U, "CRC-32 of 123456789 (bitwise)");
@@ -110,6 +115,9 @@ void test_crc32() {
 	// PT: Garantia de um gerador de grau 32: toda rajada de até 32 bits é detectada. Todas as
 	//     rajadas de até 12 bits são testadas em cada posição de um quadro de 16 bytes, e
 	//     depois rajadas aleatórias de até 32 bits.
+	// ES: Garantía de un generador de grado 32: toda ráfaga de hasta 32 bits se detecta. Todas
+	//     las ráfagas de hasta 12 bits se prueban en cada posición de una trama de 16 bytes, y
+	//     luego ráfagas aleatorias de hasta 32 bits.
 	std::vector<std::uint8_t> frame(16);
 	for (std::uint8_t& byte : frame) {
 		byte = static_cast<std::uint8_t>(rng.next() >> 56);
@@ -168,11 +176,14 @@ void test_hamming74() {
 
 	// EN: Exhaustive: 16 codewords times 7 positions. Every single-bit error is corrected.
 	// PT: Exaustivo: 16 palavras vezes 7 posições. Todo erro de um bit é corrigido.
+	// ES: Exhaustivo: 16 palabras por 7 posiciones. Todo error de un bit se corrige.
 	int corrected = 0;
 	// EN: Exhaustive: 16 codewords times 21 pairs of positions. Every double error is
 	//     "corrected" into the wrong data, which is the limit of distance 3.
 	// PT: Exaustivo: 16 palavras vezes 21 pares de posições. Todo erro duplo é "corrigido"
 	//     para os dados errados, que é o limite da distância 3.
+	// ES: Exhaustivo: 16 palabras por 21 pares de posiciones. Todo error doble se "corrige" hacia
+	//     los datos incorrectos, que es el límite de la distancia 3.
 	int miscorrected = 0;
 	for (unsigned data = 0; data < 16; ++data) {
 		const std::uint8_t word = edc::hamming74_encode(static_cast<std::uint8_t>(data));
@@ -241,6 +252,7 @@ void test_simulator() {
 	constexpr std::uint64_t kBlocks = 20'000;
 	// EN: With no noise nothing is damaged, whatever the scheme.
 	// PT: Sem ruído nada é danificado, qualquer que seja o esquema.
+	// ES: Sin ruido nada se daña, sea cual sea el esquema.
 	check(edc::simulate_parity(0.0, kBlocks, 1).clean == kBlocks, "BER 0: parity");
 	check(edc::simulate_frames(true, 0.0, kBlocks, 1).clean == kBlocks, "BER 0: CRC-32");
 	check(edc::simulate_corrector(edc::Corrector::kHamming74, 0.0, kBlocks, 1).clean == kBlocks,
@@ -268,6 +280,7 @@ void test_simulator() {
 
 	// EN: The measured share of damaged blocks must match the formula 1 - (1 - p)^n.
 	// PT: A fração medida de blocos danificados precisa bater com a fórmula 1 - (1 - p)^n.
+	// ES: La fracción medida de bloques dañados debe coincidir con la fórmula 1 - (1 - p)^n.
 	const edc::Tally hamming =
 	    edc::simulate_corrector(edc::Corrector::kHamming74, 0.05, 200'000, 3);
 	const double measured = static_cast<double>(hamming.with_errors()) / 200'000.0;

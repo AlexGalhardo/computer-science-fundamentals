@@ -5,6 +5,8 @@
 //
 // PT: `bench <algoritmo> <variante> <n>` lê `data/<variante>-<n>.txt`, ordena e imprime uma
 // linha JSON no contrato de benchmark. Só a ordenação é cronometrada.
+// ES: `bench <algoritmo> <variante> <n>` lee `data/<variante>-<n>.txt`, ordena e imprime una
+// línea JSON en el contrato de benchmark. Solo se cronometra la ordenación.
 package main
 
 import (
@@ -31,6 +33,7 @@ type result struct {
 
 // EN: The file is external input: a line that is not an integer from 0 to 2^31 - 1 is an error.
 // PT: O arquivo é entrada externa: uma linha que não é um inteiro de 0 a 2^31 - 1 é um erro.
+// ES: El archivo es entrada externa: una línea que no es un entero de 0 a 2^31 - 1 es un error.
 func readValues(path string, expected int) ([]int32, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -57,6 +60,7 @@ func readValues(path string, expected int) ([]int32, error) {
 
 // EN: Same order-sensitive digest in every language: h = (h * 31 + v) mod 1,000,000,007.
 // PT: Mesmo resumo sensível à ordem em toda linguagem: h = (h * 31 + v) mod 1.000.000.007.
+// ES: El mismo resumen sensible al orden en todo lenguaje: h = (h * 31 + v) mod 1.000.000.007.
 func checksum(values []int32) string {
 	var digest int64
 	for _, value := range values {
@@ -84,6 +88,8 @@ func run(args []string) error {
 	//
 	// PT: Até 5 execuções enquanto o total fica abaixo de 300 ms, e a mais rápida é informada: o
 	// mínimo é a medida menos perturbada por outros programas na máquina.
+	// ES: Hasta 5 ejecuciones mientras el total se mantiene por debajo de 300 ms, y se informa la más
+	// rápida: el mínimo es la medida menos perturbada por otros programas en la máquina.
 	var sorted []int32
 	var elapsed, spent time.Duration
 	for repetition := 0; repetition < 5 && (repetition == 0 || spent < 300*time.Millisecond); repetition++ {
@@ -98,6 +104,7 @@ func run(args []string) error {
 
 	// EN: On Linux, Maxrss is the peak resident memory of the process in kibibytes.
 	// PT: No Linux, Maxrss é o pico de memória residente do processo em kibibytes.
+	// ES: En Linux, Maxrss es el pico de memoria residente del proceso en kibibytes.
 	var usage syscall.Rusage
 	if err := syscall.Getrusage(syscall.RUSAGE_SELF, &usage); err != nil {
 		return err

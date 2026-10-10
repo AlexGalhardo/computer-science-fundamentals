@@ -8,6 +8,9 @@ package graphs
 // PT: Dijkstra, Prim e a ordenação topológica precisam de "me dê o menor item pendente" muitas
 // vezes. Um heap binário responde em O(log n): o menor item está sempre no índice 0, e os
 // filhos do índice i ficam em 2i + 1 e 2i + 2.
+// ES: Dijkstra, Prim y el ordenamiento topológico necesitan "dame el menor elemento pendiente"
+// muchas veces. Un heap binario responde en O(log n): el menor elemento está siempre en el
+// índice 0, y los hijos del índice i quedan en 2i + 1 y 2i + 2.
 type minHeap[T any] struct {
 	items []T
 	less  func(a, b T) bool

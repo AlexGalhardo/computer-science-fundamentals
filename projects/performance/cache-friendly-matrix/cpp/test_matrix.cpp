@@ -10,6 +10,12 @@
 //     em uma matriz que não cabe nos primeiros níveis de cache. Isso é conferido com uma razão
 //     entre tempos, não com tempos absolutos, e com um limite muito abaixo do que normalmente
 //     se mede: uma razão depende muito mais do padrão de acesso que da máquina.
+// ES: Dos tipos de prueba. Corrección: las tres variantes dan la misma matriz, dentro de una
+//     tolerancia de punto flotante, para tamaños y bloques que dividen y que no dividen
+//     exactamente. Localidad: el orden ingenuo debe ser claramente más lento que el intercambiado
+//     en una matriz que no cabe en los primeros niveles de caché. Eso se verifica con una razón
+//     entre tiempos, no con tiempos absolutos, y con un límite muy por debajo de lo que normalmente
+//     se mide: una razón depende mucho más del patrón de acceso que de la máquina.
 #include <array>
 #include <chrono>
 #include <cstdlib>
@@ -45,6 +51,8 @@ double best_ms(Multiply multiply) {
 		// EN: The result is used, so the compiler cannot remove the multiplication as dead code.
 		// PT: O resultado é usado, então o compilador não pode remover a multiplicação como código
 		// morto.
+		// ES: El resultado se usa, así que el compilador no puede eliminar la multiplicación como
+		// código muerto.
 		if (product.empty()) {
 			return 0;
 		}
@@ -89,6 +97,10 @@ void test_variants_agree() {
 		// PT: Cada elemento é uma soma de n produtos de números abaixo de 1, então 1e-9 * n é
 		//     uma tolerância muito mais apertada que qualquer erro real e mais folgada que o
 		//     arredondamento.
+		// ES: Cada elemento es una suma de n productos de números menores que 1, así que 1e-9 * n
+		// es
+		//     una tolerancia mucho más estrecha que cualquier error real y más holgada que el
+		//     redondeo.
 		const double tolerance = 1e-9 * static_cast<double>(n);
 		const std::string label = "n=" + std::to_string(n);
 		const Matrix interchanged = cache_matrix::multiply_interchanged(a, b, n);
@@ -136,6 +148,9 @@ void test_locality() {
 	// PT: 512 x 512 doubles são 2 MiB por matriz: percorrer uma coluna de B sai da cache L1, e na
 	//     maioria das máquinas também da L2. A ordem ingênua costuma ser de 3 a 10 vezes mais
 	//     lenta.
+	// ES: 512 x 512 doubles son 2 MiB por matriz: recorrer una columna de B sale del caché L1, y en
+	//     la mayoría de las máquinas también del L2. El orden ingenuo suele ser de 3 a 10 veces más
+	//     lento.
 	const std::size_t n = 512;
 	const Matrix a = cache_matrix::make_matrix(n, 1);
 	const Matrix b = cache_matrix::make_matrix(n, 2);

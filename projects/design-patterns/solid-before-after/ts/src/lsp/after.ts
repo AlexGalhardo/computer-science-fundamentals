@@ -8,6 +8,11 @@ import type { AccountSpec } from "./types";
 //     Toda conta tem saldo; só algumas permitem saque, e isso é um segundo tipo, mais estreito.
 //     Uma conta a prazo fixo simplesmente não é um `Withdrawable`, então nenhum método precisa
 //     lançar exceção e nenhum cliente precisa perguntar o que tem em mãos.
+// ES: SUSTITUCIÓN DE LISKOV. La jerarquía ahora promete solo lo que todo miembro puede cumplir.
+//     Toda cuenta tiene saldo; solo algunas permiten retiro, y eso es un segundo tipo, más
+//     estrecho. Una cuenta a plazo fijo simplemente no es un `Withdrawable`, así que ningún
+//     método necesita lanzar una excepción y ningún cliente necesita preguntar qué tiene en las
+//     manos.
 export interface Account {
 	balance(): number;
 }
@@ -48,6 +53,8 @@ interface Portfolio {
 //     once, and the clients receive lists whose types already say it.
 // PT: O único lugar que conhece as classes concretas. Ele separa cada conta pelo que ela sabe
 //     fazer, uma única vez, e os clientes recebem listas cujos tipos já dizem isso.
+// ES: El único lugar que conoce las clases concretas. Separa cada cuenta por lo que sabe hacer,
+//     una sola vez, y los clientes reciben listas cuyos tipos ya dicen eso.
 function open(specs: AccountSpec[]): Portfolio {
 	const portfolio: Portfolio = { all: [], withdrawable: [] };
 	for (const spec of specs) {

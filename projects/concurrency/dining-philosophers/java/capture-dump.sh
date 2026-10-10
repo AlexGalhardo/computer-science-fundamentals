@@ -5,6 +5,9 @@
 # PT: Congela a mesa ingênua e imprime o thread dump tirado pelo jstack, a ferramenta do JDK que
 #     pede a uma JVM em execução a pilha de cada thread. O jstack também roda o detector de
 #     deadlock da JVM e imprime no final o ciclo que ele achou.
+# ES: Congela la mesa ingenua e imprime el thread dump tomado por jstack, la herramienta del JDK que
+#     le pide a una JVM en ejecución la pila de cada thread. jstack también ejecuta el detector de
+#     deadlock de la JVM e imprime al final el ciclo que encontró.
 set -eu
 
 java -cp /src/build/classes/java/main philosophers.Demo naive --hold >/dev/null &

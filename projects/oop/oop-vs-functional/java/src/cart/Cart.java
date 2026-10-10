@@ -8,6 +8,10 @@ import java.util.List;
 // PT: O carrinho é dono do seu estado. Os campos são privados, então a única forma de alterar o
 //     carrinho é pelos seus métodos, e a única forma de saber o total é pedir que o carrinho o
 //     calcule ("tell, don't ask"). O carrinho é mutável: add altera este mesmo objeto.
+// ES: El carrito es dueño de su estado. Los campos son privados, así que la única forma de
+//     modificar el carrito es mediante sus métodos, y la única forma de conocer el total es
+//     pedirle al carrito que lo calcule ("tell, don't ask"). El carrito es mutable: add modifica
+//     este mismo objeto.
 public final class Cart {
   private final List<CartLine> lines = new ArrayList<>();
   private final List<DiscountRule> rules = new ArrayList<>();
@@ -29,6 +33,8 @@ public final class Cart {
   //     gets an UnsupportedOperationException.
   // PT: Sai uma visão somente leitura, nunca a lista interna. Quem tentar alterá-la recebe uma
   //     UnsupportedOperationException.
+  // ES: Sale una vista de solo lectura, nunca la lista interna. Quien intente modificarla recibe
+  //     una UnsupportedOperationException.
   public List<CartLine> lines() {
     return Collections.unmodifiableList(lines);
   }
@@ -39,6 +45,9 @@ public final class Cart {
   // PT: O carrinho conhece só as duas interfaces. Cada objeto de regra responde a discountCents
   //     e a describe do seu jeito (despacho dinâmico), então este laço nunca muda quando uma
   //     regra é adicionada. Uma regra nunca tira mais do que resta a pagar.
+  // ES: El carrito conoce solo las dos interfaces. Cada objeto de regla responde a discountCents
+  //     y a describe a su manera (despacho dinámico), así que este ciclo nunca cambia cuando se
+  //     agrega una regla. Una regla nunca quita más de lo que queda por pagar.
   public Receipt checkout() {
     int subtotal = 0;
     for (CartLine line : lines) {

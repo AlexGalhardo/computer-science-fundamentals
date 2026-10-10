@@ -6,6 +6,8 @@ import type { DiscountRule } from "../discount-rule";
 //     never negative.
 // PT: Um valor fixo. O carrinho o limita, então um cupom maior que o carrinho zera o total,
 //     nunca o deixa negativo.
+// ES: Un valor fijo. El carrito lo limita, así que un cupón mayor que el carrito deja el total en
+//     cero, nunca negativo.
 export class FixedCoupon implements DiscountRule {
 	readonly #code: string;
 	readonly #amountCents: number;

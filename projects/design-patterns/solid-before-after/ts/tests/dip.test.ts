@@ -15,6 +15,7 @@ const cart: Cart = {
 
 // EN: Same tests, both versions (see tests/srp.test.ts for the idea).
 // PT: Mesmos testes, duas versões (a ideia está em tests/srp.test.ts).
+// ES: Mismas pruebas, dos versiones (la idea está en tests/srp.test.ts).
 function behaviour(name: string, createCheckout: () => CheckoutApp): void {
 	describe(`dip: ${name}`, () => {
 		test("totals the cart and numbers the orders", () => {
@@ -45,6 +46,7 @@ behaviour("after", after.createCheckout);
 describe("dip: what the refactor allows", () => {
 	// EN: The rule alone, with two plain objects in the place of SMTP and SQL.
 	// PT: A regra sozinha, com dois objetos simples no lugar do SMTP e do SQL.
+	// ES: La regla sola, con dos objetos simples en lugar de SMTP y SQL.
 	test("the business rule is tested with no infrastructure class", () => {
 		const saved: string[] = [];
 		const told: string[] = [];
@@ -61,6 +63,8 @@ describe("dip: what the refactor allows", () => {
 	//     rule itself. In `after` it is only `createCheckout`, after the class has ended.
 	// PT: Onde as classes concretas são criadas, lido no código-fonte. Em `before` é a própria
 	//     regra. Em `after` é só `createCheckout`, depois que a classe terminou.
+	// ES: Dónde se crean las clases concretas, leído en el código fuente. En `before` es la propia
+	//     regla. En `after` es solo `createCheckout`, después de que la clase termina.
 	test("the rule no longer creates its own details", () => {
 		const classBody = (file: string): string => {
 			const source = readFileSync(join(import.meta.dir, "..", "src", "dip", file), "utf8");

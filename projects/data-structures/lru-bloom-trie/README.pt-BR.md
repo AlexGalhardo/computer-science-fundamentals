@@ -1,6 +1,6 @@
 # lru-bloom-trie
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Três estruturas pequenas que ficam por trás de sistemas do dia a dia, escritas em TypeScript e em Go: uma **cache LRU** com `get` e `put` em O(1) (o que uma cache faz quando enche), um **filtro de Bloom** com tamanho e número de funções de espalhamento configuráveis (um teste de pertinência com poucos bits por chave, com falsos positivos e sem falsos negativos), e uma **trie** (busca por prefixo, como no autocompletar).
 

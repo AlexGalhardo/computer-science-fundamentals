@@ -10,6 +10,12 @@
 //     várias vezes e, enquanto o k6 roda, amostra a CPU e a memória do contêiner do servidor
 //     pelo `docker stats`. Ele escreve os mesmos três arquivos do runner (results.json,
 //     results.md, results.js) com as métricas HTTP adicionadas a cada linha.
+// ES: Recolector de la carga HTTP (`bun run http`). El runner compartido de `tools/bench` mide un
+//     programa que arranca, trabaja y sale. Un servidor nunca sale, así que este script hace el
+//     trabajo equivalente: para cada lenguaje levanta el servidor, lo calienta, ejecuta k6
+//     varias veces y, mientras k6 corre, muestrea la CPU y la memoria del contenedor del servidor
+//     con `docker stats`. Escribe los mismos tres archivos del runner (results.json,
+//     results.md, results.js) con las métricas HTTP agregadas a cada fila.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -27,6 +33,8 @@ const K6_CONTAINER = "sef-bd-http-k6-load";
 //     server the virtual users spend their time waiting, and k6 itself is almost idle.
 // PT: O k6 conta como "enviando carga" acima deste uso de CPU. É baixo de propósito: contra um
 //     servidor lento os usuários virtuais passam o tempo esperando, e o próprio k6 fica quase ocioso.
+// ES: k6 cuenta como "enviando carga" por encima de este uso de CPU. Es bajo a propósito: contra
+//     un servidor lento los usuarios virtuales pasan el tiempo esperando, y el propio k6 queda casi ocioso.
 const K6_ACTIVE_PERCENT = 1;
 
 const STACK: Record<Language, { server: string; version: string[] }> = {
@@ -69,6 +77,10 @@ function parseMemoryKb(usage: string): number {
 //     execução, depois de um código de terminal que leva o cursor ao início. Cada bloco entre
 //     dois desses códigos é uma amostra de todos os contêineres no mesmo instante, aqui
 //     chamada de tick.
+// ES: `docker stats` imprime, cerca de una vez por segundo, una línea por contenedor en
+//     ejecución, después de un código de terminal que lleva el cursor al inicio. Cada bloque entre
+//     dos de esos códigos es una muestra de todos los contenedores en el mismo instante, aquí
+//     llamada tick.
 function startSampler(): { ticks: Tick[]; stop: () => void } {
 	const ticks: Tick[] = [];
 	const child = Bun.spawn(["docker", "stats", "--format", "{{json .}}"], { stdout: "pipe", stderr: "ignore" });
@@ -146,6 +158,9 @@ function k6Command(language: Language, endpoint: string, seconds: number): strin
 // PT: O k6 é iniciado sem bloquear este script: enquanto ele roda, o amostrador acima precisa
 //     continuar lendo o `docker stats`, e uma chamada bloqueante congelaria esse leitor até o
 //     k6 terminar.
+// ES: k6 se inicia sin bloquear este script: mientras corre, el muestreador de arriba necesita
+//     seguir leyendo `docker stats`, y una llamada bloqueante congelaría ese lector hasta que
+//     k6 termine.
 async function runK6(language: Language, endpoint: string, seconds: number): Promise<K6Summary> {
 	const child = Bun.spawn(["docker", "compose", "--profile", "tools", ...k6Command(language, endpoint, seconds)], {
 		cwd: httpDir,
@@ -183,6 +198,7 @@ async function measure(language: Language, endpoint: string, server: string, tic
 	const summary = await runK6(language, endpoint, DURATION_S);
 	// EN: Give the sampler a moment to deliver the last tick of this run.
 	// PT: Dá ao amostrador um instante para entregar o último tick desta execução.
+	// ES: Le da al muestreador un instante para entregar el último tick de esta ejecución.
 	await Bun.sleep(1200);
 	const to = Date.now();
 	// EN: Keep only the ticks in which k6 was really sending load, then drop the first and the
@@ -191,6 +207,9 @@ async function measure(language: Language, endpoint: string, server: string, tic
 	// PT: Fica só com os ticks em que o k6 estava de fato enviando carga, depois descarta o
 	//     primeiro e o último: cada tick é uma média do segundo anterior, então as bordas
 	//     incluem tempo sem carga e puxariam a média para baixo.
+	// ES: Se queda solo con los ticks en que k6 realmente estaba enviando carga, y luego descarta el
+	//     primero y el último: cada tick es un promedio del segundo anterior, así que los bordes
+	//     incluyen tiempo sin carga y bajarían el promedio.
 	const active = ticks
 		.filter((tick) => tick.at >= from && tick.at <= to + 1500)
 		.filter(
@@ -286,6 +305,7 @@ async function main(): Promise<void> {
 	compose(["build", ...services]);
 	// EN: A run that was interrupted may have left containers behind. Start from nothing.
 	// PT: Uma execução interrompida pode ter deixado contêineres para trás. Começa do zero.
+	// ES: Una ejecución interrumpida pudo haber dejado contenedores atrás. Empieza desde cero.
 	compose(["down", "-v", "--remove-orphans"]);
 
 	const sampler = startSampler();
@@ -368,6 +388,9 @@ async function main(): Promise<void> {
 	// PT: Quando só algumas linguagens foram pedidas, as linhas e os runtimes das outras são
 	//     mantidos a partir dos resultados já em disco, então uma linguagem pode ser medida de
 	//     novo sozinha.
+	// ES: Cuando solo se pidieron algunos lenguajes, las filas y los runtimes de los demás se
+	//     mantienen a partir de los resultados que ya están en disco, así un lenguaje puede medirse
+	//     de nuevo por sí solo.
 	const previousPath = join(httpDir, "results", "results.json");
 	if (requested.length > 0 && existsSync(previousPath)) {
 		const previous = JSON.parse(readFileSync(previousPath, "utf8")) as {

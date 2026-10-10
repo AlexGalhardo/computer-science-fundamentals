@@ -1,6 +1,6 @@
 # File organisation and indexes
 
-> Versão em português: [docs/pt/file-systems/file-organisation.md](../../pt/file-systems/file-organisation.md)
+> Versão em português: [docs/pt/file-systems/file-organisation.md](../../pt/file-systems/file-organisation.md) · Versión en español: [docs/es/file-systems/file-organisation.md](../../es/file-systems/file-organisation.md)
 
 Mini-project: [projects/file-systems/file-organisation](../../../projects/file-systems/file-organisation). Languages: C++, Rust. Quiz topics: `file-systems` / `record-organisation`, `indexes`, `compression-and-space-reclamation`.
 
@@ -12,7 +12,7 @@ This mini-project builds the classic answers one on top of the other: fixed-leng
 
 ## The data file
 
-```
+```text
 byte 0                     32             96             160
      +----------------------+--------------+--------------+-----
      | header (32 bytes)    | slot, RRN 0  | slot, RRN 1  | ...
@@ -44,7 +44,7 @@ Because every slot has 64 bytes, the slot with relative record number (RRN) n st
 
 Deleting a record does not move anything. The slot is marked with `*`, the old head of the free list is written inside it, and the header now points to this slot. The list is a stack that lives in the space it manages:
 
-```
+```text
 delete RRN 3, then 7, then 2:      header.free_head = 2
                                    slot 2: * next 7
                                    slot 7: * next 3
@@ -64,7 +64,7 @@ The index lives in memory while the files are open and is written to `primary.id
 
 A secondary index answers searches by a field that repeats, here the city and the year. It has two parts:
 
-```
+```text
 key table (city.sec)             list file (city.lst)
 NATAL   -> 1                     0: id 30, next -1
 RECIFE  -> 2                     1: id 20, next -1

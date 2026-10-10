@@ -2,6 +2,8 @@
 //     Giving it its own type stops a stray number such as 2 from entering a gate.
 // PT: Um bit é o único valor que um fio de um circuito digital pode carregar: 0 (baixo) ou
 //     1 (alto). Dar a ele um tipo próprio impede que um número solto, como 2, entre em uma porta.
+// ES: Un bit es el único valor que puede llevar un cable de un circuito digital: 0 (bajo) o 1
+//     (alto). Darle un tipo propio impide que un número suelto, como 2, entre en una compuerta.
 export type Bit = 0 | 1;
 
 // EN: The three primitive operations of Boolean algebra. NOT inverts, AND is 1 only when every
@@ -11,6 +13,10 @@ export type Bit = 0 | 1;
 //     as entradas valem 1 (produto lógico), OR vale 1 quando pelo menos uma entrada vale 1
 //     (soma lógica). Todas as outras portas abaixo são escritas com essas três, do mesmo modo
 //     que um circuito seria ligado.
+// ES: Las tres operaciones primitivas del álgebra booleana. NOT invierte, AND vale 1 solo
+//     cuando todas las entradas valen 1 (producto lógico), OR vale 1 cuando al menos una
+//     entrada vale 1 (suma lógica). Todas las demás compuertas de abajo se escriben con estas
+//     tres, del mismo modo en que se cablearía un circuito.
 export function not(a: Bit): Bit {
 	return a === 1 ? 0 : 1;
 }
@@ -27,6 +33,8 @@ export function or(a: Bit, b: Bit): Bit {
 //     inputs differ: A'·B + A·B'. XNOR is its complement, 1 when the inputs are equal.
 // PT: Portas derivadas. NAND e NOR são AND e OR seguidas de um inversor. XOR vale 1 quando as
 //     entradas são diferentes: A'·B + A·B'. XNOR é o seu complemento, 1 quando são iguais.
+// ES: Compuertas derivadas. NAND y NOR son AND y OR seguidas de un inversor. XOR vale 1 cuando
+//     las entradas son distintas: A'·B + A·B'. XNOR es su complemento, 1 cuando son iguales.
 export function nand(a: Bit, b: Bit): Bit {
 	return not(and(a, b));
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the huffman-lz77 mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto huffman-lz77. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto huffman-lz77. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"

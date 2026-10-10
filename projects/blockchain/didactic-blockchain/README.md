@@ -1,6 +1,6 @@
 # didactic-blockchain
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A toy blockchain small enough to read in one sitting: blocks linked by hashes, a Merkle root per block, proof of work with adjustable difficulty, signed transactions over unspent outputs, and three local nodes that gossip and follow the longest chain. It shows why changing one old transaction is detected, why a coin cannot be spent twice and how a fork resolves itself.
 
@@ -50,7 +50,7 @@ docker compose down -v
 
 The network demo prints each claim and checks it, and exits with an error if one does not hold:
 
-```
+```text
 4. Double spend, attempt 2: two conflicting payments sent to two different nodes
    ok   node A accepted the payment to Bob (first seen)
    ok   node C, which already heard of it, rejected the payment to Carol: output 07de...:1 does not exist or was already spent

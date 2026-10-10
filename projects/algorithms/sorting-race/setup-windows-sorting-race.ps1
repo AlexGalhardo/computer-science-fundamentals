@@ -1,5 +1,6 @@
 # EN: Builds and tests the sorting-race mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto sorting-race. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto sorting-race. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

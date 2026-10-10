@@ -12,6 +12,9 @@ export interface StoredLine {
 // PT: O esquema fica em uma função para que o servidor e os testes de integração criem a tabela
 //     do mesmo jeito. Um teste com uma tabela escrita à mão só para ele estaria testando um
 //     banco que não existe em produção.
+// ES: El esquema vive en una función para que el servidor y las pruebas de integración creen la tabla
+//     de la misma forma. Una prueba con una tabla escrita a mano solo para ella estaría probando una
+//     base de datos que no existe en producción.
 export function migrate(db: Database): void {
 	db.run(
 		"CREATE TABLE IF NOT EXISTS cart_items (product_id TEXT PRIMARY KEY, quantity INTEGER NOT NULL CHECK (quantity > 0))",
@@ -24,6 +27,9 @@ export function migrate(db: Database): void {
 // PT: O repositório é onde o TypeScript encontra o SQL. Um teste unitário não enxerga um erro
 //     aqui, porque o erro está no texto SQL, e SQL só significa algo para um banco de verdade.
 //     Esse é o papel do nível de integração: duas partes aparentemente corretas, conferidas juntas.
+// ES: El repositorio es donde TypeScript se encuentra con el SQL. Una prueba unitaria no ve un error
+//     aquí, porque el error está en el texto SQL, y el SQL solo significa algo para una base de datos real.
+//     Ese es el papel del nivel de integración: dos partes aparentemente correctas, comprobadas juntas.
 export class CartRepository {
 	private readonly db: Database;
 
@@ -36,6 +42,8 @@ export class CartRepository {
 		//     one instead of being added to it. The TypeScript around it is unchanged.
 		// PT: BUG SEMEADO "integration": em um produto repetido a nova quantidade substitui a
 		//     antiga em vez de ser somada. O TypeScript em volta não muda.
+		// ES: BUG SEMBRADO "integration": en un producto repetido la nueva cantidad reemplaza a la
+		//     antigua en lugar de sumarse. El TypeScript alrededor no cambia.
 		const merged = bugIs("integration") ? "excluded.quantity" : "cart_items.quantity + excluded.quantity";
 		this.db
 			.query(

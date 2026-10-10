@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the nand-alu-cpu mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto nand-alu-cpu. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto nand-alu-cpu. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -19,6 +20,8 @@ echo "nand-alu-cpu: all tests passed"
 #     results/trace.txt. The two implementations write the same bytes.
 # PT: Cada demo executa programs/multiply.asm na CPU, imprime o trace e regrava
 #     results/trace.txt. As duas implementações gravam os mesmos bytes.
+# ES: Cada demo ejecuta programs/multiply.asm en la CPU, imprime el trace y reescribe
+#     results/trace.txt. Las dos implementaciones escriben los mismos bytes.
 docker compose run --rm ts-demo
 docker compose run --rm go-demo
 echo "nand-alu-cpu: trace written to results/trace.txt"

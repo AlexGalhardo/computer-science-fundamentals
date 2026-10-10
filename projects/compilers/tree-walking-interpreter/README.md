@@ -1,6 +1,6 @@
 # tree-walking-interpreter
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 An interpreter that runs the mini language by walking its syntax tree. It teaches **how a tree is executed**: an environment per scope, static scope as a chain of environments, functions as closures that remember where they were created, and run-time errors that point at a line and a column.
 

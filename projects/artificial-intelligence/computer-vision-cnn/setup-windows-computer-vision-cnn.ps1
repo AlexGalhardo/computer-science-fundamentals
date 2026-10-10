@@ -1,5 +1,6 @@
 # EN: Builds and tests the computer-vision-cnn mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto computer-vision-cnn. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto computer-vision-cnn. El único requisito es Docker.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 
@@ -20,6 +21,8 @@ Write-Output "computer-vision-cnn: all tests passed"
 #     (results.md, the loss curve and the pictures of the filters and activation maps).
 # PT: A demo treina as tres redes, imprime as tabelas de acuracia e regrava ./results
 #     (results.md, a curva de perda e as figuras dos filtros e dos mapas de ativacao).
+# ES: La demo entrena las tres redes, imprime las tablas de exactitud y reescribe ./results
+#     (results.md, la curva de perdida y las figuras de los filtros y de los mapas de activacion).
 docker compose run --rm python-demo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Output "computer-vision-cnn: tables and pictures written to results/"

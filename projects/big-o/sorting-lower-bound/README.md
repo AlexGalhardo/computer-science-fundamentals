@@ -1,6 +1,6 @@
 # sorting-lower-bound
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 It teaches **why no comparison sort beats Ω(n lg n) and how counting sorts escape it**. A generator builds the decision tree of a real sorting algorithm, comparison counters measure merge sort, heapsort and quicksort against lg(n!), and counting sort and radix sort order the same inputs without a single comparison between elements.
 

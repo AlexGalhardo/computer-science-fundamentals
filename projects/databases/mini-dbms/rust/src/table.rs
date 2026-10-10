@@ -8,6 +8,10 @@ use std::fmt;
 //     todo texto, que é também como o SQLite ordena suas classes de armazenamento. `Hash` permite
 //     que o valor seja chave de uma tabela hash (usada na junção por hash) e `Ord` permite
 //     ordená-lo (junção por ordenação e intercalação).
+// ES: Un valor guardado en una tabla. Derivar `Ord` en este orden hace que todo entero sea
+//     menor que todo texto, que es también como SQLite ordena sus clases de almacenamiento.
+//     `Hash` permite que el valor sea clave de una tabla hash (usada en el hash join) y `Ord`
+//     permite ordenarlo (sort-merge join).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Value {
     Int(i64),
@@ -60,6 +64,7 @@ impl Op {
 
 // EN: A selection condition of the form `column op constant`, such as `salary > 4000`.
 // PT: Uma condição de seleção da forma `coluna op constante`, como `salary > 4000`.
+// ES: Una condición de selección de la forma `columna op constante`, como `salary > 4000`.
 #[derive(Debug, Clone)]
 pub struct Predicate {
     pub column: String,
@@ -74,6 +79,10 @@ pub struct Predicate {
 //     ficam em um vetor, então, diferente de uma relação matemática, esta tabela tem ordem e
 //     pode ter linhas repetidas. Essa é a visão de tabela do SQL, e é por isso que `project`
 //     tem a opção `distinct`.
+// ES: Una tabla en memoria: un encabezado (nombres de las columnas) y un cuerpo (filas). Las
+//     filas se guardan en un vector, así que, a diferencia de una relación matemática, esta
+//     tabla tiene orden y puede tener filas repetidas. Esa es la visión de tabla de SQL, y por
+//     eso `project` tiene la opción `distinct`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Table {
     pub columns: Vec<String>,
@@ -113,6 +122,9 @@ impl Table {
     // PT: Seleção (restrição, o sigma da álgebra relacional): mantém as linhas em que a condição
     //     é verdadeira e mantém todas as colunas. É a cláusula WHERE do SQL. Sem índice, o único
     //     jeito de responder é olhar cada linha uma vez: O(n).
+    // ES: Selección (restricción, el sigma del álgebra relacional): conserva las filas en que la
+    //     condición es verdadera y conserva todas las columnas. Es la cláusula WHERE de SQL. Sin
+    //     índice, la única forma de responder es mirar cada fila una vez: O(n).
     pub fn select(&self, predicate: &Predicate) -> Result<Table, String> {
         let index = self.column_index(&predicate.column)?;
         let rows = self
@@ -138,6 +150,12 @@ impl Table {
     //     menos que se escreva DISTINCT. `distinct` escolhe entre os dois comportamentos; um
     //     conjunto hash lembra as linhas já produzidas, então remover duplicatas continua O(n)
     //     em média.
+    // ES: Proyección (el pi del álgebra relacional): conserva las columnas pedidas de cada fila.
+    //     Descartar columnas puede volver iguales filas que eran distintas. El álgebra relacional
+    //     elimina esos duplicados porque una relación es un conjunto, mientras que SQL los
+    //     conserva a menos que se escriba DISTINCT. `distinct` elige entre los dos
+    //     comportamientos; un conjunto hash recuerda las filas ya producidas, así que eliminar
+    //     duplicados sigue siendo O(n) en promedio.
     pub fn project(&self, columns: &[&str], distinct: bool) -> Result<Table, String> {
         let indexes = columns
             .iter()
@@ -162,6 +180,8 @@ impl Table {
     //     A query result has no guaranteed order unless ORDER BY is used.
     // PT: Linhas como texto ordenado, para comparar dois resultados sem depender da ordem das
     //     linhas. O resultado de uma consulta não tem ordem garantida sem ORDER BY.
+    // ES: Filas como texto ordenado, para comparar dos resultados sin depender del orden de las
+    //     filas. El resultado de una consulta no tiene orden garantizado sin ORDER BY.
     pub fn sorted_text_rows(&self) -> Vec<Vec<String>> {
         let mut rows: Vec<Vec<String>> = self
             .rows

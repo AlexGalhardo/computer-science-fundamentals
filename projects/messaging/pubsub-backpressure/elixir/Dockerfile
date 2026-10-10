@@ -4,8 +4,13 @@
 # PT: Elixir em uma imagem fixada. O GenStage é baixado do Hex durante o build da imagem, na
 #     versão exata do `mix.lock` versionado (`--check-locked` falha o build se o lock e o
 #     `mix.exs` discordarem). Depois disso o contêiner não precisa de rede: testes e demo rodam offline.
+# ES: Elixir en una imagen fijada. GenStage se descarga de Hex mientras se construye la imagen, en
+#     la versión exacta del `mix.lock` versionado (`--check-locked` hace fallar la construcción si
+#     el lock y `mix.exs` discrepan). Después de eso el contenedor no necesita red: las pruebas y la
+#     demo se ejecutan sin conexión.
 # EN: The Alpine variant ships the CA certificates Hex needs for HTTPS; the slim Debian one does not.
 # PT: A variante Alpine traz os certificados de CA que o Hex precisa para HTTPS; a Debian slim não.
+# ES: La variante Alpine incluye los certificados CA que Hex necesita para HTTPS; la Debian slim no.
 FROM elixir:1.20.4-otp-28-alpine
 WORKDIR /app
 COPY mix.exs mix.lock ./

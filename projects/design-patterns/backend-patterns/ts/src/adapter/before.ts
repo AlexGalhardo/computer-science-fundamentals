@@ -7,6 +7,10 @@ import type { AcmePaySdk, AcmeTransaction } from "./vendors";
 //     as unidades ela mesma e devolve o tipo do próprio fornecedor. Todo chamador acaba
 //     comparando o texto de status do fornecedor, então trocar de fornecedor significa editar
 //     a regra e todos os seus chamadores.
+// ES: DISEÑO QUE FALLA. La regla de negocio llama al SDK del proveedor directamente, convierte
+//     las unidades ella misma y devuelve el tipo del propio proveedor. Todo llamador termina
+//     comparando el texto de estado del proveedor, así que cambiar de proveedor significa editar
+//     la regla y a todos sus llamadores.
 export function checkout(sdk: AcmePaySdk, totalCents: number): AcmeTransaction {
 	if (totalCents <= 0) {
 		throw new Error("nothing to charge");

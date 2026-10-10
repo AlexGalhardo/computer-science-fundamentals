@@ -4,6 +4,9 @@
 # PT: Servidor HTTP em C++ do benchmark. As duas bibliotecas são arquivos de header único,
 #     baixados em tags de release fixas e incluídos como headers de sistema para que os avisos
 #     delas não quebrem o build.
+# ES: Servidor HTTP en C++ del benchmark. Las dos bibliotecas son archivos de un solo header,
+#     descargados en tags de release fijos e incluidos como headers de sistema para que sus
+#     advertencias no rompan el build.
 FROM gcc:16.2.0-trixie
 ARG HTTPLIB_VERSION=v0.60.0
 ARG NLOHMANN_JSON_VERSION=v3.12.0

@@ -13,6 +13,11 @@
 //     com um bloco barato termina cedo e fica ocioso. Dynamic deixa cada trabalhador buscar o
 //     próximo pedaço pequeno quando fica livre: um pouco de coordenação por pedaço, e a carga
 //     se equilibra sozinha.
+// ES: Dos formas de repartir un bucle entre trabajadores. Static corta los ítems en un bloque
+//     contiguo por trabajador antes de cualquier ejecución: coordinación cero, pero el
+//     trabajador con un bloque barato termina antes y queda ocioso. Dynamic deja que cada
+//     trabajador tome la siguiente porción pequeña cuando queda libre: algo de coordinación por
+//     porción, y la carga se equilibra sola.
 enum class Schedule { Static, Dynamic };
 
 // The half-open range [start, end) of items given to one worker.
@@ -29,6 +34,10 @@ struct Span {
 //     um. Os primeiros `total % workers` blocos ficam com os itens que sobram, então nada se
 //     perde quando a divisão não é exata. Cada item pertence a exatamente um bloco: é isso que
 //     deixa os trabalhadores rodarem sem travas.
+// ES: Divide `total` ítems en `workers` bloques contiguos cuyos tamaños difieren en como máximo
+//     uno. Los primeros `total % workers` bloques se quedan con los ítems que sobran, así que
+//     nada se pierde cuando la división no es exacta. Cada ítem pertenece a exactamente un
+//     bloque: eso es lo que deja a los trabajadores correr sin bloqueos.
 inline std::vector<Span> split_static(std::uint64_t total, unsigned workers) {
 	const std::uint64_t count = std::max(workers, 1U);
 	const std::uint64_t base = total / count;

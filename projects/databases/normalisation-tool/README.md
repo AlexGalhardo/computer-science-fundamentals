@@ -1,6 +1,6 @@
 # normalisation-tool
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A small tool that shows how **functional dependencies drive the normal forms**. Give it a relation and its dependencies and it prints, step by step, the minimal cover, the attribute closures, the candidate keys, the highest normal form with the dependency that breaks the next one, and the decompositions to 3NF and to BCNF. Every decomposition is checked with the **chase** test (lossless join) and for dependency preservation. Python, standard library only.
 
@@ -34,13 +34,13 @@ Other uses:
 
 ```sh
 docker compose run --rm explain --list                         # built-in examples
-docker compose run --rm explain --example supplier --lang pt   # an example, in Portuguese
+docker compose run --rm explain --example supplier --lang pt   # an example, in Portuguese (`--lang` takes `en`, `pt` or `es`)
 docker compose run --rm explain "R(A, B, C, D)" "A, B -> C; C -> D; D -> A"
 ```
 
 A piece of the output (some lines omitted):
 
-```
+```text
 2. Candidate keys
   attributes on no right side (must be in every key): {aluno}
   {aluno, disciplina}+ = {aluno, disciplina, professor}
@@ -63,7 +63,7 @@ A piece of the output (some lines omitted):
 | `fd.py` | parsing, closure, candidate keys, minimal cover, projection of dependencies |
 | `normal_forms.py` | 2NF, 3NF and BCNF checks, with the offending dependency |
 | `decompose.py` | 3NF synthesis, BCNF decomposition, chase test, dependency preservation |
-| `explain.py` | the step-by-step text, in English and Portuguese |
+| `explain.py` | the step-by-step text, in English, Portuguese and Spanish |
 | `cli.py` | command line |
 | `examples.py` | classroom schemas with their documented keys and normal forms |
 
@@ -76,7 +76,7 @@ docker compose run --rm python-test
 - Eight classroom schemas return the documented candidate keys and normal form.
 - The chase accepts the lossless split and rejects the lossy ones of the classic `R(A, B, C)` with `A -> B`.
 - For the classroom schemas and for 300 random sets of dependencies, both decompositions are lossless by the chase, the 3NF synthesis preserves every dependency and yields 3NF relations, and the BCNF algorithm yields BCNF relations.
-- The command line is tested in both languages.
+- The command line is tested in the three languages.
 
 ## Limits
 

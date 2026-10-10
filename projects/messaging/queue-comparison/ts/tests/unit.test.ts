@@ -2,6 +2,8 @@
 //     only" guard and the report. They run in a container with no network.
 // PT: Testes que não precisam de broker: o schema da mensagem, a análise de ordem, a trava de
 //     "somente hosts locais" e o relatório. Rodam em um contêiner sem rede.
+// ES: Pruebas que no necesitan broker: el esquema del mensaje, el análisis del orden, la
+//     protección de "solo hosts locales" y el reporte. Corren en un contenedor sin red.
 
 import { describe, expect, test } from "bun:test";
 import { isLocalHost, loadConfig } from "../src/config";

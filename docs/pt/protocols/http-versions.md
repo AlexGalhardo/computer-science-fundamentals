@@ -1,6 +1,6 @@
 # HTTP/1.1, HTTP/2 e HTTP/3 (MP-PROTO-2)
 
-> English version: [docs/en/protocols/http-versions.md](../../en/protocols/http-versions.md)
+> English version: [docs/en/protocols/http-versions.md](../../en/protocols/http-versions.md) · Versión en español: [docs/es/protocols/http-versions.md](../../es/protocols/http-versions.md)
 
 Mini-projeto: [`projects/protocols/http-versions`](../../../projects/protocols/http-versions/README.pt-BR.md). Tópicos do quiz: `http2`, `http3-quic`, `tls-handshake`.
 
@@ -50,7 +50,7 @@ Toda porta usa TLS, com `tls internal` no Caddyfile: o Caddy cria a sua própria
 
 O `tc netem` é o emulador de rede do kernel Linux. O `caddy/entrypoint.sh` o prende à interface de saída do contêiner do Caddy e seleciona os pacotes pela **porta de origem**, então um servidor oferece as três condições ao mesmo tempo:
 
-```
+```text
 qdisc prio (3 faixas)
   faixa 1                              portas 80xx   intocada
   faixa 2  netem delay 50ms            portas 81xx   filtro: sport & 0xfffc == 8100

@@ -1,7 +1,7 @@
 # Brainstorming record
 
-> Versão em português: [docs/pt/brainstorming.md](../pt/brainstorming.md)
-
+> Versão em português: [docs/pt/brainstorming.md](../pt/brainstorming.md) · Versión en español: [docs/es/brainstorming.md](../es/brainstorming.md)
+>
 > Note (2026-10-08): the `references/` folder mentioned in this document was removed from the repository and from its history. Study references are in [REFERENCES.md](../../REFERENCES.md).
 
 Record of the questions asked in the Phase 2 brainstorming, on 2026-10-07, with the chosen option and the discarded ones. The consolidated decisions are in [decisions.md](decisions.md), the quiz design in [quiz.md](quiz.md) and the backlog in [mini-project-catalog.md](mini-project-catalog.md).

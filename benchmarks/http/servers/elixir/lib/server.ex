@@ -11,6 +11,13 @@
 #     os processos, então nem um handler preso à CPU consegue deixar o resto sem vez, e os
 #     escalonadores usam todos os núcleos.
 #     Protocolo (o mesmo nas 7 linguagens): GET /health, POST /echo, GET /primes?limit=N.
+# ES: Servidor HTTP del benchmark en Elixir, con Plug (la interfaz web estándar) sobre Bandit (el
+#     servidor estándar de Phoenix). El JSON viene de la biblioteca estándar (módulo JSON).
+#     Modelo: un proceso de la BEAM por conexión. Cada petición corre en su propio proceso
+#     aislado, así que una falla o un handler lento en uno nunca alcanza a los demás. La VM expulsa
+#     los procesos, así que ni un handler limitado por CPU logra dejar al resto sin turno, y los
+#     planificadores usan todos los núcleos.
+#     Protocolo (el mismo en los 7 lenguajes): GET /health, POST /echo, GET /primes?limit=N.
 defmodule Server.Router do
   use Plug.Router
 
@@ -27,6 +34,8 @@ defmodule Server.Router do
   #     HTTP stack, not a copy of bytes.
   # PT: O corpo é interpretado e serializado de novo, então isto mede a biblioteca de JSON e a
   #     pilha HTTP, não uma cópia de bytes.
+  # ES: El cuerpo se interpreta y se serializa de nuevo, así que esto mide la biblioteca de JSON y la
+  #     pila HTTP, no una copia de bytes.
   post "/echo" do
     {:ok, body, conn} = Plug.Conn.read_body(conn)
 
@@ -60,6 +69,7 @@ defmodule Server.Router do
 
   # EN: The CPU-bound endpoint: count the primes up to limit by trial division.
   # PT: O endpoint preso à CPU: conta os primos até limit por divisão por tentativa.
+  # ES: El endpoint limitado por CPU: cuenta los primos hasta limit por división de prueba.
   defp count_primes(limit, k, count) when k > limit, do: count
 
   defp count_primes(limit, k, count),
@@ -82,6 +92,7 @@ defmodule Server.Application do
   def start(_type, _args) do
     # EN: A supervisor restarts the HTTP server if it ever crashes: the usual OTP structure.
     # PT: Um supervisor reinicia o servidor HTTP se ele cair: a estrutura usual do OTP.
+    # ES: Un supervisor reinicia el servidor HTTP si se cae: la estructura habitual de OTP.
     children = [{Bandit, plug: Server.Router, port: 8080}]
     Supervisor.start_link(children, strategy: :one_for_one, name: Server.Supervisor)
   end

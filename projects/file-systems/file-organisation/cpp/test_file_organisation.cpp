@@ -58,6 +58,9 @@ void record_layout() {
 // PT: Aceite de MP-FS-1.1: o arquivo tem o mesmo tamanho depois das remoções e depois das
 //     inserções que reaproveitam os slots removidos, e cresce exatamente um registro só quando
 //     a lista de livres está vazia.
+// ES: Aceptación de MP-FS-1.1: el archivo tiene el mismo tamaño después de las eliminaciones y
+//     después de las inserciones que reutilizan los slots eliminados, y crece exactamente un
+//     registro solo cuando la lista de libres está vacía.
 void free_list() {
 	const std::string path = directory + "/free-list.dat";
 	SplitMix64 rng{kSeed};
@@ -158,6 +161,8 @@ void indexes() {
 //     the indexes returns exactly the records that a full scan of the file returns.
 // PT: Aceite de MP-FS-1.2: para cada cidade, cada ano e cada par, a busca pelos índices devolve
 //     exatamente os registros que uma varredura completa do arquivo devolve.
+// ES: Aceptación de MP-FS-1.2: para cada ciudad, cada año y cada par, la búsqueda por los
+//     índices devuelve exactamente los registros que devuelve un barrido completo del archivo.
 void compare_with_scan(Database& db, const std::string& when) {
 	for (const char* city : kCities) {
 		const std::string name = city;
@@ -188,6 +193,9 @@ void index_against_scan() {
 		//     inserted again with another city and year. The std::map is the model.
 		// PT: Inserções e remoções aleatórias em uma faixa pequena de ids, de modo que ids são
 		//     removidos e inseridos de novo com outra cidade e outro ano. O std::map é o modelo.
+		// ES: Inserciones y eliminaciones aleatorias en un rango pequeño de ids, de modo que los
+		//     ids se eliminan y se insertan de nuevo con otra ciudad y otro año. El std::map es
+		//     el modelo.
 		for (int step = 0; step < 6000; ++step) {
 			const auto id = static_cast<std::uint32_t>(rng.below(3000));
 			if (rng.below(3) == 0) {
@@ -232,6 +240,9 @@ Bytes text(const std::string& value) { return Bytes(value.begin(), value.end());
 //     and for the data file, and the compressed sizes are the ones worked out by hand.
 // PT: Aceite de MP-FS-1.3: decodificar devolve exatamente os bytes originais, nos casos
 //     extremos e no arquivo de dados, e os tamanhos comprimidos são os calculados à mão.
+// ES: Aceptación de MP-FS-1.3: decodificar devuelve exactamente los bytes originales, en los
+//     casos extremos y en el archivo de datos, y los tamaños comprimidos son los calculados a
+//     mano.
 void compression() {
 	const Bytes runs = {0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x23, 0x24, 0x24,
 	                    0x24, 0x24, 0x24, 0x24, 0x24, 0x24, 0x25, 0x26, 0x26};
@@ -314,6 +325,8 @@ int main(int argc, char** argv) {
 	compression();
 	// EN: The demo output is deterministic, so it is compared with the committed table.
 	// PT: A saída da demonstração é determinística, então é comparada com a tabela versionada.
+	// ES: La salida de la demostración es determinista, así que se compara con la tabla
+	//     versionada.
 	if (argc > 1) {
 		const Bytes expected = read_whole_file(argv[1]);
 		check(!expected.empty() && run_demo(directory + "/demo", 10000) ==

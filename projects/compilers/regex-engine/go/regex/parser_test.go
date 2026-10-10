@@ -9,6 +9,8 @@ import (
 // binds the least must be at the top.
 // PT: A precedência é conferida na forma da árvore, impressa em forma prefixa: o operador que
 // liga menos precisa estar no topo.
+// ES: La precedencia se comprueba en la forma del árbol, impreso en forma prefija: el operador
+// que enlaza menos debe estar en lo alto.
 func TestPrecedence(t *testing.T) {
 	cases := []struct{ pattern, tree string }{
 		{"a", "a"},

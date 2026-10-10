@@ -4,6 +4,8 @@ EN: Reads `data/<variant>-<n>.txt`, sorts it and prints one JSON line in the ben
     contract. Only the sort is timed, not the start of the interpreter nor the file parsing.
 PT: Lê `data/<variante>-<n>.txt`, ordena e imprime uma linha JSON no contrato de benchmark. Só a
     ordenação é cronometrada, não a subida do interpretador nem a leitura do arquivo.
+ES: Lee `data/<variante>-<n>.txt`, ordena e imprime una línea JSON en el contrato de benchmark.
+    Solo se cronometra la ordenación, no el arranque del intérprete ni la lectura del archivo.
 """
 
 import json
@@ -21,6 +23,7 @@ MAX_VALUE = 2**31 - 1
 def read_values(path: Path, expected: int) -> list[int]:
     # EN: The file is external input: reject anything that is not an integer in range.
     # PT: O arquivo é entrada externa: rejeita o que não for um inteiro dentro da faixa.
+    # ES: El archivo es entrada externa: rechaza lo que no sea un entero dentro del rango.
     values = [int(line) for line in path.read_text().split()]
     if len(values) != expected:
         raise ValueError(f"{path}: expected {expected} values, found {len(values)}")
@@ -32,6 +35,7 @@ def read_values(path: Path, expected: int) -> list[int]:
 def checksum(values: list[int]) -> str:
     # EN: Same order-sensitive digest in every language: h = (h * 31 + v) mod 1,000,000,007.
     # PT: Mesmo resumo sensível à ordem em toda linguagem: h = (h * 31 + v) mod 1.000.000.007.
+    # ES: El mismo resumen sensible al orden en todo lenguaje: h = (h * 31 + v) mod 1.000.000.007.
     digest = 0
     for value in values:
         digest = (digest * 31 + value) % 1_000_000_007
@@ -48,6 +52,8 @@ def main() -> None:
     #     minimum is the measurement least disturbed by other programs on the machine.
     # PT: Até 5 execuções enquanto o total fica abaixo de 300 ms, e a mais rápida é informada: o
     #     mínimo é a medida menos perturbada por outros programas na máquina.
+    # ES: Hasta 5 ejecuciones mientras el total se mantiene por debajo de 300 ms, y se informa la
+    #     más rápida: el mínimo es la medida menos perturbada por otros programas en la máquina.
     result: list[int] = []
     elapsed_ms = float("inf")
     spent_ms = 0.0
@@ -67,6 +73,7 @@ def main() -> None:
                 "elapsedMs": elapsed_ms,
                 # EN: On Linux, ru_maxrss is the peak resident memory in kibibytes.
                 # PT: No Linux, ru_maxrss é o pico de memória residente em kibibytes.
+                # ES: En Linux, ru_maxrss es el pico de memoria residente en kibibytes.
                 "memoryKb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
                 "language": "python",
                 "implementation": implementation,

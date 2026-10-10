@@ -1,5 +1,6 @@
 # EN: Bun HTTP server of the benchmark. No dependency to install: Bun.serve is built in.
 # PT: Servidor HTTP em Bun do benchmark. Nenhuma dependência a instalar: o Bun.serve é embutido.
+# ES: Servidor HTTP en Bun del benchmark. Ninguna dependencia que instalar: Bun.serve viene integrado.
 FROM oven/bun:1.4.2
 WORKDIR /opt/server
 COPY server.ts .

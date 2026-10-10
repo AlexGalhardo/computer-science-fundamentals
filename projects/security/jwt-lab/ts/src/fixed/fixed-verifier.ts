@@ -10,6 +10,10 @@
 //     ou reaproveitar um token, e a ordem importa: primeiro as verificações baratas de formato,
 //     depois a assinatura, e só então o conteúdo. Nada do payload é acreditado antes de a
 //     assinatura ser confirmada.
+// ES: LA CORRECCIÓN, parte 2: el verificador. Cada paso numerado de abajo cierra una manera de falsificar
+//     o reutilizar un token, y el orden importa: primero las verificaciones baratas de formato,
+//     luego la firma, y solo después el contenido. Nada del payload se cree antes de que la
+//     firma se confirme.
 //
 //     Este verificador é escrito à mão só para que cada verificação fique visível. Código de
 //     produção deve usar uma biblioteca mantida (por exemplo `jose`) configurada com uma lista
@@ -23,6 +27,7 @@ import { assertStrongKey } from "./fixed-key";
 
 // EN: The verifier decides the algorithm. It is a constant of the server, not a field of the token.
 // PT: O verificador decide o algoritmo. É uma constante do servidor, não um campo do token.
+// ES: El verificador decide el algoritmo. Es una constante del servidor, no un campo del token.
 const PINNED_ALGORITHM = "HS256";
 
 const DEFAULT_MAX_TOKEN_BYTES = 2048;
@@ -51,6 +56,8 @@ export interface FixedVerifierOptions {
 	//     minutes) avoids rejecting a token because of that drift.
 	// PT: Dois servidores nunca concordam sobre a hora até o segundo. Uma tolerância pequena
 	//     (segundos, nunca minutos) evita rejeitar um token por causa dessa diferença.
+	// ES: Dos servidores nunca coinciden en la hora hasta el segundo. Una tolerancia pequeña
+	//     (segundos, nunca minutos) evita rechazar un token por culpa de esa diferencia.
 	clockToleranceSeconds?: number;
 	maxTokenBytes?: number;
 }
@@ -61,6 +68,9 @@ export interface FixedVerifierOptions {
 // PT: Um objeto estrito: `alg` e opcionalmente `typ`, nada mais. Campos de cabeçalho como `kid`,
 //     `jku` ou `jwk` dizem ao verificador onde achar a chave; este verificador tem uma chave só
 //     e não deixa o token apontar para outra.
+// ES: Un objeto estricto: `alg` y opcionalmente `typ`, nada más. Campos de encabezado como `kid`,
+//     `jku` o `jwk` le dicen al verificador dónde encontrar la clave; este verificador tiene una sola clave
+//     y no deja que el token apunte a otra.
 const headerSchema = z.strictObject({ alg: z.string(), typ: z.literal("JWT").optional() });
 
 const unixTimeSchema = z.number().int().positive();
@@ -70,6 +80,9 @@ const unixTimeSchema = z.number().int().positive();
 // PT: O payload é entrada externa como qualquer corpo de requisição, então o formato é validado:
 //     `exp` é OBRIGATÓRIO (um token sem expiração viveria para sempre) e `role` precisa ser um
 //     valor conhecido.
+// ES: El payload es entrada externa como cualquier cuerpo de solicitud, así que se valida el formato:
+//     `exp` es OBLIGATORIO (un token sin expiración viviría para siempre) y `role` debe ser un
+//     valor conocido.
 const claimsSchema = z.object({
 	sub: z.string().min(1).max(64),
 	role: z.enum(["user", "admin"]),
@@ -88,6 +101,7 @@ function parseJson(part: string): unknown {
 	} catch {
 		// EN: Not JSON. The caller turns `undefined` into a rejection.
 		// PT: Não é JSON. Quem chamou transforma `undefined` em uma rejeição.
+		// ES: No es JSON. Quien llamó convierte `undefined` en un rechazo.
 		return undefined;
 	}
 }
@@ -110,12 +124,17 @@ export function createFixedVerifier(options: FixedVerifierOptions): FixedVerifie
 		// PT: 1. Limite de tamanho, antes de qualquer análise. Um token é enviado por um estranho;
 		//     sem limite, um token enorme faz o servidor decodificar, analisar e calcular hash de
 		//     megabytes à toa.
+		// ES: 1. Límite de tamaño, antes de cualquier análisis. Un token lo envía un extraño;
+		//     sin límite, un token enorme hace que el servidor decodifique, analice y calcule el hash de
+		//     megabytes en vano.
 		if (Buffer.byteLength(token, "utf8") > maxTokenBytes) return reject("token_too_large");
 
 		// EN: 2. Shape: exactly three non-empty base64url parts. An unsigned token has an empty
 		//     third part and already fails here.
 		// PT: 2. Formato: exatamente três partes base64url não vazias. Um token sem assinatura tem
 		//     a terceira parte vazia e já falha aqui.
+		// ES: 2. Formato: exactamente tres partes base64url no vacías. Un token sin firma tiene
+		//     la tercera parte vacía y ya falla aquí.
 		const parts = token.split(".");
 		const [headerPart, payloadPart, signaturePart] = parts;
 		if (
@@ -134,6 +153,9 @@ export function createFixedVerifier(options: FixedVerifierOptions): FixedVerifie
 		// PT: 3. Algoritmo fixado. O cabeçalho é lido só para confirmar que diz o que o servidor já
 		//     decidiu. Qualquer outra coisa (`none`, `HS512`, `RS256`, `hs256`) é recusada antes de
 		//     qualquer trabalho de assinatura. O cabeçalho nunca escolhe o caminho do código.
+		// ES: 3. Algoritmo fijado. El encabezado se lee solo para confirmar que dice lo que el servidor ya
+		//     decidió. Cualquier otra cosa (`none`, `HS512`, `RS256`, `hs256`) se rechaza antes de
+		//     cualquier trabajo de firma. El encabezado nunca elige el camino del código.
 		const header = headerSchema.safeParse(parseJson(headerPart));
 		if (!header.success) return reject("malformed");
 		if (header.data.alg !== PINNED_ALGORITHM) return reject("algorithm_not_allowed");
@@ -145,6 +167,10 @@ export function createFixedVerifier(options: FixedVerifierOptions): FixedVerifie
 		//     quer o primeiro ou o último byte seja diferente, então o tempo de resposta não diz
 		//     nada sobre o quão perto um palpite chegou. Ele exige tamanhos iguais, e o tamanho
 		//     não é segredo.
+		// ES: 4. Firma, comparada en tiempo constante. `timingSafeEqual` tarda lo mismo
+		//     ya sea que difiera el primer o el último byte, así que el tiempo de respuesta no dice
+		//     nada sobre qué tan cerca estuvo un intento. Exige tamaños iguales, y el tamaño
+		//     no es secreto.
 		const received = base64UrlDecode(signaturePart);
 		const expected = hmacSha256(`${headerPart}.${payloadPart}`, key);
 		if (received.length !== HS256_SIGNATURE_BYTES || !timingSafeEqual(received, expected)) {
@@ -155,6 +181,8 @@ export function createFixedVerifier(options: FixedVerifierOptions): FixedVerifie
 		//     wrote it; what is left is deciding whether it is valid here and now.
 		// PT: 5. Só agora o payload é analisado e validado. Daqui em diante sabemos que o emissor o
 		//     escreveu; falta decidir se ele vale aqui e agora.
+		// ES: 5. Solo ahora se analiza y valida el payload. De aquí en adelante sabemos que el emisor lo
+		//     escribió; falta decidir si vale aquí y ahora.
 		const parsed = claimsSchema.safeParse(parseJson(payloadPart));
 		if (!parsed.success) return reject("invalid_claims");
 		const claims = parsed.data;
@@ -164,6 +192,8 @@ export function createFixedVerifier(options: FixedVerifierOptions): FixedVerifie
 		//     when present: the token is not valid yet. The tolerance is applied to both.
 		// PT: 6. Tempo. `exp`: o token só vale ANTES daquele instante. `nbf` (não antes de),
 		//     quando presente: o token ainda não vale. A tolerância é aplicada aos dois.
+		// ES: 6. Tiempo. `exp`: el token solo vale ANTES de ese instante. `nbf` (no antes de),
+		//     cuando está presente: el token todavía no vale. La tolerancia se aplica a los dos.
 		if (now >= claims.exp + tolerance) return reject("expired");
 		if (claims.nbf !== undefined && now + tolerance < claims.nbf) return reject("not_yet_valid");
 
@@ -174,6 +204,10 @@ export function createFixedVerifier(options: FixedVerifierOptions): FixedVerifie
 		//     QUEM. Quando vários serviços confiam no mesmo emissor, um token emitido para um deles
 		//     tem assinatura perfeitamente válida em todos os outros. Só a verificação da
 		//     audiência barra isso.
+		// ES: 7. Emisor y audiencia. La firma prueba QUIÉN escribió el token; `aud` dice PARA
+		//     QUIÉN. Cuando varios servicios confían en el mismo emisor, un token emitido para uno de ellos
+		//     tiene una firma perfectamente válida en todos los demás. Solo la verificación de la
+		//     audiencia lo impide.
 		if (claims.iss !== options.issuer) return reject("wrong_issuer");
 		const audiences = typeof claims.aud === "string" ? [claims.aud] : claims.aud;
 		if (!audiences.includes(options.audience)) return reject("wrong_audience");

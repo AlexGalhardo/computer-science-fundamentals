@@ -7,6 +7,9 @@ defmodule CartTest do
   # PT: O teste de aceitação do mini-projeto: um teste por cenário do arquivo compartilhado, o
   #     mesmo arquivo que as versões em Java e TypeScript leem. Os testes são gerados em tempo
   #     de compilação a partir do arquivo.
+  # ES: La prueba de aceptación del miniproyecto: una prueba por escenario del archivo compartido,
+  #     el mismo archivo que leen las versiones en Java y TypeScript. Las pruebas se generan en
+  #     tiempo de compilación a partir del archivo.
   @external_resource Scenarios.path()
   scenarios = Scenarios.load()
 
@@ -32,6 +35,9 @@ defmodule CartTest do
     # PT: Em Elixir isto é uma propriedade da linguagem, não deste módulo: não existe operação
     #     que altere um mapa ou uma lista no lugar. O teste torna isso visível. O nome `cart`
     #     continua ligado ao mesmo valor enquanto quatro funções o "alteram".
+    # ES: En Elixir esto es una propiedad del lenguaje, no de este módulo: no existe ninguna
+    #     operación que modifique un mapa o una lista en el mismo lugar. La prueba lo hace visible.
+    #     El nombre `cart` sigue ligado al mismo valor mientras cuatro funciones lo "modifican".
     test "the cart given to each function is still the same value afterwards" do
       cart =
         Cart.new()

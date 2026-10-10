@@ -8,6 +8,12 @@
 //     que uma pessoa abriria, e os testes conferem que todo gráfico é desenhado, que toda seção
 //     ensina (cartão de explicação, cartão "por quê", cartão "cuidado"), que os tooltips
 //     funcionam com teclado e toque, e que a página cabe em uma tela de 320 px nos dois temas.
+// ES: Pruebas de navegador del dashboard, ejecutadas por `bun run test:dashboard` dentro de la
+//     imagen fijada de Playwright, sin ninguna red. La página se abre desde el disco (file://),
+//     como la abriría una persona, y las pruebas comprueban que cada gráfico se dibuja, que cada
+//     sección enseña (tarjeta de explicación, tarjeta "por qué", tarjeta "cuidado"), que los
+//     tooltips funcionan con teclado y toque, y que la página cabe en una pantalla de 320 px en
+//     los dos temas.
 
 import { expect, type Page, test } from "@playwright/test";
 
@@ -36,7 +42,10 @@ interface Watch {
 // PT: Abre a página registrando toda requisição que não é um arquivo local e todo erro de
 //     script. Requisições http(s) também são abortadas, então um link de CDN esquecido derruba
 //     o teste mesmo em uma máquina com rede.
-async function open(page: Page, lang: "en" | "pt" = "en"): Promise<Watch> {
+// ES: Abre la página registrando toda petición que no es un archivo local y todo error de
+//     script. Las peticiones http(s) también se abortan, así un enlace de CDN olvidado hace
+//     fallar la prueba incluso en una máquina con red.
+async function open(page: Page, lang: "en" | "pt" | "es" = "en"): Promise<Watch> {
 	const watch: Watch = { external: [], errors: [] };
 	page.on("request", (request) => {
 		if (!request.url().startsWith("file://")) {
@@ -56,6 +65,7 @@ async function open(page: Page, lang: "en" | "pt" = "en"): Promise<Watch> {
 		} catch {
 			// EN: Storage blocked: the page falls back to the browser language.
 			// PT: Armazenamento bloqueado: a página usa o idioma do navegador.
+			// ES: Almacenamiento bloqueado: la página usa el idioma del navegador.
 		}
 	}, lang);
 	await page.goto(SITE);
@@ -95,6 +105,7 @@ test("every section opens with an explanation card", async ({ page }) => {
 		await expect(card, section).toBeVisible();
 		// EN: What is measured, the analogy, why it matters, how to read the charts.
 		// PT: O que é medido, a analogia, por que importa, como ler os gráficos.
+		// ES: Qué se mide, la analogía, por qué importa, cómo leer los gráficos.
 		await expect(card.locator("dt"), section).toHaveCount(4);
 		await expect(page.locator(`#${section} [data-figure]`), section).toHaveCount(charts.length);
 	}
@@ -165,7 +176,7 @@ test("the request and phase switches redraw their charts", async ({ page }) => {
 	}
 });
 
-test("the page is available in Portuguese and English", async ({ page }) => {
+test("the page is available in English, Portuguese and Spanish", async ({ page }) => {
 	await open(page, "en");
 	await expect(page.locator("html")).toHaveAttribute("lang", "en");
 	await expect(page.locator("#glossary h2")).toHaveText("Glossary");
@@ -174,12 +185,19 @@ test("the page is available in Portuguese and English", async ({ page }) => {
 	await expect(page.locator("#glossary h2")).toHaveText("Glossário");
 	await expect(page.locator('[data-chart="cpu-nbody"] svg')).toBeVisible();
 	expect(await page.locator("[data-chart] svg").count()).toBe(CHARTS.length);
+	await page.locator('#language-switch button[data-lang="es"]').click();
+	await expect(page.locator("html")).toHaveAttribute("lang", "es");
+	await expect(page.locator("#glossary h2")).toHaveText("Glosario");
+	await expect(page.locator('[data-chart="cpu-nbody"] svg')).toBeVisible();
+	expect(await page.locator("[data-chart] svg").count()).toBe(CHARTS.length);
 });
 
 // EN: WCAG contrast ratio between two colours: (lighter + 0.05) / (darker + 0.05), where each
 //     term is the relative luminance. AA asks for at least 4.5 for normal text.
 // PT: Razão de contraste da WCAG entre duas cores: (mais clara + 0,05) / (mais escura + 0,05),
 //     onde cada termo é a luminância relativa. O nível AA pede pelo menos 4,5 para texto normal.
+// ES: Razón de contraste de WCAG entre dos colores: (más claro + 0,05) / (más oscuro + 0,05),
+//     donde cada término es la luminancia relativa. El nivel AA pide al menos 4,5 para texto normal.
 async function lowContrast(page: Page): Promise<string[]> {
 	return page.evaluate(() => {
 		const canvas = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
@@ -257,8 +275,8 @@ test("the theme follows the system and the toggle overrides it", async ({ page }
 test.describe("on a 320 px phone", () => {
 	test.use({ viewport: { width: 320, height: 640 }, hasTouch: true, isMobile: true });
 
-	test("nothing scrolls sideways, in both languages", async ({ page }) => {
-		for (const lang of ["en", "pt"] as const) {
+	test("nothing scrolls sideways, in every language", async ({ page }) => {
+		for (const lang of ["en", "pt", "es"] as const) {
 			await open(page, lang);
 			for (const id of CHARTS) {
 				await expect(page.locator(`[data-chart="${id}"] svg`), id).toBeVisible();

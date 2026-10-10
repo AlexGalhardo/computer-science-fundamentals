@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the solid-before-after mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto solid-before-after. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto solid-before-after. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -12,6 +13,7 @@ fi
 
 # EN: The Java build also checks the formatting and treats every compiler warning as an error.
 # PT: O build do Java também confere a formatação e trata todo aviso do compilador como erro.
+# ES: La construcción de Java también comprueba el formato y trata todo aviso del compilador como error.
 docker compose build
 docker compose run --rm ts-test
 docker compose run --rm java-test
@@ -19,4 +21,5 @@ echo "solid-before-after: all tests passed"
 
 # EN: The demo runs the same call on both versions of each principle and compares the answers.
 # PT: A demo executa a mesma chamada nas duas versões de cada princípio e compara as respostas.
+# ES: La demo ejecuta la misma llamada en las dos versiones de cada principio y compara las respuestas.
 docker compose run --rm ts-demo

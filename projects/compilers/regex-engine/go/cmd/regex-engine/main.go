@@ -92,6 +92,11 @@ func peakMemoryKb() int {
 // o casamento é medido. A última linha impressa é o objeto JSON do contrato de benchmark do
 // repositório; o checksum carrega a resposta e o número de passos, que é a forma independente de
 // máquina de ver o crescimento linear contra o exponencial.
+// ES: Punto de entrada del benchmark. La compilación del patrón queda fuera del tramo
+// cronometrado: solo se mide el emparejamiento. La última línea impresa es el objeto JSON del
+// contrato de benchmark del repositorio; el checksum lleva la respuesta y el número de pasos,
+// que es la forma independiente de la máquina de ver el crecimiento lineal frente al
+// exponencial.
 func bench(name, size string) error {
 	n, err := strconv.Atoi(size)
 	if err != nil || n < 0 {

@@ -38,6 +38,11 @@ type TraceEntry struct {
 // dadas de graça são o clock e o conteúdo da ROM. A ROM é guardada como duas tabelas de
 // nibbles, uma para os opcodes e outra para os operandos, de modo que cada uma é lida por um
 // Mux16.
+// ES: Todo su estado vive en registros hechos de flip-flops de NAND: el contador de programa PC,
+// el acumulador A, las flags Z y C, el registro de salida OUT y 16 celdas de memoria. Todo lo
+// que hay entre los registros es lógica combinacional hecha de NAND. Lo único que se da gratis
+// son el clock y el contenido de la ROM. La ROM se guarda como dos tablas de nibbles, una para
+// los opcodes y otra para los operandos, de modo que cada una la lee un Mux16.
 type CPU struct {
 	romOpcode  [16]Nibble
 	romOperand [16]Nibble
@@ -65,6 +70,8 @@ func NewCPU(program []byte) (*CPU, error) {
 		cpu.ram[address] = NewRegister()
 		// EN: Unused ROM positions hold HLT, so a program that runs past its end stops.
 		// PT: As posições não usadas da ROM guardam HLT, então um programa que passa do fim para.
+		// ES: Las posiciones sin usar de la ROM guardan HLT, así que un programa que pasa del
+		// final se detiene.
 		instruction := byte(OpcodeHLT << 4)
 		if address < len(program) {
 			instruction = program[address]
@@ -101,6 +108,10 @@ func (c *CPU) State() State {
 // decodificação (o opcode liga uma de 16 linhas, e ORs dessas linhas são os sinais de
 // controle), execução (a ALU calcula) e a escolha do próximo PC. Só então vem o pulso de clock,
 // e todos os registradores capturam a entrada na mesma borda.
+// ES: Primero se asienta la parte combinacional: búsqueda (el PC selecciona una palabra de la
+// ROM), decodificación (el opcode enciende una de 16 líneas, y las OR de esas líneas son las
+// señales de control), ejecución (la ALU calcula) y la elección del siguiente PC. Solo entonces
+// llega el pulso de clock, y todos los registros capturan la entrada en el mismo flanco.
 func (c *CPU) Step() (address int, instruction byte, halted bool) {
 	pc := c.pc.Read()
 	operand := Mux16(pc, &c.romOperand)
@@ -109,6 +120,7 @@ func (c *CPU) Step() (address int, instruction byte, halted bool) {
 
 	// EN: Control signals. Each one answers a yes/no question about the instruction.
 	// PT: Sinais de controle. Cada um responde a uma pergunta de sim ou não sobre a instrução.
+	// ES: Señales de control. Cada una responde a una pregunta de sí o no sobre la instrucción.
 	loadA := OrAll(is[OpcodeLDI], is[OpcodeLDA], is[OpcodeADD], is[OpcodeSUB],
 		is[OpcodeAND], is[OpcodeOR], is[OpcodeADDI], is[OpcodeSUBI])
 	useA := OrAll(is[OpcodeADD], is[OpcodeSUB], is[OpcodeAND], is[OpcodeOR], is[OpcodeADDI], is[OpcodeSUBI])
@@ -124,6 +136,9 @@ func (c *CPU) Step() (address int, instruction byte, halted bool) {
 	// is 0, so every write to A goes through the ALU and updates the flags.
 	// PT: Caminho de dados. Uma carga é "0 + operando": as portas AND zeram a primeira entrada
 	// da ALU quando useA vale 0, então toda escrita em A passa pela ALU e atualiza as flags.
+	// ES: Camino de datos. Una carga es "0 + operando": las compuertas AND ponen en cero la
+	// primera entrada de la ALU cuando useA vale 0, así que toda escritura en A pasa por la ALU
+	// y actualiza las flags.
 	accumulator := c.a.Read()
 	var cells [16]Nibble
 	for i := range c.ram {
@@ -144,6 +159,9 @@ func (c *CPU) Step() (address int, instruction byte, halted bool) {
 	// PT: A borda do clock. Todas as entradas foram calculadas acima a partir dos valores
 	// ANTIGOS dos registradores, então a ordem destas chamadas não importa: é uma atualização
 	// simultânea.
+	// ES: El flanco del clock. Todas las entradas se calcularon arriba a partir de los valores
+	// ANTIGUOS de los registros, así que el orden de estas llamadas no importa: es una
+	// actualización simultánea.
 	for i := range c.ram {
 		c.ram[i].Pulse(accumulator, writeLine[i])
 	}
@@ -176,6 +194,8 @@ func (c *CPU) Run(maxSteps int) ([]TraceEntry, error) {
 //
 // PT: Texto puro com colunas fixas permite comparar byte a byte as implementações em Go e em
 // TypeScript: as duas precisam imprimir exatamente results/trace.txt.
+// ES: El texto plano con columnas fijas permite comparar byte a byte las implementaciones en Go
+// y en TypeScript: las dos deben imprimir exactamente results/trace.txt.
 func FormatTrace(trace []TraceEntry) string {
 	var text strings.Builder
 	text.WriteString("step  pc  instr    A     dec  Z C  m0  m1  m2  out\n")

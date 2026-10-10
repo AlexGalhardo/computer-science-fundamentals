@@ -5,6 +5,8 @@ import { activeBug } from "../../src/seeded-bugs";
 //     afterwards. A test that leaks state makes the next test depend on the order of execution.
 // PT: Este teste altera um global (uma variável de ambiente), então devolve o valor original
 //     depois. Um teste que vaza estado faz o próximo depender da ordem de execução.
+// ES: Esta prueba modifica un global (una variable de entorno), así que devuelve el valor original
+//     después. Una prueba que filtra estado hace que la siguiente dependa del orden de ejecución.
 const original = process.env.SEEDED_BUG;
 
 afterEach(() => {

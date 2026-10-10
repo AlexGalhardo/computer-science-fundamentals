@@ -20,6 +20,8 @@ using Page = std::array<std::uint8_t, kPageSize>;
 //     layout whatever language or machine wrote it.
 // PT: Os inteiros são guardados em ordem little-endian em posições fixas, então o arquivo tem o
 //     mesmo layout seja qual for a linguagem ou a máquina que o gravou.
+// ES: Los enteros se guardan en orden little-endian en posiciones fijas, así que el archivo tiene
+//     el mismo layout sea cual sea el lenguaje o la máquina que lo grabó.
 inline std::uint64_t get_u64(const Page& page, std::size_t offset) {
 	std::uint64_t value = 0;
 	for (std::size_t i = 0; i < 8; ++i) {
@@ -44,6 +46,12 @@ inline void put_u64(Page& page, std::size_t offset, std::uint64_t value) {
 //     gravam, e conta cada página lida e gravada. Em disco, o número de páginas lidas é o custo
 //     de uma busca, muito mais que as comparações feitas em memória. Não há cache de propósito:
 //     um nó visitado é uma página lida, então o contador mostra a forma real da estrutura.
+// ES: El pager es el único código que toca el archivo. Ve el archivo como un vector de páginas
+//     de 4096 bytes, la unidad que un disco y un sistema operativo realmente leen y graban, y
+//     cuenta cada página leída y grabada. En disco, el número de páginas leídas es el costo de
+//     una búsqueda, mucho más que las comparaciones hechas en memoria. No hay caché a propósito:
+//     un nodo visitado es una página leída, así que el contador muestra la forma real de la
+//     estructura.
 class Pager {
 public:
 	Pager(const std::string& path, bool create) {
@@ -87,6 +95,7 @@ public:
 
 	// EN: A new page is simply the next position after the end of the file.
 	// PT: Uma página nova é simplesmente a próxima posição depois do fim do arquivo.
+	// ES: Una página nueva es simplemente la siguiente posición después del final del archivo.
 	PageId append() { return page_count_++; }
 
 	PageId page_count() const { return page_count_; }

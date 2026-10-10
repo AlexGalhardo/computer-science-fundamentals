@@ -8,6 +8,11 @@
 //     inserir n linhas uma a uma, ler cada uma pela chave primária, rodar uma consulta com
 //     filtro e agregação, e ler pela chave de novo a partir de 8 threads dividindo um pool de 8
 //     conexões. As chamadas JDBC bloqueiam, então cada worker é uma thread que espera a resposta.
+// ES: Cliente de base de datos del benchmark en Java, con el driver JDBC oficial de PostgreSQL y
+//     HikariCP, el pool de conexiones más usado. Las cuatro fases son las mismas en los 7 lenguajes:
+//     insertar n filas una por una, leer cada una por la clave primaria, ejecutar una consulta con
+//     filtro y agregación, y leer por la clave de nuevo desde 8 threads que comparten un pool de 8
+//     conexiones. Las llamadas JDBC bloquean, así que cada worker es un thread que espera la respuesta.
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -62,6 +67,7 @@ public final class Main {
 
   // EN: Runs the operation for every id from..to in steps, timing each call.
   // PT: Roda a operação para cada id de from a to em passos, cronometrando cada chamada.
+  // ES: Ejecuta la operación para cada id de from a to con paso, cronometrando cada llamada.
   private static Phase timed(int from, int to, int step, Operation operation) throws SQLException {
     Phase phase = new Phase();
     long start = System.nanoTime();
@@ -113,6 +119,8 @@ public final class Main {
       //     keeps user input from ever being run as SQL.
       // PT: Um PreparedStatement envia os valores separados do texto SQL, e é isso também que
       //     impede que uma entrada do usuário seja executada como SQL.
+      // ES: Un PreparedStatement envía los valores separados del texto SQL, y eso también es lo que
+      //     impide que una entrada del usuario se ejecute como SQL.
       try (PreparedStatement ps =
           conn.prepareStatement("INSERT INTO " + TABLE + " (id, name, category, price) VALUES (?, ?, ?, ?)")) {
         insert =
@@ -149,6 +157,7 @@ public final class Main {
 
       // EN: A pool keeps connections open and lends one to each thread that asks.
       // PT: Um pool mantém conexões abertas e empresta uma a cada thread que pedir.
+      // ES: Un pool mantiene conexiones abiertas y presta una a cada thread que la pida.
       HikariConfig config = new HikariConfig();
       config.setJdbcUrl(url);
       config.setUsername(user);
@@ -196,6 +205,7 @@ public final class Main {
 
     // EN: CPU time of every thread of the JVM and peak memory of the JVM, counted by the kernel.
     // PT: Tempo de CPU de todas as threads da JVM e pico de memória da JVM, contados pelo kernel.
+    // ES: Tiempo de CPU de todos los threads de la JVM y pico de memoria de la JVM, contados por el kernel.
     double cpuMs = ProcessHandle.current().info().totalCpuDuration().orElse(Duration.ZERO).toNanos() / 1e6;
     System.out.println(
         String.format(

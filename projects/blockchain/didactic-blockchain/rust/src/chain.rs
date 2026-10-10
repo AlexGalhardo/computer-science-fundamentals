@@ -9,6 +9,10 @@ use std::fmt::Write;
 //     Merkle, prova de trabalho e a validação que torna a adulteração evidente. Uma transação
 //     aqui é só uma linha de texto identificada pelo seu hash. Assinaturas, saídas não gastas e
 //     a rede de nós estão na referência em TypeScript.
+// ES: El lado en Rust cubre la parte de la lección donde el lenguaje marca la diferencia: hash,
+//     raíz de Merkle, prueba de trabajo y la validación que vuelve evidente la manipulación.
+//     Una transacción aquí es solo una línea de texto identificada por su hash. Las firmas, las
+//     salidas no gastadas y la red de nodos están en la referencia en TypeScript.
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Header {
@@ -40,6 +44,9 @@ pub struct ChainError {
 // PT: Mesma convenção da referência em TypeScript, então as duas dão a mesma raiz: as folhas são
 //     os hashes das transações, um pai é o hash dos textos hexadecimais dos dois filhos
 //     concatenados, e um nível com número ímpar de nós duplica o último.
+// ES: La misma convención que la referencia en TypeScript, así que ambas dan la misma raíz: las
+//     hojas son los hashes de las transacciones, un padre es el hash de los textos hexadecimales
+//     de sus dos hijos concatenados, y un nivel con número impar de nodos duplica el último.
 pub fn merkle_root(leaves: &[String]) -> String {
     if leaves.is_empty() {
         return sha256_hex("");
@@ -78,6 +85,8 @@ fn header_prefix(header: &Header) -> String {
 //     Merkle root (the fingerprint of the transactions).
 // PT: O hash do bloco cobre só o cabeçalho, que guarda o hash anterior (o elo) e a raiz de
 //     Merkle (a impressão digital das transações).
+// ES: El hash del bloque cubre solo el encabezado, que guarda el hash anterior (el enlace) y la
+//     raíz de Merkle (la huella digital de las transacciones).
 pub fn header_hash(header: &Header) -> String {
     sha256_hex(&format!("{}{}", header_prefix(header), header.nonce))
 }
@@ -88,6 +97,9 @@ pub fn header_hash(header: &Header) -> String {
 // PT: Um dígito hexadecimal são 4 bits, então "d dígitos zero" significa d/2 bytes zero mais,
 //     quando d é ímpar, a metade alta do byte seguinte zerada. Conferir os bytes crus evita
 //     montar o texto hexadecimal a cada tentativa.
+// ES: Un dígito hexadecimal son 4 bits, así que "d dígitos cero" significa d/2 bytes cero más,
+//     cuando d es impar, la mitad alta del byte siguiente en cero. Revisar los bytes crudos
+//     evita armar el texto hexadecimal en cada intento.
 fn digest_meets(digest: &[u8; 32], difficulty: u32) -> bool {
     let digits = (difficulty as usize).min(64);
     let full = digits / 2;
@@ -116,6 +128,9 @@ pub struct Mined {
 // PT: Prova de trabalho: testa nonces até o hash começar com os zeros exigidos. Cerca de 16^d
 //     tentativas em média, um hash para conferir. O buffer é reaproveitado entre as tentativas,
 //     então o laço não aloca nada.
+// ES: Prueba de trabajo: prueba nonces hasta que el hash empiece con los ceros exigidos. Unos
+//     16^d intentos en promedio, un hash para comprobar. El buffer se reutiliza entre
+//     intentos, así que el bucle no reserva memoria.
 pub fn mine(mut header: Header) -> Mined {
     let mut text = header_prefix(&header);
     let prefix_len = text.len();
@@ -139,6 +154,7 @@ pub fn mine(mut header: Header) -> Mined {
 
 // EN: The fixed starting point, identical to the genesis block of the TypeScript reference.
 // PT: O ponto de partida fixo, idêntico ao bloco gênese da referência em TypeScript.
+// ES: El punto de partida fijo, idéntico al bloque génesis de la referencia en TypeScript.
 pub fn genesis() -> Block {
     let header = Header {
         height: 0,
@@ -192,6 +208,11 @@ pub fn add_block(
 //     do bloco. Consertar a raiz muda o hash do bloco, o que quebra a prova de trabalho. Refazer
 //     a prova de trabalho quebra a ligação a partir do bloco seguinte. Logo, reescrever um
 //     bloco antigo significa refazer o trabalho de todos os blocos depois dele.
+// ES: Reejecuta la cadena desde el bloque génesis. Cambiar una transacción rompe la raíz de
+//     Merkle del bloque. Arreglar la raíz cambia el hash del bloque, lo que rompe la prueba de
+//     trabajo. Rehacer la prueba de trabajo rompe el enlace desde el bloque siguiente. Por
+//     tanto, reescribir un bloque antiguo significa rehacer el trabajo de todos los bloques
+//     posteriores.
 pub fn validate(chain: &[Block], difficulty: u32) -> Result<(), ChainError> {
     let fail = |height, reason| Err(ChainError { height, reason });
     let Some(first) = chain.first() else {

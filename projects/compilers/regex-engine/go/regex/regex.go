@@ -19,6 +19,9 @@ type Regex struct {
 // PT: Este é o pipeline de um gerador de analisadores léxicos em três linhas. Cada estágio
 // responde à mesma pergunta, "este texto casa?", em uma forma mais barata de executar e mais cara
 // de construir do que a anterior.
+// ES: Este es el pipeline de un generador de analizadores léxicos en tres líneas. Cada etapa
+// responde a la misma pregunta, "¿este texto empareja?", en una forma más barata de ejecutar y
+// más cara de construir que la anterior.
 func New(pattern string) (*Regex, error) {
 	tree, err := Parse(pattern)
 	if err != nil {

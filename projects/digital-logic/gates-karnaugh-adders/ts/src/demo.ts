@@ -4,6 +4,9 @@
 // PT: `bun run demo` imprime as três lições do mini-projeto: uma expressão transformada em
 //     tabela-verdade, uma tabela-verdade minimizada por Quine-McCluskey e uma soma feita por
 //     portas. Com RESULTS_DIR definida, o mesmo texto é gravado em results/results-ts.md.
+// ES: `bun run demo` imprime las tres lecciones del mini-proyecto: una expresión convertida en
+//     tabla de verdad, una tabla de verdad minimizada por Quine-McCluskey y una suma hecha por
+//     compuertas. Con RESULTS_DIR definida, el mismo texto se escribe en results/results-ts.md.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

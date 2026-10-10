@@ -4,6 +4,9 @@
 // PT: Os três jeitos de falar com o mesmo PostgreSQL, montados lado a lado, cada um com um
 //     gravador que guarda todo comando SQL enviado. O gravador é como o laboratório responde
 //     "que SQL o ORM gera?" e "quantos comandos aquele laço realmente emitiu?".
+// ES: Las tres formas de hablar con el mismo PostgreSQL, montadas lado a lado, cada una con un
+//     registrador que guarda toda sentencia SQL enviada. El registrador es cómo el laboratorio responde
+//     "¿qué SQL genera el ORM?" y "¿cuántas sentencias emitió realmente ese bucle?".
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -22,6 +25,8 @@ export type Row = Record<string, unknown>;
 //     concatenates them into the text, which is what keeps SQL injection out.
 // PT: SQL puro pelo node-postgres. `query` sempre passa os parâmetros separados ($1, $2...),
 //     nunca concatenados no texto, e é isso que mantém a injeção de SQL do lado de fora.
+// ES: SQL puro con node-postgres. `query` siempre pasa los parámetros por separado ($1, $2...),
+//     nunca concatenados en el texto, y eso es lo que mantiene la inyección SQL afuera.
 export interface RawDb {
 	query: <T extends Row>(text: string, params?: unknown[]) => Promise<T[]>;
 	transaction: <T>(work: (tx: RawDb) => Promise<T>) => Promise<T>;
@@ -61,6 +66,9 @@ function rawDb(pool: Pool, log: string[], record: boolean): RawDb {
 		// PT: Uma transação precisa rodar em UMA conexão. Pegar um cliente do pool e usá-lo para
 		//     o BEGIN, o trabalho e o COMMIT garante isso. Enviar o BEGIN pelo pool poderia
 		//     colocar cada comando em uma conexão diferente.
+		// ES: Una transacción debe ejecutarse en UNA conexión. Tomar un cliente del pool y usarlo para
+		//     el BEGIN, el trabajo y el COMMIT lo garantiza. Enviar el BEGIN por el pool podría
+		//     poner cada sentencia en una conexión diferente.
 		transaction: async <T>(work: (tx: RawDb) => Promise<T>): Promise<T> => {
 			const client = await pool.connect();
 			const query = on(client);
@@ -121,6 +129,7 @@ export function createContext(options: ContextOptions): Context {
 
 // EN: Recreates the tables and the seed data, so every test file starts from the same rows.
 // PT: Recria as tabelas e os dados iniciais, então todo arquivo de teste parte das mesmas linhas.
+// ES: Recrea las tablas y los datos iniciales, así que todo archivo de prueba parte de las mismas filas.
 export async function resetDatabase(databaseUrl: string): Promise<void> {
 	const pool = new Pool({ connectionString: databaseUrl, max: 1 });
 	try {

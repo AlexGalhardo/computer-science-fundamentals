@@ -2,6 +2,8 @@
 //     with Zod before it reaches the cache or the database.
 // PT: A API HTTP do laboratório, feita com ElysiaJS. Todo corpo e parâmetro de caminho é
 //     validado com Zod antes de chegar ao cache ou ao banco.
+// ES: La API HTTP del laboratorio, hecha con ElysiaJS. Todo cuerpo y parámetro de ruta se
+//     valida con Zod antes de llegar al caché o a la base de datos.
 
 import { Elysia } from "elysia";
 import { z } from "zod";
@@ -53,6 +55,8 @@ export async function resetLab(lab: Lab, settings: Partial<Settings> = {}): Prom
 	//     updated in place.
 	// PT: O objeto de configurações é compartilhado por referência com o store e a chave quente,
 	//     então é atualizado no lugar.
+	// ES: El objeto de configuración se comparte por referencia con el store y la clave caliente,
+	//     así que se actualiza en el lugar.
 	Object.assign(lab.settings, settingsSchema.parse(settings));
 	await lab.store.flush();
 	await lab.cache.flushAll();
@@ -81,6 +85,8 @@ const hotParams = z.object({ mode: z.enum(MODES) });
 //     response in the type of the app, and writing it by hand would only lose that information.
 // PT: O tipo de retorno fica por conta da inferência de propósito: o Elysia codifica cada rota,
 //     corpo e resposta no tipo do app, e escrevê-lo à mão só perderia essa informação.
+// ES: El tipo de retorno se deja a la inferencia a propósito: Elysia codifica cada ruta,
+//     cuerpo y respuesta en el tipo de la app, y escribirlo a mano solo perdería esa información.
 export function createApp(lab: Lab) {
 	return (
 		new Elysia()
@@ -102,6 +108,7 @@ export function createApp(lab: Lab) {
 			)
 			// EN: Used by the load test to leave the warm-up out of the measurement.
 			// PT: Usado pelo teste de carga para deixar o aquecimento fora da medição.
+			// ES: Lo usa la prueba de carga para dejar el calentamiento fuera de la medición.
 			.post("/admin/counters/reset", () => {
 				resetCounters(lab);
 				return { ok: true };
@@ -111,6 +118,8 @@ export function createApp(lab: Lab) {
 			//     a CDN does, so the load test can count hits without asking the server.
 			// PT: O `X-Cache` conta ao cliente se a resposta veio do cache, como uma CDN faz,
 			//     então o teste de carga consegue contar acertos sem perguntar ao servidor.
+			// ES: `X-Cache` le dice al cliente si la respuesta vino del caché, igual que lo hace
+			//     una CDN, así que la prueba de carga puede contar aciertos sin preguntar al servidor.
 			.get(
 				"/products/:strategy/:id",
 				async ({ params, set, status }) => {

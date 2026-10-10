@@ -61,6 +61,7 @@ describe.each(versions)("god class, %s", (_name, createShop) => {
 
 // EN: What the refactoring bought: each responsibility can be tested with nothing else around.
 // PT: O que a refatoração comprou: cada responsabilidade pode ser testada sem nada em volta.
+// ES: Lo que la refactorización compró: cada responsabilidad puede probarse sin nada alrededor.
 describe("god class, only possible after", () => {
 	test("the stock rule without prices, e-mails or reports", () => {
 		const inventory = new after.Inventory();

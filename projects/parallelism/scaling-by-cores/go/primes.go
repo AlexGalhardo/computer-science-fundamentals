@@ -15,6 +15,10 @@ const primesChunk = 10_000
 // os resultados parciais dos trabalhadores podem ser somados em qualquer ordem e
 // agrupamento e o total é sempre o mesmo. Por isso a resposta paralela é exatamente igual
 // à sequencial.
+// ES: El resultado es un par de enteros. La suma de enteros es asociativa y conmutativa, así que
+// los resultados parciales de los trabajadores pueden sumarse en cualquier orden y
+// agrupación y el total es siempre el mismo. Por eso la respuesta paralela es exactamente igual
+// a la secuencial.
 type primeStats struct {
 	count, sum uint64
 }
@@ -32,6 +36,11 @@ func (s primeStats) merge(other primeStats) primeStats {
 // sqrt(n) / 2 divisões, enquanto a maioria dos compostos sai depois de poucas. Números
 // maiores são, portanto, mais caros, o que faz blocos iguais de números serem quantidades
 // desiguais de trabalho.
+// ES: División de prueba por impares hasta la raíz cuadrada. Es deliberadamente simple y
+// limitada por CPU, y el costo depende del valor: probar que n es primo toma unas
+// sqrt(n) / 2 divisiones, mientras que la mayoría de los compuestos salen después de pocas. Los
+// números mayores son, por tanto, más caros, lo que hace que bloques iguales de números sean
+// cantidades desiguales de trabajo.
 func isPrime(n uint64) bool {
 	if n < 2 {
 		return false
@@ -56,6 +65,9 @@ func isPrime(n uint64) bool {
 // PT: A unidade de trabalho comum a todas as versões: percorrer um intervalo e acumular em
 // uma variável local. Nada aqui é compartilhado entre goroutines, então esta função é a
 // mesma no código sequencial e no paralelo.
+// ES: La unidad de trabajo común a todas las versiones: recorrer un intervalo y acumular en
+// una variable local. Nada aquí se comparte entre goroutines, así que esta función es la
+// misma en el código secuencial y en el paralelo.
 func countRange(start, end uint64) primeStats {
 	var stats primeStats
 	for n := start; n < end; n++ {
@@ -88,6 +100,12 @@ func countParallel(limit uint64, workers int, mode schedule) primeStats {
 	// no fim: nenhum contador compartilhado é escrito no laço quente, o que evita tanto a
 	// corrida de dados quanto a disputa de linha de cache (as posições são vizinhas na
 	// memória, então escrevê-las a cada número seria falso compartilhamento).
+	// ES: Fork-join. Cada `wg.Go` crea una goroutine y `wg.Wait` espera a que todas terminen,
+	// así que los resultados parciales están completos cuando se leen. Cada trabajador
+	// acumula en una variable local y escribe su posición de `partials` una sola vez,
+	// al final: ningún contador compartido se escribe en el bucle caliente, lo que evita tanto
+	// la condición de carrera como la disputa de línea de caché (las posiciones son vecinas en
+	// la memoria, así que escribirlas en cada número sería falso compartido).
 	partials := make([]primeStats, workers)
 	var wg sync.WaitGroup
 	switch mode {
@@ -106,6 +124,10 @@ func countParallel(limit uint64, workers int, mode schedule) primeStats {
 		// pegou ainda". O `Add` é atômico, então dois trabalhadores nunca recebem o mesmo
 		// pedaço. Ele é tocado uma vez a cada 10 000 números, e não a cada número, então o
 		// custo de compartilhá-lo fica diluído.
+		// ES: El único estado compartido es este contador: "el próximo número que nadie ha
+		// tomado todavía". `Add` es atómico, así que dos trabajadores nunca reciben la misma
+		// porción. Se toca una vez cada 10 000 números, y no en cada número, así que el
+		// costo de compartirlo queda diluido.
 		var next atomic.Uint64
 		for index := range workers {
 			wg.Go(func() {
@@ -125,6 +147,7 @@ func countParallel(limit uint64, workers int, mode schedule) primeStats {
 	wg.Wait()
 	// EN: The reduction: combine one partial result per worker into the final answer.
 	// PT: A redução: combinar um resultado parcial por trabalhador na resposta final.
+	// ES: La reducción: combinar un resultado parcial por trabajador en la respuesta final.
 	var result primeStats
 	for _, partial := range partials {
 		result = result.merge(partial)

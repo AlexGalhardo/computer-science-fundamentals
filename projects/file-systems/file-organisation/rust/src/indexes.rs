@@ -14,6 +14,11 @@ pub struct Entry {
 //     enquanto o arquivo de dados fica em ordem de chegada. Entradas ordenadas e de mesmo
 //     tamanho são o que a busca binária precisa, então achar uma chave entre n registros custa
 //     cerca de log2(n) comparações na memória e depois um único seek no arquivo de dados.
+// ES: El índice primario: entradas de tamaño fijo (clave, RRN) mantenidas en orden de clave,
+//     mientras el archivo de datos queda en orden de llegada. Entradas ordenadas y del mismo
+//     tamaño son lo que necesita la búsqueda binaria, así que encontrar una clave entre n
+//     registros cuesta unas log2(n) comparaciones en memoria y después un único seek en el
+//     archivo de datos.
 #[derive(Debug, Default)]
 pub struct PrimaryIndex {
     entries: Vec<Entry>,
@@ -66,6 +71,7 @@ impl PrimaryIndex {
 
     // EN: Entries examined by the last search, and the largest value seen so far.
     // PT: Entradas examinadas pela última busca, e o maior valor visto até agora.
+    // ES: Entradas examinadas por la última búsqueda, y el mayor valor visto hasta ahora.
     pub fn last_probes(&self) -> u32 {
         self.last_probes
     }
@@ -76,6 +82,8 @@ impl PrimaryIndex {
 
     // EN: Index file: "PIDX", the out-of-date flag, the number of entries, then the entries.
     // PT: Arquivo de índice: "PIDX", o indicador de desatualizado, o número de entradas e as entradas.
+    // ES: Archivo de índice: "PIDX", el indicador de desactualizado, el número de entradas y las
+    //     entradas.
     pub fn to_bytes(&self, stale: bool) -> Vec<u8> {
         let mut bytes = vec![0u8; 12 + self.entries.len() * 8];
         bytes[0..4].copy_from_slice(b"PIDX");
@@ -92,6 +100,9 @@ impl PrimaryIndex {
     //     three cases the caller rebuilds the index from the data file.
     // PT: Devolve false quando o arquivo não existe, está danificado ou está marcado como
     //     desatualizado. Nos três casos quem chamou reconstrói o índice a partir dos dados.
+    // ES: Devuelve false cuando el archivo no existe, está dañado o está marcado como
+    //     desactualizado. En los tres casos quien llamó reconstruye el índice a partir de los
+    //     datos.
     pub fn load_bytes(&mut self, bytes: &[u8]) -> bool {
         self.entries.clear();
         if bytes.len() < 12 || &bytes[0..4] != b"PIDX" || get_u32(bytes, 4) != 0 {
@@ -114,6 +125,8 @@ impl PrimaryIndex {
     //     with the middle entry and throws away half of what is left.
     // PT: Busca binária escrita à mão para que as sondagens possam ser contadas: cada passo
     //     compara com a entrada do meio e descarta metade do que resta.
+    // ES: Búsqueda binaria escrita a mano para que los sondeos puedan contarse: cada paso
+    //     compara con la entrada del medio y descarta la mitad de lo que queda.
     fn lower_bound(&mut self, id: u32) -> usize {
         let mut low = 0;
         let mut high = self.entries.len();
@@ -150,6 +163,13 @@ struct Node {
 //     nó. O índice guarda chaves primárias, e não endereços (ligação tardia): quando um
 //     registro muda de lugar ou é removido, só o índice primário muda. Cada lista é mantida em
 //     ordem crescente de chave primária, para que duas listas sejam combinadas em uma passada.
+// ES: Un índice secundario con listas invertidas. La tabla de claves tiene una entrada por
+//     clave secundaria (una ciudad, un año), con la posición del primer nodo de una lista
+//     enlazada. Los nodos quedan en un segundo archivo, cada uno con una CLAVE PRIMARIA y la
+//     posición del siguiente nodo. El índice guarda claves primarias, y no direcciones (enlace
+//     tardío): cuando un registro cambia de lugar o se elimina, solo cambia el índice primario.
+//     Cada lista se mantiene en orden creciente de clave primaria, para que dos listas puedan
+//     combinarse en una pasada.
 #[derive(Debug, Default)]
 pub struct SecondaryIndex {
     keys: Vec<(String, i32)>,
@@ -170,6 +190,9 @@ impl SecondaryIndex {
         //     and two links change. Nothing is shifted, whatever the length of the list.
         // PT: Percorre a lista até o ponto de inserção. O nó novo vai para o fim do arquivo de
         //     listas e dois elos mudam. Nada é deslocado, qualquer que seja o tamanho da lista.
+        // ES: Recorre la lista hasta el punto de inserción. El nodo nuevo va al final del archivo
+        //     de listas y cambian dos enlaces. Nada se desplaza, sea cual sea el tamaño de la
+        //     lista.
         let mut previous = NO_SLOT;
         let mut current = self.keys[at].1;
         while current != NO_SLOT && self.nodes[current as usize].id < id {
@@ -215,6 +238,8 @@ impl SecondaryIndex {
 
     // EN: Key table file: count, then entries of 24 bytes (key padded to 20 bytes, head).
     // PT: Arquivo da tabela de chaves: quantidade e entradas de 24 bytes (chave em 20 bytes, cabeça).
+    // ES: Archivo de la tabla de claves: cantidad y entradas de 24 bytes (clave en 20 bytes,
+    //     cabeza).
     pub fn keys_to_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![b' '; 4 + self.keys.len() * 24];
         put_u32(&mut bytes, 0, self.keys.len() as u32);
@@ -228,6 +253,7 @@ impl SecondaryIndex {
 
     // EN: List file: count, then nodes of 8 bytes (primary key, next).
     // PT: Arquivo de listas: quantidade e nós de 8 bytes (chave primária, próximo).
+    // ES: Archivo de listas: cantidad y nodos de 8 bytes (clave primaria, siguiente).
     pub fn nodes_to_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![0u8; 4 + self.nodes.len() * 8];
         put_u32(&mut bytes, 0, self.nodes.len() as u32);
@@ -271,6 +297,9 @@ impl SecondaryIndex {
 // PT: Matching cossequencial: duas listas ordenadas pela mesma chave são percorridas juntas,
 //     avançando sempre a que tem o menor item atual. Itens iguais pertencem às duas listas.
 //     Basta uma passada em cada lista, sem nenhuma busca.
+// ES: Matching cosecuencial: dos listas ordenadas por la misma clave se recorren juntas,
+//     avanzando siempre la que tiene el menor elemento actual. Los elementos iguales pertenecen
+//     a las dos listas. Basta una pasada por cada lista, sin ninguna búsqueda.
 pub fn match_lists(left: &[u32], right: &[u32]) -> Vec<u32> {
     let mut both = Vec::new();
     let (mut i, mut j) = (0, 0);

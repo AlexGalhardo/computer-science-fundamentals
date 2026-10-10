@@ -6,6 +6,10 @@
 //     clientes rodam contra o mesmo PostgreSQL com uma entrada pequena, e todos precisam
 //     informar o mesmo checksum, igual a uma referência calculada aqui sem banco nenhum. Isso
 //     prova que eles inseriram as mesmas linhas e leram os mesmos valores. Precisa do Docker.
+// ES: Prueba de la carga de base de datos del lado del host (`bun run test:database`). Los siete
+//     clientes corren contra el mismo PostgreSQL con una entrada pequeña, y todos deben informar
+//     el mismo checksum, igual a una referencia calculada aquí sin base de datos alguna. Eso
+//     prueba que insertaron las mismas filas y leyeron los mismos valores. Necesita Docker.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { LANGUAGES, run } from "../scripts/lib";
@@ -18,6 +22,8 @@ const WORKERS = 8;
 //     (single connection and pool) and, for 200 queries, the count and the sum of one category.
 // PT: A linha i tem preço (i * 37) % 1000 e categoria i % 10. Os clientes somam os preços duas
 //     vezes (conexão única e pool) e, em 200 consultas, a contagem e a soma de uma categoria.
+// ES: La fila i tiene precio (i * 37) % 1000 y categoría i % 10. Los clientes suman los precios
+//     dos veces (conexión única y pool) y, en 200 consultas, el conteo y la suma de una categoría.
 function reference(rows: number): string {
 	let prices = 0;
 	const count = new Array<number>(10).fill(0);

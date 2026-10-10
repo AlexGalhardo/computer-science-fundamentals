@@ -6,6 +6,10 @@
 //     suas respostas, e o checkout abaixo conversa só com esta interface. O despacho dinâmico
 //     escolhe o código, então a pergunta "que tipo é este?" nunca é feita. Um tipo novo é uma
 //     classe nova: este arquivo e os tipos existentes não são abertos.
+// ES: REFACTORIZADO con Reemplazar Condicional por Polimorfismo. Cada tipo es una clase que
+//     carga sus respuestas, y el checkout de abajo habla solo con esta interfaz. El despacho
+//     dinámico elige el código, así que la pregunta "¿qué tipo es este?" nunca se hace. Un tipo
+//     nuevo es una clase nueva: este archivo y los tipos existentes no se abren.
 public interface DeliveryMethod {
   String name();
 

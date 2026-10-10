@@ -8,6 +8,9 @@ import { ALGORITHMS } from "./limiter";
 // PT: A tabela de casos é um arquivo JSON lido por duas linguagens, então é entrada externa:
 //     ela é validada com um schema antes que qualquer teste confie nela. Um erro de digitação
 //     como "alowed" falha aqui com uma mensagem clara, em vez de virar `undefined` em silêncio.
+// ES: La tabla de casos es un archivo JSON leído por dos lenguajes, así que es entrada externa:
+//     se valida con un schema antes de que cualquier prueba confíe en ella. Un error de tipeo
+//     como "alowed" falla aquí con un mensaje claro, en lugar de volverse `undefined` en silencio.
 const requestSchema = z.strictObject({
 	atMs: z.number().int().min(0),
 	allowed: z.boolean(),

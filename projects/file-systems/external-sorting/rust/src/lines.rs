@@ -11,6 +11,8 @@ static SYNC_EVERY: AtomicU64 = AtomicU64::new(0);
 //     disk. Zero, the default, never forces it. See `LineWriter`.
 // PT: Uma configuração do processo inteiro: depois de quantos bytes gravados em um arquivo os
 //     dados são forçados para o disco. Zero, o padrão, nunca força. Veja `LineWriter`.
+// ES: Una configuración del proceso entero: después de cuántos bytes escritos en un archivo los
+//     datos se fuerzan a disco. Cero, el valor por defecto, nunca fuerza. Véase `LineWriter`.
 pub fn set_sync_every(bytes: u64) {
     SYNC_EVERY.store(bytes, Ordering::Relaxed);
 }
@@ -28,6 +30,13 @@ pub fn set_sync_every(bytes: u64) {
 //     o disco pode, então, ser morto mesmo com a própria memória minúscula. Com um intervalo de
 //     sincronização, o escritor chama fdatasync a cada poucos megabytes, o que limita as
 //     páginas sujas que o processo deixa para trás.
+// ES: Todo archivo de salida de la ordenación se escribe con este escritor con buffer. Los
+//     bytes entregados al kernel todavía no están en disco: esperan en la caché de páginas como
+//     páginas sucias. El límite de memoria de un contenedor también cuenta esas páginas, y las
+//     páginas sucias no pueden descartarse antes de escribirse. Un programa que escribe más
+//     rápido que el disco puede, entonces, ser matado aunque su propia memoria sea diminuta. Con
+//     un intervalo de sincronización, el escritor llama a fdatasync cada pocos megabytes, lo que
+//     limita las páginas sucias que el proceso deja atrás.
 pub struct LineWriter {
     writer: BufWriter<File>,
     sync_every: u64,
@@ -68,6 +77,9 @@ impl LineWriter {
 //     Rust and in Go, so both programs generate the same input file, byte for byte.
 // PT: SplitMix64, um gerador pseudoaleatório pequeno. A mesma semente dá a mesma sequência em
 //     Rust e em Go, então os dois programas geram o mesmo arquivo de entrada, byte a byte.
+// ES: SplitMix64, un generador pseudoaleatorio pequeño. La misma semilla da la misma secuencia
+//     en Rust y en Go, así que los dos programas generan el mismo archivo de entrada, byte a
+//     byte.
 pub struct SplitMix64 {
     pub state: u64,
 }
@@ -96,6 +108,11 @@ impl SplitMix64 {
 //     de um hash de 64 bits de cada linha). Dois arquivos com a mesma contagem e o mesmo
 //     checksum têm, para todos os efeitos práticos, o mesmo multiconjunto de linhas: a entrada
 //     e a saída ordenada são comparadas assim com memória O(1).
+// ES: Lo que se sabe de un archivo de líneas sin guardarlo en memoria: cuántas líneas tiene, si
+//     están en orden, y un checksum que no depende del orden de las líneas (la suma y el o
+//     exclusivo de un hash de 64 bits de cada línea). Dos archivos con la misma cuenta y el
+//     mismo checksum tienen, a todos los efectos prácticos, el mismo multiconjunto de líneas: la
+//     entrada y la salida ordenada se comparan así con memoria O(1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Digest {
     pub lines: u64,
@@ -146,6 +163,11 @@ pub enum Target {
 //     diferentes, o que os testes usam para forçar chaves repetidas (0 significa qualquer chave
 //     de 64 bits). O digest é calculado durante a gravação, então a entrada nunca precisa ser
 //     lida de novo para ser comparada com a saída.
+// ES: Escribe el archivo de entrada: cada línea es una clave de 16 dígitos hexadecimales, un
+//     espacio y de 8 a 56 letras, unos 50 bytes por línea. `distinct` limita el número de
+//     claves distintas, lo que las pruebas usan para forzar claves repetidas (0 significa
+//     cualquier clave de 64 bits). El digest se calcula durante la escritura, así que la
+//     entrada nunca necesita leerse de nuevo para compararla con la salida.
 pub fn generate(path: &Path, target: Target, seed: u64, distinct: u64) -> io::Result<Digest> {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut writer = LineWriter::create(path, 1 << 16)?;
@@ -190,6 +212,7 @@ pub fn generate(path: &Path, target: Target, seed: u64, distinct: u64) -> io::Re
 
 // EN: Reads one line into `line`, without the line break. Returns false at the end of the file.
 // PT: Lê uma linha para `line`, sem a quebra de linha. Devolve false no fim do arquivo.
+// ES: Lee una línea en `line`, sin el salto de línea. Devuelve false al final del archivo.
 pub fn read_line(reader: &mut impl BufRead, line: &mut Vec<u8>) -> io::Result<bool> {
     line.clear();
     if reader.read_until(b'\n', line)? == 0 {
@@ -204,6 +227,8 @@ pub fn read_line(reader: &mut impl BufRead, line: &mut Vec<u8>) -> io::Result<bo
 // EN: One sequential pass over a file: the digest, and whether every line is greater than or
 //     equal to the one before it.
 // PT: Uma passada sequencial em um arquivo: o digest, e se cada linha é maior ou igual à anterior.
+// ES: Una pasada secuencial por un archivo: el digest, y si cada línea es mayor o igual que la
+//     anterior.
 pub fn inspect(path: &Path) -> io::Result<(Digest, bool)> {
     let mut reader = BufReader::with_capacity(1 << 16, File::open(path)?);
     let mut digest = Digest::default();

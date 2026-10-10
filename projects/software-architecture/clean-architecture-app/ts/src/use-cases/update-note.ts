@@ -20,6 +20,9 @@ export class UpdateNote {
 	// PT: O caso de uso orquestra e a entidade decide. Se o novo título é aceitável é perguntado
 	//     a `note.edit`. Se o título está livre nesta aplicação é perguntado ao repositório.
 	//     O caso de uso só coloca as respostas em ordem.
+	// ES: El caso de uso orquesta y la entidad decide. Si el nuevo título es aceptable se le
+	//     pregunta a `note.edit`. Si el título está libre en esta aplicación se le pregunta al
+	//     repositorio. El caso de uso solo pone las respuestas en orden.
 	async execute(input: UpdateNoteInput): Promise<Result<NoteData, ApplicationError>> {
 		const current = await this.repository.findById(input.id);
 		if (current === undefined) {

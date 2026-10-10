@@ -6,6 +6,10 @@
 //     arquivo. Ele existe para mostrar as quatro chamadas de sistema em que todo shell UNIX se
 //     apoia: fork cria um processo, exec troca o programa dele, pipe conecta dois processos, e
 //     dup2 aponta a entrada ou a saída padrão para outro lugar.
+// ES: msh, un mini shell. `./msh` lee comandos de la entrada estándar y `./msh script` los lee de
+//     un archivo. Existe para mostrar las cuatro llamadas al sistema sobre las que se construye
+//     todo shell UNIX: fork crea un proceso, exec reemplaza su programa, pipe conecta dos procesos
+//     y dup2 apunta la entrada o la salida estándar a otro lugar.
 
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -39,11 +43,19 @@ void close_if_open(int fd) {
 //     reorganizar seus próprios descritores de arquivo antes de o novo programa começar. O
 //     novo programa depois apenas lê o descritor 0 e escreve no descritor 1, sem saber aonde
 //     eles levam.
+// ES: Se ejecuta en el hijo, entre fork y exec. Este intervalo es la razón por la que fork y exec
+//     son dos llamadas separadas: aquí el hijo todavía ejecuta el código del shell, así que puede
+//     reorganizar sus propios descriptores de archivo antes de que empiece el nuevo programa. El
+//     programa nuevo simplemente lee el descriptor 0 y escribe en el descriptor 1, sin saber
+//     adónde llevan.
 [[noreturn]] void run_child(const Command& command, int read_end, int write_end) {
 	// EN: The shell ignores Ctrl-C, but the programs it starts must die with it. A signal
 	//     that is ignored stays ignored across exec, so the child restores the default first.
 	// PT: O shell ignora o Ctrl-C, mas os programas que ele inicia precisam morrer com ele. Um
 	//     sinal ignorado continua ignorado depois do exec, então o filho restaura o padrão antes.
+	// ES: El shell ignora Ctrl-C, pero los programas que inicia deben morir con él. Una señal
+	//     ignorada sigue ignorada después de exec, así que el hijo restaura primero la acción
+	//     por defecto.
 	struct sigaction action{};
 	action.sa_handler = SIG_DFL;
 	sigaction(SIGINT, &action, nullptr);
@@ -58,6 +70,8 @@ void close_if_open(int fd) {
 	//     the file, as in a real shell.
 	// PT: Os redirecionamentos explícitos são aplicados depois do pipe, então `cmd > arq | outro`
 	//     escreve no arquivo, como em um shell de verdade.
+	// ES: Las redirecciones explícitas se aplican después del pipe, así que `cmd > arch | otro`
+	//     escribe en el archivo, como en un shell de verdad.
 	if (!command.input.empty()) {
 		const int fd = open(command.input.c_str(), O_RDONLY);
 		if (fd == -1) {
@@ -88,6 +102,7 @@ void close_if_open(int fd) {
 	execvp(argv[0], argv.data());
 	// EN: exec returns only when it failed, for example when the program does not exist.
 	// PT: O exec só retorna quando falhou, por exemplo quando o programa não existe.
+	// ES: exec solo retorna cuando falló, por ejemplo cuando el programa no existe.
 	std::perror(("msh: " + command.argv[0]).c_str());
 	_exit(127);
 }
@@ -100,6 +115,11 @@ void close_if_open(int fd) {
 //     O detalhe que mais importa: depois do fork, o pai precisa fechar as suas cópias das pontas
 //     do pipe. Um leitor só vê fim de arquivo quando TODAS as pontas de escrita estão fechadas.
 //     Se o shell mantivesse uma aberta, um `cat` no fim do pipeline esperaria para sempre.
+// ES: Inicia un proceso por comando y conecta cada uno con el siguiente mediante un pipe.
+//     El detalle que más importa: después del fork, el padre debe cerrar sus copias de los
+//     extremos del pipe. Un lector ve fin de archivo solo cuando TODOS los extremos de escritura
+//     están cerrados. Si el shell mantuviera uno abierto, un `cat` al final del pipeline
+//     esperaría para siempre.
 int run_pipeline(const std::vector<Command>& pipeline) {
 	std::cout.flush();
 	std::vector<pid_t> children;
@@ -133,6 +153,8 @@ int run_pipeline(const std::vector<Command>& pipeline) {
 	//     its last command.
 	// PT: O shell espera por todos os processos do pipeline. Um filho pelo qual ninguém espera
 	//     fica na tabela de processos como zumbi. O status do pipeline é o do seu último comando.
+	// ES: El shell espera a todos los procesos del pipeline. Un hijo al que nadie espera queda en
+	//     la tabla de procesos como zombie. El estado del pipeline es el de su último comando.
 	int status = 1;
 	for (std::size_t i = 0; i < children.size(); ++i) {
 		int raw = 0;
@@ -157,6 +179,9 @@ int run_pipeline(const std::vector<Command>& pipeline) {
 // PT: Os comandos embutidos executam dentro do próprio shell. O `cd` precisa ser um deles: o
 //     diretório de trabalho é de cada processo, então um filho que chamasse chdir mudaria só o
 //     próprio diretório e terminaria em seguida, deixando o shell onde estava.
+// ES: Los builtins se ejecutan dentro del propio shell. `cd` tiene que ser uno: el directorio de
+//     trabajo pertenece a cada proceso, así que un hijo que llamara a chdir cambiaría solo su
+//     propio directorio y luego terminaría, dejando al shell donde estaba.
 int change_directory(const Command& command) {
 	const char* home = std::getenv("HOME");
 	const std::string target = command.argv.size() > 1 ? command.argv[1] : (home ? home : "/");
@@ -188,6 +213,9 @@ int main(int argc, char** argv) {
 	// PT: O Ctrl-C envia SIGINT a todos os processos do grupo em primeiro plano, inclusive o
 	//     shell. O shell o ignora e seus filhos não, então o pipeline em execução morre, e o
 	//     shell segue para o próximo comando.
+	// ES: Ctrl-C envía SIGINT a todos los procesos del grupo en primer plano, el shell incluido.
+	//     El shell lo ignora y sus hijos no, así que el pipeline en ejecución muere y el shell
+	//     pasa al siguiente comando.
 	struct sigaction ignore{};
 	ignore.sa_handler = SIG_IGN;
 	sigaction(SIGINT, &ignore, nullptr);

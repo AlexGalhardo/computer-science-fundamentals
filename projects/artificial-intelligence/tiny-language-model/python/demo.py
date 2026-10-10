@@ -3,6 +3,9 @@ results/loss-curve.svg and results/attention.svg.
 
 PT: `python demo.py` treina os dois modelos, imprime as tabelas e grava results/results.md,
 results/loss-curve.svg e results/attention.svg.
+
+ES: `python demo.py` entrena los dos modelos, imprime las tablas y escribe results/results.md,
+results/loss-curve.svg y results/attention.svg.
 """
 
 import os
@@ -39,6 +42,8 @@ def bigram_lines(experiment: Experiment, count: int) -> list[str]:
     """EN: Lines written by the bigram table, to compare with the lines of the transformer.
 
     PT: Linhas escritas pela tabela de bigramas, para comparar com as linhas do transformer.
+
+    ES: Líneas escritas por la tabla de bigramas, para comparar con las líneas del transformer.
     """
     vocabulary = experiment.corpus.vocabulary
     newline_id = vocabulary.index("\n")
@@ -250,6 +255,7 @@ def main() -> None:
     ):
         # EN: newline="\n" keeps Unix line endings whatever the system.
         # PT: newline="\n" mantém as quebras de linha do Unix em qualquer sistema.
+        # ES: newline="\n" mantiene los saltos de línea de Unix en cualquier sistema.
         with (results_dir / name).open("w", encoding="utf-8", newline="\n") as file:
             file.write(content)
     print(f"written: {results_dir}/results.md, loss-curve.svg, attention.svg")

@@ -10,6 +10,12 @@
 // com poucos kibibytes e cresce quando precisa), escalonada pelo runtime do Go sobre poucas
 // threads do SO (escalonamento M:N). Uma goroutine bloqueada em um canal não custa uma thread
 // do SO: o runtime a estaciona e roda outra.
+// ES: Carga de concurrencia en Go: n goroutines esperan en una compuerta, la compuerta se abre, cada una
+// envía su número por un canal, y la suma es el checksum.
+// Modelo de Go: goroutines. Una goroutine es una función con su propio stack pequeño (empieza
+// con pocos kibibytes y crece cuando hace falta), planificada por el runtime de Go sobre pocos
+// threads del SO (planificación M:N). Una goroutine bloqueada en un canal no cuesta un thread
+// del SO: el runtime la estaciona y ejecuta otra.
 package main
 
 import (
@@ -28,6 +34,7 @@ func run(n int) int {
 		go func(id int) {
 			// EN: Receiving from a channel blocks until it is closed, so closing it wakes everyone.
 			// PT: Receber de um canal bloqueia até ele ser fechado, então fechá-lo acorda todos.
+			// ES: Recibir de un canal bloquea hasta que se cierre, así que cerrarlo despierta a todos.
 			<-gate
 			mailbox <- id
 		}(id)

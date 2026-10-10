@@ -19,6 +19,11 @@ namespace trees {
 //     remoção, os nós do caminho de volta até a raiz são conferidos, e um nó que ficou
 //     desbalanceado é corrigido com uma ou duas rotações. Isso mantém a altura abaixo de cerca
 //     de 1,44 log2(n).
+// ES: Árbol AVL: un árbol binario de búsqueda en que, en todo nodo, las alturas de los dos
+//     subárboles difieren en como máximo 1. Cada nodo guarda su altura. Después de una inserción
+//     o eliminación, se revisan los nodos del camino de vuelta hasta la raíz, y un nodo que
+//     quedó desbalanceado se corrige con una o dos rotaciones. Eso mantiene la altura por debajo
+//     de cerca de 1.44 log2(n).
 class AvlTree final : public SearchTree {
 public:
 	AvlTree() = default;
@@ -79,6 +84,11 @@ private:
 	//     esquerdo de y, e a subárvore que ficava entre eles troca de pai. A sequência em-ordem
 	//     é a mesma antes e depois, então a árvore continua sendo de busca. Só três ponteiros
 	//     mudam, então é O(1).
+	// ES: Rotación. `link` es el puntero que lleva al subárbol (la raíz, o un campo de hijo del
+	//     padre). En la rotación a la izquierda el hijo derecho y sube al lugar de x, x pasa a ser
+	//     hijo izquierdo de y, y el subárbol que estaba entre ellos cambia de padre. La secuencia
+	//     en orden es la misma antes y después, así que el árbol sigue siendo de búsqueda. Solo
+	//     cambian tres punteros, así que es O(1).
 	void rotate_left(Node*& link) {
 		Node* x = link;
 		Node* y = x->right;
@@ -113,6 +123,12 @@ private:
 	//     uma rotação à esquerda resolve. Se o filho direito pende para a esquerda (caso de
 	//     dentro, um zigue-zague), uma rotação simples só espelharia o problema, então o filho é
 	//     girado à direita antes, para alinhar o caminho. O -2 é a imagem no espelho.
+	// ES: Factor de balance = altura del subárbol derecho menos la del izquierdo. En +2 el lado
+	//     derecho está demasiado alto. Si el hijo derecho se inclina al mismo lado (caso de
+	//     afuera), una rotación a la izquierda lo resuelve. Si el hijo derecho se inclina a la
+	//     izquierda (caso de adentro, un zigzag), una rotación simple solo reflejaría el
+	//     problema, así que antes se gira el hijo a la derecha, para alinear el camino. El -2 es
+	//     la imagen en el espejo.
 	void rebalance(Node*& link) {
 		update(link);
 		const int balance = height_of(link->right) - height_of(link->left);
@@ -133,6 +149,9 @@ private:
 	//     rebalancing happens on the way back from the recursion, from the new leaf up.
 	// PT: A recursão é segura aqui: a altura é logarítmica, então a pilha de chamadas é rasa. O
 	//     rebalanceamento acontece na volta da recursão, da folha nova para cima.
+	// ES: La recursión es segura aquí: la altura es logarítmica, así que la pila de llamadas es
+	//     poco profunda. El rebalanceo ocurre al volver de la recursión, de la hoja nueva hacia
+	//     arriba.
 	bool insert(Node*& link, Key key) {
 		if (link == nullptr) {
 			link = new Node{key};

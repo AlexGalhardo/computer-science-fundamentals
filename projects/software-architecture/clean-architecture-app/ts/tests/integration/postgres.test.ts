@@ -6,6 +6,10 @@
 //     propósito. As regras de negócio já foram provadas sem banco, então aqui basta provar que o
 //     adaptador PostgreSQL cumpre o mesmo contrato que o em memória, e que a aplicação composta
 //     com ele continua funcionando de ponta a ponta.
+// ES: Pruebas de integración: las únicas que necesitan el contenedor de PostgreSQL. Son pocas a
+//     propósito. Las reglas de negocio ya se probaron sin base de datos, así que aquí basta
+//     probar que el adaptador PostgreSQL cumple el mismo contrato que el de memoria, y que la
+//     aplicación compuesta con él sigue funcionando de punta a punta.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { NoteCliController } from "../../src/adapters/note-cli-controller";

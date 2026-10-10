@@ -4,6 +4,9 @@
 // PT: Roda uma consulta por uma abordagem e devolve os comandos SQL que ela realmente enviou. O
 //     resultado é gravado em um arquivo `.captured.sql` ao lado da consulta, então o SQL gerado é
 //     revisado em pull requests como qualquer outro código.
+// ES: Ejecuta una consulta por un enfoque y devuelve las sentencias SQL que realmente envió. El
+//     resultado se escribe en un archivo `.captured.sql` junto a la consulta, así que el SQL generado se
+//     revisa en pull requests como cualquier otro código.
 
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -19,6 +22,8 @@ export interface Captured {
 //     recorder waits one turn of the event loop before reading the list.
 // PT: O Prisma informa suas consultas por um evento entregue de forma assíncrona, então o
 //     gravador espera uma volta do laço de eventos antes de ler a lista.
+// ES: Prisma informa sus consultas mediante un evento entregado de forma asíncrona, así que el
+//     registrador espera una vuelta del bucle de eventos antes de leer la lista.
 export async function capture(context: Context, query: Runnable, approach: Approach): Promise<Captured> {
 	context.clearStatements();
 	const result = await query.run(context, approach);

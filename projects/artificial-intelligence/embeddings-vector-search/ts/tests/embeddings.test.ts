@@ -49,6 +49,7 @@ import {
 
 // EN: The experiments are run once for the whole file: every test below reads the same result.
 // PT: Os experimentos rodam uma vez para o arquivo inteiro: todo teste abaixo lê o mesmo resultado.
+// ES: Los experimentos se ejecutan una vez para todo el archivo: toda prueba de abajo lee el mismo resultado.
 const experiment = runExperiment();
 const summary = summarize(experiment);
 const expected = JSON.parse(readData("expected.json")) as Summary;

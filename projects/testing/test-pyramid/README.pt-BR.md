@@ -1,6 +1,6 @@
 # test-pyramid
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Uma loja minúscula (um catálogo, um carrinho, 10% de desconto a partir de 100,00) testada em todos os níveis da pirâmide de testes: unitário, integração, ponta a ponta com Playwright, mais uma suíte de fumaça e uma de regressão. Um bug é semeado de propósito em cada nível, e uma matriz mostra qual suíte percebe qual bug e quanto cada suíte custa. A lição: cada nível enxerga algo que os outros não enxergam, e o preço de um teste cresce conforme ele sobe.
 
@@ -78,7 +78,7 @@ Um teste de ponta a ponta custa mais ou menos o mesmo que 200 testes unitários,
 
 ## Estrutura
 
-```
+```text
 ts/src/pricing.ts            regras puras (nível unitário)
 ts/src/cart-repository.ts    SQL no SQLite (nível de integração)
 ts/src/app.ts                handler HTTP, entrada validada com Zod

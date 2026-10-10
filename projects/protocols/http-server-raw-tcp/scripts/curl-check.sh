@@ -5,12 +5,16 @@
 # PT: Confere o servidor com o curl, um cliente HTTP que não escrevemos. Se o curl aceita as
 #     respostas, elas são HTTP válido, e não apenas coerentes com o nosso próprio parser.
 #     Uso: curl-check.sh http://server:8080
+# ES: Comprueba el servidor con curl, un cliente HTTP que no escribimos. Si curl acepta las
+#     respuestas, son HTTP válido y no solo coherentes con nuestro propio parser.
+#     Uso: curl-check.sh http://server:8080
 set -eu
 
 BASE="${1:-http://server:8080}"
 
 # EN: The check only ever targets a service of this lab.
 # PT: A checagem só atinge um serviço deste laboratório.
+# ES: La comprobación solo apunta a un servicio de este laboratorio.
 case "$BASE" in
 http://server:* | http://127.0.0.1:* | http://localhost:*) ;;
 *)
@@ -50,12 +54,15 @@ expect "chunked response, decoded by curl" \
 #     final zero-sized chunk.
 # PT: --raw mostra o corpo como ele está no fio: cada pedaço precedido pelo tamanho (7) e o
 #     pedaço final de tamanho zero.
+# ES: --raw muestra el cuerpo como está en la red: cada chunk precedido por su tamaño (7) y el
+#     chunk final de tamaño cero.
 expect "chunked response, raw framing" \
 	"$(curl -sS --raw "$BASE/stream" | tr -d '\r' | tr '\n' ',')" \
 	"7,line 1,,7,line 2,,7,line 3,,7,line 4,,7,line 5,,0,,"
 
 # EN: Two URLs in one curl command. With keep-alive the second one reuses the TCP connection.
 # PT: Duas URLs em um comando curl. Com keep-alive a segunda reaproveita a conexão TCP.
+# ES: Dos URLs en un comando curl. Con keep-alive el segundo reutiliza la conexión TCP.
 expect "keep-alive: the second request reuses the connection" \
 	"$(curl -sS -v "$BASE/hello/one" "$BASE/hello/two" 2>&1 | grep -ci 're-using existing')" \
 	"1"

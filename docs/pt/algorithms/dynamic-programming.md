@@ -1,6 +1,6 @@
 # Programação dinâmica
 
-> English version: [docs/en/algorithms/dynamic-programming.md](../../en/algorithms/dynamic-programming.md)
+> English version: [docs/en/algorithms/dynamic-programming.md](../../en/algorithms/dynamic-programming.md) · Versión en español: [docs/es/algorithms/dynamic-programming.md](../../es/algorithms/dynamic-programming.md)
 
 Mini-projeto: [`projects/algorithms/dynamic-programming`](../../../projects/algorithms/dynamic-programming/README.pt-BR.md) (MP-ALG-2). Linguagens: TypeScript e Python. Quiz: área `algorithms`, tópico `dynamic-programming`.
 

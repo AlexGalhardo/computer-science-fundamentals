@@ -3,6 +3,9 @@
 // PT: Funções puras que transformam cargas de página cruas nos resultados versionados:
 //     estatísticas, a tabela Markdown, e os dados compactos de cascata que o dashboard estático
 //     desenha.
+// ES: Funciones puras que convierten cargas de página crudas en los resultados versionados:
+//     estadísticas, la tabla Markdown, y los datos compactos de cascada que dibuja el
+//     dashboard estático.
 
 import type { ResourceEntry } from "./browser";
 import type { ConditionId, ProtocolId } from "./targets";
@@ -70,6 +73,10 @@ export interface Cell {
 //     o momento em que o último byte chegou. Só os dois números são guardados, arredondados para
 //     um décimo de milissegundo, então nove cascatas de 200 barras ficam pequenas o bastante para
 //     versionar.
+// ES: Una cascada es una barra horizontal por recurso, desde el momento en que el navegador lo
+//     pidió hasta el momento en que llegó el último byte. Solo se guardan los dos números,
+//     redondeados a una décima de milisegundo, así que nueve cascadas de 200 barras quedan lo
+//     bastante pequeñas para versionarse.
 export function toWaterfall(resources: readonly ResourceEntry[]): [number, number][] {
 	const round = (value: number): number => Math.round(value * 10) / 10;
 	return resources

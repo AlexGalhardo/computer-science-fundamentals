@@ -42,6 +42,12 @@ class Invoice {
 //     faz com aqueles dados o trabalho que pertence à classe dona deles: montar um endereço,
 //     formatar um CEP, multiplicar uma linha. As classes acima são sacos de campos, e qualquer
 //     outro lugar que precise de uma etiqueta de endereço vai repetir este código.
+// ES: MAL OLOR: Envidia de Características. El impresor no tiene ningún dato. Cada línea de
+//     `render` entra en otro objeto, a veces tres puntos adentro (`invoice.customer.address.zip`),
+//     y hace con esos datos el trabajo que pertenece a la clase dueña de ellos: armar una
+//     dirección, formatear un código postal, multiplicar una línea. Las clases de arriba son
+//     bolsas de campos, y cualquier otro lugar que necesite una etiqueta de dirección va a
+//     repetir este código.
 class InvoicePrinter {
 	render(invoice: Invoice): string {
 		const out: string[] = [];

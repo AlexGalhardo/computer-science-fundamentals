@@ -3,6 +3,8 @@
 //
 // PT: Ordenação externa por intercalação: ordenar um arquivo de linhas que não cabe na memória,
 // com geração de runs sob um orçamento de memória e intercalação de k caminhos com heap.
+// ES: Ordenación externa por mezcla: ordenar un archivo de líneas que no cabe en memoria, con
+// generación de runs bajo un presupuesto de memoria y mezcla de k vías con heap.
 package main
 
 import (
@@ -20,6 +22,8 @@ const mib = 1024 * 1024
 //
 // PT: Sob um limite de memória do contêiner, os dados gravados são forçados para o disco a cada
 // 4 MiB (veja lineWriter).
+// ES: Bajo un límite de memoria del contenedor, los datos escritos se fuerzan a disco cada
+// 4 MiB (véase lineWriter).
 const syncMib = 4
 
 // EN: Peak resident memory of this process, in KiB, as the Linux kernel reports it in the
@@ -31,6 +35,10 @@ const syncMib = 4
 // VmHWM ("marca d'água") de /proc/self/status. Memória residente é o que o processo realmente
 // mantém na RAM. O cache de páginas que o núcleo usa para os arquivos não entra nela. Devolve 0
 // onde /proc não existe.
+// ES: Pico de memoria residente de este proceso, en KiB, como lo informa el kernel de Linux en
+// la línea VmHWM ("marca de agua") de /proc/self/status. La memoria residente es lo que el
+// proceso realmente mantiene en la RAM. La caché de páginas que el kernel usa para los
+// archivos no entra en ella. Devuelve 0 donde /proc no existe.
 func peakRSSKb() uint64 {
 	status, err := os.ReadFile("/proc/self/status")
 	if err != nil {
@@ -61,6 +69,7 @@ func number(args []string, at int, what string) (uint64, error) {
 // EN: The output is accepted only if it is in order and has the same lines as the input.
 //
 // PT: A saída só é aceita se estiver em ordem e tiver as mesmas linhas da entrada.
+// ES: La salida solo se acepta si está en orden y tiene las mismas líneas que la entrada.
 func checkOutput(input digest, output string) (digest, error) {
 	result, sorted, err := inspect(output)
 	if err != nil {
@@ -82,6 +91,10 @@ func checkOutput(input digest, output string) (digest, error) {
 // PT: `bench <fanin-K> <run-Nk> <linhas>`: uma linha da grade de benchmark. A entrada é gerada
 // uma vez por contêiner e reaproveitada pelas execuções seguintes, então o processo medido é a
 // ordenação. A última linha impressa segue o contrato de benchmark do repositório.
+// ES: `bench <fanin-K> <run-Nk> <líneas>`: una fila de la grilla de benchmark. La entrada se
+// genera una vez por contenedor y se reutiliza en las ejecuciones siguientes, así que el
+// proceso medido es la ordenación. La última línea impresa sigue el contrato de benchmark del
+// repositorio.
 func bench(args []string) error {
 	if len(args) < 3 {
 		return errors.New("usage: bench <fanin-K> <run-Nk> <lines>")
@@ -153,6 +166,11 @@ func cgroup(file string) string {
 // de memória residente do processo não ficou abaixo do limite. O docker-compose dá ao contêiner
 // esse mesmo limite, sem swap, então um programa que precisasse de mais memória seria morto
 // pelo núcleo em vez de terminar.
+// ES: `limit-check <MiB>`: la prueba de aceptación del límite de memoria. Genera un archivo
+// diez veces mayor que el límite, ordena con runs de un cuarto del límite, comprueba la salida
+// y falla si el pico de memoria residente del proceso no quedó por debajo del límite. El
+// docker-compose le da al contenedor ese mismo límite, sin swap, así que un programa que
+// necesitara más memoria sería matado por el kernel en lugar de terminar.
 func limitCheck(args []string) error {
 	limitMib, err := number(args, 0, "limit in MiB")
 	if err != nil {
@@ -204,6 +222,8 @@ func limitCheck(args []string) error {
 //
 // PT: `in-memory-check <MiB>`: o mesmo arquivo, carregado inteiro e ordenado na memória. Sob o
 // limite do contêiner, espera-se que este processo seja morto (código de saída 137).
+// ES: `in-memory-check <MiB>`: el mismo archivo, cargado entero y ordenado en memoria. Bajo el
+// límite del contenedor, se espera que este proceso sea matado (código de salida 137).
 func inMemoryCheck(args []string) error {
 	limitMib, err := number(args, 0, "limit in MiB")
 	if err != nil {

@@ -1,6 +1,6 @@
 # Compiladores
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um compilador traduz um programa de uma linguagem para outra, e um interpretador o executa diretamente. Ambos passam pelas mesmas etapas: dividir o texto em tokens, construir uma árvore a partir de uma gramática, verificá-la e então gerar código ou executá-lo. Conhecer essas etapas tira o mistério das mensagens de erro, do desempenho, da coleta de lixo e de toda ferramenta que lê código.
 

@@ -32,6 +32,11 @@ type image struct {
 // descreve: custa o mesmo com 1 ou com 8 trabalhadores. O FNV-1a (aqui misturando um
 // pixel inteiro por passo) depende da ordem dos valores, então checksums iguais significam
 // imagens iguais, pixel a pixel.
+// ES: Esta pasada sobre la imagen terminada corre en una goroutine, sea cual sea el número de
+// trabajadores. Es una parte serial real del programa, del tipo que describe la ley de Amdahl:
+// cuesta lo mismo con 1 o con 8 trabajadores. FNV-1a (aquí mezclando un
+// píxel entero por paso) depende del orden de los valores, así que checksums iguales significan
+// imágenes iguales, píxel a píxel.
 func (img image) checksum() uint64 {
 	hash := uint64(0xcbf29ce484222325)
 	for _, pixel := range img.pixels {
@@ -59,6 +64,15 @@ func (img image) checksum() uint64 {
 // muda o último bit do resultado nas CPUs que a têm. Converter de forma explícita obriga o
 // produto a ser arredondado antes, então este código dá os mesmos bits em qualquer máquina
 // e os mesmos bits das versões em Rust e C++.
+// ES: Tiempo de escape de un punto c: iterar z = z² + c a partir de z = 0 y contar los pasos
+// hasta |z| > 2. Los puntos dentro del conjunto nunca escapan y cuestan el límite entero, los puntos
+// lejanos cuestan uno o dos, así que el costo de un píxel varía mil veces a lo largo de la
+// imagen. El resultado depende solo de c, nunca de otro píxel.
+// Las llamadas float64(...) no son adorno. La especificación de Go permite que el
+// compilador fusione x*y + z en una sola instrucción (FMA) con un solo redondeo, lo que
+// cambia el último bit del resultado en las CPU que la tienen. Convertir de forma explícita obliga
+// a redondear antes el producto, así que este código da los mismos bits en cualquier máquina
+// y los mismos bits de las versiones en Rust y C++.
 func escapeTime(cx, cy float64, limit uint32) uint32 {
 	var zx, zy float64
 	var iterations uint32
@@ -82,6 +96,10 @@ func escapeTime(cx, cy float64, limit uint32) uint32 {
 // iterações gastas. Cada linha pertence a exatamente um trabalhador, então todo pixel tem
 // um único escritor e nenhuma trava é necessária. As iterações são acumuladas em uma
 // variável local.
+// ES: Calcula las filas [firstRow, lastRow) en el búfer de píxeles compartido y devuelve las
+// iteraciones gastadas. Cada fila pertenece a exactamente un trabajador, así que todo píxel tiene
+// un único escritor y no se necesita ningún bloqueo. Las iteraciones se acumulan en una
+// variable local.
 func renderRows(pixels []uint32, firstRow, lastRow, side int, limit uint32) uint64 {
 	step := planeSpan / float64(side)
 	var iterations uint64
@@ -119,6 +137,9 @@ func renderParallel(side int, limit uint32, workers int, mode schedule) image {
 		// PT: Um bloco grande de linhas por trabalhador. As linhas do meio da imagem
 		// atravessam o conjunto e custam muito mais que as do topo e da base, então os
 		// trabalhadores com os blocos externos terminam cedo e esperam: o speed-up sofre.
+		// ES: Un bloque grande de filas por trabajador. Las filas del medio de la imagen
+		// atraviesan el conjunto y cuestan mucho más que las de arriba y las de abajo, así que los
+		// trabajadores con los bloques externos terminan antes y esperan: el speed-up sufre.
 		for index, rows := range splitStatic(uint64(side), workers) {
 			wg.Go(func() {
 				partials[index] = renderRows(pixels, int(rows.start), int(rows.end), side, limit)
@@ -132,6 +153,10 @@ func renderParallel(side int, limit uint32, workers int, mode schedule) image {
 		// ainda. Um trabalhador livre reserva as próximas linhas com uma única soma
 		// atômica, então linhas caras e baratas acabam espalhadas por todos os
 		// trabalhadores.
+		// ES: Un contador atómico compartido guarda la próxima fila que nadie ha tomado
+		// todavía. Un trabajador libre reserva las siguientes filas con una única suma
+		// atómica, así que filas caras y baratas terminan repartidas entre todos los
+		// trabajadores.
 		var next atomic.Int64
 		for index := range workers {
 			wg.Go(func() {

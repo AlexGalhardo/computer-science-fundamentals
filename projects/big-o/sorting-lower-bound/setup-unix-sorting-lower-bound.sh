@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the sorting-lower-bound mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto sorting-lower-bound. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto sorting-lower-bound. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -17,6 +18,7 @@ echo "sorting-lower-bound: all tests passed"
 
 # EN: The demos print the decision tree and the comparison tables, and rewrite ./results.
 # PT: As demos imprimem a árvore de decisão e as tabelas de comparações, e regravam ./results.
+# ES: Las demos imprimen el árbol de decisión y las tablas de comparaciones, y reescriben ./results.
 docker compose run --rm ts-demo
 docker compose run --rm python-demo
 echo "sorting-lower-bound: tables written to results/"

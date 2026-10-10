@@ -1,6 +1,6 @@
 # Arquitetura de software
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Arquitetura de software é o conjunto das decisões caras de mudar: como um sistema é dividido em partes, para que lado apontam as dependências e quais atributos de qualidade (desempenho, disponibilidade, facilidade de mudança) são favorecidos. Arquiteturas em camadas, hexagonal e limpa, monólitos e microsserviços, eventos e CQRS são respostas à mesma pergunta: como manter as regras de negócio independentes dos detalhes ao redor.
 

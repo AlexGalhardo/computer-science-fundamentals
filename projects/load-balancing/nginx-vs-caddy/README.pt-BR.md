@@ -1,6 +1,6 @@
 # nginx-vs-caddy
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Três instâncias idênticas de uma API atrás de dois balanceadores de carga, NGINX e Caddy, configurados lado a lado. O laboratório manda o mesmo tráfego pelos dois e responde a duas perguntas com números:
 

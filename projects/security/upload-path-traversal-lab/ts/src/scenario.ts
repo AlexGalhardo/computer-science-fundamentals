@@ -8,6 +8,11 @@
 //     são montadas em memória e entregues direto ao app (`app.handle`): nada sai do processo.
 //     Cada laboratório ganha a própria pasta temporária, criada aqui e removida no fim, e os
 //     únicos arquivos que existem são os que este laboratório cria.
+// ES: Los escenarios del laboratorio. Cada función es un intento, escrito una vez y ejecutado contra
+//     las dos versiones de la API. Las pruebas afirman lo que ocurrió y la demo lo imprime. Las solicitudes
+//     se arman en memoria y se entregan directo a la app (`app.handle`): nada sale del proceso.
+//     Cada laboratorio recibe su propia carpeta temporal, creada aquí y eliminada al final, y los
+//     únicos archivos que existen son los que este laboratorio crea.
 
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readdir, rm, symlink, writeFile } from "node:fs/promises";
@@ -37,9 +42,11 @@ export interface Lab {
 	app: LabApp;
 	// EN: The only folder the server is supposed to read and write.
 	// PT: A única pasta que o servidor deveria ler e escrever.
+	// ES: La única carpeta que el servidor debería leer y escribir.
 	uploadRoot: string;
 	// EN: A sibling folder, outside the upload folder, holding the fake secret.
 	// PT: Uma pasta irmã, fora da pasta de uploads, com o segredo falso.
+	// ES: Una carpeta hermana, fuera de la carpeta de cargas, con el secreto falso.
 	privateDir: string;
 	maxBytes: number;
 	cleanup(): Promise<void>;
@@ -51,6 +58,9 @@ export interface Lab {
 // PT: Um laboratório novo no disco:
 //       <pasta temporária>/uploads/                  a raiz de uploads (vazia)
 //       <pasta temporária>/private/FAKE-SECRET.txt   o arquivo que ninguém deveria conseguir baixar
+// ES: Un laboratorio nuevo en el disco:
+//       <carpeta temporal>/uploads/                  la raíz de cargas (vacía)
+//       <carpeta temporal>/private/FAKE-SECRET.txt   el archivo que nadie debería poder descargar
 export async function createLab(version: Version): Promise<Lab> {
 	const dir = await mkdtemp(join(tmpdir(), "upload-path-traversal-lab-"));
 	const uploadRoot = join(dir, "uploads");
@@ -66,6 +76,7 @@ export async function createLab(version: Version): Promise<Lab> {
 
 // EN: Runs one scenario on a fresh lab and always removes the temporary folder afterwards.
 // PT: Executa um cenário em um laboratório novo e sempre remove a pasta temporária depois.
+// ES: Ejecuta un escenario en un laboratorio nuevo y siempre elimina la carpeta temporal después.
 export async function withLab<T>(version: Version, run: (lab: Lab) => Promise<T>): Promise<T> {
 	const lab = await createLab(version);
 	try {
@@ -82,6 +93,7 @@ export interface Observation {
 	text: string;
 	// EN: The body parsed as JSON, or `undefined` when it is not JSON (a downloaded file).
 	// PT: O corpo interpretado como JSON, ou `undefined` quando não é JSON (um arquivo baixado).
+	// ES: El cuerpo interpretado como JSON, o `undefined` cuando no es JSON (un archivo descargado).
 	json: unknown;
 }
 
@@ -107,6 +119,7 @@ export async function call(app: LabApp, path: string, options: CallOptions = {})
 	} catch {
 		// EN: Not JSON (a downloaded file, or the framework's plain-text 404): `json` stays undefined.
 		// PT: Não é JSON (um arquivo baixado, ou o 404 em texto puro do framework): `json` fica undefined.
+		// ES: No es JSON (un archivo descargado, o el 404 en texto plano del framework): `json` queda undefined.
 	}
 	return { status: response.status, headers: response.headers, bytes, text, json };
 }
@@ -123,6 +136,7 @@ export function upload(
 
 // EN: `rawReference` goes into the URL exactly as given, so a scenario controls the encoding.
 // PT: `rawReference` entra na URL exatamente como veio, então o cenário controla a codificação.
+// ES: `rawReference` entra en la URL exactamente como vino, así que el escenario controla la codificación.
 export function download(lab: Lab, token: string, rawReference: string): Promise<Observation> {
 	return call(lab.app, `/download?file=${rawReference}`, { token });
 }
@@ -131,6 +145,8 @@ export function download(lab: Lab, token: string, rawReference: string): Promise
 //     reference is the name the client chose; on the fixed API it is the id the server generated.
 // PT: As duas versões respondem um upload com `{ "file": <referência> }`. Na API vulnerável a
 //     referência é o nome que o cliente escolheu; na corrigida é o id que o servidor gerou.
+// ES: Las dos versiones responden una carga con `{ "file": <referencia> }`. En la API vulnerable la
+//     referencia es el nombre que eligió el cliente; en la corregida es el id que generó el servidor.
 export function referenceOf(observation: Observation): string {
 	const { json } = observation;
 	if (typeof json === "object" && json !== null && "file" in json && typeof json.file === "string") return json.file;
@@ -143,11 +159,15 @@ export function referenceOf(observation: Observation): string {
 // PT: As duas entradas de demonstração do laboratório, e as únicas. As duas nomeiam o mesmo
 //     arquivo falso criado por `createLab`, um nível acima da pasta de uploads. A segunda é a
 //     primeira com `.` e `/` escritos em percent-encoding.
+// ES: Las dos entradas de demostración del laboratorio, y las únicas. Las dos nombran el mismo
+//     archivo falso creado por `createLab`, un nivel por encima de la carpeta de cargas. La segunda es la
+//     primera con `.` y `/` escritos en percent-encoding.
 export const TRAVERSAL_NAME = `../private/${SECRET_FILE_NAME}`;
 export const ENCODED_TRAVERSAL_NAME = `%2e%2e%2fprivate%2f${SECRET_FILE_NAME}`;
 
 // EN: bob-fake asks for a "file name" that walks out of the upload folder.
 // PT: bob-fake pede um "nome de arquivo" que sai da pasta de uploads.
+// ES: bob-fake pide un "nombre de archivo" que sale de la carpeta de cargas.
 export function readOutsideUploadFolder(lab: Lab, rawName: string = TRAVERSAL_NAME): Promise<Observation> {
 	return download(lab, TOKENS.bob, rawName);
 }
@@ -165,6 +185,8 @@ export interface WriteOutsideAttempt {
 //     result is read from the disk, not from the answer, so the test sees what really happened.
 // PT: O mesmo truque no lado da escrita: o nome do upload sai da pasta. O resultado é lido do
 //     disco, não da resposta, então o teste vê o que realmente aconteceu.
+// ES: El mismo truco del lado de la escritura: el nombre de la carga sale de la carpeta. El resultado se lee del
+//     disco, no de la respuesta, así que la prueba ve lo que realmente ocurrió.
 export async function writeOutsideUploadFolder(lab: Lab): Promise<WriteOutsideAttempt> {
 	const attempt = await upload(
 		lab,
@@ -194,6 +216,8 @@ export interface OverwriteAttempt {
 //     Then alice-fake downloads hers again, with the reference she received.
 // PT: alice-fake envia `report.txt`. bob-fake envia outro arquivo com o mesmo nome. Depois
 //     alice-fake baixa o dela de novo, com a referência que recebeu.
+// ES: alice-fake envía `report.txt`. bob-fake envía otro archivo con el mismo nombre. Después
+//     alice-fake descarga el suyo de nuevo, con la referencia que recibió.
 export async function overwriteOtherUsersFile(lab: Lab): Promise<OverwriteAttempt> {
 	const aliceUpload = await upload(lab, TOKENS.alice, SHARED_NAME, "text/plain", textBytes(ALICE_CONTENT));
 	const bobUpload = await upload(lab, TOKENS.bob, SHARED_NAME, "text/plain", textBytes(BOB_CONTENT));
@@ -205,6 +229,7 @@ export interface TypeAttempt {
 	attempt: Observation;
 	// EN: What the server sends when the stored file is downloaded (undefined when the upload was refused).
 	// PT: O que o servidor envia quando o arquivo guardado é baixado (undefined quando o upload foi recusado).
+	// ES: Lo que el servidor envía cuando se descarga el archivo guardado (undefined cuando la carga fue rechazada).
 	servedBack: Observation | undefined;
 }
 
@@ -214,6 +239,9 @@ export interface TypeAttempt {
 // PT: Os bytes são uma página HTML (inofensiva, sem script) e o cliente declara `declaredType`.
 //     Com `image/png` o cabeçalho mente sobre o conteúdo. Com `text/html` ele diz a verdade, e a
 //     pergunta é se o servidor aceita servir páginas escritas pelos próprios usuários.
+// ES: Los bytes son una página HTML (inofensiva, sin script) y el cliente declara `declaredType`.
+//     Con `image/png` la cabecera miente sobre el contenido. Con `text/html` dice la verdad, y la
+//     pregunta es si el servidor acepta servir páginas escritas por los propios usuarios.
 export async function uploadHtmlDeclaredAs(lab: Lab, declaredType: string): Promise<TypeAttempt> {
 	const attempt = await upload(lab, TOKENS.bob, "picture.png", declaredType, SAMPLE_HTML);
 	const reference = referenceOf(attempt);
@@ -224,6 +252,8 @@ export async function uploadHtmlDeclaredAs(lab: Lab, declaredType: string): Prom
 
 // EN: One byte over the limit of the fixed version. Not a flood: a single request of about 1 MiB.
 // PT: Um byte acima do limite da versão corrigida. Não é uma enxurrada: uma única requisição de
+//     cerca de 1 MiB.
+// ES: Un byte por encima del límite de la versión corregida. No es una avalancha: una única solicitud de
 //     cerca de 1 MiB.
 export function uploadOverTheLimit(lab: Lab): Promise<Observation> {
 	const body = new Uint8Array(lab.maxBytes + 1).fill(0x61);
@@ -238,6 +268,10 @@ export function uploadOverTheLimit(lab: Lab): Promise<Observation> {
 //     bob-fake é substituído, direto no disco, por um link para o segredo falso fora da pasta.
 //     Isso representa qualquer jeito de um link ir parar na pasta (um arquivo compactado extraído
 //     ali, um erro de operação). A requisição em si é perfeitamente bem formada.
+// ES: Un enlace simbólico es un archivo que solo apunta a otra ruta. Aquí el archivo guardado de
+//     bob-fake se reemplaza, directo en el disco, por un enlace al secreto falso fuera de la carpeta.
+//     Esto representa cualquier forma en que un enlace termine en la carpeta (un archivo comprimido extraído
+//     allí, un error de operación). La solicitud en sí está perfectamente bien formada.
 export async function readThroughSymlink(lab: Lab): Promise<Observation> {
 	const uploaded = await upload(lab, TOKENS.bob, "notes.txt", "text/plain", textBytes("bob-fake notes\n"));
 	const reference = referenceOf(uploaded);
@@ -258,6 +292,8 @@ export interface RoundTrip {
 //     working: alice-fake uploads a text file, a PNG and a PDF and downloads each one again.
 // PT: Uma correção que recusa tudo não é correção. Este é o uso legítimo que precisa continuar
 //     funcionando: alice-fake envia um texto, um PNG e um PDF e baixa cada um de novo.
+// ES: Una corrección que rechaza todo no es corrección. Este es el uso legítimo que debe seguir
+//     funcionando: alice-fake envía un texto, un PNG y un PDF y descarga cada uno de nuevo.
 export async function normalUse(lab: Lab): Promise<RoundTrip[]> {
 	const files = [
 		{ label: "text", name: "report.txt", type: "text/plain", bytes: SAMPLE_TEXT },

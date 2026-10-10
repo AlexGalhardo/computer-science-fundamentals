@@ -4,6 +4,9 @@
 // PT: A demo e os testes de navegador só conversam com os dois apps deste laboratório. O endereço
 //     vem de uma variável de ambiente com padrão local, e tudo que não for um host do laboratório
 //     é recusado antes de qualquer requisição ser enviada.
+// ES: La demo y las pruebas de navegador solo hablan con las dos apps de este laboratorio. La dirección
+//     viene de una variable de entorno con valor por defecto local, y todo lo que no sea un host del laboratorio
+//     se rechaza antes de que se envíe cualquier solicitud.
 
 const LAB_HOSTS: readonly string[] = ["vulnerable", "fixed", "localhost", "127.0.0.1"];
 

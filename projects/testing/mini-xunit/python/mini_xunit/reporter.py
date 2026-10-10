@@ -12,6 +12,10 @@ from mini_xunit.core import TestResult
 #       0  todos os testes passaram
 #       1  pelo menos um teste falhou
 #       2  nenhum teste foi encontrado (uma execução com zero testes não pode parecer sucesso)
+# ES: El código de salida es el contrato con scripts y CI, que no leen texto:
+#       0  todas las pruebas pasaron
+#       1  al menos una prueba falló
+#       2  no se encontró ninguna prueba (una ejecución con cero pruebas no puede parecer un éxito)
 
 
 def format_report(result: TestResult) -> str:

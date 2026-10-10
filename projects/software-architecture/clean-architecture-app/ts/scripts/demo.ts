@@ -5,6 +5,10 @@
 //     guardado por dois repositórios. Ela roda o programa de terminal como um processo de
 //     verdade e chama a API HTTP do contêiner `api`, depois mostra o que cada um respondeu.
 //     `docker compose run --rm demo`.
+// ES: La demostración: un conjunto de casos de uso, alcanzado por dos mecanismos de entrega y
+//     guardado por dos repositorios. Ejecuta el programa de terminal como un proceso de
+//     verdad y llama a la API HTTP del contenedor `api`, luego muestra lo que respondió cada uno.
+//     `docker compose run --rm demo`.
 
 import { join } from "node:path";
 import { z } from "zod";
@@ -13,6 +17,7 @@ const env = z.object({ API_URL: z.url().default("http://api:3000") }).parse({ AP
 
 // EN: The demo only ever talks to the service of its own docker-compose network.
 // PT: A demonstração só fala com o serviço da sua própria rede do docker-compose.
+// ES: La demostración solo habla con el servicio de su propia red del docker-compose.
 const host = new URL(env.API_URL).hostname;
 if (!["api", "localhost", "127.0.0.1"].includes(host)) {
 	console.error(`refusing to run against "${host}": the demo only targets the local api service`);

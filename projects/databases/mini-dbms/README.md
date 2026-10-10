@@ -1,6 +1,6 @@
 # mini-dbms
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A mini relational DBMS small enough to read in one sitting. It teaches how **selection** and **projection** work on an in-memory table, and how three algorithms answer the same join: **nested loop**, **hash join** and **sort-merge join**. The same engine is written in Rust and in Python, every answer is checked against SQLite, and a benchmark shows at which table size the nested loop falls behind.
 

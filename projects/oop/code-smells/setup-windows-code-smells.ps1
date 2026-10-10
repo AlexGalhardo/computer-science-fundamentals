@@ -1,6 +1,7 @@
 # EN: Builds, tests and demonstrates the code-smells mini-project. The only requirement is
 #     Docker.
 # PT: Constrói, testa e demonstra o mini-projeto code-smells. O único requisito é o Docker.
+# ES: Construye, prueba y demuestra el mini-proyecto code-smells. El único requisito es Docker.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 
@@ -13,6 +14,7 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 
 # EN: The build already checks types (tsc), format (Spotless) and the negative compile test.
 # PT: O build já confere os tipos (tsc), o formato (Spotless) e o teste negativo de compilação.
+# ES: El build ya verifica los tipos (tsc), el formato (Spotless) y el test negativo de compilación.
 docker compose build
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 docker compose run --rm ts-test

@@ -1,6 +1,6 @@
 # tree-walking-interpreter
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um interpretador que executa a mini linguagem percorrendo sua árvore sintática. Ensina **como uma árvore é executada**: um ambiente por escopo, escopo estático como uma cadeia de ambientes, funções como closures que lembram onde foram criadas, e erros de execução que apontam linha e coluna.
 

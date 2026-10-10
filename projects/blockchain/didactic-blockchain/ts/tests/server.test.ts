@@ -9,10 +9,13 @@ import { alice, bob, carol, RULES } from "./fixtures";
 //     same code as three separate containers.
 // PT: Três nós HTTP de verdade em loopback, dentro de um único processo de teste. A demo do
 //     compose roda o mesmo código como três contêineres separados.
+// ES: Tres nodos HTTP de verdad en loopback, dentro de un único proceso de prueba. La demo del
+//     compose ejecuta el mismo código como tres contenedores separados.
 let servers: NodeServer[] = [];
 
 // EN: Each node mines to a different toy wallet: "alice", "bob" or "carol".
 // PT: Cada nó minera para uma carteira de brinquedo diferente: "alice", "bob" ou "carol".
+// ES: Cada nodo mina para una billetera de juguete distinta: "alice", "bob" o "carol".
 function start(minerLabel: string): NodeServer {
 	const server = startNode({ name: minerLabel, port: 0, hostname: "127.0.0.1", peers: [], rules: RULES, minerLabel });
 	servers.push(server);

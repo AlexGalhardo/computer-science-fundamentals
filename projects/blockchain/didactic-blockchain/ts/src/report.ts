@@ -8,6 +8,9 @@ import { type Bench, benchSchema } from "./bench";
 // PT: Lê o JSON gravado pelos benchmarks em TypeScript e em Rust e escreve a tabela de tempos em
 //     Markdown. A coluna a observar é a razão entre uma dificuldade e a anterior, que deve
 //     ficar perto de 16.
+// ES: Lee el JSON escrito por los benchmarks en TypeScript y en Rust y escribe la tabla de
+//     tiempos en Markdown. La columna a observar es la razón entre una dificultad y la
+//     anterior, que debe quedar cerca de 16.
 function load(path: string): Bench | undefined {
 	if (!existsSync(path)) {
 		return undefined;

@@ -6,6 +6,10 @@
 //     dos 50 primeiros livros", "este livro com autor e resenhas"), e cada cliente o obtém do
 //     jeito que o seu estilo permite. Os testes de comportamento e o benchmark usam só a
 //     interface, então não distinguem os estilos, exceto contando requisições e bytes.
+// ES: Tres clientes con UNA interfaz. Cada método es algo que una pantalla necesita ("los títulos
+//     de los primeros 50 libros", "este libro con autor y reseñas"), y cada cliente lo obtiene de
+//     la manera que su estilo permite. Las pruebas de comportamiento y el benchmark usan solo la
+//     interfaz, así que no distinguen los estilos, excepto contando peticiones y bytes.
 
 import { z } from "zod";
 import { QUERY_COUNT_HEADER } from "./db";
@@ -67,6 +71,8 @@ export interface ApiClient {
 //     many bytes went up and came down in the bodies, and how many SQL statements the server ran.
 // PT: O que o benchmark compara além do tempo: quantas idas e voltas HTTP uma leitura precisou,
 //     quantos bytes subiram e desceram nos corpos, e quantos comandos SQL o servidor executou.
+// ES: Lo que el benchmark compara además del tiempo: cuántos viajes de ida y vuelta HTTP necesitó una lectura,
+//     cuántos bytes subieron y bajaron en los cuerpos, y cuántos comandos SQL ejecutó el servidor.
 export interface Meter {
 	requests: number;
 	requestBytes: number;
@@ -107,6 +113,7 @@ class Transport {
 
 // EN: A response is external input too. Each client validates what it received before using it.
 // PT: Uma resposta também é entrada externa. Cada cliente valida o que recebeu antes de usar.
+// ES: Una respuesta también es entrada externa. Cada cliente valida lo que recibió antes de usarlo.
 const restBook = z.object({
 	id: z.number(),
 	authorId: z.number(),
@@ -145,6 +152,8 @@ export class RestClient implements ApiClient {
 	//     every book, including the long summary, and the client throws most of it away.
 	// PT: Over-fetching: a tela quer id e título, o recurso devolve todos os campos de todos os
 	//     livros, incluindo o resumo longo, e o cliente joga a maior parte fora.
+	// ES: Over-fetching: la pantalla quiere id y título, el recurso devuelve todos los campos de todos
+	//     los libros, incluido el resumen largo, y el cliente descarta la mayor parte.
 	async listTitles(limit: number): Promise<BookTitle[]> {
 		const reply = await this.transport.send("GET", `/rest/books?limit=${limit}`);
 		if (reply.status !== 200) {
@@ -172,6 +181,8 @@ export class RestClient implements ApiClient {
 	//     author can only be asked after the book arrived, because the book carries the author id.
 	// PT: Under-fetching: um recurso não basta, então o cliente faz três requisições. O autor só
 	//     pode ser pedido depois que o livro chegou, porque é o livro que traz o id do autor.
+	// ES: Under-fetching: un recurso no basta, así que el cliente hace tres peticiones. El autor solo
+	//     puede pedirse después de que llegó el libro, porque es el libro el que trae el id del autor.
 	async getPage(id: number): Promise<BookPage | null> {
 		const bookReply = await this.transport.send("GET", `/rest/books/${id}`);
 		if (bookReply.status === 404) {
@@ -239,11 +250,14 @@ export class GraphqlClient implements ApiClient {
 	//     string, and the server checks each variable against its declared type.
 	// PT: Os valores vão em `variables`, nunca colados no texto da consulta. A consulta continua
 	//     sendo uma string constante, e o servidor confere cada variável contra o tipo declarado.
+	// ES: Los valores van en `variables`, nunca pegados en el texto de la consulta. La consulta sigue
+	//     siendo una cadena constante, y el servidor verifica cada variable contra el tipo declarado.
 	async run<T>(schema: z.ZodType<T>, query: string, variables: Record<string, unknown>): Promise<T> {
 		const reply = await this.transport.send("POST", this.path, { query, variables });
 		const parsed = graphqlReply.parse(JSON.parse(reply.text));
 		// EN: The status was 200 either way. The failure is only visible here, inside the body.
 		// PT: O status foi 200 de qualquer forma. A falha só é visível aqui, dentro do corpo.
+		// ES: El estado fue 200 de cualquier forma. La falla solo es visible aquí, dentro del cuerpo.
 		const failure = parsed.errors?.[0];
 		if (failure !== undefined) {
 			const code = failure.extensions?.code;
@@ -282,6 +296,8 @@ export class GraphqlClient implements ApiClient {
 	//     exactly the fields that were asked, in the same shape.
 	// PT: A leitura aninhada em uma única ida e volta: a consulta segue as relações, e a resposta
 	//     tem exatamente os campos pedidos, no mesmo formato.
+	// ES: La lectura anidada en un solo viaje de ida y vuelta: la consulta sigue las relaciones, y la
+	//     respuesta tiene exactamente los campos pedidos, con la misma forma.
 	async getPage(id: number): Promise<BookPage | null> {
 		const data = await this.run(
 			z.object({
@@ -373,6 +389,8 @@ export class JsonRpcClient implements ApiClient {
 	//     so they are matched by `id`, never by position.
 	// PT: Um lote envia várias chamadas em uma requisição HTTP. As respostas podem vir em
 	//     qualquer ordem, então são casadas pelo `id`, nunca pela posição.
+	// ES: Un lote envía varias llamadas en una petición HTTP. Las respuestas pueden llegar en
+	//     cualquier orden, así que se emparejan por `id`, nunca por posición.
 	private async batch(calls: RpcCall[]): Promise<(RpcReply | undefined)[]> {
 		const requests = calls.map((call) => ({ jsonrpc: "2.0", ...call, id: this.nextId++ }));
 		const reply = await this.transport.send("POST", "/rpc", requests);
@@ -399,6 +417,10 @@ export class JsonRpcClient implements ApiClient {
 	//     do id do livro. O autor não pode entrar nesse lote: o id dele está dentro da resposta de
 	//     `books.get`. Um lote só economiza idas e voltas entre chamadas que não dependem uma da
 	//     outra.
+	// ES: Dos viajes de ida y vuelta. El libro y sus reseñas caben en un lote, porque ambos solo necesitan
+	//     el id del libro. El autor no puede entrar en ese lote: su id está dentro de la respuesta de
+	//     `books.get`. Un lote solo ahorra viajes entre llamadas que no dependen una de la
+	//     otra.
 	async getPage(id: number): Promise<BookPage | null> {
 		return nullWhenMissing(async () => {
 			const [bookReply, reviewsReply] = await this.batch([

@@ -5,6 +5,10 @@
 //     build quando um broker não tem adaptador, e cada classe é declarada `implements
 //     QueueAdapter`, então "os quatro adaptadores implementam a mesma interface" é conferido
 //     pelo `tsc`, não por uma promessa.
+// ES: El registro de adaptadores. `satisfies Record<BrokerName, ...>` hace que el compilador
+//     rechace la compilación cuando un broker no tiene adaptador, y cada clase se declara
+//     `implements QueueAdapter`, así que "los cuatro adaptadores implementan la misma interfaz" lo
+//     verifica `tsc`, no una promesa.
 
 import type { Config } from "../config";
 import type { AdapterFactory, BrokerName, QueueAdapter } from "../queue";

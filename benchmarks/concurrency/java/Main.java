@@ -12,6 +12,13 @@
 //     bloqueia, sua pilha vai para o heap e a thread carregadora (de plataforma) roda outra
 //     virtual thread. As carregadoras são um ForkJoinPool pequeno, uma por núcleo. O código
 //     bloqueante continua simples e ainda escala para muitos milhares de threads.
+// ES: Carga de concurrencia en Java: n threads esperan en una compuerta, la compuerta se abre, cada uno
+//     pone su número en una cola, y la suma es el checksum.
+//     Modelo de Java: threads virtuales (finales desde JDK 21). Un thread virtual es un Thread
+//     normal para quien programa, pero quien lo planifica es la JVM, no el kernel: cuando
+//     se bloquea, su stack pasa al heap y el thread portador (de plataforma) ejecuta otro
+//     thread virtual. Los portadores son un ForkJoinPool pequeño, uno por núcleo. El código
+//     bloqueante sigue siendo simple y aun así escala a muchos miles de threads.
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,6 +41,7 @@ public final class Main {
             try {
               // EN: await() blocks the virtual thread only. Its carrier thread is released.
               // PT: O await() bloqueia só a virtual thread. A thread carregadora é liberada.
+              // ES: await() bloquea solo el thread virtual. El thread portador queda libre.
               gate.await();
               mailbox.put(id);
             } catch (InterruptedException e) {
@@ -60,6 +68,7 @@ public final class Main {
     } catch (IOException e) {
       // EN: Not on Linux: report zero instead of failing the run.
       // PT: Fora do Linux: informa zero em vez de derrubar a execução.
+      // ES: Fuera de Linux: informa cero en lugar de tumbar la ejecución.
     }
     return 0;
   }

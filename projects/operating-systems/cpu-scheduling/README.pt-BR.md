@@ -1,6 +1,6 @@
 # cpu-scheduling
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um simulador de escalonamento de CPU. Ele executa o mesmo conjunto de processos em cinco políticas (FCFS, job mais curto primeiro, round-robin, prioridade e múltiplas filas com realimentação), desenha o gráfico de Gantt de cada uma e compara os tempos médios de espera, de retorno e de resposta. Ele ensina que nenhuma política ganha em todas as métricas: o que é melhor para a média é injusto com alguém, e o que responde rápido termina tarde.
 
@@ -29,7 +29,7 @@ docker compose run --rm demo
 
 Ela imprime o gráfico de Gantt de um exemplo com cinco processos em cada política e a tabela de comparação em três cargas geradas, e grava `results/results.md`, `results/results.json` e `results/results.js`. Depois abra `dashboard/index.html` direto do disco: a página desenha os mesmos gráficos de Gantt e as tabelas, sem servidor e sem rede.
 
-```
+```text
 RR(q=4)
 |     A     |     B     |     C     |     D     |     A     |  E  |     C     |D |C |
 0           4           8           12          16          20    22          26 27 28

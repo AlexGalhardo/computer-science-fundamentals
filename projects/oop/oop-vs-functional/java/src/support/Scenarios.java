@@ -10,6 +10,10 @@ import java.util.List;
 // PT: Leitor do scenarios.txt compartilhado. É código de apoio, usado pelos testes e pela demo,
 //     e não entra na comparação. Cada cenário é executado enquanto é lido: as linhas do arquivo
 //     viram chamadas em um Cart, e as linhas "expect" viram o resultado esperado.
+// ES: Lector del scenarios.txt compartido. Es código de apoyo, usado por las pruebas y por la
+//     demo, y no entra en la comparación. Cada escenario se ejecuta mientras se lee: las líneas
+//     del archivo se vuelven llamadas a un Cart, y las líneas "expect" se vuelven el resultado
+//     esperado.
 public final class Scenarios {
   private Scenarios() {}
 
@@ -24,6 +28,7 @@ public final class Scenarios {
 
   // EN: Mutable on purpose and private to this file: it only exists while one scenario is read.
   // PT: Mutável de propósito e privado a este arquivo: só existe enquanto um cenário é lido.
+  // ES: Mutable a propósito y privado de este archivo: solo existe mientras se lee un escenario.
   private static final class Draft {
     final String name;
     final Cart cart = new Cart();
@@ -53,6 +58,8 @@ public final class Scenarios {
   //     Everything after this point sees only the DiscountRule interface.
   // PT: O único lugar que conhece as classes concretas: onde os objetos são criados. Tudo depois
   //     deste ponto enxerga só a interface DiscountRule.
+  // ES: El único lugar que conoce las clases concretas: donde se crean los objetos. Todo lo que
+  //     viene después de este punto ve solo la interfaz DiscountRule.
   private static DiscountRule createRule(String[] words) {
     int third = Integer.parseInt(words[3]);
     return switch (words[1]) {
@@ -112,6 +119,8 @@ public final class Scenarios {
       //     do. Only the "expect" lines are still read.
       // PT: Depois da primeira recusa o carrinho deste cenário é abandonado, como faria quem
       //     chama. Só as linhas "expect" continuam sendo lidas.
+      // ES: Después del primer rechazo el carrito de este escenario se abandona, como haría quien
+      //     llama. Solo se siguen leyendo las líneas "expect".
       if (draft.thrown != null && !line.startsWith("expect ")) {
         continue;
       }

@@ -9,6 +9,12 @@
 #     ler pela chave de novo a partir de 8 processos dividindo um pool de 8 conexões. No
 #     Postgrex cada conexão é ela mesma um processo da BEAM, e o pool já vem pronto: basta o
 #     `pool_size`.
+# ES: Cliente de base de datos del benchmark en Elixir, con Postgrex, el driver de PostgreSQL usado
+#     por Ecto y Phoenix. Las cuatro fases son las mismas en los 7 lenguajes: insertar n filas
+#     una por una, leer cada una por la clave primaria, ejecutar una consulta con filtro y agregación, y
+#     leer por la clave de nuevo desde 8 procesos que comparten un pool de 8 conexiones. En
+#     Postgrex cada conexión es ella misma un proceso de la BEAM, y el pool ya viene listo: basta
+#     `pool_size`.
 defmodule Client do
   @table "items_elixir"
   @query_ops 200
@@ -16,6 +22,7 @@ defmodule Client do
 
   # EN: Runs fun for every id, records how long each call took and adds up what it returned.
   # PT: Roda fun para cada id, registra quanto tempo cada chamada levou e soma o que ela devolveu.
+  # ES: Ejecuta fun para cada id, registra cuánto tardó cada llamada y suma lo que devolvió.
   defp timed(ids, fun) do
     start = System.monotonic_time(:nanosecond)
 
@@ -103,6 +110,7 @@ defmodule Client do
 
     # EN: The pool is just another Postgrex process with more connections behind it.
     # PT: O pool é só outro processo do Postgrex com mais conexões por trás.
+    # ES: El pool es solo otro proceso de Postgrex con más conexiones detrás.
     {:ok, pool} = Postgrex.start_link(options(workers))
     Enum.each(1..workers, fn _ -> Postgrex.query!(pool, "SELECT 1", []) end)
     start = System.monotonic_time(:nanosecond)
@@ -126,6 +134,7 @@ defmodule Client do
 
     # EN: CPU time of every thread of the VM and peak memory of the VM, as counted by the kernel.
     # PT: Tempo de CPU de todas as threads da VM e pico de memória da VM, contados pelo kernel.
+    # ES: Tiempo de CPU de todos los threads de la VM y pico de memoria de la VM, contados por el kernel.
     {cpu_ms, _} = :erlang.statistics(:runtime)
     [_, peak] = Regex.run(~r/VmHWM:\s+(\d+)/, File.read!("/proc/self/status"))
 

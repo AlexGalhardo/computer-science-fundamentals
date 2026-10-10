@@ -1,6 +1,6 @@
 # References
 
-> Versão em português: [REFERENCES.pt-BR.md](REFERENCES.pt-BR.md)
+> Versão em português: [REFERENCES.pt-BR.md](REFERENCES.pt-BR.md) · Versión en español: [REFERENCES.es.md](REFERENCES.es.md)
 
 The main sources for studying and going deeper into every area of this repository, grouped by area in the same order as the area index of [PLAN.md](PLAN.md).
 

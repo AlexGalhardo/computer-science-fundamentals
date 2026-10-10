@@ -8,6 +8,11 @@
 //     contrato de benchmark, por exemplo `bench median3-k10 random 1000000`.
 //     `bench sweep <n>` ordena a mesma entrada aleatória com limiares 0, 5, 10, 20 e 50 e
 //     imprime uma tabela Markdown com o melhor.
+// ES: Dos modos.
+//     `bench <pivote>-k<umbral> <forma> <n>` ordena una entrada e imprime una línea JSON en el
+//     contrato de benchmark, por ejemplo `bench median3-k10 random 1000000`.
+//     `bench sweep <n>` ordena la misma entrada aleatoria con umbrales 0, 5, 10, 20 y 50 e
+//     imprime una tabla Markdown con el mejor.
 #include <sys/resource.h>
 
 #include <algorithm>
@@ -53,6 +58,8 @@ std::size_t parse_number(const std::string& text, std::size_t limit) {
 //     run of a few milliseconds is too noisy to tell threshold 10 from threshold 20.
 // PT: A ordenação é repetida em cópias novas da entrada e o tempo mediano é informado. Uma
 //     execução de poucos milissegundos é ruidosa demais para separar o limiar 10 do limiar 20.
+// ES: La ordenación se repite sobre copias nuevas de la entrada y se informa el tiempo mediano. Una
+//     ejecución de pocos milisegundos es demasiado ruidosa para separar el umbral 10 del umbral 20.
 struct Measurement {
 	double median_ms;
 	double min_ms;
@@ -121,6 +128,7 @@ int run(const std::vector<std::string>& args) {
 
 	// EN: On Linux, ru_maxrss is the peak resident memory of the process in kibibytes.
 	// PT: No Linux, ru_maxrss é o pico de memória residente do processo em kibibytes.
+	// ES: En Linux, ru_maxrss es el pico de memoria residente del proceso en kibibytes.
 	rusage usage_info{};
 	getrusage(RUSAGE_SELF, &usage_info);
 	std::cout << "{\"n\":" << n << ",\"elapsedMs\":" << std::fixed << result.median_ms

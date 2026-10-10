@@ -3,6 +3,9 @@
 // PT: As operações sobre contas de usuário. `A` é o tipo que cada versão usa para uma conta,
 //     então os mesmos testes rodam sobre uma conta feita de strings e sobre uma conta feita de
 //     tipos pequenos.
+// ES: Las operaciones sobre cuentas de usuario. `A` es el tipo que cada versión usa para una
+//     cuenta, así que los mismos tests corren sobre una cuenta hecha de strings y sobre una
+//     cuenta hecha de tipos pequeños.
 
 export interface Accounts<A> {
 	register(name: string, email: string, phone: string): A;

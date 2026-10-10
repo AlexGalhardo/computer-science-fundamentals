@@ -6,6 +6,9 @@ import { bugIs } from "./seeded-bugs";
 // PT: Regras de preço puras: sem banco, sem HTTP, sem relógio. A mesma entrada sempre dá a mesma
 //     saída, e é isso que faz deste módulo o alvo natural dos testes unitários. O dinheiro fica
 //     em centavos, como inteiros, porque 0.1 + 0.2 não é 0.3 em ponto flutuante.
+// ES: Reglas de precio puras: sin base de datos, sin HTTP, sin reloj. La misma entrada siempre da la
+//     misma salida, y eso es lo que hace de este módulo el blanco natural de las pruebas unitarias.
+//     El dinero queda en centavos, como enteros, porque 0.1 + 0.2 no es 0.3 en punto flotante.
 export interface CartLine {
 	productId: string;
 	name: string;
@@ -25,6 +28,8 @@ export function discountCents(subtotal: number): number {
 	//     differently, so only a test written for the boundary value notices.
 	// PT: BUG SEMEADO "unit": `>` no lugar de `>=`. Só um carrinho de exatamente 100,00 se
 	//     comporta diferente, então só um teste escrito para o valor-limite percebe.
+	// ES: BUG SEMBRADO "unit": `>` en lugar de `>=`. Solo un carrito de exactamente 100,00 se
+	//     comporta distinto, así que solo una prueba escrita para el valor límite lo nota.
 	const qualifies = bugIs("unit") ? subtotal > DISCOUNT_THRESHOLD_CENTS : subtotal >= DISCOUNT_THRESHOLD_CENTS;
 	if (!qualifies) {
 		return 0;
@@ -36,6 +41,9 @@ export function discountCents(subtotal: number): number {
 	// PT: BUG SEMEADO "regression": o arredondamento é removido, o que traz de volta o relato de
 	//     bug #17 (um total com meio centavo). A correção foi este `Math.round`, e a suíte de
 	//     regressão existe para que ninguém a desfaça sem um teste ficar vermelho.
+	// ES: BUG SEMBRADO "regression": se quita el redondeo, lo que trae de vuelta el reporte de
+	//     bug #17 (un total con medio centavo). La corrección fue este `Math.round`, y la suite de
+	//     regresión existe para que nadie la deshaga sin que una prueba se ponga roja.
 	return bugIs("regression") ? exact : Math.round(exact);
 }
 

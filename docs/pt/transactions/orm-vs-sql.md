@@ -1,6 +1,6 @@
 # Prisma, Drizzle e SQL puro (MP-TX-3)
 
-> English version: [docs/en/transactions/orm-vs-sql.md](../../en/transactions/orm-vs-sql.md)
+> English version: [docs/en/transactions/orm-vs-sql.md](../../en/transactions/orm-vs-sql.md) · Versión en español: [docs/es/transactions/orm-vs-sql.md](../../es/transactions/orm-vs-sql.md)
 
 Mini-projeto: [`projects/transactions/orm-vs-sql`](../../../projects/transactions/orm-vs-sql/README.pt-BR.md). Tópico do quiz: `acid-properties` (transações por meio de um ORM).
 

@@ -11,6 +11,7 @@ function points(sizes: number[], f: (n: number) => number): Point[] {
 describe("curve fitting", () => {
 	// EN: Acceptance of MP-BIGO-1.2: the tool names the right class for all six samples.
 	// PT: Aceite de MP-BIGO-1.2: a ferramenta nomeia a classe certa para as seis amostras.
+	// ES: Aceptación de MP-BIGO-1.2: la herramienta nombra la clase correcta para las seis muestras.
 	test("names the right class for all six samples", () => {
 		const reports = runLab(1);
 		expect(reports).toHaveLength(6);
@@ -43,6 +44,7 @@ describe("curve fitting", () => {
 
 	// EN: Lower-order terms and constants must not change the verdict.
 	// PT: Termos de ordem inferior e constantes não podem mudar o veredito.
+	// ES: Los términos de menor orden y las constantes no pueden cambiar el veredicto.
 	test("ignores constants and lower-order terms", () => {
 		const sizes = doublingSizes(16, 10);
 		expect(fitCurve(points(sizes, (n) => 5 * n * n + 300 * n + 1000)).best.id).toBe("quadratic");

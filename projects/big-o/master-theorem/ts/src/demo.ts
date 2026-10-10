@@ -4,6 +4,9 @@
 // PT: `bun run demo` classifica um conjunto de recorrências conhecidas, confere três delas com
 //     uma função recursiva de verdade, imprime tudo e grava os resultados para pessoas
 //     (Markdown), ferramentas (JSON) e a página estática (um script).
+// ES: `bun run demo` clasifica un conjunto de recurrencias conocidas, comprueba tres de ellas
+//     con una función recursiva real, imprime todo y escribe los resultados para personas
+//     (Markdown), herramientas (JSON) y la página estática (un script).
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -33,6 +36,8 @@ export const EXAMPLES: Example[] = [
 //     at 2^7 because its tree already has about a million calls there.
 // PT: As três recorrências do critério de aceite, com tamanhos n = b^profundidade. Strassen
 //     para em 2^7 porque sua árvore já tem cerca de um milhão de chamadas ali.
+// ES: Las tres recurrencias del criterio de aceptación, con tamaños n = b^profundidad. Strassen
+//     se detiene en 2^7 porque su árbol ya tiene cerca de un millón de llamadas ahí.
 export const EMPIRICAL: { name: string; input: RecurrenceInput; depths: number[] }[] = [
 	{ name: "merge sort", input: { a: 2, b: 2, d: 1 }, depths: [8, 10, 12, 14, 15, 16] },
 	{ name: "binary search", input: { a: 1, b: 2, d: 0 }, depths: [8, 12, 16, 20, 23, 24] },
@@ -43,6 +48,8 @@ export const EMPIRICAL: { name: string; input: RecurrenceInput; depths: number[]
 //     here, by the tested TypeScript code, so the page never reimplements the theorem.
 // PT: A página deixa o leitor escolher a, b e f(n). Toda combinação oferecida é classificada
 //     aqui, pelo código TypeScript testado, então a página nunca reimplementa o teorema.
+// ES: La página deja que el lector elija a, b y f(n). Cada combinación que ofrece se clasifica
+//     aquí, con el código TypeScript probado, así que la página nunca reimplementa el teorema.
 export function classificationGrid(): Classification[] {
 	const grid: Classification[] = [];
 	for (let a = 1; a <= 9; a++) {
@@ -132,6 +139,7 @@ function main(): void {
 	writeFileSync(join(directory, "results.json"), `${json}\n`);
 	// EN: A page opened from disk cannot fetch a JSON file, but it can load a script.
 	// PT: Uma página aberta do disco não consegue buscar um arquivo JSON, mas consegue carregar um script.
+	// ES: Una página abierta desde el disco no puede pedir un archivo JSON, pero sí puede cargar un script.
 	writeFileSync(join(directory, "results.js"), `window.MASTER_THEOREM_RESULTS = ${json};\n`);
 	writeFileSync(join(directory, "results.md"), renderMarkdown(generatedAt, examples, checks));
 	console.log(`\nresults written to ${directory}`);

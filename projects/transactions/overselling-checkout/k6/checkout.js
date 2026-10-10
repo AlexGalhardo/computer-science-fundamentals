@@ -4,6 +4,9 @@
 // PT: Teste de carga: 200 compradores tentam comprar um produto que tem 10 unidades, todos ao
 //     mesmo tempo. Uma execução mede uma estratégia (`STRATEGY`) e grava um resumo JSON pequeno
 //     que a etapa de relatório transforma na tabela de resultados.
+// ES: Prueba de carga: 200 compradores intentan comprar un producto que tiene 10 unidades, todos al
+//     mismo tiempo. Una ejecución mide una estrategia (`STRATEGY`) y escribe un resumen JSON pequeño
+//     que la etapa de informe transforma en la tabla de resultados.
 
 import { check } from "k6";
 import http from "k6/http";
@@ -20,6 +23,9 @@ const STOCK = Number(__ENV.STOCK || 10);
 // PT: Um teste de carga só é apontado para um serviço deste laboratório. O script recusa qualquer
 //     host que não seja local ou um nome de serviço do docker-compose, antes de enviar uma
 //     única requisição.
+// ES: Una prueba de carga solo apunta a un servicio de este laboratorio. El script rechaza cualquier
+//     host que no sea local o un nombre de servicio de docker-compose, antes de enviar una
+//     única petición.
 const LOCAL_HOSTS = ["localhost", "127.0.0.1", "api"];
 const target = /^http:\/\/([a-z0-9.-]+)(:\d+)?$/.exec(BASE_URL);
 if (target === null || !LOCAL_HOSTS.includes(target[1])) {
@@ -30,6 +36,8 @@ if (target === null || !LOCAL_HOSTS.includes(target[1])) {
 //     makes exactly one purchase attempt. That is the "200 concurrent buyers" of the lesson.
 // PT: `per-vu-iterations` com uma iteração: 200 usuários virtuais começam juntos e cada um faz
 //     exatamente uma tentativa de compra. São os "200 compradores concorrentes" da lição.
+// ES: `per-vu-iterations` con una iteración: 200 usuarios virtuales empiezan juntos y cada uno hace
+//     exactamente un intento de compra. Son los "200 compradores concurrentes" de la lección.
 export const options = {
 	scenarios: {
 		buyers: { executor: "per-vu-iterations", vus: BUYERS, iterations: 1, maxDuration: "60s" },
@@ -61,6 +69,8 @@ export default function (data) {
 	//     so k6 start-up, setup and teardown stay out of the requests-per-second number.
 	// PT: A janela de vazão vai da primeira requisição enviada à última resposta recebida, então
 	//     a inicialização do k6, o setup e o teardown ficam fora do número de requisições por segundo.
+	// ES: La ventana de rendimiento va de la primera petición enviada a la última respuesta recibida, así que
+	//     la inicialización de k6, el setup y el teardown quedan fuera del número de peticiones por segundo.
 	windowStart.add(Date.now() - data.startedAt);
 	const response = http.post(
 		`${BASE_URL}/checkout/${STRATEGY}`,

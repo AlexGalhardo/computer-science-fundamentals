@@ -61,6 +61,9 @@ fn record_layout() -> io::Result<()> {
 // PT: Aceite de MP-FS-1.1: o arquivo tem o mesmo tamanho depois das remoções e depois das
 //     inserções que reaproveitam os slots removidos, e cresce exatamente um registro só quando
 //     a lista de livres está vazia.
+// ES: Aceptación de MP-FS-1.1: el archivo tiene el mismo tamaño después de las eliminaciones y
+//     después de las inserciones que reutilizan los slots eliminados, y crece exactamente un
+//     registro solo cuando la lista de libres está vacía.
 #[test]
 fn free_list_reuses_deleted_slots() -> io::Result<()> {
     let path = temp("free-list.dat");
@@ -208,6 +211,8 @@ fn primary_and_secondary_indexes() {
 //     the indexes returns exactly the records that a full scan of the file returns.
 // PT: Aceite de MP-FS-1.2: para cada cidade, cada ano e cada par, a busca pelos índices devolve
 //     exatamente os registros que uma varredura completa do arquivo devolve.
+// ES: Aceptación de MP-FS-1.2: para cada ciudad, cada año y cada par, la búsqueda por los
+//     índices devuelve exactamente los registros que devuelve un barrido completo del archivo.
 fn compare_with_scan(db: &mut Database, when: &str) -> io::Result<()> {
     for city in CITIES {
         let by_scan = db.scan(|record| record.city == city)?;
@@ -252,6 +257,9 @@ fn index_search_equals_full_scan() -> io::Result<()> {
         //     inserted again with another city and year. The BTreeMap is the model.
         // PT: Inserções e remoções aleatórias em uma faixa pequena de ids, de modo que ids são
         //     removidos e inseridos de novo com outra cidade e outro ano. O BTreeMap é o modelo.
+        // ES: Inserciones y eliminaciones aleatorias en un rango pequeño de ids, de modo que los
+        //     ids se eliminan y se insertan de nuevo con otra ciudad y otro año. El BTreeMap es
+        //     el modelo.
         for _ in 0..6000 {
             let id = rng.below(3000) as u32;
             if rng.below(3) == 0 {
@@ -308,6 +316,9 @@ fn index_search_equals_full_scan() -> io::Result<()> {
 //     and for the data file, and the compressed sizes are the ones worked out by hand.
 // PT: Aceite de MP-FS-1.3: decodificar devolve exatamente os bytes originais, nos casos
 //     extremos e no arquivo de dados, e os tamanhos comprimidos são os calculados à mão.
+// ES: Aceptación de MP-FS-1.3: decodificar devuelve exactamente los bytes originales, en los
+//     casos extremos y en el archivo de datos, y los tamaños comprimidos son los calculados a
+//     mano.
 #[test]
 fn compression_round_trips() -> io::Result<()> {
     let runs: Vec<u8> = vec![
@@ -408,6 +419,8 @@ fn compression_round_trips() -> io::Result<()> {
 //     also what the C++ demo prints.
 // PT: A saída da demonstração é determinística, então é comparada com a tabela versionada, que
 //     também é o que a demo em C++ imprime.
+// ES: La salida de la demostración es determinista, así que se compara con la tabla
+//     versionada, que también es lo que imprime la demo en C++.
 #[test]
 fn demo_equals_committed_table() -> io::Result<()> {
     let expected =

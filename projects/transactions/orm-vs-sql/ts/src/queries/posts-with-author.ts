@@ -4,6 +4,9 @@
 // PT: Consulta 3, uma junção. Em SQL e no Drizzle a junção é escrita explicitamente. No Prisma
 //     você pede uma relação e a ferramenta decide como buscá-la, então o SQL capturado ao lado
 //     deste arquivo é o único jeito de saber se virou um JOIN ou dois comandos separados.
+// ES: Consulta 3, una unión (join). En SQL y en Drizzle la unión se escribe explícitamente. En Prisma
+//     pides una relación y la herramienta decide cómo obtenerla, así que el SQL capturado junto
+//     a este archivo es la única forma de saber si se volvió un JOIN o dos sentencias separadas.
 
 import { asc, eq } from "drizzle-orm";
 import { authors, posts } from "../drizzle-schema";

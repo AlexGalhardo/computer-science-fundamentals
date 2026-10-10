@@ -1,5 +1,6 @@
 // EN: The scenarios shared by the demo and the end-to-end tests.
 // PT: Os cenários usados tanto pela demo quanto pelos testes de ponta a ponta.
+// ES: Los escenarios que usan tanto la demo como las pruebas de extremo a extremo.
 
 import type { ChannelModel, ConfirmChannel, GetMessage } from "amqplib";
 import type { Pool } from "pg";
@@ -29,6 +30,9 @@ function freshTopology(label: string): Topology {
 // PT: O pipeline está ocioso quando a fila de trabalho e todas as filas de espera estão vazias e o
 //     consumidor não segura nada, duas vezes seguidas. Uma olhada só não basta: uma mensagem pode
 //     estar entre duas filas.
+// ES: El pipeline está inactivo cuando la cola de trabajo y todas las colas de espera están vacías
+//     y el consumidor no sostiene nada, dos veces seguidas. Una sola mirada no basta: un mensaje
+//     puede estar entre dos colas.
 async function waitUntilIdle(
 	channel: ConfirmChannel,
 	names: Topology,
@@ -82,6 +86,9 @@ export interface DuplicatesOptions {
 // PT: Toda mensagem é publicada DUAS vezes (um produtor que repete depois de perder o confirm), e
 //     o consumidor "cai" ao acaso entre o efeito e o ack. Assim cada mensagem é entregue ao menos
 //     duas vezes, e a pergunta é quantas vezes o seu efeito é aplicado.
+// ES: Cada mensaje se publica DOS veces (un productor que reintenta tras perder la confirmación), y
+//     el consumidor "cae" al azar entre el efecto y el ack. Así cada mensaje se entrega al menos
+//     dos veces, y la pregunta es cuántas veces se aplica su efecto.
 export async function duplicatesScenario(
 	connection: ChannelModel,
 	pool: Pool,
@@ -180,6 +187,10 @@ function gaps(log: AttemptLog[]): { attempt: number; waitedMs: number | null }[]
 //     que não existe, então o handler lança erro em toda tentativa: é repetida com backoff e vai
 //     para a dead-letter quando as tentativas acabam. "malformed" nem é JSON válido para o
 //     schema: vai para a dead-letter de imediato. As saudáveis não podem ser travadas por elas.
+// ES: Dos mensajes malos entre mensajes sanos. "poison" tiene forma válida pero una cuenta que no
+//     existe, así que el handler lanza un error en cada intento: se reintenta con backoff y va a la
+//     dead-letter cuando se agotan los intentos. "malformed" ni siquiera es un JSON válido para el
+//     esquema: va a la dead-letter de inmediato. Los sanos no deben ser retenidos por ninguno.
 export async function poisonScenario(connection: ChannelModel, pool: Pool, policy: RetryPolicy): Promise<PoisonResult> {
 	await resetDb(pool);
 	const names = freshTopology("poison");

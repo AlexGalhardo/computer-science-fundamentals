@@ -8,6 +8,10 @@ import { type Product, parseCsv } from "./types";
 //     o que realmente oferece, e uma função pede o tipo mais estreito que resolve o seu
 //     trabalho. O catálogo CSV é um leitor e nada mais, então entregá-lo a `increasePrices`
 //     agora é um erro de compilação, e não uma falha em tempo de execução.
+// ES: SEGREGACIÓN DE INTERFACES. Dos interfaces, una por tipo de cliente. Una clase implementa
+//     lo que realmente ofrece, y una función pide el tipo más estrecho que resuelve su trabajo.
+//     El catálogo CSV es un lector y nada más, así que entregarlo a `increasePrices` ahora es
+//     un error de compilación, y no una falla en tiempo de ejecución.
 export interface ProductReader {
 	find(id: string): Product | null;
 	list(): Product[];

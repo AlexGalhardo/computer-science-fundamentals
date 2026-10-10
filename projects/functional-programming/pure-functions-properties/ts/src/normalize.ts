@@ -6,6 +6,10 @@
 //     volta, em maiúsculas, e com cada sequência de espaços em branco trocada por um hífen.
 //     Um normalizador deve ser idempotente: normalizar um valor já normal não muda nada,
 //     então é seguro aplicá-lo de novo em cada camada.
+// ES: Transforma un nombre de producto escrito por una persona en un código: sin espacios
+//     alrededor, en mayúsculas, y con cada secuencia de espacios en blanco cambiada por un guion.
+//     Un normalizador debe ser idempotente: normalizar un valor ya normal no cambia nada,
+//     así que es seguro aplicarlo de nuevo en cada capa.
 export function normalizeCode(name: string): string {
 	return name.trim().toUpperCase().replace(/\s+/g, "-");
 }

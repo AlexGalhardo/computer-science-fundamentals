@@ -33,6 +33,9 @@ public final class CartTests {
   // PT: O teste de aceitação do mini-projeto: os cenários do arquivo compartilhado, os mesmos
   //     que as versões em TypeScript e Elixir leem. Records comparam por conteúdo, então uma
   //     chamada a equals compara o recibo inteiro, desconto por desconto.
+  // ES: La prueba de aceptación del miniproyecto: los escenarios del archivo compartido, los
+  //     mismos que leen las versiones en TypeScript y Elixir. Los records comparan por contenido,
+  //     así que una llamada a equals compara el recibo completo, descuento por descuento.
   private static void sharedScenarios(Path file) throws IOException {
     List<Scenarios.Result> results = Scenarios.runAll(file);
     check(results.size() >= 15, "the shared file has at least 15 scenarios");
@@ -71,6 +74,8 @@ public final class CartTests {
   //     through the interface exactly as it calls the rules of the project.
   // PT: Uma regra que o carrinho nunca viu, escrita aqui como classe anônima. O carrinho a chama
   //     pela interface exatamente como chama as regras do projeto.
+  // ES: Una regla que el carrito nunca ha visto, escrita aquí como clase anónima. El carrito la
+  //     llama por la interfaz exactamente como llama a las reglas del proyecto.
   private static void polymorphism() {
     DiscountRule oneCentOff =
         new DiscountRule() {

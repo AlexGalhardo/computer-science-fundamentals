@@ -4,6 +4,9 @@ import { defineConfig } from "@playwright/test";
 //     is generous: 9 ports, several cold loads each, some of them on a slow and lossy link.
 // PT: Configuração da medição (`bun run bench`). É um único "teste" longo, então o tempo limite é
 //     generoso: 9 portas, várias cargas a frio em cada uma, algumas em um enlace lento e com perda.
+// ES: Configuración de la medición (`bun run bench`). Es una única "prueba" larga, así que el
+//     tiempo límite es generoso: 9 puertos, varias cargas en frío en cada uno, algunas en un
+//     enlace lento y con pérdida.
 export default defineConfig({
 	testDir: "bench",
 	testMatch: "**/*.spec.ts",

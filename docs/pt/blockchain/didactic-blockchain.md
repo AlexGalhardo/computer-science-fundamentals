@@ -1,6 +1,6 @@
 # Blockchain didática
 
-> English version: [docs/en/blockchain/didactic-blockchain.md](../../en/blockchain/didactic-blockchain.md)
+> English version: [docs/en/blockchain/didactic-blockchain.md](../../en/blockchain/didactic-blockchain.md) · Versión en español: [docs/es/blockchain/didactic-blockchain.md](../../es/blockchain/didactic-blockchain.md)
 
 Mini-projeto: [`projects/blockchain/didactic-blockchain`](../../../projects/blockchain/didactic-blockchain/README.pt-BR.md) (MP-CHAIN-1). Linguagens: TypeScript e Rust. Quiz: área `blockchain`, tópicos `hash-functions`, `digital-signatures-and-keys`, `transactions-and-unspent-outputs`, `blocks-chain-and-merkle-trees`, `proof-of-work-and-difficulty`, `double-spending-and-confirmations`, `network-and-consensus` e `incentives-and-mining`. Fonte: Nakamoto, "Bitcoin: A Peer-to-Peer Electronic Cash System" (2008).
 
@@ -16,7 +16,7 @@ A resposta tem quatro partes, e o mini-projeto constrói cada uma.
 
 Um hash criptográfico dá uma impressão digital de tamanho fixo para qualquer dado, e mudar um bit do dado muda a impressão digital inteira. Três usos dele, empilhados:
 
-```
+```text
 id da transação = hash(entradas e saídas da transação)
 raiz de Merkle  = hash dos ids, aos pares, nível a nível
 hash do bloco   = hash(altura | hash do bloco anterior | raiz de Merkle | tempo | dificuldade | nonce)
@@ -73,7 +73,7 @@ Os nós difundem mensagens: o que um nó aceita de novo, ele repassa aos pares. 
 
 A demo cria uma bifurcação de propósito, cortando as ligações entre os nós:
 
-```
+```text
             partição                       ligações restauradas
 A, B:  ... - 3 - 4a - 5a          ->   A, B, C:  ... - 3 - 4a - 5a - 6
 C:     ... - 3 - 4c (paga Carol)                 4c abandonado, o pagamento volta a ficar

@@ -8,6 +8,11 @@
 //     banco. Cada consulta é rápida e parece inocente, e essa é a armadilha: o custo é o número
 //     de idas e voltas, que cresce com os dados. A correção pede todos os posts de uma vez, então
 //     o número de comandos é 2, não importa quantos autores existam.
+// ES: El problema N+1. Para mostrar N autores con sus posts, el código ingenuo ejecuta 1 consulta para
+//     la lista y luego 1 consulta más por autor, dentro de un bucle: N + 1 viajes de ida y vuelta a la
+//     base de datos. Cada consulta es rápida y parece inocente, y esa es la trampa: el costo es el
+//     número de viajes, que crece con los datos. La corrección pide todos los posts de una vez, así
+//     que el número de sentencias es 2, sin importar cuántos autores existan.
 
 import { asc, eq, inArray } from "drizzle-orm";
 import { authors, posts } from "../drizzle-schema";
@@ -23,6 +28,8 @@ export interface AuthorWithPosts {
 //     generic "record of columns" is expected.
 // PT: Estes dois são aliases `type`, não interfaces: só um alias de tipo é aceito onde se espera
 //     um "registro de colunas" genérico.
+// ES: Estos dos son alias `type`, no interfaces: solo un alias de tipo se acepta donde se espera
+//     un "registro de columnas" genérico.
 type AuthorRow = {
 	id: number;
 	name: string;
@@ -37,6 +44,8 @@ type PostRow = {
 //     by author, one pass over the authors. Linear time, no extra query.
 // PT: Junta em memória o que os dois comandos da correção devolveram: uma passada para agrupar os
 //     posts por autor, uma passada pelos autores. Tempo linear, nenhuma consulta a mais.
+// ES: Une en memoria lo que devolvieron las dos sentencias de la corrección: una pasada para agrupar los
+//     posts por autor, una pasada por los autores. Tiempo lineal, ninguna consulta de más.
 function attach(authorRows: AuthorRow[], postRows: PostRow[]): AuthorWithPosts[] {
 	const byAuthor = new Map<number, string[]>();
 	for (const post of postRows) {
@@ -126,6 +135,8 @@ export const nPlusOneFixed: QueryDefinition<[limit: number], AuthorWithPosts[]> 
 	//     the posts of all the listed authors with one `IN (...)` statement.
 	// PT: No Prisma a correção é pedir a relação na mesma chamada. O Prisma então carrega todos os
 	//     posts de todos os autores listados com um único comando `IN (...)`.
+	// ES: En Prisma la corrección es pedir la relación en la misma llamada. Prisma entonces carga todos los
+	//     posts de todos los autores listados con una única sentencia `IN (...)`.
 	prisma: async (context, limit) => {
 		const rows = await context.prisma.author.findMany({
 			orderBy: { id: "asc" },

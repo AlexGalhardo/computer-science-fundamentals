@@ -1,6 +1,6 @@
 # TDD kata with commit history (MP-TEST-2)
 
-> Versão em português: [docs/pt/testing/tdd-kata.md](../../pt/testing/tdd-kata.md)
+> Versão em português: [docs/pt/testing/tdd-kata.md](../../pt/testing/tdd-kata.md) · Versión en español: [docs/es/testing/tdd-kata.md](../../es/testing/tdd-kata.md)
 
 Mini-project: [`projects/testing/tdd-kata`](../../../projects/testing/tdd-kata/README.md). Quiz topics: `tdd-cycle`, `unit-tests-isolation`.
 
@@ -8,7 +8,7 @@ Mini-project: [`projects/testing/tdd-kata`](../../../projects/testing/tdd-kata/R
 
 Test-driven development is a rhythm of three steps, always in the same order:
 
-```
+```text
    +-----------+   write the smallest code   +-----------+
    |    RED    | --------------------------> |   GREEN   |
    | a failing |                             | all tests |

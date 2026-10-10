@@ -6,6 +6,10 @@
 //     em `data/`, um inteiro por linha: `random-<n>.txt`, `sorted-<n>.txt` e `reversed-<n>.txt`.
 //     Os três formatos têm os mesmos números em ordem diferente, então uma diferença de tempo
 //     entre eles vem só da ordem. As sete linguagens leem esses mesmos arquivos.
+// ES: `bun run ts/src/generate.ts [tamaños...]` escribe los archivos de entrada compartidos
+//     en `data/`, un entero por línea: `random-<n>.txt`, `sorted-<n>.txt` y `reversed-<n>.txt`.
+//     Las tres formas tienen los mismos números en distinto orden, así que una diferencia de tiempo
+//     entre ellas viene solo del orden. Los siete lenguajes leen esos mismos archivos.
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { DATA_DIR, dataFile, randomValues, VARIANTS, type Variant } from "./input";
@@ -33,6 +37,7 @@ function shape(values: number[], variant: Variant): ArrayLike<number> {
 	}
 	// EN: The generator is not one of the algorithms under study, so it may use the library sort.
 	// PT: O gerador não é um dos algoritmos em estudo, então pode usar a ordenação da biblioteca.
+	// ES: El generador no es uno de los algoritmos en estudio, así que puede usar la ordenación de la biblioteca.
 	const sorted = Int32Array.from(values).sort();
 	return variant === "sorted" ? sorted : sorted.reverse();
 }

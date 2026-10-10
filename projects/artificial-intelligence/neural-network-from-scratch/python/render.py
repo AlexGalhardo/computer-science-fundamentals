@@ -8,6 +8,12 @@ em texto.
 
 SVG é texto puro que um navegador (e o GitHub) desenha, então o projeto não precisa de nenhuma
 dependência para fazer uma figura.
+
+ES: Dibujos sin biblioteca de gráficos: una curva de pérdida y una frontera de decisión, en SVG y
+en texto.
+
+SVG es texto plano que un navegador (y GitHub) dibuja, así que el proyecto no necesita ninguna
+dependencia para hacer una figura.
 """
 
 from data import Point
@@ -55,7 +61,12 @@ def loss_curve_svg(losses: list[float], title: str) -> str:
 
 
 def _grid(columns: int, rows: int) -> list[list[Point]]:
-    """EN: The centres of a grid of cells covering the plane. PT: Os centros de uma grade."""
+    """EN: The centres of a grid of cells covering the plane.
+
+    PT: Os centros de uma grade.
+
+    ES: Los centros de una cuadrícula.
+    """
     x_step = (X_RANGE[1] - X_RANGE[0]) / columns
     y_step = (Y_RANGE[1] - Y_RANGE[0]) / rows
     return [
@@ -75,6 +86,10 @@ def decision_boundary_text(model: MLP, points: list[Point], labels: list[int]) -
     PT: A fronteira de decisão em caracteres: pergunta-se à rede a resposta em cada célula de uma
     grade. `.` é onde ela responde classe 0 e `#` onde responde classe 1. Os pontos de treino são
     desenhados por cima, `o` para a classe 0 e `x` para a classe 1.
+
+    ES: La frontera de decisión en caracteres: se le pregunta a la red la respuesta en cada celda de
+    una cuadrícula. `.` es donde responde clase 0 y `#` donde responde clase 1. Los puntos de
+    entrenamiento se dibujan encima, `o` para la clase 0 y `x` para la clase 1.
     """
     columns, rows = 64, 24
     cells = [
@@ -93,6 +108,8 @@ def decision_boundary_svg(model: MLP, points: list[Point], labels: list[int], ti
     """EN: The same picture in colour: each cell is painted with the probability of class 1.
 
     PT: A mesma figura em cores: cada célula é pintada com a probabilidade da classe 1.
+
+    ES: La misma figura en colores: cada celda se pinta con la probabilidad de la clase 1.
     """
     columns, rows, cell, margin = 56, 40, 10, 32
     width, height = columns * cell, rows * cell + margin
@@ -108,6 +125,7 @@ def decision_boundary_svg(model: MLP, points: list[Point], labels: list[int], ti
             colour = ORANGE if chance > 0.5 else BLUE
             # EN: The colour is stronger where the network is more certain.
             # PT: A cor é mais forte onde a rede tem mais certeza.
+            # ES: El color es más fuerte donde la red está más segura.
             opacity = 0.12 + 0.5 * abs(chance - 0.5) * 2
             parts.append(
                 f'<rect x="{column * cell}" y="{row * cell + margin}" width="{cell}" '

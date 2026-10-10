@@ -15,6 +15,13 @@ import "sync"
 // saldo é guardado em unidades de "crédito" (uma ficha = WindowMs créditos), então cada
 // milissegundo rende exatamente Limit créditos e não há ponto flutuante. A reposição é
 // preguiçosa: calculada a partir do tempo decorrido a cada requisição, sem timer em segundo plano.
+//
+// ES: Una solicitud gasta una ficha. La capacidad es la ráfaga que pasa de una vez, la tasa de
+// reposición es el promedio a largo plazo, y las fichas por encima de la capacidad se descartan.
+// El saldo se guarda en unidades de "crédito" (una ficha = WindowMs créditos), así que cada
+// milisegundo rinde exactamente Limit créditos y no hay punto flotante. La reposición es
+// perezosa: se calcula a partir del tiempo transcurrido en cada solicitud, sin temporizador en
+// segundo plano.
 type TokenBucket struct {
 	mu     sync.Mutex
 	config Config
@@ -49,6 +56,13 @@ func (t *TokenBucket) Allow(nowMs int64) bool {
 // frente vazar, então a saída nunca é mais rápida que a taxa de vazão, seja qual for a
 // entrada. Ele admite as mesmas requisições que um token bucket do mesmo tamanho; a
 // diferença é que o token bucket encaminha a rajada de uma vez e o leaky bucket a espalha no tempo.
+//
+// ES: El balde guarda como máximo Limit solicitudes y gotea Limit de ellas cada WindowMs. Una
+// solicitud que lo encuentra lleno se rechaza. Una solicitud admitida espera a que gotee el
+// agua que tiene delante, así que la salida nunca es más rápida que el ritmo de goteo, sea
+// cual sea la entrada. Admite las mismas solicitudes que un token bucket del mismo tamaño; la
+// diferencia es que el token bucket reenvía la ráfaga de una vez y el leaky bucket la reparte
+// en el tiempo.
 type LeakyBucket struct {
 	mu     sync.Mutex
 	config Config
@@ -68,6 +82,7 @@ func (l *LeakyBucket) Schedule(nowMs int64) (departAtMs int64, ok bool) {
 	}
 	// EN: The wait is the time the water already in the bucket takes to leak, rounded up.
 	// PT: A espera é o tempo que a água já presente no balde leva para vazar, arredondado para cima.
+	// ES: La espera es el tiempo que tarda en gotear el agua que ya está en el balde, redondeado hacia arriba.
 	waitMs := (l.level + limit - 1) / limit
 	l.level += windowMs
 	return nowMs + waitMs, true

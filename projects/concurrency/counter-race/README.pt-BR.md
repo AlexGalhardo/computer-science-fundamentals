@@ -1,6 +1,6 @@
 # counter-race
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Oito workers somam 1 ao mesmo contador, 125.000 vezes cada um. A resposta deveria ser 1.000.000. Sem sincronização ela não é, porque `counter++` são três passos (ler, somar, gravar) e dois workers podem ler o mesmo valor antigo. Este mini-projeto mostra essa atualização perdida em Go, Rust, Java e TypeScript, e depois a corrige de quatro formas: mutex, operação atômica, troca de mensagens e ator.
 
@@ -72,7 +72,7 @@ docker compose run --rm go-demo      # também: rust-demo, java-demo, ts-demo, e
 
 Saída da demo em Go na máquina descrita em [results/results.md](results/results.md):
 
-```
+```text
 variant       final       lost         ms
 buggy        230786     769214        5.4
 mutex       1000000          0       30.7

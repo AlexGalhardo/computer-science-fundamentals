@@ -1,6 +1,6 @@
 # solid-before-after
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 One small module per SOLID principle, twice: a version that violates the principle (`before`) and its refactor (`after`). The **same tests** run against both, so the refactor is proven to keep the behaviour. It teaches **what each principle prevents**, measured by the diff a new requirement needs in each version.
 

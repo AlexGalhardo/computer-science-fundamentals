@@ -43,6 +43,10 @@ func DefaultOptions() Options {
 // PT: O transporte mantém abertas as conexões ociosas com os back ends e as reutiliza. Estas
 // são as "duas conexões" de um proxy de camada 7: a conexão do cliente termina aqui, e a
 // requisição viaja em outra, que normalmente já existe.
+//
+// ES: El transporte mantiene abiertas las conexiones ociosas con los back ends y las reutiliza.
+// Estas son las "dos conexiones" de un proxy de capa 7: la conexión del cliente termina aquí, y
+// la solicitud viaja en otra, que normalmente ya existe.
 func NewProxy(pool *Pool, strategy Strategy, options Options) *Proxy {
 	dialer := &net.Dialer{Timeout: options.DialTimeout}
 	return &Proxy{
@@ -78,6 +82,8 @@ var hopByHop = []string{
 // values of Connection are read before it is deleted.
 // PT: `Connection: close, X-Custom` também transforma X-Custom em cabeçalho hop-by-hop, então
 // os valores de Connection são lidos antes de ele ser apagado.
+// ES: `Connection: close, X-Custom` también convierte a X-Custom en un encabezado hop-by-hop, así
+// que los valores de Connection se leen antes de borrarlo.
 func removeHopByHop(header http.Header) {
 	for _, value := range header.Values("Connection") {
 		for name := range strings.SplitSeq(value, ",") {
@@ -100,6 +106,11 @@ func removeHopByHop(header http.Header) {
 // precisa viajar em um cabeçalho. Cada proxy acrescenta o par de quem recebeu a requisição.
 // Um back end só deve acreditar nesse cabeçalho quando a conexão vem de um proxy em que
 // confia, porque qualquer cliente também pode enviá-lo.
+//
+// ES: El back end ve una conexión que viene del balanceador, así que la dirección del cliente
+// real debe viajar en un encabezado. Cada proxy agrega el par de quien le entregó la solicitud.
+// Un back end solo debe creer en este encabezado cuando la conexión viene de un proxy en el que
+// confía, porque cualquier cliente también puede enviarlo.
 func forwardedHeaders(in *http.Request) http.Header {
 	header := in.Header.Clone()
 	removeHopByHop(header)
@@ -123,6 +134,11 @@ func forwardedHeaders(in *http.Request) http.Header {
 // nem chegou a ser aberta: o back end não viu nada. Depois que a requisição foi enviada, só
 // se repeti-la não causa dano: um GET pode ser repetido, um POST pode já ter criado o pedido
 // ou cobrado o cartão.
+//
+// ES: ¿Cuándo es seguro enviar la misma solicitud a otro back end? Siempre, si la conexión
+// nunca llegó a abrirse: el back end no vio nada. Después de que la solicitud se envió, solo
+// si repetirla no causa daño: un GET puede repetirse, un POST puede haber creado ya el pedido
+// o cobrado la tarjeta.
 func canRetry(method string, err error) bool {
 	var opErr *net.OpError
 	if errors.As(err, &opErr) && opErr.Op == "dial" {
@@ -142,6 +158,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// proxy streams large bodies and gives up the retry instead.
 	// PT: O corpo é lido para a memória para poder ser enviado de novo em uma nova tentativa.
 	// Um proxy de produção transmite corpos grandes aos poucos e abre mão da nova tentativa.
+	// ES: El cuerpo se lee en memoria para poder enviarse de nuevo en un reintento. Un proxy de
+	// producción transmite los cuerpos grandes por partes y renuncia al reintento.
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, p.maxBody))
 	if err != nil {
 		http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
@@ -185,6 +203,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// once, without waiting for the next probe. The active check puts it back.
 		// PT: Verificação passiva: uma requisição que falha tira o back end da rotação na
 		// hora, sem esperar a próxima sonda. A verificação ativa o coloca de volta.
+		// ES: Verificación pasiva: una solicitud que falla saca el back end de la rotación de
+		// inmediato, sin esperar la siguiente sonda. La verificación activa lo vuelve a poner.
 		backend.SetHealthy(false)
 		if !canRetry(r.Method, err) {
 			http.Error(w, "the back end failed and the request cannot be repeated safely", http.StatusBadGateway)
@@ -203,6 +223,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // is why the caller decrements the counter only after this function returns.
 // PT: A requisição conta como "em andamento" até o último byte da resposta ser copiado, e é
 // por isso que quem chama só decrementa o contador depois que esta função retorna.
+// ES: La solicitud cuenta como "en curso" hasta que se copió el último byte de la respuesta, y
+// por eso quien llama solo decrementa el contador después de que esta función retorna.
 func copyResponse(w http.ResponseWriter, response *http.Response) {
 	defer response.Body.Close() //nolint:errcheck // nothing useful to do with a close error
 	removeHopByHop(response.Header)

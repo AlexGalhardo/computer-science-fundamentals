@@ -6,6 +6,10 @@
 #     compartilhado com a implementação em TypeScript. Não há dependências: o decodificador
 #     de JSON e o framework de testes vêm com o Elixir, então nada é baixado e o contêiner
 #     roda sem rede.
+# ES: El contexto de build es la carpeta del mini-proyecto, y no elixir/, porque cases.json es
+#     compartido con la implementación en TypeScript. No hay dependencias: el decodificador
+#     de JSON y el framework de pruebas vienen con Elixir, así que no se descarga nada y el
+#     contenedor corre sin red.
 FROM elixir:1.20.4-otp-28-slim
 WORKDIR /app/elixir
 COPY cases.json /app/

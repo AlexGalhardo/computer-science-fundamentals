@@ -5,6 +5,10 @@
 //     memória). A JVM começa interpretando bytecode e compila os laços quentes para código de
 //     máquina enquanto o programa roda (JIT), então execuções curtas pagam um aquecimento que
 //     as longas diluem.
+// ES: Carga de CPU en un thread en Java: `nbody` (punto flotante) y `sieve` (enteros y
+//     memoria). La JVM empieza interpretando bytecode y compila los bucles calientes a código de
+//     máquina mientras el programa corre (JIT), así que las ejecuciones cortas pagan un
+//     calentamiento que las largas diluyen.
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,6 +44,7 @@ public final class Main {
 
   // EN: Sun, Jupiter, Saturn, Uranus and Neptune.
   // PT: Sol, Júpiter, Saturno, Urano e Netuno.
+  // ES: Sol, Júpiter, Saturno, Urano y Neptuno.
   private static Body[] makeBodies() {
     return new Body[] {
       new Body(0, 0, 0, 0, 0, 0, 1),
@@ -78,6 +83,7 @@ public final class Main {
 
   // EN: One time step: every pair pulls on each other, then every body moves.
   // PT: Um passo de tempo: cada par se atrai, depois cada corpo anda.
+  // ES: Un paso de tiempo: cada par se atrae, luego cada cuerpo avanza.
   private static void advance(Body[] bodies) {
     for (int i = 0; i < bodies.length; i++) {
       Body a = bodies[i];
@@ -130,6 +136,7 @@ public final class Main {
 
   // EN: Sieve of Eratosthenes. The checksum is "how many primes:the largest one".
   // PT: Crivo de Eratóstenes. O checksum é "quantos primos:o maior deles".
+  // ES: Criba de Eratóstenes. El checksum es "cuántos primos:el mayor de ellos".
   private static String sieve(int n) {
     boolean[] composite = new boolean[n + 1];
     for (long i = 2; i * i <= n; i++) {
@@ -152,6 +159,7 @@ public final class Main {
 
   // EN: VmHWM in /proc/self/status is the peak resident memory of the whole JVM, in kibibytes.
   // PT: VmHWM em /proc/self/status é o pico de memória residente da JVM inteira, em kibibytes.
+  // ES: VmHWM en /proc/self/status es el pico de memoria residente de toda la JVM, en kibibytes.
   private static long peakMemoryKb() {
     try {
       for (String line : Files.readAllLines(Path.of("/proc/self/status"))) {
@@ -162,6 +170,7 @@ public final class Main {
     } catch (IOException e) {
       // EN: Not on Linux: report zero instead of failing the run.
       // PT: Fora do Linux: informa zero em vez de derrubar a execução.
+      // ES: Fuera de Linux: informa cero en lugar de tumbar la ejecución.
     }
     return 0;
   }

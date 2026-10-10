@@ -2,6 +2,8 @@
 //     the interesting amounts: two keyboards are exactly the discount threshold (100.00).
 // PT: Um catálogo fixo com produtos fictícios. Os preços foram escolhidos para que os testes
 //     alcancem os valores interessantes: dois teclados dão exatamente o limite do desconto (100,00).
+// ES: Un catálogo fijo con productos ficticios. Los precios se eligieron para que las pruebas
+//     lleguen a los valores interesantes: dos teclados dan exactamente el límite del descuento (100,00).
 export interface Product {
 	id: string;
 	name: string;

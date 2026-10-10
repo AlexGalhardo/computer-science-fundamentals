@@ -1,7 +1,7 @@
 # jwt-lab
 
-> English version: [README.md](README.md)
-
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
+>
 > **Laboratório de segurança, vulnerável de propósito.** O código em `ts/src/vulnerable/` existe só para tornar uma falha observável dentro deste laboratório. Nunca copie, importe ou publique.
 
 Um JSON Web Token (JWT) é um bilhete assinado que diz "este é o `bob-fake`, papel `user`, válido até 10:15". O servidor que o recebe não tem tabela de sessões para consultar: ele acredita no bilhete se, e somente se, a verificação estiver certa. Este laboratório mostra os jeitos comuns de essa verificação dar errado: aceitar tokens sem assinatura porque o próprio token disse `alg: none`, assinar com uma palavra que uma pessoa escolheu, e nunca conferir a expiração. Depois corrige cada um em um verificador escrito à mão com `node:crypto`, em que cada verificação é um passo visível e numerado.
@@ -68,7 +68,7 @@ O contêiner roda `tsc --noEmit` e depois `bun test`.
 
 ## Um JWT em um minuto
 
-```
+```text
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9 . eyJzdWIiOiJib2ItZmFrZSIsInJvbGUiOiJ1c2VyIiwuLi59 . 3q2-7w...
        cabeçalho                                  payload                                  assinatura
  {"alg":"HS256","typ":"JWT"}        {"sub":"bob-fake","role":"user","exp":...}     HMAC-SHA256(chave, cabeçalho.payload)

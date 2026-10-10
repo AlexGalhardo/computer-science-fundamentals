@@ -16,6 +16,14 @@ import type { Matrix, Solution } from "./instance";
 //     São 2^n conjuntos e n finais, cada um calculado a partir de n candidatos: tempo
 //     O(n² · 2^n) e memória O(n · 2^n). Ainda é exponencial, mas muito abaixo de (n - 1)!: para
 //     20 cidades são cerca de 4·10^8 passos em vez de 1,2·10^17. A memória é o novo limite.
+// ES: Held-Karp: programación dinámica sobre subconjuntos. La observación central es que, para
+//     extender un camino parcial, no importa en qué orden se visitaron sus ciudades. Solo
+//     importan dos cosas: CUÁLES ciudades se visitaron (un conjunto) y DÓNDE termina el camino.
+//         cost(S, j) = camino más corto que parte de la ciudad 0, visita exactamente el conjunto S y termina en j
+//         cost(S, j) = mínimo, sobre k en S \ {j}, de  cost(S \ {j}, k) + dist[k][j]
+//     Son 2^n conjuntos y n finales, cada uno calculado a partir de n candidatos: tiempo
+//     O(n² · 2^n) y memoria O(n · 2^n). Sigue siendo exponencial, pero muy por debajo de (n - 1)!: para
+//     20 ciudades son cerca de 4·10^8 pasos en lugar de 1.2·10^17. La memoria es el nuevo límite.
 export const HELD_KARP_MAX_CITIES = 22;
 const UNREACHED = 0x7fffffff;
 
@@ -37,6 +45,9 @@ export function heldKarp(dist: Matrix): Solution {
 	// PT: Um conjunto de cidades é uma máscara de bits: o bit c é 1 quando a cidade c + 1 está no
 	//     conjunto. A cidade 0 é a partida fixa e fica de fora, o que reduz a tabela à metade.
 	//     cost[mask * m + j] guarda cost(S, j + 1), e parent[...] lembra o k que deu o mínimo.
+	// ES: Un conjunto de ciudades es una máscara de bits: el bit c es 1 cuando la ciudad c + 1 está en el
+	//     conjunto. La ciudad 0 es la partida fija y queda fuera, lo que reduce la tabla a la mitad.
+	//     cost[mask * m + j] guarda cost(S, j + 1), y parent[...] recuerda el k que dio el mínimo.
 	const m = n - 1;
 	const full = (1 << m) - 1;
 	const cost = new Int32Array((full + 1) * m).fill(UNREACHED);
@@ -51,6 +62,9 @@ export function heldKarp(dist: Matrix): Solution {
 	// PT: Máscaras em ordem numérica crescente: remover um bit sempre dá um número menor, então
 	//     todo subproblema de que uma máscara precisa foi preenchido antes dela. Esta é a ordem
 	//     da tabulação.
+	// ES: Máscaras en orden numérico creciente: quitar un bit siempre da un número menor, así que
+	//     todo subproblema que una máscara necesita se llenó antes que ella. Este es el orden
+	//     de la tabulación.
 	for (let mask = 1; mask <= full; mask++) {
 		for (let j = 0; j < m; j++) {
 			if ((mask & (1 << j)) === 0) {
@@ -89,6 +103,7 @@ export function heldKarp(dist: Matrix): Solution {
 
 	// EN: Walk the parents backwards from the last city to rebuild the tour.
 	// PT: Percorre os pais de trás para frente, a partir da última cidade, para remontar o passeio.
+	// ES: Recorre los padres hacia atrás, desde la última ciudad, para reconstruir el recorrido.
 	const tour: number[] = [];
 	let mask = full;
 	while (end !== -1) {

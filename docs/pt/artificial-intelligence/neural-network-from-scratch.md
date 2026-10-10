@@ -1,6 +1,6 @@
 # Rede neural do zero
 
-> English version: [docs/en/artificial-intelligence/neural-network-from-scratch.md](../../en/artificial-intelligence/neural-network-from-scratch.md)
+> English version: [docs/en/artificial-intelligence/neural-network-from-scratch.md](../../en/artificial-intelligence/neural-network-from-scratch.md) · Versión en español: [docs/es/artificial-intelligence/neural-network-from-scratch.md](../../es/artificial-intelligence/neural-network-from-scratch.md)
 
 Mini-projeto MP-AI-2, em [`projects/artificial-intelligence/neural-network-from-scratch`](../../../projects/artificial-intelligence/neural-network-from-scratch). Ensina o que um neurônio calcula e como a retropropagação encontra os gradientes. A base está nas seções [5](README.md#5-neurônios-camadas-e-funções-de-ativação) e [6](README.md#6-descida-do-gradiente-e-retropropagação) da página da área.
 

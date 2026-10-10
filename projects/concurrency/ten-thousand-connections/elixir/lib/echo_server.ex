@@ -12,6 +12,13 @@ defmodule EchoServer do
   memória e é escalonado pela máquina virtual. Um processo que espera (em `recv` ou em
   `Process.sleep`) não custa tempo de processador, então dez mil conexões esperando são dez mil
   processos minúsculos dormindo.
+
+  ES: La implementación en Elixir del servidor de eco y de respuesta retrasada, escrita directamente
+  sobre sockets TCP, sin biblioteca. Cada conexión recibe su propio proceso de la BEAM. Un proceso
+  de la BEAM no es un thread del sistema operativo: empieza con unos cientos de palabras de
+  memoria y lo planifica la máquina virtual. Un proceso que espera (en `recv` o en
+  `Process.sleep`) no cuesta tiempo de procesador, así que diez mil conexiones esperando son diez
+  mil procesos minúsculos durmiendo.
   """
 
   @max_delay_ms 60_000
@@ -29,6 +36,9 @@ defmodule EchoServer do
     # PT: `packet: :http_bin` pede ao runtime do Erlang que interprete as linhas de requisição
     #     e os cabeçalhos HTTP, então nenhum parser é escrito aqui. `active: false` significa
     #     que um processo só lê do socket quando pede, com `recv`.
+    # ES: `packet: :http_bin` le pide al runtime de Erlang que interprete las líneas de solicitud
+    #     y las cabeceras HTTP, así que aquí no se escribe ningún parser. `active: false` significa
+    #     que un proceso solo lee del socket cuando lo pide, con `recv`.
     options = [:binary, packet: :http_bin, active: false, reuseaddr: true, backlog: 4096]
     {:ok, socket} = :gen_tcp.listen(port, options)
     in_flight = :counters.new(1, [:write_concurrency])
@@ -41,6 +51,7 @@ defmodule EchoServer do
     {:ok, socket} = :gen_tcp.accept(listen_socket)
     # EN: One new process per connection. If it crashes, only that connection is lost.
     # PT: Um processo novo por conexão. Se ele quebrar, só aquela conexão se perde.
+    # ES: Un proceso nuevo por conexión. Si se rompe, solo se pierde esa conexión.
     pid =
       spawn(fn ->
         receive do
@@ -158,6 +169,8 @@ defmodule EchoServer do
   #     only this process to sleep. The schedulers keep running every other connection.
   # PT: A query string é entrada externa, então é conferida antes do uso. `Process.sleep` põe
   #     para dormir só este processo. Os escalonadores seguem rodando todas as outras conexões.
+  # ES: La query string es entrada externa, así que se verifica antes de usarla. `Process.sleep` pone
+  #     a dormir solo este proceso. Los planificadores siguen ejecutando todas las otras conexiones.
   defp delay(text) do
     with true <- text =~ ~r/^\d{1,6}$/,
          ms when ms <= @max_delay_ms <- String.to_integer(text) do

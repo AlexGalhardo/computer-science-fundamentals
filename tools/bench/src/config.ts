@@ -2,6 +2,8 @@
 //     Docker image) runs each implementation at each size, once per variant.
 // PT: `bench.json` de um mini-projeto. Ele descreve uma grade: cada alvo (uma linguagem com sua
 //     imagem Docker) roda cada implementação em cada tamanho, uma vez por variante.
+// ES: `bench.json` de un mini-proyecto. Describe una grilla: cada objetivo (un lenguaje con su
+//     imagen Docker) ejecuta cada implementación en cada tamaño, una vez por variante.
 
 import { z } from "zod";
 
@@ -45,6 +47,8 @@ export interface BenchCase {
 //     configuration always produce the same rows in the same order.
 // PT: Expande a grade em uma lista plana. A ordem é fixa para que duas execuções da mesma
 //     configuração produzam sempre as mesmas linhas na mesma ordem.
+// ES: Expande la grilla en una lista plana. El orden es fijo para que dos ejecuciones de la misma
+//     configuración produzcan siempre las mismas filas en el mismo orden.
 export function expandCases(config: BenchConfig, target: BenchTarget): BenchCase[] {
 	const cases: BenchCase[] = [];
 	for (const implementation of target.implementations) {

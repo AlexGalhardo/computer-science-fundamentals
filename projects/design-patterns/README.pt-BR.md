@@ -1,6 +1,6 @@
 # Padrões de projeto e SOLID
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Padrões de projeto são soluções com nome para problemas de projeto que sempre voltam, e os princípios SOLID são cinco regras práticas para manter classes e módulos fáceis de mudar. Juntos eles dão um vocabulário comum (Strategy, Adapter, Observer, inversão de dependência) para discutir projeto, e o discernimento para ver quando um padrão se paga e quando é só cerimônia.
 

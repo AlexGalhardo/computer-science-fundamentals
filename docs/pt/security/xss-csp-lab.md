@@ -1,6 +1,6 @@
 # Laboratório de XSS e Content Security Policy (MP-SEC-2)
 
-> English version: [docs/en/security/xss-csp-lab.md](../../en/security/xss-csp-lab.md)
+> English version: [docs/en/security/xss-csp-lab.md](../../en/security/xss-csp-lab.md) · Versión en español: [docs/es/security/xss-csp-lab.md](../../es/security/xss-csp-lab.md)
 
 Mini-projeto: [`projects/security/xss-csp-lab`](../../../projects/security/xss-csp-lab/README.pt-BR.md). Tópicos do quiz: `xss`, `csp-security-headers`.
 
@@ -14,7 +14,7 @@ A causa raiz é sempre a mesma: **um dado foi escrito em um lugar que é interpr
 
 ## A falha, três vezes
 
-```
+```text
 visitante digita:      <script>window.__labXssExecuted = true</script>
 
 servidor monta:        "<span>" + texto + "</span>"
@@ -33,7 +33,7 @@ A entrada baseada em DOM é um `<img>` com um manipulador `onerror` inline, porq
 
 **1. Codificação de saída (servidor).** `escapeHtml` troca `&`, `<`, `>`, `"` e `'` por `&amp;`, `&lt;`, `&gt;`, `&quot;` e `&#39;` no momento em que o texto é escrito no HTML.
 
-```
+```text
 servidor monta:        "<span>" + escapeHtml(texto) + "</span>"
 navegador interpreta:  <span>&lt;script&gt;...&lt;/script&gt;</span>     <- um nó de texto
 tela mostra:           <script>window.__labXssExecuted = true</script>
@@ -45,7 +45,7 @@ Funciona porque o parser nunca encontra um `<` que veio do visitante, então o v
 
 **3. Content Security Policy (cabeçalho).** O app corrigido envia, em toda resposta:
 
-```
+```http
 Content-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
 X-Content-Type-Options: nosniff
 ```
@@ -77,7 +77,7 @@ Ou seja, a política reduziu o dano de um bug que continua lá. Marcação injet
 | MP-SEC-2.1 XSS armazenado, refletido e baseado em DOM são demonstrados dentro do laboratório | `docker compose run --rm e2e`: o grupo "vulnerable app" de `tests/e2e/xss.e2e.ts` afirma que a marca foi ligada pelo código injetado em cada um dos três cenários |
 | MP-SEC-2.2 os mesmos testes não conseguem executar script na versão corrigida | Mesmo comando: o grupo "fixed app" roda as mesmas funções de cenário e afirma que a marca não é ligada, que nenhum elemento foi injetado, que o texto é exibido como foi digitado e que o uso normal funciona |
 | MP-SEC-2.2 CSP como segunda camada | Mesmo comando: o grupo "vulnerable page with CSP only" afirma marcação injetada, nenhuma execução e uma violação de política reportada |
-| MP-SEC-2.3 causa e prevenção documentadas | Esta página e os dois READMEs do mini-projeto |
+| MP-SEC-2.3 causa e prevenção documentadas | Esta página e os três READMEs do mini-projeto |
 | Sem acesso ao exterior | `docker compose run --rm ts-test`: `tests/network-isolation.test.ts` afirma que uma requisição a `example.com` falha. A rede do compose é `internal: true` e não publica nenhuma porta |
 
 Os testes do lado do servidor (`tests/apps.test.ts`) conferem a mesma coisa um passo antes: o que o servidor escreve (marcação crua ou entidades) e quais cabeçalhos ele envia. O valor exato da política é fixado por `tests/security-headers.test.ts`.

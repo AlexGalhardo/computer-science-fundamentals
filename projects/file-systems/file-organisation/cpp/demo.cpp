@@ -8,6 +8,8 @@
 //     table in results/demo.md.
 // PT: Uso: forg_demo [registros]. O padrão de 10.000 registros é o tamanho da tabela versionada
 //     em results/demo.md.
+// ES: Uso: forg_demo [registros]. El valor por defecto de 10.000 registros es el tamaño de la
+//     tabla versionada en results/demo.md.
 int main(int argc, char** argv) {
 	const unsigned long records = argc > 1 ? std::strtoul(argv[1], nullptr, 10) : 10000;
 	if (records < 100 || records > 50000) {

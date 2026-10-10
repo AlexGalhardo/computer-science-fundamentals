@@ -9,6 +9,10 @@ import { baseUrl } from "../base-url";
 //     ele responde, o banco por trás é utilizável, a página é servida. Não prova nada sobre as
 //     regras de negócio. O papel dela é dizer, em um segundo, se o build ou a implantação estão
 //     quebrados, antes que alguém gaste minutos nas suítes mais lentas.
+// ES: SUITE DE HUMO. Un puñado de comprobaciones superficiales contra el servicio que de verdad está
+//     en ejecución: responde, la base de datos detrás es utilizable, la página se sirve. No prueba nada sobre las
+//     reglas de negocio. Su papel es decir, en un segundo, si el build o el despliegue están
+//     rotos, antes de que alguien gaste minutos en las suites más lentas.
 const BASE_URL = baseUrl();
 
 test("the health endpoint answers 200", async () => {

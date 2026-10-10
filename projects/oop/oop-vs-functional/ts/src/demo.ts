@@ -2,6 +2,8 @@
 //     objects, and says whether the version with functions produced exactly the same receipt.
 // PT: `bun run demo` imprime o recibo de cada cenário compartilhado, calculado pela versão com
 //     objetos, e diz se a versão com funções produziu exatamente o mesmo recibo.
+// ES: `bun run demo` imprime el recibo de cada escenario compartido, calculado por la versión con
+//     objetos, e indica si la versión con funciones produjo exactamente el mismo recibo.
 
 import { formatOutcome, runWithFunctions, runWithObjects } from "./run";
 import { loadScenarios } from "./scenarios";

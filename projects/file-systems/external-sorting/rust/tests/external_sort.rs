@@ -43,6 +43,8 @@ fn lines_of(path: &std::path::Path) -> io::Result<Vec<Vec<u8>>> {
 //     same file. These values are also asserted by the Go tests.
 // PT: O gerador é o contrato entre as duas linguagens: a mesma semente precisa dar o mesmo
 //     arquivo. Estes valores também são verificados pelos testes em Go.
+// ES: El generador es el contrato entre los dos lenguajes: la misma semilla debe dar el mismo
+//     archivo. Estos valores también los verifican las pruebas en Go.
 #[test]
 fn generator_is_deterministic() -> io::Result<()> {
     let directory = temp("generator")?;
@@ -84,6 +86,10 @@ fn generator_is_deterministic() -> io::Result<()> {
 // PT: Aceite de MP-FS-2.2: para vários formatos de entrada, tamanhos de run e fan-ins, a saída
 //     da ordenação externa é exatamente a lista de linhas da entrada ordenada na memória. Ser
 //     igual a essa lista significa "ordenada" e também "mesmo multiconjunto de linhas".
+// ES: Aceptación de MP-FS-2.2: para varios formatos de entrada, tamaños de run y fan-ins, la
+//     salida de la ordenación externa es exactamente la lista de líneas de la entrada ordenada
+//     en memoria. Ser igual a esa lista significa "ordenada" y también "mismo multiconjunto de
+//     líneas".
 #[test]
 fn output_equals_in_memory_sort() -> io::Result<()> {
     let directory = temp("equality")?;
@@ -234,6 +240,8 @@ fn input_without_final_line_break_and_long_lines() -> io::Result<()> {
 //     line are all detected.
 // PT: As próprias verificações são testadas: um arquivo fora de ordem, uma linha faltando e uma
 //     linha alterada são todos detectados.
+// ES: Las propias verificaciones se prueban: un archivo desordenado, una línea faltante y una
+//     línea alterada se detectan todos.
 #[test]
 fn inspection_detects_wrong_outputs() -> io::Result<()> {
     let directory = temp("inspect")?;

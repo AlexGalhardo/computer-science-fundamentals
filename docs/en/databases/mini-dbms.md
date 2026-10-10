@@ -1,6 +1,6 @@
 # Mini relational DBMS (MP-DB-1)
 
-> Versão em português: [docs/pt/databases/mini-dbms.md](../../pt/databases/mini-dbms.md)
+> Versão em português: [docs/pt/databases/mini-dbms.md](../../pt/databases/mini-dbms.md) · Versión en español: [docs/es/databases/mini-dbms.md](../../es/databases/mini-dbms.md)
 
 Code: [projects/databases/mini-dbms](../../../projects/databases/mini-dbms). Languages: Rust and Python.
 
@@ -29,7 +29,7 @@ Projection keeps the requested columns. Dropping columns can make different rows
 
 All three receive two tables and one column of each, and return the pairs of rows whose keys are equal.
 
-```
+```text
 nested loop          hash join                    sort-merge join
 
 for r in R:          build: for s in S:           sort R by key

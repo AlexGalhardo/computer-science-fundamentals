@@ -4,6 +4,9 @@
 // PT: `docker compose run --rm report`. Lê os resumos brutos do k6 em `k6-results/`, grava
 //     `results/` e as tabelas dos dois READMEs, e termina com erro quando o teste de carga não
 //     mostrou o que a lição afirma.
+// ES: `docker compose run --rm report`. Lee los resúmenes en bruto de k6 en `k6-results/`,
+//     escribe `results/` y las tablas de los tres README, y termina con error cuando la
+//     prueba de carga no mostró lo que afirma la lección.
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
@@ -63,6 +66,7 @@ writeFileSync(
 for (const [file, language] of [
 	["README.md", "en"],
 	["README.pt-BR.md", "pt"],
+	["README.es.md", "es"],
 ] as const) {
 	const path = join(config.PROJECT_DIR, file);
 	const withStampede = injectTable(readFileSync(path, "utf8"), "stampede", renderStampedeTable(stampede, language));

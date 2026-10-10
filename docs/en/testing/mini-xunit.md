@@ -1,6 +1,6 @@
 # Mini xUnit from scratch (MP-TEST-5)
 
-> Versão em português: [docs/pt/testing/mini-xunit.md](../../pt/testing/mini-xunit.md)
+> Versão em português: [docs/pt/testing/mini-xunit.md](../../pt/testing/mini-xunit.md) · Versión en español: [docs/es/testing/mini-xunit.md](../../es/testing/mini-xunit.md)
 
 Mini-project: [`projects/testing/mini-xunit`](../../../projects/testing/mini-xunit/README.md). Quiz topic: `unit-tests-isolation`.
 
@@ -8,7 +8,7 @@ Mini-project: [`projects/testing/mini-xunit`](../../../projects/testing/mini-xun
 
 Almost every test framework in use (JUnit, pytest, NUnit, the runner of Bun) descends from one small design, called xUnit. It has four parts:
 
-```
+```text
                       +--------------+
    discovery ------>  |  TestSuite   |  a list of things that can run
                       +--------------+
@@ -61,10 +61,10 @@ The **location** of a failure is taken from the stack: the deepest frame that is
 
 The **exit code** is what scripts and CI read: 0 for green, 1 for red, and 2 when no test was found, because a run with zero tests must not look like success.
 
-```
+```text
 FAIL CartTest.test_total_with_discount
      expected 100 but got 90.0
-     at examples/failing/cart_xtest.py:25
+     at examples/failing/cart_xtest.py:28
 2 run, 1 failed
 ```
 

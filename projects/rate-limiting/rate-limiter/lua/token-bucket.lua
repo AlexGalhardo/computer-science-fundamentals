@@ -16,6 +16,15 @@
 --     Duas instâncias com relógios algumas centenas de milissegundos diferentes discordariam
 --     sobre quantas fichas foram ganhas. Chamar TIME e depois escrever é permitido porque o
 --     Redis replica os efeitos de um script (as escritas), não o seu texto.
+-- ES: Token bucket en Redis, como UN script atómico.
+--     KEYS[1] = hash con el balde de este cliente. ARGV[1] = capacidad. ARGV[2] = tiempo en
+--     milisegundos para llenar el balde entero.
+--     Devuelve { admitida (1 o 0), fichas enteras restantes, milisegundos hasta la próxima ficha }.
+--
+--     El reloj es el del servidor Redis (TIME), no el de la instancia de la aplicación que
+--     llamó. Dos instancias con relojes que difieren unos cientos de milisegundos discreparían
+--     sobre cuántas fichas se ganaron. Llamar a TIME y luego escribir está permitido porque
+--     Redis replica los efectos de un script (las escrituras), no su texto.
 local capacity = tonumber(ARGV[1])
 local window_ms = tonumber(ARGV[2])
 
@@ -26,6 +35,8 @@ local now_ms = tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)
 --     credits, and each millisecond earns `capacity` credits. A missing key is a full bucket.
 -- PT: As mesmas unidades inteiras de "crédito" da versão em memória: uma ficha vale window_ms
 --     créditos, e cada milissegundo rende `capacity` créditos. Chave ausente é balde cheio.
+-- ES: Las mismas unidades enteras de "crédito" de la versión en memoria: una ficha vale
+--     window_ms créditos, y cada milisegundo rinde `capacity` créditos. Clave ausente es balde lleno.
 local full = capacity * window_ms
 local state = redis.call('HMGET', KEYS[1], 'credit', 'last_ms')
 local credit = tonumber(state[1]) or full
@@ -44,6 +55,9 @@ redis.call('HSET', KEYS[1], 'credit', credit, 'last_ms', now_ms)
 --     missing key means. So the key may expire and idle clients cost no memory.
 -- PT: Depois de window_ms sem requisições o balde está cheio de novo, que é exatamente o que
 --     uma chave ausente significa. Então a chave pode expirar e clientes ociosos não custam memória.
+-- ES: Después de window_ms sin solicitudes el balde vuelve a estar lleno, que es exactamente lo
+--     que significa una clave ausente. Así la clave puede expirar y los clientes inactivos no
+--     cuestan memoria.
 redis.call('PEXPIRE', KEYS[1], window_ms)
 
 local retry_ms = 0

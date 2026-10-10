@@ -1,6 +1,6 @@
 # Bancos de dados (teoria)
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 A teoria de bancos de dados explica como os dados são modelados como relações, consultados com uma linguagem declarativa e armazenados de modo que as consultas continuem rápidas e os dados continuem corretos. O modelo relacional, a álgebra relacional, a normalização, os índices e a otimização de consultas são as ideias por trás de todo banco SQL, e são o que permite projetar um esquema e ler um plano de consulta em vez de adivinhar.
 

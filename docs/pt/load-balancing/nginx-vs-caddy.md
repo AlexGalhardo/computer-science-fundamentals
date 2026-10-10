@@ -1,6 +1,6 @@
 # NGINX contra Caddy
 
-> English version: [docs/en/load-balancing/nginx-vs-caddy.md](../../en/load-balancing/nginx-vs-caddy.md)
+> English version: [docs/en/load-balancing/nginx-vs-caddy.md](../../en/load-balancing/nginx-vs-caddy.md) · Versión en español: [docs/es/load-balancing/nginx-vs-caddy.md](../../es/load-balancing/nginx-vs-caddy.md)
 
 Mini-projeto: [projects/load-balancing/nginx-vs-caddy](../../../projects/load-balancing/nginx-vs-caddy/README.pt-BR.md) (MP-LB-1). Linguagens: arquivos de configuração e TypeScript.
 
@@ -26,7 +26,7 @@ NGINX e Caddy respondem a essas perguntas, com palavras diferentes e, mais impor
 
 O laboratório faz a `api-3` responder em 40 ms e as outras em 10 ms, e mantém 30 requisições em andamento. O least connections mantém cerca de 10 em cada instância. Uma instância que segura 10 requisições de 10 ms termina 1000 por segundo, e uma que segura 10 requisições de 40 ms termina 250 por segundo:
 
-```
+```text
 taxa     = em andamento / tempo por requisição
 api-1    = 10 / 0,010 s = 1000 requisições/s
 api-2    = 10 / 0,010 s = 1000 requisições/s

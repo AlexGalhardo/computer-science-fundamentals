@@ -6,6 +6,10 @@
 //     método que recebe um limpa e confere de novo: a regra de e-mail abaixo está escrita três
 //     vezes. O compilador não distingue nome, e-mail e telefone, então describe() pode ser
 //     chamado com os argumentos em qualquer ordem.
+// ES: MAL OLOR: Obsesión por los Primitivos. Un correo y un teléfono son "solo strings", así
+//     que todo método que recibe uno lo limpia y lo verifica de nuevo: la regla de correo de
+//     abajo está escrita tres veces. El compilador no distingue nombre, correo y teléfono, así
+//     que describe() puede llamarse con los argumentos en cualquier orden.
 public final class SignupBefore implements Signup {
   @Override
   public String register(String name, String email, String phone) {

@@ -6,6 +6,10 @@ defmodule PureFunctionsProperties.Cases do
   PT: Lê `cases.json`, os exemplos compartilhados com a implementação em TypeScript, e
       transforma os objetos JSON em camelCase nos maps com chaves átomo que o código Elixir
       usa. Ler um arquivo é um efeito, então isso fica aqui, na borda, longe dos módulos puros.
+  ES: Lee `cases.json`, los ejemplos compartidos con la implementación en TypeScript, y
+      transforma los objetos JSON en camelCase en los maps con claves átomo que el código
+      Elixir usa. Leer un archivo es un efecto, así que esto queda aquí, en el borde, lejos de
+      los módulos puros.
   """
 
   def load do

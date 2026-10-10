@@ -2,6 +2,8 @@
 //     check, the README injection, and the guard that keeps k6 pointed at the lab.
 // PT: O relatório é código puro, então é testado sem contêineres: agregação, a conferência do
 //     aceite, a injeção no README, e a guarda que mantém o k6 apontado para o laboratório.
+// ES: El reporte es código puro, así que se prueba sin contenedores: agregación, la verificación
+//     de aceptación, la inyección en el README, y la guarda que mantiene k6 apuntando al laboratorio.
 
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
@@ -143,10 +145,14 @@ describe("aggregation and tables", () => {
 		expect(rows[0]?.dbReadsPer1000).toBeCloseTo(196);
 	});
 
-	test("tables exist in both languages", () => {
+	test("tables exist in the three languages", () => {
 		expect(renderStampedeTable(aggregateStampede(good), "en")).toContain("| `lock` | 1 | 4 | 4 | **1** | 1 |");
 		expect(renderStampedeTable(aggregateStampede(good), "pt")).toContain("Consultas por expiração");
 		expect(renderHitRateTable(aggregateHitRate(good), "pt")).toContain(
+			"| `cache-aside` | 1000 ms | 1 | 80.0% ± 0.0 |",
+		);
+		expect(renderStampedeTable(aggregateStampede(good), "es")).toContain("Consultas por expiración");
+		expect(renderHitRateTable(aggregateHitRate(good), "es")).toContain(
 			"| `cache-aside` | 1000 ms | 1 | 80.0% ± 0.0 |",
 		);
 	});
@@ -178,6 +184,8 @@ describe("configuration", () => {
 //     container. It is plain JavaScript, so what it exports is checked before it is called.
 // PT: A guarda mora na pasta do k6, que o docker-compose monta só para leitura no contêiner de
 //     teste. É JavaScript puro, então o que ela exporta é conferido antes de ser chamado.
+// ES: La guarda vive en la carpeta de k6, que docker-compose monta solo de lectura en el
+//     contenedor de pruebas. Es JavaScript puro, así que lo que exporta se verifica antes de llamarlo.
 describe("k6 target guard", () => {
 	const guardSchema = z.object({
 		assertLocalTarget: z.custom<(url: string) => string>((value) => typeof value === "function"),

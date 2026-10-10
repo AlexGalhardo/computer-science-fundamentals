@@ -4,6 +4,9 @@
 // PT: VULNERÁVEL DE PROPÓSITO. Este arquivo existe só para demonstrar SQL injection dentro deste
 //     laboratório local. Nunca copie e nunca importe de fora deste mini-projeto.
 //     A versão segura é `../fixed/fixed-queries.ts`.
+// ES: VULNERABLE A PROPÓSITO. Este archivo existe solo para demostrar SQL injection dentro de este
+//     laboratorio local. Nunca lo copies ni lo importes desde fuera de este miniproyecto.
+//     La versión segura es `../fixed/fixed-queries.ts`.
 
 import type { Pool } from "pg";
 import { fakePasswordHash, type Product, type User } from "../db";
@@ -16,6 +19,10 @@ import { fakePasswordHash, type Product, type User } from "../db";
 //     recebe UMA string e não tem como saber qual parte o programador escreveu e qual parte o
 //     usuário escreveu. Uma aspa digitada pelo usuário fecha o literal de texto, e o que vier
 //     depois é lido como código SQL.
+// ES: La falla está aquí: el texto escrito por el usuario se pega dentro del texto del SQL. La base de
+//     datos recibe UNA cadena y no tiene cómo saber qué parte escribió el programador y qué parte
+//     escribió el usuario. Una comilla escrita por el usuario cierra el literal de texto, y lo que
+//     venga después se lee como código SQL.
 export function buildVulnerableLoginSql(username: string, password: string): string {
 	return `SELECT id, username FROM users WHERE username = '${username}' AND password_hash = '${fakePasswordHash(password)}'`;
 }

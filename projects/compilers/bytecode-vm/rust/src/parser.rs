@@ -11,6 +11,9 @@ const UNARY_POWER: u8 = 8;
 // PT: A tabela de precedência da linguagem, idêntica à do MP-COMP-1: um número maior liga mais
 //     forte. Manter os mesmos números nos dois parsers é o que garante que os dois constroem a
 //     mesma árvore para o mesmo texto.
+// ES: La tabla de precedencia del lenguaje, idéntica a la del MP-COMP-1: un número mayor enlaza
+//     más fuerte. Mantener los mismos números en los dos parsers es lo que garantiza que ambos
+//     construyan el mismo árbol para el mismo texto.
 fn binding_power(kind: TokenKind) -> Option<u8> {
     Some(match kind {
         TokenKind::Equal => 1,
@@ -210,6 +213,10 @@ impl Parser {
     //     enquanto ligarem mais forte que `min_power`. Um operador associativo à esquerda lê seu
     //     lado direito com a própria força; a atribuição, associativa à direita, lê com uma
     //     unidade a menos.
+    // ES: Análisis de Pratt, como en el MP-COMP-1: lee un operando y absorbe operadores infijos
+    //     mientras enlacen más fuerte que `min_power`. Un operador asociativo a la izquierda lee
+    //     su lado derecho con su propia fuerza; la asignación, asociativa a la derecha, lee con
+    //     una unidad menos.
     fn expression(&mut self, min_power: u8) -> Parsed<Expr> {
         let mut left = self.prefix()?;
         loop {

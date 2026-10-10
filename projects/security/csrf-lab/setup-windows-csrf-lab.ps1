@@ -4,10 +4,15 @@
 # PT: Constrói e testa o mini-projeto csrf-lab. O único requisito é o Docker.
 #     Roda os testes unitários (ts-test) e os testes com navegador (e2e, Playwright).
 #     Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
+# ES: Construye y prueba el miniproyecto csrf-lab. El único requisito es Docker.
+#     Ejecuta las pruebas unitarias (ts-test) y las pruebas con navegador (e2e, Playwright).
+#     Los contenedores y volúmenes se eliminan al final, incluso cuando una prueba falla.
 # EN: Docker writes its progress to stderr. With "Stop", Windows PowerShell 5.1 turns that into a
 #     terminating error whenever the output is redirected, so failures are checked by exit code.
 # PT: O Docker escreve o progresso em stderr. Com "Stop", o Windows PowerShell 5.1 transforma isso
 #     em erro fatal sempre que a saída é redirecionada, então as falhas são conferidas pelo código de saída.
+# ES: Docker escribe el progreso en stderr. Con "Stop", Windows PowerShell 5.1 convierte eso en un
+#     error fatal siempre que la salida se redirige, así que los fallos se comprueban por el código de salida.
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot

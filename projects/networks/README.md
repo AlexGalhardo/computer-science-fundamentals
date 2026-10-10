@@ -1,6 +1,6 @@
 # Networks
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Computer networks are the layers of protocols that move bytes between machines: from signals on a wire, through frames, packets and routes, up to reliable connections and the applications built on them. Almost every program today talks to another one, so knowing what TCP, IP, DNS and Ethernet actually guarantee is what separates guessing from diagnosing.
 

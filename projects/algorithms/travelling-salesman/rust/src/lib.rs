@@ -8,6 +8,12 @@
 //!     `ts/src/`, onde cada um é explicado em detalhe. O que muda aqui é o fator constante:
 //!     código compilado sobre vetores planos empurra o muro da força bruta uma cidade adiante,
 //!     e só. Uma linguagem mais rápida compra uma cidade a mais, um algoritmo melhor compra dez.
+//! ES: Los solucionadores del viajante de comercio en Rust: fuerza bruta, Held-Karp, vecino más
+//!     cercano y 2-opt. Mismos algoritmos y mismas decisiones que la referencia en TypeScript en
+//!     `ts/src/`, donde cada uno se explica en detalle. Lo que cambia aquí es el factor constante:
+//!     código compilado sobre vectores planos empuja el muro de la fuerza bruta una ciudad más
+//!     allá, y nada más. Un lenguaje más rápido compra una ciudad más, un algoritmo mejor
+//!     compra diez.
 
 use std::time::{Duration, Instant};
 
@@ -32,6 +38,9 @@ impl Instance {
     //     build the same cities and the same integer distances from the same seed.
     // PT: Mesmo gerador de Lehmer e mesmo arredondamento do lado TypeScript, então as duas
     //     linguagens montam as mesmas cidades e as mesmas distâncias inteiras da mesma semente.
+    // ES: Mismo generador de Lehmer y mismo redondeo que el lado TypeScript, así los dos
+    //     lenguajes construyen las mismas ciudades y las mismas distancias enteras con la
+    //     misma semilla.
     pub fn random(n: usize, seed: u64) -> Self {
         let mut state = (seed * 1000 + n as u64) % 2_147_483_646 + 1;
         let mut next = || {
@@ -72,6 +81,8 @@ impl Instance {
 
     // EN: A tour is valid when it starts at city 0 and visits every city exactly once.
     // PT: Um passeio é válido quando começa na cidade 0 e visita cada cidade exatamente uma vez.
+    // ES: Un recorrido es válido cuando empieza en la ciudad 0 y visita cada ciudad
+    //     exactamente una vez.
     pub fn is_valid_tour(&self, tour: &[usize]) -> bool {
         let mut seen = vec![false; self.n];
         tour.len() == self.n
@@ -97,6 +108,8 @@ impl Search<'_> {
     //     (swap in, recurse, swap back). There is no pruning on purpose: (n - 1)! orders.
     // PT: As posições 0..depth-1 estão fixas. Cada cidade restante ocupa a posição `depth` por
     //     vez (troca, recursão, destroca). Não há poda de propósito: (n - 1)! ordens.
+    // ES: Las posiciones 0..depth-1 están fijas. Cada ciudad restante ocupa la posición `depth`
+    //     por turno (intercambia, recursión, deshace). No hay poda a propósito: (n - 1)! órdenes.
     fn permute(&mut self, depth: usize, length: i32) {
         if self.timed_out {
             return;
@@ -111,6 +124,7 @@ impl Search<'_> {
             }
             // EN: Reading the clock is slow, so it is checked once every 2^20 complete tours.
             // PT: Ler o relógio é lento, então ele é conferido uma vez a cada 2^20 passeios.
+            // ES: Leer el reloj es lento, así que se comprueba una vez cada 2^20 recorridos.
             self.leaves += 1;
             if self.leaves & 0xf_ffff == 0 && self.deadline.is_some_and(|d| Instant::now() > d) {
                 self.timed_out = true;
@@ -162,6 +176,10 @@ pub fn brute_force(instance: &Instance, deadline: Option<Duration>) -> Option<So
 //     conjunto S e termina em j. Um conjunto é uma máscara de bits sobre as cidades 1..n-1. As
 //     máscaras são preenchidas em ordem crescente, porque remover uma cidade sempre dá uma
 //     máscara menor. Tempo O(n² · 2^n) e memória O(n · 2^n).
+// ES: Held-Karp: cost(S, j) es el camino más corto que parte de la ciudad 0, visita exactamente el
+//     conjunto S y termina en j. Un conjunto es una máscara de bits sobre las ciudades 1..n-1. Las
+//     máscaras se llenan en orden creciente, porque quitar una ciudad siempre da una
+//     máscara menor. Tiempo O(n² · 2^n) y memoria O(n · 2^n).
 pub fn held_karp(instance: &Instance) -> Solution {
     let n = instance.n;
     if n < 2 {
@@ -221,6 +239,7 @@ pub fn held_karp(instance: &Instance) -> Solution {
 
     // EN: Walk the parents backwards from the last city to rebuild the tour.
     // PT: Percorre os pais de trás para frente, a partir da última cidade, para remontar o passeio.
+    // ES: Recorre los padres hacia atrás, desde la última ciudad, para reconstruir el recorrido.
     let mut tour = Vec::with_capacity(n);
     let mut mask = full;
     while end >= 0 {
@@ -238,6 +257,9 @@ pub fn held_karp(instance: &Instance) -> Solution {
 //     no guarantee of quality. The strict `<` keeps the lowest index on a tie.
 // PT: Vizinho mais próximo: vai sempre à cidade ainda não visitada mais próxima. O(n²), um
 //     passeio válido, sem garantia de qualidade. O `<` estrito mantém o menor índice no empate.
+// ES: Vecino más cercano: va siempre a la ciudad aún no visitada más próxima. O(n²), un
+//     recorrido válido, sin garantía de calidad. El `<` estricto mantiene el menor índice en
+//     el empate.
 pub fn nearest_neighbour(instance: &Instance) -> Solution {
     let n = instance.n;
     if n == 0 {
@@ -271,6 +293,9 @@ pub fn nearest_neighbour(instance: &Instance) -> Solution {
 // PT: 2-opt: troca os trechos a→b e c→e por a→c e b→e, o que inverte o pedaço entre b e c,
 //     sempre que isso encurta o passeio. Repete até nenhum par de trechos melhorar. O resultado
 //     é um ótimo local. Parte do passeio do vizinho mais próximo.
+// ES: 2-opt: cambia los tramos a→b y c→e por a→c y b→e, lo que invierte el pedazo entre b y c,
+//     siempre que eso acorte el recorrido. Repite hasta que ningún par de tramos mejore. El
+//     resultado es un óptimo local. Parte del recorrido del vecino más cercano.
 pub fn two_opt(instance: &Instance) -> Solution {
     let mut tour = nearest_neighbour(instance).tour;
     let n = tour.len();
@@ -300,6 +325,7 @@ mod tests {
 
     // EN: The documented factors (see the README), the same as in the TypeScript tests.
     // PT: Os fatores documentados (veja o README), os mesmos dos testes em TypeScript.
+    // ES: Los factores documentados (mira el README), los mismos de las pruebas en TypeScript.
     const NEAREST_NEIGHBOUR_FACTOR: f64 = 1.6;
     const TWO_OPT_FACTOR: f64 = 1.2;
 
@@ -307,6 +333,8 @@ mod tests {
     fn known_instance() {
         // EN: A square of side 10 with a city in the middle of one edge: the best tour is 40.
         // PT: Um quadrado de lado 10 com uma cidade no meio de uma aresta: o melhor passeio é 40.
+        // ES: Un cuadrado de lado 10 con una ciudad en medio de una arista: el mejor recorrido
+        //     es 40.
         let square = Instance::from_points(&[
             (0.0, 0.0),
             (5.0, 0.0),
@@ -364,6 +392,9 @@ mod tests {
     // PT: Comprimentos impressos pela referência em TypeScript para as mesmas instâncias
     //     (semente 1). Números iguais provam que as duas linguagens montam as mesmas cidades e
     //     concordam nas respostas.
+    // ES: Longitudes impresas por la referencia en TypeScript para las mismas instancias
+    //     (semilla 1). Números iguales prueban que los dos lenguajes construyen las mismas ciudades
+    //     y coinciden en las respuestas.
     #[test]
     fn agrees_with_the_typescript_reference() {
         assert_eq!(held_karp(&Instance::random(18, 1)).length, 3108);

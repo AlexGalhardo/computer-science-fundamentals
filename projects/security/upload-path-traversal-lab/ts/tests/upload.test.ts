@@ -4,6 +4,9 @@
 // PT: No que o upload confia: o tipo declarado, o tamanho, e os cabeçalhos usados para devolver
 //     um arquivo. As mesmas funções de cenário contra as duas versões, mais o uso legítimo que
 //     precisa continuar funcionando depois da correção.
+// ES: En qué confía la carga: el tipo declarado, el tamaño, y las cabeceras usadas para devolver
+//     un archivo. Las mismas funciones de escenario contra las dos versiones, más el uso legítimo que
+//     debe seguir funcionando después de la corrección.
 
 import { describe, expect, test } from "bun:test";
 import { readdir } from "node:fs/promises";
@@ -71,6 +74,7 @@ describe("fixed API: the same attempts are blocked", () => {
 
 // EN: Normal use must work on both versions: the fix removes the holes, not the feature.
 // PT: O uso normal precisa funcionar nas duas versões: a correção tira os buracos, não a função.
+// ES: El uso normal debe funcionar en las dos versiones: la corrección tapa los agujeros, no la función.
 describe.each<Version>(["vulnerable", "fixed"])("%s API: normal use works", (version) => {
 	test("a text file, a PNG and a PDF are uploaded and downloaded again, byte for byte", async () => {
 		const trips = await withLab(version, normalUse);
@@ -131,6 +135,8 @@ describe("fixed API: size limit enforced while reading", () => {
 	//     Content-Length. The server must stop pulling right after the limit, not at the end.
 	// PT: O corpo é um stream que entregaria 64 MiB, em pedaços de 64 KiB, e não manda
 	//     Content-Length. O servidor precisa parar de puxar logo depois do limite, não no fim.
+	// ES: El cuerpo es un stream que entregaría 64 MiB, en trozos de 64 KiB, y no manda
+	//     Content-Length. El servidor debe dejar de leer justo después del límite, no al final.
 	test("a streamed body is cut off right after the limit, long before its end", async () => {
 		await withLab("fixed", async (lab) => {
 			const chunk = new Uint8Array(64 * 1024).fill(0x61);

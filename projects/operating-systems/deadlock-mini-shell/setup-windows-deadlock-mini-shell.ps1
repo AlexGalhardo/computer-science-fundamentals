@@ -4,6 +4,9 @@
 # PT: Constrói e testa o mini-projeto deadlock-mini-shell e depois roda as duas demos: o
 #     relatório de impasses (que grava results/) e um script no mini shell. O único requisito
 #     é o Docker.
+# ES: Construye y prueba el mini-proyecto deadlock-mini-shell y luego ejecuta las dos demos: el
+#     informe de deadlocks (que escribe results/) y un script en el mini shell. El único
+#     requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

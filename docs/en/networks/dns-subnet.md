@@ -1,6 +1,6 @@
 # DNS resolver and subnet calculator
 
-> Versão em português: [docs/pt/networks/dns-subnet.md](../../pt/networks/dns-subnet.md)
+> Versão em português: [docs/pt/networks/dns-subnet.md](../../pt/networks/dns-subnet.md) · Versión en español: [docs/es/networks/dns-subnet.md](../../es/networks/dns-subnet.md)
 
 Mini-project: [`projects/networks/dns-subnet`](../../../projects/networks/dns-subnet/README.md). Languages: Go and TypeScript. Quiz topics: `networks` / `application-layer` and `networks` / `network-layer`.
 
@@ -22,7 +22,7 @@ No server has the whole answer, and none of them asks another one. A server that
 
 The resolver starts knowing one thing: the address of the root server. It asks the same question at each level and follows the referrals. This is the committed trace ([results/resolution.txt](../../../projects/networks/dns-subnet/results/resolution.txt)):
 
-```
+```text
 1. www.example.test. A
   ask 10.253.53.2     (zone .)  www.example.test. A -> referral: test. is served by ns.test.
   ask 10.253.53.3     (zone test.)  www.example.test. A -> referral: example.test. is served by ns1.example.test.
@@ -34,7 +34,7 @@ The resolver starts knowing one thing: the address of the root server. It asks t
 
 Every record carries a TTL chosen by its owner: for how many seconds the answer may be reused. The cache in `go/resolver/cache.go` stores each record set until its shortest TTL runs out and hands records on with the time they have left.
 
-```
+```text
 2. www.example.test. A
   cache                        www.example.test. A -> answer: www.example.test. 3 A 192.0.2.10
   queries sent: 0
@@ -87,7 +87,7 @@ An IPv4 address is a 32-bit number. A prefix `/n` says that the first n bits ide
 
 Worked example, `192.168.10.77/26`:
 
-```
+```text
 address    11000000.10101000.00001010.01 001101   192.168.10.77
 mask       11111111.11111111.11111111.11 000000   255.255.255.192
 network    11000000.10101000.00001010.01 000000   192.168.10.64

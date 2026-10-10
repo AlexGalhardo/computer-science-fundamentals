@@ -1,6 +1,6 @@
 # SOLID antes e depois
 
-> English version: [docs/en/design-patterns/solid-before-after.md](../../en/design-patterns/solid-before-after.md)
+> English version: [docs/en/design-patterns/solid-before-after.md](../../en/design-patterns/solid-before-after.md) · Versión en español: [docs/es/design-patterns/solid-before-after.md](../../es/design-patterns/solid-before-after.md)
 
 Mini-projeto MP-PAT-2, em [`projects/design-patterns/solid-before-after`](../../../projects/design-patterns/solid-before-after). Ensina o que cada princípio SOLID evita, medindo o custo de um requisito novo em um módulo que quebra o princípio e na sua refatoração.
 

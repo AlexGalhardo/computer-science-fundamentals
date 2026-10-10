@@ -6,6 +6,10 @@
 //     sobre qual protocolo carregou o documento e cada uma das 200 imagens (`nextHopProtocol` das
 //     APIs Navigation Timing e Resource Timing), então o teste não confia na configuração: ele
 //     confere o que de fato aconteceu no fio.
+// ES: El protocolo negociado, comprobado en cada uno de los nueve puertos. Se le pregunta al
+//     navegador qué protocolo transportó el documento y cada una de las 200 imágenes
+//     (`nextHopProtocol` de las APIs Navigation Timing y Resource Timing), así que la prueba no
+//     confía en la configuración: comprueba lo que realmente ocurrió en la red.
 
 import { type Browser, expect, test } from "@playwright/test";
 import { fetchServerKeyHash, launchBrowser, loadPage } from "../src/browser";
@@ -47,6 +51,8 @@ test("the HTTP/1.1 port refuses to negotiate h2: ALPN picks the best protocol bo
 	//     of what the server offers on each one.
 	// PT: O navegador oferece h2 e http/1.1 em toda porta TLS. A resposta só difere por causa do
 	//     que o servidor oferece em cada uma.
+	// ES: El navegador ofrece h2 y http/1.1 en todo puerto TLS. La respuesta solo difiere por lo
+	//     que ofrece el servidor en cada uno.
 	const h1 = await loadPage(browser, originOf(settings.SITE_HOST, 8001));
 	const h2 = await loadPage(browser, originOf(settings.SITE_HOST, 8002));
 	expect(h1.documentProtocol).toBe("http/1.1");
@@ -64,6 +70,8 @@ test("the h3 port advertises HTTP/3 in Alt-Svc, and a browser that was not told 
 	//     available over h3 on UDP port 8003".
 	// PT: Um cliente HTTPS comum (sem QUIC) vê o anúncio: "esta mesma origem também está
 	//     disponível em h3 na porta UDP 8003".
+	// ES: Un cliente HTTPS común (sin QUIC) ve el anuncio: "este mismo origen también está
+	//     disponible en h3 en el puerto UDP 8003".
 	const response = await request.get(`${origin}/`, { ignoreHTTPSErrors: true });
 	expect(response.headers()["alt-svc"]).toContain('h3=":8003"');
 
@@ -71,6 +79,8 @@ test("the h3 port advertises HTTP/3 in Alt-Svc, and a browser that was not told 
 	//     very first request goes over TCP and negotiates h2.
 	// PT: Um navegador sem conhecimento prévio não tem como adivinhar que um servidor fala
 	//     HTTP/3, então a sua primeira requisição vai por TCP e negocia h2.
+	// ES: Un navegador sin conocimiento previo no tiene forma de adivinar que un servidor habla
+	//     HTTP/3, así que su primera petición va por TCP y negocia h2.
 	const untold = await launchBrowser({ host: settings.SITE_HOST, conditions: allConditions, keyHash }, false);
 	try {
 		const load = await loadPage(untold, origin);

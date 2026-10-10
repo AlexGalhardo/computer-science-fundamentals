@@ -9,6 +9,8 @@ from mini_xunit import TestCase
 #     "test_". Each method gets its own new Cart.
 # PT: Estenda TestCase, monte a fixture no `set_up`, escreva métodos cujos nomes começam com
 #     "test_". Cada método recebe um Cart novo só dele.
+# ES: Extiende TestCase, arma el fixture en `set_up`, escribe métodos cuyos nombres empiezan con
+#     "test_". Cada método recibe un Cart nuevo solo para él.
 
 
 class CartTest(TestCase):

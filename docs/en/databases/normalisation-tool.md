@@ -1,6 +1,6 @@
 # Normalisation tool (MP-DB-2)
 
-> Versão em português: [docs/pt/databases/normalisation-tool.md](../../pt/databases/normalisation-tool.md)
+> Versão em português: [docs/pt/databases/normalisation-tool.md](../../pt/databases/normalisation-tool.md) · Versión en español: [docs/es/databases/normalisation-tool.md](../../es/databases/normalisation-tool.md)
 
 Code: [projects/databases/normalisation-tool](../../../projects/databases/normalisation-tool). Language: Python.
 
@@ -16,7 +16,7 @@ docker compose run --rm explain
 
 `X -> Y` holds when two rows that agree on `X` always agree on `Y`. The **closure** `X+` is everything `X` determines. The algorithm starts with `X` and keeps adding the right side of any dependency whose left side is already inside, until nothing changes.
 
-```
+```text
 F = { A -> B, B -> C, CD -> E }
 
 {A}+ :  {A}  --A->B-->  {A, B}  --B->C-->  {A, B, C}      (CD -> E needs D: stop)
@@ -57,7 +57,7 @@ An attribute is **prime** when it belongs to some candidate key. With `X -> A` a
 
 **BCNF by splitting.** While a relation has a determinant `X` that is not a key, split it into `X+` and the rest plus `X`. The result is always lossless, but a dependency can be lost. The classic case:
 
-```
+```text
 AULA(aluno, disciplina, professor)
   aluno, disciplina -> professor        professor -> disciplina
 
@@ -71,7 +71,7 @@ That is the trade-off between the two forms: 3NF can always keep the dependencie
 
 A decomposition is lossless when joining the pieces gives back exactly the original relation, with no invented rows. The chase checks it with a small table: one row per piece, `a` where the piece has the attribute and a unique `b` where it does not.
 
-```
+```text
 R(A, B, C) with A -> B, pieces {A, B} and {A, C}
 
 start            A -> B: the rows agree on A, so they must agree on B

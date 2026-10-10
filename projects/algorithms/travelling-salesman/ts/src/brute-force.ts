@@ -8,6 +8,10 @@ import type { Matrix, Solution } from "./instance";
 //     partida elimina as rotações do mesmo passeio, o que deixa (n - 1)! ordens. Não há poda de
 //     propósito: esta é a linha de base que mostra onde a busca exaustiva deixa de ser usável.
 //     10 cidades são 362.880 ordens, 13 cidades são 479 milhões, 16 cidades são 1,3 trilhão.
+// ES: Fuerza bruta: prueba todo orden de visita y se queda con el más corto. Fijar la ciudad 0 como
+//     partida elimina las rotaciones del mismo recorrido, lo que deja (n - 1)! órdenes. No hay poda
+//     a propósito: esta es la línea base que muestra dónde la búsqueda exhaustiva deja de ser usable.
+//     10 ciudades son 362,880 órdenes, 13 ciudades son 479 millones, 16 ciudades son 1.3 billones.
 export interface BruteForceOptions {
 	/** Give up after this many milliseconds. The benchmark uses it to cap hopeless sizes. */
 	deadlineMs?: number;
@@ -29,6 +33,8 @@ export function bruteForce(dist: Matrix, options: BruteForceOptions = {}): Solut
 	//     (swap in, recurse, swap back). `length` is the cost of the fixed prefix.
 	// PT: As posições 0..depth-1 estão fixas. Cada cidade restante ocupa a posição `depth` por
 	//     vez (troca, recursão, destroca). `length` é o custo do prefixo fixo.
+	// ES: Las posiciones 0..depth-1 están fijas. Cada ciudad restante ocupa la posición `depth` por
+	//     turno (intercambia, recursión, deshace). `length` es el costo del prefijo fijo.
 	function permute(depth: number, length: number): void {
 		if (timedOut) {
 			return;
@@ -42,6 +48,7 @@ export function bruteForce(dist: Matrix, options: BruteForceOptions = {}): Solut
 			}
 			// EN: Reading the clock is slow, so it is checked once every 2^20 complete tours.
 			// PT: Ler o relógio é lento, então ele é conferido uma vez a cada 2^20 passeios completos.
+			// ES: Leer el reloj es lento, así que se comprueba una vez cada 2^20 recorridos completos.
 			leaves++;
 			if (deadline !== undefined && (leaves & 0xfffff) === 0 && performance.now() > deadline) {
 				timedOut = true;

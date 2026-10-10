@@ -2,6 +2,8 @@
 //     program exits with a non-zero code if any failed.
 // PT: Testes de unidade do analisador, sem framework: cada CHECK registra uma falha, e o
 //     programa termina com código diferente de zero se alguma falhou.
+// ES: Pruebas unitarias del parser, sin framework: cada CHECK registra un fallo, y el programa
+//     termina con un código distinto de cero si alguno falló.
 
 #include <cstdlib>
 #include <iostream>

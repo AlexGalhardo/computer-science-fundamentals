@@ -1,6 +1,6 @@
 # Huffman e LZ77 (MP-INFO-1)
 
-> English version: [docs/en/information-theory/huffman-lz77.md](../../en/information-theory/huffman-lz77.md)
+> English version: [docs/en/information-theory/huffman-lz77.md](../../en/information-theory/huffman-lz77.md) · Versión en español: [docs/es/information-theory/huffman-lz77.md](../../es/information-theory/huffman-lz77.md)
 
 Código: [projects/information-theory/huffman-lz77](../../../projects/information-theory/huffman-lz77). Linguagens: Rust e Python.
 
@@ -19,7 +19,7 @@ A **entropia** diz quanto existe do primeiro tipo e, portanto, até onde um cód
 
 Para um arquivo, a entropia de ordem 0 é
 
-```
+```text
 H = soma, sobre os valores de byte que aparecem, de  p * log2(1 / p)      p = contagem / total
 ```
 
@@ -29,7 +29,7 @@ H = soma, sobre os valores de byte que aparecem, de  p * log2(1 / p)      p = co
 
 ## Huffman: códigos curtos para símbolos frequentes
 
-```
+```text
 contagens: A=5  B=2  C=1  D=1
 
 1. une os dois mais leves:  C(1) + D(1)  -> nó 2
@@ -55,7 +55,7 @@ contagens: A=5  B=2  C=1  D=1
 
 A saída é uma lista de tokens `(deslocamento, comprimento, literal)`: copie `comprimento` bytes começando `deslocamento` bytes atrás e depois escreva um byte literal.
 
-```
+```text
 entrada: a b c d e f a b c d e f X
 tokens:  (0,0,a) (0,0,b) (0,0,c) (0,0,d) (0,0,e) (0,0,f) (6,6,X)
                                                            |

@@ -4,6 +4,9 @@
 // PT: O serviço interno falso do laboratório. Ele não tem login de propósito: ele "confia na
 //     rede", que é a suposição que o SSRF quebra. Ele vive só na rede interna `lab`, em um
 //     endereço privado, e não publica porta nenhuma. O token que ele devolve é falso.
+// ES: El servicio interno falso del laboratorio. A propósito no tiene inicio de sesión: "confía en la
+//     red", que es la suposición que rompe el SSRF. Vive solo en la red interna `lab`, en una
+//     dirección privada, y no publica ningún puerto. El token que devuelve es falso.
 
 import { FAKE_INTERNAL_TOKEN, loadPort } from "../config";
 
@@ -15,6 +18,10 @@ import { FAKE_INTERNAL_TOKEN, loadPort } from "../config";
 //     forte do que "o token não foi mostrado": o app corrigido NÃO fez requisição nenhuma. Isso
 //     importa porque uma requisição pode causar dano mesmo quando a resposta nunca volta para o
 //     usuário (SSRF cego): uma rota interna pode mudar estado só por ser chamada.
+// ES: Cuenta cuántas veces se pidió el secreto. Las pruebas leen ese número para demostrar algo más
+//     fuerte que "el token no se mostró": la app corregida NO hizo ninguna solicitud. Esto
+//     importa porque una solicitud puede causar daño incluso cuando la respuesta nunca vuelve al
+//     usuario (SSRF ciego): una ruta interna puede cambiar el estado solo por ser llamada.
 let secretHits = 0;
 
 const server = Bun.serve({

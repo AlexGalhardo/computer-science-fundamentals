@@ -5,10 +5,12 @@ export type HomeView = {
 	note: string;
 	// EN: `null` means nobody is logged in, so the page shows the login form.
 	// PT: `null` significa que ninguém está logado, então a página mostra o formulário de login.
+	// ES: `null` significa que nadie tiene la sesión iniciada, así que la página muestra el formulario de inicio de sesión.
 	username: string | null;
 	email: string;
 	// EN: `null` means this version of the app has no anti-CSRF token in its form.
 	// PT: `null` significa que esta versão do app não tem token anti-CSRF no formulário.
+	// ES: `null` significa que esta versión de la app no tiene token anti-CSRF en el formulario.
 	csrfToken: string | null;
 };
 
@@ -35,6 +37,10 @@ ${body}
 //     sincronizador: o servidor escreve um segredo no SEU PRÓPRIO formulário. Uma página de
 //     outro site consegue fazer o navegador enviar um formulário, mas não consegue ler esta
 //     página, então não tem como saber o valor.
+// ES: La única página de la app. El campo oculto `csrfToken` es toda la idea del token
+//     sincronizador: el servidor escribe un secreto en SU PROPIO formulario. Una página de
+//     otro sitio puede hacer que el navegador envíe un formulario, pero no puede leer esta
+//     página, así que no tiene cómo saber el valor.
 export function renderHome(view: HomeView): string {
 	if (view.username === null) {
 		return layout(

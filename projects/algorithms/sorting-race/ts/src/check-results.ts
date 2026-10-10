@@ -8,6 +8,11 @@
 //     linguagem imprimiu o mesmo checksum, então todos produziram a mesma sequência ordenada;
 //     (2) quando n dobra, o merge sort leva menos de 2,5 vezes mais tempo, que é o que
 //     O(n log n) prevê (cerca de 2,1) e o que O(n²) contradiz (cerca de 4).
+// ES: `bun run ts/src/check-results.ts` lee `results/results.json` y comprueba las dos afirmaciones
+//     que hace el benchmark: (1) para el mismo archivo de entrada, todo algoritmo en todo
+//     lenguaje imprimió el mismo checksum, así que todos produjeron la misma secuencia ordenada;
+//     (2) cuando n se duplica, el merge sort tarda menos de 2.5 veces más, que es lo que
+//     O(n log n) predice (cerca de 2.1) y lo que O(n²) contradice (cerca de 4).
 
 import { readFileSync } from "node:fs";
 
@@ -26,6 +31,7 @@ const MIN_MEASURABLE_MS = 1;
 
 // EN: The results file is external input too, so its shape is checked before use.
 // PT: O arquivo de resultados também é entrada externa, então seu formato é conferido antes do uso.
+// ES: El archivo de resultados también es entrada externa, así que su formato se comprueba antes de usarlo.
 function isRow(value: unknown): value is Row {
 	if (typeof value !== "object" || value === null) {
 		return false;
@@ -85,6 +91,9 @@ for (const small of rows.filter((row) => row.implementation === "merge")) {
 	// PT: Uma ordenação que leva menos de um milissegundo é curta demais para cronometrar: a
 	//     razão entre dois números assim é quase só ruído do relógio, então esses pares são
 	//     mostrados, mas não julgados.
+	// ES: Una ordenación que tarda menos de un milisegundo es demasiado corta para cronometrar: la
+	//     razón entre dos números así es casi solo ruido del reloj, así que esos pares se
+	//     muestran, pero no se juzgan.
 	if (small.elapsedMs < MIN_MEASURABLE_MS) {
 		console.log(`${label}: x${ratio.toFixed(2)} (not judged: ${small.elapsedMs.toFixed(3)} ms is too short)`);
 		continue;
@@ -96,6 +105,10 @@ for (const small of rows.filter((row) => row.implementation === "merge")) {
 	//     lixo, que copia os dados vivos e cresce mais rápido que o algoritmo. O limite dele é
 	//     4, o fator de um algoritmo quadrático: o bastante para mostrar que o crescimento não
 	//     é quadrático.
+	// ES: Elixir ordena listas enlazadas inmutables, así que su tiempo incluye al recolector de
+	//     basura, que copia los datos vivos y crece más rápido que el algoritmo. Su límite es
+	//     4, el factor de un algoritmo cuadrático: lo bastante para mostrar que el crecimiento no
+	//     es cuadrático.
 	const limit = small.language === "elixir" ? GC_LANGUAGE_LIMIT : DOUBLING_LIMIT;
 	ratios++;
 	worst = Math.max(worst, ratio);

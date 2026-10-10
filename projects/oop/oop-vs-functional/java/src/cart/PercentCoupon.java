@@ -2,6 +2,8 @@ import java.util.List;
 
 // EN: A percentage of what is still to pay. Integer division drops fractions of a cent.
 // PT: Uma porcentagem do que ainda falta pagar. A divisão inteira descarta frações de centavo.
+// ES: Un porcentaje de lo que todavía falta por pagar. La división entera descarta las fracciones
+//     de centavo.
 public final class PercentCoupon implements DiscountRule {
   private final String code;
   private final int percent;

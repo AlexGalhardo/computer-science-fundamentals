@@ -1,6 +1,6 @@
 # Back-end design patterns
 
-> Versão em português: [docs/pt/design-patterns/backend-patterns.md](../../pt/design-patterns/backend-patterns.md)
+> Versão em português: [docs/pt/design-patterns/backend-patterns.md](../../pt/design-patterns/backend-patterns.md) · Versión en español: [docs/es/design-patterns/backend-patterns.md](../../es/design-patterns/backend-patterns.md)
 
 Mini-project MP-PAT-1, in [`projects/design-patterns/backend-patterns`](../../../projects/design-patterns/backend-patterns). It teaches which pain each of ten design patterns removes, by showing the failing design first.
 

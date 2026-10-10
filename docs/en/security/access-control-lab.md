@@ -1,6 +1,6 @@
 # Access control lab: IDOR and role checks (MP-SEC-4)
 
-> Versão em português: [docs/pt/security/access-control-lab.md](../../pt/security/access-control-lab.md)
+> Versão em português: [docs/pt/security/access-control-lab.md](../../pt/security/access-control-lab.md) · Versión en español: [docs/es/security/access-control-lab.md](../../es/security/access-control-lab.md)
 
 Mini-project: [`projects/security/access-control-lab`](../../../projects/security/access-control-lab/README.md). Quiz topics: `access-control`, `owasp-threat-modelling`.
 
@@ -22,7 +22,7 @@ Broken access control is the first item of the OWASP Top 10 because the second q
 
 ## The flaw
 
-```
+```text
 bob-fake (logged in as himself)        server (vulnerable)
 GET /invoices/1002  ------------------> load invoice 1002 -> 200, his invoice
 GET /invoices/1001  ------------------> load invoice 1001 -> 200, alice-fake's invoice

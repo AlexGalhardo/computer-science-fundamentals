@@ -4,6 +4,9 @@
 // PT: O que é particular de cada estilo, visto no fio: códigos de status no REST, a lista
 //     `errors` no GraphQL, o objeto de erro, notificações e lotes no JSON-RPC, e a contagem de
 //     comandos do N+1 com e sem lote.
+// ES: Lo que es particular de cada estilo, visto en el cable: códigos de estado en REST, la lista
+//     `errors` en GraphQL, el objeto de error, notificaciones y lotes en JSON-RPC, y el conteo de
+//     comandos del N+1 con y sin lote.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { Pool } from "pg";
@@ -85,6 +88,7 @@ describe("GraphQL: the N+1 problem and its fix with batching", () => {
 		const batched = await readShelf(app.baseUrl, "/graphql");
 		// EN: 1 for the list + one per book for the author + one per book for the reviews.
 		// PT: 1 para a lista + um por livro para o autor + um por livro para as resenhas.
+		// ES: 1 para la lista + uno por libro para el autor + uno por libro para las reseñas.
 		expect(naive.dbQueries).toBe(1 + 2 * N_PLUS_ONE_BOOKS);
 		expect(naive.dbQueries).toBeGreaterThan(100);
 		expect(batched.dbQueries).toBe(3);

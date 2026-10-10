@@ -9,6 +9,8 @@ const ana = { id: "1", name: "Ana" };
 //     that changes observable behaviour fails here.
 // PT: O contrato de `Users`, executado contra todas as formas de montar um. Uma subclasse ou um
 //     decorador que mude o comportamento observável falha aqui.
+// ES: El contrato de `Users`, ejecutado contra todas las formas de montar uno. Una subclase o un
+//     decorador que cambie el comportamiento observable falla aquí.
 function contract(name: string, create: () => Users): void {
 	test(`${name}: a read after a write returns what was written`, () => {
 		const users = create();
@@ -30,6 +32,8 @@ describe("decorator: before", () => {
 	//     records every call, including the ones served by the cache, needs a fourth class.
 	// PT: O defeito: uma classe por combinação, e só existe uma ordem de empilhamento. Um log
 	//     que registre toda chamada, inclusive as atendidas pelo cache, exige uma quarta classe.
+	// ES: El defecto: una clase por combinación, y solo existe un orden de apilamiento. Un log
+	//     que registre toda llamada, incluso las atendidas por la caché, exige una cuarta clase.
 	test("the only combination available logs just the calls that miss the cache", () => {
 		const users = new CachedLoggedUsers();
 		users.find("1");

@@ -23,6 +23,9 @@ test("insert, contains and prefix listing on a small set", () => {
 // PT: O filtro linear é a definição da resposta: olhar todas as palavras e ficar com as que
 //     começam com o prefixo. A trie precisa devolver exatamente o mesmo conjunto, para prefixos
 //     que existem, para palavras inteiras e para prefixos que não casam com nada.
+// ES: El filtro lineal es la definición de la respuesta: mirar todas las palabras y quedarse con las
+//     que empiezan con el prefijo. El trie debe devolver exactamente el mismo conjunto, para prefijos
+//     que existen, para palabras enteras y para prefijos que no coinciden con nada.
 test("prefix search over 100,000 words returns the same set as a linear filter", () => {
 	const words = generateWords(100_000, 7);
 	expect(words.length).toBe(100_000);

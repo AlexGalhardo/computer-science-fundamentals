@@ -7,6 +7,8 @@ import { createUnstableApi, FAILURE_RATE } from "../../src/unstable-api";
 //     parameter, and here it is a function that returns a chosen number.
 // PT: Até o serviço que simula azar é testado sem sorte: a fonte aleatória dele é um parâmetro, e
 //     aqui ela é uma função que devolve um número escolhido.
+// ES: Incluso el servicio que simula mala suerte se prueba sin suerte: su fuente aleatoria es un parámetro, y
+//     aquí es una función que devuelve un número elegido.
 const request = new Request("http://unstable-api:3000/rates/USD-BRL");
 
 test("answers the rate when the random draw is at or above the failure rate", async () => {

@@ -1,6 +1,6 @@
 # Detecção de impasses e um mini shell
 
-> English version: [docs/en/operating-systems/deadlock-mini-shell.md](../../en/operating-systems/deadlock-mini-shell.md)
+> English version: [docs/en/operating-systems/deadlock-mini-shell.md](../../en/operating-systems/deadlock-mini-shell.md) · Versión en español: [docs/es/operating-systems/deadlock-mini-shell.md](../../es/operating-systems/deadlock-mini-shell.md)
 
 Mini-projeto: [`projects/operating-systems/deadlock-mini-shell`](../../../projects/operating-systems/deadlock-mini-shell/). Item do plano: MP-OS-4. Tópicos do quiz: `operating-systems` / `deadlocks`, `introduction-and-system-calls` e `processes-and-threads`.
 
@@ -76,7 +76,7 @@ A saída completa da demo está em [`results/results.md`](../../../projects/oper
 
 O `msh` lê uma linha, transforma-a em um pipeline e o executa.
 
-```
+```text
 sort < in.txt | uniq | wc -l > out.txt
 
   in.txt --> [ sort ] --pipe--> [ uniq ] --pipe--> [ wc -l ] --> out.txt

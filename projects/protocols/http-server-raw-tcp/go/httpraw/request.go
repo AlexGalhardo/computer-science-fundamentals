@@ -101,6 +101,10 @@ func readLine(r *bufio.Reader, limit int) (string, error) {
 	//     aceite também um LF sozinho, e este aceita. O que ele NÃO pode aceitar é um CR solto
 	//     no meio da linha: dois programas que discordam sobre onde uma linha termina podem ser
 	//     levados a enxergar requisições diferentes nos mesmos bytes (request smuggling).
+	// ES: HTTP/1.1 termina toda línea con CRLF ("\r\n"). El estándar permite que un servidor
+	//     acepte también un LF solo, y este lo acepta. Lo que NO puede aceptar es un CR suelto
+	//     en medio de la línea: dos programas que discrepan sobre dónde termina una línea
+	//     pueden terminar viendo peticiones distintas en los mismos bytes (request smuggling).
 	var line []byte
 	for {
 		b, err := r.ReadByte()
@@ -154,6 +158,8 @@ func ReadRequest(r *bufio.Reader, limits Limits) (*Request, error) {
 	//     "GET /hello/ana HTTP/1.1". Exactly two spaces, so exactly three parts.
 	// PT: Parte 1, a linha de requisição: MÉTODO SP ALVO SP VERSÃO, por exemplo
 	//     "GET /hello/ana HTTP/1.1". Exatamente dois espaços, então exatamente três partes.
+	// ES: Parte 1, la línea de petición: MÉTODO SP DESTINO SP VERSIÓN, por ejemplo
+	//     "GET /hello/ana HTTP/1.1". Exactamente dos espacios, así que exactamente tres partes.
 	line, err := readLine(r, limits.MaxRequestLine)
 	if err != nil {
 		switch {
@@ -188,6 +194,8 @@ func ReadRequest(r *bufio.Reader, limits Limits) (*Request, error) {
 	//     empty line is the only thing that separates the headers from the body.
 	// PT: Parte 2, os campos de cabeçalho: um "Nome: valor" por linha, até uma linha VAZIA.
 	//     Essa linha vazia é a única coisa que separa os cabeçalhos do corpo.
+	// ES: Parte 2, los campos de cabecera: un "Nombre: valor" por línea, hasta una línea VACÍA.
+	//     Esa línea vacía es lo único que separa las cabeceras del cuerpo.
 	headerBytes := 0
 	for count := 0; ; count++ {
 		// The +1 lets a line that exactly fills the remaining budget be told from one that exceeds it.
@@ -218,6 +226,9 @@ func ReadRequest(r *bufio.Reader, limits Limits) (*Request, error) {
 		// PT: Uma linha que começa com espaço significava "continuação do cabeçalho anterior".
 		//     Isso é obsoleto e recusado, assim como um espaço entre o nome e os dois-pontos:
 		//     os dois casos são lidos de formas diferentes por programas diferentes.
+		// ES: Una línea que empieza con espacio significaba "continuación de la cabecera anterior".
+		//     Eso es obsoleto y se rechaza, igual que un espacio entre el nombre y los dos puntos:
+		//     ambos casos los leen de forma distinta programas distintos.
 		if line[0] == ' ' || line[0] == '\t' {
 			return nil, refuse(400, "obsolete line folding in a header")
 		}
@@ -232,6 +243,8 @@ func ReadRequest(r *bufio.Reader, limits Limits) (*Request, error) {
 	//     Host is how the server knows which one the client wants.
 	// PT: O HTTP/1.1 exige exatamente um cabeçalho Host: um endereço IP pode servir vários
 	//     sites, e é pelo Host que o servidor sabe qual deles o cliente quer.
+	// ES: HTTP/1.1 exige exactamente una cabecera Host: una dirección IP puede servir varios
+	//     sitios, y es por el Host que el servidor sabe cuál de ellos quiere el cliente.
 	if req.Proto == "HTTP/1.1" && len(req.Header["host"]) != 1 {
 		return nil, refuse(400, "HTTP/1.1 requires exactly one Host header")
 	}
@@ -245,6 +258,11 @@ func ReadRequest(r *bufio.Reader, limits Limits) (*Request, error) {
 	//     Content-Length. Uma requisição com Transfer-Encoding é recusada com 501 em vez de
 	//     ser adivinhada: um servidor que ignorasse o cabeçalho leria o corpo errado e trataria
 	//     os bytes dele como uma nova requisição.
+	// ES: Parte 3, el cuerpo. Nada en el flujo de bytes marca su final, así que las cabeceras
+	//     deben decir el tamaño. Este servidor lee solo cuerpos delimitados por Content-Length.
+	//     Una petición con Transfer-Encoding se rechaza con 501 en lugar de adivinarse: un
+	//     servidor que ignorara la cabecera leería mal el cuerpo y trataría sus bytes como una
+	//     petición nueva.
 	if len(req.Header["transfer-encoding"]) > 0 {
 		return nil, refuse(501, "request bodies with Transfer-Encoding are not supported")
 	}
@@ -272,6 +290,9 @@ func contentLength(h Header) (int64, error) {
 	// PT: O valor precisa ter só dígitos. "+5", "5 5" ou "0x10" são recusados, assim como dois
 	//     cabeçalhos Content-Length que discordam: adivinhar qual está certo é como um proxy e
 	//     um servidor acabam discordando sobre onde a requisição termina.
+	// ES: El valor debe tener solo dígitos. "+5", "5 5" o "0x10" se rechazan, igual que dos
+	//     cabeceras Content-Length que discrepan: adivinar cuál es la correcta es como un proxy
+	//     y un servidor terminan discrepando sobre dónde termina la petición.
 	values := h["content-length"]
 	if len(values) == 0 {
 		return 0, nil

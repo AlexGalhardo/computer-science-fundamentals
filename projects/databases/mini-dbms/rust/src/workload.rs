@@ -8,6 +8,10 @@ use crate::table::{Table, Value};
 //     escrito à mão, com as mesmas constantes da versão em Python, para que as duas linguagens
 //     montem exatamente as mesmas tabelas a partir da mesma semente e seus resultados possam ser
 //     comparados por um checksum.
+// ES: Un generador congruencial lineal: un generador de números pseudoaleatorios diminuto. Está
+//     escrito a mano, con las mismas constantes de la versión en Python, para que los dos
+//     lenguajes armen exactamente las mismas tablas a partir de la misma semilla y sus
+//     resultados puedan compararse con un checksum.
 pub struct Lcg(u64);
 
 impl Lcg {
@@ -22,6 +26,8 @@ impl Lcg {
             .wrapping_add(1_442_695_040_888_963_407);
         // EN: The high bits of an LCG are more random than the low ones, so the low 33 are dropped.
         // PT: Os bits altos de um LCG são mais aleatórios que os baixos, então os 33 baixos saem.
+        // ES: Los bits altos de un LCG son más aleatorios que los bajos, así que se descartan los
+        //     33 bajos.
         (self.0 >> 33) % bound
     }
 }
@@ -42,6 +48,12 @@ const MODULUS: u64 = 1_000_000_007;
 //     é primo e não divide uma potência de dez). Assim cada linha de R casa com exatamente uma
 //     linha de S, e a junção devolve n linhas. S é embaralhada para que a junção por ordenação
 //     realmente precise ordenar.
+// ES: La carga del benchmark: R(id, k) y S(k, v), ambas con n filas. R.k es aleatorio en [0, n),
+//     así que algunas claves se repiten y otras nunca aparecen. S.k toma cada valor de [0, n)
+//     exactamente una vez, en orden mezclado (i * 7919 + 13 mod n es una permutación porque 7919
+//     es primo y no divide una potencia de diez). Así cada fila de R coincide con exactamente
+//     una fila de S, y el join devuelve n filas. S se mezcla para que el sort-merge realmente
+//     tenga que ordenar.
 pub fn bench_tables(n: usize) -> (Table, Table) {
     let size = n as u64;
     let mut random = Lcg::new(SEED);
@@ -67,6 +79,9 @@ pub fn bench_tables(n: usize) -> (Table, Table) {
 // PT: Um resumo do resultado da junção que não depende da ordem dos pares: a quantidade de
 //     pares e a soma de R.id * S.v. Duas implementações que imprimem o mesmo checksum acharam os
 //     mesmos casamentos, seja qual for a ordem em que os acharam.
+// ES: Un resumen del resultado del join que no depende del orden de los pares: la cantidad de
+//     pares y la suma de R.id * S.v. Dos implementaciones que imprimen el mismo checksum
+//     encontraron las mismas coincidencias, sea cual sea el orden en que las encontraron.
 pub fn checksum(r: &Table, s: &Table, pairs: &[Pair]) -> String {
     let mut total: u64 = 0;
     for &(i, j) in pairs {

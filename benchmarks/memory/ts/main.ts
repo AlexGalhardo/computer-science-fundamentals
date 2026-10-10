@@ -8,6 +8,11 @@
 //     aloca objetos. O coletor é geracional: varre os objetos jovens com frequência, porque a
 //     maioria já morreu, e o heap inteiro raramente. Parte do trabalho acontece em threads
 //     auxiliares, então o tempo de CPU pode passar do tempo de relógio.
+// ES: Carga de memoria en TypeScript sobre Bun: `binary-trees` e `idle`. Modelo de JavaScript: un
+//     recolector de basura de rastreo dentro del motor (JavaScriptCore en Bun). El programa solo
+//     asigna objetos. El recolector es generacional: barre los objetos jóvenes con frecuencia, porque la
+//     mayoría ya murió, y el heap completo rara vez. Parte del trabajo ocurre en threads
+//     auxiliares, así que el tiempo de CPU puede superar el tiempo de reloj.
 
 import { readFileSync } from "node:fs";
 
@@ -22,6 +27,7 @@ function make(depth: number): TreeNode {
 
 // EN: Walks the whole tree and counts its nodes.
 // PT: Percorre a árvore inteira e conta os nós.
+// ES: Recorre el árbol completo y cuenta los nodos.
 function check(node: TreeNode): number {
 	return node.left === null || node.right === null ? 1 : 1 + check(node.left) + check(node.right);
 }

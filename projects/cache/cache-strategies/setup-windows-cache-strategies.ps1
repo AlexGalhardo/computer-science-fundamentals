@@ -4,10 +4,15 @@
 # PT: Constrói e testa o mini-projeto cache-strategies. O único requisito é o Docker.
 #     Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
 #     Para o teste de carga com k6 e as tabelas de resultados, rode .\load-test-windows.ps1.
+# ES: Construye y prueba el miniproyecto cache-strategies. El único requisito es Docker.
+#     Los contenedores y volúmenes se eliminan al final, incluso cuando una prueba falla.
+#     Para la prueba de carga con k6 y las tablas de resultados, ejecuta .\load-test-windows.ps1.
 # EN: Docker writes its progress to stderr. With "Stop", Windows PowerShell 5.1 turns that into a
 #     terminating error whenever the output is redirected, so failures are checked by exit code.
 # PT: O Docker escreve o progresso em stderr. Com "Stop", o Windows PowerShell 5.1 transforma isso
 #     em erro fatal sempre que a saída é redirecionada, então as falhas são conferidas pelo código de saída.
+# ES: Docker escribe su progreso en stderr. Con "Stop", Windows PowerShell 5.1 lo convierte en
+#     un error fatal siempre que la salida se redirige, así que las fallas se verifican por el código de salida.
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot

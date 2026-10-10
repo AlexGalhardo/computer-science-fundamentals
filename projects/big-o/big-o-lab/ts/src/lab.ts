@@ -2,6 +2,8 @@
 //     time, and fit a curve to the counts.
 // PT: O experimento em si: roda cada amostra em cada tamanho, registra a contagem de operações e
 //     o tempo, e ajusta uma curva às contagens.
+// ES: El experimento en sí: ejecuta cada muestra en cada tamaño, registra el conteo de operaciones
+//     y el tiempo, y ajusta una curva a los conteos.
 
 import { type FitReport, fitCurve } from "./fit";
 import { type ComplexityClass, SAMPLES, type Sample } from "./samples";
@@ -36,6 +38,10 @@ function median(values: number[]): number {
 // PT: Tempo tem ruído: o coletor de lixo, o compilador JIT e outros processos interferem. Por
 //     isso a mesma entrada roda várias vezes e fica a mediana, que ignora a execução lenta
 //     ocasional. A contagem de operações não precisa disso: é igual em toda execução e máquina.
+// ES: El tiempo tiene ruido: el recolector de basura, el compilador JIT y otros procesos
+//     interfieren. Por eso la misma entrada se ejecuta varias veces y nos quedamos con la
+//     mediana, que ignora la ejecución lenta ocasional. El conteo de operaciones no necesita
+//     esto: es igual en toda ejecución y en toda máquina.
 export function measure(sample: Sample, n: number, repetitions: number): Measurement {
 	const input = sample.prepare(n);
 	const times: number[] = [];

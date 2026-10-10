@@ -11,6 +11,12 @@ import { z } from "zod";
 //
 //     A carga só é enviada para este laboratório: os alvos vêm de uma variável cujo padrão são
 //     os dois serviços do compose, e o teste se recusa a começar quando algum host não é local.
+// ES: Dos instancias de la aplicación, un Redis, y una multitud de solicitudes concurrentes
+//     repartidas entre las dos. Esta prueba corre dentro de docker-compose, en una red interna.
+//
+//     La carga solo se envía a este laboratorio: los destinos vienen de una variable cuyo valor
+//     por defecto son los dos servicios del compose, y la prueba se niega a empezar cuando algún
+//     host no es local.
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "limiter-a", "limiter-b"]);
 
 const env = z
@@ -43,6 +49,8 @@ const bodySchema = z.object({ allowed: z.boolean(), remaining: z.number(), insta
 //     same time, alternating between the two instances.
 // PT: Todas as requisições são criadas antes de se esperar qualquer resposta, então estão todas
 //     em voo ao mesmo tempo, alternando entre as duas instâncias.
+// ES: Todas las solicitudes se crean antes de esperar cualquier respuesta, así que están todas
+//     en vuelo al mismo tiempo, alternando entre las dos instancias.
 async function crowd(strategy: string): Promise<Outcome> {
 	const key = `${strategy}-${crypto.randomUUID()}`;
 	const started = performance.now();
@@ -74,6 +82,9 @@ describe(`two instances, one Redis, ${REQUESTS} concurrent requests, limit ${env
 	// PT: O limite é um orçamento compartilhado, não um orçamento por instância: um cliente que
 	//     gasta tudo pela instância A é recusado pela instância B já na requisição seguinte.
 	//     Aqui as requisições vão uma por vez, então o resultado não depende de tempo.
+	// ES: El límite es un presupuesto compartido, no un presupuesto por instancia: un cliente que
+	//     gasta todo por la instancia A es rechazado por la instancia B ya en la solicitud siguiente.
+	//     Aquí las solicitudes van una por una, así que el resultado no depende del tiempo.
 	test("what a client spends on one instance is gone on the other", async () => {
 		expect(targets.length).toBe(2);
 		const key = `shared-${crypto.randomUUID()}`;
@@ -96,6 +107,8 @@ describe(`two instances, one Redis, ${REQUESTS} concurrent requests, limit ${env
 		//     runs must still be caught.
 		// PT: Várias rodadas, cada uma com uma chave de cliente nova: uma corrida que aparece
 		//     uma vez em dez execuções ainda precisa ser pega.
+		// ES: Varias rondas, cada una con una clave de cliente nueva: una carrera que aparece una
+		//     vez cada diez ejecuciones todavía debe ser detectada.
 		for (let round = 0; round < 5; round++) {
 			const outcome = await crowd("fixed-window");
 			expect(outcome.admitted).toBe(env.LIMIT);
@@ -130,6 +143,11 @@ describe(`two instances, one Redis, ${REQUESTS} concurrent requests, limit ${env
 		//     seguido de INCR não é: muitas requisições leem o contador antes de alguém incrementá-lo.
 		//     Uma corrida depende de tempo, e algumas rodadas admitem exatamente o limite por
 		//     sorte. Por isso as rodadas se repetem até uma ultrapassá-lo, no máximo vinte vezes.
+		// ES: Este es el bug que el script corrige. Cada comando de Redis es atómico, pero GET
+		//     seguido de INCR no lo es: muchas solicitudes leen el contador antes de que alguien lo
+		//     incremente. Una carrera depende del tiempo, y algunas rondas admiten exactamente el
+		//     límite por suerte. Por eso las rondas se repiten hasta que una lo supere, como máximo
+		//     veinte veces.
 		const admitted: number[] = [];
 		for (let round = 0; round < 20 && Math.max(0, ...admitted) <= env.LIMIT; round++) {
 			admitted.push((await crowd("naive")).admitted);

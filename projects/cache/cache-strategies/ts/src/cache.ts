@@ -4,6 +4,9 @@
 // PT: Uma camada fina sobre o cliente Redis que vem com o Bun, só com os comandos que este
 //     laboratório precisa e um nome por ideia. O que volta do Redis é dado externo, então é
 //     conferido antes de ser usado.
+// ES: Una capa delgada sobre el cliente Redis que viene con Bun, solo con los comandos que
+//     necesita este laboratorio y un nombre por idea. Lo que vuelve de Redis es dato externo,
+//     así que se verifica antes de usarlo.
 
 import { RedisClient } from "bun";
 import { z } from "zod";
@@ -16,6 +19,10 @@ import { z } from "zod";
 //     enviados pelo cliente, a trava poderia expirar e ser pega por outro, e o DEL apagaria a
 //     trava DELE. Um script Lua roda dentro do Redis como um passo atômico, então nada acontece
 //     entre a comparação e a remoção.
+// ES: Liberar un bloqueo debe ser "elimínalo solo si sigue siendo mío". Entre un GET y un DEL
+//     enviados por el cliente, el bloqueo podría expirar y ser tomado por otro, y el DEL
+//     eliminaría SU bloqueo. Un script Lua se ejecuta dentro de Redis como un solo paso atómico,
+//     así que nada puede ocurrir entre la comparación y la eliminación.
 const RELEASE_LOCK = `if redis.call("GET", KEYS[1]) == ARGV[1] then
 	return redis.call("DEL", KEYS[1])
 end
@@ -58,6 +65,9 @@ export class Cache {
 	// PT: `SET key token NX PX ttl` é a trava: NX grava a chave só se ela não existir, então
 	//     exatamente um chamador recebe "OK". PX dá validade à trava, então um dono que cai não
 	//     bloqueia todo mundo para sempre.
+	// ES: `SET key token NX PX ttl` es el bloqueo: NX guarda la clave solo si no existe, así que
+	//     exactamente un llamador recibe "OK". PX le da vencimiento al bloqueo, así que un titular
+	//     que se cae no bloquea a todos para siempre.
 	async acquireLock(key: string, token: string, ttlMs: number): Promise<boolean> {
 		const reply: unknown = await this.client.send("SET", [key, token, "NX", "PX", String(ttlMs)]);
 		return reply === "OK";

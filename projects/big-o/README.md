@@ -1,6 +1,6 @@
 # Big O and algorithm analysis
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Algorithm analysis is the tool for predicting how the cost of a program grows with the size of its input, before running it. It gives the vocabulary (O, Ω, Θ), the techniques (counting operations, recurrences, amortised analysis) and the limits (lower bounds, P and NP) that every other area in this repository relies on when it says that something is fast or slow.
 

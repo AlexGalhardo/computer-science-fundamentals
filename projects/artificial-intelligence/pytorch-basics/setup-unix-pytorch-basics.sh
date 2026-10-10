@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # EN: Builds and tests the pytorch-basics mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto pytorch-basics. O único requisito é o Docker.
+# ES: Construye y prueba el miniproyecto pytorch-basics. El único requisito es Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -12,6 +13,7 @@ fi
 
 # EN: The demo container writes ./results, so it runs with the uid and gid of this user.
 # PT: O container da demo grava ./results, então roda com o uid e o gid deste usuário.
+# ES: El contenedor de la demo escribe ./results, así que se ejecuta con el uid y el gid de este usuario.
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID
@@ -24,5 +26,7 @@ echo "pytorch-basics: all tests passed"
 #     tables and the loss chart in ./results.
 # PT: A demo confere os gradientes, treina a rede, mede o tempo das duas versões e regrava as
 #     tabelas e o gráfico de perda em ./results.
+# ES: La demo comprueba los gradientes, entrena la red, mide el tiempo de las dos versiones y
+#     reescribe las tablas y el gráfico de pérdida en ./results.
 docker compose run --rm python-demo
 echo "pytorch-basics: results written to results/"

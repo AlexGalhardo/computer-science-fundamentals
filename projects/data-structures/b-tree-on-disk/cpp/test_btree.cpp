@@ -47,6 +47,8 @@ void basics() {
 	//     comes from the pages on disk.
 	// PT: O primeiro objeto da árvore não existe mais e o arquivo foi fechado. Tudo o que um
 	//     objeto novo sabe vem das páginas em disco.
+	// ES: El primer objeto del árbol ya no existe y el archivo se cerró. Todo lo que un objeto
+	//     nuevo sabe viene de las páginas en disco.
 	BTree reopened(path, BTree::OpenExisting{});
 	check(reopened.size() == 19 && reopened.search(14) == std::optional<Value>(2),
 	      "basics: the tree survives closing and reopening the file");
@@ -61,6 +63,10 @@ void basics() {
 //     resposta precisa bater, e as invariantes são conferidas pelo caminho e no fim. Graus
 //     pequenos com uma faixa pequena de chaves fazem divisões, empréstimos e fusões acontecerem
 //     o tempo todo.
+// ES: 100,000 operaciones aleatorias corren en el árbol B y en un std::map a la vez. Cada
+//     respuesta debe coincidir, y las invariantes se verifican por el camino y al final. Grados
+//     pequeños con un rango pequeño de claves hacen que divisiones, préstamos y fusiones ocurran
+//     todo el tiempo.
 void random_operations(std::size_t degree, std::uint64_t key_range) {
 	const std::string name = "random, t = " + std::to_string(degree);
 	const std::string path = directory + "/random.btree";
@@ -112,6 +118,9 @@ void random_operations(std::size_t degree, std::uint64_t key_range) {
 	// PT: Remover tudo precisa trazer a árvore de volta a uma folha vazia, e as páginas
 	//     liberadas no caminho precisam ser reaproveitadas: esvaziar a árvore e inserir as
 	//     mesmas chaves na mesma ordem pela segunda vez não pode fazer o arquivo crescer.
+	// ES: Quitar todo debe traer el árbol de vuelta a una hoja vacía, y las páginas liberadas
+	//     en el camino deben reutilizarse: vaciar el árbol e insertar las mismas claves en el
+	//     mismo orden por segunda vez no puede hacer crecer el archivo.
 	for (const auto& [key, value] : reference) {
 		same = same && tree.remove(key);
 	}
@@ -136,6 +145,8 @@ void random_operations(std::size_t degree, std::uint64_t key_range) {
 //     reads more pages than the height of the tree, and that height is 3.
 // PT: O sentido do mini-projeto inteiro em uma verificação: com um milhão de chaves, nenhuma
 //     busca lê mais páginas que a altura da árvore, e essa altura é 3.
+// ES: El sentido del mini-proyecto entero en una verificación: con un millón de claves, ninguna
+//     búsqueda lee más páginas que la altura del árbol, y esa altura es 3.
 void page_reads() {
 	const Comparison result = compare(1000000, directory);
 	std::cout << "1,000,000 keys: B-tree height " << result.btree_height

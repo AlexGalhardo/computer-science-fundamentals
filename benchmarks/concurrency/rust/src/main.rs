@@ -12,6 +12,13 @@
 //     `.await`. A linguagem não traz runtime embutido, então o tokio, o usual, fornece: um pool
 //     de threads do SO, uma por núcleo, que executa as tarefas prontas e rouba trabalho entre
 //     as threads. Uma tarefa parada custa uma pequena alocação no heap, não uma pilha.
+// ES: Carga de concurrencia en Rust: n tareas esperan en una compuerta, la compuerta se abre, cada
+//     tarea envía su número por un canal, y la suma es el checksum.
+//     Modelo de Rust: tareas asíncronas en tokio. Un bloque `async` se compila a una
+//     máquina de estados (una corrutina sin stack) que guarda solo lo que vive a través de un
+//     `.await`. El lenguaje no trae un runtime integrado, así que lo aporta tokio, el habitual: un
+//     pool de threads del SO, uno por núcleo, que ejecuta las tareas listas y roba trabajo entre
+//     los threads. Una tarea detenida cuesta una pequeña asignación en el heap, no un stack.
 
 use std::time::Instant;
 use tokio::sync::{mpsc, watch};
@@ -19,6 +26,7 @@ use tokio::sync::{mpsc, watch};
 async fn run(n: u64) -> u64 {
     // EN: A watch channel holds one value that every task can observe: here, "is the gate open".
     // PT: Um canal watch guarda um valor que toda tarefa pode observar: aqui, "o portão abriu".
+    // ES: Un canal watch guarda un valor que toda tarea puede observar: aquí, "la compuerta se abrió".
     let (open_gate, gate) = watch::channel(false);
     let (sender, mut mailbox) = mpsc::unbounded_channel::<u64>();
 
@@ -34,6 +42,8 @@ async fn run(n: u64) -> u64 {
     // EN: Dropping the last sender held here lets the receive loop end when the tasks finish.
     // PT: Soltar o último sender mantido aqui deixa o laço de recebimento acabar quando as
     //     tarefas terminam.
+    // ES: Soltar el último sender que se mantiene aquí deja que el bucle de recepción termine
+    //     cuando las tareas acaban.
     drop(sender);
     open_gate.send(true).expect("tasks are listening");
 
@@ -46,6 +56,7 @@ async fn run(n: u64) -> u64 {
 
 // EN: VmHWM in /proc/self/status is the peak resident memory, in kibibytes.
 // PT: VmHWM em /proc/self/status é o pico de memória residente, em kibibytes.
+// ES: VmHWM en /proc/self/status es el pico de memoria residente, en kibibytes.
 fn peak_memory_kb() -> u64 {
     std::fs::read_to_string("/proc/self/status")
         .ok()

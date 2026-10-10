@@ -1,5 +1,6 @@
 # EN: Builds and tests the gates-karnaugh-adders mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto gates-karnaugh-adders. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto gates-karnaugh-adders. El único requisito es Docker.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 
@@ -21,6 +22,7 @@ Write-Output "gates-karnaugh-adders: all tests passed"
 
 # EN: The demos print truth tables, minimal expressions and an addition, and rewrite ./results.
 # PT: As demos imprimem tabelas-verdade, expressoes minimas e uma soma, e regravam ./results.
+# ES: Las demos imprimen tablas de verdad, expresiones minimas y una suma, y reescriben ./results.
 docker compose run --rm ts-demo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 docker compose run --rm python-demo

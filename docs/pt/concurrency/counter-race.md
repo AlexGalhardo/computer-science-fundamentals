@@ -1,6 +1,6 @@
 # Condição de corrida no contador
 
-> English version: [docs/en/concurrency/counter-race.md](../../en/concurrency/counter-race.md)
+> English version: [docs/en/concurrency/counter-race.md](../../en/concurrency/counter-race.md) · Versión en español: [docs/es/concurrency/counter-race.md](../../es/concurrency/counter-race.md)
 
 Mini-projeto: [projects/concurrency/counter-race](../../../projects/concurrency/counter-race/README.pt-BR.md) (MP-CONC-1). Linguagens: Go, Rust, Java, TypeScript, Elixir.
 
@@ -8,7 +8,7 @@ Mini-projeto: [projects/concurrency/counter-race](../../../projects/concurrency/
 
 `counter++` não é um passo só. O processador lê o valor, soma 1 e grava o resultado de volta. Quando duas threads executam esses três passos ao mesmo tempo, isto pode acontecer:
 
-```
+```text
 thread A            thread B            contador
 lê 41                                   41
                     lê 41               41

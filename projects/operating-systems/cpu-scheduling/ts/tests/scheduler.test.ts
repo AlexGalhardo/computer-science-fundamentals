@@ -17,6 +17,8 @@ function jobs(bursts: number[], priorities: number[] = []): Process[] {
 //     each worked out by hand there.
 // PT: Os números esperados abaixo são os documentados em docs/pt/operating-systems/cpu-scheduling.md,
 //     cada um calculado à mão lá.
+// ES: Los números esperados abajo son los documentados en docs/es/operating-systems/cpu-scheduling.md,
+//     cada uno calculado a mano allí.
 
 test("FCFS: bursts 24, 3, 3 wait 0, 24 and 27 (average 17)", () => {
 	const schedule = simulate(jobs([24, 3, 3]), fcfs());
@@ -149,6 +151,7 @@ test("the generator is reproducible and the report has every policy for every wo
 	}
 	// EN: Round-robin exists to answer quickly: its response time beats FCFS on the mixed workload.
 	// PT: O round-robin existe para responder rápido: seu tempo de resposta ganha do FCFS na carga mista.
+	// ES: El round-robin existe para responder rápido: su tiempo de respuesta le gana a FCFS en la carga mixta.
 	const mixed = report.workloads[2]?.rows ?? [];
 	expect(mixed[2]?.response).toBeLessThan(mixed[0]?.response ?? 0);
 });

@@ -4,6 +4,10 @@
 // PT: Transforma os resumos do k6 na tabela de resultados versionada. Cada configuração rodou
 //     várias rodadas, e a tabela mostra a mediana com a faixa (da menor à maior rodada), porque uma
 //     execução em máquina compartilhada é uma anedota: diferença menor que a faixa não é resultado.
+// ES: Convierte los resúmenes de k6 en la tabla de resultados versionada. Cada configuración corrió
+//     varias rondas, y la tabla muestra la mediana con el rango (de la ronda menor a la mayor), porque
+//     una ejecución en una máquina compartida es una anécdota: una diferencia menor que el rango no
+//     es un resultado.
 
 import { z } from "zod";
 
@@ -20,6 +24,7 @@ const phaseSchema = z.object({
 
 // EN: The summaries are files written by another tool, so they are validated like any input.
 // PT: Os resumos são arquivos escritos por outra ferramenta, então são validados como qualquer entrada.
+// ES: Los resúmenes son archivos escritos por otra herramienta, así que se validan como cualquier entrada.
 export const summarySchema = z.object({
 	setup: z.enum(SETUPS),
 	round: z.number().int().min(1),
@@ -57,7 +62,7 @@ export interface Row {
 	memoryMib: Spread;
 }
 
-export type Language = "en" | "pt";
+export type Language = "en" | "pt" | "es";
 
 export function spread(values: number[]): Spread {
 	const sorted = [...values].sort((a, b) => a - b);
@@ -94,6 +99,9 @@ export function aggregate(summaries: Summary[]): Row[] {
 // PT: O que precisa valer para a tabela significar algo: as três configurações foram medidas, e
 //     nenhuma requisição falhou. Qual configuração é mais rápida NÃO é afirmado: isso é a medição,
 //     não uma regra.
+// ES: Lo que debe cumplirse para que la tabla signifique algo: las tres configuraciones se midieron y
+//     ninguna solicitud falló. Cuál configuración es más rápida NO se afirma: eso es la medición, no
+//     una regla.
 export function violations(summaries: Summary[]): string[] {
 	const problems: string[] = [];
 	for (const setup of SETUPS) {
@@ -137,6 +145,16 @@ const HEADERS: Record<Language, string[]> = {
 		"I/O-bound: requisições/s",
 		"I/O-bound: p95 (ms)",
 		"Pico de memória (MiB)",
+	],
+	es: [
+		"Configuración",
+		"Runtime",
+		"Rondas",
+		"CPU-bound: solicitudes/s",
+		"CPU-bound: p95 (ms)",
+		"I/O-bound: solicitudes/s",
+		"I/O-bound: p95 (ms)",
+		"Pico de memoria (MiB)",
 	],
 };
 

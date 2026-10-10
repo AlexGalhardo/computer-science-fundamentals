@@ -4,6 +4,9 @@
 // PT: QUEBRA O PRINCÍPIO ABERTO-FECHADO. A lista de tipos de cliente está escrita dentro da
 //     função. Todo tipo novo é uma edição em código que já funciona e já está testado, e
 //     ninguém de fora deste arquivo consegue acrescentar um.
+// ES: ROMPE EL PRINCIPIO ABIERTO-CERRADO. La lista de tipos de cliente está escrita dentro de
+//     la función. Todo tipo nuevo es una edición en código que ya funciona y ya está probado, y
+//     nadie fuera de este archivo puede añadir uno.
 export function discountCents(kind: string, totalCents: number): number {
 	if (kind === "regular") {
 		return 0;

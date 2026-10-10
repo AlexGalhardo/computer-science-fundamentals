@@ -7,6 +7,9 @@ import { checkSteps, parseLog } from "../scripts/history";
 // PT: O próprio verificador é testado com pequenos históricos escritos à mão: um que segue o
 //     ritmo e um para cada jeito de quebrá-lo. Um verificador que aceita tudo tornaria sem
 //     sentido o critério de aceite deste mini-projeto.
+// ES: El propio verificador se prueba con pequeños historiales escritos a mano: uno que sigue el
+//     ritmo y uno por cada forma de romperlo. Un verificador que acepta todo volvería absurdo
+//     el criterio de aceptación de este mini-proyecto.
 const GOOD = `
 aaaaaa1 chore(tdd-kata): scaffold
 aaaaaa2 test(tdd-kata): red - first

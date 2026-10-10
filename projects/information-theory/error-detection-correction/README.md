@@ -1,6 +1,6 @@
 # error-detection-correction
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How does redundancy detect and repair flipped bits? This mini-project implements, in C++, three **detecting** codes (parity bit, Internet checksum, CRC-32) and three **correcting** codes (triple repetition, Hamming(7,4) and extended Hamming(8,4)), and a **noise simulator** that sends blocks through a binary symmetric channel and counts how many damaged blocks each scheme detected, corrected or missed.
 

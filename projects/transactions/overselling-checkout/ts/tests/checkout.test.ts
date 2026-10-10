@@ -36,6 +36,8 @@ function post(path: string, body: unknown): Promise<Response> {
 //     same 10 units, exactly like the k6 load test does over HTTP.
 // PT: 200 requisições são iniciadas antes de qualquer uma ser aguardada, então todas disputam as
 //     mesmas 10 unidades, exatamente como o teste de carga do k6 faz por HTTP.
+// ES: 200 peticiones se inician antes de esperar ninguna, así que todas se disputan las
+//     mismas 10 unidades, exactamente como lo hace la prueba de carga de k6 por HTTP.
 async function rush(strategy: Strategy): Promise<Record<number, number>> {
 	await reset(pool, STOCK);
 	const responses = await Promise.all(
@@ -56,6 +58,7 @@ describe("200 concurrent buyers, 10 units", () => {
 		expect(byStatus[201]).toBe(after.orders);
 		// EN: The stock never goes negative, which is why this bug hides from a quick look.
 		// PT: O estoque nunca fica negativo, e é por isso que este bug se esconde de uma olhada rápida.
+		// ES: El stock nunca queda negativo, y por eso este bug se esconde de una mirada rápida.
 		expect(after.stock).toBeGreaterThanOrEqual(0);
 	}, 30_000);
 
@@ -82,12 +85,15 @@ describe("what a row lock blocks", () => {
 			//     is why locking only the write path does not fix a naive read.
 			// PT: Leitores não pegam bloqueio de linha no PostgreSQL (MVCC), então isto volta na hora.
 			//     É por isso que bloquear só o caminho de escrita não corrige uma leitura ingênua.
+			// ES: Los lectores no toman bloqueo de fila en PostgreSQL (MVCC), así que esto vuelve al instante.
+			//     Por eso bloquear solo el camino de escritura no corrige una lectura ingenua.
 			const plain = await other.query<{ stock: number }>("SELECT stock FROM products WHERE id = $1", [
 				PRODUCT_ID,
 			]);
 			expect(plain.rows[0]?.stock).toBe(STOCK);
 			// EN: NOWAIT turns "wait for the lock" into an immediate error, SQLSTATE 55P03.
 			// PT: NOWAIT troca "esperar o bloqueio" por um erro imediato, SQLSTATE 55P03.
+			// ES: NOWAIT cambia "esperar el bloqueo" por un error inmediato, SQLSTATE 55P03.
 			await expect(
 				other.query("SELECT stock FROM products WHERE id = $1 FOR UPDATE NOWAIT", [PRODUCT_ID]),
 			).rejects.toMatchObject({ code: "55P03" });

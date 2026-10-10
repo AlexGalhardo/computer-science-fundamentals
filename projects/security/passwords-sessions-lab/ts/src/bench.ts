@@ -8,6 +8,11 @@
 //     mesma senha falsa repetidas vezes e conta. Não há lista de senhas candidatas, nenhum hash
 //     guardado sendo comparado e nenhum laço que para quando algo confere: isto mede as funções
 //     e não adivinha nada.
+// ES: El benchmark: `docker compose run --rm bench`. Responde una pregunta: ¿cuántos hashes
+//     por segundo calcula en esta máquina cada esquema de almacenamiento? Calcula el hash de la
+//     misma contraseña falsa repetidas veces y cuenta. No hay lista de contraseñas candidatas, ningún hash
+//     guardado que se compare y ningún ciclo que se detenga cuando algo coincide: esto mide las funciones
+//     y no adivina nada.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, release, totalmem, type } from "node:os";
@@ -23,6 +28,8 @@ export interface Subject {
 	//     ones need few, or the benchmark would take minutes.
 	// PT: Hashes calculados em uma rodada. Funções rápidas precisam de muitos para o relógio
 	//     enxergá-las; as lentas precisam de poucos, ou o benchmark levaria minutos.
+	// ES: Hashes calculados en una ronda. Las funciones rápidas necesitan muchos para que el reloj
+	//     las vea; las lentas necesitan pocos, o el benchmark tardaría minutos.
 	n: number;
 	hashOnce: () => string;
 }
@@ -61,6 +68,8 @@ export function spreadOf(values: readonly number[]): Spread {
 //     so the runtime cannot decide the results are unused and skip the work.
 // PT: Uma rodada: calcula `n` hashes e devolve os milissegundos gastos. Os tamanhos são somados
 //     para o runtime não concluir que os resultados não são usados e pular o trabalho.
+// ES: Una ronda: calcula `n` hashes y devuelve los milisegundos gastados. Los tamaños se suman
+//     para que el runtime no concluya que los resultados no se usan y se salte el trabajo.
 function timeOneRun(subject: Subject): number {
 	let sink = 0;
 	const startedAt = performance.now();
@@ -75,6 +84,9 @@ function timeOneRun(subject: Subject): number {
 // PT: As rodadas de aquecimento são descartadas (as primeiras chamadas pagam compilação e caches
 //     frios). Depois, várias rodadas medidas, e o relatório mostra a dispersão delas em vez de
 //     só a melhor.
+// ES: Las rondas de calentamiento se descartan (las primeras llamadas pagan compilación y cachés
+//     fríos). Después, varias rondas medidas, y el informe muestra su dispersión en lugar de
+//     solo la mejor.
 export function measure(subject: Subject, runs: number, warmupRuns: number): Omit<Row, "timesSlowerThanMd5"> {
 	for (let i = 0; i < warmupRuns; i++) timeOneRun(subject);
 	const elapsedMs: number[] = [];
@@ -103,6 +115,8 @@ function argon2Subject(label: string, params: Argon2Params, n: number): Subject 
 
 // EN: A stronger configuration, only to show that the cost of Argon2id is a dial, not a constant.
 // PT: Uma configuração mais forte, só para mostrar que o custo do Argon2id é um botão, não uma
+//     constante.
+// ES: Una configuración más fuerte, solo para mostrar que el costo de Argon2id es una perilla, no una
 //     constante.
 const STRONGER_ARGON2: Argon2Params = { memoryCost: 65536, timeCost: 3 };
 
@@ -145,6 +159,7 @@ function duration(ms: number): string {
 
 // EN: Below one hundredth of MD5 there is no hashing work left to compare (the plain text row).
 // PT: Abaixo de um centésimo do MD5 não sobra trabalho de hash para comparar (a linha de texto puro).
+// ES: Por debajo de una centésima parte de MD5 no queda trabajo de hash que comparar (la fila de texto plano).
 function factor(times: number): string {
 	if (times < 0.01) return "none (not a hash)";
 	if (times >= 10) return `${Math.round(times).toLocaleString("en-US")}x`;

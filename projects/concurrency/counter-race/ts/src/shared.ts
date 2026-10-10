@@ -4,6 +4,9 @@
 // PT: Threads em JavaScript (workers) normalmente não compartilham nada: cada uma tem sua
 //     memória. O `SharedArrayBuffer` é a exceção. Todo worker que o recebe enxerga os mesmos
 //     bytes, e é exatamente isso que torna possível uma corrida de dados em JavaScript.
+// ES: Los threads en JavaScript (workers) normalmente no comparten nada: cada uno tiene su
+//     memoria. El `SharedArrayBuffer` es la excepción. Todo worker que lo recibe ve los mismos
+//     bytes, y eso es exactamente lo que hace posible una carrera de datos en JavaScript.
 
 export const VARIANTS = ["buggy", "mutex", "atomic", "message"] as const;
 export type Variant = (typeof VARIANTS)[number];
@@ -31,12 +34,15 @@ export type WorkerMessage = "ready" | "done" | "inc";
 //     then puts the old value plus one on top of it. That increment is lost.
 // PT: Entre a leitura e a escrita outro worker pode gravar um valor mais novo, e esta escrita
 //     coloca o valor antigo mais um por cima dele. Aquele incremento se perde.
+// ES: Entre la lectura y la escritura otro worker puede escribir un valor más nuevo, y esta
+//     escritura coloca el valor antiguo más uno encima de él. Ese incremento se pierde.
 export function incBuggy(view: Int32Array): void {
 	view[COUNTER] = (view[COUNTER] ?? 0) + 1;
 }
 
 // EN: `Atomics.add` reads, adds and writes as one indivisible step of the processor.
 // PT: `Atomics.add` lê, soma e grava como um passo indivisível do processador.
+// ES: `Atomics.add` lee, suma y escribe como un paso indivisible del procesador.
 export function incAtomic(view: Int32Array): void {
 	Atomics.add(view, COUNTER, 1);
 }
@@ -50,6 +56,11 @@ export function incAtomic(view: Int32Array): void {
 //     dois workers nunca ganham ao mesmo tempo. Quem perde dorme com `Atomics.wait` em vez de
 //     girar em falso, e `unlock` acorda um dos que dormem. É assim que um mutex de verdade
 //     funciona por baixo (um futex).
+// ES: Un mutex armado con dos primitivas atómicas. El lock es un entero: 0 es libre, 1 es
+//     ocupado. `compareExchange(0 -> 1)` solo lo toma si está libre, en un paso atómico, así que
+//     dos workers nunca ganan al mismo tiempo. Quien pierde duerme con `Atomics.wait` en lugar de
+//     girar en vano, y `unlock` despierta a uno de los que duermen. Así funciona un mutex de
+//     verdad por debajo (un futex).
 export function lock(view: Int32Array): void {
 	while (Atomics.compareExchange(view, LOCK, 0, 1) !== 0) {
 		Atomics.wait(view, LOCK, 1);
@@ -63,6 +74,7 @@ export function unlock(view: Int32Array): void {
 
 // EN: The same buggy read and write, now inside a critical section: only the lock holder runs it.
 // PT: A mesma leitura e escrita com bug, agora dentro de uma seção crítica: só quem tem a trava executa.
+// ES: La misma lectura y escritura con bug, ahora dentro de una sección crítica: solo quien tiene el lock ejecuta.
 export function incMutex(view: Int32Array): void {
 	lock(view);
 	incBuggy(view);

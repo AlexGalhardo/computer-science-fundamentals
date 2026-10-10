@@ -1,6 +1,6 @@
 # pure-functions-properties
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 The same small code base in TypeScript and Elixir. It teaches **why pure code is easy to test and what property-based tests find**: one rule written impure and pure, a property that catches a bug the example tests miss and shrinks it to the smallest input, and a pipeline built by composing pure functions.
 
@@ -18,7 +18,7 @@ Full explanation: [docs/en/functional-programming/pure-functions-properties.md](
 
 The round-trip property fails on it. With the default seed (42), both languages report the same thing:
 
-```
+```text
 round trip, buggy decoder: FAILED on run 1 (seed 42)
   original counterexample: "aaaaaaaaaccccccccbbbbbbbbbb"
   shrunk in 6 steps to:   "aaaaaaaaaa"

@@ -4,6 +4,9 @@
 # PT: As dependências são instaladas a partir do lockfile em uma camada própria, então editar o
 #     código não as baixa de novo e as versões são exatamente as versionadas.
 #     Esta imagem roda os apps, os testes unitários e a demo. Os navegadores ficam no e2e.Dockerfile.
+# ES: Las dependencias se instalan desde el lockfile en su propia capa, así que editar el
+#     código no las descarga de nuevo y las versiones son exactamente las versionadas.
+#     Esta imagen ejecuta las apps, las pruebas unitarias y la demo. Los navegadores están en e2e.Dockerfile.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock ./

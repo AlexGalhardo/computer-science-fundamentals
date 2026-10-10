@@ -14,6 +14,14 @@
 //     este script chama o hyperfine diretamente, com `--prepare`.
 //     Linguagens sem etapa de compilação não ganham um número inventado: a linha diz o que é
 //     realmente medido (compilação para bytecode ou empacotamento).
+// ES: Recolector de la carga de build (`bun run build-time`). Mide cuánto tarda cada lenguaje en
+//     convertir el mismo programa pequeño (el de `cpu-single`) en lo que ejecuta. "Frío" parte de
+//     cero: sin salida anterior y sin caché del compilador. "Caliente" cambia una línea del
+//     código fuente y compila de nuevo, que es lo que hace quien programa todo el día. El runner
+//     compartido no hace esto (no tiene un paso que corra antes de cada medición), así que este
+//     script llama a hyperfine directamente, con `--prepare`.
+//     Los lenguajes sin paso de compilación no reciben un número inventado: la fila dice qué se
+//     mide realmente (compilación a bytecode o empaquetado).
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -62,6 +70,7 @@ const RECIPES: Record<Language, Recipe> = {
 		build: "go build -o main .",
 		// EN: The Go build cache holds the compiled standard library too. A cold build pays for it.
 		// PT: O cache de build do Go guarda também a biblioteca padrão compilada. Um build frio paga por ela.
+		// ES: La caché de build de Go guarda también la biblioteca estándar compilada. Un build frío paga por ella.
 		clean: "rm -f main && go clean -cache",
 	},
 	java: {
@@ -115,12 +124,17 @@ function measure(language: Language, recipe: Recipe, mode: "cold" | "warm"): { w
 	// PT: O "quente" acrescenta um comentário com um número novo, uma edição real que muda o
 	//     conteúdo do arquivo. Só tocar no arquivo não bastaria: o Go, por exemplo, compara
 	//     conteúdo, não datas.
+	// ES: El "caliente" agrega un comentario con un número nuevo, una edición real que cambia el
+	//     contenido del archivo. Solo tocar el archivo no bastaría: Go, por ejemplo, compara
+	//     contenido, no fechas.
 	const edit = `echo "${recipe.comment} edit $(date +%s%N)" >> ${recipe.source}`;
 	const prepare = mode === "cold" ? recipe.clean : edit;
 	// EN: The first build of the warm mode is not measured, and its output is silenced so that the
 	//     only thing printed at the end is the JSON of hyperfine.
 	// PT: O primeiro build do modo quente não é medido, e sua saída é silenciada para que a única
 	//     coisa impressa no final seja o JSON do hyperfine.
+	// ES: El primer build del modo caliente no se mide, y su salida se silencia para que lo único
+	//     que se imprima al final sea el JSON de hyperfine.
 	const setup = mode === "cold" ? "true" : `{ ${recipe.clean} && ${recipe.build}; } >/dev/null 2>&1`;
 	const script = [
 		"mkdir -p /tmp/work && cp -r /in/. /tmp/work && cd /tmp/work",

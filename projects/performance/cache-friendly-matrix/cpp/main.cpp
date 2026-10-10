@@ -11,6 +11,13 @@
 //     e falha a menos que a variante em blocos seja pelo menos 2 vezes mais rápida que a ingênua.
 //     `bench sweep <n>` mede a variante em blocos com vários tamanhos de bloco e imprime uma
 //     tabela.
+// ES: Tres modos.
+//     `bench <naive|interchanged|blocked-B> <n>` multiplica dos matrices n x n una vez e
+//     imprime una línea JSON en el contrato de benchmark, por ejemplo `bench blocked-64 1024`.
+//     `bench speedup <n>` mide las tres variantes sobre la misma entrada, imprime una tabla
+//     Markdown y falla a menos que la variante por bloques sea al menos 2 veces más rápida que la
+//     ingenua. `bench sweep <n>` mide la variante por bloques con varios tamaños de bloque e
+//     imprime una tabla.
 #include <sys/resource.h>
 
 #include <algorithm>
@@ -72,6 +79,9 @@ Matrix multiply(const std::string& implementation, const Matrix& a, const Matrix
 // PT: Uma multiplicação pequena leva poucos milissegundos, pouco para confiar em uma execução só,
 //     então ela é repetida e a mediana é informada. Uma grande leva segundos e roda uma vez: o
 //     runner de benchmark repete o processo inteiro de qualquer forma e informa a dispersão.
+// ES: Una multiplicación pequeña toma pocos milisegundos, poco para confiar en una sola ejecución,
+//     así que se repite y se informa la mediana. Una grande toma segundos y corre una vez: el
+//     runner de benchmark repite el proceso completo de todos modos e informa la dispersión.
 int repetitions_for(std::size_t n) { return n <= 512 ? 5 : 1; }
 
 struct Measurement {
@@ -176,6 +186,7 @@ int run(const std::vector<std::string>& args) {
 
 	// EN: On Linux, ru_maxrss is the peak resident memory of the process in kibibytes.
 	// PT: No Linux, ru_maxrss é o pico de memória residente do processo em kibibytes.
+	// ES: En Linux, ru_maxrss es el pico de memoria residente del proceso en kibibytes.
 	rusage usage_info{};
 	getrusage(RUSAGE_SELF, &usage_info);
 	std::cout << "{\"n\":" << n << ",\"elapsedMs\":" << std::fixed << result.median_ms

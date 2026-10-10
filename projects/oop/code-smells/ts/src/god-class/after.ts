@@ -8,6 +8,10 @@ import type { CreateShop, Shop } from "./contract";
 //     pequena com seu próprio estado privado: Inventory, PriceList, Outbox, SalesLedger. O que
 //     sobrou da loja só as coordena. Cada classe tem um motivo para mudar e pode ser testada
 //     sozinha, e os campos de uma ficam fora do alcance das outras.
+// ES: REFACTORIZADO con Extraer Clase. Cada responsabilidad de la clase dios se volvió una
+//     clase pequeña con su propio estado privado: Inventory, PriceList, Outbox, SalesLedger. Lo
+//     que quedó de la tienda solo las coordina. Cada clase tiene un motivo para cambiar y puede
+//     probarse sola, y los campos de una quedan fuera del alcance de las otras.
 
 const money = (cents: number): string => (cents / 100).toFixed(2);
 
@@ -92,6 +96,8 @@ export class SalesLedger {
 //     can hand it an Outbox of its own and look inside afterwards.
 // PT: O coordenador recebe seus colaboradores prontos (injeção de dependência), então um teste
 //     pode entregar a ele um Outbox próprio e olhar dentro depois.
+// ES: El coordinador recibe sus colaboradores ya listos (inyección de dependencias), así que un
+//     test puede entregarle un Outbox propio y mirar dentro después.
 export class CoordinatingShop implements Shop {
 	readonly #inventory: Inventory;
 	readonly #prices: PriceList;

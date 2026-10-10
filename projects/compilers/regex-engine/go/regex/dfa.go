@@ -16,6 +16,10 @@ import (
 // conjuntos. Para a maioria dos padrões só alguns deles são alcançáveis, mas alguns padrões
 // realmente precisam de exponencialmente muitos (o clássico é "o k-ésimo byte a partir do fim é
 // um a"). O limite transforma essa explosão em um erro em vez de memória esgotada.
+// ES: Un estado del AFD es un CONJUNTO de estados del AFN, y un AFN con n estados tiene hasta 2^n
+// conjuntos. Para la mayoría de los patrones solo unos pocos son alcanzables, pero algunos
+// patrones realmente necesitan exponencialmente muchos (el clásico es "el k-ésimo byte desde el
+// final es una a"). El límite convierte esa explosión en un error en lugar de memoria agotada.
 const MaxDFAStates = 10000
 
 // DFA is a deterministic finite automaton: from each state, each byte leads to exactly one state.
@@ -79,6 +83,19 @@ func byteClasses(nfa *NFA) (classOf [256]int, representatives []byte) {
 //  3. Um conjunto nunca visto vira um novo estado do AFD e espera a sua vez. Repita até não
 //     haver conjunto esperando.
 //  4. Um estado do AFD aceita quando seu conjunto contém o estado de aceitação do AFN.
+//
+// ES: La idea es hacer, una sola vez y por adelantado, todo lo que la simulación del AFN hace en
+// el momento de emparejar. La simulación pasa de un conjunto de estados del AFN a otro; la
+// construcción de subconjuntos le da un nombre a cada uno de esos conjuntos y lo convierte en un
+// único estado del AFD.
+//
+//  1. El estado inicial es la clausura épsilon del estado inicial del AFN.
+//  2. Toma un conjunto aún no procesado. Para cada clase de bytes, reúne a dónde van sus
+//     estados del AFN con ese byte y cierra el resultado bajo épsilon. Ese conjunto es el
+//     destino de la transición.
+//  3. Un conjunto nunca visto se convierte en un nuevo estado del AFD y espera su turno. Repite
+//     hasta que no haya conjuntos esperando.
+//  4. Un estado del AFD acepta cuando su conjunto contiene el estado de aceptación del AFN.
 func Determinize(nfa *NFA) (*DFA, error) {
 	dfa := &DFA{}
 	var representatives []byte
@@ -132,6 +149,8 @@ func Determinize(nfa *NFA) (*DFA, error) {
 // search. The time is O(len(input)) and does not depend on the pattern at all.
 // PT: Este laço é o motivo de se construir um AFD: uma consulta à tabela por byte da entrada, sem
 // conjuntos, sem busca. O tempo é O(len(entrada)) e não depende em nada do padrão.
+// ES: Este bucle es la razón de construir un AFD: una consulta a la tabla por byte de la entrada,
+// sin conjuntos, sin búsqueda. El tiempo es O(len(entrada)) y no depende en nada del patrón.
 func (d *DFA) Match(input string) (matched bool, steps int) {
 	state := 0
 	for i := 0; i < len(input); i++ {

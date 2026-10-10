@@ -11,6 +11,14 @@ Um arquivo PNG é uma assinatura seguida de blocos (chunks). Três blocos bastam
 tons de cinza: IHDR (largura, altura, 8 bits por pixel, tons de cinza), IDAT (os pixels,
 comprimidos com zlib) e IEND. Um arquivo SVG é texto que descreve linhas e rótulos, então a curva
 de perda é escrita como texto.
+
+ES: Figuras sin ninguna biblioteca de gráficos ni de imágenes: un escritor de PNG y un gráfico de
+líneas en SVG.
+
+Un archivo PNG es una firma seguida de bloques (chunks). Tres bloques bastan para una figura en
+escala de grises: IHDR (ancho, alto, 8 bits por píxel, escala de grises), IDAT (los píxeles,
+comprimidos con zlib) y IEND. Un archivo SVG es texto que describe líneas y etiquetas, así que la
+curva de pérdida se escribe como texto.
 """
 
 import struct
@@ -26,6 +34,8 @@ def _chunk(kind: bytes, data: bytes) -> bytes:
     # EN: Every chunk is: length, 4-letter type, data, and a checksum (CRC) of type + data.
     # PT: Todo bloco é: tamanho, tipo de 4 letras, dados e uma soma de verificação (CRC) de
     #     tipo + dados.
+    # ES: Todo bloque es: tamaño, tipo de 4 letras, datos y una suma de verificación (CRC) de
+    #     tipo + datos.
     return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
 
 
@@ -35,11 +45,15 @@ def png_bytes(pixels: torch.Tensor) -> bytes:
 
     PT: Codifica um tensor 2D de inteiros de 0 (preto) a 255 (branco) como um PNG de 8 bits em
     tons de cinza.
+
+    ES: Codifica un tensor 2D de enteros de 0 (negro) a 255 (blanco) como un PNG de 8 bits en
+    escala de grises.
     """
     height, width = pixels.shape
     header = struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0)
     # EN: Each row starts with one byte saying which filter was applied to it. 0 means "none".
     # PT: Cada linha começa com um byte dizendo qual filtro foi aplicado a ela. 0 é "nenhum".
+    # ES: Cada fila empieza con un byte que dice qué filtro se le aplicó. 0 es "ninguno".
     rows = b"".join(b"\x00" + bytes(row) for row in pixels.to(torch.uint8).tolist())
     return (
         PNG_SIGNATURE
@@ -65,6 +79,12 @@ def to_grey(values: torch.Tensor, signed: bool = False) -> torch.Tensor:
     Sem sinal (brilho, ativações): 0 é preto e o maior valor é branco.
     Com sinal (pesos de filtros, respostas de borda): 0 é cinza médio, o maior valor positivo é
     branco e o maior valor negativo é preto, então o sinal continua visível.
+
+    ES: Transforma cualquier tensor 2D en niveles de gris de 0 a 255.
+
+    Sin signo (brillo, activaciones): 0 es negro y el mayor valor es blanco.
+    Con signo (pesos de filtros, respuestas de borde): 0 es gris medio, el mayor valor positivo es
+    blanco y el mayor valor negativo es negro, así que el signo sigue siendo visible.
     """
     values = values.detach().float()
     peak = float(values.abs().max())
@@ -79,6 +99,8 @@ def upscale(pixels: torch.Tensor, factor: int) -> torch.Tensor:
     #     3 x 3 filter is visible without being blurred.
     # PT: Vizinho mais próximo: cada pixel vira um quadrado factor x factor do mesmo cinza, então
     #     um filtro 3 x 3 fica visível sem ser borrado.
+    # ES: Vecino más cercano: cada píxel se convierte en un cuadrado factor x factor del mismo gris,
+    #     así un filtro 3 x 3 se ve sin quedar borroso.
     return pixels.repeat_interleave(factor, dim=0).repeat_interleave(factor, dim=1)
 
 
@@ -86,6 +108,9 @@ def tile(pictures: list[torch.Tensor], gap: int = 4, background: int = 96) -> to
     """EN: Puts pictures of the same size side by side, in one row, with a gap between them.
 
     PT: Coloca figuras do mesmo tamanho lado a lado, em uma linha, com um espaço entre elas.
+
+    ES: Coloca figuras del mismo tamaño una al lado de otra, en una fila, con un espacio entre
+    ellas.
     """
     height, width = pictures[0].shape
     total = gap + len(pictures) * (width + gap)
@@ -100,6 +125,9 @@ def loss_curve_svg(series: dict[str, list[float]]) -> str:
     """EN: A line chart "training loss per epoch", one line per model, as SVG text.
 
     PT: Um gráfico de linhas "perda de treino por época", uma linha por modelo, em texto SVG.
+
+    ES: Un gráfico de líneas "pérdida de entrenamiento por época", una línea por modelo, en
+    texto SVG.
     """
     width, height = 640, 360
     left, right, top, bottom = 60, 20, 40, 50
@@ -108,6 +136,7 @@ def loss_curve_svg(series: dict[str, list[float]]) -> str:
     peak = max(max(values) for values in series.values())
     # EN: Round the top of the vertical axis up to the next 0.5, so the ticks are round numbers.
     # PT: Arredonda o topo do eixo vertical para o próximo 0.5, para as marcas serem redondas.
+    # ES: Redondea el tope del eje vertical al siguiente 0.5, para que las marcas sean redondas.
     y_max = max(0.5, -(-peak // 0.5) * 0.5)
     colours = ["#1d4ed8", "#b45309", "#15803d", "#7e22ce"]
 

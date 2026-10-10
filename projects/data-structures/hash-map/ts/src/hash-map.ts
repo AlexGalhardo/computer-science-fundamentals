@@ -4,6 +4,9 @@
 // PT: Mapa de espalhamento do zero: encadeamento separado e endereçamento aberto com sondagem
 //     linear. As chaves são inteiros sem sinal de 32 bits e os valores são números, o que mantém
 //     a atenção na tabela e não em como espalhar textos ou objetos.
+// ES: Mapa de dispersión desde cero: encadenamiento separado y direccionamiento abierto con sondeo
+//     lineal. Las claves son enteros sin signo de 32 bits y los valores son números, lo que mantiene
+//     la atención en la tabla y no en cómo dispersar textos u objetos.
 
 export type HashFn = (key: number) => number;
 
@@ -23,6 +26,9 @@ export interface HashMap {
 // PT: A função de espalhamento embaralha os bits da chave para que chaves parecidas (1, 2, 3...)
 //     caiam em posições sem relação entre si. Este é o finalizador de 32 bits do MurmurHash3.
 //     `Math.imul` multiplica como inteiros de 32 bits e `>>> 0` torna o resultado sem sinal.
+// ES: La función de dispersión mezcla los bits de la clave para que claves parecidas (1, 2, 3...)
+//     caigan en posiciones sin relación entre sí. Este es el finalizador de 32 bits de MurmurHash3.
+//     `Math.imul` multiplica como enteros de 32 bits y `>>> 0` vuelve el resultado sin signo.
 export function mix32(key: number): number {
 	let h = key | 0;
 	h ^= h >>> 16;
@@ -46,6 +52,10 @@ interface Node {
 //     com todas as entradas cujo hash aponta para ele. Uma colisão só deixa uma lista mais
 //     longa, então a tabela continua funcionando com qualquer fator de carga, apenas fica mais
 //     lenta conforme as listas crescem.
+// ES: Encadenamiento separado. La tabla es un vector de cubetas y cada cubeta es una lista enlazada
+//     con todas las entradas cuyo hash apunta a ella. Una colisión solo deja una lista más
+//     larga, así que la tabla sigue funcionando con cualquier factor de carga, solo se vuelve más
+//     lenta a medida que las listas crecen.
 export class ChainingMap implements HashMap {
 	private buckets: (Node | undefined)[];
 	private count = 0;
@@ -73,11 +83,14 @@ export class ChainingMap implements HashMap {
 		//     of a list. Growing before it passes the limit keeps the lists short.
 		// PT: O fator de carga é elementos dividido por baldes, que também é o tamanho médio de
 		//     uma lista. Crescer antes de passar do limite mantém as listas curtas.
+		// ES: El factor de carga es elementos dividido por cubetas, que también es el tamaño medio de
+		//     una lista. Crecer antes de pasar el límite mantiene las listas cortas.
 		if (this.count + 1 > this.maxLoad * this.buckets.length) {
 			this.resize(this.buckets.length * 2);
 		}
 		// EN: The new node goes to the head of the list: O(1), no walk to the end.
 		// PT: O nó novo entra no início da lista: O(1), sem caminhar até o fim.
+		// ES: El nodo nuevo entra al inicio de la lista: O(1), sin caminar hasta el final.
 		const index = this.indexOf(key);
 		this.buckets[index] = { key, value, next: this.buckets[index] };
 		this.count++;
@@ -97,6 +110,8 @@ export class ChainingMap implements HashMap {
 	//     of a list has no predecessor, so there the bucket itself is what changes.
 	// PT: Desligar um nó é fazer o anterior apontar para o sucessor. O primeiro nó de uma lista
 	//     não tem anterior, então ali quem muda é o próprio balde.
+	// ES: Desenlazar un nodo es hacer que el anterior apunte al sucesor. El primer nodo de una lista
+	//     no tiene anterior, así que ahí lo que cambia es la propia cubeta.
 	remove(key: number): boolean {
 		const index = this.indexOf(key);
 		let previous: Node | undefined;
@@ -133,6 +148,9 @@ export class ChainingMap implements HashMap {
 	// PT: Rehashing. O balde de uma chave é `hash % capacidade`, então uma capacidade nova muda
 	//     o balde de quase todas as chaves e todos os nós precisam ser movidos. Custa O(n), mas
 	//     dobrar torna isso raro o bastante para a inserção continuar O(1) amortizado.
+	// ES: Rehashing. La cubeta de una clave es `hash % capacidad`, así que una capacidad nueva cambia
+	//     la cubeta de casi todas las claves y todos los nodos deben moverse. Cuesta O(n), pero
+	//     duplicar lo vuelve lo bastante raro para que la inserción siga siendo O(1) amortizado.
 	private resize(newBuckets: number): void {
 		const old = this.buckets;
 		this.buckets = new Array<Node | undefined>(newBuckets).fill(undefined);
@@ -161,6 +179,10 @@ const TOMBSTONE = 2;
 //     a posição dada pelo hash está ocupada, tenta-se a seguinte, depois a seguinte, dando a
 //     volta no fim. A busca segue a mesma sequência e para na chave ou em uma posição nunca
 //     usada. Três vetores tipados paralelos guardam chave, valor e estado de cada posição.
+// ES: Direccionamiento abierto con sondeo lineal. Toda entrada vive en los propios vectores. Cuando
+//     la posición que da el hash está ocupada, se prueba la siguiente, luego la siguiente, dando la
+//     vuelta al final. La búsqueda sigue la misma secuencia y se detiene en la clave o en una
+//     posición nunca usada. Tres vectores tipados paralelos guardan clave, valor y estado de cada posición.
 export class ProbingMap implements HashMap {
 	private keys: Uint32Array;
 	private values: Float64Array;
@@ -170,6 +192,8 @@ export class ProbingMap implements HashMap {
 	//     towards the limit.
 	// PT: Posições cheias mais lápides. Lápides continuam alongando toda sondagem, então contam
 	//     para o limite.
+	// ES: Posiciones llenas más lápidas. Las lápidas siguen alargando todo sondeo, así que cuentan
+	//     para el límite.
 	private used = 0;
 	private readonly maxLoad: number;
 
@@ -184,6 +208,8 @@ export class ProbingMap implements HashMap {
 		this.states = new Uint8Array(slots);
 		// EN: At least one slot must stay empty, or a search for a missing key never ends.
 		// PT: Ao menos uma posição precisa ficar vazia, senão a busca por uma chave ausente
+		//     nunca termina.
+		// ES: Al menos una posición debe quedar vacía, o la búsqueda de una clave ausente
 		//     nunca termina.
 		this.maxLoad = Math.min(maxLoad, 0.99);
 	}
@@ -218,6 +244,8 @@ export class ProbingMap implements HashMap {
 			//     checked: the key may still be stored further ahead.
 			// PT: Uma lápide pode ser reaproveitada, mas só depois de conferir a sequência de
 			//     sondagem inteira: a chave ainda pode estar guardada mais adiante.
+			// ES: Una lápida puede reutilizarse, pero solo después de revisar la secuencia de
+			//     sondeo completa: la clave aún puede estar guardada más adelante.
 			if (this.states[index] === TOMBSTONE && firstTombstone === -1) {
 				firstTombstone = index;
 			}
@@ -245,6 +273,9 @@ export class ProbingMap implements HashMap {
 	// PT: A remoção deixa uma lápide em vez de uma posição vazia. Posição vazia significa
 	//     "nenhuma chave passou por aqui", então esvaziá-la esconderia toda chave que colidiu e
 	//     foi guardada depois dela.
+	// ES: La eliminación deja una lápida en lugar de una posición vacía. Posición vacía significa
+	//     "ninguna clave pasó por aquí", así que vaciarla escondería toda clave que colisionó y
+	//     fue guardada después de ella.
 	remove(key: number): boolean {
 		const index = this.find(key);
 		if (index === -1) {
@@ -275,6 +306,9 @@ export class ProbingMap implements HashMap {
 	//     live entries alone justify it, otherwise the rebuild is a clean-up at the same size.
 	// PT: Reconstruir a tabela joga todas as lápides fora. A capacidade só dobra quando as
 	//     entradas vivas sozinhas justificam, senão a reconstrução é uma limpeza no mesmo tamanho.
+	// ES: Reconstruir la tabla descarta todas las lápidas. La capacidad solo se duplica cuando las
+	//     entradas vivas por sí solas lo justifican, si no la reconstrucción es una limpieza del
+	//     mismo tamaño.
 	private grow(): void {
 		const { keys, values, states } = this;
 		const crowded = this.count + 1 > (this.maxLoad * states.length) / 2;

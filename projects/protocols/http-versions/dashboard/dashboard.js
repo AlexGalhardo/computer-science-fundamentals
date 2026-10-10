@@ -4,6 +4,9 @@
 // PT: Dashboard estático. Ele lê `window.HTTP_VERSIONS_RESULTS`, escrito pela medição em
 //     `../results/results.js`, e desenha uma cascata por versão do HTTP. Não há etapa de build
 //     nem requisição de rede: a página funciona aberta direto do disco.
+// ES: Dashboard estático. Lee `window.HTTP_VERSIONS_RESULTS`, escrito por la medición en
+//     `../results/results.js`, y dibuja una cascada por versión de HTTP. No hay paso de build
+//     ni petición de red: la página funciona abierta directamente desde el disco.
 
 const SVG = "http://www.w3.org/2000/svg";
 const COLOURS = { h1: "#dc2626", h2: "#2563eb", h3: "#16a34a" };
@@ -53,6 +56,13 @@ function conditionLabel(cell) {
 //     por uma conexão livre, e cada grupo de seis custa mais uma ida e volta. HTTP/2 e HTTP/3
 //     multiplexam: todas as requisições saem de uma vez em uma conexão, então as barras são
 //     curtas e o gráfico é um bloco estreito.
+// ES: Cómo leer las formas. Una barra empieza cuando el navegador QUISO la imagen, que es casi
+//     el mismo instante para todas, y las barras se dibujan en el orden en que terminaron.
+//     HTTP/1.1 dibuja un triángulo: el navegador abre unas seis conexiones por origen, cada una
+//     lleva una única petición a la vez, así que la mayor parte de una barra es tiempo
+//     esperando en la cola una conexión libre, y cada grupo de seis cuesta un viaje de ida y
+//     vuelta más. HTTP/2 y HTTP/3 multiplexan: todas las peticiones salen a la vez en una
+//     conexión, así que las barras son cortas y el gráfico es un bloque estrecho.
 function drawWaterfall(cell, maxMs) {
 	const height = PAD.top + cell.waterfall.length * ROW + PAD.bottom;
 	const scale = (ms) => PAD.left + (ms / maxMs) * (WIDTH - PAD.left - PAD.right);
@@ -185,6 +195,7 @@ function main() {
 	}
 	// EN: Start on the condition where the three versions differ the most.
 	// PT: Começa na condição em que as três versões mais diferem.
+	// ES: Empieza en la condición en que las tres versiones más difieren.
 	select.value = seen.has("latency") ? "latency" : select.value;
 
 	const machine = document.getElementById("machine");

@@ -1,6 +1,6 @@
 # master-theorem
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 An interactive master theorem. It teaches **how the three cases of the master theorem decide the cost of a recurrence** `T(n) = a·T(n/b) + f(n)`: a classifier returns the case and the solution, a generated recursive function checks the prediction by counting real calls, and a static page draws the recursion tree for the `a`, `b` and `f(n)` you choose.
 
@@ -51,6 +51,6 @@ docker compose run --rm ts-demo bun run classify 7 2 2       # one recurrence: T
 docker compose run --rm ts-demo bun run classify 2 2 1 1     # T(n) = 2T(n/2) + n log n: does not apply
 ```
 
-The arguments are `a`, `b`, `d` and an optional `k`, for `f(n) = n^d · (log n)^k`. The command prints the case, the reason in English and Portuguese, the solution and the recursion tree for a small `n`.
+The arguments are `a`, `b`, `d` and an optional `k`, for `f(n) = n^d · (log n)^k`. The command prints the case, the reason in English, Portuguese and Spanish (one `EN:`, one `PT:` and one `ES:` line), the solution and the recursion tree for a small `n`.
 
 Then open `dashboard/index.html` in a browser, straight from disk. Choose `a`, `b` and `f(n)`: the page shows the case and draws the tree with one bar per level, so you can see whether the leaves, every level or the root pays the bill.

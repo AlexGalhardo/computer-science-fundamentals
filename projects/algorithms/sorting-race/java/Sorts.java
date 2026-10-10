@@ -12,6 +12,12 @@ import java.util.function.UnaryOperator;
 //     aqui: int[] é um bloco contíguo de primitivos, e a JVM começa interpretando o bytecode e
 //     compila os laços quentes enquanto o programa roda, então entradas pequenas pagam o
 //     aquecimento e entradas grandes rodam perto da velocidade nativa.
+// ES: Los seis algoritmos de ordenación de la carrera, en Java. Mismos algoritmos y mismas
+//     decisiones que la referencia en TypeScript en `ts/src/`, donde cada uno se explica en
+//     detalle. Lo que cambia aquí: int[] es un bloque contiguo de primitivos, y la JVM empieza
+//     interpretando el bytecode y compila los bucles calientes mientras el programa corre, así
+//     que las entradas pequeñas pagan el calentamiento y las grandes corren cerca de la
+//     velocidad nativa.
 public final class Sorts {
   private Sorts() {}
 
@@ -29,6 +35,7 @@ public final class Sorts {
 
   // EN: Swap out-of-order neighbours. Stop when a pass makes no swap.
   // PT: Troca vizinhos fora de ordem. Para quando uma passada não faz trocas.
+  // ES: Intercambia vecinos desordenados. Se detiene cuando una pasada no hace intercambios.
   public static int[] bubbleSort(int[] values) {
     int[] a = values.clone();
     for (int end = a.length - 1; end > 0; end--) {
@@ -48,6 +55,7 @@ public final class Sorts {
 
   // EN: Insert each value into the sorted prefix, shifting the larger values right.
   // PT: Insere cada valor no prefixo ordenado, deslocando os maiores para a direita.
+  // ES: Inserta cada valor en el prefijo ordenado, desplazando los mayores hacia la derecha.
   public static int[] insertionSort(int[] values) {
     int[] a = values.clone();
     for (int i = 1; i < a.length; i++) {
@@ -64,6 +72,7 @@ public final class Sorts {
 
   // EN: Split in half, sort each half, merge. One buffer is reused by every merge.
   // PT: Divide ao meio, ordena cada metade, intercala. Um buffer é reusado em toda intercalação.
+  // ES: Divide a la mitad, ordena cada mitad, mezcla. Un búfer se reutiliza en cada mezcla.
   public static int[] mergeSort(int[] values) {
     int[] a = values.clone();
     mergeRange(a, new int[a.length], 0, a.length);
@@ -82,6 +91,8 @@ public final class Sorts {
     for (int k = lo; k < hi; k++) {
       // EN: `<=` takes the left value on a tie, which keeps the sort stable.
       // PT: `<=` pega o valor da esquerda no empate, o que mantém a ordenação estável.
+      // ES: `<=` toma el valor de la izquierda en el empate, lo que mantiene la ordenación
+      //     estable.
       if (j >= hi || (i < mid && a[i] <= a[j])) {
         buffer[k] = a[i++];
       } else {
@@ -95,6 +106,8 @@ public final class Sorts {
   //     the larger one keeps the stack at O(log n).
   // PT: Partição de Hoare em torno da mediana de três. Fazer a recursão no lado menor e o laço no
   //     maior mantém a pilha em O(log n).
+  // ES: Partición de Hoare alrededor de la mediana de tres. Hacer la recursión sobre el lado menor
+  //     y el bucle sobre el mayor mantiene la pila en O(log n).
   public static int[] quickSort(int[] values) {
     int[] a = values.clone();
     quickRange(a, 0, a.length - 1);
@@ -136,6 +149,7 @@ public final class Sorts {
 
   // EN: Build a max-heap inside the array, then move the maximum to the end n - 1 times.
   // PT: Constrói um max-heap dentro do vetor e move o máximo para o fim n - 1 vezes.
+  // ES: Construye un max-heap dentro del arreglo y mueve el máximo al final n - 1 veces.
   public static int[] heapSort(int[] values) {
     int[] a = values.clone();
     int n = a.length;
@@ -173,6 +187,8 @@ public final class Sorts {
   //     no comparison between values. Valid for integers from 0 to 2^31 - 1.
   // PT: Radix sort LSD na base 256: quatro passadas estáveis de contagem, uma por byte da chave,
   //     sem comparar valores. Válido para inteiros de 0 a 2^31 - 1.
+  // ES: Radix sort LSD en base 256: cuatro pasadas estables de conteo, una por byte de la clave,
+  //     sin comparar valores. Válido para enteros de 0 a 2^31 - 1.
   public static int[] radixSort(int[] values) {
     int[] source = values.clone();
     int[] target = new int[source.length];
@@ -197,6 +213,7 @@ public final class Sorts {
 
   // EN: Same order-sensitive digest in every language: h = (h * 31 + v) mod 1,000,000,007.
   // PT: Mesmo resumo sensível à ordem em toda linguagem: h = (h * 31 + v) mod 1.000.000.007.
+  // ES: El mismo resumen sensible al orden en todo lenguaje: h = (h * 31 + v) mod 1.000.000.007.
   public static String checksum(int[] values) {
     long digest = 0;
     for (int value : values) {

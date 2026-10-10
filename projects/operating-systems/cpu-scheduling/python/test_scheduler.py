@@ -22,6 +22,7 @@ def jobs(bursts: list[int], priorities: list[int] | None = None) -> list[Process
 
 # EN: The expected numbers are the ones documented in docs/en/operating-systems/cpu-scheduling.md.
 # PT: Os números esperados são os documentados em docs/pt/operating-systems/cpu-scheduling.md.
+# ES: Los números esperados son los documentados en docs/es/operating-systems/cpu-scheduling.md.
 
 
 def test_fcfs_textbook_examples() -> None:

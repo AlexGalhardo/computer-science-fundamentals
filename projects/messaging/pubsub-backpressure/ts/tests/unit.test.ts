@@ -4,6 +4,9 @@
 // PT: Testes que não precisam de broker: a fila limitada e o critério de aceitação sobre
 //     memória. Um produtor mais rápido que o consumidor faz a memória crescer sem limite quando
 //     nada o segura, e a mantém estável quando a fila é limitada.
+// ES: Pruebas que no necesitan broker: la cola acotada y el criterio de aceptación sobre la
+//     memoria. Un productor más rápido que el consumidor hace crecer la memoria sin límite cuando
+//     nada lo frena, y la mantiene estable cuando la cola es acotada.
 
 import { describe, expect, test } from "bun:test";
 import { BoundedQueue, DEFAULT_PRESSURE, runPressure } from "../src/backpressure";
@@ -54,6 +57,9 @@ describe("producer faster than consumer", () => {
 	//     memory measured after the unbounded run would only show that run's buffer being freed.
 	// PT: A execução limitada vem primeiro de propósito. As duas dividem um processo, e a memória
 	//     residente medida depois da execução ilimitada só mostraria o buffer dela sendo liberado.
+	// ES: La ejecución acotada va primero a propósito. Las dos comparten un proceso, y la memoria
+	//     residente medida después de la ejecución no acotada solo mostraría cómo se libera el
+	//     buffer de esa ejecución.
 	test("with backpressure, memory stays flat", async () => {
 		const capacity = 100;
 		const result = await runPressure({ ...DEFAULT_PRESSURE, capacity });

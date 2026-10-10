@@ -68,6 +68,9 @@ const (
 	// PT: O lado que fecha repete o FIN a cada closeRetry, e o outro lado permanece por
 	// lingerTime depois do último FIN que viu. O segundo precisa ser muitas vezes o primeiro:
 	// se o receptor saísse antes de o transmissor desistir, um FIN+ACK perdido não teria conserto.
+	// ES: El lado que cierra repite el FIN cada closeRetry, y el otro lado permanece por
+	// lingerTime después del último FIN que vio. El segundo debe ser muchas veces el primero:
+	// si el receptor se fuera antes de que el transmisor se rinda, un FIN+ACK perdido no tendría arreglo.
 	closeRetry = 25 * time.Millisecond
 	lingerTime = 16 * closeRetry
 )
@@ -80,6 +83,9 @@ const (
 // PT: A interface de loopback praticamente nunca perde pacotes, então a perda é injetada aqui,
 // na saída de cada socket. Um datagrama descartado devolve sucesso a quem chamou, exatamente
 // como uma rede real: ninguém avisa o transmissor de que um roteador jogou o pacote fora.
+// ES: La interfaz de loopback prácticamente nunca pierde un paquete, así que la pérdida se inyecta
+// aquí, a la salida de cada socket. Un datagrama descartado devuelve éxito a quien llamó, exactamente
+// como lo haría una red real: nadie avisa al transmisor de que un router tiró su paquete.
 type lossyConn struct {
 	net.PacketConn
 	rng     *rand.Rand
@@ -133,6 +139,9 @@ func Receive(ctx context.Context, conn net.PacketConn, cfg Config) ([]byte, erro
 			// PT: Segundo passo do acordo de três vias. O receptor responde com o seu próprio
 			// número inicial e confirma o do transmissor. Um SYN repetido recebe a mesma
 			// resposta, porque significa que o primeiro SYN+ACK se perdeu.
+			// ES: Segundo paso del acuerdo de tres vías. El receptor responde con su propio
+			// número inicial y confirma el del transmisor. Un SYN repetido recibe la misma
+			// respuesta, porque significa que el primer SYN+ACK se perdió.
 			peer, irs = addr, seg.seq
 			if err := reply(segment{flags: flagSYN | flagACK, seq: iss, ack: irs + 1}); err != nil {
 				return nil, fmt.Errorf("answering the SYN: %w", err)
@@ -142,6 +151,8 @@ func Receive(ctx context.Context, conn net.PacketConn, cfg Config) ([]byte, erro
 			// segment that does not acknowledge iss+1 does not belong to this connection.
 			// PT: Terceiro passo. Só quem realmente recebeu o nosso SYN+ACK conhece iss, então
 			// um segmento que não confirma iss+1 não pertence a esta conexão.
+			// ES: Tercer paso. Solo quien realmente recibió nuestro SYN+ACK conoce iss, así que
+			// un segmento que no confirma iss+1 no pertenece a esta conexión.
 			continue
 		case seg.flags&flagFIN != 0:
 			if distance(seg.seq, irs+1) != expected {
@@ -165,6 +176,8 @@ func Receive(ctx context.Context, conn net.PacketConn, cfg Config) ([]byte, erro
 				// delivered at once.
 				// PT: O buraco foi preenchido, então tudo o que estava guardado logo depois
 				// dele pode ser entregue de uma vez.
+				// ES: El hueco se llenó, así que todo lo que estaba guardado justo después
+				// puede entregarse de una vez.
 				for chunk, ok := pending[expected]; ok; chunk, ok = pending[expected] {
 					out = append(out, chunk...)
 					delete(pending, expected)
@@ -177,6 +190,8 @@ func Receive(ctx context.Context, conn net.PacketConn, cfg Config) ([]byte, erro
 			// repeated ACK is how the sender learns that something is missing.
 			// PT: Todo segmento de dados recebe resposta, até cópias repetidas e segmentos fora de
 			// ordem. O ACK repetido é como o transmissor descobre que algo está faltando.
+			// ES: Todo segmento de datos recibe respuesta, incluso copias repetidas y segmentos
+			// fuera de orden. El ACK repetido es como el transmisor descubre que falta algo.
 			ack := segment{flags: flagACK, seq: iss + 1, ack: irs + 1 + uint32(expected), sack: seg.seq}
 			if err := reply(ack); err != nil {
 				return nil, fmt.Errorf("acknowledging: %w", err)
@@ -191,6 +206,8 @@ func Receive(ctx context.Context, conn net.PacketConn, cfg Config) ([]byte, erro
 // receiver knowing. Waiting a little, ready to repeat it, is what TCP does in TIME_WAIT.
 // PT: O último ACK de uma conexão nunca é confirmado, então ele pode se perder sem que o
 // receptor saiba. Esperar um pouco, pronto para repeti-lo, é o que o TCP faz em TIME_WAIT.
+// ES: El último ACK de una conexión nunca se confirma, así que puede perderse sin que el
+// receptor lo sepa. Esperar un poco, listo para repetirlo, es lo que hace TCP en TIME_WAIT.
 func linger(conn net.PacketConn, peer net.Addr, fin segment) error {
 	buf := make([]byte, 2*MSS)
 	deadline := time.Now().Add(lingerTime)
@@ -294,6 +311,9 @@ func (s *sender) read(deadline time.Time) (segment, bool, error) {
 // PT: O tempo limite acompanha o tempo de ida e volta medido: uma média suavizada mais quatro
 // vezes o desvio suavizado. Um tempo fixo seria curto demais em um caminho lento
 // (retransmissões inúteis) ou longo demais em um caminho rápido (recuperação lenta).
+// ES: El tiempo límite sigue el tiempo de ida y vuelta medido: un promedio suavizado más cuatro
+// veces la desviación suavizada. Un tiempo fijo sería demasiado corto en un camino lento
+// (retransmisiones inútiles) o demasiado largo en uno rápido (recuperación lenta).
 func (s *sender) sample(rtt time.Duration) {
 	if s.srtt == 0 {
 		s.srtt, s.rttvar = rtt, rtt/2
@@ -313,6 +333,10 @@ func (s *sender) sample(rtt time.Duration) {
 // duplicação feita por backoff é desfeita. Sem isso, uma janela retransmitida várias vezes
 // ficaria com um tempo limite enorme, porque segmentos retransmitidos não geram medida
 // (regra de Karn).
+// ES: Una confirmación de datos nuevos prueba que el camino volvió a funcionar, así que la
+// duplicación hecha por el backoff se deshace. Sin esto, una ventana retransmitida varias veces
+// se quedaría con un tiempo límite enorme, porque los segmentos retransmitidos no dan medida
+// (regla de Karn).
 func (s *sender) restoreRTO() {
 	if s.srtt > 0 {
 		s.rto = min(max(s.srtt+4*s.rttvar, minRTO), maxRTO)
@@ -347,6 +371,8 @@ func (s *sender) handshake(ctx context.Context) error {
 			// is it answering?), so only a first attempt is used to measure the round trip.
 			// PT: Regra de Karn: a resposta a um segmento retransmitido é ambígua (a qual
 			// cópia ela responde?), então só a primeira tentativa serve para medir o tempo.
+			// ES: Regla de Karn: la respuesta a un segmento retransmitido es ambigua (¿a qué
+			// copia responde?), así que solo un primer intento sirve para medir el tiempo.
 			if try == 0 {
 				s.sample(time.Since(sentAt))
 			}
@@ -404,6 +430,8 @@ func (s *sender) transfer(ctx context.Context) error {
 		// and not yet acknowledged. Each ACK that moves `base` opens room for new segments.
 		// PT: A janela deslizante: o transmissor pode ter no máximo `window` bytes enviados e
 		// ainda não confirmados. Cada ACK que move `base` abre espaço para novos segmentos.
+		// ES: La ventana deslizante: el transmisor puede tener como máximo `window` bytes enviados y
+		// aún sin confirmar. Cada ACK que mueve `base` abre espacio para nuevos segmentos.
 		for next < len(s.data) && next < base+window {
 			size, err := s.sendData(next)
 			if err != nil {
@@ -419,6 +447,7 @@ func (s *sender) transfer(ctx context.Context) error {
 			if s.cfg.Mode == SelectiveRepeat {
 				// EN: Selective repeat resends only the segments whose own timer expired.
 				// PT: A retransmissão seletiva reenvia só os segmentos cujo temporizador expirou.
+				// ES: La repetición selectiva reenvía solo los segmentos cuyo temporizador expiró.
 				now := time.Now()
 				for offset, f := range s.flights {
 					if !f.acked && !now.Before(f.sentAt.Add(s.rto)) {
@@ -432,6 +461,8 @@ func (s *sender) transfer(ctx context.Context) error {
 				// flight and starts again from the oldest unacknowledged byte.
 				// PT: O go-back-N (e o stop-and-wait, a sua janela de um) esquece tudo o que
 				// estava em trânsito e recomeça do byte mais antigo ainda não confirmado.
+				// ES: El go-back-N (y el stop-and-wait, su ventana de uno) olvida todo lo que
+				// estaba en tránsito y recomienza desde el byte más antiguo aún sin confirmar.
 				clear(s.flights)
 				next = base
 			}
@@ -473,6 +504,8 @@ func (s *sender) transfer(ctx context.Context) error {
 		// ACK that would do it was lost.
 		// PT: Um ACK seletivo pode liberar a frente da janela mesmo quando o ACK cumulativo
 		// que faria isso se perdeu.
+		// ES: Un ACK selectivo puede liberar el frente de la ventana incluso cuando se perdió el
+		// ACK acumulativo que lo habría hecho.
 		for f := s.flights[base]; f != nil && f.acked; f = s.flights[base] {
 			delete(s.flights, base)
 			base += f.size

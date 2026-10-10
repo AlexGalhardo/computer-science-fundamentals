@@ -2,6 +2,8 @@
 //     rewrites `results/results.md`.
 // PT: `bun run demo`: roda os cenários contra o RabbitMQ e o PostgreSQL, mostra as tabelas e
 //     reescreve `results/results.md`.
+// ES: `bun run demo`: ejecuta los escenarios contra RabbitMQ y PostgreSQL, imprime las tablas y
+//     reescribe `results/results.md`.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

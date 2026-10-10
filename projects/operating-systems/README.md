@@ -1,6 +1,6 @@
 # Operating systems
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 An operating system is the program that shares one machine among many programs: it gives each process the illusion of its own CPU and memory, mediates access to files and devices, and keeps programs from damaging each other. Understanding processes, scheduling, virtual memory, file systems and deadlocks explains most of the behaviour, and most of the performance problems, of real software.
 

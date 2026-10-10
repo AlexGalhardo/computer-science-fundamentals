@@ -14,6 +14,15 @@ desenhada a partir da sua geometria (uma fórmula para "a que distância este pi
 contorno"), então a mesma função consegue desenhá-la maior, mais grossa, deslocada ou girada. O
 arquivo também tem as duas transformações de imagem usadas no aumento de dados: deslocar e girar
 uma imagem que já existe.
+
+ES: El conjunto de datos: imágenes pequeñas en escala de grises de cuatro formas, dibujadas por
+este archivo. No se descarga nada.
+
+Cada imagen es un tensor de 20 x 20 con valores de brillo de 0 (negro) a 1 (blanco). La forma se
+dibuja a partir de su geometría (una fórmula para "a qué distancia está este píxel del contorno"),
+así que la misma función puede dibujarla más grande, más gruesa, desplazada o girada. El archivo
+también tiene las dos transformaciones de imagen usadas en el aumento de datos: desplazar y girar
+una imagen que ya existe.
 """
 
 import math
@@ -24,6 +33,8 @@ SIZE = 20
 CLASSES = ("circle", "square", "triangle", "cross")
 # EN: The middle of a 20-pixel side is between pixels 9 and 10, so the centre is at 9.5.
 # PT: O meio de um lado de 20 pixels fica entre os pixels 9 e 10, então o centro está em 9.5.
+# ES: La mitad de un lado de 20 píxeles queda entre los píxeles 9 y 10, así que el centro está
+#     en 9.5.
 CENTRE = (SIZE - 1) / 2
 
 
@@ -34,6 +45,8 @@ def _segment_distance(
     #     projection between the two ends, and measure the distance to that point.
     # PT: Distância de cada pixel a um segmento de reta: projeta o pixel na reta, mantém a
     #     projeção entre as duas pontas e mede a distância até esse ponto.
+    # ES: Distancia de cada píxel a un segmento de recta: proyecta el píxel sobre la recta, mantiene
+    #     la proyección entre los dos extremos y mide la distancia hasta ese punto.
     px, py = end[0] - start[0], end[1] - start[1]
     t = (((u - start[0]) * px + (v - start[1]) * py) / (px * px + py * py)).clamp(0.0, 1.0)
     return torch.sqrt((u - start[0] - t * px) ** 2 + (v - start[1] - t * py) ** 2)
@@ -51,11 +64,15 @@ def draw_shape(
     """EN: Draws the outline of one shape and returns a size x size tensor with values in [0, 1].
 
     PT: Desenha o contorno de uma forma e devolve um tensor size x size com valores em [0, 1].
+
+    ES: Dibuja el contorno de una forma y devuelve un tensor size x size con valores en [0, 1].
     """
     # EN: Two tables with the coordinates of every pixel: ys[r][c] = r and xs[r][c] = c. All the
     #     pixels are then computed at once, with no loop.
     # PT: Duas tabelas com as coordenadas de cada pixel: ys[r][c] = r e xs[r][c] = c. Todos os
     #     pixels são então calculados de uma vez, sem laço.
+    # ES: Dos tablas con las coordenadas de cada píxel: ys[r][c] = r y xs[r][c] = c. Todos los
+    #     píxeles se calculan entonces de una vez, sin bucle.
     axis = torch.arange(size, dtype=torch.float32)
     ys, xs = torch.meshgrid(axis, axis, indexing="ij")
     dx, dy = xs - centre_x, ys - centre_y
@@ -64,6 +81,8 @@ def draw_shape(
     #     shape in them. (u, v) are the coordinates of the pixel as the shape sees them.
     # PT: Para desenhar uma forma girada giramos as coordenadas no sentido contrário e desenhamos
     #     nelas a forma em pé. (u, v) são as coordenadas do pixel vistas pela forma.
+    # ES: Para dibujar una forma girada giramos las coordenadas en sentido contrario y dibujamos en
+    #     ellas la forma derecha. (u, v) son las coordenadas del píxel vistas por la forma.
     angle = math.radians(angle_degrees)
     u = dx * math.cos(angle) + dy * math.sin(angle)
     v = -dx * math.sin(angle) + dy * math.cos(angle)
@@ -82,6 +101,9 @@ def draw_shape(
         #     of an image grows downwards, so "up" is a negative y).
         # PT: Três cantos sobre um círculo, a 120 graus um do outro, o primeiro apontando para
         #     cima (o eixo y de uma imagem cresce para baixo, então "para cima" é um y negativo).
+        # ES: Tres esquinas sobre un círculo, a 120 grados una de otra, la primera apuntando hacia
+        #     arriba (el eje y de una imagen crece hacia abajo, así que "hacia arriba" es una y
+        #     negativa).
         corners = [
             (radius * math.cos(math.radians(a)), radius * math.sin(math.radians(a)))
             for a in (-90.0, 30.0, 150.0)
@@ -95,6 +117,8 @@ def draw_shape(
     #     the line get something in between, which gives a smooth line and not a staircase.
     # PT: Os pixels sobre o contorno recebem 1, os distantes recebem 0, e os pixels na beira do
     #     traço recebem algo no meio, o que dá um traço suave e não uma escada.
+    # ES: Los píxeles sobre el contorno reciben 1, los lejanos reciben 0, y los píxeles en el borde
+    #     del trazo reciben algo intermedio, lo que da un trazo suave y no una escalera.
     return (thickness / 2 + 0.5 - distance).clamp(0.0, 1.0)
 
 
@@ -121,10 +145,20 @@ def make_dataset(
     a 4 pixels do centro nos dois eixos, para a esquerda ou a direita e para cima ou para baixo
     ao acaso. `angle=(10, 30)` gira cada forma de 10 a 30 graus, em um sentido ou no outro ao
     acaso. A mesma semente sempre dá as mesmas imagens.
+
+    ES: Genera `count` imágenes etiquetadas. Devuelve las imágenes (count x 1 x 20 x 20) y las
+    etiquetas.
+
+    Cada imagen tiene tamaño, grosor del trazo y brillo aleatorios, una pequeña posición aleatoria
+    (`jitter` píxeles alrededor del centro) y ruido. `shift=(2, 4)` aleja cada forma de 2 a 4
+    píxeles del centro en los dos ejes, a la izquierda o a la derecha y hacia arriba o hacia abajo
+    al azar. `angle=(10, 30)` gira cada forma de 10 a 30 grados, en un sentido o en el otro al
+    azar. La misma semilla siempre da las mismas imágenes.
     """
     generator = torch.Generator().manual_seed(seed)
     # EN: One row of random numbers in [0, 1) per image; each column decides one property.
     # PT: Uma linha de números aleatórios em [0, 1) por imagem; cada coluna decide uma propriedade.
+    # ES: Una fila de números aleatorios en [0, 1) por imagen; cada columna decide una propiedad.
     rolls = torch.rand(count, 10, generator=generator).tolist()
 
     def signed(low_high: tuple[float, float], amount: float, side: float) -> float:
@@ -134,6 +168,7 @@ def make_dataset(
     images = torch.zeros(count, 1, SIZE, SIZE)
     # EN: Labels 0, 1, 2, 3, 0, 1, ... so that every class has the same number of images.
     # PT: Rótulos 0, 1, 2, 3, 0, 1, ... para que toda classe tenha o mesmo número de imagens.
+    # ES: Etiquetas 0, 1, 2, 3, 0, 1, ... para que cada clase tenga el mismo número de imágenes.
     labels = torch.arange(count) % len(CLASSES)
     for index, roll in enumerate(rolls):
         centre_x = CENTRE + jitter * (2 * roll[0] - 1) + signed(shift, roll[1], roll[2])
@@ -170,6 +205,14 @@ def transform_batch(
     quatro pixels, os valores deles são misturados (interpolação bilinear), e quando cai fora da
     imagem o resultado é 0 (preto). `affine_grid` monta a tabela "pixel novo -> posição antiga" e
     `grid_sample` faz a leitura.
+
+    ES: Gira y desplaza imágenes que ya existen. `shifts` guarda (dx, dy) en píxeles.
+
+    Para cada píxel de la imagen NUEVA calculamos de dónde viene en la imagen ANTIGUA (deshace el
+    desplazamiento, luego deshace la rotación) y leemos el brillo ahí. Cuando ese lugar cae entre
+    cuatro píxeles, sus valores se mezclan (interpolación bilineal), y cuando cae fuera de la
+    imagen el resultado es 0 (negro). `affine_grid` arma la tabla "píxel nuevo -> posición antigua"
+    y `grid_sample` hace la lectura.
     """
     radians = angles_degrees * (math.pi / 180.0)
     cos, sin = torch.cos(radians), torch.sin(radians)
@@ -177,6 +220,8 @@ def transform_batch(
     #     of 20 pixels is 2 units long and one pixel is 2 / 20 of a unit.
     # PT: affine_grid mede posições de -1 (uma borda) a +1 (a outra borda), então um lado de 20
     #     pixels tem 2 unidades e um pixel vale 2 / 20 de unidade.
+    # ES: affine_grid mide posiciones de -1 (un borde) a +1 (el otro borde), así que un lado de 20
+    #     píxeles tiene 2 unidades y un píxel vale 2 / 20 de unidad.
     tx = shifts[:, 0] * (2.0 / images.shape[-1])
     ty = shifts[:, 1] * (2.0 / images.shape[-2])
     theta = torch.stack(
@@ -210,6 +255,14 @@ def random_augment(
     O rótulo continua verdadeiro (um triângulo deslocado e um pouco girado ainda é um triângulo),
     então a rede vê exemplos novos de graça e aprende que a posição e pequenas rotações não
     importam. É aplicado só aos lotes de treino, nunca às imagens usadas para medir a acurácia.
+
+    ES: Aumento de datos: cada imagen del lote recibe su propio desplazamiento y rotación
+    aleatorios.
+
+    La etiqueta sigue siendo verdadera (un triángulo desplazado y un poco girado sigue siendo un
+    triángulo), así que la red ve ejemplos nuevos gratis y aprende que la posición y las rotaciones
+    pequeñas no importan. Se aplica solo a los lotes de entrenamiento, nunca a las imágenes usadas
+    para medir la exactitud.
     """
     count = images.shape[0]
     angles = (2 * torch.rand(count, generator=generator) - 1) * max_angle

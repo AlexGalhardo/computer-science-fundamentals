@@ -10,6 +10,9 @@ import { forgedGet, forgedPost, legitimateChange, logIn, postChange, readCsrfTok
 // PT: Sem navegador aqui. Estes testes chamam os apps dentro do processo e anexam o cookie à
 //     mão, então respondem a uma única pergunta: "se o cookie CHEGAR em uma requisição forjada,
 //     o que o servidor faz?". Se o navegador envia o cookie é assunto dos testes com Playwright.
+// ES: Aquí no hay navegador. Estas pruebas llaman a las apps dentro del proceso y adjuntan la cookie a
+//     mano, así que responden una única pregunta: "si la cookie LLEGA en una solicitud falsificada,
+//     ¿qué hace el servidor?". Si el navegador envía la cookie es tema de las pruebas con Playwright.
 describe("vulnerable app: the flaw is observable", () => {
 	test("a forged POST carrying only the cookie changes the e-mail", async () => {
 		const { app, state } = createVulnerableApp();
@@ -95,6 +98,9 @@ describe("fixed app: the same attempts are blocked and normal use still works", 
 	// PT: "Amarrado à sessão": um token válido de OUTRA sessão não pode funcionar. Senão um
 	//     atacante poderia logar na própria conta, copiar o próprio token e colocá-lo no
 	//     formulário forjado.
+	// ES: "Atado a la sesión": un token válido de OTRA sesión no puede funcionar. De lo contrario un
+	//     atacante podría iniciar sesión en su propia cuenta, copiar su propio token y ponerlo en el
+	//     formulario falsificado.
 	test("a valid token from another session is refused", async () => {
 		const { app, state } = createFixedApp();
 		const victim = await logIn(app);
@@ -154,6 +160,10 @@ describe("one defence at a time (server side)", () => {
 	//     assim (um navegador antigo, ou uma requisição de um subdomínio irmão, que é "same
 	//     site"), um app só com SameSite não tem mais com o que recusá-la. Por isso a correção
 	//     usa as duas defesas.
+	// ES: Un límite honesto: SameSite lo aplica el NAVEGADOR. Si la cookie llega de todos modos
+	//     (un navegador antiguo, o una solicitud de un subdominio hermano, que es "same
+	//     site"), una app con solo SameSite ya no tiene con qué rechazarla. Por eso la corrección
+	//     usa las dos defensas.
 	test("SameSite only: if the cookie arrives anyway, nothing on the server stops the change", async () => {
 		const { app, state } = createFixedApp({ sameSite: "Strict", requireToken: false });
 		const { cookieHeader, setCookie } = await logIn(app);

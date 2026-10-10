@@ -1,6 +1,6 @@
 # cache-strategies
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A cache is a second copy of the data, and the whole difficulty is keeping the two copies together. This mini-project puts Redis in front of PostgreSQL behind an ElysiaJS API and shows two things. First, how the three classic strategies behave on a write (cache-aside, write-through and write-behind), each with a test that states what it guarantees and what it does not. Second, the cache stampede: 300 readers of one popular key send hundreds of identical queries to the database every time the key expires, and a lock or an early refresh brings that down to one.
 

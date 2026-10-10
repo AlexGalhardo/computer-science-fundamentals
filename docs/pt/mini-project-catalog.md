@@ -1,7 +1,7 @@
 # Catálogo de miniprojetos
 
-> English version: [docs/en/mini-project-catalog.md](../en/mini-project-catalog.md)
-
+> English version: [docs/en/mini-project-catalog.md](../en/mini-project-catalog.md) · Versión en español: [docs/es/mini-project-catalog.md](../es/mini-project-catalog.md)
+>
 > Nota (2026-10-08): a pasta `references/` citada neste documento foi removida do repositório e do histórico. As referências de estudo estão em [REFERENCES.pt-BR.md](../../REFERENCES.pt-BR.md).
 
 Ideias acordadas no brainstorming da Fase 2, agrupadas por área. Este é o backlog que o `PLAN.md` transforma em tarefas com critérios de aceite. TypeScript é a linguagem de referência, a menos que outra apareça primeiro na lista.

@@ -7,6 +7,11 @@
 //     consumidor ingênuo, o armazenamento de chaves de idempotência dá exatamente um efeito por
 //     mensagem, e uma mensagem envenenada termina na dead-letter queue depois das tentativas
 //     configuradas.
+// ES: Pruebas de extremo a extremo contra un RabbitMQ y un PostgreSQL reales, iniciados por
+//     docker-compose. Son los criterios de aceptación del mini-proyecto: los duplicados perjudican
+//     a un consumidor ingenuo, el almacén de claves de idempotencia da exactamente un efecto por
+//     mensaje, y un mensaje envenenado termina en la dead-letter queue tras los intentos
+//     configurados.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { ChannelModel } from "amqplib";

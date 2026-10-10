@@ -4,6 +4,9 @@
 # PT: Uma imagem roda a loja, a checagem de tipos e as três suítes que não precisam de navegador
 #     (unitária, integração, regressão), além da suíte de fumaça. As dependências vêm do
 #     lockfile, em uma camada própria, então editar o código não as baixa de novo.
+# ES: Una imagen ejecuta la tienda, la verificación de tipos y las tres suites que no necesitan navegador
+#     (unitaria, integración, regresión), además de la suite de humo. Las dependencias vienen del
+#     lockfile, en su propia capa, así que editar el código no las descarga de nuevo.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock ./

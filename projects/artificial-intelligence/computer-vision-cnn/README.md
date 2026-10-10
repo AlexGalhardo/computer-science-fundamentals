@@ -1,6 +1,6 @@
 # computer-vision-cnn
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 It teaches **how a network sees: images as numbers, convolution, pooling and learned filters**. A convolution is written by hand with loops and checked against PyTorch, number by number. Then a small convolutional network (CNN) learns to classify four shapes that the project draws itself (circle, square, triangle, cross), is compared with a fully connected network of the same size on shapes that moved, is trained again with data augmentation, and has its learned filters and activation maps saved as pictures.
 

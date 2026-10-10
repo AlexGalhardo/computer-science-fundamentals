@@ -3,6 +3,8 @@
 //     lab. Never copy it, never import it from another project, never deploy it.
 // PT: VULNERÁVEL DE PROPÓSITO. Esta API protege as rotas com o verificador vulnerável deste
 //     laboratório. Nunca copie, nunca importe de outro projeto, nunca publique.
+// ES: VULNERABLE A PROPÓSITO. Esta API protege las rutas con el verificador vulnerable de este
+//     laboratorio. Nunca la copies, nunca la importes desde otro proyecto, nunca la publiques.
 // ============================================================================================
 
 import { Elysia } from "elysia";
@@ -21,6 +23,8 @@ function readText(body: unknown, field: string): string {
 //     of the app, and writing it by hand would only lose that information.
 // PT: O tipo de retorno fica por conta da inferência de propósito: o Elysia codifica cada rota
 //     no tipo do app, e escrevê-lo à mão só perderia essa informação.
+// ES: El tipo de retorno se deja a la inferencia a propósito: Elysia codifica cada ruta
+//     en el tipo de la app, y escribirlo a mano solo perdería esa información.
 export function createVulnerableApp(secret: string, clock: Clock) {
 	function requireIdentity(request: Request): VulnerableIdentity {
 		const token = bearerToken(request);
@@ -36,6 +40,8 @@ export function createVulnerableApp(secret: string, clock: Clock) {
 			//     flaws are on the verifying side, which never reads them, and in the secret.
 			// PT: O lado emissor é honesto: escreve `exp`, `iss` e `aud` no token. As falhas estão
 			//     no lado que verifica, que nunca lê esses campos, e no segredo.
+			// ES: El lado emisor es honesto: escribe `exp`, `iss` y `aud` en el token. Las fallas están
+			//     en el lado que verifica, que nunca lee esos campos, y en el secreto.
 			.post("/login", ({ body }) => {
 				const user = findUser(readText(body, "username"), readText(body, "password"));
 				if (user === null) throw new HttpError(401, "invalid_credentials");

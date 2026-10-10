@@ -5,6 +5,9 @@ defmodule PureFunctionsProperties.Pipeline do
   PT: Um relatório de vendas montado pela composição de pequenas funções puras. Cada etapa
       recebe um valor e devolve um novo, então as etapas podem ser testadas sozinhas e lidas de
       cima para baixo.
+  ES: Un reporte de ventas armado componiendo pequeñas funciones puras. Cada paso
+      recibe un valor y devuelve uno nuevo, así que los pasos se pueden probar solos y leer de
+      arriba hacia abajo.
   """
 
   # EN: The pipe operator passes the value on its left as the first argument of the call on
@@ -15,6 +18,10 @@ defmodule PureFunctionsProperties.Pipeline do
   #     então estas cinco linhas são `Enum.take(ranked(totals_by_category(...)), top)` escritas
   #     na ordem em que as coisas acontecem. TypeScript não tem esse operador, e a outra
   #     implementação monta a mesma cadeia com uma função `pipe`.
+  # ES: El operador pipe pasa el valor de la izquierda como primer argumento de la llamada de la
+  #     derecha, así que estas cinco líneas son `Enum.take(ranked(totals_by_category(...)), top)`
+  #     escritas en el orden en que ocurren las cosas. TypeScript no tiene ese operador, y la otra
+  #     implementación arma la misma cadena con una función `pipe`.
   def sales_report(orders, top) do
     orders
     |> only_status("paid")
@@ -36,6 +43,8 @@ defmodule PureFunctionsProperties.Pipeline do
   #     returns a new map; nothing is updated in place.
   # PT: Agrupar é uma redução cujo acumulador é um map de categoria para total. Cada passo
   #     devolve um map novo; nada é atualizado no lugar.
+  # ES: Agrupar es una reducción cuyo acumulador es un map de categoría a total. Cada paso
+  #     devuelve un map nuevo; nada se actualiza en el lugar.
   def totals_by_category(lines) do
     lines
     |> Enum.reduce(%{}, fn line, totals ->
@@ -48,5 +57,7 @@ defmodule PureFunctionsProperties.Pipeline do
   #     depend on the order of the input (a map has no guaranteed order).
   # PT: Maior total primeiro; totais iguais são ordenados pelo nome da categoria, para o
   #     resultado não depender da ordem da entrada (um map não tem ordem garantida).
+  # ES: Primero el total mayor; los totales iguales se ordenan por el nombre de la categoría, para
+  #     que el resultado no dependa del orden de la entrada (un map no tiene orden garantizado).
   def ranked(totals), do: Enum.sort_by(totals, &{-&1.total_cents, &1.category})
 end

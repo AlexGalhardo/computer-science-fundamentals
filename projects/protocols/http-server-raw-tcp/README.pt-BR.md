@@ -1,6 +1,6 @@
 # http-server-raw-tcp
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um servidor HTTP/1.1 escrito em Go diretamente sobre sockets TCP, **sem `net/http`**. O mini-projeto ensina o que há dentro de uma requisição e de uma resposta HTTP: uma linha de requisição, linhas de cabeçalho, uma linha vazia e um corpo cujo tamanho os cabeçalhos anunciam. Ele analisa as requisições à mão, faz o roteamento, mantém conexões abertas, transmite respostas em chunked, e recusa requisições malformadas ou grandes demais com o código de status correto. O curl e um navegador de verdade conferem que o que ele envia é HTTP válido.
 

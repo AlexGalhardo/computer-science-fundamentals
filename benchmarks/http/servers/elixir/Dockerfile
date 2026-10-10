@@ -4,6 +4,9 @@
 # PT: Servidor HTTP em Elixir do benchmark, construído como release OTP em modo de produção:
 #     uma pasta autocontida com a aplicação compilada e o runtime do Erlang.
 #     A imagem slim não traz certificados de CA, e o Hex precisa deles para baixar pacotes.
+# ES: Servidor HTTP en Elixir del benchmark, construido como release OTP en modo de producción:
+#     una carpeta autocontenida con la aplicación compilada y el runtime de Erlang.
+#     La imagen slim no trae certificados de CA, y Hex los necesita para descargar paquetes.
 FROM elixir:1.20.4-otp-28-slim
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends ca-certificates \

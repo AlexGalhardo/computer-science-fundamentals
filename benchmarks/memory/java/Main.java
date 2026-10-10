@@ -10,6 +10,12 @@
 //     muito rápido. A maioria morre jovem e nunca mais é tocada. Os poucos que sobrevivem são
 //     copiados para a geração velha. A JVM reserva um heap grande de saída para isso
 //     funcionar, então seu uso de memória é bem maior que os dados vivos.
+// ES: Carga de memoria en Java: `binary-trees` (asigna y descarta muchos nodos pequeños) e `idle`
+//     (arranca y sale). Modelo de Java: recolector de basura generacional que mueve objetos (G1 por
+//     defecto). Los objetos nuevos se asignan avanzando un puntero en la generación joven, lo que es
+//     muy rápido. La mayoría muere joven y nunca vuelve a tocarse. Los pocos que sobreviven se
+//     copian a la generación vieja. La JVM reserva un heap grande desde el inicio para que esto
+//     funcione, así que su uso de memoria es bastante mayor que los datos vivos.
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,6 +34,7 @@ public final class Main {
 
     // EN: Walks the whole tree and counts its nodes.
     // PT: Percorre a árvore inteira e conta os nós.
+    // ES: Recorre el árbol completo y cuenta los nodos.
     long check() {
       return left == null ? 1 : 1 + left.check() + right.check();
     }
@@ -63,6 +70,7 @@ public final class Main {
     } catch (IOException e) {
       // EN: Not on Linux: report zero instead of failing the run.
       // PT: Fora do Linux: informa zero em vez de derrubar a execução.
+      // ES: Fuera de Linux: informa cero en lugar de tumbar la ejecución.
     }
     return 0;
   }

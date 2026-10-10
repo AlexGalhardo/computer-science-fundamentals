@@ -6,6 +6,10 @@
 //     1. consultas parametrizadas (`fixed-queries.ts`): é a camada que elimina a falha;
 //     2. validação de entrada com Zod: recusa entrada sem sentido antes de chegar ao banco;
 //     3. um papel de banco com menor privilégio: o pool entregue a este app só lê duas tabelas.
+// ES: La app ElysiaJS corregida. Mismas rutas que la vulnerable, con tres capas de defensa:
+//     1. consultas parametrizadas (`fixed-queries.ts`): es la capa que elimina la falla;
+//     2. validación de entrada con Zod: rechaza entradas sin sentido antes de llegar a la base de datos;
+//     3. un rol de base de datos con mínimo privilegio: el pool entregado a esta app solo lee dos tablas.
 
 import { Elysia } from "elysia";
 import type { Pool } from "pg";
@@ -19,6 +23,10 @@ import { fixedFindUser, fixedSearchProducts } from "./fixed-queries";
 //     que É aceito. O termo de busca é texto livre (um produto pode se chamar "Bob's mouse"),
 //     então só o tamanho é limitado. Tudo bem: não é a validação que barra a injeção, são os
 //     marcadores.
+// ES: Un nombre de usuario tiene un formato conocido, así que el schema es una lista de permitidos:
+//     dice qué SE acepta. El término de búsqueda es texto libre (un producto puede llamarse
+//     "Bob's mouse"), así que solo se limita el tamaño. Está bien: no es la validación lo que
+//     detiene la inyección, son los marcadores.
 const loginBody = z.object({
 	username: z.string().regex(/^[a-z0-9-]{3,32}$/),
 	password: z.string().min(1).max(128),
@@ -32,6 +40,8 @@ const searchQuery = z.object({
 //     of the app, and writing it by hand would only lose that information.
 // PT: O tipo de retorno fica por conta da inferência de propósito: o Elysia codifica cada rota
 //     no tipo do app, e escrevê-lo à mão só perderia essa informação.
+// ES: El tipo de retorno se deja a la inferencia a propósito: Elysia codifica cada ruta
+//     en el tipo de la app, y escribirlo a mano solo perdería esa información.
 export function createFixedApp(pool: Pool) {
 	return (
 		new Elysia()
@@ -54,6 +64,10 @@ export function createFixedApp(pool: Pool) {
 			//     ali, o Elysia 1.4 quebra o valor da query em um array a cada vírgula antes de
 			//     validar, então uma busca legítima como "mouse, fake" seria recusada. Aqui o termo
 			//     continua sendo uma string só: é conferido pelo Zod e depois enviado como parâmetro.
+			// ES: Esta ruta valida dentro del handler en lugar de usar la opción `query`. Con un schema Zod
+			//     allí, Elysia 1.4 parte el valor de la query en un arreglo en cada coma antes de
+			//     validar, así que una búsqueda legítima como "mouse, fake" sería rechazada. Aquí el término
+			//     sigue siendo una sola cadena: lo comprueba Zod y luego se envía como parámetro.
 			.get("/products", async ({ query, status }) => {
 				const parsed = searchQuery.safeParse(query);
 				if (!parsed.success) {

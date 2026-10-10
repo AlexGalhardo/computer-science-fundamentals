@@ -3,6 +3,9 @@ written as a PyTorch module.
 
 PT: A rede do MP-AI-2 (2 entradas, duas camadas ocultas de 8 neurônios com tanh, 1 saída)
 escrita como um módulo do PyTorch.
+
+ES: La red de MP-AI-2 (2 entradas, dos capas ocultas de 8 neuronas con tanh, 1 salida) escrita
+como un módulo de PyTorch.
 """
 
 import torch
@@ -10,7 +13,12 @@ from torch import nn
 
 
 class MoonsNet(nn.Module):
-    """EN: A multi-layer perceptron 2-8-8-1. PT: Um perceptron multicamadas 2-8-8-1."""
+    """EN: A multi-layer perceptron 2-8-8-1.
+
+    PT: Um perceptron multicamadas 2-8-8-1.
+
+    ES: Un perceptrón multicapa 2-8-8-1.
+    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -24,6 +32,11 @@ class MoonsNet(nn.Module):
         #     vieses de formato (8,). Na versão feita à mão isso era uma lista de 8 objetos
         #     `Neuron`, cada um com uma lista de pesos. Atribuir uma camada a `self` a registra:
         #     é assim que `model.parameters()` depois encontra todos os pesos sem ser avisado.
+        # ES: `nn.Linear(2, 8)` es una capa entera de 8 neuronas en un solo objeto. Es dueña de una
+        #     matriz de pesos de forma (8, 2), una fila por neurona, y de un vector de sesgos de
+        #     forma (8,). En la versión hecha a mano esto era una lista de 8 objetos `Neuron`, cada
+        #     uno con una lista de pesos. Asignar una capa a `self` la registra: así es como
+        #     `model.parameters()` luego encuentra todos los pesos sin que se le avise.
         self.hidden1 = nn.Linear(2, 8)
         self.hidden2 = nn.Linear(8, 8)
         self.output = nn.Linear(8, 1)
@@ -37,12 +50,18 @@ class MoonsNet(nn.Module):
         #     cada. Uma camada linear calcula `inputs @ weight.T + bias` para os N pontos em um
         #     único produto de matrizes, então os formatos vão de (N, 2) -> (N, 8) -> (N, 8) ->
         #     (N, 1). Não há laço de Python sobre os pontos nem sobre os neurônios.
+        # ES: `inputs` contiene el lote entero de una vez, forma (N, 2): N puntos, 2 números cada
+        #     uno. Una capa lineal calcula `inputs @ weight.T + bias` para los N puntos en un solo
+        #     producto de matrices, así que las formas van de (N, 2) -> (N, 8) -> (N, 8) ->
+        #     (N, 1). No hay bucle de Python sobre los puntos ni sobre las neuronas.
         hidden = torch.tanh(self.hidden1(inputs))
         hidden = torch.tanh(self.hidden2(hidden))
         # EN: No activation at the end: the output is a logit, exactly as in MP-AI-2. The loss
         #     function applies the sigmoid itself.
         # PT: Sem ativação no fim: a saída é um logit, exatamente como no MP-AI-2. A função de
         #     perda aplica a sigmoide por conta própria.
+        # ES: Sin activación al final: la salida es un logit, exactamente como en MP-AI-2. La
+        #     función de pérdida aplica la sigmoide por su cuenta.
         return self.output(hidden)
 
 
@@ -64,6 +83,15 @@ def start_like_scratch(model: MoonsNet) -> None:
     aprende o conjunto de dados, só que mais devagar, e a demo mostra isso. Para refazer o
     MP-AI-2 a mesma regra é usada aqui. Os números sorteados não são os mesmos (o PyTorch tem o
     seu próprio gerador aleatório), só a regra é.
+
+    ES: Cambia los pesos iniciales por la regla de MP-AI-2: pesos sorteados uniformemente en
+    (-1, 1) y sesgos en cero.
+
+    `nn.Linear` ya empieza con pesos aleatorios, pero menores (entre -1/raíz(entradas) y
+    1/raíz(entradas)), una elección hecha para redes profundas. Con ellos esta red pequeña también
+    aprende el conjunto de datos, solo que más despacio, y la demo lo muestra. Para rehacer
+    MP-AI-2 aquí se usa la misma regla. Los números sorteados no son los mismos (PyTorch tiene su
+    propio generador aleatorio), solo la regla lo es.
     """
     with torch.no_grad():
         for layer in (model.hidden1, model.hidden2, model.output):

@@ -1,6 +1,6 @@
 # Laboratório de testes intermitentes (MP-TEST-4)
 
-> English version: [docs/en/testing/flaky-tests.md](../../en/testing/flaky-tests.md)
+> English version: [docs/en/testing/flaky-tests.md](../../en/testing/flaky-tests.md) · Versión en español: [docs/es/testing/flaky-tests.md](../../es/testing/flaky-tests.md)
 
 Mini-projeto: [`projects/testing/flaky-tests`](../../../projects/testing/flaky-tests/README.pt-BR.md). Tópicos do quiz: `flaky-tests`, `test-doubles`, `unit-tests-isolation`.
 

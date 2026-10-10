@@ -1,6 +1,6 @@
 # Mini SGBD relacional (MP-DB-1)
 
-> English version: [docs/en/databases/mini-dbms.md](../../en/databases/mini-dbms.md)
+> English version: [docs/en/databases/mini-dbms.md](../../en/databases/mini-dbms.md) · Versión en español: [docs/es/databases/mini-dbms.md](../../es/databases/mini-dbms.md)
 
 Código: [projects/databases/mini-dbms](../../../projects/databases/mini-dbms). Linguagens: Rust e Python.
 
@@ -29,7 +29,7 @@ A projeção mantém as colunas pedidas. Descartar colunas pode tornar iguais li
 
 Os três recebem duas tabelas e uma coluna de cada, e devolvem os pares de linhas cujas chaves são iguais.
 
-```
+```text
 laços aninhados      junção por hash              ordenação e intercalação
 
 para r em R:         construção: para s em S:     ordena R pela chave

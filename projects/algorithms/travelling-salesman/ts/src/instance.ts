@@ -6,6 +6,10 @@
 //     distâncias entre elas. As distâncias são euclidianas, arredondadas para inteiros.
 //     Distâncias inteiras tornam o comprimento de um passeio exato, então dois resolvedores (ou
 //     duas linguagens) podem ser comparados com `===` em vez de uma tolerância.
+// ES: Una instancia del viajante de comercio: n ciudades en una cuadrícula de 1000 x 1000 y la matriz
+//     de distancias entre ellas. Las distancias son euclidianas, redondeadas a enteros.
+//     Las distancias enteras hacen exacta la longitud de un recorrido, así que dos solucionadores (o
+//     dos lenguajes) pueden compararse con `===` en lugar de una tolerancia.
 export type Matrix = readonly (readonly number[])[];
 
 export interface Solution {
@@ -20,6 +24,8 @@ export const GRID = 1000;
 //     JavaScript computes it exactly and Rust produces the same cities from the same seed.
 // PT: Gerador de Lehmer (estado * 48271 mod 2^31 - 1). O produto fica abaixo de 2^53, então o
 //     JavaScript o calcula de forma exata e o Rust produz as mesmas cidades da mesma semente.
+// ES: Generador de Lehmer (estado * 48271 mod 2^31 - 1). El producto queda por debajo de 2^53, así que
+//     JavaScript lo calcula de forma exacta y Rust produce las mismas ciudades con la misma semilla.
 export function randomInstance(n: number, seed: number): Matrix {
 	let state = ((seed * 1000 + n) % 2147483646) + 1;
 	const next = (): number => {
@@ -42,6 +48,7 @@ export function tourLength(dist: Matrix, tour: readonly number[]): number {
 
 // EN: A tour is valid when it starts at city 0 and visits every city exactly once.
 // PT: Um passeio é válido quando começa na cidade 0 e visita cada cidade exatamente uma vez.
+// ES: Un recorrido es válido cuando empieza en la ciudad 0 y visita cada ciudad exactamente una vez.
 export function isValidTour(n: number, tour: readonly number[]): boolean {
 	return (
 		tour.length === n &&

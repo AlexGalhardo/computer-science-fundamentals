@@ -4,6 +4,10 @@
 # PT: Dois estágios. O primeiro gera a página e suas 200 imagens com o Bun. O segundo é a imagem
 #     fixada do Caddy mais duas ferramentas pequenas: `tc` (controle de tráfego, para o netem) e
 #     `ethtool` (para desligar o segmentation offload). O contexto de build é a pasta do projeto.
+# ES: Dos etapas. La primera genera la página y sus 200 imágenes con Bun. La segunda es la
+#     imagen fijada de Caddy más dos herramientas pequeñas: `tc` (control de tráfico, para
+#     netem) y `ethtool` (para desactivar el segmentation offload). El contexto de build es la
+#     carpeta del proyecto.
 FROM oven/bun:1.4.2 AS site
 WORKDIR /build
 COPY ts/src/site.ts ts/src/build-site.ts ./

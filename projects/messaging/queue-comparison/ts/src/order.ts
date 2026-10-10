@@ -4,6 +4,9 @@
 // PT: A única tarefa que todo broker carrega neste mini-projeto: uma mensagem "pedido realizado"
 //     que faz um consumidor enviar um e-mail de confirmação (simulado). Uma mensagem vem da rede,
 //     então é validada com um schema antes de qualquer código confiar nos seus campos.
+// ES: La única tarea que lleva todo broker en este mini-proyecto: un mensaje "pedido realizado"
+//     que hace que un consumidor envíe un correo de confirmación (simulado). Un mensaje viene de
+//     la red, así que se valida con un esquema antes de que cualquier código confíe en sus campos.
 
 import { z } from "zod";
 
@@ -25,6 +28,8 @@ const CUSTOMERS = 4;
 //     choose the partition, so the orders of one customer stay in order.
 // PT: Os pedidos alternam entre poucos clientes. O id do cliente é a chave de ordenação: o Kafka
 //     a usa para escolher a partição, então os pedidos de um cliente ficam em ordem.
+// ES: Los pedidos rotan entre unos pocos clientes. El id del cliente es la clave de ordenamiento:
+//     Kafka la usa para elegir la partición, así que los pedidos de un cliente quedan en orden.
 export function makeOrders(count: number, prefix: string): OrderPlaced[] {
 	return Array.from({ length: count }, (_, seq) => {
 		const customer = seq % CUSTOMERS;
@@ -56,6 +61,8 @@ export interface SentEmail {
 //     have been sent, which is what the tests count.
 // PT: O e-mail é simulado: nada sai do processo. A caixa de saída só lembra o que teria sido
 //     enviado, que é o que os testes contam.
+// ES: El correo es simulado: nada sale del proceso. La bandeja de salida solo recuerda lo que se
+//     habría enviado, que es lo que cuentan las pruebas.
 export class FakeMailer {
 	readonly sent: SentEmail[] = [];
 

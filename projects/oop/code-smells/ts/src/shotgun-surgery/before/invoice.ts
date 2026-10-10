@@ -1,6 +1,8 @@
 // EN: SMELL: Shotgun Surgery (file 2 of 3). The same formatting again, this time with a loop.
 // PT: MAU CHEIRO: Cirurgia com Espingarda (arquivo 2 de 3). A mesma formatação de novo, desta
 //     vez com um laço.
+// ES: MAL OLOR: Cirugía con Escopeta (archivo 2 de 3). El mismo formateo de nuevo, esta vez
+//     con un bucle.
 export function invoiceTotal(amountsCents: readonly number[]): string {
 	let total = 0;
 	for (const amount of amountsCents) {

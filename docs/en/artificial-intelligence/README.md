@@ -1,6 +1,6 @@
 # Artificial intelligence and LLMs
 
-> Versão em português: [docs/pt/artificial-intelligence/README.md](../../pt/artificial-intelligence/README.md)
+> Versão em português: [docs/pt/artificial-intelligence/README.md](../../pt/artificial-intelligence/README.md) · Versión en español: [docs/es/artificial-intelligence/README.md](../../es/artificial-intelligence/README.md)
 
 This page explains, for a beginner, the ideas behind modern AI: how a program learns from data, what tokens and vectors are, how a language model writes text and how an image model draws. It follows the order of the quiz topics of the area (QC-AI), and each section points to the mini-project that shows the idea running. Every number below is small enough to check by hand.
 

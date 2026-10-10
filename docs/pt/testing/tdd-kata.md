@@ -1,6 +1,6 @@
 # Kata de TDD com histórico de commits (MP-TEST-2)
 
-> English version: [docs/en/testing/tdd-kata.md](../../en/testing/tdd-kata.md)
+> English version: [docs/en/testing/tdd-kata.md](../../en/testing/tdd-kata.md) · Versión en español: [docs/es/testing/tdd-kata.md](../../es/testing/tdd-kata.md)
 
 Mini-projeto: [`projects/testing/tdd-kata`](../../../projects/testing/tdd-kata/README.pt-BR.md). Tópicos do quiz: `tdd-cycle`, `unit-tests-isolation`.
 
@@ -8,7 +8,7 @@ Mini-projeto: [`projects/testing/tdd-kata`](../../../projects/testing/tdd-kata/R
 
 Desenvolvimento guiado por testes é um ritmo de três passos, sempre na mesma ordem:
 
-```
+```text
    +-----------+   escrever o menor código   +-----------+
    |    RED    | --------------------------> |   GREEN   |
    | um teste  |                             | todos os  |

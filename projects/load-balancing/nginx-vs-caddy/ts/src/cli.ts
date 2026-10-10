@@ -20,6 +20,10 @@ import {
 //     Roda os experimentos contra os dois proxies e escreve as tabelas em OUT_DIR. A
 //     configuração é lida primeiro, então um alvo que não é local para o programa antes de
 //     qualquer requisição ser enviada.
+// ES: `bun run src/cli.ts [distribution|failure|all]`
+//     Ejecuta los experimentos contra los dos proxies y escribe las tablas en OUT_DIR. La
+//     configuración se lee primero, así que un destino que no es local detiene el programa antes
+//     de que se envíe cualquier solicitud.
 
 const PROXIES: ProxyName[] = ["nginx", "caddy"];
 

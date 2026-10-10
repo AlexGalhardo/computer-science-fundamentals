@@ -6,6 +6,10 @@
 //     de sorte: rode mil vezes e a anomalia aparece duas. Aqui nada fica por conta da sorte. O
 //     cenário é uma lista de passos, cada um diz qual sessão o executa, e o harness os roda
 //     estritamente um depois do outro, então toda execução intercala as transações do mesmo jeito.
+// ES: Un arnés de pruebas con dos sesiones. Una carrera entre dos transacciones normalmente depende
+//     de la suerte: ejecútala mil veces y la anomalía aparece dos. Aquí nada queda a la suerte. El
+//     escenario es una lista de pasos, cada uno indica qué sesión lo ejecuta, y el arnés los corre
+//     estrictamente uno después del otro, así que cada ejecución intercala las transacciones igual.
 
 import { Client } from "pg";
 
@@ -69,6 +73,10 @@ const POLL_INTERVAL_MS = 2;
 //     transação. Um pool de conexões esconderia isso: duas consultas poderiam cair em sessões
 //     diferentes sem aviso. O observador é uma terceira sessão, fora das duas transações, usada
 //     para preparar os dados, olhar o estado final e perguntar ao servidor quem está esperando.
+// ES: Un `Client` es una conexión TCP, y una conexión es una sesión de PostgreSQL con su propia
+//     transacción. Un pool de conexiones escondería esto: dos consultas podrían caer en sesiones
+//     diferentes sin aviso. El observador es una tercera sesión, fuera de las dos transacciones, usada
+//     para preparar los datos, mirar el estado final y preguntarle al servidor quién está esperando.
 export async function openLab(databaseUrl: string): Promise<Lab> {
 	const names: SessionName[] = ["A", "B", "observer"];
 	const opened: Session[] = [];
@@ -79,6 +87,8 @@ export async function openLab(databaseUrl: string): Promise<Lab> {
 		//     fails after five seconds instead of hanging the test run.
 		// PT: Uma rede de segurança. Se um cenário for escrito errado e esperar para sempre, a
 		//     espera pelo bloqueio falha depois de cinco segundos em vez de travar os testes.
+		// ES: Una red de seguridad. Si un escenario se escribe mal y espera para siempre, la
+		//     espera por el bloqueo falla después de cinco segundos en lugar de colgar las pruebas.
 		await client.query("SET lock_timeout = '5s'");
 		const result = await client.query<{ pid: number }>("SELECT pg_backend_pid() AS pid");
 		const pid = result.rows[0]?.pid;
@@ -112,6 +122,8 @@ function errorCode(error: unknown): string {
 //     exactly how PostgreSQL prevents an anomaly, so the harness records the error and moves on.
 // PT: Um comando que falha é um resultado, não uma quebra. "Could not serialize access" (40001)
 //     é exatamente como o PostgreSQL evita uma anomalia, então o harness registra o erro e segue.
+// ES: Un comando que falla es un resultado, no una rotura. "Could not serialize access" (40001)
+//     es exactamente cómo PostgreSQL evita una anomalía, así que el arnés registra el error y sigue.
 async function execute(session: Session, sql: string, params: unknown[]): Promise<StepOutcome> {
 	try {
 		const result = await session.client.query(sql, params);
@@ -137,6 +149,11 @@ async function isWaitingForLock(observer: Session, pid: number): Promise<boolean
 //     chute, e chutes geram testes instáveis. Em vez disso o observador pergunta ao servidor: a
 //     visão `pg_stat_activity` informa `wait_event_type = 'Lock'` para uma sessão parada esperando
 //     um bloqueio. O laço termina quando o comando acaba ou quando o servidor confirma a espera.
+// ES: ¿Cómo saber que un comando está bloqueado y no solo lento? Dormir "lo suficiente" es una
+//     suposición, y las suposiciones generan pruebas inestables. En su lugar el observador le
+//     pregunta al servidor: la vista `pg_stat_activity` informa `wait_event_type = 'Lock'` para una
+//     sesión detenida esperando un bloqueo. El bucle termina cuando el comando acaba o cuando el
+//     servidor confirma la espera.
 async function settleOrBlock(
 	pending: Promise<unknown>,
 	observer: Session,
@@ -169,6 +186,9 @@ export async function runScenario(lab: Lab, steps: Step[]): Promise<ScenarioRun>
 	// PT: Depois de cada passo, uma sessão que estava bloqueada pode ter sido liberada (o outro
 	//     lado fez commit). Ela termina antes de o próximo passo começar, então a ordem do log
 	//     nunca depende de qual dos dois calhou de ser mais rápido.
+	// ES: Después de cada paso, una sesión que estaba bloqueada pudo haberse liberado (el otro
+	//     lado hizo commit). Termina antes de que empiece el siguiente paso, así que el orden del
+	//     registro nunca depende de cuál de los dos resultó ser más rápido.
 	async function drainReleased(): Promise<void> {
 		for (const [name, pending] of waiting) {
 			if (!(await isWaitingForLock(observer, lab.sessions[name].pid))) {
@@ -222,6 +242,7 @@ export async function runScenario(lab: Lab, steps: Step[]): Promise<ScenarioRun>
 	}
 	// EN: Whatever happened, both sessions leave the scenario with no open transaction.
 	// PT: Aconteça o que acontecer, as duas sessões saem do cenário sem transação aberta.
+	// ES: Pase lo que pase, las dos sesiones salen del escenario sin transacción abierta.
 	await lab.sessions.A.client.query("ROLLBACK");
 	await lab.sessions.B.client.query("ROLLBACK");
 	return { log, outcomes };
@@ -233,6 +254,9 @@ export async function runScenario(lab: Lab, steps: Step[]): Promise<ScenarioRun>
 // PT: A prova de que a intercalação foi a planejada: todo passo começou depois de o anterior ter
 //     terminado ou ter sido confirmado como bloqueado. Devolve a lista de violações, vazia
 //     quando a ordem foi respeitada.
+// ES: La prueba de que la intercalación fue la planeada: todo paso empezó después de que el anterior
+//     terminó o fue confirmado como bloqueado. Devuelve la lista de violaciones, vacía
+//     cuando se respetó el orden.
 export function orderViolations(log: LogEntry[]): string[] {
 	const violations: string[] = [];
 	for (let index = 1; index < log.length; index += 1) {

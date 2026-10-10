@@ -6,6 +6,10 @@
 //     cuja cópia em cache vive 2 segundos e cuja consulta leva 100 ms. Uma execução mede uma
 //     proteção (`MODE`): none, lock ou early. O número que importa é contado pela API, não pelo
 //     k6: quantas consultas ao banco cada expiração causou.
+// ES: Experimento del stampede: 300 usuarios virtuales leen sin parar UNA clave caliente cuya
+//     copia en caché vive 2 segundos y cuya consulta tarda 100 ms. Una ejecución mide una
+//     protección (`MODE`): none, lock o early. El número que importa lo cuenta la API, no k6:
+//     cuántas consultas a la base de datos causó cada expiración.
 
 import { check, sleep } from "k6";
 import http from "k6/http";
@@ -49,6 +53,8 @@ export function setup() {
 //     users find the cache empty at the same instant.
 // PT: Não há aquecimento de propósito. A partida a frio é o primeiro estouro da execução: 300
 //     usuários encontram o cache vazio no mesmo instante.
+// ES: No hay calentamiento a propósito. El arranque en frío es el primer stampede de la
+//     ejecución: 300 usuarios encuentran el caché vacío en el mismo instante.
 export default function () {
 	const response = http.get(`${BASE_URL}/hot/${MODE}`);
 	duration.add(response.timings.duration);
@@ -61,6 +67,9 @@ export default function () {
 	// PT: Uma pausa entre as leituras mantém a máquina utilizável. Com 300 usuários ainda são
 	//     cerca de 3000 requisições por segundo, muito mais que o bastante para empilhar durante
 	//     uma consulta de 100 ms.
+	// ES: Una pausa entre lecturas mantiene la máquina utilizable. Con 300 usuarios siguen siendo
+	//     unas 3000 solicitudes por segundo, mucho más que suficiente para acumularse durante una
+	//     consulta de 100 ms.
 	sleep(0.1);
 }
 

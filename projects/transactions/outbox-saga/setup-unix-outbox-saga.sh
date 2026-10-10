@@ -5,12 +5,16 @@
 # PT: Constrói e testa o mini-projeto outbox-saga. O único requisito é o Docker.
 #     Os testes são de ponta a ponta: dois serviços, dois bancos e um broker. Contêineres e volumes são
 #     removidos no fim, mesmo quando um teste falha.
+# ES: Construye y prueba el mini-proyecto outbox-saga. El único requisito es Docker.
+#     Las pruebas son de extremo a extremo: dos servicios, dos bases de datos y un broker. Los
+#     contenedores y volúmenes se eliminan al final, incluso cuando una prueba falla.
 set -eu
 
 cd "$(dirname "$0")"
 
 # EN: Containers that write into this folder run as the current user (see docker-compose.yml).
 # PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+# ES: Los contenedores que escriben en esta carpeta se ejecutan como el usuario actual (ver docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

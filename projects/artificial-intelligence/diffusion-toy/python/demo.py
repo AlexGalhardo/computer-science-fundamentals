@@ -5,6 +5,10 @@ training loss) and results.md (the numbers).
 PT: `python demo.py` treina o previsor de ruído, roda o processo direto e o reverso e grava em
 results/: forward.svg e reverse.svg (os pontos em vários passos), loss.svg (a perda do treino) e
 results.md (os números).
+
+ES: `python demo.py` entrena el predictor de ruido, ejecuta el proceso directo y el inverso y
+escribe en results/: forward.svg y reverse.svg (los puntos en varios pasos), loss.svg (la pérdida
+del entrenamiento) y results.md (los números).
 """
 
 import math
@@ -37,6 +41,9 @@ from svg import line_chart, scatter_panels
 # PT: A distância média abaixo da qual os pontos gerados precisam ficar. Está documentada no
 #     README e é conferida pelo teste do MP-AI-5.2. O dado real mede cerca de 0,024 e o ruído puro
 #     cerca de 0,54.
+# ES: La distancia media por debajo de la cual deben quedar los puntos generados. Está documentada
+#     en el README y la comprueba la prueba de MP-AI-5.2. El dato real mide cerca de 0,024 y el
+#     ruido puro cerca de 0,54.
 DISTANCE_THRESHOLD = 0.10
 
 KEPT_STEPS = (0, 10, 25, 50, 75, 100)
@@ -184,6 +191,8 @@ def write_results(trained: Trained, directory: Path) -> list[Path]:
     """EN: Runs both processes with the fixed seeds and writes the four result files.
 
     PT: Roda os dois processos com as sementes fixas e grava os quatro arquivos de resultado.
+
+    ES: Ejecuta los dos procesos con las semillas fijas y escribe los cuatro archivos de resultados.
     """
     forward = forward_chain(
         make_ring(FORWARD_COUNT, FORWARD_SEED), trained.schedule, FORWARD_SEED + 1, KEPT_STEPS
@@ -215,6 +224,10 @@ def write_results(trained: Trained, directory: Path) -> list[Path]:
         # PT: O arquivo antigo é removido antes. No Docker Desktop para Windows um arquivo gravado
         #     por um id de usuário (o script Unix) não pode ser sobrescrito por outro (o script
         #     PowerShell), mas pode ser apagado, porque a pasta em si é gravável por todos.
+        # ES: El archivo antiguo se elimina antes. En Docker Desktop para Windows un archivo
+        #     escrito por un id de usuario (el script Unix) no puede ser sobrescrito por otro (el
+        #     script PowerShell), pero sí puede borrarse, porque la carpeta en sí es escribible por
+        #     todos.
         (directory / name).unlink(missing_ok=True)
         (directory / name).write_text(text, encoding="utf-8", newline="\n")
         written.append(directory / name)

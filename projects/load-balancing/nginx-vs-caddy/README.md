@@ -1,6 +1,6 @@
 # nginx-vs-caddy
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Three identical API instances behind two load balancers, NGINX and Caddy, configured side by side. The lab sends the same traffic through both and answers two questions with numbers:
 

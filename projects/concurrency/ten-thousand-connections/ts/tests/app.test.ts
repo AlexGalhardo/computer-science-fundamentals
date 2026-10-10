@@ -25,6 +25,8 @@ test("delay rejects input that is not an integer from 0 to 60000", async () => {
 //     event loop is not waiting on any of them: it holds 200 timers and stays free.
 // PT: 200 requisições que esperam 300 ms cada terminam juntas em cerca de 300 ms em UMA thread.
 //     O event loop não fica esperando nenhuma delas: guarda 200 timers e continua livre.
+// ES: 200 solicitudes que esperan 300 ms cada una terminan juntas en cerca de 300 ms en UN thread.
+//     El event loop no queda esperando a ninguna de ellas: guarda 200 timers y sigue libre.
 test("delays overlap on a single thread", async () => {
 	const start = performance.now();
 	const responses = await Promise.all(Array.from({ length: 200 }, () => call("/delay?ms=300")));

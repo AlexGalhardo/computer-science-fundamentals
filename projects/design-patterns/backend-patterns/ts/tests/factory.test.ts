@@ -10,6 +10,7 @@ describe("factory: before", () => {
 
 	// EN: The flaw: the creation decision is duplicated, and one copy is out of date.
 	// PT: O defeito: a decisão de criação está duplicada, e uma das cópias está desatualizada.
+	// ES: El defecto: la decisión de creación está duplicada, y una de las copias está desactualizada.
 	test("a forgotten copy of the decision fails for a channel the other copy supports", () => {
 		expect(before.welcome("push", "ana")).toBe("push to ana: Welcome!");
 		expect(() => before.orderShipped("push", "ana")).toThrow("unknown channel: push");

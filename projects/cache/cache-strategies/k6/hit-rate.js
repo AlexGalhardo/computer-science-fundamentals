@@ -6,6 +6,11 @@
 //     por alguns segundos, 98% leituras e 2% escritas. Uma execução mede uma estratégia
 //     (`STRATEGY`) com um tempo de vida (`TTL_MS`). A taxa de acerto vem do cabeçalho `X-Cache`
 //     de cada resposta, a latência do k6, e os contadores do banco vêm da API.
+// ES: Experimento de tasa de aciertos y latencia. 20 usuarios virtuales leen y escriben 200
+//     productos durante unos segundos, 98% lecturas y 2% escrituras. Una ejecución mide una
+//     estrategia (`STRATEGY`) con un tiempo de vida (`TTL_MS`). La tasa de aciertos sale del
+//     encabezado `X-Cache` de cada respuesta, la latencia de k6, y los contadores de la base de
+//     datos vienen de la API.
 
 import { sleep } from "k6";
 import http from "k6/http";
@@ -30,6 +35,10 @@ const DURATION_S = Number(__ENV.DURATION_S || 5);
 // PT: Três cenários em sequência. `warmup` enche o cache e não é medido. `mark` roda uma vez e
 //     zera os contadores da API. `measure` é o único que registra métricas. Sem isso, toda
 //     execução começaria com o cache vazio e as falhas a frio entrariam na conta da estratégia.
+// ES: Tres escenarios en secuencia. `warmup` llena el caché y no se mide. `mark` se ejecuta una
+//     vez y pone en cero los contadores de la API. `measure` es el único que registra métricas.
+//     Sin esto, cada ejecución empezaría con el caché vacío y los fallos en frío se cargarían a
+//     la cuenta de la estrategia.
 export const options = {
 	scenarios: {
 		warmup: { executor: "constant-vus", vus: USERS, duration: `${WARMUP_S}s`, gracefulStop: "2s", exec: "warmup" },
@@ -70,6 +79,9 @@ const JSON_HEADERS = { headers: { "Content-Type": "application/json" } };
 // PT: Tráfego real não é uniforme: poucos produtos recebem a maioria das leituras. Elevar ao
 //     quadrado um número aleatório uniforme empurra as escolhas para os ids baixos, então o
 //     produto 1 é lido muito mais vezes que o produto 200.
+// ES: El tráfico real no es uniforme: pocos productos reciben la mayoría de las lecturas.
+//     Elevar al cuadrado un número aleatorio uniforme empuja las elecciones hacia los ids
+//     bajos, así que el producto 1 se lee muchas más veces que el producto 200.
 function pickProduct() {
 	return 1 + Math.floor(Math.random() ** 2 * PRODUCTS);
 }

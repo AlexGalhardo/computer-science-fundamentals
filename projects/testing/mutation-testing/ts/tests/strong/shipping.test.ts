@@ -9,6 +9,10 @@ import { isAccepted, type Parcel, shippingCents } from "../../src/shipping";
 //     o valor exato esperado, e todo limite das regras é testado em cima do limite e logo ao
 //     lado. Cada sobrevivente da suíte fraca apontava uma asserção que faltava, e este arquivo
 //     é o resultado de responder a eles um por um.
+// ES: LA SUITE FUERTE. El mismo módulo, el mismo 100% de cobertura de líneas, pero cada prueba afirma
+//     el valor exacto esperado, y todo límite de las reglas se prueba justo encima del límite y justo
+//     al lado. Cada sobreviviente de la suite débil señalaba una aserción que faltaba, y este archivo
+//     es el resultado de responderles uno por uno.
 function parcel(overrides: Partial<Parcel>): Parcel {
 	return { weightKg: 1, distanceKm: 10, express: false, ...overrides };
 }

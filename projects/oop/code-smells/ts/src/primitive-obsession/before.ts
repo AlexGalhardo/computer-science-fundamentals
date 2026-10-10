@@ -8,6 +8,11 @@ import type { Accounts } from "./contract";
 //     diz se uma dada string já foi conferida. Toda função que recebe uma confere e normaliza de
 //     novo (conte as cópias da regra de e-mail abaixo), e o compilador não vê diferença entre um
 //     nome, um e-mail e um telefone: troque dois argumentos e compila.
+// ES: MAL OLOR: Obsesión por los Primitivos. Un correo y un teléfono son "solo strings", así
+//     que nada dice si un string dado ya fue verificado. Toda función que recibe uno lo
+//     verifica y normaliza de nuevo (cuenta las copias de la regla de correo de abajo), y el
+//     compilador no ve diferencia entre un nombre, un correo y un teléfono: intercambia dos
+//     argumentos y compila.
 export interface Account {
 	name: string;
 	email: string;

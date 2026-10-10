@@ -3,6 +3,8 @@
 #     is Docker.
 # PT: Constrói, testa e demonstra o mini-projeto oop-vs-functional. O único requisito é o
 #     Docker.
+# ES: Construye, prueba y demuestra el miniproyecto oop-vs-functional. El único requisito es
+#     Docker.
 set -eu
 
 cd "$(dirname "$0")"
@@ -24,5 +26,8 @@ echo "oop-vs-functional: all tests passed"
 # PT: A demo imprime o recibo de cada cenário compartilhado, calculado em TypeScript pela versão
 #     com objetos e conferido contra a versão com funções. Depois, a tabela de comparação. As
 #     demos em Java e Elixir imprimem os mesmos recibos: java-demo e elixir-demo.
+# ES: La demo imprime el recibo de cada escenario compartido, calculado en TypeScript por la
+#     versión con objetos y verificado contra la versión con funciones. Después, la tabla de
+#     comparación. Las demos en Java y Elixir imprimen los mismos recibos: java-demo y elixir-demo.
 docker compose run --rm ts-demo
 docker compose run --rm compare

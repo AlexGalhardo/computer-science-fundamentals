@@ -1,6 +1,6 @@
 # tensorflow-keras-basics
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Ensina **o mesmo modelo em outro framework, e o que uma API de alto nível esconde**. A rede 2-8-8-1 do [neural-network-from-scratch](../neural-network-from-scratch/) (MP-AI-2) é descrita com o Keras e treinada no mesmo conjunto de dados de três formas: com `compile`, `fit` e `evaluate`, com um passo de treinamento escrito à mão em volta de uma `tf.GradientTape`, e com esse mesmo passo transformado em grafo pelo `tf.function`. As três dão a mesma perda em todas as épocas, o que mostra o que o `fit` estava fazendo o tempo todo. Uma tabela então coloca PyTorch e TensorFlow lado a lado.
 

@@ -8,6 +8,11 @@
 #     histórico real do git (red, green, refactor), quando o histórico está disponível: precisa
 #     de git e de um clone completo. Em um clone raso o passo 2 é pulado e o ritmo ainda é
 #     conferido por um teste, no retrato versionado ts/HISTORY.txt.
+# ES: Construye y prueba el mini-proyecto tdd-kata. El único requisito es Docker.
+#     El paso 1 ejecuta la verificación de tipos y las pruebas del kata terminado. El paso 2 comprueba
+#     el ritmo del historial real de git (red, green, refactor), cuando el historial está disponible:
+#     necesita git y un clon completo. En un clon superficial el paso 2 se omite y el ritmo aún se
+#     comprueba con una prueba, sobre la instantánea versionada ts/HISTORY.txt.
 # "Continue": PowerShell 5.1 treats Docker stderr output as an error; exit codes are checked instead.
 $ErrorActionPreference = "Continue"
 

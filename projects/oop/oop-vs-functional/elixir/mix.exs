@@ -3,6 +3,7 @@ defmodule OopVsFunctional.MixProject do
 
   # EN: No dependencies: the test framework ships with Elixir.
   # PT: Sem dependências: o framework de testes vem com o Elixir.
+  # ES: Sin dependencias: el framework de pruebas viene con Elixir.
   def project do
     [app: :oop_vs_functional, version: "0.1.0", elixir: "~> 1.20", deps: []]
   end

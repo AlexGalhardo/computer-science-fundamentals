@@ -5,6 +5,10 @@
 #     unitários, testes de integração e experimentos. As dependências são instaladas a partir
 #     do lockfile em uma camada própria, então as versões são exatamente as versionadas. Nada
 #     roda como root.
+# ES: Una imagen sirve para todos los trabajos del laboratorio: instancia de back end, pruebas
+#     unitarias, pruebas de integración y experimentos. Las dependencias se instalan desde el
+#     lockfile en una capa propia, así que las versiones son exactamente las confirmadas. Nada
+#     corre como root.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock ./

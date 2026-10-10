@@ -31,6 +31,9 @@ const (
 // PT: Como no TCP, seq numera o primeiro byte dos dados e ack é o próximo byte que o receptor
 // espera, de modo que a confirmação é cumulativa. sack não existe no cabeçalho clássico do TCP:
 // ele nomeia o segmento que provocou este ACK, algo de que a retransmissão seletiva precisa.
+// ES: Como en TCP, seq numera el primer byte de los datos y ack es el siguiente byte que espera el
+// receptor, de modo que la confirmación es acumulativa. sack no existe en el encabezado clásico de
+// TCP: nombra el segmento que provocó este ACK, algo que la repetición selectiva necesita.
 type segment struct {
 	flags   byte
 	seq     uint32
@@ -53,6 +56,8 @@ func (s segment) marshal() []byte {
 	// and payload lets the receiver drop a damaged segment, which then looks like a loss.
 	// PT: O UDP já tem um checksum, mas ele é fraco e opcional no IPv4. Um CRC sobre cabeçalho
 	// e dados permite ao receptor descartar um segmento danificado, que passa a ser uma perda.
+	// ES: UDP ya tiene un checksum, pero es débil y opcional en IPv4. Un CRC sobre el encabezado
+	// y los datos permite al receptor descartar un segmento dañado, que pasa a ser una pérdida.
 	return binary.BigEndian.AppendUint32(buf, crc32.ChecksumIEEE(buf))
 }
 
@@ -85,6 +90,9 @@ func unmarshal(buf []byte) (segment, error) {
 // PT: Os números de sequência têm 32 bits e dão a volta. Subtrair como inteiro sem sinal e ler
 // o resultado com sinal dá a distância correta enquanto os dois números estiverem a menos de
 // 2^31 um do outro, o que sempre vale dentro de uma janela.
+// ES: Los números de secuencia tienen 32 bits y dan la vuelta. Restar como entero sin signo y leer
+// el resultado con signo da la distancia correcta mientras los dos números estén a menos de
+// 2^31 uno del otro, lo que siempre se cumple dentro de una ventana.
 func distance(seq, origin uint32) int {
 	return int(int32(seq - origin))
 }

@@ -7,6 +7,11 @@
 //     que basta para provar que um texto digitado por um visitante foi executado como código
 //     pelo navegador. Nada sai da página, e o endereço da imagem é um caminho do próprio
 //     servidor do laboratório.
+// ES: Las únicas entradas que este laboratorio envía. Un ataque real robaría una sesión o actuaría
+//     como la víctima; aquí el "ataque" solo activa una marca en la página (`window.__labXssExecuted`), lo
+//     que basta para probar que un texto escrito por un visitante fue ejecutado como código
+//     por el navegador. Nada sale de la página, y la dirección de la imagen es una ruta del propio
+//     servidor del laboratorio.
 
 export const MARKER = "__labXssExecuted";
 
@@ -14,12 +19,16 @@ export const MARKER = "__labXssExecuted";
 //     the parser meets a <script> element and runs it.
 // PT: Funciona onde o servidor escreve o texto no HTML que envia (armazenado e refletido): o
 //     parser encontra um elemento <script> e o executa.
+// ES: Funciona donde el servidor escribe el texto en el HTML que envía (almacenado y reflejado): el
+//     parser encuentra un elemento <script> y lo ejecuta.
 export const SCRIPT_INPUT = `<script>window.${MARKER} = true</script>`;
 
 // EN: A <script> inserted through `innerHTML` never runs, so the DOM-based case needs another
 //     element: an image that fails to load and has an inline `onerror` handler.
 // PT: Um <script> inserido via `innerHTML` nunca roda, então o caso baseado em DOM precisa de
 //     outro elemento: uma imagem que falha ao carregar e tem um manipulador `onerror` inline.
+// ES: Un <script> insertado vía `innerHTML` nunca corre, así que el caso basado en DOM necesita
+//     otro elemento: una imagen que falla al cargar y tiene un manejador `onerror` en línea.
 export const IMAGE_INPUT = `<img src="/lab-missing-image" onerror="window.${MARKER} = true">`;
 
 // EN: Honest text that happens to contain the characters HTML treats as special. A correct fix
@@ -27,6 +36,9 @@ export const IMAGE_INPUT = `<img src="/lab-missing-image" onerror="window.${MARK
 // PT: Texto honesto que por acaso contém os caracteres que o HTML trata como especiais. Uma
 //     correção certa precisa mostrá-lo exatamente como foi digitado, e é isso que separa
 //     codificar de apagar caracteres.
+// ES: Texto honesto que por casualidad contiene los caracteres que HTML trata como especiales. Una
+//     corrección correcta debe mostrarlo exactamente como se escribió, y eso es lo que separa
+//     codificar de borrar caracteres.
 export const NORMAL_INPUT = "Tom & Jerry <3 the lab";
 
 export const FAKE_AUTHOR = "alice-fake";

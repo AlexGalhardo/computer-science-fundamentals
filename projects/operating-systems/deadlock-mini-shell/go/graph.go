@@ -10,6 +10,11 @@
 // outro processo do conjunto pode liberar. Nada no conjunto volta a executar. Este pacote
 // mostra as duas formas clássicas de raciocinar sobre isso: um grafo, quando cada recurso tem
 // uma instância, e matrizes, quando os recursos têm várias instâncias.
+//
+// ES: Un deadlock es un conjunto de procesos en el que cada uno espera algo que solo otro
+// proceso del conjunto puede liberar. Nada del conjunto vuelve a ejecutarse. Este paquete
+// muestra las dos formas clásicas de razonar sobre ello: un grafo, cuando cada recurso tiene una
+// instancia, y matrices, cuando los recursos tienen varias instancias.
 package deadlock
 
 import (
@@ -26,6 +31,10 @@ import (
 // PT: O grafo tem dois tipos de arco. "Recurso -> processo" significa que o processo segura o
 // recurso. "Processo -> recurso" significa que o processo o pediu e está bloqueado à espera.
 // Com recursos de instância única, existe impasse exatamente quando o grafo tem um ciclo.
+//
+// ES: El grafo tiene dos tipos de arco. "Recurso -> proceso" significa que el proceso retiene el
+// recurso. "Proceso -> recurso" significa que el proceso lo pidió y está bloqueado esperando.
+// Con recursos de una sola instancia, hay un deadlock exactamente cuando el grafo tiene un ciclo.
 type Graph struct {
 	holder    map[string]string
 	wants     map[string][]string
@@ -70,6 +79,10 @@ func (g *Graph) Request(process, resource string) {
 //
 // PT: O grafo de espera elimina os recursos: P espera por Q quando P pede um recurso que Q
 // segura. O pedido de um recurso livre não cria arco, porque pode ser atendido na hora.
+//
+// ES: El grafo de espera elimina los recursos: P espera a Q cuando P solicita un recurso que Q
+// retiene. La solicitud de un recurso libre no crea ningún arco, porque puede atenderse de
+// inmediato.
 func (g *Graph) waitsFor() map[string][]string {
 	edges := map[string][]string{}
 	for process, resources := range g.wants {
@@ -106,6 +119,9 @@ func reachable(edges map[string][]string, start string) map[string]bool {
 // PT: Um processo está em um ciclo quando, seguindo os arcos de "espera por" a partir dele,
 // voltamos a ele. Esses processos esperam uns pelos outros, então nenhum deles pode ser o
 // primeiro a liberar.
+//
+// ES: Un proceso está en un ciclo cuando, siguiendo los arcos de "espera a" desde él, volvemos a
+// él. Esos procesos se esperan unos a otros, así que ninguno puede ser el primero en liberar.
 func (g *Graph) Deadlocked() []string {
 	edges := g.waitsFor()
 	var cycle []string
@@ -126,6 +142,10 @@ func (g *Graph) Deadlocked() []string {
 //
 // PT: Esses processos não fazem parte da espera circular, e removê-los não desfaria o impasse.
 // Mas eles também vão esperar para sempre, porque o que precisam está preso dentro do ciclo.
+//
+// ES: Estos procesos no forman parte de la espera circular, y eliminarlos no rompería el
+// deadlock. Pero también esperarán para siempre, porque lo que necesitan está retenido dentro
+// del ciclo.
 func (g *Graph) Blocked() []string {
 	edges := g.waitsFor()
 	inCycle := map[string]bool{}

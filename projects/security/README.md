@@ -1,6 +1,6 @@
 # Security
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Application security is about understanding how software fails when someone tries to misuse it, so that it can be built not to. This area is defensive: each flaw (injection, cross-site scripting, broken access control, weak password storage) is studied to explain why it happens and how to prevent it, following the OWASP guidance. The labs run only locally, in Docker, and always ship the fix together with the flaw.
 

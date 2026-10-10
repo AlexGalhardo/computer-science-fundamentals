@@ -8,6 +8,9 @@ const types = (source: string): TokenType[] => tokenize(source).tokens.map((toke
 //     proves the table is complete, so adding a token type without a test fails the suite.
 // PT: Um lexema de exemplo para cada tipo de token. O primeiro teste percorre a tabela inteira e
 //     o segundo prova que ela está completa, então criar um tipo de token sem teste quebra a suíte.
+// ES: Un lexema de ejemplo para cada tipo de token. La primera prueba recorre la tabla completa y
+//     la segunda demuestra que está completa, así que crear un tipo de token sin prueba rompe la
+//     suite.
 const SAMPLES: Record<Exclude<TokenType, "EOF">, string> = {
 	LEFT_PAREN: "(",
 	RIGHT_PAREN: ")",

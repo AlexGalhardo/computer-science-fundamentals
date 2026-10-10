@@ -4,6 +4,10 @@
 // PT: DESENHO COM DEFEITO: SINGLETON. Uma instância, alcançável de qualquer lugar por um método
 //     estático. A instância única não é o problema. O acesso global é: ele funciona como uma
 //     variável global, e o estado mutável lá dentro liga, sem aviso, todo código que o toca.
+// ES: DISEÑO QUE FALLA: SINGLETON. Una instancia, accesible desde cualquier lugar mediante un
+//     método estático. La instancia única no es el problema. El acceso global sí: funciona como
+//     una variable global, y el estado mutable que hay dentro une, sin aviso, a todo el código
+//     que lo toca.
 export class RequestCounter {
 	private static instance: RequestCounter | undefined;
 	private readonly hits = new Map<string, number>();
@@ -28,6 +32,9 @@ export class RequestCounter {
 // PT: O construtor recebe só o limite, então esta classe parece independente. Não é: a
 //     dependência do contador está escondida dentro de `allow`, e dois limitadores que nunca
 //     foram apresentados um ao outro contam sobre os mesmos números.
+// ES: El constructor recibe solo el límite, así que esta clase parece independiente. No lo es: la
+//     dependencia del contador está escondida dentro de `allow`, y dos limitadores que nunca se
+//     presentaron cuentan sobre los mismos números.
 export class RateLimiter {
 	constructor(private readonly limit: number) {}
 

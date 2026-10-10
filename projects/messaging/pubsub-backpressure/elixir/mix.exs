@@ -18,6 +18,8 @@ defmodule PubsubBackpressure.MixProject do
   #     build refuses to continue if it does not match.
   # PT: Uma dependência, fixada em uma versão exata. O `mix.lock` é versionado, e o build do
   #     Docker se recusa a continuar se ele não bater.
+  # ES: Una dependencia, fijada en una versión exacta. `mix.lock` está versionado, y la
+  #     construcción de Docker se niega a continuar si no coincide.
   defp deps do
     [{:gen_stage, "== 1.3.2"}]
   end

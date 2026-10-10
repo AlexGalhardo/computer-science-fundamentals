@@ -13,6 +13,13 @@
 //     `hold` abre as conexões aos poucos e cada uma fica aberta por HOLD segundos, `echo` manda
 //     50 POST /echo pequenos por segundo e registra a latência, e `probe` faz um GET /stats
 //     para ler as requisições em andamento e a memória.
+//
+// ES: Escenario de k6 que mantiene miles de conexiones abiertas contra UN servidor LOCAL y mide
+//     dos cosas mientras están abiertas: cuánta memoria usa el servidor y con qué rapidez
+//     todavía responde a solicitudes nuevas. Tres escenarios corren en la misma línea de tiempo:
+//     `hold` abre las conexiones poco a poco y cada una se mantiene abierta HOLD segundos, `echo`
+//     envía 50 POST /echo pequeños por segundo y registra la latencia, y `probe` hace un GET /stats
+//     para leer las solicitudes en curso y la memoria.
 
 import { check, sleep } from "k6";
 import exec from "k6/execution";
@@ -24,6 +31,8 @@ import { requireLocalTarget } from "./target.js";
 //     here, k6 exits with an error and no connection is ever opened.
 // PT: Esta linha roda antes de qualquer outra coisa. Com um alvo que não é local o script lança
 //     um erro aqui, o k6 termina com erro e nenhuma conexão chega a ser aberta.
+// ES: Esta línea se ejecuta antes que cualquier otra cosa. Con un destino que no es local el script
+//     lanza un error aquí, k6 termina con error y nunca llega a abrirse ninguna conexión.
 const TARGET = requireLocalTarget(__ENV.TARGET || "http://localhost:8080");
 
 const CONNECTIONS = Number(__ENV.CONNECTIONS || 10000);
@@ -51,6 +60,10 @@ export const options = {
 	//     de mais memória do que os servidores testados. Em vez disso, cada usuário virtual abre
 	//     PER_VU conexões de uma vez com http.batch. Estas duas opções tiram os limites padrão
 	//     de 20 requisições paralelas por lote e 6 por host.
+	// ES: Un usuario virtual de k6 cuesta megabytes de memoria, así que diez mil de ellos necesitarían
+	//     más memoria que los servidores bajo prueba. En su lugar, cada usuario virtual abre
+	//     PER_VU conexiones a la vez con http.batch. Estas dos opciones quitan los límites por defecto
+	//     de 20 solicitudes paralelas por lote y 6 por host.
 	batch: PER_VU,
 	batchPerHost: PER_VU,
 	summaryTrendStats: ["min", "med", "p(50)", "p(95)", "p(99)", "max", "count"],
@@ -100,6 +113,8 @@ function stats() {
 //     which is the baseline subtracted later.
 // PT: Roda uma vez, antes da carga. Espera o servidor e registra a memória dele em repouso,
 //     que é a linha de base subtraída depois.
+// ES: Se ejecuta una vez, antes de la carga. Espera al servidor y registra su memoria en reposo,
+//     que es la línea base que se resta después.
 export function setup() {
 	for (let attempt = 0; attempt < 60; attempt++) {
 		if (http.get(`${TARGET}/health`).status === 200) {
@@ -118,12 +133,18 @@ export function hold() {
 	// PT: Os usuários virtuais começam um depois do outro durante a rampa, então o servidor
 	//     recebe as conexões como um fluxo constante e não como uma rajada que estoura a fila
 	//     de accept.
+	// ES: Los usuarios virtuales empiezan uno después del otro durante la rampa, así que el servidor
+	//     recibe las conexiones como un flujo constante y no como una ráfaga que desborda la cola
+	//     de accept.
 	// EN: Each virtual user runs this function once, so the iteration number of the scenario
 	//     (0, 1, 2 ...) says which batch this is. The global id of the virtual user would not:
 	//     ids are shared with the other scenarios.
 	// PT: Cada usuário virtual roda esta função uma vez, então o número da iteração do cenário
 	//     (0, 1, 2 ...) diz qual lote é este. O id global do usuário virtual não serviria: os
 	//     ids são compartilhados com os outros cenários.
+	// ES: Cada usuario virtual ejecuta esta función una vez, así que el número de iteración del
+	//     escenario (0, 1, 2 ...) dice qué lote es este. El id global del usuario virtual no
+	//     serviría: los ids se comparten con los otros escenarios.
 	const batchIndex = exec.scenario.iterationInTest;
 	sleep((batchIndex / VUS) * RAMP_S);
 	const count = Math.min(PER_VU, CONNECTIONS - batchIndex * PER_VU);
@@ -159,6 +180,8 @@ export function probe() {
 //     the resident memory of the server divided by the connections that were open at the probe.
 // PT: Monta o pequeno arquivo JSON que o relatório lê. Memória por conexão é o crescimento da
 //     memória residente do servidor dividido pelas conexões que estavam abertas na sondagem.
+// ES: Arma el pequeño archivo JSON que lee el reporte. La memoria por conexión es el crecimiento de
+//     la memoria residente del servidor dividido por las conexiones que estaban abiertas en el sondeo.
 export function handleSummary(data) {
 	const value = (metric, key) => data.metrics[metric]?.values?.[key] ?? null;
 	const inFlight = value("in_flight_at_probe", "value");

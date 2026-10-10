@@ -84,6 +84,8 @@ func Routes(pause time.Duration) *httpraw.Router {
 	//     sends each line as one chunk the moment it is produced.
 	// PT: O handler não sabe o tamanho total quando começa a responder, então o servidor envia
 	//     cada linha como um pedaço no momento em que ela é produzida.
+	// ES: El handler no conoce el tamaño total cuando empieza a responder, así que el servidor
+	//     envía cada línea como un chunk en el momento en que se produce.
 	router.Handle("GET", "/stream", func(*httpraw.Request) httpraw.Response {
 		header := httpraw.Header{}
 		header.Add("Content-Type", "text/plain; charset=utf-8")

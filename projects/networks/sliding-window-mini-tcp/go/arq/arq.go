@@ -24,6 +24,10 @@ const seqSpace = 1 << SeqBits
 // uma janela de envio de 1. Go-back-N deixa o transmissor avançar, mas o receptor continua
 // aceitando apenas o próximo quadro em ordem (janela de recepção 1). A retransmissão seletiva
 // dá uma janela também ao receptor, que pode guardar quadros que chegam depois de um buraco.
+// ES: Los tres son una sola idea, con tamaños de ventana distintos. Stop-and-wait es una
+// ventana de envío de 1. Go-back-N deja que el transmisor avance, pero el receptor sigue
+// aceptando solo la siguiente trama en orden (ventana de recepción 1). La repetición selectiva
+// le da una ventana también al receptor, que puede guardar tramas que llegan después de un hueco.
 type Protocol struct {
 	Name       string
 	SendWindow int
@@ -55,6 +59,11 @@ func SelectiveRepeat(window int) Protocol {
 // retransmissão de um quadro antigo com um quadro novo. Com um receptor que só aceita em ordem
 // a janela pode ser 2^n - 1. Um receptor que guarda quadros precisa que a janela antiga e a
 // nova não se sobreponham, o que limita a janela à metade do espaço de sequência, 2^(n-1).
+// ES: Los números de secuencia dan la vuelta, así que el receptor nunca debe confundir la
+// retransmisión de una trama antigua con una trama nueva. Con un receptor que solo acepta en
+// orden la ventana puede ser 2^n - 1. Un receptor que guarda tramas necesita que la ventana
+// antigua y la nueva no se superpongan, lo que limita la ventana a la mitad del espacio de
+// secuencia, 2^(n-1).
 func MaxWindow(seqBits int, selective bool) int {
 	if selective {
 		return 1 << (seqBits - 1)
@@ -117,6 +126,8 @@ const noTimer = -1
 // position by measuring the distance from the edge of their window, always modulo 2^16.
 // PT: Os quadros levam só os 16 bits baixos da sua posição. Os dois lados recuperam a posição
 // completa medindo a distância até a borda da sua janela, sempre módulo 2^16.
+// ES: Las tramas llevan solo los 16 bits bajos de su posición. Los dos lados recuperan la
+// posición completa midiendo la distancia hasta el borde de su ventana, siempre módulo 2^16.
 func offset(seq uint16, base int) int {
 	return (int(seq) - base%seqSpace + seqSpace) % seqSpace
 }
@@ -142,6 +153,8 @@ func Transfer(data []byte, payloadSize int, proto Protocol, link channel.Config)
 	// harmful as a lost frame: the sender cannot tell the two cases apart and must resend.
 	// PT: As confirmações viajam em um canal próprio, com as mesmas falhas. Um ACK perdido é tão
 	// prejudicial quanto um quadro perdido: o transmissor não distingue os dois casos e reenvia.
+	// ES: Las confirmaciones viajan por su propio canal, con las mismas fallas. Un ACK perdido es
+	// tan dañino como una trama perdida: el transmisor no distingue los dos casos y reenvía.
 	ackLink := link
 	ackLink.Seed = link.Seed + 1
 	dataCh, ackCh := channel.New(link), channel.New(ackLink)
@@ -152,6 +165,8 @@ func Transfer(data []byte, payloadSize int, proto Protocol, link channel.Config)
 	// resends frames whose acknowledgement is still on its way.
 	// PT: O tempo limite precisa ser maior que uma ida e volta no pior caso, senão o transmissor
 	// reenvia quadros cuja confirmação ainda está a caminho.
+	// ES: El tiempo límite debe ser mayor que un viaje de ida y vuelta en el peor caso, de lo
+	// contrario el transmisor reenvía tramas cuya confirmación todavía va en camino.
 	timeout := 2*(link.Delay+link.Jitter) + proto.SendWindow + 2
 
 	// Sender state.
@@ -195,6 +210,9 @@ func Transfer(data []byte, payloadSize int, proto Protocol, link channel.Config)
 			// PT: Um ACK cumulativo diz "tenho tudo antes deste número". Um ACK seletivo nomeia
 			// o quadro que acabou de chegar, mesmo uma duplicata antiga, porque uma duplicata
 			// costuma indicar que o primeiro ACK se perdeu.
+			// ES: Un ACK acumulativo dice "tengo todo lo anterior a este número". Un ACK selectivo
+			// nombra la única trama que acaba de llegar, incluso un duplicado antiguo, porque un
+			// duplicado suele indicar que su primer ACK se perdió.
 			if !proto.selective() {
 				ack = uint16(expected % seqSpace)
 			}
@@ -231,6 +249,7 @@ func Transfer(data []byte, payloadSize int, proto Protocol, link channel.Config)
 		if proto.selective() {
 			// EN: Selective repeat resends only the frame whose own timer expired.
 			// PT: A retransmissão seletiva reenvia apenas o quadro cujo temporizador expirou.
+			// ES: La repetición selectiva reenvía solo la trama cuyo temporizador expiró.
 			for index := base; index < next; index++ {
 				if at, running := deadline[index]; running && now >= at && !queued[index] {
 					delete(deadline, index)
@@ -245,6 +264,9 @@ func Transfer(data []byte, payloadSize int, proto Protocol, link channel.Config)
 			// PT: O go-back-N tem um temporizador só. Quando ele expira, o transmissor volta ao
 			// quadro mais antigo sem confirmação e reenvia a janela inteira, porque o receptor
 			// descartou tudo o que veio depois do buraco.
+			// ES: El go-back-N tiene un solo temporizador. Cuando expira, el transmisor vuelve a la
+			// trama más antigua sin confirmar y reenvía la ventana entera, porque el receptor
+			// descartó todo lo que vino después del hueco.
 			retransmit = retransmit[:0]
 			clear(queued)
 			for index := base; index < next; index++ {

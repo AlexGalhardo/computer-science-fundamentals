@@ -7,6 +7,10 @@
 #     único requisito é o Docker. Com o argumento `bench` ele mede o tempo de mineração por
 #     dificuldade e reescreve results/mining.md. Contêineres e a rede são removidos no fim,
 #     mesmo quando uma etapa falha.
+# ES: Construye y prueba el miniproyecto didactic-blockchain y luego ejecuta la demo con tres
+#     nodos. El único requisito es Docker. Con el argumento `bench` mide el tiempo de minería
+#     por dificultad y reescribe results/mining.md. Los contenedores y la red se eliminan al
+#     final, incluso cuando una etapa falla.
 set -eu
 
 cd "$(dirname "$0")"
@@ -15,6 +19,8 @@ cd "$(dirname "$0")"
 #     (see docker-compose.yml).
 # PT: Os contêineres do benchmark gravam results/ nesta pasta e rodam como o usuário atual
 #     (veja docker-compose.yml).
+# ES: Los contenedores del benchmark escriben results/ en esta carpeta y corren como el usuario
+#     actual (ve docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

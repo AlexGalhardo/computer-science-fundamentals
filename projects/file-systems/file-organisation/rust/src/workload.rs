@@ -12,6 +12,9 @@ pub const SEED: u64 = 20261007;
 //     C++ and in Rust, so both programs build the same file and print the same tables.
 // PT: SplitMix64, um gerador pseudoaleatório pequeno. A mesma semente dá a mesma sequência em
 //     C++ e em Rust, então os dois programas montam o mesmo arquivo e imprimem as mesmas tabelas.
+// ES: SplitMix64, un generador pseudoaleatorio pequeño. La misma semilla da la misma secuencia
+//     en C++ y en Rust, así que los dos programas arman el mismo archivo e imprimen las mismas
+//     tablas.
 pub struct SplitMix64 {
     pub state: u64,
 }
@@ -83,6 +86,9 @@ fn text_error(_: std::fmt::Error) -> io::Error {
 // PT: A demonstração. Todo número que ela imprime é uma contagem (bytes, slots, sondagens), e
 //     nunca um tempo, então a saída é a mesma em qualquer máquina e nas duas linguagens, e um
 //     teste a compara com a tabela versionada.
+// ES: La demostración. Todo número que imprime es una cuenta (bytes, slots, sondeos), y nunca
+//     un tiempo, así que la salida es la misma en cualquier máquina y en los dos lenguajes, y
+//     una prueba la compara con la tabla versionada.
 pub fn run_demo(directory: &Path, n: u32) -> io::Result<String> {
     if directory.exists() {
         std::fs::remove_dir_all(directory)?;
@@ -224,6 +230,8 @@ pub fn run_demo(directory: &Path, n: u32) -> io::Result<String> {
     db.insert(&make_record(999_999, &mut rng))?;
     // EN: The object is dropped without close(): the index files on disk are now out of date.
     // PT: O objeto é descartado sem close(): os arquivos de índice em disco ficaram desatualizados.
+    // ES: El objeto se descarta sin close(): los archivos de índice en disco quedaron
+    //     desactualizados.
     drop(db);
     let mut db = Database::open(directory)?;
     let rebuilt = if db.rebuilt_on_open() {

@@ -7,6 +7,8 @@ use file_organisation::workload::run_demo;
 //     table in results/demo.md.
 // PT: Uso: forg_demo [registros]. O padrão de 10.000 registros é o tamanho da tabela versionada
 //     em results/demo.md.
+// ES: Uso: forg_demo [registros]. El valor por defecto de 10.000 registros es el tamaño de la
+//     tabla versionada en results/demo.md.
 fn main() -> ExitCode {
     let records = match std::env::args().nth(1) {
         Some(text) => text.parse::<u32>().unwrap_or(0),

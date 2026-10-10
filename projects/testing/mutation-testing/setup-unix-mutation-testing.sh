@@ -6,6 +6,10 @@
 #     Roda os testes, o relatório de cobertura das duas suítes (cada uma precisa dar 100%) e a
 #     execução de mutação, que falha a menos que a suíte fraca pontue abaixo de 60% e a forte
 #     acima de 90%.
+# ES: Construye y prueba el mini-proyecto mutation-testing. El único requisito es Docker.
+#     Ejecuta las pruebas, el informe de cobertura de las dos suites (cada una debe dar 100%) y la
+#     ejecución de mutación, que falla a menos que la suite débil puntúe por debajo de 60% y la fuerte
+#     por encima de 90%.
 set -eu
 
 cd "$(dirname "$0")"
@@ -17,6 +21,7 @@ fi
 
 # EN: The mutation container writes into ./results, so it runs with the uid of whoever owns it.
 # PT: O contêiner de mutação escreve em ./results, então roda com o uid de quem é dono da pasta.
+# ES: El contenedor de mutación escribe en ./results, así que se ejecuta con el uid de quien es dueño de la carpeta.
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

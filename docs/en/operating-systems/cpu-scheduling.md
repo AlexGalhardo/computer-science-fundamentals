@@ -1,6 +1,6 @@
 # CPU scheduling simulator
 
-> Versão em português: [docs/pt/operating-systems/cpu-scheduling.md](../../pt/operating-systems/cpu-scheduling.md)
+> Versão em português: [docs/pt/operating-systems/cpu-scheduling.md](../../pt/operating-systems/cpu-scheduling.md) · Versión en español: [docs/es/operating-systems/cpu-scheduling.md](../../es/operating-systems/cpu-scheduling.md)
 
 Mini-project: [`projects/operating-systems/cpu-scheduling`](../../../projects/operating-systems/cpu-scheduling/). Plan item: MP-OS-1. Quiz topic: `operating-systems` / `scheduling`.
 
@@ -49,7 +49,7 @@ All processes arrive at time 0 unless stated.
 
 A Gantt chart draws the schedule on a time line. The CLI prints it as text, and the static page `dashboard/index.html` draws it as coloured bars, one colour per process, so the same process can be followed across the policies.
 
-```
+```text
 SJF
 |           A           |  E  |     B     |      D       |            C             |
 0                       8     10          14             19                         28

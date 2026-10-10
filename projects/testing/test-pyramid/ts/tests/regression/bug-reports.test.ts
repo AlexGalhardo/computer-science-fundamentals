@@ -14,6 +14,11 @@ import { totalCents } from "../../src/pricing";
 //     o teste para sempre. Uma suíte de regressão não é um nível da pirâmide, ela atravessa os
 //     níveis: o #17 é conferido em uma função pura, o #23 pelo handler HTTP. O valor dela é a
 //     memória: os casos daqui são justamente os que ninguém imaginou ao escrever os primeiros testes.
+// ES: SUITE DE REGRESIÓN. Cada prueba de aquí nació de un bug que llegó a un usuario. La receta es
+//     siempre la misma: escribir una prueba que reproduce el reporte y falla, corregir el código, mantener
+//     la prueba para siempre. Una suite de regresión no es un nivel de la pirámide, atraviesa los
+//     niveles: el #17 se comprueba en una función pura, el #23 con el handler HTTP. Su valor es la
+//     memoria: los casos de aquí son justamente los que nadie imaginó al escribir las primeras pruebas.
 
 test("bug #17: a 10% discount on 100.05 must not leave half a cent in the total", () => {
 	// 3 x 33.35 = 100.05, and 10% of 10005 cents is 1000.5 cents.

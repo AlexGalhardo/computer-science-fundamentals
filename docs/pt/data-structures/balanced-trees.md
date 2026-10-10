@@ -1,6 +1,6 @@
 # Árvores de busca balanceadas
 
-> English version: [docs/en/data-structures/balanced-trees.md](../../en/data-structures/balanced-trees.md)
+> English version: [docs/en/data-structures/balanced-trees.md](../../en/data-structures/balanced-trees.md) · Versión en español: [docs/es/data-structures/balanced-trees.md](../../es/data-structures/balanced-trees.md)
 
 Mini-projeto: [projects/data-structures/balanced-trees](../../../projects/data-structures/balanced-trees). Linguagens: C++, Java. Tópicos do quiz: `data-structures` / `binary-search-trees`, `avl-trees`, `red-black-trees`.
 
@@ -10,7 +10,7 @@ Uma árvore binária de busca responde "esta chave está aqui?" indo para a esqu
 
 Quando as chaves chegam já ordenadas, cada uma é maior que todas as outras e vai para a direita da última. A árvore vira uma lista encadeada:
 
-```
+```text
 inserir 10, 20, 30, 40         uma árvore balanceada com as mesmas chaves
 
 10                                   20
@@ -26,7 +26,7 @@ inserir 10, 20, 30, 40         uma árvore balanceada com as mesmas chaves
 
 Uma rotação troca os papéis de um nó e de um dos seus filhos, mudando três ponteiros:
 
-```
+```text
       x                 y
      / \               / \
     A   y     -->     x   C        rotação à esquerda em x

@@ -4,6 +4,9 @@
 // PT: RabbitMQ (AMQP 0-9-1). O produtor publica na exchange padrão com o nome da fila como routing
 //     key, e espera os publisher confirms. O consumidor confirma manualmente: uma mensagem sem
 //     ack pertence ao canal, e volta para a fila quando ele fecha.
+// ES: RabbitMQ (AMQP 0-9-1). El productor publica en el exchange por defecto con el nombre de la
+//     cola como routing key, y espera los publisher confirms. El consumidor confirma manualmente:
+//     un mensaje sin ack pertenece al canal, y vuelve a la cola cuando este se cierra.
 
 import { type ChannelModel, connect } from "amqplib";
 import type { Config } from "../config";
@@ -52,6 +55,8 @@ export class RabbitmqAdapter implements QueueAdapter {
 						//     message to survive a broker restart.
 						// PT: Fila durável mais mensagem persistente: as duas são necessárias
 						//     para uma mensagem sobreviver a um reinício do broker.
+						// ES: Cola durable más mensaje persistent: ambos son necesarios para que un
+						//     mensaje sobreviva a un reinicio del broker.
 						channel.sendToQueue(this.channel, Buffer.from(encodeOrder(order)), {
 							persistent: true,
 							messageId: order.id,
@@ -75,6 +80,8 @@ export class RabbitmqAdapter implements QueueAdapter {
 		//     hold. With 1, messages are handled strictly one at a time.
 		// PT: O prefetch é o limite de mensagens sem ack que o broker deixa este consumidor
 		//     segurar. Com 1, as mensagens são tratadas estritamente uma por vez.
+		// ES: El prefetch es el límite de mensajes sin ack que el broker deja retener a este
+		//     consumidor. Con 1, los mensajes se procesan estrictamente de uno en uno.
 		await channel.prefetch(options.parallelism);
 		const { consumerTag } = await channel.consume(this.channel, (message) => {
 			if (message === null) {

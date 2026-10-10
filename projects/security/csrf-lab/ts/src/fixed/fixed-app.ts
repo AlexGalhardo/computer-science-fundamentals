@@ -18,6 +18,9 @@ import { generateCsrfToken, verifyCsrfToken } from "./fixed-csrf-token";
 // PT: A correção de verdade usa as DUAS defesas. As chaves existem apenas para que o
 //     laboratório consiga desligar uma delas e mostrar, em um navegador, o que cada uma faz
 //     sozinha.
+// ES: La corrección de verdad usa las DOS defensas. Los interruptores existen solo para que el
+//     laboratorio pueda desactivar una de ellas y mostrar, en un navegador, qué hace cada una
+//     por sí sola.
 export type FixedAppOptions = {
 	sameSite: SameSite | null;
 	requireToken: boolean;
@@ -52,6 +55,7 @@ export function createFixedApp(options: FixedAppOptions = FULL_DEFENCES): FixedA
 					email: state.email,
 					// EN: The token is written only into the page of the logged-in user.
 					// PT: O token é escrito apenas na página do usuário logado.
+					// ES: El token se escribe solo en la página del usuario con sesión iniciada.
 					csrfToken: options.requireToken ? (session?.csrfToken ?? null) : null,
 				}),
 			);
@@ -63,6 +67,7 @@ export function createFixedApp(options: FixedAppOptions = FULL_DEFENCES): FixedA
 			}
 			// EN: FIX 1. The token is born with the session and stored next to it on the server.
 			// PT: CORREÇÃO 1. O token nasce com a sessão e fica guardado junto dela no servidor.
+			// ES: CORRECCIÓN 1. El token nace con la sesión y queda guardado junto a ella en el servidor.
 			const session = state.createSession(options.requireToken ? generateCsrfToken() : null);
 			// EN: FIX 2. `SameSite=Strict` is written explicitly: the browser must not attach this
 			//     cookie to any request that starts on another site. The app no longer depends on
@@ -70,6 +75,9 @@ export function createFixedApp(options: FixedAppOptions = FULL_DEFENCES): FixedA
 			// PT: CORREÇÃO 2. `SameSite=Strict` é escrito explicitamente: o navegador não deve
 			//     anexar este cookie a nenhuma requisição que comece em outro site. O app deixa de
 			//     depender do padrão do navegador que o usuário tiver.
+			// ES: CORRECCIÓN 2. `SameSite=Strict` se escribe explícitamente: el navegador no debe
+			//     adjuntar esta cookie a ninguna solicitud que empiece en otro sitio. La app deja de
+			//     depender del valor por defecto del navegador que tenga el usuario.
 			return redirect("/", { "set-cookie": buildSessionCookie(session.id, options.sameSite) });
 		})
 		// EN: FIX 3. State changes only through POST. A GET on this path changes nothing and
@@ -77,6 +85,9 @@ export function createFixedApp(options: FixedAppOptions = FULL_DEFENCES): FixedA
 		// PT: CORREÇÃO 3. O estado só muda por POST. Um GET neste caminho não altera nada e
 		//     responde 405 "Method Not Allowed", então um link ou um redirecionamento não consegue
 		//     disparar a alteração.
+		// ES: CORRECCIÓN 3. El estado solo cambia por POST. Un GET en este camino no modifica nada y
+		//     responde 405 "Method Not Allowed", así que un enlace o una redirección no puede
+		//     disparar el cambio.
 		.get("/email/change", ({ request }) => {
 			state.record(request, "rejected-method");
 			return textResponse("Use the form: this action only accepts POST.", 405, { allow: "POST" });
@@ -93,6 +104,9 @@ export function createFixedApp(options: FixedAppOptions = FULL_DEFENCES): FixedA
 			// PT: O cookie disse "este navegador está logado". O token responde à pergunta que o
 			//     cookie não consegue: "esta requisição veio de um formulário que o NOSSO servidor
 			//     renderizou?". Ele é conferido antes mesmo de se olhar o e-mail.
+			// ES: La cookie dijo "este navegador tiene la sesión iniciada". El token responde la pregunta que la
+			//     cookie no puede: "¿esta solicitud vino de un formulario que NUESTRO servidor
+			//     renderizó?". Se comprueba incluso antes de mirar el correo.
 			if (
 				options.requireToken &&
 				!verifyCsrfToken(session.csrfToken, isRecord(body) ? body.csrfToken : undefined)

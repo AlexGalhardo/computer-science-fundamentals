@@ -8,6 +8,11 @@
 //!     `cpp/quicksort.hpp`. A regra do pivô decide se a entrada ordenada é o melhor caso ou o
 //!     pior caso O(n²). O limiar não muda a ordem de crescimento: ele reduz o fator constante,
 //!     porque a maioria das chamadas recursivas trata trechos minúsculos.
+//! ES: Un quicksort con dos perillas: cómo se elige el pivote, y por debajo de qué tamaño un tramo
+//!     se entrega al insertion sort. Mismo algoritmo y mismas decisiones que la versión en C++ en
+//!     `cpp/quicksort.hpp`. La regla del pivote decide si la entrada ordenada es el mejor caso o el
+//!     peor caso O(n²). El umbral no cambia el orden de crecimiento: reduce el factor constante,
+//!     porque la mayoría de las llamadas recursivas tratan tramos minúsculos.
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Pivot {
@@ -28,6 +33,8 @@ pub const SHAPES: [&str; 3] = ["random", "sorted", "reversed"];
 //     so every run and both languages see the same numbers.
 // PT: xorshift32, usado no pivô aleatório e para montar a entrada aleatória. A semente é fixa,
 //     então toda execução e as duas linguagens veem os mesmos números.
+// ES: xorshift32, usado en el pivote aleatorio y para construir la entrada aleatoria. La semilla
+//     es fija, así que cada ejecución y los dos lenguajes ven los mismos números.
 pub struct Xorshift(u32);
 
 impl Xorshift {
@@ -45,6 +52,7 @@ impl Xorshift {
 
 // EN: Insertion sort on a[lo..=hi]. Quadratic in general, unbeatable on a handful of values.
 // PT: Insertion sort em a[lo..=hi]. Quadrático no geral, imbatível em um punhado de valores.
+// ES: Insertion sort en a[lo..=hi]. Cuadrático en general, imbatible con un puñado de valores.
 fn insertion_sort(a: &mut [i32], lo: isize, hi: isize) {
     for i in lo + 1..=hi {
         let key = a[i as usize];
@@ -65,6 +73,10 @@ fn insertion_sort(a: &mut [i32], lo: isize, hi: isize) {
 //     então um lado de toda divisão fica vazio. `Random` faz o pior caso depender da sorte e não
 //     da entrada. `MedianOfThree` fica com o valor intermediário entre o primeiro, o do meio e
 //     o último, que é a mediana real quando o trecho já está ordenado.
+// ES: `First` es la regla de libro y la trampa: en entrada ordenada el primer valor es el mínimo,
+//     así que un lado de cada división queda vacío. `Random` hace que el peor caso dependa de la
+//     suerte y no de la entrada. `MedianOfThree` se queda con el valor intermedio entre el primero,
+//     el del medio y el último, que es la mediana real cuando el tramo ya está ordenado.
 fn choose_pivot(a: &[i32], lo: isize, hi: isize, pivot: Pivot, random: &mut Xorshift) -> i32 {
     match pivot {
         Pivot::First => a[lo as usize],
@@ -93,6 +105,8 @@ fn sort_range(
         //     With threshold 0 this never happens and the code is a plain quicksort.
         // PT: O passo híbrido: um trecho de no máximo `threshold` valores vai para o insertion
         //     sort. Com limiar 0 isso nunca acontece e o código é um quicksort puro.
+        // ES: El paso híbrido: un tramo de como máximo `threshold` valores va al insertion
+        //     sort. Con umbral 0 esto nunca ocurre y el código es un quicksort puro.
         if hi - lo < threshold {
             insertion_sort(a, lo, hi);
             return;
@@ -101,6 +115,8 @@ fn sort_range(
         // EN: Hoare partition: two indexes walk towards each other and swap misplaced pairs.
         // PT: Partição de Hoare: dois índices andam um em direção ao outro e trocam os pares
         //     fora do lugar.
+        // ES: Partición de Hoare: dos índices avanzan uno hacia el otro e intercambian los pares
+        //     fuera de lugar.
         let (mut i, mut j) = (lo, hi);
         while i <= j {
             while a[i as usize] < value {
@@ -119,6 +135,8 @@ fn sort_range(
         //     terrible and the time is quadratic, the stack stays O(log n) deep.
         // PT: Recursão no lado menor e laço no maior. Mesmo quando o pivô é péssimo e o tempo é
         //     quadrático, a pilha fica com profundidade O(log n).
+        // ES: Recursión sobre el lado menor y bucle sobre el mayor. Incluso cuando el pivote es
+        //     pésimo y el tiempo es cuadrático, la pila queda con profundidad O(log n).
         if j - lo < hi - i {
             sort_range(a, lo, j, pivot, threshold, random);
             lo = i;
@@ -137,6 +155,7 @@ pub fn hybrid_quicksort(a: &mut [i32], pivot: Pivot, threshold: usize) {
 
 // EN: The three input shapes, built in memory: the same n values in a different order.
 // PT: Os três formatos de entrada, montados em memória: os mesmos n valores em outra ordem.
+// ES: Las tres formas de entrada, construidas en memoria: los mismos n valores en otro orden.
 pub fn make_input(shape: &str, n: usize) -> Vec<i32> {
     let mut random = Xorshift::new(20_260_101);
     let mut values: Vec<i32> = (0..n).map(|_| (random.next_u32() >> 1) as i32).collect();
@@ -151,6 +170,8 @@ pub fn make_input(shape: &str, n: usize) -> Vec<i32> {
 
 // EN: Same order-sensitive digest as the other mini-projects: h = (h * 31 + v) mod 1,000,000,007.
 // PT: Mesmo resumo sensível à ordem dos outros mini-projetos: h = (h * 31 + v) mod 1.000.000.007.
+// ES: El mismo resumen sensible al orden de los otros mini-proyectos:
+//     h = (h * 31 + v) mod 1.000.000.007.
 pub fn checksum(values: &[i32]) -> String {
     let mut digest: i64 = 0;
     for &value in values {
@@ -203,6 +224,9 @@ mod tests {
     // PT: Quando n cresce 4 vezes, um algoritmo O(n²) leva cerca de 16 vezes mais tempo e um
     //     O(n log n) cerca de 4,5 vezes. O limite 8 fica entre os dois. Razões entre tempos
     //     dependem muito mais do algoritmo que da máquina.
+    // ES: Cuando n crece 4 veces, un algoritmo O(n²) tarda cerca de 16 veces más y un
+    //     O(n log n) cerca de 4.5 veces. El límite 8 queda entre los dos. Las razones entre tiempos
+    //     dependen mucho más del algoritmo que de la máquina.
     #[test]
     fn first_pivot_is_quadratic_on_sorted_input() {
         let small = make_input("sorted", 10_000);
@@ -212,6 +236,8 @@ mod tests {
         //     reliably. Its growth is measured on inputs 50 times larger.
         // PT: A mediana de três é tão rápida que 40.000 valores levam tempo de menos para medir
         //     com confiança. O crescimento dela é medido em entradas 50 vezes maiores.
+        // ES: La mediana de tres es tan rápida que 40,000 valores tardan muy poco para medir
+        //     con confianza. Su crecimiento se mide en entradas 50 veces mayores.
         let median_ratio = time_ms(&make_input("sorted", 2_000_000), Pivot::MedianOfThree)
             / time_ms(&make_input("sorted", 500_000), Pivot::MedianOfThree);
         assert!(first_ratio > 8.0, "first pivot grew only x{first_ratio}");

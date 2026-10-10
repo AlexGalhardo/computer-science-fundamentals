@@ -9,6 +9,10 @@ use b_tree_on_disk::compare;
 //     para tamanhos crescentes, e imprime uma tabela Markdown com as páginas lidas por busca
 //     em cada uma.
 //       demo [maior n] [diretório dos arquivos temporários]
+// ES: Demo: arma un árbol B y un árbol binario de búsqueda en disco con las mismas claves,
+//     para tamaños crecientes, e imprime una tabla Markdown con las páginas leídas por búsqueda
+//     en cada uno.
+//       demo [mayor n] [directorio de los archivos temporales]
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let largest: u64 = args

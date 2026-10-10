@@ -11,6 +11,9 @@ export interface AdderOutput {
 // PT: Meio somador: soma dois bits. O bit de soma vale 1 quando as entradas são diferentes
 //     (XOR) e o vai-um vale 1 apenas em 1 + 1 (AND). É "meio" porque não tem entrada para um
 //     vai-um vindo da coluna à direita.
+// ES: Semisumador: suma dos bits. El bit de suma vale 1 cuando las entradas son distintas
+//     (XOR) y el acarreo vale 1 solo en 1 + 1 (AND). Es "semi" porque no tiene entrada para un
+//     acarreo que venga de la columna de la derecha.
 export function halfAdder(a: Bit, b: Bit): AdderOutput {
 	return { sum: xor(a, b), carry: and(a, b) };
 }
@@ -21,6 +24,10 @@ export function halfAdder(a: Bit, b: Bit): AdderOutput {
 // PT: Somador completo: soma três bits, os dois operandos e o vai-um de entrada. São dois meio
 //     somadores em sequência mais uma OR. Os dois vai-uns nunca valem 1 ao mesmo tempo, então a
 //     OR apenas os junta. Soma = A xor B xor Cin, vai-um de saída = maioria(A, B, Cin).
+// ES: Sumador completo: suma tres bits, los dos operandos y el acarreo de entrada. Son dos
+//     semisumadores en secuencia más una OR. Los dos acarreos nunca valen 1 al mismo tiempo,
+//     así que la OR solo los une. Suma = A xor B xor Cin, acarreo de salida = mayoría(A, B,
+//     Cin).
 export function fullAdder(a: Bit, b: Bit, carryIn: Bit): AdderOutput {
 	const first = halfAdder(a, b);
 	const second = halfAdder(first.sum, carryIn);
@@ -45,6 +52,11 @@ export interface RippleCarryOutput {
 //     da direita para a esquerda como na soma feita à mão, e por isso o atraso desse somador
 //     cresce com o número de bits. Os vetores de bits começam pelo bit menos significativo,
 //     então o índice i tem peso 2^i.
+// ES: Sumador con propagación de acarreo: un sumador completo por bit, y el acarreo de salida
+//     de cada etapa es el acarreo de entrada de la siguiente, más significativa. El acarreo "se
+//     propaga" de derecha a izquierda como en la suma hecha a mano, y por eso el retardo de este
+//     sumador crece con el número de bits. Los vectores de bits empiezan por el bit menos
+//     significativo, así que el índice i tiene peso 2^i.
 export function rippleCarryAdder(a: readonly Bit[], b: readonly Bit[], carryIn: Bit = 0): RippleCarryOutput {
 	if (a.length !== b.length) {
 		throw new RangeError("both operands must have the same number of bits");

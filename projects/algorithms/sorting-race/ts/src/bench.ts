@@ -4,6 +4,9 @@
 // PT: `bun run ts/src/bench.ts <algoritmo> <variante> <n>` lê `data/<variante>-<n>.txt`, ordena
 //     e imprime uma linha JSON no contrato de benchmark. Só a chamada da ordenação é
 //     cronometrada: ler e interpretar o arquivo dominaria o tempo dos algoritmos rápidos.
+// ES: `bun run ts/src/bench.ts <algoritmo> <variante> <n>` lee `data/<variante>-<n>.txt`, ordena
+//     e imprime una línea JSON en el contrato de benchmark. Solo se cronometra la llamada a la
+//     ordenación: leer e interpretar el archivo dominaría el tiempo de los algoritmos rápidos.
 
 import { checksum, dataFile, isVariant, readValues, VARIANTS } from "./input";
 import { SORTS } from "./registry";
@@ -24,6 +27,9 @@ const values = readValues(dataFile(variant, n), n);
 // PT: A ordenação roda até 5 vezes, enquanto o total fica abaixo de 300 ms, e a execução mais
 //     rápida é informada. Outros programas dividem a máquina, e o mínimo é a medida menos
 //     perturbada por eles. Uma ordenação lenta (bubble com 10.000) roda só uma vez.
+// ES: La ordenación corre hasta 5 veces, mientras el total se mantiene por debajo de 300 ms, y se
+//     informa la ejecución más rápida. Otros programas comparten la máquina, y el mínimo es la
+//     medida menos perturbada por ellos. Una ordenación lenta (bubble con 10,000) corre solo una vez.
 const MAX_REPETITIONS = 5;
 const BUDGET_MS = 300;
 let sorted: number[] = [];
@@ -43,6 +49,7 @@ console.log(
 		elapsedMs,
 		// EN: maxRSS is the peak resident memory of the process, in kibibytes on Linux.
 		// PT: maxRSS é o pico de memória residente do processo, em kibibytes no Linux.
+		// ES: maxRSS es el pico de memoria residente del proceso, en kibibytes en Linux.
 		memoryKb: process.resourceUsage().maxRSS,
 		language: "ts",
 		implementation,

@@ -7,6 +7,12 @@ PT: Um gerador aleatório pequeno e com semente (mulberry32), o mesmo escrito em
 Os geradores embutidos do Python e do JavaScript usam algoritmos diferentes, então nunca sorteiam
 os mesmos números. Este usa só aritmética inteira de 32 bits, que não arredonda, então as duas
 linguagens produzem a mesma sequência bit a bit, e os planos aleatórios do índice são idênticos.
+
+ES: Un generador aleatorio pequeño y con semilla (mulberry32), el mismo escrito en ts/src/rng.ts.
+Los generadores incorporados de Python y de JavaScript usan algoritmos distintos, así que nunca
+sortean los mismos números. Este usa solo aritmética de enteros de 32 bits, que no redondea, así
+que los dos lenguajes producen la misma secuencia bit a bit, y los planos aleatorios del índice
+son idénticos.
 """
 
 from collections.abc import Callable
@@ -27,6 +33,8 @@ def mulberry32(seed: int) -> Rng:
         # PT: Um inteiro do Python nunca estoura, um inteiro de 32 bits do JavaScript estoura.
         #     `& MASK` guarda os 32 bits baixos depois de cada passo, que é o que o JavaScript
         #     faz sozinho.
+        # ES: Un entero de Python nunca desborda, un entero de 32 bits de JavaScript sí. `& MASK`
+        #     conserva los 32 bits bajos después de cada paso, que es lo que JavaScript hace solo.
         state = (state + 0x6D2B79F5) & MASK
         t = state
         t = ((t ^ (t >> 15)) * (t | 1)) & MASK
@@ -43,5 +51,9 @@ def bell_random(rng: Rng) -> float:
     PT: Quatro números uniformes somados, menos 2: uma forma parecida com o sino ao redor de zero
     usando só somas, que dão o mesmo resultado em qualquer linguagem (log e cos podem diferir no
     último dígito).
+
+    ES: Cuatro números uniformes sumados, menos 2: una forma parecida a la campana alrededor de cero
+    usando solo sumas, que dan el mismo resultado en cualquier lenguaje (log y cos pueden diferir en
+    el último dígito).
     """
     return rng() + rng() + rng() + rng() - 2

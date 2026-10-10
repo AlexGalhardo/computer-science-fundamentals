@@ -2,6 +2,8 @@
 //     of non-local targets and the report functions.
 // PT: Testes das peças que não precisam de servidor: o site gerado, a grade de portas, a recusa
 //     de alvos não locais e as funções do relatório.
+// ES: Pruebas de las piezas que no necesitan servidor: el sitio generado, la cuadrícula de
+//     puertos, el rechazo de destinos no locales y las funciones del informe.
 
 import { expect, test } from "@playwright/test";
 import { mean, median, renderTable, stddev, summariseCell, toWaterfall, typicalIndex } from "../src/report";
@@ -31,6 +33,8 @@ test("the port grid: last digit is the protocol, hundreds digit is the condition
 	//     must fall in one block of four.
 	// PT: O filtro tc do entrypoint.sh casa `porta & 0xfffc`, então cada grupo de portas moldado
 	//     precisa cair em um único bloco de quatro.
+	// ES: El filtro tc de entrypoint.sh coincide con `puerto & 0xfffc`, así que cada grupo de
+	//     puertos modelado debe caer en un único bloque de cuatro.
 	expect(ports.slice(3, 6).map((port) => port & 0xfffc)).toEqual([8100, 8100, 8100]);
 	expect(ports.slice(6, 9).map((port) => port & 0xfffc)).toEqual([8200, 8200, 8200]);
 	expect(ports.slice(0, 3).some((port) => (port & 0xfffc) === 8100 || (port & 0xfffc) === 8200)).toBe(false);

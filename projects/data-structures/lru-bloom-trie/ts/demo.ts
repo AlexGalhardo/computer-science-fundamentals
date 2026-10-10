@@ -1,5 +1,6 @@
 // EN: Demo of the three structures, printed as plain text: `bun run demo.ts`.
 // PT: Demo das três estruturas, impressa em texto puro: `bun run demo.ts`.
+// ES: Demo de las tres estructuras, impresa en texto plano: `bun run demo.ts`.
 
 import { BloomFilter } from "./src/bloom-filter";
 import { LruCache } from "./src/lru-cache";

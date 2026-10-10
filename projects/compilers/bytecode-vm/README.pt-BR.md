@@ -1,6 +1,6 @@
 # bytecode-vm
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um compilador da árvore sintática da mini linguagem para bytecode de pilha, e a máquina virtual que o executa, em Rust. Ensina **por que bytecode roda mais rápido do que percorrer uma árvore**: o compilador decide com antecedência o que o interpretador de árvore decide de novo a cada visita (a qual variável um nome se refere, para onde o controle vai em seguida), e sobra para a máquina um vetor plano de instruções pequenas e uma pilha.
 

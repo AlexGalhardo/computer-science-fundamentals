@@ -4,6 +4,10 @@
 // PT: O contrato comum aos quatro brokers. Os experimentos e os testes são escritos só contra
 //     estas interfaces, então o mesmo código roda em BullMQ, RabbitMQ, Kafka e SQS. O que
 //     continua diferente é o comportamento (ordem, reentrega, velocidade), e essa é a lição.
+// ES: El contrato común a los cuatro brokers. Los experimentos y las pruebas se escriben solo
+//     contra estas interfaces, así que el mismo código corre en BullMQ, RabbitMQ, Kafka y SQS. Lo
+//     que sigue siendo distinto es el comportamiento (orden, reentrega, velocidad), y esa es la
+//     lección.
 
 import type { OrderPlaced } from "./order";
 

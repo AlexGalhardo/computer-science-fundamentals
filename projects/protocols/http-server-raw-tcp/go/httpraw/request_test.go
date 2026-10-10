@@ -163,6 +163,8 @@ func TestReadRequestEnforcesTheSizeLimits(t *testing.T) {
 	//     whole oversized line. A reader that fails when read too far proves it.
 	// PT: O parser precisa parar de ler assim que o limite é ultrapassado, não depois de guardar
 	//     a linha gigante inteira. Um leitor que falha quando é lido além da conta prova isso.
+	// ES: El parser debe dejar de leer en cuanto se supera el límite, no después de guardar la
+	//     línea gigante completa. Un lector que falla cuando se lee más de la cuenta lo prueba.
 	t.Run("an oversized header is refused without reading all of it", func(t *testing.T) {
 		head := "GET / HTTP/1.1\r\nHost: a\r\nX-Big: "
 		reader := &countingReader{data: head + strings.Repeat("z", 1<<20)}

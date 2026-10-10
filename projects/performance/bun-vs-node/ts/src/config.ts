@@ -1,5 +1,6 @@
 // EN: Environment variables are external input, so they are validated at the edge.
 // PT: Variáveis de ambiente são entrada externa, então são validadas na borda.
+// ES: Las variables de entorno son entrada externa, así que se validan en el borde.
 
 import { z } from "zod";
 

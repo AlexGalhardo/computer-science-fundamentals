@@ -3,6 +3,10 @@ eagerly, the same tape as a graph) and writes the tables and the loss chart to r
 
 PT: `python demo.py` treina a mesma rede de três formas (o `fit` do Keras, uma fita de gradiente
 executada na hora, a mesma fita como grafo) e grava as tabelas e o gráfico de perda em results/.
+
+ES: `python demo.py` entrena la misma red de tres maneras (el `fit` de Keras, una cinta de
+gradiente ejecutada al instante, la misma cinta como grafo) y escribe las tablas y el gráfico de
+pérdida en results/.
 """
 
 import os
@@ -26,7 +30,12 @@ SAME_LOSS_BOUND = 1e-4
 
 @dataclass
 class Runs:
-    """EN: The three trainings of the demo. PT: Os três treinamentos da demo."""
+    """EN: The three trainings of the demo.
+
+    PT: Os três treinamentos da demo.
+
+    ES: Los tres entrenamientos de la demo.
+    """
 
     fit: FitRun
     eager: TapeRun

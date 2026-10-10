@@ -4,6 +4,8 @@ import java.util.List;
 //     never negative.
 // PT: Um valor fixo. O carrinho o limita, então um cupom maior que o carrinho zera o total,
 //     nunca o deixa negativo.
+// ES: Un valor fijo. El carrito lo limita, así que un cupón mayor que el carrito deja el total en
+//     cero, nunca negativo.
 public final class FixedCoupon implements DiscountRule {
   private final String code;
   private final int amountCents;

@@ -21,6 +21,9 @@ func (r *Random) Below(limit int) int {
 // PT: Dados de teste determinísticos, sempre os mesmos para a mesma semente. Nenhum arquivo de
 // palavras precisa ser distribuído nem baixado. Só as 12 primeiras letras são usadas, então
 // muitas palavras dividem prefixos.
+// ES: Datos de prueba deterministas, siempre los mismos para la misma semilla. No hace falta
+// distribuir ni descargar ningún archivo de palabras. Solo se usan las 12 primeras letras, así
+// que muchas palabras comparten prefijos.
 func GenerateWords(count int, seed uint64) []string {
 	rng := NewRandom(seed)
 	seen := make(map[string]bool, count)

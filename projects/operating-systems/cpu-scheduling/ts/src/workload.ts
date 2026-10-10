@@ -8,6 +8,10 @@ import type { Process } from "./scheduler";
 //     aleatoriedade para segurança, mas é minúsculo e, acima de tudo, reproduzível. As
 //     implementações em TypeScript e em Python usam a mesma fórmula e a mesma semente, então as
 //     duas simulam exatamente a mesma carga e precisam imprimir exatamente a mesma tabela.
+// ES: Un generador congruencial lineal: siguiente = (a * estado + c) mod 2^32. Es una mala fuente
+//     de aleatoriedad para seguridad, pero es diminuto y, sobre todo, reproducible. Las
+//     implementaciones en TypeScript y en Python usan la misma fórmula y la misma semilla, así que
+//     ambas simulan exactamente la misma carga y deben imprimir exactamente la misma tabla.
 export class Lcg {
 	private state: number;
 
@@ -40,6 +44,12 @@ export type WorkloadKind = (typeof WORKLOADS)[number];
 //     workload: a queue forms, but the system is not hopelessly overloaded.
 //     O intervalo entre chegadas é escolhido para que a CPU fique ocupada cerca de 90% do tempo
 //     em cada carga: forma-se fila, mas o sistema não fica irremediavelmente sobrecarregado.
+// ES: Tres formas de carga. "interactive" tiene solo ráfagas cortas, "cpu-bound" solo largas, y
+//     "mixed" tiene muchos trabajos cortos y unos pocos largos, que es donde más difieren las
+//     políticas: los largos pueden bloquear a los cortos, o los cortos pueden dejar en inanición
+//     a los largos.
+//     El intervalo entre llegadas se elige para que la CPU esté ocupada cerca del 90% del tiempo
+//     en cada carga: se forma una cola, pero el sistema no queda irremediablemente sobrecargado.
 const MAX_GAP: Record<WorkloadKind, number> = { interactive: 10, "cpu-bound": 90, mixed: 30 };
 
 export function generate(kind: WorkloadKind, count: number, seed: number): Process[] {

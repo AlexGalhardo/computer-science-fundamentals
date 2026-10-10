@@ -10,6 +10,12 @@ import { type Bit, muxWord, nand, not, type Word } from "./nand";
 //     são ativas em nível BAIXO: S' = 0 leva Q a 1, R' = 0 leva Q a 0, e com as duas em 1 o laço
 //     mantém o que tinha. Um laço não tem "primeira" porta, então a simulação recalcula as duas
 //     portas até as saídas pararem de mudar, que é o que o circuito real faz ao se acomodar.
+// ES: La memoria aparece cuando la salida de una compuerta vuelve a su propia entrada. Dos NAND
+//     conectadas en cruz son el latch SR: Q = NAND(S', Q') y Q' = NAND(R', Q). Las entradas son
+//     activas en nivel BAJO: S' = 0 lleva Q a 1, R' = 0 lleva Q a 0, y con las dos en 1 el lazo
+//     mantiene lo que tenía. Un lazo no tiene una "primera" compuerta, así que la simulación
+//     recalcula las dos compuertas hasta que las salidas dejan de cambiar, que es lo que hace
+//     el circuito real al asentarse.
 export class SrLatch {
 	q: Bit = 0;
 	qBar: Bit = 1;
@@ -34,6 +40,9 @@ export class SrLatch {
 // PT: O latch D põe duas NANDs na frente do latch SR para que a combinação proibida (set e
 //     reset juntos) não possa ocorrer. Enquanto `enable` vale 1 o latch é transparente, Q
 //     acompanha D. Quando `enable` vai a 0, as duas entradas internas viram 1 e Q é mantido.
+// ES: El latch D pone dos NAND delante del latch SR para que la combinación prohibida (set y
+//     reset juntos) no pueda ocurrir. Mientras `enable` vale 1 el latch es transparente, Q
+//     sigue a D. Cuando `enable` pasa a 0, las dos entradas internas pasan a 1 y Q se mantiene.
 export class DLatch {
 	private readonly latch = new SrLatch();
 
@@ -57,6 +66,11 @@ export class DLatch {
 //     fechado. Quando o clock sobe o mestre se fecha, congelando o valor que D tinha naquele
 //     instante, e o escravo se abre e o mostra. Mudanças de D com o clock em 1 não vão a lugar
 //     nenhum.
+// ES: Un flip-flop solo cambia en el FLANCO del clock. Son dos latches D en secuencia con
+//     habilitaciones opuestas (maestro-esclavo). Mientras el clock vale 0 el maestro sigue a D y
+//     el esclavo está cerrado. Cuando el clock sube el maestro se cierra, congelando el valor
+//     que D tenía en ese instante, y el esclavo se abre y lo muestra. Los cambios de D con el
+//     clock en 1 no van a ninguna parte.
 export class DFlipFlop {
 	private readonly master = new DLatch();
 	private readonly slave = new DLatch();
@@ -86,6 +100,10 @@ export class DFlipFlop {
 //     então um registrador que deve manter o valor precisa de um jeito de ignorar o pulso: um
 //     multiplexador na frente de cada flip-flop realimenta o bit atual quando `load` vale 0 e
 //     deixa o bit novo entrar quando `load` vale 1.
+// ES: Un registro es un flip-flop por bit compartiendo el mismo clock. El clock nunca se
+//     detiene, así que un registro que debe conservar su valor necesita una forma de ignorar el
+//     pulso: un multiplexor delante de cada flip-flop realimenta el bit actual cuando `load`
+//     vale 0 y deja entrar el bit nuevo cuando `load` vale 1.
 export class Register {
 	private readonly bits: DFlipFlop[];
 

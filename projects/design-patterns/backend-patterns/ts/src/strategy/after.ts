@@ -4,6 +4,9 @@
 // PT: STRATEGY. Cada forma de calcular o frete é um objeto com a mesma interface. O checkout
 //     conhece só a interface, então uma modalidade nova é um objeto novo escrito em qualquer
 //     lugar, inclusive em um teste, e este arquivo não é editado.
+// ES: STRATEGY. Cada forma de calcular el envío es un objeto con la misma interfaz. El checkout
+//     conoce solo la interfaz, así que una modalidad nueva es un objeto nuevo escrito en
+//     cualquier lugar, incluso en una prueba, y este archivo no se edita.
 export interface ShippingStrategy {
 	readonly name: string;
 	cost(weightKg: number): number;
@@ -26,6 +29,7 @@ export const pickup: ShippingStrategy = {
 
 // EN: The context. It receives the strategy from outside and delegates the part that varies.
 // PT: O contexto. Ele recebe a estratégia de fora e delega a parte que varia.
+// ES: El contexto. Recibe la estrategia desde fuera y delega la parte que varía.
 export class Checkout {
 	constructor(private readonly shipping: ShippingStrategy) {}
 

@@ -1,6 +1,6 @@
 # backend-patterns
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Ten design patterns in back-end situations where they pay off. Each pattern has a folder with **the failing design** (`before.ts`), **the pattern version** (`after.ts`) and tests that run both, so you can see the problem before the solution. It teaches **which pain each pattern removes**, and, for Singleton, why the pattern is the pain.
 
@@ -61,7 +61,7 @@ docker compose run --rm ts-demo
 
 It prints one scenario per pattern, run on both designs:
 
-```
+```text
 strategy
   before: throws "unknown shipping kind: drone"
   after:  drone shipping added from outside: total 15300 cents

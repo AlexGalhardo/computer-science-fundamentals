@@ -7,6 +7,9 @@ import { type CartLine, discountCents, formatCents, subtotalCents, totalCents } 
 // PT: NÍVEL UNITÁRIO. Um módulo, chamado direto, sem nada em volta: sem banco, sem servidor, sem
 //     navegador. Estes testes rodam em milissegundos e, quando um falha, ele aponta a função
 //     errada. O preço é que não dizem nada sobre como os módulos se encaixam.
+// ES: NIVEL UNITARIO. Un módulo, llamado directamente, sin nada alrededor: sin base de datos, sin servidor, sin
+//     navegador. Estas pruebas se ejecutan en milisegundos y, cuando una falla, señala la función
+//     equivocada. El precio es que no dicen nada sobre cómo encajan los módulos.
 function line(unitPriceCents: number, quantity: number): CartLine {
 	return { productId: "any", name: "Any", unitPriceCents, quantity };
 }
@@ -25,6 +28,8 @@ describe("subtotalCents", () => {
 //     it and above it. The seeded "unit" bug (`>` for `>=`) survives every value except 10000.
 // PT: Valores-limite: a regra muda em 100,00, então os testes ficam logo abaixo, exatamente em
 //     cima e acima. O bug semeado "unit" (`>` no lugar de `>=`) sobrevive a todo valor, menos 10000.
+// ES: Valores límite: la regla cambia en 100,00, así que las pruebas quedan justo debajo, exactamente
+//     encima y por encima. El bug sembrado "unit" (`>` en lugar de `>=`) sobrevive a todo valor, menos 10000.
 describe("discountCents", () => {
 	test("no discount one cent below the threshold", () => {
 		expect(discountCents(9999)).toBe(0);

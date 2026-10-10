@@ -7,12 +7,18 @@
 #     Os brokers são testados um por vez e removidos entre um e outro, então a máquina nunca
 #     segura Redis, RabbitMQ, Kafka e LocalStack ao mesmo tempo. Tudo é removido no fim, mesmo
 #     quando um teste falha.
+# ES: Construye y prueba el mini-proyecto queue-comparison. El único requisito es Docker.
+#     Los brokers se prueban uno a la vez y se eliminan entre uno y otro, así que la máquina nunca
+#     sostiene Redis, RabbitMQ, Kafka y LocalStack a la vez. Todo se elimina al final, incluso
+#     cuando una prueba falla.
 set -eu
 
 cd "$(dirname "$0")"
 
 # EN: Containers that write into this folder run as the current user (see docker-compose.yml).
 # PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+# ES: Los contenedores que escriben en esta carpeta se ejecutan como el usuario actual (ver
+#     docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

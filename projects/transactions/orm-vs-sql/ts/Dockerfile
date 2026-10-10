@@ -4,6 +4,9 @@
 # PT: As dependências são instaladas a partir do lockfile em uma camada própria. Depois o cliente
 #     do Prisma é gerado a partir do schema: é código produzido por uma ferramenta, então é
 #     construído dentro da imagem em vez de versionado.
+# ES: Las dependencias se instalan desde el lockfile en su propia capa. Después el cliente de Prisma
+#     se genera a partir del schema: es código producido por una herramienta, así que se construye
+#     dentro de la imagen en lugar de versionarse.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock ./

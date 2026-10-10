@@ -1,6 +1,6 @@
 # Pure functions and property-based tests
 
-> Versão em português: [docs/pt/functional-programming/pure-functions-properties.md](../../pt/functional-programming/pure-functions-properties.md)
+> Versão em português: [docs/pt/functional-programming/pure-functions-properties.md](../../pt/functional-programming/pure-functions-properties.md) · Versión en español: [docs/es/functional-programming/pure-functions-properties.md](../../es/functional-programming/pure-functions-properties.md)
 
 Mini-project MP-FP-1, in [`projects/functional-programming/pure-functions-properties`](../../../projects/functional-programming/pure-functions-properties). It teaches why pure code is easy to test and what property-based tests find. Languages: TypeScript and Elixir.
 
@@ -53,7 +53,7 @@ The five examples pass against the buggy decoder. They are the examples a person
 
 The round-trip property fails:
 
-```
+```text
 original counterexample: "aaaaaaaaaccccccccbbbbbbbbbb"
 shrunk in 6 steps to:   "aaaaaaaaaa"
 encode -> "10a", buggy decode -> ""

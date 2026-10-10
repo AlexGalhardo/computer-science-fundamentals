@@ -21,6 +21,17 @@ import { assertConfig, type LimiterConfig, type RateLimiter } from "./limiter";
 //     chegaram espalhadas por igual. Quando elas se concentraram no fim, a estimativa fica
 //     baixa demais e um pouco mais que o limite pode passar em algum intervalo de tamanho W:
 //     troca-se memória por precisão.
+// ES: Contador de ventana deslizante. Una aproximación barata del log deslizante con dos
+//     contadores: la ventana fija actual y la anterior. La ventana deslizante que termina ahora
+//     cubre toda la ventana fija actual hasta aquí y la parte final de la anterior, así que:
+//
+//         estimación = anterior * (1 - transcurrido / W) + actual
+//
+//     donde `transcurrido` es el tiempo desde el inicio de la ventana fija actual. La solicitud
+//     se admite cuando estimación < límite. La fórmula supone que las solicitudes de la ventana
+//     anterior llegaron repartidas por igual. Cuando se concentraron al final, la estimación
+//     queda demasiado baja y puede pasar un poco más que el límite en algún intervalo de tamaño
+//     W: se cambia memoria por precisión.
 export class SlidingCounter implements RateLimiter {
 	private windowId = -1;
 	private current = 0;
@@ -39,6 +50,9 @@ export class SlidingCounter implements RateLimiter {
 			// PT: Passar para a janela imediatamente seguinte transforma "atual" em "anterior".
 			//     Depois de um silêncio maior, a janela logo antes desta ficou vazia, então
 			//     "anterior" é zero.
+			// ES: Pasar a la ventana inmediatamente siguiente convierte "actual" en "anterior".
+			//     Después de un silencio mayor, la ventana justo anterior a esta quedó vacía, así
+			//     que "anterior" es cero.
 			this.previous = windowId === this.windowId + 1 ? this.current : 0;
 			this.current = 0;
 			this.windowId = windowId;
@@ -48,6 +62,8 @@ export class SlidingCounter implements RateLimiter {
 		//     the comparison is exact with integers.
 		// PT: Os dois lados de "estimativa < limite" são multiplicados por W, então não há
 		//     divisão e a comparação é exata com inteiros.
+		// ES: Los dos lados de "estimación < límite" se multiplican por W, así que no hay división
+		//     y la comparación es exacta con enteros.
 		const scaledEstimate = this.previous * (windowMs - elapsed) + this.current * windowMs;
 		if (scaledEstimate >= limit * windowMs) {
 			return false;

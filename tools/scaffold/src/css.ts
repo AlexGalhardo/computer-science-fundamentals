@@ -6,6 +6,10 @@
 //     estático. O Tailwind resolve `@import "tailwindcss"` a partir da pasta do arquivo CSS, e
 //     um mini-projeto não tem `node_modules`. Então a entrada é copiada para junto desta
 //     ferramenta, onde o Tailwind fixado está instalado, com os caminhos de `@source` absolutos.
+// ES: `bun run dashboard:css <carpeta con input.css>` recompila el `tailwind.css` de un dashboard
+//     estático. Tailwind resuelve `@import "tailwindcss"` desde la carpeta del archivo CSS, y
+//     un mini-proyecto no tiene `node_modules`. Entonces la entrada se copia junto a esta
+//     herramienta, donde está instalado el Tailwind fijado, con las rutas de `@source` absolutas.
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";

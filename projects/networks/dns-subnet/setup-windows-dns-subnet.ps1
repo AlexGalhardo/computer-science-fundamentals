@@ -1,5 +1,6 @@
 # EN: Builds and tests the dns-subnet mini-project. The only requirement is Docker.
 # PT: Constrói e testa o mini-projeto dns-subnet. O único requisito é o Docker.
+# ES: Construye y prueba el mini-proyecto dns-subnet. El único requisito es Docker.
 $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot

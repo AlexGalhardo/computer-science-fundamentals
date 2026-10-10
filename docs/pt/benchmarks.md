@@ -1,6 +1,6 @@
 # Benchmarks
 
-> English version: [docs/en/benchmarks.md](../en/benchmarks.md)
+> English version: [docs/en/benchmarks.md](../en/benchmarks.md) · Versión en español: [docs/es/benchmarks.md](../es/benchmarks.md)
 
 Um contrato e um runner para todos os benchmarks do repositório, para que um resultado em C++ e um em Python caibam na mesma tabela. Regras: [.claude/rules/load-tests.md](../../.claude/rules/load-tests.md).
 

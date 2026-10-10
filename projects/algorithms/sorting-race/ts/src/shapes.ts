@@ -8,6 +8,11 @@
 //     entre linguagens corre só o formato aleatório, para caber em poucos minutos. Este script
 //     mostra o outro eixo em uma linguagem: os mesmos números em outra ordem podem mudar o
 //     custo de um algoritmo de linear para quadrático, ou não mudar nada.
+// ES: `bun run ts/src/shapes.ts [n]` cronometra los seis algoritmos en las tres formas de entrada
+//     (random, sorted, reversed) de los mismos n valores e imprime una tabla Markdown. El benchmark
+//     entre lenguajes corre solo la forma aleatoria, para caber en pocos minutos. Este script
+//     muestra el otro eje en un lenguaje: los mismos números en otro orden pueden cambiar el
+//     costo de un algoritmo de lineal a cuadrático, o no cambiar nada.
 
 import { existsSync } from "node:fs";
 import { dataFile, readValues, VARIANTS } from "./input";
@@ -25,6 +30,8 @@ if (!Number.isInteger(n) || n < 0 || !VARIANTS.every((variant) => existsSync(dat
 //     JIT compile the hot loops, and the range shows how much the measurement moves.
 // PT: Mediana de várias execuções após um aquecimento, com o intervalo ao lado. O aquecimento
 //     deixa o JIT compilar os laços quentes, e o intervalo mostra quanto a medida oscila.
+// ES: Mediana de varias ejecuciones tras un calentamiento, con el intervalo al lado. El calentamiento
+//     deja que el JIT compile los bucles calientes, y el intervalo muestra cuánto oscila la medida.
 function measure(sort: (values: readonly number[]) => number[], values: readonly number[]): string {
 	const times: number[] = [];
 	for (let run = 0; run < WARMUP + RUNS; run++) {

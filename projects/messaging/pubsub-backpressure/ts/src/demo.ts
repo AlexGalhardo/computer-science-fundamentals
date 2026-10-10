@@ -2,6 +2,8 @@
 //     prints the tables and rewrites `results/results.md`.
 // PT: `bun run demo`: roda os experimentos com RabbitMQ e o experimento de backpressure em
 //     processo, mostra as tabelas e reescreve `results/results.md`.
+// ES: `bun run demo`: ejecuta los experimentos con RabbitMQ y el experimento de backpressure en
+//     proceso, imprime las tablas y reescribe `results/results.md`.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -93,6 +95,8 @@ if (import.meta.main) {
 	//     unbounded run would only show that run's buffer being freed.
 	// PT: A execução limitada vai primeiro: as duas dividem este processo, e medi-la depois da
 	//     ilimitada só mostraria o buffer da outra sendo liberado.
+	// ES: La ejecución acotada va primero: las dos comparten este proceso, y medirla después de
+	//     la no acotada solo mostraría cómo se libera el buffer de la otra.
 	const bounded = await runPressure({ ...DEFAULT_PRESSURE, capacity: 100 });
 	const unbounded = await runPressure({ ...DEFAULT_PRESSURE, capacity: Number.POSITIVE_INFINITY });
 	const connection = await connectBroker(config.AMQP_URL);

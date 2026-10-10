@@ -8,6 +8,11 @@
 //     imprime, para cada fase, quantas operações fez, quanto tempo levaram e os percentis de
 //     latência, além do próprio tempo de CPU e pico de memória. O coletor se recusa a escrever
 //     resultados se os clientes não concordarem no checksum do que leram.
+// ES: Recolector de la carga de base de datos (`bun run database`). Levanta un PostgreSQL y luego
+//     ejecuta el cliente de cada lenguaje varias veces. Cada cliente hace las mismas cuatro fases
+//     e imprime, para cada fase, cuántas operaciones hizo, cuánto tardaron y los percentiles de
+//     latencia, además de su propio tiempo de CPU y pico de memoria. El recolector se niega a
+//     escribir resultados si los clientes no coinciden en el checksum de lo que leyeron.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -89,6 +94,7 @@ function main(): void {
 
 			// EN: One small run first, thrown away: it warms the database cache and the image.
 			// PT: Uma execução pequena antes, descartada: ela aquece o cache do banco e a imagem.
+			// ES: Una ejecución pequeña antes, descartada: calienta la caché de la base de datos y la imagen.
 			runClient(language, 500, WORKERS);
 			const results: ClientResult[] = [];
 			for (let attempt = 1; attempt <= RUNS; attempt++) {
@@ -119,6 +125,7 @@ function main(): void {
 					p99Ms: meanOf((item) => item.p99Ms),
 					// EN: CPU time and memory belong to the whole client run, all four phases together.
 					// PT: O tempo de CPU e a memória são da execução inteira do cliente, as quatro fases juntas.
+					// ES: El tiempo de CPU y la memoria son de la ejecución completa del cliente, las cuatro fases juntas.
 					clientCpuMs: spread(results.map((result) => result.cpuMs)).mean,
 					clientPeakMemoryKb: Math.max(...results.map((result) => result.memoryKb)),
 					checksum: results[0]?.checksum,

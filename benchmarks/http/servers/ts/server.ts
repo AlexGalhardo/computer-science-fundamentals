@@ -11,9 +11,17 @@
 //     /primes) faz todas as outras esperarem: este servidor nunca usa mais que cerca de um
 //     núcleo.
 //     Protocolo (o mesmo nas 7 linguagens): GET /health, POST /echo, GET /primes?limit=N.
+// ES: Servidor HTTP del benchmark en TypeScript, con el servidor integrado de Bun (Bun.serve).
+//     Modelo: un thread y un event loop. El trabajo de red ocurre en código nativo, y el
+//     handler de abajo corre en el único thread de JavaScript, una petición a la vez. Eso es muy
+//     eficiente para handlers cortos, y significa que una petición limitada por CPU (como
+//     /primes) hace esperar a todas las demás: este servidor nunca usa más que cerca de un
+//     núcleo.
+//     Protocolo (el mismo en los 7 lenguajes): GET /health, POST /echo, GET /primes?limit=N.
 
 // EN: An empty export makes this file a module, so its names stay private to it.
 // PT: Um export vazio torna este arquivo um módulo, então seus nomes ficam privados a ele.
+// ES: Un export vacío convierte este archivo en un módulo, así sus nombres quedan privados a él.
 export {};
 
 const MAX_LIMIT = 100000;
@@ -30,6 +38,7 @@ function isPrime(k: number): boolean {
 
 // EN: The CPU-bound endpoint: count the primes up to limit by trial division.
 // PT: O endpoint preso à CPU: conta os primos até limit por divisão por tentativa.
+// ES: El endpoint limitado por CPU: cuenta los primos hasta limit por división de prueba.
 function countPrimes(limit: number): number {
 	let count = 0;
 	for (let k = 2; k <= limit; k++) {
@@ -42,6 +51,8 @@ function countPrimes(limit: number): number {
 //     library and the HTTP stack, not a copy of bytes.
 // PT: O endpoint de eco interpreta o corpo JSON e o serializa de novo, então mede a biblioteca
 //     de JSON e a pilha HTTP, não uma cópia de bytes.
+// ES: El endpoint de eco interpreta el cuerpo JSON y lo serializa de nuevo, así que mide la biblioteca
+//     de JSON y la pila HTTP, no una copia de bytes.
 async function echo(request: Request): Promise<Response> {
 	let value: unknown;
 	try {

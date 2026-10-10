@@ -6,6 +6,10 @@
 //     um acidente, é uma resposta que quem chamou precisa tratar, então viaja como valor de
 //     retorno e o compilador obriga quem chamou a olhar para ela. Exceções ficam para o que
 //     ninguém esperava, como uma conexão perdida com o banco.
+// ES: Un `Result` es un valor que es o un éxito o una falla esperada. Un título vacío no es un
+//     accidente, es una respuesta que quien llamó debe manejar, así que viaja como valor de
+//     retorno y el compilador obliga a quien llamó a mirarla. Las excepciones quedan para lo que
+//     nadie esperaba, como una conexión perdida con la base de datos.
 export type Result<T, E> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: E };
 
 export function ok<T>(value: T): Result<T, never> {

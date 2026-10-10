@@ -7,6 +7,10 @@
 #     Roda as cinco suítes, da mais barata para a mais cara, e depois a matriz de bugs, que roda
 #     cada suíte contra cada bug semeado e escreve results/bug-matrix.md.
 #     Contêineres e volumes são removidos no fim, mesmo quando uma suíte falha.
+# ES: Construye y prueba el mini-proyecto test-pyramid. El único requisito es Docker.
+#     Ejecuta las cinco suites, de la más barata a la más cara, y luego la matriz de bugs, que ejecuta
+#     cada suite contra cada bug sembrado y escribe results/bug-matrix.md.
+#     Los contenedores y volúmenes se eliminan al final, incluso cuando una suite falla.
 set -eu
 
 cd "$(dirname "$0")"
@@ -18,6 +22,7 @@ fi
 
 # EN: The matrix container writes into ./results, so it runs with the uid of whoever owns it.
 # PT: O contêiner da matriz escreve em ./results, então roda com o uid de quem é dono da pasta.
+# ES: El contenedor de la matriz escribe en ./results, así que se ejecuta con el uid de quien es dueño de la carpeta.
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

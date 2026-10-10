@@ -7,6 +7,11 @@
 //     porque o que importa é quantas requisições podem estar em andamento ao mesmo tempo, não a
 //     banda bruta. Tudo é gerado de forma determinística: sem biblioteca de aleatoriedade, sem
 //     arquivo baixado.
+// ES: La página bajo prueba: un documento HTML y 200 imágenes pequeñas, cada una una petición
+//     HTTP separada. Muchos recursos pequeños es la carga en la que más difieren las versiones
+//     de HTTP, porque lo que importa es cuántas peticiones pueden estar en curso al mismo
+//     tiempo, no el ancho de banda bruto. Todo se genera de forma determinista: sin biblioteca
+//     de aleatoriedad, sin archivos descargados.
 
 import { deflateSync } from "node:zlib";
 
@@ -21,6 +26,9 @@ export function imageName(index: number): string {
 //     polynomial 0xEDB88320 whenever the bit that fell out was 1.
 // PT: CRC-32, a soma de verificação com que todo bloco de um PNG termina. Bit a bit: desloca
 //     para a direita, e faz XOR com o polinômio 0xEDB88320 sempre que o bit que saiu era 1.
+// ES: CRC-32, la suma de verificación con que termina cada bloque de un PNG. Bit a bit:
+//     desplaza a la derecha, y hace XOR con el polinomio 0xEDB88320 siempre que el bit que
+//     salió era 1.
 function crc32(bytes: Uint8Array): number {
 	let crc = 0xffffffff;
 	for (const byte of bytes) {
@@ -49,6 +57,10 @@ function chunk(type: string, data: Uint8Array): Buffer {
 //     laboratório não precisar de biblioteca de imagem. Os pixels são uma cor base mais ruído
 //     pseudoaleatório de um gerador congruente linear semeado pelo índice. O ruído existe porque
 //     não comprime, o que mantém cada arquivo em um tamanho realista.
+// ES: Cada pieza es un PNG de unos 2 kB (ocupa más de un paquete), escrito a mano para que el
+//     laboratorio no necesite una biblioteca de imágenes. Los píxeles son un color base más
+//     ruido pseudoaleatorio de un generador congruencial lineal sembrado por el índice. El
+//     ruido existe porque no se comprime, lo que mantiene cada archivo en un tamaño realista.
 export function imagePng(index: number): Buffer {
 	const base = [(index * 53) % 256, (index * 97) % 256, (index * 31) % 256];
 	let state = (index + 1) * 2654435761;

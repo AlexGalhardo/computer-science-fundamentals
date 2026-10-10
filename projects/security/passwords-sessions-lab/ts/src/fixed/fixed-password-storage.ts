@@ -4,6 +4,9 @@
 // PT: A CORREÇÃO do armazenamento de senhas: Argon2id, pela API `Bun.password` que já vem com o
 //     runtime. Este arquivo também sabe conferir um hash feito por um esquema antigo, por um
 //     único motivo: atualizá-lo para Argon2id na próxima vez que o dono fizer login.
+// ES: LA CORRECCIÓN del almacenamiento de contraseñas: Argon2id, mediante la API `Bun.password` que ya viene con el
+//     runtime. Este archivo también sabe comprobar un hash hecho por un esquema antiguo, por un
+//     único motivo: actualizarlo a Argon2id la próxima vez que el dueño inicie sesión.
 
 import { createHash, timingSafeEqual } from "node:crypto";
 
@@ -14,9 +17,13 @@ export interface Argon2Params {
 	// PT: Memória usada por um hash, em KiB. É isso que torna o Argon2 "memory-hard": o hardware
 	//     que calcula bilhões de SHA-256 por segundo não consegue o mesmo aqui, porque cada
 	//     palpite em paralelo precisa do seu próprio bloco de memória.
+	// ES: Memoria usada por un hash, en KiB. Eso es lo que hace que Argon2 sea "memory-hard": el hardware
+	//     que calcula miles de millones de SHA-256 por segundo no logra lo mismo aquí, porque cada
+	//     intento en paralelo necesita su propio bloque de memoria.
 	memoryCost: number;
 	// EN: Number of passes over that memory. More passes, more time per hash.
 	// PT: Número de passadas sobre essa memória. Mais passadas, mais tempo por hash.
+	// ES: Número de pasadas sobre esa memoria. Más pasadas, más tiempo por hash.
 	timeCost: number;
 }
 
@@ -28,6 +35,10 @@ export interface Argon2Params {
 //     OWASP Password Storage Cheat Sheet (com 1 thread, que é o que o Bun usa). Um sistema real
 //     aumenta esses números até um hash demorar o quanto o login dele aguenta, e aumenta de novo
 //     quando o hardware fica mais rápido. É por isso que `needsRehash` existe.
+// ES: La política de este laboratorio: 19 MiB y 2 pasadas, la configuración mínima de Argon2id del
+//     OWASP Password Storage Cheat Sheet (con 1 hilo, que es lo que usa Bun). Un sistema real
+//     aumenta esos números hasta que un hash tarde lo que su inicio de sesión aguante, y los aumenta de nuevo
+//     cuando el hardware se vuelve más rápido. Por eso existe `needsRehash`.
 export const ARGON2_PARAMS: Argon2Params = { memoryCost: 19456, timeCost: 2 };
 
 export type Scheme = "plain" | "md5" | "sha256" | "argon2id" | "unknown";
@@ -38,6 +49,9 @@ export type Scheme = "plain" | "md5" | "sha256" | "argon2id" | "unknown";
 // PT: O Argon2id sorteia um sal novo a cada chamada e escreve tudo o que é preciso para conferir
 //     depois em uma única string: `$argon2id$v=19$m=19456,t=2,p=1$<sal>$<hash>`. Nada mais
 //     precisa ser guardado, e a mesma senha nunca produz a mesma string duas vezes.
+// ES: Argon2id sortea una sal nueva en cada llamada y escribe todo lo necesario para comprobar
+//     después en una única cadena: `$argon2id$v=19$m=19456,t=2,p=1$<sal>$<hash>`. No hace falta
+//     guardar nada más, y la misma contraseña nunca produce la misma cadena dos veces.
 export function hashPassword(password: string, params: Argon2Params = ARGON2_PARAMS): Promise<string> {
 	return Bun.password.hash(password, { algorithm: "argon2id", ...params });
 }
@@ -60,6 +74,8 @@ function argon2ParamsOf(stored: string): Argon2Params | undefined {
 //     with less memory or fewer passes than today's parameters.
 // PT: Verdadeiro quando um hash guardado é mais fraco que a política atual: qualquer esquema
 //     antigo, ou Argon2id com menos memória ou menos passadas que os parâmetros de hoje.
+// ES: Verdadero cuando un hash guardado es más débil que la política actual: cualquier esquema
+//     antiguo, o Argon2id con menos memoria o menos pasadas que los parámetros de hoy.
 export function needsRehash(stored: string, policy: Argon2Params = ARGON2_PARAMS): boolean {
 	const params = argon2ParamsOf(stored);
 	if (params === undefined) return true;
@@ -73,6 +89,10 @@ export function needsRehash(stored: string, policy: Argon2Params = ARGON2_PARAMS
 //     tempo gasto diz quanto do valor estava certo. `timingSafeEqual` sempre olha todos os
 //     bytes. Ela precisa de dois buffers do mesmo tamanho, então os dois lados passam por um
 //     hash antes.
+// ES: Comparación en tiempo constante. `a === b` retorna en cuanto un carácter difiere, así que el
+//     tiempo gastado dice cuánto del valor era correcto. `timingSafeEqual` siempre mira todos los
+//     bytes. Necesita dos buffers del mismo tamaño, así que los dos lados pasan por un
+//     hash antes.
 export function constantTimeEqual(a: string, b: string): boolean {
 	const left = createHash("sha256").update(a).digest();
 	const right = createHash("sha256").update(b).digest();
@@ -83,6 +103,8 @@ export function constantTimeEqual(a: string, b: string): boolean {
 //     migration. Nothing in the fixed version ever stores a new value in these formats.
 // PT: Recalcula um hash antigo só para reconhecer a senha certa uma última vez, durante a
 //     migração. Nada na versão corrigida guarda um valor novo nesses formatos.
+// ES: Recalcula un hash antiguo solo para reconocer la contraseña correcta una última vez, durante la
+//     migración. Nada en la versión corregida guarda un valor nuevo en esos formatos.
 function verifyLegacy(password: string, stored: string): boolean {
 	const [scheme, first, second] = stored.split("$");
 	if (scheme === "plain") return constantTimeEqual(stored, `plain$${password}`);
@@ -107,6 +129,8 @@ export interface LoginCheck {
 	//     The caller saves it in place of the old value.
 	// PT: Presente só quando a senha estava certa e o hash guardado estava abaixo da política.
 	//     Quem chamou grava este valor no lugar do antigo.
+	// ES: Presente solo cuando la contraseña era correcta y el hash guardado estaba por debajo de la política.
+	//     Quien llamó escribe este valor en lugar del antiguo.
 	upgradedHash?: string;
 }
 
@@ -119,6 +143,11 @@ export interface LoginCheck {
 //     login bem-sucedido, então é aí que o hash antigo é trocado por um Argon2id. Usuários que
 //     nunca voltam ficam com o hash antigo, e por isso sistemas antigos também os embrulham ou
 //     expiram.
+// ES: Actualización en el inicio de sesión. Un hash no puede convertirse en otro hash, porque la contraseña no es
+//     recuperable a partir de él. El único momento en que el servidor tiene la contraseña de verdad es un
+//     inicio de sesión exitoso, así que ahí es donde el hash antiguo se cambia por uno Argon2id. Los usuarios que
+//     nunca vuelven se quedan con el hash antiguo, y por eso los sistemas antiguos también los envuelven o
+//     los hacen expirar.
 export async function verifyAndUpgrade(
 	password: string,
 	stored: string,

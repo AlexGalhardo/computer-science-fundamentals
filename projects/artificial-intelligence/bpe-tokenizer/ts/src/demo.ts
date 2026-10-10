@@ -2,6 +2,9 @@
 //     against number of tokens", and writes results/results-ts.md and results/table-ts.json.
 // PT: `bun run demo` treina uma vez, imprime as primeiras fusões e a tabela "tamanho do
 //     vocabulário contra número de tokens", e grava results/results-ts.md e results/table-ts.json.
+// ES: `bun run demo` entrena una vez, imprime las primeras fusiones y la tabla "tamaño del
+//     vocabulario frente a número de tokens", y escribe results/results-ts.md y
+//     results/table-ts.json.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";

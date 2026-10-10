@@ -5,6 +5,10 @@
 //     da raiz de composição enquanto nenhum outro arquivo citar um repositório concreto. Este
 //     teste lê o código e falha no dia em que um controller ou caso de uso mencionar
 //     `PostgresNoteRepository`.
+// ES: El experimento de intercambio como una guarda. Reemplazar el repositorio solo sigue siendo
+//     un cambio de la raíz de composición mientras ningún otro archivo cite un repositorio
+//     concreto. Esta prueba lee el código y falla el día en que un controller o un caso de uso
+//     mencione `PostgresNoteRepository`.
 
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";

@@ -6,6 +6,7 @@ import { check, int, listOf, oneOf, tuple } from "../src/prop";
 describe("checkout: the pure version is tested with plain values", () => {
 	// EN: No mock, no fake clock, no setup: the instant is just another argument.
 	// PT: Sem mock, sem relógio falso, sem preparação: o instante é só mais um argumento.
+	// ES: Sin mock, sin reloj falso, sin preparación: el instante es solo un argumento más.
 	for (const example of cases.checkout.examples) {
 		test(example.name, () => {
 			expect(priceOrder(example.order, cases.checkout.now)).toEqual(example.expected);
@@ -23,6 +24,8 @@ describe("checkout: the impure version", () => {
 	//     result. This is the definition of "not referentially transparent".
 	// PT: Mesmo pedido, duas chamadas, duas respostas diferentes: o contador oculto vaza para
 	//     o resultado. É a definição de "não é referencialmente transparente".
+	// ES: Mismo pedido, dos llamadas, dos respuestas distintas: el contador oculto se filtra al
+	//     resultado. Es la definición de "no es referencialmente transparente".
 	test("returns different values for the same argument", () => {
 		const order: Order = { items: [{ unitCents: 100, quantity: 1 }], coupon: null };
 		const first = priceOrderImpure(order);
@@ -37,6 +40,8 @@ describe("checkout: invariants", () => {
 	//     tuples, and `toOrder` gives them names.
 	// PT: Um pedido gerado: até 8 itens e talvez um cupom. O gerador trabalha com tuplas, e
 	//     `toOrder` dá nome a elas.
+	// ES: Un pedido generado: hasta 8 ítems y quizá un cupón. El generador trabaja con tuplas, y
+	//     `toOrder` les da nombre.
 	const orders = tuple(
 		listOf(tuple(int(0, 100_000), int(0, 20)), 8),
 		oneOf([false, true]),
@@ -54,6 +59,8 @@ describe("checkout: invariants", () => {
 	//     is never negative and never larger than the subtotal, and the three fields add up.
 	// PT: Invariantes são fatos que valem para todo pedido, quaisquer que sejam os números: o
 	//     desconto nunca é negativo nem maior que o subtotal, e os três campos fecham a conta.
+	// ES: Los invariantes son hechos que valen para todo pedido, sean cuales sean los números: el
+	//     descuento nunca es negativo ni mayor que el subtotal, y los tres campos cuadran.
 	test("0 <= discount <= subtotal and total = subtotal - discount", () => {
 		const result = check(
 			orders,

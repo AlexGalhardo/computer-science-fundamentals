@@ -32,6 +32,11 @@ impl Image {
     //     descreve: custa o mesmo com 1 ou com 8 trabalhadores. O FNV-1a (aqui misturando um
     //     pixel inteiro por passo) depende da ordem dos valores, então checksums iguais
     //     significam imagens iguais, pixel a pixel.
+    // ES: Esta pasada sobre la imagen terminada corre en un hilo, sea cual sea el número de
+    //     trabajadores. Es una parte serial real del programa, del tipo que describe la ley de
+    //     Amdahl: cuesta lo mismo con 1 o con 8 trabajadores. FNV-1a (aquí mezclando un
+    //     píxel entero por paso) depende del orden de los valores, así que checksums iguales
+    //     significan imágenes iguales, píxel a píxel.
     pub fn checksum(&self) -> u64 {
         let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
         for &pixel in &self.pixels {
@@ -53,6 +58,12 @@ impl Image {
 //     vezes ao longo da imagem, e é isso que torna esta carga irregular. O resultado depende
 //     só de c, nunca de outro pixel, então os pixels podem ser calculados em qualquer ordem e
 //     em qualquer thread.
+// ES: Tiempo de escape de un punto c: iterar z = z² + c a partir de z = 0 y contar los pasos
+//     hasta |z| > 2. Los puntos dentro del conjunto nunca escapan y cuestan los `max_iter` pasos
+//     enteros, los puntos lejanos cuestan uno o dos. El costo de un píxel varía, por tanto, mil
+//     veces a lo largo de la imagen, y eso es lo que hace irregular esta carga. El resultado
+//     depende solo de c, nunca de otro píxel, así que los píxeles pueden calcularse en cualquier
+//     orden y en cualquier hilo.
 pub fn escape_time(cx: f64, cy: f64, max_iter: u32) -> u32 {
     let mut zx = 0.0_f64;
     let mut zy = 0.0_f64;
@@ -77,6 +88,10 @@ pub fn escape_time(cx: f64, cy: f64, max_iter: u32) -> u32 {
 //     imagem, e devolve as iterações gastas. O trabalhador é dono exclusivo de `block`
 //     (`&mut`), então escreve pixels sem trava alguma, e acumula as iterações em uma variável
 //     local.
+// ES: Calcula las filas guardadas en `block`, cuya primera fila es la fila `first_row` de la
+//     imagen, y devuelve las iteraciones gastadas. El trabajador es dueño exclusivo de `block`
+//     (`&mut`), así que escribe píxeles sin ningún bloqueo, y acumula las iteraciones en una
+//     variable local.
 fn render_rows(block: &mut [u32], first_row: usize, side: usize, max_iter: u32) -> u64 {
     if side == 0 {
         return 0;
@@ -125,6 +140,10 @@ pub fn render_parallel(side: usize, max_iter: u32, workers: usize, schedule: Sch
     //     se sobrepõem. É a prova que o compilador de Rust exige antes de deixar várias threads
     //     escreverem no mesmo buffer: cada pixel tem exatamente um escritor, então não há
     //     corrida de dados por construção.
+    // ES: `split_at_mut` y `chunks_mut` cortan el búfer en bloques de filas enteras que no se
+    //     solapan. Es la prueba que el compilador de Rust exige antes de dejar que varios hilos
+    //     escriban en el mismo búfer: cada píxel tiene exactamente un escritor, así que no hay
+    //     condición de carrera por construcción.
     let partials: Vec<u64> = match schedule {
         Schedule::Static => {
             // EN: One big block per worker. The rows in the middle of the image cross the set
@@ -134,6 +153,10 @@ pub fn render_parallel(side: usize, max_iter: u32, workers: usize, schedule: Sch
             //     conjunto e custam muito mais que as do topo e da base, então os
             //     trabalhadores com os blocos externos terminam cedo e esperam: o speed-up
             //     sofre.
+            // ES: Un bloque grande por trabajador. Las filas del medio de la imagen atraviesan el
+            //     conjunto y cuestan mucho más que las de arriba y las de abajo, así que los
+            //     trabajadores con los bloques externos terminan antes y esperan: el speed-up
+            //     sufre.
             thread::scope(|scope| {
                 let mut rest = pixels.as_mut_slice();
                 let mut handles = Vec::with_capacity(workers);
@@ -163,6 +186,12 @@ pub fn render_parallel(side: usize, max_iter: u32, workers: usize, schedule: Sch
             //     aqui um contador atômico de linhas; Rust usa uma fila porque entregar blocos
             //     `&mut` a partir de um iterador é como ele mantém a prova de "um escritor por
             //     pixel".
+            // ES: Muchos bloques pequeños en una cola. Un trabajador libre bloquea la cola solo el
+            //     tiempo de tomar el siguiente bloque y luego lo calcula con el bloqueo liberado.
+            //     Filas caras y baratas terminan repartidas entre todos los trabajadores. Go y C++
+            //     usan aquí un contador atómico de filas; Rust usa una cola porque entregar bloques
+            //     `&mut` desde un iterador es como mantiene la prueba de "un escritor por
+            //     píxel".
             let queue = Mutex::new(pixels.chunks_mut(DYNAMIC_CHUNK_ROWS * side).enumerate());
             thread::scope(|scope| {
                 let handles: Vec<_> = (0..workers)
@@ -214,6 +243,10 @@ mod tests {
     //     resultados de ponto flutuante coincidem entre linguagens porque as três avaliam as
     //     mesmas operações na mesma ordem e nenhuma funde uma multiplicação e uma soma em uma
     //     única instrução.
+    // ES: Los mismos valores de referencia se verifican en las pruebas de Go y C++. Los
+    //     resultados de punto flotante coinciden entre lenguajes porque los tres evalúan las
+    //     mismas operaciones en el mismo orden y ninguno fusiona una multiplicación y una suma en
+    //     una única instrucción.
     #[test]
     fn golden_image() {
         let image = render_sequential(64, MAX_ITER);

@@ -49,6 +49,7 @@ test("aggregate builds one row per setup, in a fixed order", () => {
 	expect(rows[0]?.memoryMib.median).toBe(64);
 	expect(renderTable(rows, "en")).toContain("| `bun` | Bun 1.0.0 | 3 | 100 (90 to 110) |");
 	expect(renderTable(rows, "pt")).toContain("Pico de memória");
+	expect(renderTable(rows, "es")).toContain("Pico de memoria");
 });
 
 test("violations reports a missing setup and failed requests", () => {

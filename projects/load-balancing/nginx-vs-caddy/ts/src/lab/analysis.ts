@@ -4,6 +4,8 @@ import type { Sample } from "./load";
 //     network, so all of it is unit tested.
 // PT: Funções puras que transformam amostras nos números do relatório. Nada aqui toca a rede,
 //     então tudo é testado com testes unitários.
+// ES: Funciones puras que transforman muestras en los números del informe. Nada aquí toca la red,
+//     así que todo se prueba con pruebas unitarias.
 
 /** Acceptance criterion of the mini-project: observed share within 5 percentage points. */
 export const TOLERANCE = 0.05;
@@ -21,6 +23,8 @@ export function shares(counts: number[]): number[] {
 //     weights 3, 2, 1 mean 3/6, 2/6 and 1/6 of the requests.
 // PT: O round robin e sua forma ponderada prometem uma fatia proporcional ao peso:
 //     pesos 3, 2, 1 significam 3/6, 2/6 e 1/6 das requisições.
+// ES: El round robin y su forma ponderada prometen una parte proporcional al peso:
+//     pesos 3, 2, 1 significan 3/6, 2/6 y 1/6 de las solicitudes.
 export function expectedFromWeights(weights: number[]): number[] {
 	return shares(weights);
 }
@@ -33,6 +37,10 @@ export function expectedFromWeights(weights: number[]): number[] {
 //     cada instância. Uma instância que segura k requisições e leva t ms em cada uma termina
 //     k / t requisições por ms, então as fatias são proporcionais a 1 / t. Com 10, 10 e 40 ms:
 //     1/10 : 1/10 : 1/40 = 4 : 4 : 1, então a instância lenta atende 1/9 das requisições.
+// ES: El least connections en lazo cerrado mantiene el mismo número de solicitudes en curso en
+//     cada instancia. Una instancia que sostiene k solicitudes y tarda t ms en cada una termina
+//     k / t solicitudes por ms, así que las partes son proporcionales a 1 / t. Con 10, 10 y 40 ms:
+//     1/10 : 1/10 : 1/40 = 4 : 4 : 1, así que la instancia lenta atiende 1/9 de las solicitudes.
 export function expectedFromServiceTimes(serviceTimesMs: number[]): number[] {
 	return shares(serviceTimesMs.map((time) => 1 / time));
 }
@@ -55,6 +63,10 @@ export function withinTolerance(observed: number[], expected: number[], toleranc
 //     instância. Espalhamento: muitos clientes diferentes são divididos entre as instâncias.
 //     Esta função confere a primeira promessa. `clientOf` diz qual cliente simulado mandou a
 //     requisição `index`.
+// ES: Una política de hash hace dos promesas. Fijación: un cliente siempre llega a la misma
+//     instancia. Dispersión: muchos clientes distintos se reparten entre las instancias. Esta
+//     función verifica la primera promesa. `clientOf` dice qué cliente simulado envió la
+//     solicitud `index`.
 export function stickyClients(pairs: { client: string; instance: string | null }[]): {
 	clients: number;
 	sticky: number;
@@ -97,6 +109,10 @@ export interface FailureSummary {
 //     os clientes pararam de perceber a falha depois da última requisição que falhou ou ficou
 //     lenta, então a recuperação é a distância da falha até o momento em que essa requisição
 //     foi enviada.
+// ES: "Tiempo de recuperación" necesita una definición que un programa pueda verificar. Aquí: los
+//     clientes dejaron de notar la falla después de la última solicitud que falló o fue lenta, así
+//     que la recuperación es la distancia desde la falla hasta el momento en que se envió esa
+//     solicitud.
 export function summariseFailure(samples: Sample[], window: FailureWindow): FailureSummary {
 	const failed = (sample: Sample): boolean => sample.status !== 200;
 	const slow = (sample: Sample): boolean => sample.status === 200 && sample.latencyMs > window.slowMs;
@@ -124,6 +140,8 @@ export interface Spread {
 //     several runs, shown with the smallest and the largest value.
 // PT: Uma execução em máquina compartilhada prova pouco. Todo número do relatório é a mediana
 //     de várias execuções, mostrada com o menor e o maior valor.
+// ES: Una ejecución en una máquina compartida prueba poco. Cada número del informe es la mediana
+//     de varias ejecuciones, mostrada con el menor y el mayor valor.
 export function spread(values: number[]): Spread {
 	if (values.length === 0) {
 		throw new Error("spread of no values");

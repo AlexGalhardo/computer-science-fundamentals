@@ -2,6 +2,8 @@
 //     PostgreSQL and prints the table and the timestamp log of each interleaving.
 // PT: A demo: `docker compose run --rm demo`. Roda a matriz inteira contra o PostgreSQL local e
 //     mostra a tabela e o log de timestamps de cada intercalação.
+// ES: La demo: `docker compose run --rm demo`. Ejecuta toda la matriz contra el PostgreSQL local y
+//     muestra la tabla y el registro de timestamps de cada intercalación.
 
 import { loadConfig } from "./config";
 import { openLab } from "./harness";

@@ -8,6 +8,10 @@ package main
 //     referência em TypeScript em `ts/src/`, onde cada um é explicado em detalhe. O que muda
 //     aqui: Go compila para código de máquina e um slice de int32 é um bloco contíguo de
 //     memória, então cada passo custa poucas instruções de CPU e o cache é bem aproveitado.
+// ES: Los seis algoritmos de ordenación de la carrera, en Go. Mismos algoritmos y mismas decisiones
+//     que la referencia en TypeScript en `ts/src/`, donde cada uno se explica en detalle. Lo que
+//     cambia aquí: Go compila a código de máquina y un slice de int32 es un bloque contiguo de
+//     memoria, así que cada paso cuesta pocas instrucciones de CPU y el caché se aprovecha bien.
 
 // SortFunc receives the input and returns a new sorted slice, leaving the input untouched.
 type SortFunc func(values []int32) []int32
@@ -80,6 +84,7 @@ func mergeRange(a, buffer []int32, lo, hi int) {
 	for i < mid && j < hi {
 		// EN: `<=` takes the left value on a tie, which keeps the sort stable.
 		// PT: `<=` pega o valor da esquerda no empate, o que mantém a ordenação estável.
+		// ES: `<=` toma el valor de la izquierda en el empate, lo que mantiene la ordenación estable.
 		if a[i] <= a[j] {
 			buffer[k] = a[i]
 			i++
@@ -107,6 +112,7 @@ func medianOfThree(x, y, z int32) int32 {
 
 // EN: Recursing on the smaller side and looping on the larger one keeps the stack at O(log n).
 // PT: Fazer a recursão no lado menor e o laço no maior mantém a pilha em O(log n).
+// ES: Hacer la recursión sobre el lado menor y el bucle sobre el mayor mantiene la pila en O(log n).
 func quickRange(a []int32, lo, hi int) {
 	for lo < hi {
 		pivot := medianOfThree(a[lo], a[lo+(hi-lo)/2], a[hi])
@@ -172,6 +178,7 @@ func siftDown(a []int32, start, size int) {
 //
 // EN: Four stable counting passes, one per byte of the key, and no comparison between values.
 // PT: Quatro passadas estáveis de contagem, uma por byte da chave, sem comparar valores.
+// ES: Cuatro pasadas estables de conteo, una por byte de la clave, sin comparar valores.
 func RadixSort(values []int32) []int32 {
 	source := clone(values)
 	target := make([]int32, len(source))

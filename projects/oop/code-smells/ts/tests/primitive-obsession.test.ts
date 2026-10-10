@@ -7,6 +7,8 @@ import type { Accounts } from "../src/primitive-obsession/contract";
 //     only uses the contract.
 // PT: O tipo da conta difere entre as versões, então a suíte é uma função genérica que só usa o
 //     contrato.
+// ES: El tipo de la cuenta difiere entre las versiones, así que la suite es una función
+//     genérica que solo usa el contrato.
 function suite<A>(name: string, accounts: Accounts<A>): void {
 	describe(`primitive obsession, ${name}`, () => {
 		const ana = () => accounts.register("Ana", "  Ana@Example.COM ", "(11) 99999-0000");
@@ -49,6 +51,10 @@ describe("primitive obsession, what the compiler sees", () => {
 	// PT: Com strings, argumentos trocados compilam. Trocar e-mail e telefone ao menos é pego em
 	//     tempo de execução, porque a regra de e-mail rejeita um número de telefone. Trocar nome e
 	//     e-mail não é pego por ninguém quando o nome por acaso parece um e-mail.
+	// ES: Con strings, los argumentos intercambiados compilan. Intercambiar correo y teléfono al
+	//     menos se detecta en tiempo de ejecución, porque la regla de correo rechaza un número
+	//     de teléfono. Intercambiar nombre y correo no lo detecta nadie cuando el nombre por
+	//     casualidad parece un correo.
 	test("before: swapped arguments compile", () => {
 		expect(() => before.createAccount("Ana", "11999990000", "ana@example.com")).toThrow("invalid e-mail");
 		const wrong = before.createAccount("ana@example.com", "ana@work.example", "11999990000");
@@ -61,6 +67,10 @@ describe("primitive obsession, what the compiler sees", () => {
 	// PT: Um teste de tipos. `@ts-expect-error` é o oposto de silenciar um erro: ele faz a
 	//     checagem de tipos FALHAR se a linha seguinte um dia compilar. A imagem Docker roda o
 	//     `tsc`, então o build prova que a chamada trocada é recusada pelo compilador.
+	// ES: Un test de tipos. `@ts-expect-error` es lo opuesto a silenciar un error: hace que la
+	//     verificación de tipos FALLE si la línea siguiente algún día compila. La imagen Docker
+	//     ejecuta `tsc`, así que el build prueba que el compilador rechaza la llamada
+	//     intercambiada.
 	test("after: swapped arguments do not compile", () => {
 		const email = after.Email.parse("ana@example.com");
 		const phone = after.Phone.parse("11999990000");

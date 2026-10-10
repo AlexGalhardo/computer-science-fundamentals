@@ -4,6 +4,9 @@
 // PT: Os cenários do laboratório, conduzidos de fora apenas por HTTP, como um cliente de verdade.
 //     Os testes fazem asserções sobre eles e a demo os imprime. Nada aqui toca um banco
 //     diretamente: o que os cenários enxergam é o que os dois serviços respondem.
+// ES: Los escenarios del laboratorio, conducidos desde afuera solo por HTTP, como un cliente de verdad.
+//     Las pruebas hacen aserciones sobre ellos y la demo los imprime. Nada aquí toca una base de
+//     datos directamente: lo que los escenarios ven es lo que responden los dos servicios.
 
 import type { Mode, Order } from "./orders";
 import type { Payment } from "./payments";
@@ -55,6 +58,8 @@ export function getPayment(lab: Lab, orderId: string): Promise<Payment | null> {
 //     honest view of the client during a crash: it does not know whether the order was stored.
 // PT: Devolve o status HTTP, ou null quando a conexão caiu. Uma conexão perdida é a visão honesta
 //     do cliente durante uma queda: ele não sabe se o pedido foi gravado.
+// ES: Devuelve el estado HTTP, o null cuando la conexión se cayó. Una conexión perdida es la visión
+//     honesta del cliente durante una caída: no sabe si el pedido se guardó.
 export async function postOrder(lab: Lab, request: OrderRequest, idempotencyKey?: string): Promise<number | null> {
 	try {
 		const response = await fetch(`${lab.orderServiceUrl}/orders`, {
@@ -74,6 +79,8 @@ export async function postOrder(lab: Lab, request: OrderRequest, idempotencyKey?
 //     sleeping a fixed time and hoping. Returns the last value seen, matching or not.
 // PT: Sistemas assíncronos são testados consultando uma condição até um prazo, nunca dormindo um
 //     tempo fixo e torcendo. Devolve o último valor visto, satisfazendo a condição ou não.
+// ES: Los sistemas asíncronos se prueban consultando una condición hasta un plazo, nunca durmiendo un
+//     tiempo fijo y esperando que salga bien. Devuelve el último valor visto, cumpla o no la condición.
 export async function waitFor<T>(read: () => Promise<T>, done: (value: T) => boolean, timeoutMs: number): Promise<T> {
 	const deadline = Date.now() + timeoutMs;
 	let value = await read();
@@ -119,6 +126,9 @@ export async function happyPath(lab: Lab, mode: Mode, amountCents = 12_345): Pro
 // PT: O cenário de queda. O serviço é morto logo depois de o pedido ser confirmado. Depois o
 //     cenário espera o reinício e observa por `observeMs`: com o outbox o evento aparece depois
 //     do reinício, com o dual write ele nunca aparece.
+// ES: El escenario de caída. El servicio se mata justo después de que se confirma el pedido. Luego el
+//     escenario espera el reinicio y observa durante `observeMs`: con el outbox el evento aparece después
+//     del reinicio, con el dual write nunca aparece.
 export async function crashAfterCommit(lab: Lab, mode: Mode, observeMs = 4_000): Promise<Outcome> {
 	const orderId = crypto.randomUUID();
 	const status = await postOrder(lab, {

@@ -4,6 +4,9 @@
 // PT: O formato que toda consulta do laboratório segue: um nome, um conjunto de argumentos de
 //     exemplo, e a mesma pergunta respondida três vezes. Como as três implementações têm o mesmo
 //     tipo de retorno, os testes podem exigir que devolvam exatamente as mesmas linhas.
+// ES: La forma que sigue toda consulta del laboratorio: un nombre, un conjunto de argumentos de
+//     ejemplo, y la misma pregunta respondida tres veces. Como las tres implementaciones tienen el mismo
+//     tipo de retorno, las pruebas pueden exigir que devuelvan exactamente las mismas filas.
 
 import type { Approach, Context } from "../context";
 

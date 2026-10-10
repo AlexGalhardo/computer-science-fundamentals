@@ -4,6 +4,9 @@
 # PT: O contexto de build é a pasta do mini-projeto, e não elixir/, porque machine.json e
 #     diagram.md são compartilhados com a implementação em TypeScript. Não há dependências,
 #     então nada é baixado e o contêiner roda sem rede.
+# ES: El contexto de build es la carpeta del miniproyecto, y no elixir/, porque machine.json y
+#     diagram.md se comparten con la implementación en TypeScript. No hay dependencias, así que
+#     no se descarga nada y el contenedor corre sin red.
 FROM elixir:1.20.4-otp-28-slim
 WORKDIR /app/elixir
 COPY machine.json diagram.md /app/

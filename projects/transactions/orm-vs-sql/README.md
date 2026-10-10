@@ -1,6 +1,6 @@
 # orm-vs-sql
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 What does an ORM cost, and what SQL does it really send? This mini-project writes the same five queries three times, with raw SQL (node-postgres), Prisma and Drizzle, on one PostgreSQL schema. The tests prove that the three return identical rows, capture the SQL each one generates and commit it next to the query, and a benchmark measures the latency of each approach and the cost of the N+1 pattern.
 

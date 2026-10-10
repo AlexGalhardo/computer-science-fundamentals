@@ -56,6 +56,10 @@ public final class Table {
   // PT: Um deadlock precisa de azar no tempo: os cinco têm de segurar um garfo antes de alguém
   //     pegar o segundo. Esta pausa curta entre os dois garfos torna esse azar comum, então o
   //     bug aparece em milissegundos. As correções usam a mesma pausa e mesmo assim nunca travam.
+  // ES: Un deadlock necesita mala suerte en el tiempo: los cinco deben sostener un tenedor antes de
+  //     que alguien tome el segundo. Esta pausa corta entre los dos tenedores hace común esa mala
+  //     suerte, así que el bug aparece en milisegundos. Las correcciones usan la misma pausa y aun
+  //     así nunca se traban.
   static final long REACH_MILLIS = 1;
 
   private Table() {}
@@ -74,6 +78,13 @@ public final class Table {
    * (ninguém tira o garfo da sua mão) e espera circular (0 espera 1, 1 espera 2 ... 4 espera 0). A
    * ordenação de travas quebra a espera circular: todos pegam primeiro o menor número, então o
    * último filósofo tenta o garfo 0 antes do 4 e o círculo não se fecha.
+   *
+   * <p>ES: Un deadlock necesita cuatro condiciones al mismo tiempo (Coffman): exclusión mutua (un
+   * tenedor tiene un solo dueño), retener y esperar (sostener un tenedor mientras se espera el
+   * otro), sin expropiación (nadie te quita el tenedor de la mano) y espera circular (0 espera a
+   * 1, 1 espera a 2 ... 4 espera a 0). El ordenamiento de locks rompe la espera circular: todos
+   * toman primero el menor número, así que el último filósofo intenta el tenedor 0 antes que el
+   * 4 y el círculo no se cierra.
    */
   static int[] forks(Strategy strategy, int i, int n) {
     int left = i;
@@ -102,6 +113,9 @@ public final class Table {
     // PT: O garçom é um semáforo contador com n-1 permissões. Com no máximo 4 dos 5 filósofos
     //     à mesa, pelo menos um deles sempre consegue os dois garfos. Um círculo de espera
     //     precisa dos cinco, então ele não se forma.
+    // ES: El mesero es un semáforo contador con n-1 permisos. Con a lo sumo 4 de los 5 filósofos
+    //     en la mesa, al menos uno de ellos siempre consigue los dos tenedores. Un círculo de
+    //     espera necesita los cinco, así que no se forma.
     Semaphore waiter = new Semaphore(n - 1);
 
     Thread[] philosophers = new Thread[n];
@@ -135,6 +149,8 @@ public final class Table {
       //     threads at least do not keep the JVM alive after a deadlock.
       // PT: Uma thread bloqueada em `synchronized` não pode ser interrompida nem cancelada.
       //     Threads daemon pelo menos não mantêm a JVM viva depois de um deadlock.
+      // ES: Un thread bloqueado en `synchronized` no puede interrumpirse ni cancelarse.
+      //     Los threads daemon al menos no mantienen viva la JVM después de un deadlock.
       philosophers[i].setDaemon(true);
     }
     for (Thread philosopher : philosophers) {
@@ -158,6 +174,8 @@ public final class Table {
         //     "thread waits for a lock held by thread" and reports the threads in a cycle.
         // PT: O tempo limite diz "sem progresso". A JVM sabe dizer mais: ela percorre o grafo
         //     "thread espera uma trava que está com outra thread" e informa as threads em ciclo.
+        // ES: El tiempo límite dice "sin progreso". La JVM sabe decir más: recorre el grafo
+        //     "thread espera un lock que tiene otro thread" e informa los threads en ciclo.
         long[] cycle = ManagementFactory.getThreadMXBean().findDeadlockedThreads();
         return new Result(snapshot(meals), true, cycle == null ? 0 : cycle.length);
       }

@@ -1,6 +1,6 @@
 # clean-architecture-app
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A note-taking application built in the four circles of the Clean Architecture, plus a composition root. It teaches one idea: **source-code dependencies point only inward**, so the business rules know nothing about the web framework, the terminal or the database. The same use cases are reached through HTTP (ElysiaJS) and through a command line, and stored in memory or in PostgreSQL, and three things are checked by a program and not by a diagram: no inner layer imports an outer one, the use cases are tested with no database and no HTTP server, and replacing the repository changes only the composition root.
 
@@ -28,7 +28,7 @@ The script builds one image, runs the unit tests in a container with no network,
 
 ## The layers
 
-```
+```text
 ts/src/
   entities/     Note, Title, domain errors, Result        imports nothing but itself
   use-cases/    CreateNote, ListNotes, UpdateNote,         imports entities
@@ -60,7 +60,7 @@ ts/src/
 docker compose run --rm ts-test bun run check:layers
 ```
 
-```
+```text
 ok   entities   4 files, 0 violations
 ok   use-cases  6 files, 0 violations
 ok   adapters   3 files, 0 violations
@@ -72,7 +72,7 @@ dependency rule holds: every import points inward
 
 The check reads every import of `ts/src/`, including `import type`, re-exports and dynamic imports. A file may import from its own layer and from the layers inside it. The two inner layers may import no package at all, the adapters only Zod. The command exits with code 1 on the first outward import, and it is part of the default command of the test container, so such an import fails the build. Try it: add `import type { HttpResponse } from "../adapters/note-http-controller";` to `ts/src/use-cases/create-note.ts` and run the tests again.
 
-```
+```text
 FAIL use-cases  6 files, 1 violations
 use-cases/create-note.ts:1 imports "../adapters/note-http-controller": "use-cases" is an inner layer and cannot import from "adapters"
 
@@ -163,7 +163,7 @@ docker compose down -v
 
 One command: it starts PostgreSQL and the HTTP API, then creates a note in the terminal, reads it over HTTP, creates another over HTTP, lists both in the terminal, and shows the same rule answered in two vocabularies:
 
-```
+```text
 == 4. One rule, two vocabularies: a repeated title is 409 over HTTP and exit code 1 in the terminal
 $ POST /notes {"title":"Written over HTTP"}
 409 {"error":"duplicate-title","message":"a note titled \"Written over HTTP\" already exists"}

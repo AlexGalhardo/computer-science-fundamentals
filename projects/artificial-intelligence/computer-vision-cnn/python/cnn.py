@@ -15,6 +15,15 @@ O experimento treina três modelos nas mesmas formas centradas:
 2. a MLP, com quase o mesmo número de parâmetros,
 3. a CNN de novo, a partir dos mesmos pesos iniciais, com aumento de dados.
 Depois mede todos em imagens que eles nunca viram: centradas, deslocadas e giradas.
+
+ES: Una red convolucional pequeña (CNN), una red totalmente conectada (MLP) del mismo tamaño, el
+bucle de entrenamiento y el experimento que las compara.
+
+El experimento entrena tres modelos con las mismas formas centradas:
+1. la CNN,
+2. la MLP, con casi el mismo número de parámetros,
+3. la CNN de nuevo, desde los mismos pesos iniciales, con aumento de datos.
+Después mide todos con imágenes que nunca vieron: centradas, desplazadas y giradas.
 """
 
 from collections.abc import Callable
@@ -38,6 +47,9 @@ TRAIN_SEED, CLEAN_SEED, SHIFTED_SEED, ROTATED_SEED = 1, 101, 102, 103
 # PT: Imagens de teste deslocadas: de 2 a 4 pixels do centro em cada eixo. Imagens de teste
 #     giradas: de 10 a 30 graus. As imagens de treino não têm nem um nem outro, só 1 pixel de
 #     variação de posição.
+# ES: Imágenes de prueba desplazadas: de 2 a 4 píxeles del centro en cada eje. Imágenes de prueba
+#     giradas: de 10 a 30 grados. Las imágenes de entrenamiento no tienen ni lo uno ni lo otro,
+#     solo 1 píxel de variación de posición.
 TEST_SHIFT = (2.0, 4.0)
 TEST_ANGLE = (10.0, 30.0)
 
@@ -48,6 +60,9 @@ def set_reproducible(seed: int = SEED) -> None:
     # PT: Mesma semente, mesmos números aleatórios, mesmos pesos, mesmos resultados. O número de
     #     threads também é fixo, porque somar números de ponto flutuante em outra ordem muda as
     #     últimas casas decimais.
+    # ES: Misma semilla, mismos números aleatorios, mismos pesos, mismos resultados. El número de
+    #     hilos también es fijo, porque sumar números de punto flotante en otro orden cambia los
+    #     últimos decimales.
     torch.manual_seed(seed)
     torch.set_num_threads(THREADS)
     torch.use_deterministic_algorithms(True)
@@ -63,6 +78,11 @@ class SmallCNN(nn.Module):
 
     Formatos para uma imagem 20 x 20: 1 x 20 x 20 -> conv1 -> 8 x 20 x 20 -> pool -> 8 x 10 x 10
     -> conv2 -> 24 x 10 x 10 -> pool -> 24 x 5 x 5 -> média de cada mapa -> 24 números -> 4 notas.
+
+    ES: imagen -> [conv + ReLU + pool] -> [conv + ReLU + pool] -> media global -> lineal.
+
+    Formas para una imagen de 20 x 20: 1 x 20 x 20 -> conv1 -> 8 x 20 x 20 -> pool -> 8 x 10 x 10
+    -> conv2 -> 24 x 10 x 10 -> pool -> 24 x 5 x 5 -> media de cada mapa -> 24 números -> 4 notas.
     """
 
     def __init__(self) -> None:
@@ -73,9 +93,13 @@ class SmallCNN(nn.Module):
         # PT: 8 filtros de 3 x 3 sobre 1 canal: 8 * (3*3*1) pesos + 8 vieses = 80 parâmetros,
         #     seja qual for o tamanho da imagem. Os mesmos 9 pesos de um filtro são usados nas
         #     400 posições: isto é o compartilhamento de parâmetros.
+        # ES: 8 filtros de 3 x 3 sobre 1 canal: 8 * (3*3*1) pesos + 8 sesgos = 80 parámetros,
+        #     sea cual sea el tamaño de la imagen. Los mismos 9 pesos de un filtro se usan en las
+        #     400 posiciones: esto es la compartición de parámetros.
         self.conv1 = nn.Conv2d(1, 8, kernel_size=3, padding=1)
         # EN: 24 filters of 3 x 3 over the 8 maps of the layer before: 24 * (3*3*8) + 24 = 1752.
         # PT: 24 filtros de 3 x 3 sobre os 8 mapas da camada anterior: 24 * (3*3*8) + 24 = 1752.
+        # ES: 24 filtros de 3 x 3 sobre los 8 mapas de la capa anterior: 24 * (3*3*8) + 24 = 1752.
         self.conv2 = nn.Conv2d(8, 24, kernel_size=3, padding=1)
         self.classifier = nn.Linear(24, len(CLASSES))
 
@@ -85,6 +109,9 @@ class SmallCNN(nn.Module):
 
         PT: Os mapas de ativação (de características) da primeira camada: onde cada filtro achou
         o seu padrão.
+
+        ES: Los mapas de activación (de características) de la primera capa: dónde encontró cada
+        filtro su patrón.
         """
         return torch.relu(self.conv1(images))
 
@@ -95,6 +122,9 @@ class SmallCNN(nn.Module):
         # PT: O max pooling guarda o maior valor de cada bloco 2 x 2. Ele divide cada lado por
         #     dois, não tem parâmetros, e um padrão que anda 1 pixel muitas vezes continua no
         #     mesmo bloco, então a saída muda pouco.
+        # ES: El max pooling guarda el mayor valor de cada bloque de 2 x 2. Divide cada lado entre
+        #     dos, no tiene parámetros, y un patrón que se mueve 1 píxel muchas veces sigue en el
+        #     mismo bloque, así que la salida cambia poco.
         x = torch.max_pool2d(self.first_layer_maps(images), 2)
         x = torch.max_pool2d(torch.relu(self.conv2(x)), 2)
         # EN: Global average pooling: each of the 24 maps (5 x 5) becomes ONE number, its mean.
@@ -105,6 +135,10 @@ class SmallCNN(nn.Module):
         #     a sua média. Esse número diz "quanto deste padrão existe na imagem" e não mais
         #     "onde". Achatar os 24 x 5 x 5 valores daria ao classificador um peso por posição, e
         #     a posição voltaria a importar, como na rede totalmente conectada.
+        # ES: Media global (global average pooling): cada uno de los 24 mapas (5 x 5) se vuelve UN
+        #     número, su media. Ese número dice "cuánto de este patrón hay en la imagen" y ya no
+        #     "dónde". Aplanar los 24 x 5 x 5 valores daría al clasificador un peso por posición, y
+        #     la posición volvería a importar, como en la red totalmente conectada.
         return self.classifier(x.mean(dim=(2, 3)))
 
 
@@ -120,6 +154,12 @@ class SmallMLP(nn.Module):
     400 pixels x 5 neurônios + 5 vieses = 2005 parâmetros só na primeira camada. Cada peso
     pertence a UMA posição de pixel, então o que a rede aprende sobre um traço no centro não diz
     nada sobre o mesmo traço 4 pixels à direita.
+
+    ES: La red simple: cada píxel conectado a cada neurona oculta.
+
+    400 píxeles x 5 neuronas + 5 sesgos = 2005 parámetros solo en la primera capa. Cada peso
+    pertenece a UNA posición de píxel, así que lo que la red aprende sobre un trazo en el centro no
+    dice nada sobre el mismo trazo 4 píxeles a la derecha.
     """
 
     def __init__(self, hidden: int = 5) -> None:
@@ -146,6 +186,8 @@ def train(
     """EN: The training loop. Returns the mean loss of each epoch.
 
     PT: O laço de treino. Devolve a perda média de cada época.
+
+    ES: El bucle de entrenamiento. Devuelve la pérdida media de cada época.
     """
     generator = torch.Generator().manual_seed(seed)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -155,6 +197,8 @@ def train(
         # EN: A new random order at each epoch, then slices of 32 images: mini-batches by hand.
         # PT: Uma nova ordem aleatória a cada época, depois fatias de 32 imagens: mini-lotes
         #     feitos à mão.
+        # ES: Un nuevo orden aleatorio en cada época, luego porciones de 32 imágenes: mini-batches
+        #     hechos a mano.
         order = torch.randperm(images.shape[0], generator=generator)
         total = 0.0
         for start in range(0, images.shape[0], BATCH_SIZE):
@@ -165,11 +209,16 @@ def train(
                 #     sees exactly the same image twice.
                 # PT: O aumento é aleatório e refeito a cada passo, então a rede nunca vê
                 #     exatamente a mesma imagem duas vezes.
+                # ES: El aumento es aleatorio y se rehace en cada paso, así que la red nunca ve
+                #     exactamente la misma imagen dos veces.
                 inputs = random_augment(inputs, generator)
             # EN: The five steps of every PyTorch training loop: predict, measure the error,
             #     clear the old gradients, compute the new ones, update the weights.
             # PT: Os cinco passos de todo laço de treino em PyTorch: prever, medir o erro, zerar
             #     os gradientes antigos, calcular os novos, atualizar os pesos.
+            # ES: Los cinco pasos de todo bucle de entrenamiento en PyTorch: predecir, medir el
+            #     error, poner a cero los gradientes antiguos, calcular los nuevos, actualizar los
+            #     pesos.
             loss = nn.functional.cross_entropy(model(inputs), labels[batch])
             optimizer.zero_grad()
             loss.backward()
@@ -183,6 +232,8 @@ def accuracy(model: nn.Module, images: torch.Tensor, labels: torch.Tensor) -> fl
     """EN: Fraction of images whose highest score is the right class (0 to 1).
 
     PT: Fração das imagens cuja maior nota é a classe certa (0 a 1).
+
+    ES: Fracción de las imágenes cuya mayor puntuación es la clase correcta (0 a 1).
     """
     model.eval()
     with torch.no_grad():
@@ -197,6 +248,7 @@ class Experiment:
     losses: dict[str, list[float]]
     # EN: accuracies[model][test set], with test sets "clean", "shifted" and "rotated".
     # PT: accuracies[modelo][conjunto de teste], com os conjuntos "clean", "shifted" e "rotated".
+    # ES: accuracies[modelo][conjunto de prueba], con los conjuntos "clean", "shifted" y "rotated".
     accuracies: dict[str, dict[str, float]]
     test_sets: dict[str, tuple[torch.Tensor, torch.Tensor]]
 
@@ -205,11 +257,15 @@ def run_experiment() -> Experiment:
     """EN: Trains the three models and measures them. Used by the tests and by the demo.
 
     PT: Treina os três modelos e os mede. Usado pelos testes e pela demo.
+
+    ES: Entrena los tres modelos y los mide. Lo usan las pruebas y la demo.
     """
     set_reproducible()
     train_images, train_labels = make_dataset(TRAIN_IMAGES, TRAIN_SEED)
     # EN: The test images come from other seeds: the network is graded on images it never saw.
     # PT: As imagens de teste vêm de outras sementes: a rede é avaliada em imagens que nunca viu.
+    # ES: Las imágenes de prueba vienen de otras semillas: la red se evalúa con imágenes que
+    #     nunca vio.
     test_sets = {
         "clean": make_dataset(TEST_IMAGES, CLEAN_SEED),
         "shifted": make_dataset(TEST_IMAGES, SHIFTED_SEED, shift=TEST_SHIFT),
@@ -227,6 +283,8 @@ def run_experiment() -> Experiment:
         #     the only difference between them is the augmentation.
         # PT: Semear de novo antes de cada modelo dá às duas CNNs os mesmos pesos iniciais, então
         #     a única diferença entre elas é o aumento de dados.
+        # ES: Volver a sembrar antes de cada modelo da a las dos CNN los mismos pesos iniciales, así
+        #     que la única diferencia entre ellas es el aumento de datos.
         torch.manual_seed(SEED)
         model = build()
         experiment.models[name] = model

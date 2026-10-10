@@ -1,6 +1,6 @@
 # Protocols
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Application protocols are the agreements that let programs written by different people talk to each other. This area follows HTTP from its semantics (methods, status codes, headers, caching, cookies) through its three wire formats (HTTP/1.1, HTTP/2 and HTTP/3 over QUIC), the TLS handshake underneath, and the API styles built on top: REST, GraphQL, JSON-RPC, gRPC, WebSocket and server-sent events.
 

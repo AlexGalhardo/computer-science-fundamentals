@@ -10,6 +10,8 @@ describe("diagram generated from machine.json", () => {
 	//     and this test fails when someone changes the table and forgets to regenerate it.
 	// PT: O teste de atualização. `diagram.md` é versionado para que as pessoas o leiam no
 	//     GitHub, e este teste falha quando alguém muda a tabela e esquece de regenerá-lo.
+	// ES: La prueba de actualización. `diagram.md` está versionado para que las personas lo lean
+	//     en GitHub, y esta prueba falla cuando alguien cambia la tabla y olvida regenerarlo.
 	test("the committed diagram.md is up to date", () => {
 		expect(readFileSync(DIAGRAM_PATH, "utf8")).toBe(renderDiagram(table));
 	});

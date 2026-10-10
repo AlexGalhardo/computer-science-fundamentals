@@ -7,6 +7,11 @@
 //     O limite inferior inteiro sai de dois fatos sobre essa árvore: ela precisa de pelo menos
 //     n! folhas (uma por ordem de entrada possível), e uma árvore binária de altura h tem no
 //     máximo 2^h folhas.
+// ES: El árbol de decisión de una ordenación por comparación. Cada ejecución del algoritmo es un
+//     camino: cada comparación es un nodo, cada respuesta es una rama, y el orden final es una
+//     hoja. Toda la cota inferior sale de dos hechos sobre este árbol: necesita al menos n!
+//     hojas (una por cada orden de entrada posible), y un árbol binario de altura h tiene como
+//     máximo 2^h hojas.
 
 import type { ComparisonSort } from "./sorts";
 
@@ -16,6 +21,7 @@ export type DecisionTree =
 
 // EN: Thrown by the comparator when the algorithm asks a question that has no answer yet.
 // PT: Lançada pelo comparador quando o algoritmo faz uma pergunta que ainda não tem resposta.
+// ES: Lanzada por el comparador cuando el algoritmo hace una pregunta que todavía no tiene respuesta.
 class Question extends Error {
 	constructor(
 		readonly left: number,
@@ -48,6 +54,13 @@ export function permutations(n: number): number[][] {
 //     `candidates` são as ordens de entrada ainda compatíveis com as respostas dadas. Um ramo
 //     que nenhuma entrada alcança não faz parte da árvore (o algoritmo perguntou algo que já
 //     poderia ter deduzido), então ele fica vazio.
+// ES: El árbol se descubre ejecutando el algoritmo real muchas veces sobre los elementos 0..n-1,
+//     cuyo orden se desconoce. El comparador repite una lista de respuestas ya elegidas.
+//     Cuando el algoritmo hace una pregunta más, la ejecución se detiene, la pregunta se vuelve
+//     un nodo, y el algoritmo se ejecuta de nuevo, una vez para "sí" y otra para "no".
+//     `candidates` son los órdenes de entrada todavía compatibles con las respuestas dadas. Una
+//     rama que ninguna entrada alcanza no forma parte del árbol (el algoritmo preguntó algo que
+//     ya podría haber deducido), así que queda vacía.
 function explore(sort: ComparisonSort, n: number, answers: boolean[], candidates: number[][]): DecisionTree {
 	const items = Array.from({ length: n }, (_, index) => index);
 	let asked = 0;
@@ -70,6 +83,8 @@ function explore(sort: ComparisonSort, n: number, answers: boolean[], candidates
 		//     than item right" means ranks[left] < ranks[right].
 		// PT: ranks[i] é a posição do item i na ordem final, então "o item left é menor que o
 		//     item right" significa ranks[left] < ranks[right].
+		// ES: ranks[i] es la posición que tiene el elemento i en el orden final, así que "el
+		//     elemento left es menor que el elemento right" significa ranks[left] < ranks[right].
 		const yes = candidates.filter((ranks) => (ranks[left] ?? 0) < (ranks[right] ?? 0));
 		const no = candidates.filter((ranks) => (ranks[left] ?? 0) >= (ranks[right] ?? 0));
 		return {
@@ -100,6 +115,8 @@ export function countLeaves(tree: DecisionTree | null): number {
 //     number of comparisons of the worst case.
 // PT: A altura é o maior caminho da raiz até uma folha, contado em comparações. É o número de
 //     comparações do pior caso.
+// ES: La altura es el camino más largo desde la raíz hasta una hoja, contado en comparaciones. Es
+//     el número de comparaciones del peor caso.
 export function height(tree: DecisionTree | null): number {
 	if (tree === null || tree.kind === "leaf") {
 		return 0;
@@ -111,6 +128,8 @@ export function height(tree: DecisionTree | null): number {
 //     number of comparisons when every input order is equally likely.
 // PT: A soma das profundidades de todas as folhas. Dividida pelo número de folhas, é o número
 //     médio de comparações quando todas as ordens de entrada são igualmente prováveis.
+// ES: La suma de las profundidades de todas las hojas. Dividida por el número de hojas, es el
+//     número promedio de comparaciones cuando todos los órdenes de entrada son igualmente probables.
 export function totalLeafDepth(tree: DecisionTree | null, depth = 0): number {
 	if (tree === null) {
 		return 0;
@@ -129,6 +148,7 @@ function name(item: number): string {
 
 // EN: Draws the tree as indented text. Items are named a, b, c... by their input position.
 // PT: Desenha a árvore como texto indentado. Os itens se chamam a, b, c... pela posição de entrada.
+// ES: Dibuja el árbol como texto con sangría. Los elementos se llaman a, b, c... según su posición de entrada.
 export function renderDecisionTree(tree: DecisionTree | null, indent = ""): string {
 	if (tree === null) {
 		return `${indent}(unreachable)`;

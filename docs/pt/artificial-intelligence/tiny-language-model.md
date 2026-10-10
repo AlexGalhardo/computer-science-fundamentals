@@ -1,6 +1,6 @@
 # Modelo de linguagem minúsculo
 
-> English version: [docs/en/artificial-intelligence/tiny-language-model.md](../../en/artificial-intelligence/tiny-language-model.md)
+> English version: [docs/en/artificial-intelligence/tiny-language-model.md](../../en/artificial-intelligence/tiny-language-model.md) · Versión en español: [docs/es/artificial-intelligence/tiny-language-model.md](../../es/artificial-intelligence/tiny-language-model.md)
 
 Mini-projeto MP-AI-4, em [`projects/artificial-intelligence/tiny-language-model`](../../../projects/artificial-intelligence/tiny-language-model). Ensina como um modelo de linguagem prevê o próximo token, da contagem à autoatenção. A base está nas seções 9 e 10 da página da área: [atenção e o transformer](README.md#9-atenção-e-o-transformer) e [como um modelo de linguagem prevê e amostra](README.md#10-como-um-modelo-de-linguagem-prevê-e-amostra).
 

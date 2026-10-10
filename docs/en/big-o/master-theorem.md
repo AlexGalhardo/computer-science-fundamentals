@@ -1,6 +1,6 @@
 # Interactive master theorem
 
-> Versão em português: [docs/pt/big-o/master-theorem.md](../../pt/big-o/master-theorem.md)
+> Versão em português: [docs/pt/big-o/master-theorem.md](../../pt/big-o/master-theorem.md) · Versión en español: [docs/es/big-o/master-theorem.md](../../es/big-o/master-theorem.md)
 
 Mini-project MP-BIGO-2, in [`projects/big-o/master-theorem`](../../../projects/big-o/master-theorem). It teaches how the three cases of the master theorem decide the cost of a recurrence.
 
@@ -8,7 +8,7 @@ Mini-project MP-BIGO-2, in [`projects/big-o/master-theorem`](../../../projects/b
 
 A divide and conquer algorithm splits a problem of size n into `a` subproblems of size `n/b`, and does `f(n)` of work outside the recursive calls (splitting and combining):
 
-```
+```text
 T(n) = a·T(n/b) + f(n)        a ≥ 1, b > 1
 ```
 

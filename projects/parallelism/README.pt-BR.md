@@ -1,6 +1,6 @@
 # Paralelismo
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Paralelismo é executar computações ao mesmo tempo em vários núcleos, faixas vetoriais ou máquinas para terminar mais cedo. Os processadores pararam de ficar mais rápidos um núcleo por vez, então a velocidade hoje vem de dividir bem o trabalho. A lei de Amdahl, o falso compartilhamento e a largura de banda de memória explicam por que dobrar os núcleos raramente dobra a velocidade, e como chegar mais perto disso.
 

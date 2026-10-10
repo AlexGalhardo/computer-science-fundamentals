@@ -1,7 +1,7 @@
 # access-control-lab
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
-
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
+>
 > **Security lab, vulnerable on purpose.** The code in `ts/src/vulnerable/` exists only to make a flaw observable inside this lab. Never copy it, import it or deploy it.
 
 A small invoices API knows exactly who is logged in and still lets any user read, change and delete any invoice by changing the number in the URL, and lets a regular user call an admin route whose only protection is a hidden button. This lab reproduces that flaw (broken access control: IDOR, also called broken object-level authorisation, plus a missing role check) and fixes it by putting every authorisation decision in one function, `can(user, action, resource)`, that denies by default.
