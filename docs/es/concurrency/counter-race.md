@@ -28,7 +28,7 @@ Una carrera necesita mala suerte en el tiempo, y las pruebas pequeñas rara vez 
 
 - Una **puerta de salida**. Todos los workers esperan y salen juntos. Sin ella, el primer worker suele terminar antes de que el último empiece.
 - **Lecturas y escrituras reales**. Un compilador optimizador puede convertir un bucle de 125,000 incrementos en un único `+= 125000`. La carrera sigue ahí, pero casi nunca aparece. La versión en Rust usa lecturas y escrituras volátiles, y la versión en Java usa un campo `volatile`, para mantener una lectura y una escritura por incremento. Con un campo Java común, medimos el bug escondiéndose en 8 de 10 ejecuciones después de que el compilador JIT se calentó.
-- **Repetición**. La prueba ejecuta el experimento 10 veces y exige actualizaciones perdidas en al menos 9.
+- **Repetición**. La prueba ejecuta el experimento 30 veces y exige actualizaciones perdidas en al menos 24. Una carrera de datos solo pierde actualizaciones mientras los workers corren de verdad en paralelo, así que en una máquina ocupada alguna ejecución no pierde nada; el margen evita que la prueba falle por ese motivo.
 
 El `volatile` de Java merece atención: garantiza que una lectura ve la última escritura (visibilidad), y nada más. `count++` en un campo volatile sigue siendo tres pasos y sigue perdiendo actualizaciones.
 

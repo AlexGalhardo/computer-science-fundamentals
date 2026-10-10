@@ -8,14 +8,14 @@ const EXPECTED = WORKERS * PER_WORKER; // 1,000,000
 const FIXED_RUNS = Number(process.env.FIXED_RUNS ?? 100);
 
 // EN: A race is a matter of probability, so one run proves nothing. The experiment is repeated
-//     10 times and the bug must show in at least 9 of them.
+//     30 times and the bug must show in at least 24 of them.
 // PT: Uma corrida é questão de probabilidade, então uma execução não prova nada. O experimento
-//     é repetido 10 vezes e o bug precisa aparecer em pelo menos 9 delas.
+//     é repetido 30 vezes e o bug precisa aparecer em pelo menos 24 delas.
 // ES: Una carrera es cuestión de probabilidad, así que una ejecución no prueba nada. El
-//     experimento se repite 10 veces y el bug debe aparecer en al menos 9 de ellas.
-test("buggy counter loses updates in at least 9 of 10 runs", async () => {
+//     experimento se repite 30 veces y el bug debe aparecer en al menos 24 de ellas.
+test("buggy counter loses updates in at least 24 of 30 runs", async () => {
 	let lostRuns = 0;
-	for (let run = 1; run <= 10; run++) {
+	for (let run = 1; run <= 30; run++) {
 		const total = await runCounter("buggy", WORKERS, PER_WORKER);
 		console.log(`run ${run}: final=${total} lost=${EXPECTED - total}`);
 		expect(total).toBeLessThanOrEqual(EXPECTED);
@@ -23,8 +23,8 @@ test("buggy counter loses updates in at least 9 of 10 runs", async () => {
 			lostRuns += 1;
 		}
 	}
-	console.log(`buggy counter lost updates in ${lostRuns} of 10 runs`);
-	expect(lostRuns).toBeGreaterThanOrEqual(9);
+	console.log(`buggy counter lost updates in ${lostRuns} of 30 runs`);
+	expect(lostRuns).toBeGreaterThanOrEqual(24);
 }, 120_000);
 
 // EN: A fix is only a fix if it is right every time: 100 runs in a row, each exactly 1,000,000.

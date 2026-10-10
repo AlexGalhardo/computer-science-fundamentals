@@ -28,7 +28,7 @@ Uma corrida precisa de azar no tempo, e testes pequenos raramente têm esse azar
 
 - Um **portão de largada**. Todos os workers esperam e saem juntos. Sem ele, o primeiro worker costuma terminar antes de o último começar.
 - **Leituras e escritas de verdade**. Um compilador otimizador pode transformar um laço de 125.000 incrementos em um único `+= 125000`. A corrida continua lá, mas quase nunca aparece. A versão em Rust usa leituras e escritas voláteis, e a versão em Java usa um campo `volatile`, para manter uma leitura e uma escrita por incremento. Com um campo Java comum, medimos o bug se escondendo em 8 de 10 execuções depois que o compilador JIT aqueceu.
-- **Repetição**. O teste roda o experimento 10 vezes e exige atualizações perdidas em pelo menos 9.
+- **Repetição**. O teste roda o experimento 30 vezes e exige atualizações perdidas em pelo menos 24. Uma corrida de dados só perde atualizações enquanto os workers rodam de fato em paralelo, então em uma máquina ocupada uma execução ou outra não perde nada; a margem evita que o teste falhe por esse motivo.
 
 O `volatile` do Java merece atenção: ele garante que uma leitura enxerga a última escrita (visibilidade), e nada além disso. `count++` em um campo volatile continua sendo três passos e continua perdendo atualizações.
 

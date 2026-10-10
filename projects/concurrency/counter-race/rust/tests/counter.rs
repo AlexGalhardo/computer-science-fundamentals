@@ -5,15 +5,15 @@ const PER_WORKER: u64 = 125_000;
 const EXPECTED: u64 = WORKERS as u64 * PER_WORKER; // 1,000,000
 
 // EN: A race is a matter of probability, so one run proves nothing. The experiment is repeated
-//     10 times and the bug must show in at least 9 of them.
+//     30 times and the bug must show in at least 24 of them.
 // PT: Uma corrida é questão de probabilidade, então uma execução não prova nada. O experimento
-//     é repetido 10 vezes e o bug precisa aparecer em pelo menos 9 delas.
+//     é repetido 30 vezes e o bug precisa aparecer em pelo menos 24 delas.
 // ES: Una carrera es cuestión de probabilidad, así que una ejecución no prueba nada. El
-//     experimento se repite 10 veces y el bug debe aparecer en al menos 9 de ellas.
+//     experimento se repite 30 veces y el bug debe aparecer en al menos 24 de ellas.
 #[test]
 fn buggy_counter_loses_updates() {
     let mut lost_runs = 0;
-    for run_number in 1..=10 {
+    for run_number in 1..=30 {
         let total = run(&BuggyCounter::new(), WORKERS, PER_WORKER);
         println!(
             "run {run_number}: final={total} lost={}",
@@ -27,10 +27,10 @@ fn buggy_counter_loses_updates() {
             lost_runs += 1;
         }
     }
-    println!("buggy counter lost updates in {lost_runs} of 10 runs");
+    println!("buggy counter lost updates in {lost_runs} of 30 runs");
     assert!(
-        lost_runs >= 9,
-        "lost updates in only {lost_runs} of 10 runs"
+        lost_runs >= 24,
+        "lost updates in only {lost_runs} of 30 runs"
     );
 }
 

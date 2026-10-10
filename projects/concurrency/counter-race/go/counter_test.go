@@ -24,13 +24,13 @@ func envInt(name string, fallback int) int {
 }
 
 // EN: A race is a matter of probability, so one run proves nothing. The test repeats the
-// experiment 10 times and requires the bug to show in at least 9 of them.
+// experiment 30 times and requires the bug to show in at least 24 of them.
 // PT: Uma corrida é questão de probabilidade, então uma execução não prova nada. O teste
-// repete o experimento 10 vezes e exige que o bug apareça em pelo menos 9 delas.
+// repete o experimento 30 vezes e exige que o bug apareça em pelo menos 24 delas.
 // ES: Una carrera es cuestión de probabilidad, así que una ejecución no prueba nada. La prueba
-// repite el experimento 10 veces y exige que el bug aparezca en al menos 9 de ellas.
+// repite el experimento 30 veces y exige que el bug aparezca en al menos 24 de ellas.
 func TestBuggyCounterLosesUpdates(t *testing.T) {
-	const runs = 10
+	const runs = 30
 	lostRuns := 0
 	for run := range runs {
 		final := Run(&BuggyCounter{}, workers, perWorker)
@@ -43,8 +43,8 @@ func TestBuggyCounterLosesUpdates(t *testing.T) {
 		}
 	}
 	t.Logf("buggy counter lost updates in %d of %d runs", lostRuns, runs)
-	if lostRuns < 9 {
-		t.Fatalf("lost updates in only %d of %d runs, want at least 9", lostRuns, runs)
+	if lostRuns < 24 {
+		t.Fatalf("lost updates in only %d of %d runs, want at least 24", lostRuns, runs)
 	}
 }
 

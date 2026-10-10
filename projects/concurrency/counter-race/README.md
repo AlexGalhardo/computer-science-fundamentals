@@ -47,7 +47,7 @@ docker compose run --rm go-test      # also: rust-test, java-test, ts-test, elix
 
 | What is tested | Where |
 | --- | --- |
-| The buggy counter ends below 1,000,000 in at least 9 of 10 runs | Go, Rust, Java, TypeScript |
+| The buggy counter ends below 1,000,000 in at least 24 of 30 runs | Go, Rust, Java, TypeScript |
 | Every fix reaches exactly 1,000,000 in 100 consecutive runs | all five languages |
 | The Go race detector (`-race`) flags the buggy counter and is silent on the three fixes | `go/counter_test.go` |
 | Error Prone (`GuardedBy` check) flags the Java buggy counter and is silent on the three fixes | `java/check-guarded-by.sh` |

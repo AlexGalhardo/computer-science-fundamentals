@@ -9,14 +9,14 @@ public final class CounterRaceTest {
   private CounterRaceTest() {}
 
   // EN: A race is a matter of probability, so one run proves nothing. The experiment is repeated
-  //     10 times and the bug must show in at least 9 of them.
+  //     30 times and the bug must show in at least 24 of them.
   // PT: Uma corrida é questão de probabilidade, então uma execução não prova nada. O experimento
-  //     é repetido 10 vezes e o bug precisa aparecer em pelo menos 9 delas.
+  //     é repetido 30 vezes e o bug precisa aparecer em pelo menos 24 delas.
   // ES: Una carrera es cuestión de probabilidad, así que una ejecución no prueba nada. El
-  //     experimento se repite 10 veces y el bug debe aparecer en al menos 9 de ellas.
+  //     experimento se repite 30 veces y el bug debe aparecer en al menos 24 de ellas.
   private static void buggyCounterLosesUpdates() throws InterruptedException {
     int lostRuns = 0;
-    for (int run = 1; run <= 10; run++) {
+    for (int run = 1; run <= 30; run++) {
       long total = CounterRace.run(new BuggyCounter(), WORKERS, PER_WORKER);
       System.out.printf("run %d: final=%d lost=%d%n", run, total, EXPECTED - total);
       if (total > EXPECTED) {
@@ -26,9 +26,9 @@ public final class CounterRaceTest {
         lostRuns++;
       }
     }
-    System.out.printf("buggy counter lost updates in %d of 10 runs%n", lostRuns);
-    if (lostRuns < 9) {
-      throw new AssertionError("lost updates in only " + lostRuns + " of 10 runs");
+    System.out.printf("buggy counter lost updates in %d of 30 runs%n", lostRuns);
+    if (lostRuns < 24) {
+      throw new AssertionError("lost updates in only " + lostRuns + " of 30 runs");
     }
   }
 

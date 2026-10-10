@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-10
+
+### Changed
+
+- `counter-race`: the test of the buggy counter asks for lost updates in at least 24 of 30 runs instead of 9 of 10, in Go, Rust, Java and TypeScript. A data race only loses updates while the workers really run in parallel, and on a loaded CI runner the Go test got 8 of 10 twice.
+
 ## [1.0.0] - 2026-10-10
 
 First stable release: the 32 quiz areas and every planned mini-project are complete, in English, Portuguese and Spanish.

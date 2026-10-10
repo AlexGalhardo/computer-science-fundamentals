@@ -47,7 +47,7 @@ docker compose run --rm go-test      # também: rust-test, java-test, ts-test, e
 
 | O que é testado | Onde |
 | --- | --- |
-| O contador com bug termina abaixo de 1.000.000 em pelo menos 9 de 10 execuções | Go, Rust, Java, TypeScript |
+| O contador com bug termina abaixo de 1.000.000 em pelo menos 24 de 30 execuções | Go, Rust, Java, TypeScript |
 | Toda correção chega a exatamente 1.000.000 em 100 execuções seguidas | as cinco linguagens |
 | O detector de corrida do Go (`-race`) acusa o contador com bug e fica calado nas três correções | `go/counter_test.go` |
 | O Error Prone (verificação `GuardedBy`) acusa o contador com bug em Java e fica calado nas três correções | `java/check-guarded-by.sh` |

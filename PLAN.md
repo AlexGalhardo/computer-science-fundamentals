@@ -1156,7 +1156,8 @@ Teaches: how the same algorithms behave across languages and input shapes, and h
 Teaches: why unsynchronised shared state loses updates, and four ways to fix it.
 
 - [x] **MP-CONC-1.1** Buggy version in Go, Rust (with `unsafe` clearly labelled), Java and TypeScript (worker threads with shared memory)
-	- **Accept:** a test that increments 1,000,000 times from 8 workers observes a final value below 1,000,000 in at least 9 of 10 runs.
+	- **Accept:** a test that increments 1,000,000 times from 8 workers observes a final value below 1,000,000 in at least 24 of 30 runs.
+	- Note (2026-10-10): the criterion was "at least 9 of 10 runs" until the owner changed it on this date. A data race only loses updates while the workers really run in parallel, and on a loaded CI runner the Go test got 8 of 10 in 2 of 16 runs (locally the batch of 10 failed 1 to 2% of the time, measured over 2,000 runs). The four languages use the new numbers.
 - [x] **MP-CONC-1.2** Fixes
 	- [x] MP-CONC-1.2.a Mutex.
 	- [x] MP-CONC-1.2.b Atomic operation.

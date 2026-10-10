@@ -28,7 +28,7 @@ A race needs unlucky timing, and small tests rarely have it. Three things in thi
 
 - A **starting gate**. All workers wait and leave together. Without it the first worker often finishes before the last one starts.
 - **Real reads and writes**. An optimising compiler may turn a loop of 125,000 increments into a single `+= 125000`. The race is still there, but it almost never shows. The Rust version uses volatile reads and writes, and the Java version uses a `volatile` field, to keep one read and one write per increment. With a plain Java field we measured the bug hiding in 8 of 10 runs once the JIT compiler had warmed up.
-- **Repetition**. The test runs the experiment 10 times and requires lost updates in at least 9.
+- **Repetition**. The test runs the experiment 30 times and requires lost updates in at least 24. A data race only loses updates while the workers really run in parallel, so on a busy machine a run now and then loses nothing; the margin keeps the test from failing for that reason.
 
 `volatile` in Java deserves attention: it guarantees that a read sees the last write (visibility), and nothing more. `count++` on a volatile field is still three steps and still loses updates.
 
