@@ -4,6 +4,9 @@
 // PT: Etapa 3 do pipeline de perfil: ler as pilhas dobradas dos quatro perfis, desenhar um
 //     flame graph para cada, e conferir que as figuras dizem o que a lição afirma. O comando
 //     falha quando não dizem, então ele também é o teste de ponta a ponta do projeto.
+// ES: Paso 3 del pipeline de perfil: leer las pilas plegadas de los cuatro perfiles, dibujar un
+//     flame graph para cada uno, y comprobar que las figuras dicen lo que afirma la lección. El
+//     comando falla cuando no lo dicen, así que también es la prueba de extremo a extremo del proyecto.
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

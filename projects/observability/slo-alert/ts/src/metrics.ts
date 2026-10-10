@@ -5,6 +5,10 @@
 //     Prometheus. Uma biblioteca cliente faria isso em uma linha; fazer uma vez mostra o que
 //     uma métrica realmente é: alguns números em memória que só crescem, impressos como texto
 //     quando o Prometheus pede.
+// ES: Un counter y un histograma escritos a mano, en el formato de exposición en texto de
+//     Prometheus. Una biblioteca cliente lo haría en una línea; hacerlo una vez muestra lo que
+//     una métrica realmente es: unos números en memoria que solo crecen, impresos como texto
+//     cuando Prometheus lo pide.
 
 export type Labels = Record<string, string>;
 
@@ -12,6 +16,7 @@ function renderLabels(labels: Labels): string {
 	const parts = Object.entries(labels).map(([name, value]) => {
 		// EN: The format escapes backslash, double quote and line feed inside label values.
 		// PT: O formato escapa barra invertida, aspas duplas e quebra de linha nos valores de label.
+		// ES: El formato escapa la barra invertida, las comillas dobles y el salto de línea en los valores de label.
 		const escaped = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
 		return `${name}="${escaped}"`;
 	});
@@ -25,6 +30,8 @@ function renderLabels(labels: Labels): string {
  *     few seconds and `rate()` computes the speed from the difference between two readings.
  * PT: O Prometheus nunca lê "requisições por segundo" do serviço. Ele lê este total a cada
  *     poucos segundos, e o `rate()` calcula a velocidade pela diferença entre duas leituras.
+ * ES: Prometheus nunca lee "peticiones por segundo" del servicio. Lee este total cada
+ *     pocos segundos, y `rate()` calcula la velocidad por la diferencia entre dos lecturas.
  */
 export class Counter {
 	private readonly values = new Map<string, { labels: Labels; value: number }>();
@@ -43,6 +50,9 @@ export class Counter {
 	 * PT: Uma série que não existe não é zero, é ausente. Se o primeiro 503 criasse a série de
 	 *     erros, a razão de erros não teria valor antes dele, e uma regra que a compara não
 	 *     saberia distinguir "sem erros" de "sem dados". Por isso toda série esperada começa em 0.
+	 * ES: Una serie que no existe no es cero, está ausente. Si el primer 503 creara la serie de
+	 *     errores, la razón de errores no tendría valor antes de él, y una regla que la compara no
+	 *     sabría distinguir "sin errores" de "sin datos". Por eso toda serie esperada empieza en 0.
 	 */
 	init(labels: Labels): void {
 		this.inc(labels, 0);
@@ -82,6 +92,10 @@ export class Counter {
  *     inclusive as já contadas em `le="0.05"`. É isso que faz de um SLI de latência uma única
  *     divisão: requisições abaixo do limite = o bucket do limite, todas as requisições = o
  *     bucket `+Inf` (ou `_count`). O limite do objetivo precisa ser um dos limites de bucket.
+ * ES: Los buckets son acumulativos. `le="0.1"` cuenta toda observación menor o igual a 0,1 s,
+ *     incluidas las ya contadas en `le="0.05"`. Eso es lo que hace de un SLI de latencia una única
+ *     división: peticiones bajo el umbral = el bucket del umbral, todas las peticiones = el
+ *     bucket `+Inf` (o `_count`). El umbral del objetivo debe ser uno de los límites de bucket.
  */
 export class Histogram {
 	private readonly counts: number[];

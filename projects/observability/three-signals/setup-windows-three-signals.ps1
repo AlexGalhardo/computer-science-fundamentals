@@ -8,10 +8,17 @@
 #     o collector, Tempo, Prometheus, Loki e Grafana) e o teste de ponta a ponta consulta cada
 #     back end. Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
 #     Para explorar à mão: `docker compose up -d`, e abra http://127.0.0.1:3000.
+# ES: Construye y prueba el miniproyecto three-signals. El único requisito es Docker.
+#     Las pruebas unitarias corren primero, sin red. Después se levanta la pila entera (tres servicios,
+#     el collector, Tempo, Prometheus, Loki y Grafana) y la prueba de extremo a extremo consulta cada
+#     back end. Los contenedores y los volúmenes se eliminan al final, incluso cuando una prueba falla.
+#     Para explorar a mano: `docker compose up -d`, y abre http://127.0.0.1:3000.
 # EN: Docker writes its progress to stderr. With "Stop", Windows PowerShell 5.1 turns that into a
 #     terminating error whenever the output is redirected, so failures are checked by exit code.
 # PT: O Docker escreve o progresso em stderr. Com "Stop", o Windows PowerShell 5.1 transforma isso
 #     em erro fatal sempre que a saída é redirecionada, então as falhas são conferidas pelo código de saída.
+# ES: Docker escribe el progreso en stderr. Con "Stop", Windows PowerShell 5.1 lo convierte
+#     en un error fatal siempre que la salida se redirige, así que los fallos se revisan por el código de salida.
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot
@@ -23,6 +30,7 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 
 # EN: Port 0 lets Docker pick a free host port for Grafana during the test run.
 # PT: A porta 0 deixa o Docker escolher uma porta livre do host para o Grafana durante os testes.
+# ES: El puerto 0 deja que Docker elija un puerto libre del host para Grafana durante las pruebas.
 if (-not $env:GRAFANA_PORT) { $env:GRAFANA_PORT = "0" }
 
 $code = 0

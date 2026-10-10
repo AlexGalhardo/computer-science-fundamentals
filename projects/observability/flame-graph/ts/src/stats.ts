@@ -4,6 +4,9 @@
 // PT: Um benchmark é reportado com a sua dispersão, nunca como uma única melhor execução: o
 //     valor do meio diz o que esperar, e a distância entre a execução mais rápida e a mais
 //     lenta diz o quanto confiar nele.
+// ES: Un benchmark se reporta con su dispersión, nunca como una única mejor ejecución: el
+//     valor del medio dice qué esperar, y la distancia entre la ejecución más rápida y la más
+//     lenta dice cuánto confiar en él.
 
 export function median(values: number[]): number {
 	if (values.length === 0) {

@@ -4,6 +4,9 @@
 // PT: Os dois serviços TypeScript como funções simples de Request para Response, para que os
 //     testes possam chamá-los com telemetria em memória e sem rede. `gateway.ts` e `orders.ts`
 //     apenas os ligam ao `Bun.serve`.
+// ES: Los dos servicios TypeScript como funciones simples de Request a Response, para que las
+//     pruebas puedan llamarlos con telemetría en memoria y sin red. `gateway.ts` y `orders.ts`
+//     solo los conectan a `Bun.serve`.
 
 import { z } from "zod";
 import { activeTraceId, handleRequest, log, tracedFetch } from "./instrument";
@@ -27,6 +30,8 @@ const stockSchema = z.object({ sku: z.string(), inStock: z.boolean(), shelf: z.s
 //     support ticket) can jump straight to the trace of that one request.
 // PT: O trace id volta para quem chamou em um cabeçalho da resposta. Com ele uma pessoa (ou um
 //     chamado de suporte) pula direto para o trace daquela requisição.
+// ES: El trace id vuelve a quien llamó en un encabezado de la respuesta. Con él una persona (o un
+//     ticket de soporte) salta directo al trace de esa petición.
 function withTraceId(response: Response): Response {
 	const traceId = activeTraceId();
 	if (traceId !== undefined) {
@@ -81,6 +86,8 @@ export function ordersApp(telemetry: Telemetry, inventoryUrl: string): App {
 			//     show only "orders took N ms", not which part of orders.
 			// PT: Um span INTERNAL marca uma etapa dentro deste processo. Sem ele o trace
 			//     mostraria só "orders levou N ms", e não qual parte de orders.
+			// ES: Un span INTERNAL marca un paso dentro de este proceso. Sin él el trace
+			//     mostraría solo "orders tardó N ms", y no qué parte de orders.
 			const total = telemetry.tracer.startActiveSpan("orders.price", (span) => {
 				const cents = qty * (500 + (sku.length % 7) * 100);
 				span.setAttributes({ "order.sku": sku, "order.qty": qty, "order.total_cents": cents });

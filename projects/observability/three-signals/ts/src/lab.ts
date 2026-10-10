@@ -4,6 +4,9 @@
 // PT: As perguntas que uma pessoa faz durante uma investigação, como funções sobre as APIs HTTP
 //     dos três back ends. A demo e o teste de ponta a ponta as compartilham. Cada back end tem
 //     a sua linguagem de consulta: TraceQL no Tempo, PromQL no Prometheus, LogQL no Loki.
+// ES: Las preguntas que una persona hace durante una investigación, como funciones sobre las APIs HTTP
+//     de los tres back ends. La demo y la prueba de extremo a extremo las comparten. Cada back end tiene
+//     su lenguaje de consulta: TraceQL en Tempo, PromQL en Prometheus, LogQL en Loki.
 
 import { z } from "zod";
 
@@ -147,6 +150,9 @@ function attributesToRecord(attributes: z.infer<typeof attributeSchema>[]): Reco
  * PT: Um trace é guardado agrupado por resource (um grupo por serviço). A árvore é
  *     reconstruída a partir de `parentSpanId`, e as linhas saem na ordem em que uma cascata
  *     as desenha.
+ * ES: Un trace se guarda agrupado por resource (un grupo por servicio). El árbol se
+ *     reconstruye a partir de `parentSpanId`, y las filas salen en el orden en que una cascada
+ *     las dibuja.
  */
 export function flattenTrace(raw: unknown): SpanRow[] {
 	const rows: (SpanRow & { startNano: bigint })[] = [];
@@ -175,6 +181,9 @@ export function flattenTrace(raw: unknown): SpanRow[] {
 	// PT: Percorre a árvore a partir das raízes, filhos por ordem de início. Ordenar só pelo
 	//     início não basta: relógios de processos diferentes têm resoluções diferentes (e podem
 	//     discordar), então um filho pode parecer começar no mesmo milissegundo do pai, ou antes.
+	// ES: Recorre el árbol desde las raíces, los hijos por orden de inicio. Ordenar solo por el
+	//     inicio no basta: los relojes de procesos distintos tienen resoluciones distintas (y pueden
+	//     discrepar), así que un hijo puede parecer empezar en el mismo milisegundo que el padre, o antes.
 	const ids = new Set(rows.map((row) => row.spanId));
 	const byStart = (a: { startNano: bigint }, b: { startNano: bigint }): number =>
 		a.startNano < b.startNano ? -1 : a.startNano > b.startNano ? 1 : 0;
@@ -216,6 +225,9 @@ export function depths(spans: SpanRow[]): Map<string, number> {
  * PT: Todo ancestral de um span lento também é lento, porque um pai contém os filhos. O tempo
  *     próprio remove os filhos e deixa o que o span gastou sozinho, então o maior tempo
  *     próprio aponta o verdadeiro culpado.
+ * ES: Todo ancestro de un span lento también es lento, porque un padre contiene a los hijos. El tiempo
+ *     propio quita a los hijos y deja lo que el span gastó solo, así que el mayor tiempo
+ *     propio señala al verdadero culpable.
  */
 export function selfTimes(spans: SpanRow[]): Map<string, number> {
 	const result = new Map(spans.map((span) => [span.spanId, span.durationMs]));

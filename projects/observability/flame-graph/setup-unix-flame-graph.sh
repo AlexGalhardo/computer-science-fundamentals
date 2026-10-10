@@ -10,12 +10,19 @@
 #     confere que os flame graphs novos apontam para a função quente. A execução ao vivo grava
 #     em out/, que o git ignora, então a pasta results/ versionada nunca muda aqui. Os
 #     contêineres são removidos no fim, mesmo em caso de falha.
+# ES: Construye y prueba el miniproyecto flame-graph. El único requisito es Docker.
+#     Tres compuertas: las pruebas unitarias de cada lenguaje (que también revisan los perfiles
+#     versionados), y una ejecución en vivo que carga los dos servicios, toma los perfiles y
+#     comprueba que los flame graphs nuevos apuntan a la función caliente. La ejecución en vivo
+#     escribe en out/, que git ignora, así que la carpeta results/ versionada nunca cambia aquí.
+#     Los contenedores se eliminan al final, incluso si hay un fallo.
 set -eu
 
 cd "$(dirname "$0")"
 
 # EN: Containers that write into this folder run as the current user (see docker-compose.yml).
 # PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+# ES: Los contenedores que escriben en esta carpeta se ejecutan como el usuario actual (ve docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

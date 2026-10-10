@@ -1,6 +1,6 @@
 # Observability
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Observability is the ability to understand what a running system is doing from the data it emits. Logs, metrics and traces answer different questions, and together they let someone explain a slow request across several services without guessing. The subject also covers what to measure (service level indicators), what to promise (objectives and error budgets) and when to wake a person up (alerting).
 

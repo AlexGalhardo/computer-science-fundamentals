@@ -8,6 +8,11 @@
 //     laboratório pequeno. Em produção o serviço apenas escreve em stdout, e um agente de fora
 //     (Grafana Alloy, OpenTelemetry Collector) acompanha a saída e a envia, de modo que um
 //     armazenamento de logs lento ou quebrado nunca atrasa nem quebra a aplicação.
+// ES: Un shipper de logs diminuto: junta las líneas que escribe un servicio y las envía en
+//     lotes a la API de push de Loki. Está dentro del proceso solo para mantener pequeño el
+//     laboratorio. En producción el servicio solo escribe en stdout, y un agente externo
+//     (Grafana Alloy, OpenTelemetry Collector) sigue la salida y la envía, de modo que un
+//     almacenamiento de logs lento o roto nunca retrasa ni rompe la aplicación.
 
 export interface Shipper {
 	add: (line: string, time: Date) => void;
@@ -26,6 +31,10 @@ export interface ShipperOptions {
 	 *     stream separado. Por isso labels precisam ter poucos valores possíveis: o serviço e o
 	 *     formato. Um correlation id como label criaria um stream por requisição e arruinaria o
 	 *     índice. Ele fica dentro da linha, onde uma consulta o filtra depois de escolher os streams.
+	 * ES: Los labels son lo que Loki indexa, y cada combinación distinta de valores de label es un
+	 *     stream separado. Por eso los labels deben tener pocos valores posibles: el servicio y el
+	 *     formato. Un correlation id como label crearía un stream por petición y arruinaría el
+	 *     índice. Va dentro de la línea, donde una consulta lo filtra después de elegir los streams.
 	 */
 	labels: Record<string, string>;
 	intervalMs?: number;
@@ -71,12 +80,16 @@ export function createShipper(options: ShipperOptions): Shipper {
 			// PT: O Loki pode ainda estar iniciando. O lote volta para a frente e é tentado de
 			//     novo no próximo ciclo. O buffer é limitado: se o armazenamento continuar fora,
 			//     as linhas mais antigas são descartadas em vez de o processo ficar sem memória.
+			// ES: Loki puede estar todavía arrancando. El lote vuelve al frente y se intenta de
+			//     nuevo en el siguiente ciclo. El buffer es limitado: si el almacenamiento sigue caído,
+			//     las líneas más antiguas se descartan en lugar de que el proceso se quede sin memoria.
 			buffer = [...batch, ...buffer].slice(-maxBuffered);
 		}
 	};
 
 	// EN: Flushes run one after another, so two batches never race and lines stay in order.
 	// PT: Os envios rodam um depois do outro, então dois lotes nunca disputam e as linhas ficam em ordem.
+	// ES: Los envíos corren uno después del otro, así que dos lotes nunca compiten y las líneas quedan en orden.
 	const flush = (): Promise<void> => {
 		sending = sending.then(flushOnce);
 		return sending;
@@ -90,6 +103,8 @@ export function createShipper(options: ShipperOptions): Shipper {
 			//     same millisecond get increasing nanoseconds and keep the order they were written in.
 			// PT: O Loki quer nanossegundos. Os relógios do JavaScript dão milissegundos, então duas
 			//     linhas do mesmo milissegundo recebem nanossegundos crescentes e mantêm a ordem de escrita.
+			// ES: Loki quiere nanosegundos. Los relojes de JavaScript dan milisegundos, así que dos
+			//     líneas del mismo milisegundo reciben nanosegundos crecientes y mantienen el orden de escritura.
 			let ns = BigInt(time.getTime()) * 1_000_000n;
 			if (ns <= lastNs) {
 				ns = lastNs + 1n;

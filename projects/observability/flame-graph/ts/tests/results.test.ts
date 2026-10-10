@@ -7,6 +7,11 @@
 //     dela, e as figuras versionadas são exatamente o que o renderizador desenha a partir
 //     desses perfis. O `docker compose run --rm flame` repete as mesmas checagens em perfis
 //     recém-capturados.
+// ES: La prueba de aceptación de la lección, sobre los perfiles versionados en `results/`: el perfil
+//     "before" de cada lenguaje apunta a la función escondida, el perfil "after" está libre
+//     de ella, y las figuras versionadas son exactamente lo que el renderizador dibuja a partir
+//     de esos perfiles. `docker compose run --rm flame` repite las mismas comprobaciones en perfiles
+//     recién capturados.
 
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";

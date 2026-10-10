@@ -10,6 +10,12 @@
 //       api     checkout received  -> checkout answered
 //       orders  order created      -> order queued
 //       worker  order picked up    -> confirmation sent
+// ES: Los tres servicios como funciones simples que reciben sus dependencias, para que las
+//     pruebas unitarias los ejecuten con un logger en memoria, una llamada HTTP falsa y una cola
+//     falsa. Cada petición escribe seis líneas de log, dos por servicio:
+//       api     checkout received  -> checkout answered
+//       orders  order created      -> order queued
+//       worker  order picked up    -> confirmation sent
 
 import { z } from "zod";
 import { CORRELATION_HEADER, correlationIdFrom, currentCorrelationId, runWithCorrelation } from "./correlation";
@@ -44,6 +50,10 @@ async function readJson(request: Request): Promise<unknown> {
 //     então a cadeia iniciada antes continua; senão uma nova começa aqui. Tudo que o handler
 //     faz roda dentro desse id, e a resposta o devolve, para que quem chamou possa citá-lo em
 //     um relato de erro.
+// ES: El borde de cada servicio HTTP. El id del encabezado recibido se reutiliza cuando es válido,
+//     así que la cadena iniciada antes continúa; si no, aquí empieza una nueva. Todo lo que el handler
+//     hace corre dentro de ese id, y la respuesta lo devuelve, para que quien llamó pueda citarlo en
+//     un reporte de error.
 function withCorrelation(request: Request, handler: () => Promise<Response>): Promise<Response> {
 	const correlationId = correlationIdFrom(request.headers.get(CORRELATION_HEADER));
 	return runWithCorrelation(correlationId, async () => {
@@ -90,6 +100,7 @@ export function apiApp(deps: ApiDeps): App {
 
 			// EN: Propagation over HTTP: the id leaves this process in a request header.
 			// PT: Propagação por HTTP: o id sai deste processo em um cabeçalho da requisição.
+			// ES: Propagación por HTTP: el id sale de este proceso en un encabezado de la petición.
 			const response = await call(`${deps.ordersUrl}/orders`, {
 				method: "POST",
 				headers: { "content-type": "application/json", [CORRELATION_HEADER]: currentCorrelationId() ?? "" },
@@ -109,6 +120,8 @@ export function apiApp(deps: ApiDeps): App {
 			//     of the order id, so this line cannot be found by searching for the order.
 			// PT: A frase em texto mostra a lacuna comum de logs improvisados: quem a escreveu não
 			//     pensou no id do pedido, então esta linha não é achada buscando pelo pedido.
+			// ES: La frase en texto muestra la brecha común de los logs improvisados: quien la escribió no
+			//     pensó en el id del pedido, así que esta línea no se encuentra buscando por el pedido.
 			deps.logger.info({
 				message: "checkout answered",
 				fields: { order_id: created.data.orderId, status: 201, duration_ms: durationMs },
@@ -155,6 +168,7 @@ export function ordersApp(deps: OrdersDeps): App {
 			});
 			// EN: Propagation through the queue happens inside `publish` (see broker.ts).
 			// PT: A propagação pela fila acontece dentro de `publish` (veja broker.ts).
+			// ES: La propagación por la cola ocurre dentro de `publish` (ve broker.ts).
 			await deps.publish(order);
 			deps.logger.info({
 				message: "order queued",
@@ -177,6 +191,9 @@ export interface WorkerDeps {
  *
  * PT: worker: trata uma mensagem da fila. A camada do broker já restaurou o correlation id,
  * então este código não o menciona e as suas linhas o carregam mesmo assim.
+ *
+ * ES: worker: trata un mensaje de la cola. La capa del broker ya restauró el correlation id,
+ * así que este código no lo menciona y sus líneas lo llevan de todos modos.
  */
 export function workerHandler(deps: WorkerDeps): (payload: unknown) => Promise<void> {
 	const work = deps.work ?? ((): Promise<void> => Bun.sleep(5));

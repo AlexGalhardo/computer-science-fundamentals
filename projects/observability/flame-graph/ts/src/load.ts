@@ -4,6 +4,9 @@
 // PT: Um gerador de carga de laço fechado: um número fixo de workers, cada um enviando a
 //     próxima requisição assim que a anterior é respondida. Com a concorrência fixa, o número
 //     de requisições concluídas por segundo é a vazão do servidor sob aquela pressão.
+// ES: Un generador de carga de lazo cerrado: un número fijo de workers, cada uno enviando la
+//     siguiente petición apenas se responde la anterior. Con la concurrencia fija, el número
+//     de peticiones completadas por segundo es el throughput del servidor bajo esa presión.
 
 import { requireLocalTarget } from "./target";
 
@@ -27,6 +30,7 @@ export async function runLoad(url: string, concurrency: number, durationMs: numb
 				const response = await fetch(url);
 				// EN: Read the body, or the connection is not reused for the next request.
 				// PT: Lê o corpo, ou a conexão não é reaproveitada na próxima requisição.
+				// ES: Lee el cuerpo, o la conexión no se reutiliza en la siguiente petición.
 				await response.arrayBuffer();
 				if (response.ok && performance.now() <= deadline) {
 					requests += 1;

@@ -9,6 +9,12 @@
 //     carga há um período calmo de START_S segundos, para o Prometheus ter uma linha de base
 //     saudável para comparar. O alvo é conferido antes de tudo: o k6 recusa um host que não é
 //     local.
+// ES: La carga que rompe el objetivo. Durante LOAD_S segundos, VUS usuarios virtuales llaman a /pay
+//     tan rápido como lo permite la pausa. La tienda atiende 8 peticiones a la vez, así que la mayoría
+//     recibe 503 y el resto se vuelve lento: los dos presupuestos de error empiezan a quemarse. Antes
+//     de la carga hay un período tranquilo de START_S segundos, para que Prometheus tenga una línea
+//     base sana con la cual comparar. El objetivo se comprueba antes que nada: k6 rechaza un host que
+//     no sea local.
 
 import { sleep } from "k6";
 import http from "k6/http";
@@ -31,6 +37,7 @@ export const options = {
 	},
 	// EN: The 503s are the point of this run, so they must not count as a failed test.
 	// PT: Os 503 são o objetivo desta execução, então não podem contar como teste reprovado.
+	// ES: Los 503 son el objetivo de esta ejecución, así que no pueden contar como prueba fallida.
 	thresholds: {},
 };
 

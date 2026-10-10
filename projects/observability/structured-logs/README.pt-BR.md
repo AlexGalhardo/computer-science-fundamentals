@@ -1,12 +1,12 @@
 # structured-logs
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Como seguir **uma requisição** por três serviços quando os logs dela estão misturados com os de todas as outras? Este mini-projeto roda o mesmo sistema duas vezes: uma gravando **logs JSON estruturados com um correlation id**, outra gravando **texto livre**. Uma requisição entra no `api`, vai para o `orders` por HTTP e chega ao `worker` por uma fila do RabbitMQ. Todas as linhas vão para o Loki, e então a mesma pergunta é feita às duas variantes: "mostre todas as linhas de log desta requisição".
 
 Código: MP-OBS-2. Explicação completa: [docs/pt/observability/structured-logs.md](../../../docs/pt/observability/structured-logs.md).
 
-```
+```text
 cliente --X-Correlation-Id--> api --X-Correlation-Id--> orders --AMQP correlationId--> [fila] --> worker
                                |                          |                                         |
                                +--------------------------+----- linhas de log --> Loki <-----------+

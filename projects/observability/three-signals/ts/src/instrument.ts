@@ -2,6 +2,8 @@
 //     you ("automatic instrumentation"); writing it once by hand shows what they do.
 // PT: Instrumentação manual de HTTP, dos dois lados de uma chamada. Bibliotecas costumam fazer
 //     isso por você ("instrumentação automática"); escrever uma vez à mão mostra o que elas fazem.
+// ES: Instrumentación manual de HTTP, en los dos lados de una llamada. Las bibliotecas suelen hacer
+//     eso por ti ("instrumentación automática"); escribirlo una vez a mano muestra lo que hacen.
 
 import { context, propagation, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import { SeverityNumber } from "@opentelemetry/api-logs";
@@ -34,6 +36,9 @@ export function log(
  * PT: `propagation.extract` lê o cabeçalho `traceparent`. Se ele existe, o novo span vira filho
  *     do span de quem chamou e mantém o trace id: é isso que une o trabalho de três processos em
  *     um trace só. Se falta, o span começa um trace novo.
+ * ES: `propagation.extract` lee el encabezado `traceparent`. Si existe, el nuevo span se vuelve hijo
+ *     del span de quien llamó y mantiene el trace id: eso es lo que une el trabajo de tres procesos en
+ *     un solo trace. Si falta, el span empieza un trace nuevo.
  */
 export async function handleRequest(
 	telemetry: Telemetry,
@@ -62,6 +67,7 @@ export async function handleRequest(
 				span.setAttribute("http.response.status_code", status);
 				// EN: A server span is an error only for 5xx: a 4xx is the client's mistake.
 				// PT: Um span de servidor só é erro em 5xx: um 4xx é engano do cliente.
+				// ES: Un span de servidor solo es error en 5xx: un 4xx es un error del cliente.
 				if (status >= 500) {
 					span.setStatus({ code: SpanStatusCode.ERROR });
 				}
@@ -71,6 +77,9 @@ export async function handleRequest(
 				// PT: A métrica recebe só atributos de baixa cardinalidade (método, rota modelo,
 				//     status). O SKU ou o id do pedido criariam uma série temporal por valor;
 				//     esses detalhes pertencem ao span e ao log.
+				// ES: La métrica recibe solo atributos de baja cardinalidad (método, ruta modelo,
+				//     estado). El SKU o el id del pedido crearían una serie temporal por valor;
+				//     esos detalles pertenecen al span y al log.
 				telemetry.requestDuration.record(seconds, {
 					"http.request.method": request.method,
 					"http.route": route,
@@ -94,6 +103,8 @@ export async function handleRequest(
  *     uses the span id as the parent of its own span.
  * PT: `propagation.inject` escreve `traceparent: 00-<trace id>-<id deste span>-01`. Quem recebe
  *     usa o span id como pai do seu próprio span.
+ * ES: `propagation.inject` escribe `traceparent: 00-<trace id>-<id de este span>-01`. Quien recibe
+ *     usa el span id como padre de su propio span.
  */
 export async function tracedFetch(
 	telemetry: Telemetry,
@@ -115,6 +126,7 @@ export async function tracedFetch(
 				span.setAttribute("http.response.status_code", response.status);
 				// EN: For a client, 4xx is an error too: the call did not do what it was asked to.
 				// PT: Para um cliente, 4xx também é erro: a chamada não fez o que foi pedido.
+				// ES: Para un cliente, 4xx también es error: la llamada no hizo lo que se pidió.
 				if (response.status >= 400) {
 					span.setStatus({ code: SpanStatusCode.ERROR });
 				}

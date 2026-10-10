@@ -5,6 +5,10 @@
 #     serviço `inventory` do docker-compose roda o binário construído aqui. Os módulos são
 #     baixados em uma camada própria a partir de go.mod e go.sum, então os testes rodam depois
 #     sem rede.
+# ES: Una imagen, dos trabajos: el comando por defecto es la compuerta (formateador, vet, pruebas), y el
+#     servicio `inventory` de docker-compose ejecuta el binario construido aquí. Los módulos se
+#     descargan en una capa propia a partir de go.mod y go.sum, así que las pruebas corren después
+#     sin red.
 FROM golang:1.27.1-bookworm
 WORKDIR /app
 COPY go.mod go.sum ./

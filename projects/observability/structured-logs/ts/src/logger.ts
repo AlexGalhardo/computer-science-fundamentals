@@ -6,6 +6,10 @@
 //     mais `fields`) e como a frase que um desenvolvedor teria digitado em um log improvisado
 //     (`text`). O formato JSON grava o dado, o formato texto grava a frase. Manter os dois em
 //     uma chamada torna a comparação justa: as duas variantes registram exatamente os mesmos eventos.
+// ES: Un logger, dos formatos. Cada llamada describe un evento dos veces: como dato (`message`
+//     más `fields`) y como la frase que un desarrollador habría escrito en un log improvisado
+//     (`text`). El formato JSON escribe el dato, el formato texto escribe la frase. Mantener los dos en
+//     una llamada hace justa la comparación: las dos variantes registran exactamente los mismos eventos.
 
 import type { LogFormat } from "./config";
 import { currentCorrelationId } from "./correlation";
@@ -43,6 +47,9 @@ export interface LoggerOptions {
  * PT: A linha estruturada: um objeto JSON por linha. O timestamp é UTC em ISO 8601, então linhas
  *     de serviços em fusos diferentes ordenam corretamente como texto puro. As chaves fixas são
  *     gravadas por último, então um campo do evento nunca sobrescreve `correlation_id` ou `service`.
+ * ES: La línea estructurada: un objeto JSON por línea. El timestamp es UTC en ISO 8601, así que las líneas
+ *     de servicios en zonas horarias distintas se ordenan correctamente como texto plano. Las claves fijas se
+ *     escriben al final, así que un campo del evento nunca sobrescribe `correlation_id` ni `service`.
  */
 export function formatJson(service: string, level: LogLevel, event: LogEvent, time: Date): string {
 	const correlationId = currentCorrelationId();
@@ -63,6 +70,9 @@ export function formatJson(service: string, level: LogLevel, event: LogEvent, ti
  * PT: A linha não estruturada, do jeito que logs improvisados são: um timestamp em estilo local,
  *     o nível e uma frase. Não há correlation id, e cada frase cita (ou esquece) o que o autor
  *     lembrou na hora. Uma pessoa lê com facilidade; uma máquina precisa de uma regex por frase.
+ * ES: La línea no estructurada, como son los logs improvisados: un timestamp en estilo local,
+ *     el nivel y una frase. No hay correlation id, y cada frase cita (u olvida) lo que el autor
+ *     recordó en el momento. Una persona la lee con facilidad; una máquina necesita una regex por frase.
  */
 export function formatText(service: string, level: LogLevel, event: LogEvent, time: Date): string {
 	const stamp = time.toISOString().slice(0, 19).replace("T", " ");

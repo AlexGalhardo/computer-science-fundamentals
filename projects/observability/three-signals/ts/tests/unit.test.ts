@@ -4,6 +4,9 @@
 // PT: Testes unitários com o SDK real e exporters em memória: sem collector, sem rede. Dois
 //     "serviços" no mesmo processo chamam um ao outro por um `fetch` falso, o que basta para
 //     provar que o contexto do trace atravessa um salto HTTP em um cabeçalho.
+// ES: Pruebas unitarias con el SDK real y exporters en memoria: sin collector, sin red. Dos
+//     "servicios" en el mismo proceso se llaman entre sí por un `fetch` falso, lo que basta para
+//     probar que el contexto del trace atraviesa un salto HTTP en un encabezado.
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { SpanKind } from "@opentelemetry/api";
@@ -56,6 +59,8 @@ beforeEach(() => {
 	//     gets a canned answer and its headers are kept for inspection.
 	// PT: A rede falsa: uma URL de orders vai para o handler de orders, uma URL de inventory
 	//     recebe uma resposta pronta e os cabeçalhos são guardados para inspeção.
+	// ES: La red falsa: una URL de orders va al handler de orders, una URL de inventory
+	//     recibe una respuesta lista y los encabezados se guardan para inspección.
 	globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
 		const request = input instanceof Request ? input : new Request(String(input), init);
 		if (request.url.startsWith("http://orders.test")) {
@@ -100,6 +105,7 @@ describe("context propagation", () => {
 		}
 		// EN: The chain: root SERVER span -> CLIENT span in gateway -> SERVER span in orders.
 		// PT: A cadeia: span SERVER raiz -> span CLIENT no gateway -> span SERVER em orders.
+		// ES: La cadena: span SERVER raíz -> span CLIENT en el gateway -> span SERVER en orders.
 		expect(root.parentSpanContext).toBeUndefined();
 		expect(root.kind).toBe(SpanKind.SERVER);
 		expect(client.kind).toBe(SpanKind.CLIENT);
@@ -160,6 +166,7 @@ describe("the three signals of one request", () => {
 		}
 		// EN: Three SKUs, one data point: one time series, whatever the number of products.
 		// PT: Três SKUs, um ponto de dados: uma série temporal, seja qual for o número de produtos.
+		// ES: Tres SKUs, un punto de datos: una serie temporal, sea cual sea el número de productos.
 		expect(metric.dataPoints).toHaveLength(1);
 		const point = metric.dataPoints[0];
 		expect(point?.value.count).toBe(3);
@@ -229,6 +236,8 @@ describe("reading a trace", () => {
 		// EN: Worked by hand: root 900 - 870 = 30, POST /orders 870 - 840 = 30,
 		//     GET inventory 840 - 810 = 30, GET /stock 810 - 800 = 10, lookup 800.
 		// PT: Feito à mão: raiz 900 - 870 = 30, POST /orders 870 - 840 = 30,
+		//     GET inventory 840 - 810 = 30, GET /stock 810 - 800 = 10, lookup 800.
+		// ES: Hecho a mano: raíz 900 - 870 = 30, POST /orders 870 - 840 = 30,
 		//     GET inventory 840 - 810 = 30, GET /stock 810 - 800 = 10, lookup 800.
 		expect(spans.map((row) => self.get(row.spanId))).toEqual([30, 30, 30, 10, 800]);
 		expect(waterfall(spans)).toContain("        inventory: warehouse.lookup");

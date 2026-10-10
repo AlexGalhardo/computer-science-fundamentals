@@ -1,12 +1,12 @@
 # flame-graph
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Um serviço está lento e o código parece certo. Para onde vai o tempo? Este mini-projeto tem dois serviços HTTP pequenos, um em Go e um em TypeScript (Bun), cada um com um **caminho quente escondido**: uma linha que parece uma consulta barata e que, na verdade, é a maior parte do trabalho. Um **perfil de CPU** tirado sob carga, desenhado como um **flame graph**, aponta para a função. Depois a correção é aplicada e um **benchmark de antes e depois** mede quanto ela valeu.
 
 Código: MP-OBS-4. Explicação completa: [docs/pt/observability/flame-graph.md](../../../docs/pt/observability/flame-graph.md).
 
-```
+```text
 gerador de carga --> go-server  GET /before/report   (compila uma expressão regular para cada linha de log)
                                 GET /after/report    (compilada uma vez)
                                 GET /debug/pprof/profile?seconds=5      -> perfil de CPU (pprof)

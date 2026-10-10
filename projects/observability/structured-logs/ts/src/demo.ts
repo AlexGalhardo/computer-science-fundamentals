@@ -4,6 +4,9 @@
 // PT: `docker compose run --rm demo`. Manda os mesmos quatro checkouts para a variante JSON e
 //     para a variante em texto, e depois faz a mesma pergunta às duas: "mostre todas as linhas
 //     de log da primeira requisição". Imprime as respostas e reescreve results/results.md.
+// ES: `docker compose run --rm demo`. Envía los mismos cuatro checkouts a la variante JSON y a
+//     la variante en texto, y después hace la misma pregunta a las dos: "muestra todas las líneas
+//     de log de la primera petición". Imprime las respuestas y reescribe results/results.md.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

@@ -1,6 +1,6 @@
 # Structured logs and correlation id (MP-OBS-2)
 
-> Versão em português: [docs/pt/observability/structured-logs.md](../../pt/observability/structured-logs.md)
+> Versão em português: [docs/pt/observability/structured-logs.md](../../pt/observability/structured-logs.md) · Versión en español: [docs/es/observability/structured-logs.md](../../es/observability/structured-logs.md)
 
 Mini-project: [`projects/observability/structured-logs`](../../../projects/observability/structured-logs/README.md). Quiz topics: `structured-logs`, `three-signals`, `distributed-tracing`, `prometheus-grafana-loki-tempo`.
 

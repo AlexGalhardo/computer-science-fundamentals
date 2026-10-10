@@ -10,6 +10,8 @@ import (
 //
 // PT: A correção só vale se mudar o custo e mais nada. Este teste é a garantia: as duas
 // variantes precisam devolver o mesmo resumo para a mesma entrada.
+// ES: La corrección solo vale si cambia el costo y nada más. Esta prueba es la garantía: las dos
+// variantes deben devolver el mismo resumen para la misma entrada.
 func TestBothVariantsReturnTheSameSummary(t *testing.T) {
 	lines := SampleLines(300)
 	before := SummarizeBefore(lines)
@@ -53,6 +55,8 @@ func TestSampleLinesAreDeterministic(t *testing.T) {
 //
 // PT: Um benchmark é a visão em nível de unidade da mesma lição: `go test -bench . ./report`
 // mostra a diferença por chamada, e o profiler mostra de onde ela vem.
+// ES: Un benchmark es la vista a nivel de unidad de la misma lección: `go test -bench . ./report`
+// muestra la diferencia por llamada, y el profiler muestra de dónde viene.
 func BenchmarkSummarizeBefore(b *testing.B) {
 	lines := SampleLines(300)
 	for b.Loop() {

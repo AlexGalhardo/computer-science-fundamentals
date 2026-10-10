@@ -1,12 +1,12 @@
 # three-signals
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 One request in twelve is slow, and nobody knows why. This mini-project runs three services instrumented with OpenTelemetry and shows how the three signals answer three different questions about that request: the **metric** says that something is slow, the **trace** says where, the **log** says why.
 
 Code: MP-OBS-1. Full explanation: [docs/en/observability/three-signals.md](../../../docs/en/observability/three-signals.md).
 
-```
+```text
 client -> gateway (TS) -> orders (TS) -> inventory (Go) -> warehouse.lookup   <- slow for one SKU
               |               |               |
               +------- OTLP/HTTP (traces, metrics, logs) -------+

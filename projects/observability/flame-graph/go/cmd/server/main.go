@@ -34,10 +34,13 @@ func writeJSON(w http.ResponseWriter, value any) {
 //
 // PT: As mesmas 300 linhas para toda requisição. O trabalho por requisição é idêntico, então a
 // única diferença entre as duas rotas é a variante do código.
+// ES: Las mismas 300 líneas para cada petición. El trabajo por petición es idéntico, así que la
+// única diferencia entre las dos rutas es la variante del código.
 var lines = report.SampleLines(300)
 
 // EN: Named handlers, so their names show up as frames in the profile.
 // PT: Handlers com nome, para que os nomes apareçam como quadros no perfil.
+// ES: Handlers con nombre, para que los nombres aparezcan como cuadros en el perfil.
 func handleReportBefore(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, report.SummarizeBefore(lines))
 }
@@ -65,6 +68,10 @@ func newMux() *http.ServeMux {
 	//     cerca de 100 vezes por segundo durante N segundos e devolve o perfil. O custo é
 	//     baixo o bastante para rodar em produção, mas o endpoint revela detalhes internos,
 	//     então nunca pode ser alcançável de fora. Aqui a rede do docker-compose é interna.
+	// ES: `GET /debug/pprof/profile?seconds=N` muestrea las pilas de las goroutines en ejecución
+	//     unas 100 veces por segundo durante N segundos y devuelve el perfil. El costo es
+	//     lo bastante bajo para ejecutarse en producción, pero el endpoint revela detalles internos,
+	//     así que nunca debe ser alcanzable desde fuera. Aquí la red de docker-compose es interna.
 	mux.HandleFunc("GET /debug/pprof/profile", pprof.Profile)
 	return mux
 }
@@ -74,6 +81,7 @@ func main() {
 
 	// EN: `server healthcheck` opens the real TCP port, the same one the clients use.
 	// PT: `server healthcheck` abre a porta TCP real, a mesma que os clientes usam.
+	// ES: `server healthcheck` abre el puerto TCP real, el mismo que usan los clientes.
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
 		conn, err := net.DialTimeout("tcp", "127.0.0.1"+addr, 2*time.Second)
 		if err != nil {

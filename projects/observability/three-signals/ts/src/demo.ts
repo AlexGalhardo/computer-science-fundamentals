@@ -6,6 +6,10 @@
 //     1. Métricas: o percentil 99 diz QUE há requisições lentas e em quais serviços.
 //     2. Traces: uma busca TraceQL acha uma requisição lenta, e a cascata dela diz ONDE.
 //     3. Logs: o trace id acha as linhas daquela requisição, e uma delas diz POR QUÊ.
+// ES: La demo recorre la investigación de principio a fin y graba lo que encontró en results/.
+//     1. Métricas: el percentil 99 dice QUE hay peticiones lentas y en qué servicios.
+//     2. Traces: una búsqueda TraceQL encuentra una petición lenta, y su cascada dice DÓNDE.
+//     3. Logs: el trace id encuentra las líneas de esa petición, y una de ellas dice POR QUÉ.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -37,6 +41,7 @@ await Promise.all([
 
 // EN: Mostly healthy traffic, with a few requests for the SKU that hits the slow dependency.
 // PT: Tráfego quase todo saudável, com algumas requisições do SKU que cai na dependência lenta.
+// ES: Tráfico casi todo sano, con algunas peticiones del SKU que cae en la dependencia lenta.
 const skus = ["blue-pen", "red-pen", "notebook", "stapler", "desk-lamp"];
 let slowTraceId = "";
 
@@ -45,6 +50,9 @@ let slowTraceId = "";
 // PT: Uma requisição de aquecimento, e depois uma pausa maior que o intervalo de exportação de
 //     5 s. O `rate()` mede crescimento entre duas amostras de uma série, então cada série
 //     precisa existir antes da carga.
+// ES: Una petición de calentamiento, y luego una pausa mayor que el intervalo de exportación de
+//     5 s. `rate()` mide crecimiento entre dos muestras de una serie, así que cada serie
+//     debe existir antes de la carga.
 await checkout(env.GATEWAY_URL, "blue-pen");
 await Bun.sleep(8000);
 for (let i = 0; i < 60; i++) {

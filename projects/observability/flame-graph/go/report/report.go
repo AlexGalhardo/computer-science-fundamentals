@@ -6,6 +6,10 @@
 // variantes que devolvem exatamente o mesmo resultado. A variante "before" esconde um caminho
 // quente, e nada no código parece lento à primeira vista: por isso é preciso um profiler para
 // encontrá-lo.
+// ES: El paquete report resume líneas de log: cuántas por nivel y por servicio. Existe en dos
+// variantes que devuelven exactamente el mismo resultado. La variante "before" esconde una ruta
+// caliente, y nada en el código parece lento a primera vista: por eso hace falta un profiler para
+// encontrarla.
 package report
 
 import (
@@ -30,6 +34,8 @@ const linePattern = `^\d{4}-\d{2}-\d{2}T\S+ (ERROR|WARN|INFO) ([a-z]+): `
 //
 // PT: SampleLines devolve n linhas de log sintéticas. Elas saem de uma fórmula fixa, sem
 // aleatoriedade, então toda execução e as duas variantes veem a mesma entrada.
+// ES: SampleLines devuelve n líneas de log sintéticas. Salen de una fórmula fija, sin
+// aleatoriedad, así que cada ejecución y las dos variantes ven la misma entrada.
 func SampleLines(n int) []string {
 	levels := []string{"INFO", "INFO", "INFO", "WARN", "INFO", "ERROR", "INFO"}
 	services := []string{"checkout", "billing", "inventory", "search", "auth"}
@@ -83,6 +89,10 @@ func parseLineBefore(line string) (level, service string, ok bool) {
 // padrão e construir uma máquina de estados: muito mais trabalho do que usá-la uma vez. Chamada
 // para cada linha de cada requisição, ela domina o perfil de CPU, embora a linha que a chama
 // pareça uma simples consulta.
+// ES: compileRegex es la ruta caliente. Compilar una expresión regular significa analizar el
+// patrón y construir una máquina de estados: mucho más trabajo que usarla una vez. Llamada
+// para cada línea de cada petición, domina el perfil de CPU, aunque la línea que la llama
+// parezca una simple consulta.
 func compileRegex(pattern string) *regexp.Regexp {
 	return regexp.MustCompile(pattern)
 }
@@ -94,6 +104,8 @@ func compileRegex(pattern string) *regexp.Regexp {
 //
 // PT: lineRegex é compilada uma vez, quando o programa inicia. Uma *regexp.Regexp compilada é
 // segura para uso concorrente, então todas as requisições podem compartilhá-la.
+// ES: lineRegex se compila una vez, cuando el programa arranca. Una *regexp.Regexp compilada es
+// segura para uso concurrente, así que todas las peticiones pueden compartirla.
 var lineRegex = regexp.MustCompile(linePattern)
 
 // SummarizeAfter is the fixed variant: same result, the expensive step hoisted out of the loop.

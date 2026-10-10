@@ -8,6 +8,10 @@
 // formato de texto a partir do qual os flame graphs são desenhados: uma linha por pilha de
 // chamadas distinta, os quadros da raiz até a folha unidos por ";", depois um espaço e quantas
 // amostras tinham exatamente aquela pilha.
+// ES: El paquete fold convierte las muestras de un perfil de CPU de Go en "pilas plegadas", el
+// formato de texto a partir del cual se dibujan los flame graphs: una línea por pila de
+// llamadas distinta, los cuadros de la raíz a la hoja unidos por ";", luego un espacio y
+// cuántas muestras tenían exactamente esa pila.
 package fold
 
 import (
@@ -34,6 +38,12 @@ import (
 // inversa, então cada bloco é invertido. Quadros que o compilador embutiu (inline) vêm
 // marcados com "(inline)" e continuam aparecendo como quadros, e é isso que mantém visível uma
 // função pequena como compileRegex.
+// ES: La herramienta imprime un bloque por grupo de muestras, separados por líneas de guiones. La
+// primera línea de un bloque tiene el conteo de muestras y la función hoja (la que estaba en la
+// CPU); las líneas siguientes son quien la llamó, hasta la raíz. Un flame graph quiere el orden
+// inverso, así que cada bloque se invierte. Los cuadros que el compilador incrustó (inline) vienen
+// marcados con "(inline)" y siguen apareciendo como cuadros, y eso es lo que mantiene visible una
+// función pequeña como compileRegex.
 func ParseTraces(r io.Reader) (map[string]int64, error) {
 	stacks := map[string]int64{}
 	var frames []string
@@ -62,6 +72,7 @@ func ParseTraces(r io.Reader) (map[string]int64, error) {
 		}
 		// EN: Everything before the first dashed line is the header (file, type, duration).
 		// PT: Tudo antes da primeira linha tracejada é o cabeçalho (arquivo, tipo, duração).
+		// ES: Todo lo anterior a la primera línea de guiones es el encabezado (archivo, tipo, duración).
 		if !inBlock || strings.TrimSpace(line) == "" {
 			continue
 		}
@@ -98,6 +109,8 @@ func cleanFrame(name string) string {
 //
 // PT: Format escreve as pilhas como linhas dobradas, ordenadas, para que o mesmo perfil gere
 // sempre o mesmo arquivo e um diff entre dois arquivos faça sentido.
+// ES: Format escribe las pilas como líneas plegadas, ordenadas, para que el mismo perfil genere
+// siempre el mismo archivo y un diff entre dos archivos tenga sentido.
 func Format(stacks map[string]int64) string {
 	keys := make([]string, 0, len(stacks))
 	for key := range stacks {

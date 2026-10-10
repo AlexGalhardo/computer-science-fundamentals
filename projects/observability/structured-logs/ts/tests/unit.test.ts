@@ -2,6 +2,8 @@
 //     a logger that writes into an array.
 // PT: Testes unitários: sem rede, sem broker, sem Loki. Os serviços são chamados como funções,
 //     com um logger que grava em um array.
+// ES: Pruebas unitarias: sin red, sin broker, sin Loki. Los servicios se llaman como funciones,
+//     con un logger que escribe en un array.
 
 import { describe, expect, test } from "bun:test";
 import { apiApp, type OrderMessage, ordersApp, workerHandler } from "../src/apps";
@@ -35,6 +37,7 @@ describe("correlation id", () => {
 		expect(isCorrelationId(undefined)).toBe(false);
 		// EN: A line break would forge a log line; a quote would change a LogQL query.
 		// PT: Uma quebra de linha forjaria uma linha de log; uma aspa mudaria uma consulta LogQL.
+		// ES: Un salto de línea falsificaría una línea de log; una comilla cambiaría una consulta LogQL.
 		expect(isCorrelationId("abcdefgh\nlevel=error")).toBe(false);
 		expect(isCorrelationId('abcdefgh" or "1"="1')).toBe(false);
 	});
@@ -55,6 +58,8 @@ describe("correlation id", () => {
 					//     really do interleave on the single thread.
 					// PT: Quanto mais tarde uma requisição começa, mais cedo ela acorda: as três
 					//     cadeias realmente se intercalam na única thread.
+					// ES: Cuanto más tarde empieza una petición, más temprano despierta: las tres
+					//     cadenas realmente se intercalan en el único thread.
 					await Bun.sleep(15 - index * 5);
 					return currentCorrelationId();
 				}),
@@ -172,6 +177,8 @@ describe("services", () => {
 		//     restore it around the handler, later, outside the request.
 		// PT: Uma fila falsa que faz o que o broker.ts faz: guarda o id na hora de publicar e o
 		//     restaura em volta do handler, depois, fora da requisição.
+		// ES: Una cola falsa que hace lo que hace broker.ts: guarda el id al publicar y lo
+		//     restaura alrededor del handler, después, fuera de la petición.
 		const queue: Array<{ payload: OrderMessage; correlationId: string | undefined }> = [];
 		const orders = ordersApp({
 			logger,

@@ -5,6 +5,10 @@
 //     que devolvem exatamente o mesmo orçamento. A variante "before" esconde um caminho quente,
 //     e nada no código parece lento à primeira vista, e por isso é preciso um profiler para
 //     encontrá-lo.
+// ES: La versión TypeScript de la lección: calcular el precio de un pedido. Existe en dos variantes
+//     que devuelven exactamente el mismo presupuesto. La variante "before" esconde una ruta caliente,
+//     y nada en el código parece lento a primera vista, y por eso hace falta un profiler para
+//     encontrarla.
 
 export interface Product {
 	sku: string;
@@ -26,6 +30,8 @@ export interface Quote {
 //     see the same catalog and the same order.
 // PT: Dados fixos, gerados por uma fórmula sem aleatoriedade: toda execução e as duas variantes
 //     veem o mesmo catálogo e o mesmo pedido.
+// ES: Datos fijos, generados por una fórmula sin aleatoriedad: cada ejecución y las dos variantes
+//     ven el mismo catálogo y el mismo pedido.
 export function sampleCatalog(size: number): Product[] {
 	return Array.from({ length: size }, (_, i) => ({ sku: `sku-${i}`, cents: 100 + ((i * 37) % 900) }));
 }
@@ -73,6 +79,10 @@ export function buildPriceIndex(catalog: Product[]): Map<string, number> {
  *     reconstruído para cada linha do pedido: um pedido de 200 linhas sobre um catálogo de 400
  *     produtos faz 80.000 inserções para responder a 200 consultas. O trabalho que importa é
  *     uma fatia minúscula do trabalho que é feito.
+ * ES: La línea de adentro parece una consulta barata, `index.get(sku)`. Pero el índice se
+ *     reconstruye para cada línea del pedido: un pedido de 200 líneas sobre un catálogo de 400
+ *     productos hace 80.000 inserciones para responder a 200 consultas. El trabajo que importa es
+ *     una porción minúscula del trabajo que se hace.
  */
 export function quoteBefore(order: OrderLine[], catalog: Product[]): Quote {
 	return quote(order, (sku) => buildPriceIndex(catalog).get(sku));
@@ -85,6 +95,8 @@ export function quoteBefore(order: OrderLine[], catalog: Product[]): Quote {
  *
  * PT: A variante corrigida: o índice é construído uma vez e recebido pronto, então cada linha
  * custa uma consulta.
+ * ES: La variante corregida: el índice se construye una vez y se recibe listo, así que cada línea
+ * cuesta una consulta.
  */
 export function quoteAfter(order: OrderLine[], index: ReadonlyMap<string, number>): Quote {
 	return quote(order, (sku) => index.get(sku));

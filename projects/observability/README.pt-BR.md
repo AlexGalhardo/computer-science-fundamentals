@@ -1,6 +1,6 @@
 # Observabilidade
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Observabilidade é a capacidade de entender o que um sistema em execução está fazendo a partir dos dados que ele emite. Logs, métricas e traces respondem a perguntas diferentes, e juntos permitem explicar uma requisição lenta entre vários serviços sem adivinhar. O assunto também cobre o que medir (indicadores de nível de serviço), o que prometer (objetivos e orçamentos de erro) e quando acordar uma pessoa (alertas).
 

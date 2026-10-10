@@ -3,6 +3,9 @@
 // PT: Variáveis de ambiente são entrada externa: um erro de digitação em uma URL deve parar o
 //     serviço na inicialização com uma mensagem clara, e não falhar depois, dentro de uma
 //     requisição. O Zod as valida uma única vez.
+// ES: Las variables de entorno son entrada externa: un error de tipeo en una URL debe detener el
+//     servicio al iniciar con un mensaje claro, y no fallar después, dentro de una
+//     petición. Zod las valida una única vez.
 
 import { z } from "zod";
 
@@ -13,6 +16,9 @@ const serviceEnvSchema = z.object({
 	// PT: A variável padrão do OpenTelemetry. Os serviços só conhecem o collector, nunca os
 	//     back ends: trocar o Tempo por outro armazenamento de traces não muda nenhuma linha
 	//     do código da aplicação.
+	// ES: La variable estándar de OpenTelemetry. Los servicios solo conocen el collector, nunca los
+	//     back ends: cambiar Tempo por otro almacenamiento de traces no cambia ninguna línea
+	//     del código de la aplicación.
 	OTEL_EXPORTER_OTLP_ENDPOINT: z.url().default("http://collector:4318"),
 	ORDERS_URL: z.url().default("http://orders:3000"),
 	INVENTORY_URL: z.url().default("http://inventory:3000"),

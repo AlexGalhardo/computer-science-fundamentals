@@ -10,6 +10,12 @@
 //     a partir da requisição atual, e quem consome a restaura antes de rodar o handler. Sem
 //     esse passo o rastro de uma requisição acaba na fila, porque o worker roda depois, em
 //     outro processo, sem nenhuma requisição HTTP de onde ler um cabeçalho.
+// ES: Una capa delgada sobre RabbitMQ (AMQP) con un trabajo en este laboratorio: llevar el
+//     correlation id a través de la cola. Una llamada HTTP tiene encabezados; un mensaje AMQP tiene
+//     propiedades, y una de ellas se llama literalmente `correlationId`. Quien publica la llena
+//     a partir de la petición actual, y quien consume la restaura antes de ejecutar el handler. Sin
+//     ese paso el rastro de una petición termina en la cola, porque el worker corre después, en
+//     otro proceso, sin ninguna petición HTTP de donde leer un encabezado.
 
 import { type ChannelModel, connect } from "amqplib";
 import { correlationIdFrom, currentCorrelationId, runWithCorrelation } from "./correlation";
@@ -65,6 +71,9 @@ export async function connectBroker(url: string, queue: string): Promise<Broker>
 				// PT: A propriedade vem de fora do processo, então é validada como o cabeçalho
 				//     HTTP. Uma mensagem sem id válido ainda recebe um, para que as suas linhas
 				//     possam ser encontradas juntas.
+				// ES: La propiedad viene de fuera del proceso, así que se valida como el encabezado
+				//     HTTP. Un mensaje sin id válido igual recibe uno, para que sus líneas
+				//     puedan encontrarse juntas.
 				const correlationId = correlationIdFrom(message.properties.correlationId);
 				runWithCorrelation(correlationId, () => handler(payload)).then(
 					() => channel.ack(message),
@@ -72,6 +81,8 @@ export async function connectBroker(url: string, queue: string): Promise<Broker>
 					//     not redelivered forever (a real system would use a dead-letter queue).
 					// PT: Uma mensagem que o handler rejeita nunca vai ficar válida: é descartada,
 					//     e não reentregue para sempre (um sistema real usaria uma dead-letter queue).
+					// ES: Un mensaje que el handler rechaza nunca se va a volver válido: se descarta,
+					//     y no se reentrega para siempre (un sistema real usaría una dead-letter queue).
 					() => channel.nack(message, false, false),
 				);
 			});

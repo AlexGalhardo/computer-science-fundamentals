@@ -2,6 +2,8 @@
 //     stdout and to the shipper, and flush the last lines when the container stops.
 // PT: Inicialização comum de um serviço: ler o ambiente, montar o logger cujas linhas vão para
 //     stdout e para o shipper, e descarregar as últimas linhas quando o contêiner para.
+// ES: Inicialización común de un servicio: leer el entorno, armar el logger cuyas líneas van a
+//     stdout y al shipper, y vaciar las últimas líneas cuando el contenedor se detiene.
 
 import { readServiceEnv, type ServiceEnv } from "./config";
 import { createLogger, type Logger } from "./logger";

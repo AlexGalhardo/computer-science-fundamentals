@@ -6,6 +6,8 @@
 //                   and, converted here, <out>/ts-<variant>.folded
 // PT: Etapa 1 do pipeline de perfil: colocar cada variante de cada serviço sob carga e,
 //     enquanto a carga roda, pedir ao serviço um perfil de CPU de si mesmo.
+// ES: Paso 1 del pipeline de perfil: poner cada variante de cada servicio bajo carga y,
+//     mientras la carga corre, pedirle al servicio un perfil de CPU de sí mismo.
 
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -27,6 +29,8 @@ async function capture(subject: Subject, variant: Variant): Promise<void> {
 	//     and outlives the profile by a margin, so every sample is taken under pressure.
 	// PT: Um perfil de um servidor ocioso mostra só o runtime esperando. A carga começa antes
 	//     e dura mais que o perfil, com folga, então toda amostra é tirada sob pressão.
+	// ES: Un perfil de un servidor ocioso muestra solo al runtime esperando. La carga empieza antes
+	//     y dura más que el perfil, con margen, así que cada muestra se toma bajo presión.
 	const load = runLoad(endpointUrl(subject, variant), env.LOAD_CONCURRENCY, (seconds + 3) * 1000);
 	await Bun.sleep(1000);
 

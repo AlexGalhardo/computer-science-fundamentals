@@ -4,6 +4,9 @@
 # PT: As dependências são instaladas a partir do lockfile em uma camada própria, então editar o
 #     código não as baixa de novo e as versões são exatamente as versionadas. A mesma imagem
 #     roda o gateway, o serviço orders, os testes e a demo.
+# ES: Las dependencias se instalan desde el lockfile en su propia capa, así que editar el
+#     código no las descarga de nuevo y las versiones son exactamente las versionadas. La misma imagen
+#     ejecuta el gateway, el servicio orders, las pruebas y la demo.
 FROM oven/bun:1.4.2
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock ./

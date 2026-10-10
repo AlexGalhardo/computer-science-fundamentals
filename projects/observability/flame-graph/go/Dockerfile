@@ -10,6 +10,12 @@
 #     O módulo usa só a biblioteca padrão, então o build não baixa nada.
 #     Os caches ficam em /tmp porque algumas etapas rodam como o usuário do host, que não tem
 #     pasta home nesta imagem.
+# ES: Una imagen, tres trabajos: el comando por defecto es la compuerta (formateador, vet, pruebas),
+#     el servicio `go-server` ejecuta el servidor HTTP construido aquí, y el paso `go-fold` ejecuta
+#     `fold`, que necesita `go tool pprof` y por lo tanto el toolchain de Go de esta misma imagen.
+#     El módulo usa solo la biblioteca estándar, así que el build no descarga nada.
+#     Los cachés viven en /tmp porque algunos pasos se ejecutan como el usuario del host, que no
+#     tiene carpeta home en esta imagen.
 FROM golang:1.27.1-bookworm
 ENV GOCACHE=/tmp/go-cache GOFLAGS=-buildvcs=false HOME=/tmp
 WORKDIR /app

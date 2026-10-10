@@ -9,6 +9,12 @@
 #     variantes é enviada a um único Loki. A rede é interna: nenhum contêiner alcança a
 #     internet e nenhuma porta é publicada no host. As credenciais são falsas e existem só
 #     dentro deste laboratório.
+# ES: Los mismos tres servicios se ejecutan dos veces, lado a lado: una escribiendo logs JSON
+#     estructurados y otra escribiendo texto libre. Una petición entra en `api`, va a
+#     `orders` por HTTP y llega a `worker` por una cola de RabbitMQ. Cada línea de log de las dos
+#     variantes se envía a un único Loki. La red es interna: ningún contenedor alcanza
+#     internet y ningún puerto se publica en el host. Las credenciales son falsas y existen solo
+#     dentro de este laboratorio.
 name: obs-structured-logs
 
 x-app: &app
@@ -34,6 +40,8 @@ x-needs-broker: &needs-broker
 #     the messages of one never reach the worker of the other.
 # PT: A única diferença entre as duas variantes é LOG_FORMAT. Cada uma tem a sua fila, então as
 #     mensagens de uma nunca chegam ao worker da outra.
+# ES: La única diferencia entre las dos variantes es LOG_FORMAT. Cada una tiene su cola, así que los
+#     mensajes de una nunca llegan al worker de la otra.
 x-json-env: &json-env
   LOG_FORMAT: json
   QUEUE: orders.json
@@ -75,6 +83,8 @@ services:
       #     root and can create the Erlang cookie before the broker does, making the broker exit.
       # PT: Uma checagem TCP simples da porta que os clientes usam. O `rabbitmq-diagnostics`
       #     rodaria como root e pode criar o cookie do Erlang antes do broker, fazendo-o encerrar.
+      # ES: Una comprobación TCP simple del puerto que usan los clientes. `rabbitmq-diagnostics`
+      #     se ejecutaría como root y puede crear la cookie de Erlang antes que el broker, haciéndolo terminar.
       test: ["CMD", "nc", "-z", "127.0.0.1", "5672"]
       interval: 3s
       timeout: 10s
@@ -87,6 +97,8 @@ services:
   #     its /ready endpoint, and the shippers retry until it answers.
   # PT: A imagem do Loki não tem shell, então não há health check de contêiner: os clientes
   #     consultam o endpoint /ready, e os shippers tentam de novo até ele responder.
+  # ES: La imagen de Loki no tiene shell, así que no hay health check de contenedor: los clientes
+  #     consultan el endpoint /ready, y los shippers reintentan hasta que responda.
   loki:
     image: grafana/loki:3.7.8
     command: ["-config.file=/etc/loki.yaml"]
@@ -147,6 +159,7 @@ services:
   # ---------------------------------------------------------------- tests and demo
   # EN: Unit tests need no network, so the container gets none.
   # PT: Os testes unitários não precisam de rede, então o contêiner não recebe nenhuma.
+  # ES: Las pruebas unitarias no necesitan red, así que el contenedor no recibe ninguna.
   ts-test:
     build: ./ts
     image: sef-structured-logs-ts:local
@@ -154,6 +167,7 @@ services:
 
   # EN: The end-to-end test sends checkouts to both variants and queries Loki over this network.
   # PT: O teste de ponta a ponta manda checkouts às duas variantes e consulta o Loki por esta rede.
+  # ES: La prueba de extremo a extremo envía checkouts a las dos variantes y consulta Loki por esta red.
   e2e-test:
     <<: *app
     command: ["bun", "run", "test:e2e"]
@@ -166,6 +180,9 @@ services:
   # PT: A demo grava results/ na pasta do projeto, então roda como o usuário do host: no Linux
   #     a pasta montada pertence a ele. O script de setup exporta HOST_UID e HOST_GID; no Docker
   #     Desktop o padrão funciona.
+  # ES: La demo escribe results/ en la carpeta del proyecto, así que se ejecuta como el usuario del
+  #     host: en Linux la carpeta montada le pertenece. El script de setup exporta HOST_UID y HOST_GID; en Docker
+  #     Desktop el valor por defecto funciona.
   demo:
     <<: *app
     command: ["bun", "run", "demo"]

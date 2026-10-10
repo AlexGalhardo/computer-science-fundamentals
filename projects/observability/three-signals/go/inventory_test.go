@@ -22,6 +22,10 @@ import (
 // PT: Os testes usam o SDK real com exporters em memória: spans e métricas são registrados
 //
 //	exatamente como em produção, e o teste os lê da memória em vez de um back end.
+//
+// ES: Las pruebas usan el SDK real con exporters en memoria: los spans y las métricas se registran
+//
+//	exactamente como en producción, y la prueba los lee de la memoria en lugar de un back end.
 func newTestService(t *testing.T) (*Service, *tracetest.SpanRecorder, *sdkmetric.ManualReader) {
 	t.Helper()
 	recorder := tracetest.NewSpanRecorder()
@@ -145,6 +149,7 @@ func TestMetricHasNoSkuAttribute(t *testing.T) {
 	}
 	// EN: Three different SKUs, one time series: the route template keeps cardinality low.
 	// PT: Três SKUs diferentes, uma série temporal: a rota modelo mantém a cardinalidade baixa.
+	// ES: Tres SKUs distintos, una serie temporal: la ruta modelo mantiene baja la cardinalidad.
 	if len(histogram.DataPoints) != 1 {
 		t.Fatalf("data points = %d, want 1", len(histogram.DataPoints))
 	}

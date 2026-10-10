@@ -2,6 +2,8 @@
 //     samples taken inside the HTTP handler, which share is inside the suspect function?
 // PT: "O flame graph aponta para a função" como um número que um teste consegue conferir: das
 //     amostras tiradas dentro do handler HTTP, que fatia está dentro da função suspeita?
+// ES: "El flame graph apunta a la función" como un número que una prueba puede comprobar: de las
+//     muestras tomadas dentro del handler HTTP, ¿qué porción está dentro de la función sospechosa?
 
 import { type Stacks, samplesWith, shareUnder, totalSamples } from "./folded";
 
@@ -32,6 +34,7 @@ export function problems(before: Verdict, after: Verdict): string[] {
 	const found: string[] = [];
 	// EN: A share computed from a handful of samples proves nothing, so a minimum is required.
 	// PT: Uma fatia calculada a partir de poucas amostras não prova nada, então há um mínimo.
+	// ES: Una porción calculada a partir de pocas muestras no prueba nada, así que hay un mínimo.
 	if (before.handlerSamples < 50) {
 		found.push(`before: only ${before.handlerSamples} samples inside the handler, at least 50 are needed`);
 	}

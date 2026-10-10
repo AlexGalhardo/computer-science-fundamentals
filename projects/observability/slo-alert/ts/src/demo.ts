@@ -3,6 +3,9 @@
 // PT: Roda um incidente e grava a linha do tempo em results/. O k6 sobe junto com este
 //     contêiner (veja docker-compose.yml): um período calmo, um minuto de sobrecarga, e calma
 //     de novo.
+// ES: Ejecuta un incidente y graba la línea de tiempo en results/. k6 arranca junto con este
+//     contenedor (ve docker-compose.yml): un período tranquilo, un minuto de sobrecarga, y calma
+//     otra vez.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -67,6 +70,8 @@ mkdirSync(resultsDir, { recursive: true });
 // EN: Remove before writing: a file left by a run under another user could not be overwritten.
 // PT: Remove antes de gravar: um arquivo deixado por uma execução de outro usuário não poderia
 //     ser sobrescrito.
+// ES: Elimina antes de grabar: un archivo dejado por una ejecución de otro usuario no podría
+//     sobrescribirse.
 for (const [name, content] of [
 	["results.md", report],
 	["timeline.json", `${JSON.stringify(timeline, null, "\t")}\n`],

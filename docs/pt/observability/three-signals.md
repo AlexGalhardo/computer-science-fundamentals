@@ -1,6 +1,6 @@
 # Três sinais: uma requisição lenta (MP-OBS-1)
 
-> English version: [docs/en/observability/three-signals.md](../../en/observability/three-signals.md)
+> English version: [docs/en/observability/three-signals.md](../../en/observability/three-signals.md) · Versión en español: [docs/es/observability/three-signals.md](../../es/observability/three-signals.md)
 
 Mini-projeto: [`projects/observability/three-signals`](../../../projects/observability/three-signals/README.pt-BR.md). Tópicos do quiz: `three-signals`, `distributed-tracing`, `opentelemetry`, `metric-types-cardinality`, `red-use-golden-signals`, `prometheus-grafana-loki-tempo`.
 
@@ -20,7 +20,7 @@ Cada sinal responde a uma parte disso, e nenhum responde a tudo.
 
 O OpenTelemetry separa a **API** (o que o código chama: iniciar um span, registrar um valor, emitir um log) do **SDK** (o que acontece com os dados). O SDK tem o mesmo formato para cada sinal:
 
-```
+```text
 provider -> instrumento (tracer, meter, logger) -> processor ou reader (lote) -> exporter (OTLP)
 ```
 
@@ -49,7 +49,7 @@ Trocar o Tempo por outro armazenamento de traces muda este arquivo e nenhuma lin
 
 Um trace é um conjunto de spans com o mesmo **trace id**. Cada span tem o seu próprio **span id** e o id do pai. Dentro de um processo, o SDK guarda o span ativo em um contexto (no Bun e no Node.js, `AsyncLocalStorage`; em Go, `context.Context`). Entre processos, o contexto precisa viajar na requisição, e o padrão W3C Trace Context diz como:
 
-```
+```text
 traceparent: 00-db9972d963f729b4d44e6b5848cfa283-3f1c2a9b7d4e5f60-01
              |  |                                |                |
              |  trace id (32 hex)                span id do pai   flags (01 = amostrado)

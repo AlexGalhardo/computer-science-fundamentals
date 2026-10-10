@@ -2,6 +2,8 @@
 //     flush the telemetry when the container is stopped.
 // PT: Inicialização comum de um serviço TypeScript: ler o ambiente, iniciar o SDK, servir, e
 //     descarregar a telemetria quando o contêiner é parado.
+// ES: Inicialización común de un servicio TypeScript: leer el entorno, iniciar el SDK, servir, y
+//     vaciar la telemetría cuando el contenedor se detiene.
 
 import type { App } from "./apps";
 import { readServiceEnv, type ServiceEnv } from "./config";

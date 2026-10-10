@@ -4,6 +4,9 @@
 // PT: A outra ponta de um alerta. O Alertmanager entrega notificações a receivers (um pager,
 //     um chat, um e-mail). Aqui o receiver é um webhook local que só lembra o que recebeu,
 //     para que o teste possa perguntar "alguém foi acionado, e quando?".
+// ES: El otro extremo de una alerta. Alertmanager entrega notificaciones a receivers (un pager,
+//     un chat, un correo). Aquí el receiver es un webhook local que solo recuerda lo que recibió,
+//     para que la prueba pueda preguntar "¿alguien fue activado, y cuándo?".
 
 import { z } from "zod";
 
@@ -11,6 +14,8 @@ import { z } from "zod";
 //     alerts, because Alertmanager groups them.
 // PT: O corpo do webhook do Alertmanager (versão 4). Uma notificação pode levar vários
 //     alertas, porque o Alertmanager os agrupa.
+// ES: El cuerpo del webhook de Alertmanager (versión 4). Una notificación puede llevar varias
+//     alertas, porque Alertmanager las agrupa.
 const webhookSchema = z.object({
 	status: z.enum(["firing", "resolved"]),
 	alerts: z.array(

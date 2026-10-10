@@ -1,6 +1,6 @@
 # Profiling with a flame graph (MP-OBS-4)
 
-> Versão em português: [docs/pt/observability/flame-graph.md](../../pt/observability/flame-graph.md)
+> Versão em português: [docs/pt/observability/flame-graph.md](../../pt/observability/flame-graph.md) · Versión en español: [docs/es/observability/flame-graph.md](../../es/observability/flame-graph.md)
 
 Mini-project: [`projects/observability/flame-graph`](../../../projects/observability/flame-graph/README.md). Quiz topics: `profiling`, `three-signals`.
 
@@ -41,7 +41,7 @@ These endpoints reveal internals. In the lab they are reachable only on an inter
 
 Both formats are reduced to the same plain text, one line per distinct call stack:
 
-```
+```text
 net/http.(*conn).serve;...;main.handleReportBefore;...;flame-graph/report.compileRegex;regexp.MustCompile;... 37
 ```
 

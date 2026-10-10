@@ -11,6 +11,13 @@
 //       - o eixo x NÃO é tempo: irmãos são ordenados por nome, então esquerda e direita não
 //         significam nada;
 //       - uma caixa larga sem nada em cima (um platô) é onde a CPU realmente estava.
+// ES: Un renderizador pequeño de flame graph: entran pilas plegadas, sale un SVG autocontenido
+//     (sin script, sin fuente externa). Cómo leer la figura:
+//       - cada caja es una función; la caja encima de ella es una función que ella llamó;
+//       - el ANCHO de una caja es su porción de las muestras (ella misma más lo que llamó);
+//       - el eje x NO es tiempo: los hermanos se ordenan por nombre, así que izquierda y derecha no
+//         significan nada;
+//       - una caja ancha sin nada encima (una meseta) es donde la CPU realmente estaba.
 
 import { type Stacks, samplesWith, totalSamples } from "./folded";
 
@@ -39,6 +46,9 @@ interface Node {
  * PT: Pilhas que começam com os mesmos quadros compartilham essas caixas. Essa fusão é todo o
  *     truque de um flame graph: milhares de amostras viram uma figura em que uma função quente
  *     aparece como uma caixa larga, não importa quantos chamadores e chamados diferentes tenha.
+ * ES: Las pilas que empiezan con los mismos cuadros comparten esas cajas. Esa fusión es todo el
+ *     truco de un flame graph: miles de muestras se vuelven una figura en la que una función caliente
+ *     aparece como una caja ancha, no importa cuántos llamadores y llamados distintos tenga.
  */
 export function layout(stacks: Stacks): Frame[] {
 	const root: Node = { name: "all", samples: 0, children: new Map() };
@@ -87,6 +97,9 @@ export function escapeXml(text: string): string {
 // PT: A cor não significa nada, como no flame graph clássico: só diferencia vizinhos. Ela vem
 //     de um hash do nome, então a mesma função tem a mesma cor em toda figura e a saída é
 //     determinística.
+// ES: El color no significa nada, como en el flame graph clásico: solo diferencia vecinos. Viene
+//     de un hash del nombre, así que la misma función tiene el mismo color en cada figura y la
+//     salida es determinista.
 function warmColour(name: string): string {
 	let hash = 2166136261;
 	for (let i = 0; i < name.length; i++) {
@@ -139,6 +152,7 @@ export function renderFlameGraph(stacks: Stacks, options: RenderOptions): string
 	for (const frame of frames) {
 		// EN: The root is the bottom row and the stacks grow upwards, like flames.
 		// PT: A raiz é a linha de baixo e as pilhas crescem para cima, como chamas.
+		// ES: La raíz es la fila de abajo y las pilas crecen hacia arriba, como llamas.
 		const x = SIDE + frame.left * inner;
 		const y = TOP + (maxDepth - frame.depth) * ROW;
 		const w = frame.width * inner;

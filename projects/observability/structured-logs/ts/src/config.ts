@@ -3,6 +3,9 @@
 // PT: Variáveis de ambiente são entrada externa. Elas são validadas uma vez, na inicialização,
 //     então um erro de digitação para o serviço com uma mensagem clara em vez de falhar dentro
 //     de uma requisição.
+// ES: Las variables de entorno son entrada externa. Se validan una vez, al iniciar,
+//     así un error de tipeo detiene el servicio con un mensaje claro en lugar de fallar dentro
+//     de una petición.
 
 import { z } from "zod";
 
@@ -13,6 +16,7 @@ const serviceEnvSchema = z.object({
 	PORT: z.coerce.number().int().min(1).max(65535).default(3000),
 	// EN: The one switch of the lab: the same services write structured JSON or free text.
 	// PT: A única chave do laboratório: os mesmos serviços escrevem JSON estruturado ou texto livre.
+	// ES: El único interruptor del laboratorio: los mismos servicios escriben JSON estructurado o texto libre.
 	LOG_FORMAT: z.enum(LOG_FORMATS).default("json"),
 	LOKI_URL: z.url().default("http://loki:3100"),
 	BROKER_URL: z.string().regex(/^amqp:\/\//, "must be an amqp:// URL"),

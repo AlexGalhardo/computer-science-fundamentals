@@ -4,6 +4,9 @@
 // PT: Teste de ponta a ponta, rodado dentro da rede do compose: serviços reais, uma fila real,
 //     um Loki real. Quatro checkouts concorrentes vão para cada variante, e então o teste pede
 //     as linhas de uma requisição.
+// ES: Prueba de extremo a extremo, ejecutada dentro de la red de compose: servicios reales, una cola real,
+//     un Loki real. Cuatro checkouts concurrentes van a cada variante, y entonces la prueba pide
+//     las líneas de una petición.
 
 import { beforeAll, describe, expect, test } from "bun:test";
 import { readLabEnv } from "../src/config";
@@ -46,6 +49,8 @@ describe("structured logs (JSON)", () => {
 			//     an order names this request's order.
 			// PT: Nenhuma linha de outra requisição: toda linha tem este id, e toda linha que cita
 			//     um pedido cita o pedido desta requisição.
+			// ES: Ninguna línea de otra petición: toda línea tiene este id, y toda línea que cita
+			//     un pedido cita el pedido de esta petición.
 			expect(parsed.every((line) => line.correlation_id === request.correlationId)).toBe(true);
 			const orderIds = new Set(parsed.map((line) => line.order_id).filter((id) => id !== undefined));
 			expect(orderIds).toEqual(new Set([request.orderId]));
@@ -80,6 +85,7 @@ describe("unstructured logs (text), for contrast", () => {
 		expect(lines.length).toBeLessThan(LINES_PER_REQUEST);
 		// EN: The api service never wrote the order id, so the entry point of the request is invisible.
 		// PT: O serviço api nunca escreveu o id do pedido, então a porta de entrada da requisição fica invisível.
+		// ES: El servicio api nunca escribió el id del pedido, así que la puerta de entrada de la petición queda invisible.
 		expect(lines.some((line) => line.service === "api")).toBe(false);
 	});
 

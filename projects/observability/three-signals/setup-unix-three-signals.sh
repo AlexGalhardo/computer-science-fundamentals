@@ -9,18 +9,26 @@
 #     o collector, Tempo, Prometheus, Loki e Grafana) e o teste de ponta a ponta consulta cada
 #     back end. Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
 #     Para explorar à mão: `docker compose up -d`, e abra http://127.0.0.1:3000.
+# ES: Construye y prueba el miniproyecto three-signals. El único requisito es Docker.
+#     Las pruebas unitarias corren primero, sin red. Después se levanta la pila entera (tres servicios,
+#     el collector, Tempo, Prometheus, Loki y Grafana) y la prueba de extremo a extremo consulta cada
+#     back end. Los contenedores y los volúmenes se eliminan al final, incluso cuando una prueba falla.
+#     Para explorar a mano: `docker compose up -d`, y abre http://127.0.0.1:3000.
 set -eu
 
 cd "$(dirname "$0")"
 
 # EN: Containers that write into this folder run as the current user (see docker-compose.yml).
 # PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+# ES: Los contenedores que escriben en esta carpeta se ejecutan como el usuario actual (ve docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 # EN: Port 0 lets Docker pick a free host port for Grafana, so a test run never collides with
 #     something already listening on 3000.
 # PT: A porta 0 deixa o Docker escolher uma porta livre do host para o Grafana, então uma
 #     rodada de testes nunca colide com algo que já escuta na 3000.
+# ES: El puerto 0 deja que Docker elija un puerto libre del host para Grafana, así que una
+#     ronda de pruebas nunca choca con algo que ya escucha en el 3000.
 GRAFANA_PORT="${GRAFANA_PORT:-0}"
 export HOST_UID HOST_GID GRAFANA_PORT
 

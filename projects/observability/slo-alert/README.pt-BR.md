@@ -1,12 +1,12 @@
 # slo-alert
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Como uma frase do tipo "99% das requisições precisam dar certo" vira um acionamento na hora certa, e para quando o problema para? Este mini-projeto leva um pequeno serviço de loja do objetivo até o alerta: indicadores, orçamento de erro, burn rate, regras do Prometheus testadas com o `promtool`, e um alerta que dispara quando o k6 local sobrecarrega o serviço e se resolve depois que a carga termina.
 
 Código: MP-OBS-3. Explicação completa: [docs/pt/observability/slo-alert.md](../../../docs/pt/observability/slo-alert.md).
 
-```
+```text
 k6 (só local) --sobrecarga--> shop --/metrics--> Prometheus --alertas--> Alertmanager --webhook--> receiver
                                ^                    |
      usuários normais ---------+        recording rules: SLI -> burn rate -> alerta (duas janelas)
@@ -73,7 +73,7 @@ Sobe a pilha e o k6 (45 segundos calmos, 60 segundos de carga), imprime a linha 
 ## Testes
 
 ```sh
-docker compose run --rm ts-test             # checagem de tipos + 18 testes unitários, sem rede
+docker compose run --rm ts-test             # checagem de tipos + 22 testes unitários, sem rede
 docker compose run --rm rules-test          # promtool check config + promtool test rules, sem rede
 docker compose run --rm load-refusal-test   # o k6 precisa recusar https://example.com
 docker compose run --rm e2e-test            # 8 testes: o alerta dispara e se resolve nos tempos documentados
@@ -131,3 +131,5 @@ O Alertmanager faz parte do projeto Prometheus e é a única imagem aqui que a l
 - Os intervalos de scrape e de avaliação são de 2 segundos, e o Alertmanager espera 1 segundo antes da primeira notificação. Em produção os valores são de 15 a 60 segundos e de 30 segundos. Eles só deixam o laboratório rápido; não são uma recomendação.
 - A regra de orçamento de erro olha a última hora porque o laboratório só tem minutos de dados. Uma real olha a janela inteira do objetivo (`[30d]`).
 - Os tempos dos resultados dependem da máquina, mas só em alguns segundos: são dominados pelas janelas (`for: 10s`, e a janela de 1 minuto que precisa esvaziar antes de o alerta se resolver).
+- Sem nenhuma requisição em uma janela, uma regra de razão grava `NaN` (0 / 0), e não 0. Isso acontece nos primeiros segundos do laboratório, antes de o tráfego normal ser coletado duas vezes. O alerta continua em silêncio, porque toda comparação com `NaN` é falsa, e o observador lê `NaN` como "ainda sem valor" (`sampleValue` em `ts/src/watch.ts`): guardado como número, ele transformaria todo pico em `NaN`.
+- "Alerta pending ou disparando antes da carga" significa: um alerta ficou ativo enquanto o tráfego normal do próprio observador era o único tráfego que a loja tinha atendido. O observador responde isso lendo diretamente o counter de requisições da loja e subtraindo as requisições que ele mesmo enviou. A taxa dos últimos 10 segundos, que dá o momento "carga começou" da linha do tempo, atrasa uma ou duas coletas: uma fração de segundo de sobrecarga basta para deixar o alerta pending, então o alerta pode ser visto pending um segundo antes de a taxa cruzar a linha de "carga ligada". O observador imprime uma linha quando isso acontece.

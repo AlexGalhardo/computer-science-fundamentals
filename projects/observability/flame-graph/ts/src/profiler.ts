@@ -10,6 +10,12 @@
 //     isso o resultado é estatístico: um perfil curto de um programa ocioso diz pouco.
 //     O Bun expõe o profiler do seu motor JavaScript pelo módulo `node:inspector`, com o mesmo
 //     protocolo que o Chrome DevTools usa (`Profiler.start`, `Profiler.stop`).
+// ES: Un profiler de CPU por muestreo no mide cada llamada. Muchas veces por segundo detiene el
+//     programa por un instante y anota la pila de llamadas. Una función que usa mucha CPU
+//     simplemente se encuentra en la pila más veces. Por eso la sobrecarga es pequeña, y por
+//     eso el resultado es estadístico: un perfil corto de un programa ocioso dice poco.
+//     Bun expone el profiler de su motor JavaScript por el módulo `node:inspector`, con el mismo
+//     protocolo que usa Chrome DevTools (`Profiler.start`, `Profiler.stop`).
 
 import { Session } from "node:inspector";
 
@@ -31,6 +37,7 @@ function post(session: Session, method: string): Promise<unknown> {
 export async function captureCpuProfile(seconds: number): Promise<unknown> {
 	// EN: One profile at a time: two overlapping sessions would stop each other.
 	// PT: Um perfil por vez: duas sessões sobrepostas parariam uma à outra.
+	// ES: Un perfil a la vez: dos sesiones superpuestas se detendrían una a la otra.
 	if (busy) {
 		throw new Error("a profile is already being captured");
 	}

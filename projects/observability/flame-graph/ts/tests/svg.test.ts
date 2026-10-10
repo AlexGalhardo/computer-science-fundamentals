@@ -99,6 +99,9 @@ describe("renderFlameGraph", () => {
 // PT: Uma checagem mínima de boa formação: toda tag aberta é fechada na ordem certa e nenhum
 //     "<" cru sobra dentro de texto. É suficiente para o conjunto fixo de tags que o
 //     renderizador escreve.
+// ES: Una comprobación mínima de buena formación: toda etiqueta abierta se cierra en el orden
+//     correcto y ningún "<" crudo queda dentro de un texto. Es suficiente para el conjunto fijo de
+//     etiquetas que escribe el renderizador.
 function wellFormed(xml: string): boolean {
 	const open: string[] = [];
 	const tag = /<(\/?)([a-zA-Z]+)((?:\s+[a-zA-Z:-]+="[^"<]*")*)\s*(\/?)>/y;

@@ -1,6 +1,6 @@
 # Three signals: one slow request (MP-OBS-1)
 
-> Versão em português: [docs/pt/observability/three-signals.md](../../pt/observability/three-signals.md)
+> Versão em português: [docs/pt/observability/three-signals.md](../../pt/observability/three-signals.md) · Versión en español: [docs/es/observability/three-signals.md](../../es/observability/three-signals.md)
 
 Mini-project: [`projects/observability/three-signals`](../../../projects/observability/three-signals/README.md). Quiz topics: `three-signals`, `distributed-tracing`, `opentelemetry`, `metric-types-cardinality`, `red-use-golden-signals`, `prometheus-grafana-loki-tempo`.
 
@@ -20,7 +20,7 @@ Each signal answers a part of that, and none answers all of it.
 
 OpenTelemetry separates the **API** (what the code calls: start a span, record a value, emit a log) from the **SDK** (what happens to the data). The SDK has the same shape for each signal:
 
-```
+```text
 provider -> instrument (tracer, meter, logger) -> processor or reader (batch) -> exporter (OTLP)
 ```
 
@@ -49,7 +49,7 @@ Replacing Tempo by another trace store changes this file and no line of applicat
 
 A trace is a set of spans with the same **trace id**. Each span has its own **span id** and the id of its parent. Inside a process the SDK keeps the active span in a context (in Bun and Node.js, `AsyncLocalStorage`; in Go, `context.Context`). Between processes the context has to travel in the request, and the W3C Trace Context standard says how:
 
-```
+```text
 traceparent: 00-db9972d963f729b4d44e6b5848cfa283-3f1c2a9b7d4e5f60-01
              |  |                                |                |
              |  trace id (32 hex)                parent span id   flags (01 = sampled)

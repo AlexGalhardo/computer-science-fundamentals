@@ -2,6 +2,8 @@
 //     so the tests can call it with no network.
 // PT: A superfície HTTP do serviço TypeScript como uma função simples de Request para Response,
 //     para que os testes a chamem sem rede.
+// ES: La superficie HTTP del servicio TypeScript como una función simple de Request a Response,
+//     para que las pruebas la llamen sin red.
 
 import { z } from "zod";
 import { buildPriceIndex, quoteAfter, quoteBefore, sampleCatalog, sampleOrder } from "./pricing";
@@ -14,12 +16,15 @@ const ORDER_LINES = 200;
 //     identical, so the only difference between the two routes is the variant of the code.
 // PT: O mesmo catálogo e o mesmo pedido para toda requisição. O trabalho por requisição é
 //     idêntico, então a única diferença entre as duas rotas é a variante do código.
+// ES: El mismo catálogo y el mismo pedido para cada petición. El trabajo por petición es
+//     idéntico, así que la única diferencia entre las dos rutas es la variante del código.
 const catalog = sampleCatalog(CATALOG_SIZE);
 const order = sampleOrder(ORDER_LINES, CATALOG_SIZE);
 const priceIndex = buildPriceIndex(catalog);
 
 // EN: Named handlers, so their names show up as frames in the profile.
 // PT: Handlers com nome, para que os nomes apareçam como quadros no perfil.
+// ES: Handlers con nombre, para que los nombres aparezcan como cuadros en el perfil.
 function handleQuoteBefore(): Response {
 	return Response.json(quoteBefore(order, catalog));
 }
@@ -36,6 +41,9 @@ const profileQuerySchema = z.object({ seconds: z.coerce.number().int().min(1).ma
 // PT: O equivalente ao `/debug/pprof/profile?seconds=N` do Go: perfila o servidor em execução
 //     por N segundos e devolve o resultado. Ele revela detalhes internos, então nunca pode ser
 //     alcançável de fora; aqui a rede do docker-compose é interna.
+// ES: El equivalente al `/debug/pprof/profile?seconds=N` de Go: perfila el servidor en ejecución
+//     durante N segundos y devuelve el resultado. Revela detalles internos, así que nunca debe ser
+//     alcanzable desde fuera; aquí la red de docker-compose es interna.
 async function handleCpuProfile(url: URL): Promise<Response> {
 	const query = profileQuerySchema.safeParse(Object.fromEntries(url.searchParams));
 	if (!query.success) {

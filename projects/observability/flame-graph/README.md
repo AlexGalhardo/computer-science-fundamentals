@@ -1,12 +1,12 @@
 # flame-graph
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 A service is slow and the code looks fine. Where does the time go? This mini-project has two small HTTP services, one in Go and one in TypeScript (Bun), each with a **hidden hot path**: a line that reads like a cheap lookup and is in fact most of the work. A **CPU profile** taken under load, drawn as a **flame graph**, points at the function. Then the fix is applied and a **before/after benchmark** measures what it was worth.
 
 Code: MP-OBS-4. Full explanation: [docs/en/observability/flame-graph.md](../../../docs/en/observability/flame-graph.md).
 
-```
+```text
 load generator --> go-server  GET /before/report   (compiles a regular expression for every log line)
                               GET /after/report    (compiled once)
                               GET /debug/pprof/profile?seconds=5      -> CPU profile (pprof)

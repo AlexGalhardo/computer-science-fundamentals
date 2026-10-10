@@ -37,6 +37,9 @@ describe("local targets only", () => {
 	// PT: A proteção fica dentro do próprio gerador de carga, então nenhum chamador consegue
 	//     esquecê-la. Os testes rodam sem rede: se uma requisição fosse enviada, a falha
 	//     seria outra.
+	// ES: La protección vive dentro del propio generador de carga, así que ningún llamador puede
+	//     olvidarla. Las pruebas corren sin red: si se enviara una petición, el fallo
+	//     sería otro.
 	test("the load generator refuses a target that is not local before sending anything", async () => {
 		await expect(runLoad("http://example.com/", 4, 1000)).rejects.toThrow(/refusing to run/);
 	});

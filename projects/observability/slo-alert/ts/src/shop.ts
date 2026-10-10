@@ -7,6 +7,11 @@
 //     capacidade está cheia, as novas são recusadas na hora com 503 (descarte de carga). Assim
 //     a carga sozinha, sem nenhuma flag injetada, quebra os dois objetivos: disponibilidade e
 //     latência.
+// ES: El servicio bajo un objetivo. `GET /pay` hace un poco de trabajo simulado, y el servicio tiene
+//     una capacidad fija: cada petición en curso deja más lentas a las otras, y cuando la
+//     capacidad está llena, las nuevas se rechazan al instante con 503 (descarte de carga). Así
+//     la carga sola, sin ninguna flag inyectada, rompe los dos objetivos: disponibilidad y
+//     latencia.
 
 import { Counter, EXPOSITION_CONTENT_TYPE, Histogram, renderAll } from "./metrics";
 
@@ -49,6 +54,10 @@ export function createShop(overrides: Partial<ShopOptions> = {}): Shop {
 	//     em menos de um milissegundo: contá-lo faria a latência parecer melhor justamente
 	//     quando o serviço está falhando. As falhas já são contadas pelo indicador de
 	//     disponibilidade.
+	// ES: El histograma de latencia observa solo las peticiones exitosas. Un 503 se rechaza
+	//     en menos de un milisegundo: contarlo haría que la latencia pareciera mejor justamente
+	//     cuando el servicio está fallando. Los fallos ya los cuenta el indicador de
+	//     disponibilidad.
 	const duration = new Histogram(
 		"http_request_duration_seconds",
 		"Duration of successful requests.",
@@ -91,6 +100,8 @@ export function createShop(overrides: Partial<ShopOptions> = {}): Shop {
 			//     The service keeps no history and does not know who is reading.
 			// PT: O Prometheus puxa: a cada poucos segundos ele faz GET nesta página e guarda
 			//     os números. O serviço não guarda histórico e não sabe quem está lendo.
+			// ES: Prometheus extrae (pull): cada pocos segundos hace GET en esta página y guarda
+			//     los números. El servicio no guarda historial y no sabe quién está leyendo.
 			if (pathname === "/metrics") {
 				return new Response(renderAll([requests, duration]), {
 					headers: { "content-type": EXPOSITION_CONTENT_TYPE },

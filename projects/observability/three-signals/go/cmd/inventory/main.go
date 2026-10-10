@@ -31,6 +31,8 @@ func main() {
 	//     the same one the clients use. The image needs no curl for this.
 	// PT: `inventory healthcheck` é o health check do contêiner: abre a porta TCP real, a
 	//     mesma que os clientes usam. A imagem não precisa de curl para isso.
+	// ES: `inventory healthcheck` es el health check del contenedor: abre el puerto TCP real, el
+	//     mismo que usan los clientes. La imagen no necesita curl para eso.
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
 		conn, err := net.DialTimeout("tcp", "127.0.0.1"+addr, 2*time.Second)
 		if err != nil {
@@ -67,6 +69,8 @@ func run(addr string) error {
 	//     Without the flush, the telemetry of the final seconds dies with the process.
 	// PT: No SIGTERM: para de aceitar requisições e depois descarrega o último lote de cada
 	//     sinal. Sem isso, a telemetria dos segundos finais morre com o processo.
+	// ES: En SIGTERM: deja de aceptar peticiones y luego vacía el último lote de cada
+	//     señal. Sin eso, la telemetría de los segundos finales muere con el proceso.
 	flushed := make(chan struct{})
 	go func() {
 		defer close(flushed)

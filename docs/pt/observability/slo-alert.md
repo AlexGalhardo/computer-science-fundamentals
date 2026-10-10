@@ -1,6 +1,6 @@
 # SLO e alerta (MP-OBS-3)
 
-> English version: [docs/en/observability/slo-alert.md](../../en/observability/slo-alert.md)
+> English version: [docs/en/observability/slo-alert.md](../../en/observability/slo-alert.md) · Versión en español: [docs/es/observability/slo-alert.md](../../es/observability/slo-alert.md)
 
 Mini-projeto: [`projects/observability/slo-alert`](../../../projects/observability/slo-alert/README.pt-BR.md). Tópicos do quiz: `sli-slo-error-budgets`, `alerting`, `metric-types-cardinality`, `prometheus-grafana-loki-tempo`.
 
@@ -27,7 +27,7 @@ O objetivo é uma meta para o indicador em uma janela: 99% em 30 dias. O **orça
 
 ## 3. Burn rate
 
-```
+```text
 burn rate = fatia de eventos ruins / orçamento de erro
 ```
 

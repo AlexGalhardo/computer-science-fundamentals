@@ -10,6 +10,12 @@
 //     permitidos é fechada: os nomes de loopback e os nomes de serviço deste docker-compose. A
 //     ideia foi copiada de `projects/concurrency/ten-thousand-connections/load/target.js`;
 //     mini-projetos não importam código uns dos outros.
+// ES: La regla de seguridad de toda prueba de carga de este repositorio: el objetivo debe ser un
+//     servicio local. Carga enviada a un host que no es tuyo es un ataque, incluso por accidente
+//     (basta un error de tipeo en una variable de entorno). Por eso la lista de hosts
+//     permitidos es cerrada: los nombres de loopback y los nombres de servicio de este docker-compose. La
+//     idea se copió de `projects/concurrency/ten-thousand-connections/load/target.js`;
+//     los miniproyectos no importan código unos de otros.
 
 export const LOCAL_HOSTS: readonly string[] = ["localhost", "127.0.0.1", "[::1]", "go-server", "ts-server"];
 
@@ -22,6 +28,9 @@ export const LOCAL_HOSTS: readonly string[] = ["localhost", "127.0.0.1", "[::1]"
  * PT: O padrão é rígido de propósito. `http://localhost@example.com` e
  *     `http://localhost.example.com` parecem locais à primeira vista e não são. Tudo que o
  *     padrão não entende por completo é recusado.
+ * ES: El patrón es rígido a propósito. `http://localhost@example.com` y
+ *     `http://localhost.example.com` parecen locales a primera vista y no lo son. Todo lo que el
+ *     patrón no entiende por completo se rechaza.
  */
 export function hostOf(target: string): string | undefined {
 	const match = /^http:\/\/(\[[0-9a-fA-F:]+\]|[A-Za-z0-9.-]+)(?::\d{1,5})?(?:\/[^\s]*)?$/.exec(target);

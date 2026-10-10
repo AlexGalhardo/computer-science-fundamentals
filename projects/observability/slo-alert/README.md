@@ -1,12 +1,12 @@
 # slo-alert
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 How does a sentence like "99% of requests must succeed" become a page at the right moment, and stop when the problem stops? This mini-project takes a small shop service from the objective to the alert: indicators, error budget, burn rate, Prometheus rules tested with `promtool`, and an alert that fires when local k6 overloads the service and resolves after the load ends.
 
 Code: MP-OBS-3. Full explanation: [docs/en/observability/slo-alert.md](../../../docs/en/observability/slo-alert.md).
 
-```
+```text
 k6 (local only) --overload--> shop --/metrics--> Prometheus --alerts--> Alertmanager --webhook--> receiver
                                ^                    |
         normal users ----------+        recording rules: SLI -> burn rate -> alert (two windows)
@@ -73,7 +73,7 @@ Starts the stack and k6 (45 quiet seconds, 60 seconds of load), prints the timel
 ## Tests
 
 ```sh
-docker compose run --rm ts-test             # typecheck + 18 unit tests, no network
+docker compose run --rm ts-test             # typecheck + 22 unit tests, no network
 docker compose run --rm rules-test          # promtool check config + promtool test rules, no network
 docker compose run --rm load-refusal-test   # k6 must refuse https://example.com
 docker compose run --rm e2e-test            # 8 tests: the alert fires and resolves within the documented times
@@ -131,3 +131,5 @@ Alertmanager is part of the Prometheus project and is the only image here that t
 - The scrape and evaluation intervals are 2 seconds and Alertmanager waits 1 second before the first notification. Production values are 15 to 60 seconds and 30 seconds. They only make the lab fast; they are not a recommendation.
 - The error budget rule looks at the last hour because the lab has only minutes of data. A real one looks at the whole window of the objective (`[30d]`).
 - The times in the results depend on the machine, but only by a few seconds: they are dominated by the windows (`for: 10s`, and the 1-minute window that must empty before the alert resolves).
+- With no request in a window, a ratio rule records `NaN` (0 / 0), not 0. That happens in the first seconds of the lab, before the normal traffic was scraped twice. The alert stays silent, because every comparison with `NaN` is false, and the watcher reads `NaN` as "no value yet" (`sampleValue` in `ts/src/watch.ts`): kept as a number, it would turn every peak into `NaN`.
+- "Alert pending or firing before the load" means: an alert was active while the watcher's own normal traffic was the only traffic the shop had handled. The watcher answers it by reading the shop's request counter directly and subtracting the requests it sent itself. The rate of the last 10 seconds, which gives the "load started" moment of the timeline, lags by a scrape or two: a fraction of a second of overload is enough to make the alert pending, so the alert can be seen pending one second before the rate crosses the "load is on" line. The watcher prints a line when that happens.

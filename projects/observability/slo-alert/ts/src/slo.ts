@@ -4,6 +4,9 @@
 // PT: A aritmética de um objetivo, em pequenas funções puras. As regras do Prometheus em
 //     `prometheus/rules.yaml` calculam as mesmas coisas em PromQL; estas funções são a
 //     referência contra a qual os testes as conferem, e a demo as usa para explicar os números.
+// ES: La aritmética de un objetivo, en pequeñas funciones puras. Las reglas de Prometheus en
+//     `prometheus/rules.yaml` calculan las mismas cosas en PromQL; estas funciones son la
+//     referencia contra la cual las pruebas las comprueban, y la demo las usa para explicar los números.
 
 export interface Slo {
 	name: string;
@@ -35,6 +38,8 @@ function assertObjective(objective: number): void {
  *     failures nobody planned. An objective of 100% would leave nothing to spend.
  * PT: É um orçamento porque existe para ser gasto: em lançamentos, experimentos e nas falhas
  *     que ninguém planejou. Um objetivo de 100% não deixaria nada para gastar.
+ * ES: Es un presupuesto porque existe para gastarse: en lanzamientos, experimentos y en los fallos
+ *     que nadie planeó. Un objetivo de 100% no dejaría nada para gastar.
  */
 export function errorBudget(objective: number): number {
 	assertObjective(objective);
@@ -48,6 +53,8 @@ export function errorBudget(objective: number): number {
  *     of bad requests is a burn rate of 0.144 / 0.01 = 14.4.
  * PT: Burn rate 1 gasta o orçamento inteiro exatamente na janela. Com objetivo de 99%, 14,4%
  *     de requisições ruins é um burn rate de 0,144 / 0,01 = 14,4.
+ * ES: Un burn rate de 1 gasta todo el presupuesto exactamente en la ventana. Con un objetivo de 99%, 14,4%
+ *     de peticiones malas es un burn rate de 0,144 / 0,01 = 14,4.
  */
 export function burnRate(badRatio: number, objective: number): number {
 	return badRatio / errorBudget(objective);
@@ -80,6 +87,9 @@ export function budgetRemaining(bad: number, total: number, objective: number): 
  * PT: A janela longa prova que uma parte real do orçamento se foi, então um pico breve não
  *     aciona ninguém. A janela curta prova que ainda está acontecendo, então o alerta para
  *     logo depois do problema, em vez de continuar até a janela longa esquecer.
+ * ES: La ventana larga prueba que una parte real del presupuesto se fue, así que un pico breve no
+ *     activa a nadie. La ventana corta prueba que todavía está ocurriendo, así que la alerta se detiene
+ *     justo después del problema, en lugar de continuar hasta que la ventana larga olvide.
  */
 export function shouldAlert(longWindowBurn: number, shortWindowBurn: number, threshold: number): boolean {
 	return longWindowBurn > threshold && shortWindowBurn > threshold;

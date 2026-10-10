@@ -9,6 +9,7 @@ describe("pricing", () => {
 
 	// EN: The fix is only valid if it changes the cost and nothing else.
 	// PT: A correção só vale se mudar o custo e mais nada.
+	// ES: La corrección solo vale si cambia el costo y nada más.
 	test("both variants return the same quote", () => {
 		expect(quoteBefore(order, catalog)).toEqual(quoteAfter(order, buildPriceIndex(catalog)));
 	});

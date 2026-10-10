@@ -12,6 +12,11 @@ import { rmSync } from "node:fs";
  *     como o usuário do host, um `docker compose run` simples usa o padrão), e um arquivo de
  *     outro usuário não pode ser aberto para escrita, enquanto removê-lo só exige permissão de
  *     escrita na pasta.
+ * ES: El archivo antiguo se elimina antes, en lugar de sobrescribirse. Un archivo dejado por una
+ *     ejecución anterior puede pertenecer a otro usuario (el script de setup ejecuta los contenedores
+ *     como el usuario del host, un `docker compose run` simple usa el valor por defecto), y un archivo
+ *     de otro usuario no se puede abrir para escritura, mientras que eliminarlo solo exige permiso de
+ *     escritura en la carpeta.
  */
 export async function writeFresh(file: string, content: string | ArrayBuffer): Promise<void> {
 	rmSync(file, { force: true });

@@ -20,6 +20,13 @@
 #     Uma recording rule guarda o resultado de uma expressão como uma nova série temporal, então
 #     o alerta e todo dashboard leem uma série barata e com nome, em vez de repetir a expressão.
 #     Os nomes seguem a convenção do Prometheus nível:métrica:operações.
+# ES: De un objetivo a una alerta, en tres capas de reglas.
+#     1. SLI: la porción de peticiones malas, en una ventana corta y una larga (recording rules).
+#     2. Burn rate: esa porción dividida por el presupuesto de error (recording rules).
+#     3. Alerta: las dos ventanas quemando más rápido que un umbral (alerting rules).
+#     Una recording rule guarda el resultado de una expresión como una nueva serie temporal, así
+#     que la alerta y todo dashboard leen una serie barata y con nombre, en lugar de repetir la expresión.
+#     Los nombres siguen la convención de Prometheus nivel:métrica:operaciones.
 #
 #     Objetivos do laboratório, prometidos em 30 dias:
 #       disponibilidade  99% das requisições não falham (sem 5xx)           -> orçamento de erro 1%
@@ -39,6 +46,11 @@ groups:
   #     diferentes rodam de forma independente: com os burn rates em outro grupo, eles poderiam
   #     ler o indicador da avaliação anterior, um intervalo atrasado, dependendo de qual grupo
   #     rodasse primeiro.
+  # ES: Un solo grupo, a propósito. Dentro de un grupo las reglas se ejecutan una tras otra, en el
+  #     orden escrito, así que una regla puede leer lo que la regla de arriba acaba de grabar. Los
+  #     grupos distintos se ejecutan de forma independiente: con los burn rates en otro grupo, podrían
+  #     leer el indicador de la evaluación anterior, un intervalo atrasado, según qué grupo
+  #     se ejecutara primero.
   - name: slo
     rules:
       # ---------------------------------------------------------------- 1. indicators
@@ -46,6 +58,9 @@ groups:
       #     is requests per second, and dividing two rates gives a ratio from 0 to 1.
       # PT: SLI de disponibilidade, como a fatia de requisições RUINS: falhas / todas. O
       #     `rate()` de um counter é requisições por segundo, e dividir duas taxas dá uma razão
+      #     de 0 a 1.
+      # ES: SLI de disponibilidad, como la porción de peticiones MALAS: fallos / todas. El
+      #     `rate()` de un counter son peticiones por segundo, y dividir dos tasas da una razón
       #     de 0 a 1.
       - record: job:slo_errors_per_request:ratio_rate1m
         expr: |
@@ -64,6 +79,9 @@ groups:
       # PT: SLI de latência, como a fatia de requisições LENTAS. Os buckets são cumulativos,
       #     então o bucket le="0.1" já conta toda requisição que levou 100 ms ou menos. Uma
       #     média esconderia a cauda lenta; uma fatia de requisições abaixo de um limite, não.
+      # ES: SLI de latencia, como la porción de peticiones LENTAS. Los buckets son acumulativos,
+      #     así que el bucket le="0.1" ya cuenta toda petición que tardó 100 ms o menos. Un
+      #     promedio escondería la cola lenta; una porción de peticiones bajo un umbral, no.
       - record: job:slo_slow_per_request:ratio_rate1m
         expr: |
           1 - (
@@ -85,6 +103,9 @@ groups:
       # PT: Burn rate = fatia ruim / orçamento de erro. 1 significa "gastando exatamente o
       #     orçamento": ele duraria os 30 dias. 14,4 significa que o orçamento de 30 dias acaba
       #     em 720 / 14,4 = 50 horas.
+      # ES: Burn rate = porción mala / presupuesto de error. 1 significa "gastando exactamente el
+      #     presupuesto": duraría los 30 días. 14,4 significa que el presupuesto de 30 días se acaba
+      #     en 720 / 14,4 = 50 horas.
       - record: job:slo_availability_burn_rate:ratio_rate1m
         expr: job:slo_errors_per_request:ratio_rate1m / (1 - 0.99)
       - record: job:slo_availability_burn_rate:ratio_rate5m
@@ -98,6 +119,8 @@ groups:
       #     has only minutes of data). 1 = untouched, 0 = spent, negative = overspent.
       # PT: Orçamento de erro restante, medido na última hora (um real usaria 30d; o
       #     laboratório só tem minutos de dados). 1 = intacto, 0 = gasto, negativo = estourado.
+      # ES: Presupuesto de error restante, medido en la última hora (uno real usaría 30d; el
+      #     laboratorio solo tiene minutos de datos). 1 = intacto, 0 = gastado, negativo = agotado en exceso.
       - record: job:slo_availability_error_budget_remaining:ratio_1h
         expr: |
           1 - (
@@ -117,6 +140,11 @@ groups:
       #     ninguém. A janela curta diz que ainda está acontecendo, então o alerta se resolve
       #     cerca de um minuto depois do fim do problema, e não cinco. O `for` pede que a
       #     condição se mantenha mais um pouco antes de disparar: até lá o alerta fica "pending".
+      # ES: Se activa cuando LAS DOS ventanas queman más rápido que 14,4. La ventana larga dice que
+      #     una parte real del presupuesto se fue, así que una petición con fallo no despierta a
+      #     nadie. La ventana corta dice que todavía está ocurriendo, así que la alerta se resuelve
+      #     cerca de un minuto después del fin del problema, y no cinco. El `for` pide que la
+      #     condición se mantenga un poco más antes de disparar: hasta entonces la alerta queda "pending".
       - alert: AvailabilityBudgetBurn
         expr: |
           job:slo_availability_burn_rate:ratio_rate5m > 14.4
@@ -134,6 +162,8 @@ groups:
       #     30% of the successful requests slower than 100 ms.
       # PT: O orçamento de latência é maior (5%), então o limite é um burn rate de 6: mais de
       #     30% das requisições bem-sucedidas acima de 100 ms.
+      # ES: El presupuesto de latencia es mayor (5%), así que el umbral es un burn rate de 6: más del
+      #     30% de las peticiones exitosas por encima de 100 ms.
       - alert: LatencyBudgetBurn
         expr: |
           job:slo_latency_burn_rate:ratio_rate5m > 6

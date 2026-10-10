@@ -9,6 +9,10 @@
 //     são desenhados. Uma linha por pilha de chamadas distinta: os quadros da raiz até a folha
 //     unidos por ";", um espaço, e quantas amostras tinham exatamente aquela pilha.
 //     As duas linguagens deste projeto terminam neste formato, então um renderizador serve às duas.
+// ES: Las "pilas plegadas" (folded stacks) son el formato de texto a partir del cual se dibujan
+//     los flame graphs. Una línea por pila de llamadas distinta: los cuadros de la raíz a la hoja
+//     unidos por ";", un espacio, y cuántas muestras tenían exactamente esa pila.
+//     Los dos lenguajes de este proyecto terminan en este formato, así que un renderizador sirve a ambos.
 
 import { z } from "zod";
 
@@ -24,6 +28,7 @@ export function parseFolded(text: string): Stacks {
 		}
 		// EN: The count is whatever follows the LAST space: a frame name may contain spaces.
 		// PT: A contagem é o que vem depois do ÚLTIMO espaço: um nome de quadro pode ter espaços.
+		// ES: El conteo es lo que viene después del ÚLTIMO espacio: un nombre de cuadro puede tener espacios.
 		const cut = line.lastIndexOf(" ");
 		const count = Number(line.slice(cut + 1));
 		if (cut <= 0 || !Number.isInteger(count) || count < 0) {
@@ -69,6 +74,8 @@ export function samplesWith(stacks: Stacks, frame: string): number {
  *     the handler, how much was spent inside this one function and what it calls?
  * PT: Esta é a pergunta que um flame graph responde pela largura: de todo o tempo de CPU gasto
  *     dentro do handler, quanto foi gasto dentro desta função e do que ela chama?
+ * ES: Esta es la pregunta que un flame graph responde con el ancho: de todo el tiempo de CPU gastado
+ *     dentro del handler, ¿cuánto se gastó dentro de esta función y de lo que ella llama?
  */
 export function shareUnder(stacks: Stacks, parent: string, frame: string): number {
 	let under = 0;
@@ -95,6 +102,10 @@ export function shareUnder(stacks: Stacks, parent: string, frame: string): numbe
 //     lê). É uma árvore de chamadas: cada nó é uma função chamada a partir do pai, e `hitCount`
 //     diz quantas amostras encontraram a CPU exatamente naquele nó (tempo próprio).
 //     O perfil é entrada externa, então é validado antes do uso.
+// ES: El formato `.cpuprofile` del protocolo de inspección de JavaScript (el que lee Chrome
+//     DevTools). Es un árbol de llamadas: cada nodo es una función llamada desde el padre, y
+//     `hitCount` dice cuántas muestras encontraron la CPU exactamente en ese nodo (tiempo propio).
+//     El perfil es entrada externa, así que se valida antes de usarlo.
 export const cpuProfileSchema = z.object({
 	nodes: z.array(
 		z.object({
@@ -115,6 +126,8 @@ export type CpuProfile = z.infer<typeof cpuProfileSchema>;
  *     with no hit of its own produces no line: its time is in its children.
  * PT: Subir de cada nó até a raiz reconstrói a pilha que aquele nó representa. Um nó sem
  *     amostra própria não gera linha: o tempo dele está nos filhos.
+ * ES: Subir desde cada nodo hasta la raíz reconstruye la pila que ese nodo representa. Un nodo sin
+ *     muestra propia no genera línea: su tiempo está en los hijos.
  */
 export function cpuProfileToFolded(profile: CpuProfile): Stacks {
 	const parentOf = new Map<number, number>();

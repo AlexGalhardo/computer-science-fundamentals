@@ -6,6 +6,10 @@
 //     correção vale para um usuário, em requisições por segundo. Mesma carga, mesma
 //     concorrência e mesma duração para as duas variantes, um aquecimento que é descartado,
 //     várias execuções, e a dispersão reportada ao lado da mediana.
+// ES: El benchmark de antes y después. El perfil dijo DÓNDE se va el tiempo; el benchmark dice
+//     cuánto vale la corrección para un usuario, en peticiones por segundo. La misma carga, la misma
+//     concurrencia y la misma duración para las dos variantes, un calentamiento que se descarta,
+//     varias ejecuciones, y la dispersión reportada junto a la mediana.
 
 import { mkdirSync } from "node:fs";
 import { cpus, release, totalmem } from "node:os";
@@ -40,6 +44,8 @@ for (const subject of subjects(env)) {
 		//     numbers are discarded.
 		// PT: O aquecimento deixa o runtime compilar o código quente e as conexões abrirem. Os
 		//     números dele são descartados.
+		// ES: El calentamiento deja que el runtime compile el código caliente y que las conexiones se
+		//     abran. Sus números se descartan.
 		await runLoad(url, env.LOAD_CONCURRENCY, env.WARMUP_SECONDS * 1000);
 		const runs: number[] = [];
 		for (let run = 0; run < env.BENCH_RUNS; run++) {

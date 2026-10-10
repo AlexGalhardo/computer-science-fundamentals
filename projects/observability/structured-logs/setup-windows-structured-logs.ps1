@@ -6,10 +6,16 @@
 #     Os testes unitários rodam primeiro, sem rede. Depois o teste de ponta a ponta sobe as duas
 #     variantes dos três serviços, o broker e o Loki. Contêineres e volumes são removidos no
 #     fim, mesmo quando um teste falha.
+# ES: Construye y prueba el miniproyecto structured-logs. El único requisito es Docker.
+#     Las pruebas unitarias corren primero, sin red. Después la prueba de extremo a extremo levanta las dos
+#     variantes de los tres servicios, el broker y Loki. Los contenedores y los volúmenes se eliminan al
+#     final, incluso cuando una prueba falla.
 # EN: Docker writes its progress to stderr. With "Stop", Windows PowerShell 5.1 turns that into a
 #     terminating error whenever the output is redirected, so failures are checked by exit code.
 # PT: O Docker escreve o progresso em stderr. Com "Stop", o Windows PowerShell 5.1 transforma isso
 #     em erro fatal sempre que a saída é redirecionada, então as falhas são conferidas pelo código de saída.
+# ES: Docker escribe el progreso en stderr. Con "Stop", Windows PowerShell 5.1 lo convierte
+#     en un error fatal siempre que la salida se redirige, así que los fallos se revisan por el código de salida.
 $ErrorActionPreference = "Continue"
 
 Set-Location $PSScriptRoot

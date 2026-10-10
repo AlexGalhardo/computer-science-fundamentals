@@ -5,6 +5,10 @@
 // PT: O pacote inventory é o terceiro serviço do laboratório, escrito em Go de propósito: o
 // trace que começa em dois serviços TypeScript continua aqui, o que só funciona porque todos
 // falam o mesmo cabeçalho W3C Trace Context e o mesmo protocolo OTLP.
+//
+// ES: El paquete inventory es el tercer servicio del laboratorio, escrito en Go a propósito: el
+// trace que empieza en dos servicios TypeScript continúa aquí, lo que solo funciona porque todos
+// hablan el mismo encabezado W3C Trace Context y el mismo protocolo OTLP.
 package inventory
 
 import (
@@ -35,6 +39,9 @@ type Service struct {
 	// PT: A dependência lenta injetada. Consultas do SlowSKU levam SlowDelay, qualquer outro
 	//     SKU leva FastDelay. Nada nas métricas diz qual SKU é lento: só os atributos do span
 	//     e os logs carregam esse detalhe.
+	// ES: La dependencia lenta inyectada. Las consultas de SlowSKU tardan SlowDelay, cualquier otro
+	//     SKU tarda FastDelay. Nada en las métricas dice qué SKU es lento: solo los atributos del span
+	//     y los logs llevan ese detalle.
 	SlowSKU   string
 	SlowDelay time.Duration
 	FastDelay time.Duration
@@ -65,6 +72,8 @@ func (s *Service) stock(w http.ResponseWriter, r *http.Request) {
 	//     context is a child of the span of the orders service and keeps its trace id.
 	// PT: Extract lê o `traceparent` dos cabeçalhos da requisição. O span iniciado a partir
 	//     deste contexto é filho do span do serviço orders e mantém o trace id dele.
+	// ES: Extract lee el `traceparent` de los encabezados de la petición. El span iniciado a partir
+	//     de este contexto es hijo del span del servicio orders y mantiene su trace id.
 	ctx := s.Propagator.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
 	ctx, span := s.Tracer.Start(ctx, "GET "+route,
 		trace.WithSpanKind(trace.SpanKindServer),
@@ -82,6 +91,8 @@ func (s *Service) stock(w http.ResponseWriter, r *http.Request) {
 		//     covers the three services. No SKU here: it would be one time series per product.
 		// PT: Mesmo nome de métrica, unidade e atributos dos serviços TypeScript, então uma
 		//     consulta cobre os três serviços. Sem SKU aqui: seria uma série temporal por produto.
+		// ES: Mismo nombre de métrica, unidad y atributos que los servicios TypeScript, así que una
+		//     consulta cubre los tres servicios. Sin SKU aquí: sería una serie temporal por producto.
 		s.Duration.Record(ctx, seconds, metric.WithAttributes(
 			attribute.String("http.request.method", r.Method),
 			attribute.String("http.route", route),
@@ -109,6 +120,9 @@ func (s *Service) stock(w http.ResponseWriter, r *http.Request) {
 //
 // PT: warehouseLookup representa uma chamada a uma dependência (um banco, outra API). Ela tem o
 // seu próprio span, então o trace mostra quanto da requisição foi gasto esperando por ela.
+//
+// ES: warehouseLookup representa una llamada a una dependencia (una base de datos, otra API). Tiene su
+// propio span, así que el trace muestra cuánto de la petición se gastó esperándola.
 func (s *Service) warehouseLookup(ctx context.Context, sku string) string {
 	ctx, span := s.Tracer.Start(ctx, "warehouse.lookup",
 		trace.WithSpanKind(trace.SpanKindClient),
@@ -128,6 +142,8 @@ func (s *Service) warehouseLookup(ctx context.Context, sku string) string {
 	//     `warehouse.scan = full` and knows why it was slow, without opening the code.
 	// PT: O atributo é a explicação. Quem encontra este span longo lê `warehouse.scan = full`
 	//     e sabe por que foi lento, sem abrir o código.
+	// ES: El atributo es la explicación. Quien encuentra este span largo lee `warehouse.scan = full`
+	//     y sabe por qué fue lento, sin abrir el código.
 	span.SetAttributes(attribute.String("warehouse.scan", scan))
 
 	elapsed := time.Since(started).Milliseconds()
@@ -136,6 +152,8 @@ func (s *Service) warehouseLookup(ctx context.Context, sku string) string {
 		//     the trace id and the span id of the active span into the log record.
 		// PT: Registrar o log com o contexto é o que liga a linha ao trace: a ponte copia o
 		//     trace id e o span id do span ativo para o registro de log.
+		// ES: Registrar el log con el contexto es lo que une la línea con el trace: el puente copia el
+		//     trace id y el span id del span activo al registro de log.
 		s.Logger.WarnContext(ctx, "warehouse lookup was slow: full shelf scan, no index for this sku",
 			slog.String("warehouse.sku", sku), slog.Int64("duration_ms", elapsed))
 	} else {

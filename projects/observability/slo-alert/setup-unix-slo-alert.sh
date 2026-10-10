@@ -9,12 +9,18 @@
 #     k6 recusa um alvo que não é local, e depois o incidente de ponta a ponta, que leva cerca
 #     de três minutos: o k6 sobrecarrega a loja local, o alerta dispara e se resolve.
 #     Contêineres e volumes são removidos no fim, mesmo quando um teste falha.
+# ES: Construye y prueba el miniproyecto slo-alert. El único requisito es Docker.
+#     Orden: pruebas unitarias (sin red), el probador de reglas de Prometheus, la prueba de que
+#     k6 rechaza un objetivo que no es local, y luego el incidente de extremo a extremo, que dura
+#     unos tres minutos: k6 sobrecarga la tienda local, la alerta se dispara y se resuelve.
+#     Los contenedores y los volúmenes se eliminan al final, incluso cuando una prueba falla.
 set -eu
 
 cd "$(dirname "$0")"
 
 # EN: Containers that write into this folder run as the current user (see docker-compose.yml).
 # PT: Os contêineres que gravam nesta pasta rodam como o usuário atual (veja docker-compose.yml).
+# ES: Los contenedores que escriben en esta carpeta se ejecutan como el usuario actual (ve docker-compose.yml).
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 export HOST_UID HOST_GID

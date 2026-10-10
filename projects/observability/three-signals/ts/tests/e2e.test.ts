@@ -6,6 +6,10 @@
 //     back ends reais. O teste manda uma requisição lenta e algumas rápidas, e depois faz a
 //     cada back end a pergunta que uma pessoa faria. A telemetria é enviada em lotes e chega
 //     segundos depois, então cada pergunta é repetida até ter a sua resposta.
+// ES: De extremo a extremo, por la red de docker-compose: servicios reales, un collector real y los
+//     back ends reales. La prueba envía una petición lenta y algunas rápidas, y después le hace a
+//     cada back end la pregunta que haría una persona. La telemetría se envía en lotes y llega
+//     segundos después, así que cada pregunta se repite hasta tener su respuesta.
 
 import { beforeAll, describe, expect, test } from "bun:test";
 import { readLabEnv, SLOW_SKU } from "../src/config";
@@ -88,6 +92,7 @@ describe("traces (Tempo)", () => {
 
 			// EN: The whole request took a bit over 800 ms, and one span owns almost all of it.
 			// PT: A requisição inteira levou pouco mais de 800 ms, e um span é dono de quase tudo.
+			// ES: La petición entera tardó poco más de 800 ms, y un span es dueño de casi todo.
 			const self = selfTimes(spans);
 			const culprit = spans.reduce((a, b) => ((self.get(a.spanId) ?? 0) >= (self.get(b.spanId) ?? 0) ? a : b));
 			expect(culprit.name).toBe("warehouse.lookup");
@@ -138,6 +143,8 @@ describe("metrics (Prometheus)", () => {
 			//     exists. The first requests created the series; these make them grow.
 			// PT: `rate()` precisa que o counter cresça entre duas amostras de uma série que já
 			//     existe. As primeiras requisições criaram as séries; estas as fazem crescer.
+			// ES: `rate()` necesita que el counter crezca entre dos muestras de una serie que ya
+			//     existe. Las primeras peticiones crearon las series; estas las hacen crecer.
 			await checkout(env.GATEWAY_URL, "blue-pen");
 			await checkout(env.GATEWAY_URL, SLOW_SKU);
 			const p99 = await eventually(
@@ -150,6 +157,7 @@ describe("metrics (Prometheus)", () => {
 			);
 			// EN: The slow request fell in the bucket (0.5, 1], so the estimate stays inside it.
 			// PT: A requisição lenta caiu no bucket (0,5; 1], então a estimativa fica dentro dele.
+			// ES: La petición lenta cayó en el bucket (0,5; 1], así que la estimación queda dentro de él.
 			for (const sample of p99) {
 				expect(sample.value).toBeLessThanOrEqual(1);
 			}

@@ -50,6 +50,10 @@ func NewDurationHistogram(provider metric.MeterProvider) (metric.Float64Histogra
 // PT: Os exporters leem OTEL_EXPORTER_OTLP_ENDPOINT do ambiente, a variável padrão, então este
 //
 //	código não cita nenhum host. A função de shutdown descarrega os últimos lotes.
+//
+// ES: Los exporters leen OTEL_EXPORTER_OTLP_ENDPOINT del entorno, la variable estándar, así que este
+//
+//	código no nombra ningún host. La función de shutdown vacía los últimos lotes.
 func StartOTLP(ctx context.Context, serviceName string) (*Service, func(context.Context) error, error) {
 	res := NewResource(serviceName)
 
@@ -92,6 +96,8 @@ func StartOTLP(ctx context.Context, serviceName string) (*Service, func(context.
 		//     Application code keeps using slog and does not import the OpenTelemetry log API.
 		// PT: A ponte faz a API padrão `log/slog` escrever registros de log do OpenTelemetry.
 		//     O código da aplicação continua usando slog e não importa a API de logs do OpenTelemetry.
+		// ES: El puente hace que la API estándar `log/slog` escriba registros de log de OpenTelemetry.
+		//     El código de la aplicación sigue usando slog y no importa la API de logs de OpenTelemetry.
 		Logger:     otelslog.NewLogger(scope, otelslog.WithLoggerProvider(loggerProvider)),
 		Propagator: propagation.TraceContext{},
 	}

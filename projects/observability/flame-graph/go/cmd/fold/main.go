@@ -10,6 +10,10 @@
 // projeto não precisa de biblioteca para decodificar o formato do perfil. Os perfis gerados
 // pelo net/http/pprof já carregam os nomes das funções, então o binário do servidor não é
 // necessário aqui.
+// ES: Ejecuta el `go tool pprof` estándar sobre cada perfil y reorganiza la salida de texto, así el
+// proyecto no necesita una biblioteca para decodificar el formato del perfil. Los perfiles
+// generados por net/http/pprof ya traen los nombres de las funciones, así que el binario del
+// servidor no hace falta aquí.
 package main
 
 import (
@@ -31,6 +35,8 @@ func convert(ctx context.Context, profile, output string) (int64, error) {
 	//     estimated CPU time. Counts are what a flame graph is drawn from.
 	// PT: `-sample_index=samples` imprime quantas amostras cada pilha teve, em vez do tempo
 	//     de CPU estimado. Um flame graph é desenhado a partir de contagens.
+	// ES: `-sample_index=samples` imprime cuántas muestras tuvo cada pila, en lugar del tiempo
+	//     de CPU estimado. Un flame graph se dibuja a partir de conteos.
 	command := exec.CommandContext(ctx, "go", "tool", "pprof", "-traces", "-sample_index=samples", profile)
 	var stderr bytes.Buffer
 	command.Stderr = &stderr
@@ -55,6 +61,9 @@ func convert(ctx context.Context, profile, output string) (int64, error) {
 	// PT: Remove o arquivo antigo em vez de sobrescrevê-lo: um arquivo deixado por uma execução
 	//     com outro usuário não pode ser aberto para escrita, mas pode ser removido por quem
 	//     pode gravar na pasta.
+	// ES: Elimina el archivo antiguo en lugar de sobrescribirlo: un archivo dejado por una ejecución
+	//     con otro usuario no se puede abrir para escritura, pero lo puede eliminar quien
+	//     puede escribir en la carpeta.
 	if err := os.Remove(output); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return 0, fmt.Errorf("replacing %s: %w", output, err)
 	}

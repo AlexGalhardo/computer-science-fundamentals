@@ -2,6 +2,8 @@
 //     and the description of the two services under study.
 // PT: O que os comandos do laboratório (capture, flame, bench) compartilham: o ambiente,
 //     validado uma vez, e a descrição dos dois serviços estudados.
+// ES: Lo que comparten los comandos del laboratorio (capture, flame, bench): el entorno,
+//     validado una vez, y la descripción de los dos servicios estudiados.
 
 import { join } from "node:path";
 import { z } from "zod";
@@ -14,6 +16,8 @@ const labEnvSchema = z.object({
 	//     the tests never changes the committed pictures.
 	// PT: `results` é versionada. Os scripts de setup usam `out`, que o git ignora, então rodar
 	//     os testes nunca altera as figuras versionadas.
+	// ES: `results` está versionada. Los scripts de setup usan `out`, que git ignora, así que ejecutar
+	//     las pruebas nunca altera las figuras versionadas.
 	OUT_DIR: z.enum(["results", "out"]).default("results"),
 	PROFILE_SECONDS: z.coerce.number().int().min(1).max(30).default(5),
 	LOAD_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(16),
