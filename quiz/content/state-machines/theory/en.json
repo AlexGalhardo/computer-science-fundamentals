@@ -1,0 +1,412 @@
+{
+	"area": "state-machines",
+	"intro": [
+		"Think of a traffic light. At any moment it is in one situation: green, yellow or red. A timer tells it when to change, and it may only follow certain changes: green goes to yellow, never straight to red. A **state machine** is exactly this idea written down: a list of situations, called **states**, and the allowed jumps between them.",
+		"State machines are everywhere. A vending machine, a turnstile at the subway, the buttons of your phone, the steps of an online order, the way two computers say hello before they talk to each other, and the part of a compiler that cuts program text into words are all state machines. Computer scientists also use them as a ruler: by asking which kind of machine is needed to solve a problem, we learn how hard the problem is, and we even learn that some problems cannot be solved by any computer at all.",
+		"In this summary you will learn: the words of the subject (state, event, transition, action), how a machine reads a word and accepts or rejects it, machines that can guess, patterns written as regular expressions, how to make a machine as small as possible, machines that give answers, big machines made of nested and parallel parts, machines with a stack, the Turing machine and the limits of computation, and how to use all this to write better software. At the end you will be ready for the quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: machines with memory of the past",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine a light switch with one button. Each time you press it, the light changes. Pressing the same button does different things depending on the situation: if the light is off it turns on, if it is on it turns off. The machine does not need to remember everything that happened. It only needs to remember **one thing**: is the light on or off? That one thing is its **state**." },
+				{ "type": "callout", "tone": "analogy", "text": "A state is like a board game token standing on a square. The square tells you everything you need to know about the game so far. How the token got there does not matter." },
+				{ "type": "paragraph", "text": "A **finite** state machine has a limited (finite) number of states and no other memory. That is a strong limit, and it is the reason some tasks need stronger machines. This area climbs a ladder of machines, each with more memory than the one before." },
+				{ "type": "diagram", "caption": "The ladder of machines, from least to most memory", "content": "  finite automaton   only its states\n        |\n  pushdown automaton states + a stack (pile)\n        |\n  Turing machine     states + an endless tape\n\n  more memory  =  more problems it can solve" },
+				{ "type": "paragraph", "text": "State machines have two lives. In **theory** they are models: we ask which sets of words (called [[languages|a language is just a set of strings, for example all the words that end in ab]]) each machine can recognise. In **practice** they are a design tool: if you list the states of an order, a connection or a screen, impossible situations become impossible to write in code." },
+				{ "type": "heading", "text": "Words you will meet" },
+				{ "type": "list", "items": [
+					"**Alphabet (Σ)**: the set of symbols the machine can read, for example `{a, b}` or `{0, 1}`.",
+					"**String (or word)**: a finite row of symbols from the alphabet, like `abba`. The **empty string**, written ε (epsilon), has no symbols at all.",
+					"**Language**: a set of strings. The language of a machine is the set of strings it accepts.",
+					"**Accept / reject**: the machine says yes or no to a string."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "A finite state machine remembers only which state it is in. Everything else it forgets." }
+			]
+		},
+		{
+			"id": "states-transitions-events-actions",
+			"title": "States, transitions, events and actions",
+			"blocks": [
+				{ "type": "paragraph", "text": "Think of a microwave oven. It waits with the door closed. You press Start. The oven turns the magnetron on and begins to heat. Four ideas are hidden in this little story, and every state machine is built from them." },
+				{ "type": "list", "items": [
+					"**State**: a stable situation where the system waits for something to happen (Waiting, Heating). It summarises the past: two different histories that end in the same state look exactly the same from then on.",
+					"**Event**: something that happens **to** the system and that the system does not control, like a button press, a message arriving or a timer ending (Start pressed).",
+					"**Transition**: an arrow from a source state to a target state, marked with the event that triggers it.",
+					"**Action**: something the system **does** while reacting (turn the magnetron on)."
+				] },
+				{ "type": "diagram", "caption": "A transition: source state, event, action, target state", "content": "                 Start pressed / magnetron on\n   (Waiting) -------------------------------> (Heating)" },
+				{ "type": "paragraph", "text": "So in the microwave story the **event** is the Start button and the **action** is turning the magnetron on. Do not mix them up: the event comes from outside, the action is the system's answer." },
+				{ "type": "heading", "text": "Initial, terminal, guards" },
+				{ "type": "paragraph", "text": "The **initial state** is where every new instance starts. A **terminal (final) state** is where it ends: no transition leaves it. In the life of an order, `cancelled` and `refunded` are terminal, so after them every event must be rejected." },
+				{ "type": "paragraph", "text": "In UML (a drawing language for software) the label of a transition has up to three parts, always in this order. The **guard** is a yes-or-no test in brackets: the transition may only happen if it is true." },
+				{ "type": "code", "language": "text", "content": "event [guard] / action\ncoinInserted [amount >= price] / dispenseItem", "caption": "Here dispenseItem is the action; the event triggers, the guard decides, the action runs" },
+				{ "type": "callout", "tone": "warning", "text": "If a state has two transitions for the same event, their guards must be mutually exclusive, so that at most one is true. The guards `[amount > 100]` and `[amount > 50]` both hold for amount 150, so the machine would not know where to go. Make the ranges disjoint: `[amount > 100]` and `[amount > 50 and amount <= 100]`." },
+				{ "type": "heading", "text": "Actions on states: entry and exit" },
+				{ "type": "paragraph", "text": "An action can sit on a transition or on a state. An **entry action** runs every time the state becomes active, and an **exit action** runs every time it is left, whatever the path. If the corridor light must turn on whenever an automatic door reaches Open, and three different arrows lead to Open, put \"light on\" as an entry action of Open. You write it once, and a fourth arrow added tomorrow cannot forget it." },
+				{ "type": "heading", "text": "The transition table" },
+				{ "type": "paragraph", "text": "A machine can be written as a table: one row per state, one column per event. Each cell holds the next state, or `-` when the event is not allowed there. Running the machine is simple: look at the cell (current state, event). If it holds a state, go there. If it is empty, **reject the event and change nothing**." },
+				{ "type": "table", "caption": "The life of an order (the `-` means the event is not allowed)", "headers": ["state", "pay", "ship", "deliver", "cancel", "refund"], "rows": [
+					["created", "paid", "-", "-", "cancelled", "-"],
+					["paid", "-", "shipped", "-", "-", "refunded"],
+					["shipped", "-", "-", "delivered", "-", "-"],
+					["delivered", "-", "-", "-", "-", "refunded"],
+					["cancelled", "-", "-", "-", "-", "-"],
+					["refunded", "-", "-", "-", "-", "-"]
+				] },
+				{ "type": "paragraph", "text": "Follow an order that starts in `created` and gets pay, ship, deliver, refund: created, paid, shipped, delivered, refunded. An order in `paid` that receives `deliver` finds an empty cell, so the event is refused. That is how the table stops you from delivering something that was never shipped." },
+				{ "type": "paragraph", "text": "The table is a [[partial function|a rule that gives an answer for some inputs but not for all of them]] over the pairs (state, event). With 6 states and 5 events there are 6 × 5 = 30 pairs. The table above defines 6 of them, so the other **24** must be rejected. A test can walk through all 30 pairs: the 6 valid ones must work, and the 24 others must fail without changing the state." },
+				{ "type": "heading", "text": "Why one state field beats many flags" },
+				{ "type": "paragraph", "text": "Some programs store an order with one yes-or-no flag per fact: `isPaid`, `isShipped`, `isDelivered`, `isCancelled`, `isRefunded`. Five flags can be combined in 2^5 = 32 ways, but the business knows only 6 situations. The other 26, like \"cancelled and delivered\", mean nothing, yet the database stores them happily." },
+				{ "type": "chart", "title": "Combinations of 5 yes/no flags", "unit": "combinations", "bars": [
+					{ "label": "all combinations", "value": 32 },
+					{ "label": "meaningful", "value": 6 },
+					{ "label": "bugs waiting to happen", "value": 26 }
+				] },
+				{ "type": "paragraph", "text": "A single state field with 6 allowed values makes the 26 nonsense combinations impossible to represent." },
+				{ "type": "heading", "text": "A tiny example: the turnstile" },
+				{ "type": "table", "headers": ["state", "coin", "push"], "rows": [
+					["Locked", "Unlocked", "Locked"],
+					["Unlocked", "Unlocked", "Locked"]
+				] },
+				{ "type": "paragraph", "text": "Start in Locked and send coin, push, push, coin, coin, push. The states are Locked, Unlocked, Locked, Locked, Unlocked, Unlocked, Locked. The move from Unlocked to Locked happens twice, so two people got through. Notice two things: the same input (push) does different things in different states, and the second coin in a row is lost, because this machine has only two states and cannot count credits." },
+				{ "type": "callout", "tone": "remember", "text": "Current state + event decide the reaction. An event that the table does not allow is rejected and changes nothing." }
+			]
+		},
+		{
+			"id": "deterministic-finite-automata",
+			"title": "Deterministic finite automata (DFA)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Now we use state machines to read words. Imagine a board game where you put one token on a start square and read a word, one letter at a time. For each letter, the board tells you exactly which square to move to. When the letters run out, you look at where the token stands: on a green square means \"yes, accepted\", anywhere else means \"no\". That board is a **deterministic finite automaton**, or **DFA**." },
+				{ "type": "paragraph", "text": "A DFA is described by five things, the 5-tuple (Q, Σ, δ, q0, F):" },
+				{ "type": "table", "headers": ["Symbol", "Name", "Plain meaning"], "rows": [
+					["Q", "states", "the finite set of squares"],
+					["Σ", "alphabet", "the letters it can read"],
+					["δ (delta)", "transition function", "the table: from state and letter to the next state"],
+					["q0", "start state", "where the token starts"],
+					["F", "accepting states", "the green squares"]
+				] },
+				{ "type": "paragraph", "text": "**Deterministic** means there is no choice. In every state, for every letter, there is exactly one next state, and there are no ε-transitions (moves that change state without reading anything). So the run over a word is one single path." },
+				{ "type": "heading", "text": "Accepting a word" },
+				{ "type": "paragraph", "text": "The DFA reads the word from the start state. The word is **accepted** if the state reached after the last letter is in F, and rejected otherwise. The **language** of the DFA is the set of all words it accepts. What about the empty word? It has no letters, so no move is made and we stay in the start state. Therefore ε is accepted **if and only if the start state is accepting**. This edge case is worth testing in any program." },
+				{ "type": "table", "caption": "A DFA. Start: q0. Accepting: q2", "headers": ["state", "a", "b"], "rows": [
+					["q0", "q1", "q0"],
+					["q1", "q1", "q2"],
+					["q2", "q1", "q0"]
+				] },
+				{ "type": "paragraph", "text": "Try the word `abab`: q0, a to q1, b to q2, a to q1, b to q2. It ends in q2, so it is accepted. To discover the language, ask what each state remembers: q0 means the word ends in neither `a` nor `ab`, q1 means it ends in `a`, q2 means it ends in `ab`. Only q2 accepts, so this DFA accepts the words that **end in ab**, the same as the regular expression `(a|b)*ab`." },
+				{ "type": "callout", "tone": "analogy", "text": "A good way to design a DFA is to decide what the machine must remember, and give one state to each thing worth remembering." },
+				{ "type": "heading", "text": "More examples" },
+				{ "type": "paragraph", "text": "**Parity.** A DFA over `{0, 1}` with two states E (even, start and accepting) and O (odd) that flips on every `1` and stays on every `0` accepts the words with an even number of 1s. The word `1011011` has five 1s, so it ends in O and is rejected." },
+				{ "type": "paragraph", "text": "**Divisible by 3.** Read a binary number from the first (most significant) bit. Reading a new bit b turns the value n into 2n + b, so the new remainder depends only on the old remainder and on b. Three remainders, three states: 0, 1, 2. From 0 you go to 0 or 1; from 1 to 2 or 0; from 2 to 1 or 2 (reading 0 or 1). Start and accept in remainder 0, which also accepts the empty string, counted as 0. The word `110` (six) goes 0, 1, 0, 0 and is accepted; `101` (five) goes 0, 1, 2, 2 and is rejected." },
+				{ "type": "heading", "text": "The dead state and complete DFAs" },
+				{ "type": "paragraph", "text": "Diagrams often leave out the arrows that lead to certain rejection. A **complete** DFA has an arrow for every state and every letter. To complete one, add a **dead state** (also called trap or error state): it is not accepting and every letter keeps you in it. Any word that falls in never comes out." },
+				{ "type": "callout", "tone": "warning", "text": "To build the **complement** (accept exactly what was rejected before), swapping accepting and non-accepting states works **only on a complete DFA**. If arrows are missing, the words that got stuck are rejected before and after the swap. First add the dead state, then swap: the dead state becomes accepting." },
+				{ "type": "heading", "text": "Running two DFAs at once: the product" },
+				{ "type": "paragraph", "text": "The **product construction** runs two DFAs in parallel. Each new state is a **pair** (state of A, state of B), and each letter moves both parts. For the **intersection** (words accepted by both) a pair is accepting when both parts accept. For the **union** a pair accepts when at least one part does. Two DFAs with 2 states each give up to 2 × 2 = 4 pair states. For example, A (even number of a) and B (ends in b) give the four pairs (even, not b), (odd, not b), (even, b) and (odd, b); for the intersection only (even, b) is accepting, so exactly one of the 4 states accepts." },
+				{ "type": "heading", "text": "Why DFAs are fast" },
+				{ "type": "code", "language": "ts", "content": "// table[state][symbol] gives the next state\nlet state = start;\nfor (const symbol of input) {\n\tstate = table[state][symbol];\n}\nreturn accepting.has(state);", "caption": "A whole DFA is one loop" },
+				{ "type": "paragraph", "text": "A string of n letters takes n lookups: **linear time, constant memory**. The cost of a DFA is paid earlier, when the table is built. That is why lexers (the part of a compiler that cuts text into words) are table-driven DFAs." },
+				{ "type": "video", "title": "Neso Academy: Theory of Computation and Automata Theory (DFA design, NFA to DFA, minimisation, Mealy and Moore)", "url": "https://www.youtube.com/playlist?list=PLBlnK6fEyqRgp46KUv4ZY69yXmpwKOIev" },
+				{ "type": "callout", "tone": "remember", "text": "DFA = one path, accept if the last state is in F. ε is accepted only if the start state accepts. Complement needs a complete DFA." }
+			]
+		},
+		{
+			"id": "nfa-subset-construction",
+			"title": "Non-deterministic automata and subset construction",
+			"blocks": [
+				{ "type": "paragraph", "text": "What if the machine were allowed to **guess**? Imagine you reach a fork in a maze and, magically, make a copy of yourself for each path. All copies walk at the same time. If **any** copy reaches the treasure, you win. That is a **non-deterministic finite automaton**, or **NFA**." },
+				{ "type": "paragraph", "text": "An NFA can do two things a DFA cannot. First, its transition function returns a **set** of states: possibly empty, possibly with several elements. Second, it may have **ε-transitions**, which move without reading a letter." },
+				{ "type": "paragraph", "text": "Acceptance is **existential**: a word is accepted if **there is some** sequence of choices that reads the whole word and ends in an accepting state. It does not matter that other paths fail." },
+				{ "type": "callout", "tone": "remember", "text": "NFAs are not more powerful than DFAs. NFAs (with or without ε), and DFAs recognise exactly the same languages: the regular languages. An NFA is just easier to build." },
+				{ "type": "heading", "text": "Turning an NFA into a DFA: subset construction" },
+				{ "type": "paragraph", "text": "The trick: instead of following many copies, keep **the set of all states the NFA could be in**. That set becomes one state of the DFA. We need two helpers:" },
+				{ "type": "list", "items": [
+					"**ε-closure(s)**: all states you can reach from s without reading anything. It contains s itself and everything reached by chains of ε-arrows.",
+					"**move(T, a)**: all states reached from the states of the set T by reading letter a."
+				] },
+				{ "type": "list", "ordered": true, "items": [
+					"The DFA start state is the ε-closure of the NFA start state.",
+					"For each DFA state T and letter a, the next state is ε-closure(move(T, a)).",
+					"Repeat for every new set that appears, until no new set appears.",
+					"A set is accepting if it **contains at least one** accepting state of the NFA (its intersection with F is not empty)."
+				] },
+				{ "type": "table", "caption": "An NFA with ε-transitions. Start: 0. Accepting: 4", "headers": ["state", "a", "b", "ε"], "rows": [
+					["0", "-", "-", "{1, 3}"],
+					["1", "{2}", "-", "-"],
+					["2", "-", "-", "{3}"],
+					["3", "-", "{4}", "-"],
+					["4", "-", "-", "{1}"]
+				] },
+				{ "type": "paragraph", "text": "From state 0 the ε-arrows bring in 1 and 3, and neither has ε-arrows, so the closure of 0 is {0, 1, 3}: the DFA start state T. On `a`: move(T, a) = {2}, and the closure of {2} is {2, 3}. On `b`: move(T, b) = {4}, and the closure of {4} is {1, 4}." },
+				{ "type": "paragraph", "text": "A second, simple example without ε. The NFA has q0 (start), q1, q2 (accepting), with q0 on `a` going to {q0, q1}, q0 on `b` to {q0}, q1 on `b` to {q2}. From {q0}: `a` leads to {q0, q1}, `b` stays in {q0}. From {q0, q1}: `a` stays, `b` leads to {q0, q2}. From {q0, q2}: `a` leads to {q0, q1}, `b` leads to {q0}. Only 3 sets appear, and only {q0, q2} contains q2, so only it is accepting. The language is the words ending in `ab`." },
+				{ "type": "heading", "text": "The price: size can explode" },
+				{ "type": "paragraph", "text": "A set of m states can be chosen in up to 2^m ways, so a DFA may need exponentially more states. The classic case is \"the n-th symbol from the end is a\". The NFA loops in the start state and guesses when to leave, using n + 1 states. A DFA must remember a window of the last n letters, so it needs 2^n states." },
+				{ "type": "chart", "title": "States needed: n-th symbol from the end is a (minimal DFA, 2^n)", "unit": "states", "bars": [
+					{ "label": "n = 2 (NFA has 3)", "value": 4 },
+					{ "label": "n = 4 (NFA has 5)", "value": 16 },
+					{ "label": "n = 6 (NFA has 7)", "value": 64 },
+					{ "label": "n = 8 (NFA has 9)", "value": 256 }
+				] },
+				{ "type": "heading", "text": "Simulate instead of converting" },
+				{ "type": "paragraph", "text": "You can also run the NFA directly, keeping the set of current states. For a word of n letters and an NFA of size m (states plus transitions) this costs O(n · m) time and only O(m) memory. Converting to a DFA first may produce up to 2^m states, but afterwards each word costs only O(n). Search tools usually simulate the NFA (or build DFA states lazily and cache them); lexer generators pay for the conversion once." },
+				{ "type": "callout", "tone": "analogy", "text": "A DFA is a careful hiker who follows one path. An NFA is a crowd of hikers who split at every fork. The subset construction is a photographer who writes down, after every step, who stands where." }
+			]
+		},
+		{
+			"id": "regular-languages-regex",
+			"title": "Regular languages and regular expressions",
+			"blocks": [
+				{ "type": "paragraph", "text": "When you search a document for \"c?t\" or write `*.png` to list pictures, you describe a pattern instead of one word. A **regular expression** (regex) is a short way to describe a whole set of words. The sets that regexes can describe are the **regular languages**, and they are exactly the languages that finite automata can recognise." },
+				{ "type": "heading", "text": "The three building blocks" },
+				{ "type": "table", "headers": ["Operation", "Written", "Meaning"], "rows": [
+					["Union", "`r|s`", "a word of r or a word of s"],
+					["Concatenation", "`rs`", "a word of r followed by a word of s"],
+					["Kleene closure (star)", "`r*`", "zero or more words of r glued together"]
+				] },
+				{ "type": "paragraph", "text": "Besides these three, a regex uses single symbols and ε. Note that `a*` contains ε (zero repetitions), then `a`, `aa`, and so on: an infinite language whose every word is finite. Other signs are shortcuts that can be rewritten with the three: `r+ = rr*` (one or more), `r? = r|ε` (optional), and `[abc] = a|b|c` (a class). They add convenience, not power." },
+				{ "type": "paragraph", "text": "Precedence works like arithmetic, from strongest to weakest: closure (like a power), then concatenation (like multiplication), then union (like addition). So `ab|c*` means \"the word `ab`, or any number of `c`\", and not `a`, then `b` or `c`, repeated." },
+				{ "type": "heading", "text": "Reading expressions" },
+				{ "type": "list", "items": [
+					"`(a|b)*abb`: any word of a and b (even empty) followed by `abb`. So the word must **end with abb**. `babb` matches; `bba`, `bab`, `ab` and `bbb` do not.",
+					"`(a|b)*a(a|b)`: the second-to-last symbol is `a`. Of length 3: `aaa`, `aab`, `baa`, `bab` (4 words); `aba`, `abb`, `bba` and `bbb` are out.",
+					"`b*(ab*ab*)*`: an even number of `a`. Think of the two-state automaton (even, odd): coming back to even needs two `a`, with any number of `b` in between."
+				] },
+				{ "type": "heading", "text": "Kleene's theorem: expressions and automata are twins" },
+				{ "type": "paragraph", "text": "Regular expressions **describe** languages and finite automata **recognise** them. Kleene's theorem says they have the same power. This is why a lexer generator can take your regexes and produce an automaton for you. The way from regex to automaton is the **McNaughton-Yamada-Thompson construction**, which builds an NFA piece by piece:" },
+				{ "type": "list", "items": [
+					"A symbol becomes a fragment with 2 states (a start and an accepting one).",
+					"Union adds 2 new states (new start, new accepting) joined to the fragments by 4 ε-arrows. So `a|b` has 2 + 2 + 2 = 6 states.",
+					"Closure (star) also adds 2 states and ε-arrows to loop and to skip.",
+					"Concatenation adds no new state: it glues the end of one fragment to the start of the next."
+				] },
+				{ "type": "paragraph", "text": "Each fragment has one start and one accepting state, so the pieces fit like Lego bricks. The NFA is at most about twice as big as the expression, so the construction is linear." },
+				{ "type": "heading", "text": "What you can do with regular languages" },
+				{ "type": "paragraph", "text": "Regular languages are **closed** under union, concatenation, star, complement and intersection: applying these operations to regular languages gives a regular language. Each has a construction behind it, like the product for intersection or the swap on a complete DFA for the complement." },
+				{ "type": "heading", "text": "What they cannot do" },
+				{ "type": "paragraph", "text": "A finite automaton has only its states as memory. Take the language a^n b^n (some `a` followed by the **same number** of `b`). After reading the `a` symbols, the machine would need to remember exactly how many there were, and there are infinitely many possibilities. With k states, among the prefixes a^0, a^1, ..., a^k two must land in the same state (the pigeonhole principle: more pigeons than holes). Complete both with the same b's and the automaton accepts both or rejects both, so it gets one wrong. This is the idea of the **pumping lemma**. So `a^n b^n` is **not regular**." },
+				{ "type": "callout", "tone": "warning", "text": "Real regex libraries are not exactly the regular expressions of theory. A **backreference** such as `^([ab]+)\\1$` demands an exact repetition of what was captured, and describes the language of doubled words `ww`, which is not even context-free. Engines that support backreferences use backtracking and can take exponential time; engines based on automata guarantee linear time because they do not offer them." },
+				{ "type": "callout", "tone": "remember", "text": "Regex = union, concatenation, star. Regex and finite automata describe the same languages. Counting without a bound (a^n b^n) is beyond them." }
+			]
+		},
+		{
+			"id": "dfa-minimisation",
+			"title": "Minimisation of automata",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine two kids in a class who always give the same answer to every question you ask, now and in the future. You could keep just one of them and nothing would change. In a DFA, two such states are called **equivalent**, and **minimisation** merges them to make the machine as small as possible." },
+				{ "type": "paragraph", "text": "Many different DFAs recognise the same language, but only one has the fewest states, up to renaming the states. That is the **minimal DFA**. Because it is unique, it gives a test: two DFAs are equivalent exactly when their minimal forms are the same." },
+				{ "type": "heading", "text": "Distinguishable or equivalent?" },
+				{ "type": "paragraph", "text": "Two states p and q are **distinguishable** if there is some string w such that reading w from p ends in acceptance, and from q it does not (or the other way round). If no string distinguishes them, they are **equivalent** and can become one state. The empty string alone already separates accepting states from non-accepting ones." },
+				{ "type": "paragraph", "text": "Equivalence is recursive: p and q are equivalent if they agree on acceptance and, for each letter, their targets are equivalent. So two accepting states with δ(p, a) = r and δ(q, a) = s, where r and s are different, **can still be equivalent**, when r and s themselves are equivalent. Comparing the rows of the table is not enough; that is why the algorithm works with groups." },
+				{ "type": "heading", "text": "Partition refinement" },
+				{ "type": "list", "ordered": true, "items": [
+					"Start with the **initial partition** with two groups: the accepting states and the non-accepting states.",
+					"For each group and each letter, look at which group each state goes to. If the states of a group go to different groups, **split** it accordingly.",
+					"Repeat until no group splits. Each final group becomes one state of the minimal DFA."
+				] },
+				{ "type": "table", "caption": "A DFA. Start: S0. Accepting: S0 and S1", "headers": ["state", "0", "1"], "rows": [
+					["S0", "S1", "S2"],
+					["S1", "S0", "S3"],
+					["S2", "S3", "S0"],
+					["S3", "S2", "S1"]
+				] },
+				{ "type": "paragraph", "text": "Initial partition: A = {S0, S1} and B = {S2, S3}. On 0: S0 and S1 go to S1 and S0, both in A; S2 and S3 go to S3 and S2, both in B. On 1: S0 and S1 go to S2 and S3, both in B; S2 and S3 go to S0 and S1, both in A. No group splits, so the minimal DFA has **2 states**. It accepts the words with an even number of 1s." },
+				{ "type": "paragraph", "text": "Another run. States A, B, C, D, E with D accepting, and the initial partition {A, B, C, E} and {D}. On `b`, A and C go to C (inside the group) while B and E go to D (outside). The group splits into {A, C} and {B, E}. Testing again, nothing else splits, so the minimal DFA has 3 states." },
+				{ "type": "diagram", "caption": "Refinement by rounds", "content": "round 0:  { A B C E }    { D }\n                |\n           (on b: A,C -> inside, B,E -> D)\n                v\nround 1:  { A C }  { B E }  { D }   no more splits\n          = 3 states" },
+				{ "type": "heading", "text": "Counting states by what must be remembered" },
+				{ "type": "paragraph", "text": "The **Myhill-Nerode theorem** says that the number of states of the minimal DFA equals the number of classes of prefixes that need different futures. Example: the words containing `aab` as a substring. We need q0 (no progress), q1 (ends in a), q2 (ends in aa), q3 (already contains aab: accepting, and it stays there forever). The ending `b` separates `aa` from `a` and from ε; `ab` separates `a` from ε; and the empty string separates `aab` from the rest. So the minimal complete DFA has **4 states**." },
+				{ "type": "heading", "text": "When states produce answers" },
+				{ "type": "paragraph", "text": "The classic algorithm only keeps the question \"accepted or not?\". A lexer needs more: **which token** was recognised, like `IF` versus `ID`. The solution is to start from a finer partition: one group for each kind of output (each token) plus the non-accepting group. The rest runs as usual. The same idea works for any machine whose states produce different outputs." },
+				{ "type": "callout", "tone": "remember", "text": "Minimise by starting with accepting versus non-accepting and splitting groups whose states go to different groups. The minimal DFA is unique, so equal minimal DFAs mean equal languages." }
+			]
+		},
+		{
+			"id": "mealy-moore-machines",
+			"title": "Mealy and Moore machines",
+			"blocks": [
+				{ "type": "paragraph", "text": "So far machines only said yes or no. Often we want them to **answer with something**, like a traffic light that shows a colour, or a circuit that turns on a lamp. Machines with outputs come in two flavours." },
+				{ "type": "callout", "tone": "analogy", "text": "A Moore machine is like a room with a coloured lamp: the colour depends only on which room you are in. A Mealy machine is like a doorman who shouts a reply while you walk through a door: the reply depends on the room you are leaving and on what you just said." },
+				{ "type": "table", "headers": ["Property", "Moore", "Mealy"], "rows": [
+					["Output depends on", "the current state only", "the current state and the current input (the transition)"],
+					["Drawn as", "output written inside the state", "`input/output` written on the arrow"],
+					["Outputs for n inputs", "n + 1 (the start state already has one)", "n (one per transition)"],
+					["Usual number of states", "same or more", "same or fewer"],
+					["Timing", "answers one cycle later, output stable", "answers in the same cycle, follows input changes"]
+				] },
+				{ "type": "paragraph", "text": "Why n + 1 for Moore? An input of n symbols causes n transitions, so the machine visits n + 1 states, and each visited state has an output, including the first one, which depends on no input. With 5 input symbols a Moore machine produces 6 outputs and a Mealy machine produces 5." },
+				{ "type": "heading", "text": "Example: detecting two 1s in a row" },
+				{ "type": "table", "caption": "A Mealy machine. Each cell: next state / output. Start: S0", "headers": ["state", "input 0", "input 1"], "rows": [
+					["S0", "S0 / 0", "S1 / 0"],
+					["S1", "S0 / 0", "S1 / 1"]
+				] },
+				{ "type": "paragraph", "text": "S1 means \"the last symbol was 1\". The output is 1 when the current and the previous symbol are both 1. For the input `0110111`: (S0,0) gives 0; (S0,1) gives 0; (S1,1) gives 1; (S1,0) gives 0; (S0,1) gives 0; (S1,1) gives 1; (S1,1) gives 1. Output: `0010011`." },
+				{ "type": "heading", "text": "From Mealy to Moore" },
+				{ "type": "paragraph", "text": "To convert, move the output of each transition to its target state. If a state is reached by transitions with **different** outputs, split it, one copy for each output. Here S1 is reached with output 0 (the first 1) and with output 1 (later 1s), so S1 becomes two states. The Moore machine has **3 states**. A Moore machine may need more states than the Mealy one, and never fewer." },
+				{ "type": "heading", "text": "Machines in hardware" },
+				{ "type": "paragraph", "text": "A **combinational circuit** has an output that depends only on its current inputs, like a calculator button. A **sequential circuit** has feedback and memory, so its output also depends on the state, which sums up past inputs. The memory elements are [[latches and flip-flops|small circuits that each store one bit; a flip-flop changes only when the clock ticks]]. Every synchronous sequential circuit (one driven by a clock) is a finite state machine: flip-flops hold the state, and combinational logic computes the next state and the output." },
+				{ "type": "paragraph", "text": "With **binary encoding** (the fewest bits) you need ⌈log2(number of states)⌉ flip-flops. For 6 states, log2(6) is about 2.58, rounded up to **3 flip-flops**. Three bits give 8 codes, of which 6 are used. The 2 spare codes must be handled in the design so that the machine does not get stuck in them." },
+				{ "type": "callout", "tone": "warning", "text": "Timing matters. If the input changes in the middle of a clock cycle, a Mealy output changes **immediately** in that cycle, carrying the noise of the input. A Moore output stays stable for the whole cycle because it comes straight from the state register, and reacts only one cycle later. A common fix for a noisy Mealy output is to pass it through a flip-flop, at the cost of one cycle of delay." },
+				{ "type": "callout", "tone": "remember", "text": "Moore: output on the state, n + 1 outputs. Mealy: output on the transition, n outputs, usually fewer states." }
+			]
+		},
+		{
+			"id": "statecharts",
+			"title": "Statecharts: hierarchy, guards, parallel states",
+			"blocks": [
+				{ "type": "paragraph", "text": "A music player has a Playing state and a Paused state. It also has \"power off\", which must work in both. In a flat diagram you draw a powerOff arrow from every state. With ten states, ten arrows. **Statecharts**, invented by David Harel, fix this with three ideas: hierarchy, guards and parallel regions." },
+				{ "type": "heading", "text": "Hierarchy: superstates" },
+				{ "type": "paragraph", "text": "Group Playing and Paused inside a **superstate** called On, and draw the powerOff arrow once, leaving On. The substates **inherit** it. When an event arrives, the machine first looks for a transition in the active substate. If there is none, the search moves up to the superstate." },
+				{ "type": "diagram", "caption": "One arrow for every substate", "content": "+----------------- On -------------------+\n|  initial: Playing                      |\n|   (Playing) --pause--> (Paused)        |   powerOff\n|   (Playing) <--play--  (Paused)        |-------------> (Off)\n+----------------------------------------+" },
+				{ "type": "paragraph", "text": "If the player is in Paused and gets powerOff, Paused has no such arrow, so the search goes up to On, which leads to Off. A hierarchical statechart can always be flattened into an ordinary machine, but a larger one that is harder to read." },
+				{ "type": "heading", "text": "Guards" },
+				{ "type": "paragraph", "text": "A guard lets one event lead to different targets depending on data: `withdraw [balance >= amount]` and `withdraw [balance < amount]`. As seen before, guards of the same event in the same state must be mutually exclusive." },
+				{ "type": "heading", "text": "Internal and external transitions" },
+				{ "type": "paragraph", "text": "Suppose Heating has the entry action startTimer and the exit action stopTimer. A transition from Heating to itself on each `tick` can be modelled in two ways:" },
+				{ "type": "list", "items": [
+					"**External self-transition**: leaves the state and enters it again. It runs the exit action, then the entry action: the timer is stopped and started on every tick.",
+					"**Internal transition**: never crosses the border of the state. It runs only its own action. If you just want to count the tick without restarting the timer, this is the right model."
+				] },
+				{ "type": "heading", "text": "History: remembering where you were" },
+				{ "type": "paragraph", "text": "The player is in Paused (inside On) when a phone call takes it to the Call state, outside On. When the call ends, you want to go back to Paused, not to the start. A **history pseudostate** gives the superstate this memory. **Shallow history (H)** remembers only the level right below. **Deep history (H*)** remembers the full nested configuration. On the very first entry, when there is no history yet, the initial substate is used (Playing)." },
+				{ "type": "heading", "text": "Order of actions when crossing levels" },
+				{ "type": "paragraph", "text": "When a transition goes from A1 (inside A) to B1 (inside B) with action t, the order is like closing and opening boxes:" },
+				{ "type": "list", "ordered": true, "items": [
+					"exit actions of the states being left, **from the innermost to the outermost**: exit A1, then exit A;",
+					"the action of the transition: t;",
+					"entry actions of the states being entered, **from the outermost to the innermost**: enter B, then enter B1."
+				] },
+				{ "type": "paragraph", "text": "A superstate is activated before its substates and deactivated after them." },
+				{ "type": "heading", "text": "Parallel (orthogonal) regions" },
+				{ "type": "paragraph", "text": "A player has a playback mode (Playing, Paused, Stopped) and a volume (Normal, Muted). They are independent. A flat diagram needs one state for each combination. A composite state with **orthogonal regions** gives each aspect its own small diagram, and the state of the system is the set of the active substates, one per region." },
+				{ "type": "chart", "title": "Two regions with 3 and 4 substates", "unit": "states", "bars": [
+					{ "label": "states drawn (3 + 4)", "value": 7 },
+					{ "label": "states of the flat machine (3 × 4)", "value": 12 }
+				] },
+				{ "type": "paragraph", "text": "Regions with k1, k2, ..., kn substates are equivalent to k1 × k2 × ... × kn flat states. The picture grows as a **sum**, the flat machine as a **product**. That is the **state explosion** that the notation avoids." },
+				{ "type": "callout", "tone": "remember", "text": "Superstates inherit transitions (the search goes inner to outer). Exit inner to outer, then the action, then enter outer to inner. Regions multiply the flat states." }
+			]
+		},
+		{
+			"id": "pushdown-automata-cfg",
+			"title": "Pushdown automata and context-free grammars",
+			"blocks": [
+				{ "type": "paragraph", "text": "A finite automaton cannot check that parentheses match: `((()))` is fine and `(()` is not. It would have to count the open parentheses without a limit. Give the machine a **stack**, a pile of plates where you only touch the top plate (last in, first out), and it can. A **pushdown automaton (PDA)** is a finite automaton plus a stack. Each transition looks at the state, the input symbol and the **top of the stack**, and may push or pop." },
+				{ "type": "heading", "text": "Counting with a stack: a^n b^n" },
+				{ "type": "paragraph", "text": "To accept n letters `a` followed by n letters `b`: push an X for each `a`, pop an X for each `b`, and accept if the input ends with the stack empty." },
+				{ "type": "diagram", "caption": "Input aabbb (the stack is shown between brackets)", "content": "read a  [X]\nread a  [X X]\nread b  [X]\nread b  [ ]\nread b  stack empty, no move -> REJECT" },
+				{ "type": "paragraph", "text": "A leftover X means too many `a`; a missing X means too many `b`. Acceptance needs both: end of input **and** empty stack." },
+				{ "type": "heading", "text": "Grammars: rules that build words" },
+				{ "type": "paragraph", "text": "A **context-free grammar (CFG)** has **terminals** (the real symbols), **nonterminals** (names of kinds of phrase), a **start symbol** and **productions** `A → α`, where the left side is a **single nonterminal** and α is any sequence of symbols. \"Context-free\" means the rule for A works wherever A appears, whatever is around it. The syntax of programming languages is written this way." },
+				{ "type": "code", "language": "text", "content": "S -> a S b | ε\nS => aSb => aaSbb => aaaSbbb => aaabbb", "caption": "This grammar generates a^n b^n; here n = 3" },
+				{ "type": "paragraph", "text": "Each use of `S → aSb` adds one `a` on the left and one `b` on the right, and `S → ε` ends the process. The grammar `S → (S)S | ε` makes the balanced parentheses. Both languages are **context-free but not regular**. Unbounded nesting is the mark of that gap. This is why the lexer (regular) cannot check parentheses, and that job belongs to the **parser** (context-free)." },
+				{ "type": "heading", "text": "Ambiguity" },
+				{ "type": "paragraph", "text": "A grammar is **ambiguous** if some string has more than one parse tree (a tree that shows how the rules built it). With `E → E + E | E * E | id`, the string `id + id * id` has **2** parse trees: one with `+` at the root, one with `*` at the root. With numbers, 2 + 3 * 4 would be 14 in one tree and 20 in the other. The usual fix is to stratify the grammar into levels (expression, term, factor), building precedence and associativity into it." },
+				{ "type": "heading", "text": "Is guessing useful here?" },
+				{ "type": "paragraph", "text": "For finite automata, guessing (non-determinism) added no power. For pushdown automata it **does**: the deterministic context-free languages are a **proper subset** of the context-free ones. The language of words followed by their mirror, `w w^R`, needs to guess where the middle is. With a marker `c` in the middle, `w c w^R`, no guess is needed, and it is deterministic. In practice, fast parsers such as LL and LR are deterministic pushdown automata, so programming language grammars are designed to fit that class." },
+				{ "type": "heading", "text": "Where a stack is not enough" },
+				{ "type": "paragraph", "text": "A stack can check one nested dependency at a time. In a^n b^n c^n there are two equalities at once (a with b, and b with c), and the first comparison empties the stack. So `a^n b^n c^n` is **not context-free** (the proof uses the pumping lemma for context-free languages). Curiously, a^n b^n c^m and a^m b^n c^n are both context-free, but their intersection is a^n b^n c^n. So context-free languages are **not closed under intersection**." },
+				{ "type": "callout", "tone": "remember", "text": "PDA = finite automaton + stack = context-free languages. Nested structures (parentheses, a^n b^n) need a stack. Two simultaneous counts (a^n b^n c^n) need more." }
+			]
+		},
+		{
+			"id": "turing-machines-computability",
+			"title": "Turing machines and computability",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine a very long strip of paper with squares, a pencil with an eraser, and a person who follows a small rule book. The person looks at one square, then follows a rule: write a symbol, step left or right, and switch to another page of the rule book. This is a **Turing machine**, invented by Alan Turing in 1936." },
+				{ "type": "paragraph", "text": "It has a finite control (the states), an **unbounded tape** of cells and a **head**. At each step it reads the symbol under the head and, depending on its state, **writes** a symbol, **moves** left or right, and **changes state**. Being able to go back and rewrite is what makes it stronger than a pushdown automaton, whose stack can only be reached from the top." },
+				{ "type": "heading", "text": "A small program: add 1 in binary" },
+				{ "type": "code", "language": "text", "content": "start in q0, head on the rightmost bit\n(q0, 1) -> write 0, move left, stay in q0\n(q0, 0) -> write 1, stay, go to halt\n(q0, _) -> write 1, stay, go to halt\n(_ = blank cell)", "caption": "Adds 1 to a binary number, carrying from right to left" },
+				{ "type": "paragraph", "text": "With the tape `1011` (eleven) and the head on the last 1: write 0 and move left (`1010`), write 0 and move left (`1000`), then reach a 0, write 1 and halt: `1100`, which is twelve. The carry travelled to the left like when you add by hand." },
+				{ "type": "heading", "text": "Three big ideas" },
+				{ "type": "list", "items": [
+					"**Church-Turing thesis**: several models invented independently (Turing machines, the lambda calculus, recursive functions) turned out to be equivalent. The thesis says this class is exactly what we mean by \"computable\". So what a Turing machine cannot do, no programming language can.",
+					"**Universal Turing machine**: one machine that reads the transition table of any other machine from its tape and runs it. It is the theory behind the general-purpose computer and every interpreter. It also lets us talk about programs that take programs as input.",
+					"**Turing-complete**: a model that can simulate any Turing machine. It needs unbounded memory and decision plus repetition with no bound fixed in advance. Finite automata and automata with a single stack are **not** Turing-complete."
+				] },
+				{ "type": "heading", "text": "Decidable and recognisable" },
+				{ "type": "paragraph", "text": "A language is **decidable** if a Turing machine always halts and answers yes or no. It is **recognisable** (semi-decidable) if a machine halts and accepts every word of the language, but may run forever on the others. Decidable is a proper subset of recognisable. A useful rule: a language is decidable exactly when **both it and its complement are recognisable**." },
+				{ "type": "heading", "text": "The halting problem" },
+				{ "type": "paragraph", "text": "Question: given a program and an input, does it finish, or run forever? Turing showed that **no algorithm answers correctly in all cases**: the halting problem is **undecidable**. It is recognisable (run the program; if it halts, say yes) but not decidable (you can never be sure that a long run will not halt later). Here is the proof idea, by diagonalisation:" },
+				{ "type": "code", "language": "python", "content": "# Suppose H(p, x) always halts and tells if p halts on x\ndef D(p):\n    if H(p, p):\n        while True:\n            pass        # loop forever\n    else:\n        return          # halt\n# What does D(D) do?", "caption": "D does the opposite of what H predicts for it" },
+				{ "type": "paragraph", "text": "If H says D(D) halts, then D(D) loops, so H was wrong. If H says D(D) loops, then D(D) halts, so H was wrong again. So H cannot exist. D uses H only as a subroutine, so no clever implementation can escape." },
+				{ "type": "paragraph", "text": "**Rice's theorem** generalises this: no algorithm decides, for every program, any non-trivial property of what the program computes (for example, \"can this function ever return null?\"). That is why type checkers, analysers and optimisers are conservative and err on the safe side: an optimiser applies a change only when it can prove it safe, and a type checker rejects some correct programs." },
+				{ "type": "heading", "text": "The Chomsky hierarchy" },
+				{ "type": "table", "caption": "Each step up gives the machine more memory (smallest class at the top)", "headers": ["Level", "Languages", "Machine", "Extra memory"], "rows": [
+					["Type 3", "regular", "finite automaton", "none beyond the states"],
+					["Type 2", "context-free", "pushdown automaton", "a stack"],
+					["Type 1", "context-sensitive", "linear bounded automaton", "a tape as big as the input"],
+					["Type 0", "recursively enumerable", "Turing machine", "an unbounded tape"]
+				] },
+				{ "type": "paragraph", "text": "Each class contains the one above it in the table. Less power has an upside: questions like \"does this machine accept any word?\" or \"are these two machines equivalent?\" are decidable for finite automata but undecidable for Turing-complete models." },
+				{ "type": "video", "title": "MIT 18.404J Theory of Computation, Fall 2020 (Michael Sipser, lecture videos)", "url": "https://www.youtube.com/playlist?list=PLUl4u3cNGP60_JNv2MmK3wkOt9syvfQWY" },
+				{ "type": "callout", "tone": "remember", "text": "Regular, context-free, context-sensitive, recursively enumerable: each level adds memory. The halting problem is recognisable but undecidable." }
+			]
+		},
+		{
+			"id": "state-machines-in-software",
+			"title": "State machines in software: State pattern, protocols, workflows",
+			"blocks": [
+				{ "type": "paragraph", "text": "Back to everyday programming. Whenever a thing has a life with steps (an order, a download, a login, a connection), a state machine helps to say exactly what can happen and when." },
+				{ "type": "heading", "text": "Two ways to code it" },
+				{ "type": "list", "items": [
+					"**State pattern** (object oriented): the behaviour of each state lives in its own class with the same interface. The context object delegates to the current state object, so it seems to change class when the state changes. Good: everything about one state is in one place. Cost: the overview of the transitions is spread over many classes.",
+					"**Table-driven**: the transitions are **data**, a table that maps (state, event) to the next state, and one generic function looks it up. Good: adding a transition means adding a row, without touching the mechanism, and a program can read the table to generate tests and diagrams."
+				] },
+				{ "type": "callout", "tone": "analogy", "text": "The table is the rule book of a board game. The function is the player who follows the book. You can change the rules without teaching the player how to play again." },
+				{ "type": "heading", "text": "Protocols" },
+				{ "type": "paragraph", "text": "A protocol is a set of rules about who may say what, and **when**. The \"when\" is exactly what a state is. That is why communication protocols such as the TCP connection are specified as state machines: it is explicit what to do with each message in each phase, including unexpected messages, a frequent source of failures." },
+				{ "type": "heading", "text": "Workflows: the order example" },
+				{ "type": "list", "items": [
+					"Keep the state in **one field** with a closed set of values (not derived from `paidAt`, `shippedAt`, `cancelledAt`, which allows combinations that mean nothing).",
+					"A transition function takes the state and the event. If the event is not allowed, it **rejects explicitly** (a result type or an exception) and has **no effect** on the state. The caller decides what to do with the error.",
+					"Generate the tests from the table: for every (state, event) pair expect success if it is in the table and rejection if not. Now add a state `returned`, an event `return` and one transition from `delivered`. The pairs grow from 6 × 5 = 30 to 7 × 6 = 42, and the rejections from 30 − 6 = 24 to 42 − 7 = 35. The 11 new negative cases are tested without anyone writing them.",
+					"Generate the **diagram** from the table, and keep a test that fails when the committed diagram differs from what the table generates. A hand-drawn diagram is a second copy of the rules, and copies drift apart. With one source of truth plus the freshness test, they cannot."
+				] },
+				{ "type": "heading", "text": "Let the compiler check you" },
+				{ "type": "code", "language": "ts", "content": "type OrderState = \"created\" | \"paid\" | \"shipped\";\n\nfunction assertNever(value: never): never {\n\tthrow new Error(`unexpected state: ${String(value)}`);\n}\n\nfunction label(state: OrderState): string {\n\tswitch (state) {\n\t\tcase \"created\": return \"Created\";\n\t\tcase \"paid\": return \"Paid\";\n\t\tcase \"shipped\": return \"Shipped\";\n\t\tdefault: return assertNever(state);\n\t}\n}", "caption": "Exhaustiveness check" },
+				{ "type": "paragraph", "text": "After handling all cases, the type left for `state` is `never`. If someone adds `\"delivered\"` to the type and forgets the switch, what is left is no longer `never`, and passing it to `assertNever` is a **compile error**. The compiler lists every place that needs an update." },
+				{ "type": "code", "language": "elixir", "content": "def transition(:created, :pay), do: {:ok, :paid}\ndef transition(:created, :cancel), do: {:ok, :cancelled}\ndef transition(:paid, :ship), do: {:ok, :shipped}\ndef transition(:shipped, :deliver), do: {:ok, :delivered}\ndef transition(_state, _event), do: {:error, :invalid_transition}", "caption": "In Elixir each clause is one row of the table" },
+				{ "type": "paragraph", "text": "Clauses are tried **from top to bottom**. The last, generic clause catches every other pair, so `transition(:shipped, :pay)` returns `{:error, :invalid_transition}`. Order matters: if the generic clause came first, it would match everything." },
+				{ "type": "heading", "text": "Real life is not a pure function" },
+				{ "type": "paragraph", "text": "**Concurrency.** Two requests read `status = 'created'`; one wants to pay, the other to cancel. A transition is read, check, write, and if those steps are not atomic both can start from the same state. Make the check part of the write, a **conditional update** (compare and swap). Equivalent options: lock the row with `SELECT ... FOR UPDATE`, or use a **version column** (optimistic control)." },
+				{ "type": "code", "language": "sql", "content": "UPDATE orders SET status = 'paid'\nWHERE id = 42 AND status = 'created';\n-- 1 row changed: we won. 0 rows: someone else moved first.", "caption": "Conditional update" },
+				{ "type": "paragraph", "text": "**Duplicates.** Queues often deliver a message **at least once**, so the `pay` event can arrive twice. A strict table helps: the second copy finds the order in `paid`, where `pay` is not allowed, and is refused. You still must decide the policy on purpose: treat the refusal as an error, or recognise the duplicate and acknowledge it with no effect." },
+				{ "type": "paragraph", "text": "**External effects.** On `pay` the service charges a card and then stores `paid`. If the process crashes after the charge and before the write, the event is processed again with the order still in `created`. The two steps cannot be atomic with each other, so reprocessing must be safe. The standard cure is to make the effect **idempotent** ([[idempotent|doing it twice has the same result as doing it once]]), for example with an idempotency key sent to the payment provider. The state machine protects you after the write; idempotency protects you in the window before it." },
+				{ "type": "video", "title": "Infinitely Better UIs with Finite Automata (David Khourshid)", "url": "https://www.youtube.com/watch?v=VU1NKX6Qkxc" },
+				{ "type": "callout", "tone": "remember", "text": "Rules as data, mechanism as code. One state field. Reject invalid events explicitly. Make transitions atomic and external effects idempotent." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{ "type": "paragraph", "text": "You have climbed the whole ladder. This table puts the machines side by side." },
+				{ "type": "table", "headers": ["Machine", "Memory", "Languages", "Example it can do", "Example it cannot do"], "rows": [
+					["DFA / NFA", "only the states", "regular", "ends in `ab`; even number of 1s", "a^n b^n"],
+					["Pushdown automaton", "states + stack", "context-free", "a^n b^n; balanced parentheses", "a^n b^n c^n"],
+					["Turing machine", "states + unbounded tape", "recursively enumerable", "anything computable", "decide the halting problem"]
+				] },
+				{ "type": "table", "caption": "Conversions and their costs", "headers": ["From", "To", "How", "Cost"], "rows": [
+					["Regex", "NFA", "McNaughton-Yamada-Thompson", "linear in the size of the expression"],
+					["NFA", "DFA", "subset construction", "up to 2^m states"],
+					["DFA", "minimal DFA", "partition refinement", "merges equivalent states"],
+					["Mealy", "Moore", "move outputs to target states", "may need more states"]
+				] },
+				{ "type": "heading", "text": "Mistakes to avoid" },
+				{ "type": "list", "items": [
+					"Swapping accepting states to get the complement of a DFA that is **not complete**.",
+					"Forgetting that ε is accepted exactly when the start state is accepting.",
+					"Thinking an NFA can recognise languages a DFA cannot. It cannot; it can only be smaller.",
+					"Forgetting ε when reading `a*`.",
+					"Counting n outputs for a Moore machine. It is n + 1.",
+					"Using two overlapping guards for the same event.",
+					"Believing a lexer can check balanced parentheses. That needs a stack.",
+					"Treating a rejected event as a state change. A rejection changes nothing."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Whenever an answer depends on a convention, check it: a Moore machine produces an output in its start state; acceptance in a PDA here means end of input with an empty stack; a minimal DFA is counted as complete, with its dead state." },
+				{ "type": "callout", "tone": "remember", "text": "Draw the states, name the events, decide what is allowed, reject the rest. The same simple idea runs from a turnstile to the limits of what computers can do." }
+			]
+		}
+	]
+}

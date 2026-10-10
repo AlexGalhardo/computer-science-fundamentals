@@ -1,0 +1,1304 @@
+{
+	"area": "networks",
+	"intro": [
+		"A **computer network** is a group of machines that can send messages to each other. Your phone talking to a game server, your laptop loading a web page and a school printer receiving a file are all networks at work. A network is like a postal system for computers: you write a message, put an address on it, and many helpers carry it until it arrives.",
+		"Sending a message is not one big job. It is many small jobs: turning bits into electricity or light, finding the right wire, choosing the route across the world, making sure nothing is lost, and finally letting a program understand the message. So engineers split the work into **layers**, like floors of a building. Each floor does one job and trusts the floor below it. This summary climbs the floors from the bottom (wires and signals) to the top (the Web, e-mail and security).",
+		"At the end you will know the idea behind each layer, the main rules and formulas the quiz uses (with the small calculations done step by step), and why each trick was invented. Read the sections in order the first time. Later, use the table of contents to jump to the topic you want to review."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture and the words we need",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Before the layers, let us agree on a few words. They come back in every section, so it is worth meeting them once, slowly."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Word",
+						"What it means",
+						"Everyday picture"
+					],
+					"rows": [
+						[
+							"Host",
+							"Any machine at the edge of the network that runs programs (phone, laptop, server).",
+							"A house that sends and receives letters."
+						],
+						[
+							"Router",
+							"A machine in the middle that looks at where a packet wants to go and passes it on.",
+							"A post office that sorts letters."
+						],
+						[
+							"Link",
+							"The connection between two neighbouring machines (a cable, a radio channel).",
+							"One road between two towns."
+						],
+						[
+							"Packet",
+							"A small piece of a message, with an address written on it.",
+							"One letter, with its envelope."
+						],
+						[
+							"Protocol",
+							"A written set of rules that two sides follow to understand each other.",
+							"The rules of a game, or how to answer a phone call."
+						],
+						[
+							"Bandwidth",
+							"How many bits per second a link can carry.",
+							"How many lanes a road has."
+						],
+						[
+							"Latency (delay)",
+							"How long one bit takes to get from one end to the other.",
+							"How long the trip takes, no matter how wide the road is."
+						]
+					],
+					"caption": "Eight words used everywhere in networks"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A bit is the smallest piece of information: a 0 or a 1. Think of a very long line of children passing coloured balls. How many balls the line passes each second is the bandwidth. How long a single ball needs to go from the first child to the last is the latency. A wide road does not make the trip shorter: a truck full of hard disks is high bandwidth and high latency."
+				},
+				{
+					"type": "paragraph",
+					"text": "Networks come in sizes. A **LAN** (local area network) covers a room, a house or a school. A **WAN** (wide area network) covers cities or countries. The **Internet** is not one network: it is millions of networks joined together by routers, all speaking the same family of protocols, called TCP/IP."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Bandwidth is how much per second, latency is how long it takes. Fast does not mean one thing: a link can be wide but slow to answer."
+				}
+			]
+		},
+		{
+			"id": "reference-models",
+			"title": "Layers: the OSI and TCP/IP reference models",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine you want to send a birthday card to a friend in another country. You write it, a clerk puts it in an envelope with an address, a truck takes it to the airport, a plane flies it, and another postman delivers it. Nobody does the whole job, and each helper only needs to know their own part. Networks work the same way, and each helper is called a **layer**."
+				},
+				{
+					"type": "paragraph",
+					"text": "A layer offers a **service** to the layer above it: a promise of what it can do, like 'I will carry your packet to the next machine'. To keep that promise, the layer talks to the same layer on the other machine using a **protocol**: the rules and the message formats they agree on. The service says what is offered. The protocol says how the two sides do it. Because they are separate, you can change the protocol of one layer (for example, use a different cable) without touching the layers around it."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"OSI layer (7)",
+						"TCP/IP layer (4)",
+						"Unit of data",
+						"Job",
+						"Example"
+					],
+					"rows": [
+						[
+							"7 Application",
+							"Application",
+							"Message",
+							"Programs talk to each other",
+							"HTTP, DNS, SMTP"
+						],
+						[
+							"6 Presentation",
+							"(inside the application)",
+							"Message",
+							"Data formats, codes",
+							"Text encoding"
+						],
+						[
+							"5 Session",
+							"(inside the application)",
+							"Message",
+							"Dialogue control",
+							"Login sessions"
+						],
+						[
+							"4 Transport",
+							"Transport",
+							"Segment",
+							"Process to process, reliability",
+							"TCP, UDP"
+						],
+						[
+							"3 Network",
+							"Internet",
+							"Packet",
+							"Route across many networks",
+							"IP"
+						],
+						[
+							"2 Data link",
+							"Link (host to network)",
+							"Frame",
+							"Between two neighbours",
+							"Ethernet, Wi-Fi"
+						],
+						[
+							"1 Physical",
+							"Link (host to network)",
+							"Bit",
+							"Signals on the medium",
+							"Cable, radio, fibre"
+						]
+					],
+					"caption": "OSI has seven layers, TCP/IP has four. Session and presentation have no layer of their own in TCP/IP."
+				},
+				{
+					"type": "paragraph",
+					"text": "The OSI model has seven layers. The TCP/IP model has four: link, internet, transport and application. The two OSI layers in the middle, session and presentation, were seldom useful in practice, so in TCP/IP their jobs are left to each application. A classic summary: OSI is a good model whose protocols never caught on, while TCP/IP has protocols that conquered the world but a model that describes only itself well (it does not clearly separate service, interface and protocol)."
+				},
+				{
+					"type": "heading",
+					"text": "Encapsulation: envelopes inside envelopes"
+				},
+				{
+					"type": "paragraph",
+					"text": "When a message goes down the stack, each layer puts the thing it received inside its own envelope, called a **header** (and sometimes also a trailer at the end). At the destination the opposite happens: each layer opens its own envelope, reads it and hands what is inside to the layer above. This is **encapsulation**. A layer never needs to understand what is inside the envelope it carries."
+				},
+				{
+					"type": "diagram",
+					"content": "Sender                              Receiver\n\n[ Message ]                         [ Message ]\n   |  + app header                     ^  - removed\n[AH|Message]  (application)\n   |  + transport header (segment)     ^\n[TH|AH|Message]\n   |  + network header (packet)        ^\n[NH|TH|AH|Message]\n   |  + link header/trailer (frame)    ^\n[LH|NH|TH|AH|Message|LT] ---bits---> wire",
+					"caption": "Going down: every layer adds a header. Going up: every layer removes its own."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A letter inside an envelope, inside a bag, inside a box. The postman who carries the box does not read the letter. Each person opens only the layer that is for them."
+				},
+				{
+					"type": "paragraph",
+					"text": "Headers cost space. The **overhead** is the part of the sent bytes that is headers: total headers divided by total bytes sent. If an application writes 400 bytes and four layers each add 50 bytes of header, the overhead is 200 / 600, which is one third. The smaller the message, the heavier the headers weigh."
+				},
+				{
+					"type": "heading",
+					"text": "Circuit switching and packet switching"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Circuit switching** (old telephone): before talking, a path is reserved from end to end. Nobody else can use that capacity, even when you are silent. Good quality, but wasteful for traffic that comes in bursts.",
+						"**Packet switching** (the Internet): the message is cut into packets that share the links. Each router receives the whole packet, keeps it, and then sends it on (**store-and-forward**). Efficient when traffic is bursty. The price is variable delay, because packets may wait in a queue, and packets may be lost when the queue is full."
+					],
+					"ordered": false
+				},
+				{
+					"type": "heading",
+					"text": "How long does a packet take?"
+				},
+				{
+					"type": "paragraph",
+					"text": "The delay on a link has two separate parts. **Transmission time** is how long it takes to push all the bits onto the wire: packet size in bits divided by the link rate. **Propagation delay** is how long one bit takes to travel along the wire: distance divided by the speed of the signal (about 200,000 km/s in a cable or fibre). The last bit arrives after the sum of both. Convention used in the quiz: both are counted from the moment the first bit starts to leave the sender."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "packet = 500 bytes = 4000 bits, link = 2 Mbps, distance = 3000 km\ntransmission = 4000 bits / 2,000,000 bps = 0.002 s = 2 ms\npropagation  = 3000 km / 200,000 km/s    = 0.015 s = 15 ms\nlast bit arrives after 2 + 15 = 17 ms",
+					"caption": "Two independent parts: size over rate, and distance over speed"
+				},
+				{
+					"type": "chart",
+					"title": "Where the 17 ms of the example go",
+					"unit": "ms",
+					"bars": [
+						{
+							"label": "Transmission time",
+							"value": 2
+						},
+						{
+							"label": "Propagation delay",
+							"value": 15
+						}
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Reliability on every link is not enough. Between two links a packet sits in the memory and software of a router, where it can still be lost or damaged. So the final check has to be done by the two end machines. This is the end-to-end argument: the link checks help speed, but only the ends can give the final guarantee."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Service = what a layer offers. Protocol = the rules two equal layers use. Data units, from top to bottom: message, segment, packet, frame, bit. Delay = size / rate + distance / speed."
+				}
+			]
+		},
+		{
+			"id": "physical-layer",
+			"title": "The physical layer: turning bits into signals",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "The bottom floor has a simple job: take bits and make something travel over a medium, so the other side can read them again. It does not know what the bits mean. It only cares about voltages, light and radio waves."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Medium",
+						"What travels",
+						"Good",
+						"Not so good"
+					],
+					"rows": [
+						[
+							"Twisted pair (copper cable)",
+							"Electric signal",
+							"Cheap, easy; inside buildings",
+							"Noise, weaker at high frequency"
+						],
+						[
+							"Coaxial cable",
+							"Electric signal",
+							"More shielding, cable TV",
+							"Thicker and heavier"
+						],
+						[
+							"Optical fibre",
+							"Pulses of light",
+							"Huge bandwidth, very little loss, immune to electrical interference",
+							"More costly to install"
+						],
+						[
+							"Radio (wireless)",
+							"Radio waves",
+							"No cable, mobility",
+							"Shared, noisy, can be heard by anyone"
+						]
+					],
+					"caption": "Guided media (cables) and wireless media"
+				},
+				{
+					"type": "paragraph",
+					"text": "Copper carries electricity, so lightning, motors and nearby cables add noise, and the signal gets weaker (attenuation) especially at high frequencies. Fibre carries light, so electrical noise cannot disturb it. That is why long and fast links use fibre."
+				},
+				{
+					"type": "heading",
+					"text": "Baud and bit rate"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **symbol rate**, measured in **baud**, is how many times per second the signal changes. If each symbol can have V different states, one symbol carries log₂ V bits. So **bit rate = baud × log₂ V**. A signal with 8 states and 1,000 changes per second carries 3 bits per symbol, which is 3,000 bits per second. Baud and bits per second are the same only when there are two states."
+				},
+				{
+					"type": "heading",
+					"text": "Directions of a link"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Simplex**: one direction only (like a TV broadcast).",
+						"**Half-duplex**: both directions, but taking turns (like a walkie-talkie: say 'over').",
+						"**Full-duplex**: both directions at once (like a phone call). Modern switched Ethernet is full-duplex; the old shared cable was half-duplex."
+					],
+					"ordered": false
+				},
+				{
+					"type": "heading",
+					"text": "How fast can a channel go?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Two famous limits answer this. **Bandwidth** here means the width of the band of frequencies the channel lets through, measured in hertz (Hz). **Nyquist** is for a perfect channel without noise: you can send at most 2B symbols per second, so with V levels the maximum is 2B log₂ V bits per second. **Shannon** is for a real channel with noise: the maximum is B log₂(1 + S/N), whatever the number of levels. S/N is the signal power divided by the noise power. It is often given in **decibels**: dB = 10 log₁₀(S/N), so 10 dB is 10 times, 20 dB is 100 times and 30 dB is 1,000 times."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "Nyquist: B = 4 kHz, V = 4 levels\n  max = 2 * 4000 * log2(4) = 2 * 4000 * 2 = 16,000 bps\n\nShannon: B = 2 kHz, 20 dB -> S/N = 100\n  max = 2000 * log2(1 + 100) = 2000 * 6.66 = about 13,300 bps\n\nReal channel with both limits: the smaller value wins (13,300)",
+					"caption": "The achievable rate is limited by both, so it is the smaller one"
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "More levels do not beat Shannon. Adding levels raises the Nyquist number, but when the noise is strong the receiver cannot tell the levels apart, and Shannon's number does not move."
+				},
+				{
+					"type": "heading",
+					"text": "Sending bits: coding and clocks"
+				},
+				{
+					"type": "paragraph",
+					"text": "The receiver has to know where one bit ends and the next starts, but there is no separate wire with the sender's clock. **Manchester encoding** puts the clock inside the data: every bit has a transition in the middle of its time slot, and the direction of that transition (up or down) tells whether the bit is 0 or 1. Which direction means which depends on the standard. The price is that the signal changes twice as often, so it needs about twice the bandwidth. Classic Ethernet used it. The simple way, **NRZ**, uses one voltage for 1 and another for 0, so a long run of equal bits looks like a flat line and the clock is lost."
+				},
+				{
+					"type": "diagram",
+					"content": "bits:        1 1 1 1 1 0\nNRZ:         ---------_   (one flat level for 5 bits:\n                           where does each bit start?)\nManchester:  a change in the middle of EVERY bit",
+					"caption": "NRZ may stay flat for a long time. Manchester never does."
+				},
+				{
+					"type": "heading",
+					"text": "Sharing one channel: multiplexing"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**FDM** (frequency division): each signal gets its own band of frequencies, like radio stations on different dials.",
+						"**TDM** (time division): the signals take turns, each in its own time slot.",
+						"**CDM / CDMA** (code division): everybody talks at once on the same band, but each station multiplies its bits by its own code (a chip sequence). Codes are **orthogonal**: their inner product is zero."
+					],
+					"ordered": false
+				},
+				{
+					"type": "paragraph",
+					"text": "CDMA is like a party where people speak different languages: you tune your ear to your own language and the others sound like background noise. In numbers: take chips A = (+1 +1 −1 −1) and B = (+1 −1 +1 −1). Their product, element by element, is +1 −1 −1 +1, which sums to 0, so they are orthogonal. A sends bit 1 (sends A) while B sends bit 0 (sends −B). The channel adds them: (0, +2, −2, 0). To listen to A, multiply by A and divide by 4: (0 + 2 + 2 + 0)/4 = +1, bit 1. To listen to B: (0 − 2 − 2 + 0)/4 = −1, bit 0. A result of +1 means bit 1, −1 means bit 0, and 0 means that station was silent."
+				},
+				{
+					"type": "paragraph",
+					"text": "**PCM** (pulse code modulation) turns voice into bits. A telephone voice needs about 4 kHz, so it is sampled at twice that, 8,000 times per second (one every 125 µs). With 8 bits per sample, the rate is 8,000 × 8 = 64,000 bps, the classic 64 kbps voice channel."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Bit rate = baud × log₂ V. Nyquist = 2B log₂ V (no noise). Shannon = B log₂(1 + S/N) (with noise). Manchester = clock inside the data, at twice the bandwidth. Sample at least twice the highest frequency."
+				}
+			]
+		},
+		{
+			"id": "data-link-layer",
+			"title": "The data link layer: framing, errors and the sliding window",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "The physical layer sends a stream of bits. The data link layer turns the stream into **frames** (small packages of bits) that travel between two machines directly connected by one link. It has three jobs: mark where each frame starts and ends, discover (or fix) damaged bits, and avoid drowning a slow receiver."
+				},
+				{
+					"type": "heading",
+					"text": "Framing: where does a frame end?"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Byte count**: the header says how many bytes follow. Simple, but one wrong count ruins everything after it.",
+						"**Flag byte with byte stuffing**: a special byte (the flag) marks the start and end. If the same value appears inside the data, the sender puts an **escape** byte before it (and before any escape byte in the data). The receiver removes the escape bytes, so the data arrives unchanged.",
+						"**Flag bits with bit stuffing**: the flag is the pattern 01111110. Whenever the sender sees five 1s in a row in the data, it inserts a 0. The receiver does the reverse: after five 1s, a 0 is removed. So six 1s in a row can only be the flag."
+					],
+					"ordered": false
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "data to send:   0 1 1 1 1 1 1 0 1\nafter five 1s a 0 is inserted:\nstuffed data:   0 1 1 1 1 1 [0] 1 0 1\nframe: 01111110 0111110101 01111110   (flag, data, flag)",
+					"caption": "Bit stuffing: a 0 is added after every run of five 1s in the data"
+				},
+				{
+					"type": "heading",
+					"text": "Finding errors"
+				},
+				{
+					"type": "paragraph",
+					"text": "Noise flips some bits. To notice it, we send extra check bits, called **redundancy**. A **parity bit** is the simplest: choose it so that the number of 1s in the block is even (or odd, by agreement). Data 1011 has three 1s, so the even-parity bit is 1. If one bit flips, the count becomes odd and the receiver knows. But if two bits flip, the count is even again and the error goes unseen. A single parity bit detects any odd number of flipped bits and misses even numbers."
+				},
+				{
+					"type": "paragraph",
+					"text": "The strength of a code is measured by its **Hamming distance**: the smallest number of bit positions in which two valid codewords differ. To **detect** e errors you need distance e + 1. To **correct** e errors you need distance 2e + 1 (the damaged word must still be closer to the right one than to any other). Distance 5 detects 4 errors or corrects 2. Parity has distance 2: detects 1, corrects none."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **Hamming code** corrects one flipped bit. The check bits sit at positions 1, 2, 4, 8, ... and each one checks the positions whose binary number contains that power of two. After a failure, adding the numbers of the failed checks gives the exact position of the bad bit, and the receiver flips it back. With m data bits and r check bits, the r bits must say 'no error' or point to one of m + r places, so m + r + 1 ≤ 2ʳ."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Data bits m",
+						"Check bits r needed",
+						"Test m + r + 1 ≤ 2ʳ"
+					],
+					"rows": [
+						[
+							"4",
+							"3",
+							"4 + 3 + 1 = 8 ≤ 8"
+						],
+						[
+							"8",
+							"4",
+							"8 + 4 + 1 = 13 ≤ 16"
+						],
+						[
+							"11",
+							"4",
+							"11 + 4 + 1 = 16 ≤ 16"
+						],
+						[
+							"32",
+							"6",
+							"32 + 6 + 1 = 39 ≤ 64"
+						]
+					],
+					"caption": "Check bits grow slowly: about the logarithm of the data size"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **CRC** (cyclic redundancy check) treats the data bits as a polynomial and divides it by a fixed generator polynomial, using arithmetic without carries (subtraction is XOR). The sender appends r zeros (r is the degree of the generator), divides, and puts the remainder in place of the zeros. The frame is now exactly divisible by the generator. The receiver divides the whole frame: any non-zero remainder means an error."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "data 1101, generator x^2 + 1 = 101, so r = 2\nappend two zeros:  110100\n110 xor 101 = 011, bring down 1 -> 111\n111 xor 101 = 010, bring down 0 -> 100\n100 xor 101 = 001, bring down 0 -> 010 (starts with 0)\nremainder = 10, transmit 1101 10 = 110110\nreceiver divides 110110 by 101 -> remainder 0 -> accepted",
+					"caption": "CRC in short. Real generators are longer, such as 32 bits for Ethernet."
+				},
+				{
+					"type": "heading",
+					"text": "Stop-and-wait"
+				},
+				{
+					"type": "paragraph",
+					"text": "The simplest rule for a sender: send one frame, wait for an **acknowledgement** (ACK, a little 'got it' frame), then send the next. If the ACK does not come before a **timer** runs out, send the frame again. But a lost ACK creates a problem: the receiver already has the frame and gets it again, and it cannot tell a copy from a new frame. So each frame carries a **sequence number**. For stop-and-wait, one bit (0, 1, 0, 1...) is enough."
+				},
+				{
+					"type": "paragraph",
+					"text": "Stop-and-wait wastes the link. Each cycle lasts the transmission time of the frame plus the round trip (RTT), and the line is idle while waiting. Utilisation = t_frame / (t_frame + RTT). With a 1 Mbps link and 1,000-bit frames, t_frame = 1 ms. If the RTT is 20 ms, utilisation is 1/21, only 4.8%. To keep the link busy you would need to have about 21 frames in the air, which is the idea of the sliding window."
+				},
+				{
+					"type": "paragraph",
+					"text": "Another trick is **piggybacking**: when there is data going the other way, the ACK rides inside the header of that data frame, saving a whole frame. If there is no data to carry it, a short timer sends the ACK on its own."
+				},
+				{
+					"type": "heading",
+					"text": "Sliding window: many frames in flight"
+				},
+				{
+					"type": "paragraph",
+					"text": "In a **sliding window** protocol the sender may send several frames before the first ACK arrives. The window is the list of numbers it may have outstanding. As ACKs arrive, the window slides forward. With n bits for the sequence number there are 2ⁿ numbers."
+				},
+				{
+					"type": "diagram",
+					"content": "sequence:  0  1  2  3  4  5  6  7  0  1 ...\n          [ sent, waiting for ACK ][ may send ]\n           ^ oldest unACKed         ^ next to send\n           window slides right when the ACK of 0 arrives",
+					"caption": "The sender window slides to the right as ACKs come in"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Feature",
+						"Go-back-N",
+						"Selective repeat"
+					],
+					"rows": [
+						[
+							"Receiver window",
+							"1 (accepts only the next expected frame)",
+							"Same as the sender (accepts frames inside the window)"
+						],
+						[
+							"Frame arrives out of order",
+							"Discarded",
+							"Kept in a buffer"
+						],
+						[
+							"After a loss",
+							"Sender goes back and resends the lost frame and all that followed",
+							"Sender resends only the lost frame (often prompted by a NAK, a negative acknowledgement)"
+						],
+						[
+							"Largest sender window with n bits",
+							"2ⁿ − 1",
+							"2ⁿ⁻¹ (half of the numbers)"
+						],
+						[
+							"Good for",
+							"Simple receivers, rare losses",
+							"Expensive links, frequent losses"
+						]
+					],
+					"caption": "With 3-bit numbers (0 to 7): go-back-N up to 7, selective repeat up to 4"
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Why half in selective repeat? The receiver slides its window as soon as it delivers frames. If the new window shared numbers with the old one, a late retransmission of an old frame could look like a new frame. Half the space guarantees the two windows never overlap. Go-back-N can use all but one number because its receiver window is only 1."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Stuff the flag (byte or bit). Detect e errors: distance e + 1. Correct e errors: distance 2e + 1. Hamming: m + r + 1 ≤ 2ʳ. Utilisation of stop-and-wait: t_frame / (t_frame + RTT). Windows: go-back-N 2ⁿ − 1, selective repeat 2ⁿ⁻¹."
+				},
+				{
+					"type": "video",
+					"title": "But what are Hamming codes? The origin of error correction (3Blue1Brown)",
+					"url": "https://www.youtube.com/watch?v=X8jsijhllIA"
+				}
+			]
+		},
+		{
+			"id": "medium-access-control",
+			"title": "Medium access control: sharing one channel",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "In some networks many stations share one channel, like children in one room who all want to talk. If two talk at once, nobody understands anything: this is a **collision**. The rules that say who talks when belong to a sub-layer of the data link layer, called **MAC** (medium access control)."
+				},
+				{
+					"type": "heading",
+					"text": "ALOHA: talk whenever you want"
+				},
+				{
+					"type": "paragraph",
+					"text": "In **pure ALOHA** a station sends as soon as it has a frame, without listening. If it collides, it waits a random time and tries again. A frame is hit if any other frame starts during a window of two frame times around it (the **vulnerable period**). If G is the average number of attempts per frame time, the throughput is S = G e^(−2G), at most 1/(2e) ≈ **18.4%**, at G = 0.5. More than 80% of the time is lost."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Slotted ALOHA** divides time into slots, and stations may start only at the start of a slot. Frames either overlap completely or not at all, so the vulnerable period is just one frame time. Then S = G e^(−G), at most 1/e ≈ **36.8%**, at G = 1, double the pure version. Above the best load, more attempts mean more collisions, which cause more retransmissions and even more load. That unstable behaviour is why back-off exists."
+				},
+				{
+					"type": "chart",
+					"title": "Best throughput of each method (percent of the channel used for good frames)",
+					"unit": "%",
+					"bars": [
+						{
+							"label": "Pure ALOHA (theory 1/2e)",
+							"value": 18.4
+						},
+						{
+							"label": "Slotted ALOHA (theory 1/e)",
+							"value": 36.8
+						},
+						{
+							"label": "CSMA/CD, 50 stations (simulated in this repository)",
+							"value": 93.6
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "CSMA: listen first"
+				},
+				{
+					"type": "paragraph",
+					"text": "**CSMA** (carrier sense multiple access) adds a polite rule: listen before talking, and wait if somebody else is using the channel. **CSMA/CD** (collision detection) also keeps listening while it sends, and stops at once when it notices a collision. After a collision, each station waits a random time chosen by **binary exponential backoff**: after the i-th collision of the same frame, pick a random number of slots from 0 to 2ⁱ − 1 (so 0 to 1, then 0 to 3, then 0 to 7, and so on), up to a cap of 0 to 1023. With few stations the wait is short. With many, the range grows fast and spreads them out. It adapts to the load without anyone knowing it."
+				},
+				{
+					"type": "paragraph",
+					"text": "There is a catch. A station finds a collision only if it is still sending when the noise comes back. In the worst case the frame has almost reached the far end when it collides, and the noise needs the same time to come back: twice the propagation time (2τ). So the frame must last at least 2τ, and the **minimum frame size = rate × 2τ**. Faster networks need longer minimum frames or shorter cables."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "10 Mbps, slot time 2*tau = 51.2 microseconds\nminimum frame = 10,000,000 bps * 0.0000512 s = 512 bits = 64 bytes\n\nTen times faster (100 Mbps) with the SAME 64-byte frame:\n  the cable would have to be 10 times shorter",
+					"caption": "Why classic Ethernet has a 64-byte minimum frame"
+				},
+				{
+					"type": "heading",
+					"text": "Ethernet, switches and hubs"
+				},
+				{
+					"type": "paragraph",
+					"text": "Every Ethernet interface has a **MAC address** of 48 bits. The first 24 bits identify the manufacturer. It names a device inside the local network only; it is not used to route between networks (that is the job of the IP address in the next layer)."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **hub** just repeats the bits on all the other ports, so everyone shares one channel and collisions happen. A **switch** reads the destination MAC address of each frame and sends it only through the right port, so several conversations can happen at the same time and there are no collisions between ports. A switch needs no configuration, because it learns by itself: when a frame from A comes in on port 1, it writes 'A is on port 1' in its table. To forward, it looks up the destination. If the destination is known, it uses that port only. If it is unknown (or the frame is a broadcast), it **floods** the frame out of all the other ports."
+				},
+				{
+					"type": "diagram",
+					"content": "      A --1[ SWITCH ]2-- B          table at the start: empty\n                  3                 1) A -> B : learns A=port1,\n                  |                    B unknown: FLOOD (B and C get it)\n                  C                 2) B -> A : learns B=port2,\n                                       A is known: only port 1",
+					"caption": "A switch builds its table by watching the source address"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redundant links between switches are good against failures, but they create **loops**. With a loop, flooded and broadcast frames go around forever and multiply: a **broadcast storm** that stops the network. The **spanning tree protocol** elects a root switch and keeps active only the links that form a tree (no cycles by definition). The other links wait as backups."
+				},
+				{
+					"type": "heading",
+					"text": "Wireless: CSMA/CA"
+				},
+				{
+					"type": "paragraph",
+					"text": "On a cable, a station can listen while it talks. A radio cannot do that well, so Wi-Fi (802.11) cannot detect collisions. It uses **CSMA/CA** (collision avoidance): wait for the medium to be idle, wait a random backoff, then send. Because the sender cannot know if there was a collision, the receiver sends an ACK for every frame, and a missing ACK means retransmit."
+				},
+				{
+					"type": "paragraph",
+					"text": "Radio brings the **hidden terminal problem**. What matters is the interference at the receiver, not at the sender. Take A and C, both within range of B but too far from each other. A sends to B. C listens, hears nothing (it cannot hear A), and also sends: the two signals collide at B. The fix is **RTS/CTS**: before sending, the sender asks (RTS) and the receiver answers (CTS). The CTS is heard by the neighbours of the receiver, which then stay quiet."
+				},
+				{
+					"type": "diagram",
+					"content": "   A ------- B ------- C       A and C cannot hear each other\n   (range of A reaches B)      A -> B ...... C also -> B\n                (range of C reaches B)\n                               collision at B, nobody notices",
+					"caption": "The hidden terminal: A and C are hidden from each other"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Pure ALOHA 18.4%, slotted 36.8%. CSMA/CD listens, detects, backs off (0 to 2ⁱ − 1 slots, cap 1023). Minimum frame = rate × 2τ. Switch learns by source address, floods when unknown. Spanning tree kills loops. Wi-Fi avoids collisions with ACKs and RTS/CTS."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Pure ALOHA: shouting in a crowd whenever you feel like. Slotted ALOHA: everyone speaks only when the teacher claps. CSMA: look around first, and talk only if it is quiet. CSMA/CD: if you notice somebody started at the same time, stop and wait a random time."
+				}
+			]
+		},
+		{
+			"id": "network-layer",
+			"title": "The network layer: routing, IP addresses and subnets",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "The data link layer is for neighbours. The network layer joins many links and many networks and must answer: which way should this packet go to reach a machine far away? Two basic services exist. A **datagram** (connectionless) network treats every packet alone: each carries the full destination address, and each router decides with its table at that moment. It is simple and survives failures; reliability is left to the transport layer. A **virtual circuit** (connection-oriented) network first sets up a path and then all packets follow it. The Internet uses datagrams."
+				},
+				{
+					"type": "heading",
+					"text": "Routing: how routers find the way"
+				},
+				{
+					"type": "paragraph",
+					"text": "A router has a **routing table**. For each destination it knows the next router (or the next link) to use. Routing algorithms build these tables."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Shortest path (Dijkstra).** Think of the network as towns joined by roads with costs. Dijkstra starts at the source and repeats: take the not-yet-fixed node with the smallest known distance, fix it, and update the distances of its neighbours. The cheapest path may have more hops than another one."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "links: A-B 1, A-C 4, B-C 2, C-D 1      source = A\nstep 1: fix A (0).  B = 1, C = 4\nstep 2: fix B (1).  C = min(4, 1+2) = 3\nstep 3: fix C (3).  D = 3+1 = 4\nstep 4: fix D (4).  path to D: A-B-C-D, cost 4",
+					"caption": "The direct road A-C costs 4, but A-B-C costs 3"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Distance vector** (Bellman-Ford; RIP is an example): each router tells only its neighbours how far it thinks it is from every destination, and each updates its table with what it hears. Good news travels fast. Bad news travels slowly, and this is the **count-to-infinity problem**. Example: A — B — C in a line. B reaches C in 1, A reaches C in 2. The B–C link breaks. B hears from A 'I reach C in 2' (A does not know the route goes through B), so B thinks 'then I reach C in 3'. A hears B's 3 and says 4. They keep raising the numbers, one by one. RIP defines 16 hops as 'infinity' to stop it, and uses **split horizon** (do not tell a neighbour a route you learned from it), sometimes with **poisoned reverse** (tell it that route is infinite). These help, but loops through three routers can still happen."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Link state** (OSPF is an example): each router finds its neighbours, measures the cost of the links and floods that information, in numbered packets, to everybody. All routers get the same map of the network and each runs Dijkstra on its own. It converges quickly and has no count to infinity."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Between organisations (BGP).** The Internet is divided into **autonomous systems** (AS): networks run by one organisation. Inside an AS a protocol like OSPF finds the best path. Between ASes the goal is not the shortest path but a path allowed by each organisation's rules (for example, not carrying a competitor's traffic for free). **BGP** is a **path vector** protocol: for each destination it announces the whole list of ASes on the path. The list lets a router see a loop immediately (it sees its own AS) and gives the data needed for policy decisions."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Method",
+						"What routers share",
+						"Weak point",
+						"Example"
+					],
+					"rows": [
+						[
+							"Distance vector",
+							"Distances, with neighbours only",
+							"Slow bad news (count to infinity)",
+							"RIP (infinity = 16)"
+						],
+						[
+							"Link state",
+							"The link costs of the whole map, with everybody",
+							"More memory and computing",
+							"OSPF"
+						],
+						[
+							"Path vector",
+							"Full path of ASes to the destination",
+							"Policies can be complex",
+							"BGP"
+						]
+					],
+					"caption": "Three families of routing protocols"
+				},
+				{
+					"type": "heading",
+					"text": "Congestion and quality of service"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Congestion** is when the traffic of many sources together is more than part of the network can carry. Packets wait in queues and are dropped. It is a global problem. **Flow control** is local to the two ends: it stops a fast sender from drowning a slow receiver. Both say 'send slower', but for different reasons."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **token bucket** shapes traffic. Tokens drop into a bucket at rate R, up to a capacity B. Each unit sent uses a token. After a quiet time the bucket is full, so a burst may leave at the peak rate M while tokens last. The bucket drains at M − R (tokens still arrive). The burst lasts S = B / (M − R), then the rate falls to R."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "B = 6 Mbit, R = 1 Mbps, peak M = 7 Mbps\nS = B / (M - R) = 6 / (7 - 1) = 1 s\nsent in the burst = M * S = 7 Mbit  (= B + R*S = 6 + 1)",
+					"caption": "A full bucket allows a burst of 1 second at the peak rate"
+				},
+				{
+					"type": "heading",
+					"text": "IPv4 addresses, masks and subnets"
+				},
+				{
+					"type": "paragraph",
+					"text": "An **IPv4 address** has 32 bits, written as four numbers from 0 to 255 (for example 192.168.10.77). It has two parts: the first bits name the **network**, the rest name the **host** in it. The **prefix** /n says that the first n bits are the network. The **mask** is n ones followed by zeros. Applying a logical AND of the address with the mask clears the host bits and gives the **network address**. Setting all host bits to 1 gives the **broadcast address**. With 32 − n host bits there are 2^(32−n) addresses, but the first (network) and the last (broadcast) are reserved, so there are **2^(32−n) − 2** usable hosts. Each bit taken from the prefix doubles the block."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "172.16.5.200/27   mask 255.255.255.224   (block size 256-224 = 32)\n200 is in the block 192..223 of the last number\nnetwork   172.16.5.192\nbroadcast 172.16.5.223\nhosts     172.16.5.193 .. 172.16.5.222   2^5 - 2 = 30 hosts",
+					"caption": "Subnet in four lines: find the block, network is its start, broadcast is its end"
+				},
+				{
+					"type": "paragraph",
+					"text": "To send, a machine applies its own mask to the destination. If the result equals its own network, the destination is on the same link: the machine finds the MAC address with ARP and sends directly. If not, the frame goes to the MAC of the **default router**, but the IP packet keeps the final destination address."
+				},
+				{
+					"type": "paragraph",
+					"text": "**ARP** (address resolution protocol) links the two kinds of address. The machine asks everybody, by broadcast, 'who has this IP address?', the owner answers with its MAC, and the answer is kept for a few minutes in a cache."
+				},
+				{
+					"type": "paragraph",
+					"text": "With **CIDR**, routing tables hold prefixes of any length. A destination may match several; the router picks the longest matching prefix, the most specific one. Contiguous blocks can be joined (**aggregation**) into one shorter prefix that covers exactly the same addresses, which keeps Internet tables small. Four /24 blocks form a /22 only if they are consecutive and the first one starts at a multiple of 4 in the third number."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "routes: 172.16.0.0/12 -> A,  172.16.8.0/21 -> B,  0.0.0.0/0 -> C\npacket to 172.16.9.1  : matches /12 and /21  -> longest = /21 -> B\npacket to 172.20.1.1  : matches /12 only     -> A\npacket to 8.8.8.8     : matches only /0      -> C (default)\n\naggregate: 10.1.0.0/24 + 10.1.1.0/24 + 10.1.2.0/24 + 10.1.3.0/24 = 10.1.0.0/22",
+					"caption": "Longest prefix wins. Aggregation joins aligned neighbours"
+				},
+				{
+					"type": "heading",
+					"text": "The IPv4 packet: TTL, fragments and ICMP"
+				},
+				{
+					"type": "paragraph",
+					"text": "Routing tables can be wrong for a moment and send packets in circles. The **TTL** (time to live) field protects against that: the source sets a number, each router subtracts one, and when it reaches zero the packet is thrown away and the source is warned. **ICMP** is the protocol routers use to send such warnings ('destination unreachable', 'time exceeded'). The **ping** command is built on it. **Traceroute** sends packets with TTL 1, 2, 3, ... and reads the 'time exceeded' answers to discover each router on the path."
+				},
+				{
+					"type": "paragraph",
+					"text": "Every link has an **MTU**, the largest packet it accepts. If an IPv4 packet is larger, the router breaks it into **fragments**, each with its own header. The **offset** field says where the data belongs, counted in units of 8 bytes, and the **MF** (more fragments) bit says if more follow. Only the destination puts the pieces back together."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "packet = 20 header + 2000 data, MTU = 1000\nmax data per fragment = 1000 - 20 = 980 -> use 976 (multiple of 8)\nfragment 1: data 976, offset 0,   MF = 1\nfragment 2: data 976, offset 122, MF = 1   (976 / 8 = 122)\nfragment 3: data  48, offset 244, MF = 0   (1952 / 8 = 244)",
+					"caption": "The offset is in 8-byte units, so the data size of every fragment but the last is a multiple of 8"
+				},
+				{
+					"type": "heading",
+					"text": "NAT and IPv6"
+				},
+				{
+					"type": "paragraph",
+					"text": "There are not enough IPv4 addresses (about 4.3 billion). **NAT** (network address translation) lets a whole home or company use **private addresses** (10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16) and show a single public address to the Internet. The NAT box uses port numbers to tell the conversations apart, like a receptionist who gives each call an extension. The cost is that outsiders cannot start a connection to a machine inside, which breaks the old idea that every machine can be reached from everywhere."
+				},
+				{
+					"type": "paragraph",
+					"text": "**IPv6** is the real fix: addresses have **128 bits**, practically endless. The header was simplified: fixed size (40 bytes), no checksum, and routers do not fragment. A router that gets a packet too big for the next link discards it and tells the source with an ICMPv6 message; the source learns the smallest MTU of the path and adjusts the size of its packets."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Do not mix the addresses. The MAC address works inside one link and changes at every hop. The IP address names the final destination and stays the same along the path (except for NAT). And do not forget to subtract 2 when you count hosts."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Datagram = each packet alone. Dijkstra = shortest path. Distance vector = slow bad news. Link state = everybody has the map. BGP = path of ASes. Network = address AND mask. Hosts = 2^(32−n) − 2. Longest prefix wins. TTL stops loops. IPv6 = 128 bits."
+				}
+			]
+		},
+		{
+			"id": "transport-layer",
+			"title": "The transport layer: ports, UDP and TCP",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "IP brings a packet to the right machine, but one machine runs many programs at once: a browser, a game, a music player. The transport layer delivers the data to the right program and, when needed, makes the delivery reliable. It works only at the two ends; routers in the middle do not look at it."
+				},
+				{
+					"type": "paragraph",
+					"text": "Programs are told apart by **port numbers**, 16-bit numbers (0 to 65,535). The pair (IP address, port) is a communication end point, a **socket**. Some ports are well known: 80 for HTTP, 443 for HTTPS, 53 for DNS, 25 for SMTP. It works like an apartment building: the IP address is the building and the port is the apartment."
+				},
+				{
+					"type": "heading",
+					"text": "UDP: the light one"
+				},
+				{
+					"type": "paragraph",
+					"text": "**UDP** adds almost nothing to IP: ports to reach the right program, and a checksum to detect damaged data. It has no connection, no acknowledgement, no retransmission, no flow control. The header is only 8 bytes. It is the right tool when late data is useless, such as a voice call or a game: it is better to skip a lost piece and go on than to stop and wait for a retransmission. Applications that need reliability on top of UDP must build it themselves."
+				},
+				{
+					"type": "heading",
+					"text": "TCP: the reliable one"
+				},
+				{
+					"type": "paragraph",
+					"text": "**TCP** gives the application a reliable stream of bytes in the right order. It numbers the bytes, confirms what arrives, resends what is lost, and slows down when the receiver or the network is overloaded."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Opening a connection: the three-way handshake.** Each side picks an initial sequence number and needs the other side to confirm it. First the client sends SYN with its number. Then the server answers SYN+ACK: it confirms the client's number and sends its own, in one segment. Finally the client sends an ACK. Three segments are enough. The third one has a deeper purpose: networks can delay and duplicate packets, so an old SYN may arrive long after. The server cannot know alone whether it is new. The final ACK, which confirms a number the server chose just now, proves that the client is really taking part."
+				},
+				{
+					"type": "diagram",
+					"content": "Client                        Server\n  |---- SYN, seq=x ---------->|\n  |<--- SYN+ACK, seq=y, ack=x+1|\n  |---- ACK, ack=y+1 -------->|\n  |        (data flows)        |\n  |---- FIN ----------------->|   closing:\n  |<--- ACK ------------------|   each direction\n  |<--- FIN ------------------|   is closed\n  |---- ACK ----------------->|   separately",
+					"caption": "Opening takes 3 segments, closing takes 4 (each side closes its own direction)"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Numbers and acknowledgements.** TCP numbers every byte. The sequence number of a segment is the number of its first byte. The acknowledgement number is the number of the **next byte expected**, and it is **cumulative**: it confirms everything before it. So if a segment has sequence number s and n bytes of data, it covers bytes s to s + n − 1 and the ACK is s + n. Example: s = 4000, n = 300 gives ACK 4300. A lost ACK is usually repaired by the next, bigger ACK."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Flow control** protects the receiver. In every segment it advertises its free buffer space, the **receive window**. If the application reads slowly, the window shrinks, even to zero, and the sender must slow down. **Congestion control** protects the network, and the sender estimates it, in a second window called the **congestion window** (cwnd). The sender may have in flight at most **min(cwnd, receive window)** unacknowledged bytes."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Congestion control** has these ideas (the unit is the MSS, the maximum segment size):"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Slow start**: begin with cwnd = 1 MSS. Each ACK adds 1 MSS, so the window doubles every RTT: 1, 2, 4, 8, 16. It is exponential, despite the name. It goes on until cwnd reaches the threshold **ssthresh**.",
+						"**Congestion avoidance**: above ssthresh, grow by only 1 MSS per RTT (additive increase), carefully.",
+						"**Timeout** (serious congestion, not even ACKs come back): ssthresh = half of the current window, cwnd = 1 MSS, and slow start again.",
+						"**Three duplicate ACKs**: the receiver keeps repeating the last in-order ACK when later segments arrive. One or two may be just reordering, three mean a loss. **Fast retransmit** resends the missing segment without waiting for the timer. In **TCP Reno**, **fast recovery** then sets ssthresh and cwnd to half and goes on growing by 1 MSS per RTT."
+					],
+					"ordered": false
+				},
+				{
+					"type": "chart",
+					"title": "Slow start: congestion window at the end of each round trip, starting at 1 MSS",
+					"unit": "MSS",
+					"bars": [
+						{
+							"label": "Start",
+							"value": 1
+						},
+						{
+							"label": "After 1 RTT",
+							"value": 2
+						},
+						{
+							"label": "After 2 RTT",
+							"value": 4
+						},
+						{
+							"label": "After 3 RTT",
+							"value": 8
+						},
+						{
+							"label": "After 4 RTT",
+							"value": 16
+						}
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "cwnd\n 20|        /|\n 16|      /  |\n 12|    /    |        /|\n 10|  /      |      /  |    +1 MSS per RTT,\n  8|/        |    /    |    halve at each loss\n  6|         |  /\n  4|         |/\n   +--------------------------> time",
+					"caption": "Additive increase, multiplicative decrease (AIMD): the sawtooth of TCP Reno"
+				},
+				{
+					"type": "paragraph",
+					"text": "**How long to wait? The timeout.** If the timer is too short, TCP resends for nothing. If it is too long, loss recovery is slow. So TCP follows the real delay with a moving average: SRTT = α·SRTT + (1 − α)·R, with α = 7/8, where R is the newest measurement. The old value has a big weight, each new sample a small one. Example: SRTT = 60 ms and R = 100 ms give 7/8 × 60 + 1/8 × 100 = 52.5 + 12.5 = 65 ms. The timeout is the SRTT plus a safety margin based on the variation."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Nagle's algorithm** fights tiny segments. While there is sent data not yet acknowledged, small writes wait in a buffer until the ACK arrives or a full segment is ready. It adapts to the network by itself. Interactive applications that hate waiting, such as games, turn it off."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Closing.** The side that closes first sends the last ACK and then waits in the state **TIME_WAIT** for twice the maximum segment lifetime. If that last ACK was lost, the other side will send its FIN again, and someone must still be there to answer. It also lets old duplicate segments of this connection die in the network before the same port pair is reused."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Feature",
+						"UDP",
+						"TCP"
+					],
+					"rows": [
+						[
+							"Connection",
+							"No",
+							"Yes (handshake)"
+						],
+						[
+							"Delivery",
+							"May lose, duplicate or reorder",
+							"Reliable, in order"
+						],
+						[
+							"Flow and congestion control",
+							"No",
+							"Yes"
+						],
+						[
+							"Header",
+							"8 bytes",
+							"At least 20 bytes"
+						],
+						[
+							"Good for",
+							"Voice, games, DNS queries",
+							"Web, e-mail, files"
+						]
+					],
+					"caption": "UDP and TCP side by side"
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Do not confuse the two windows. The receive window comes from the receiver (flow control). The congestion window is guessed by the sender (congestion control). The sender obeys the smaller one. And slow start is exponential, not slow."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Port = program. Handshake = SYN, SYN+ACK, ACK. ACK = next byte expected = s + n. Slow start doubles per RTT. Timeout: ssthresh = cwnd/2, cwnd = 1. Three duplicate ACKs: halve and keep going. SRTT uses α = 7/8."
+				}
+			]
+		},
+		{
+			"id": "application-layer",
+			"title": "The application layer: DNS, e-mail, the Web and streaming",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "The top floor is what people actually use. Programs here follow protocols that run over TCP or UDP. We will see how names become addresses, how e-mail travels, how the Web works, and how videos and popular sites reach you quickly."
+				},
+				{
+					"type": "heading",
+					"text": "DNS: the phone book of the Internet"
+				},
+				{
+					"type": "paragraph",
+					"text": "People like names (www.example.com). The network understands only numeric addresses. **DNS** (domain name system) translates one into the other. No machine knows everything, so the names form a tree: the **root**, then the top-level domains (.com, .org, .br), then the names below. Each part of the tree is a **zone**, run by its own administrator, with an **authoritative** server that has the final word about it."
+				},
+				{
+					"type": "diagram",
+					"content": "              . (root)\n           /     |     \\\n        .com   .org    .br          top-level domains\n         |\n    example.com                      a zone\n         |\n  www.example.com                    a name",
+					"caption": "The DNS name tree"
+				},
+				{
+					"type": "paragraph",
+					"text": "Your computer asks a **local resolver** (usually run by your provider). If the resolver does not know, it asks the hierarchy with **iterative queries**: each server answers with what it knows, either the final answer or a referral to whom to ask next. For www.example.com with an empty cache, the order is: a root server (it points to .com), then a .com server (it points to the authoritative server of example.com), and finally the authoritative server (it gives the address). In practice, the **cache** avoids almost every trip to the root and the top-level servers."
+				},
+				{
+					"type": "paragraph",
+					"text": "Every answer has a **TTL** (time to live): for how many seconds it may be reused without asking again. A high TTL means less load and faster answers, but changes spread slowly. A low TTL is the opposite. If an address with TTL 300 is cached at time 0 and the administrator changes it at 100 s, clients behind that cache keep the old address until 300 s. That is why people lower the TTL days before moving a service."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Record",
+						"Meaning",
+						"Example"
+					],
+					"rows": [
+						[
+							"A",
+							"IPv4 address of a name",
+							"www -> 192.0.2.10"
+						],
+						[
+							"AAAA",
+							"IPv6 address of a name",
+							"www -> 2001:db8::10"
+						],
+						[
+							"CNAME",
+							"Alias: this name is another name",
+							"api -> www"
+						],
+						[
+							"MX",
+							"Mail servers of the domain, with preference",
+							"example.org -> mail1 (10)"
+						],
+						[
+							"NS",
+							"Name servers of the zone",
+							"example.org -> ns1"
+						],
+						[
+							"PTR",
+							"Reverse: address to name",
+							"192.0.2.10 -> www"
+						]
+					],
+					"caption": "The most common DNS record types. A CNAME lets the real machine change without changing the published name."
+				},
+				{
+					"type": "heading",
+					"text": "E-mail"
+				},
+				{
+					"type": "paragraph",
+					"text": "E-mail does two separate jobs. **SMTP** pushes a message from the sender to the server of the recipient. The user then reads the mailbox with an access protocol, **IMAP** or **POP3**, which pulls it. To find where to send a message to ana@example.org, the sending server asks DNS for the **MX** records of example.org: they name the mail servers of the domain, in order of preference. The part after the @ is a domain, not a machine name."
+				},
+				{
+					"type": "heading",
+					"text": "The Web and HTTP"
+				},
+				{
+					"type": "paragraph",
+					"text": "**HTTP** is a request-and-answer protocol. The browser sends a request ('GET this page') and the server answers with a code and the content. HTTP is **stateless**: each request is handled alone, with no memory of the previous one. A **cookie** adds memory: the server asks the browser to store a small text and send it back with every request. Usually the cookie holds only a session identifier, and the real data stays on the server."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Code",
+						"Class",
+						"Examples"
+					],
+					"rows": [
+						[
+							"1xx",
+							"Information",
+							"100 Continue"
+						],
+						[
+							"2xx",
+							"Success",
+							"200 OK"
+						],
+						[
+							"3xx",
+							"Redirection",
+							"301 Moved, 304 Not Modified"
+						],
+						[
+							"4xx",
+							"Client error",
+							"404 Not Found, 403 Forbidden"
+						],
+						[
+							"5xx",
+							"Server error",
+							"500 Internal Error, 503 Unavailable"
+						]
+					],
+					"caption": "The first digit of the status code tells the class, and on which side the problem is"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Counting round trips.** Convention: opening a TCP connection costs 1 RTT (the handshake), and each request with its answer costs 1 RTT (the time to send the data itself is ignored). With **non-persistent** HTTP, every object needs a new connection, so 2 RTT each. With **persistent** HTTP, the same connection is reused: 1 RTT for the handshake, then 1 RTT per object. A page with 1 HTML file and N images, no parallel connections: non-persistent 2(N + 1) RTT, persistent 2 + N RTT. With N = 4: 10 against 6."
+				},
+				{
+					"type": "chart",
+					"title": "Round trips for a page with 1 HTML file and 4 images",
+					"unit": "RTT",
+					"bars": [
+						{
+							"label": "Non-persistent",
+							"value": 10
+						},
+						{
+							"label": "Persistent",
+							"value": 6
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "**HTTP caching** works in two phases. While the stored copy is within its lifetime (the max-age of the Cache-Control header), the browser uses it without asking the server. After that, it makes a **conditional request**, sending the validator it received (ETag or Last-Modified). If nothing changed, the server answers 304 Not Modified with no body, saving the transfer. Example: max-age=60 and ETag, and the page is needed again after 90 s: a conditional request is made."
+				},
+				{
+					"type": "heading",
+					"text": "Content delivery and streaming"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **CDN** (content delivery network) keeps copies of content in many places around the world. The most common trick to lead you to the nearest copy is in DNS: the CDN's DNS server returns a different address depending on where the question comes from. Content travels less, delay drops, and load is spread out."
+				},
+				{
+					"type": "paragraph",
+					"text": "Video and audio are played at a fixed rate, but arrive with a variable delay. The player keeps a few seconds in a **playout buffer**: it fills when the network is fast and drains when it is slow. The price is a small delay at the start, fine for a recorded video but bad for a live call, which needs a very small buffer."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A playout buffer is a water tank on the roof: the pump (network) works unevenly, but the tap (the video) always gets a steady flow, as long as the tank does not run dry."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "DNS: hierarchy, zones, iterative queries, cache with TTL. A/AAAA/CNAME/MX/NS/PTR. SMTP pushes, IMAP and POP3 pull. HTTP is stateless, cookies add state. 404 is a client error. Persistent HTTP saves round trips. CDN = DNS that answers by location."
+				}
+			]
+		},
+		{
+			"id": "network-security",
+			"title": "Network security",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Messages cross machines owned by strangers. Security asks: can someone read it? Can someone change it? Am I really talking to who I think? Three different properties answer these questions, and each needs its own mechanism."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Property",
+						"Question",
+						"Tool"
+					],
+					"rows": [
+						[
+							"Confidentiality",
+							"Can only the right people read it?",
+							"Encryption"
+						],
+						[
+							"Integrity",
+							"Was it changed on the way?",
+							"Hash, MAC, signature"
+						],
+						[
+							"Authenticity",
+							"Who really sent it?",
+							"Signature, certificate, challenge-response"
+						]
+					],
+					"caption": "Confidentiality, integrity and authenticity are different things"
+				},
+				{
+					"type": "heading",
+					"text": "Symmetric and asymmetric keys"
+				},
+				{
+					"type": "paragraph",
+					"text": "In **symmetric** cryptography both sides share the same secret key. It is fast, but how do they agree on the key without a spy hearing it? **Asymmetric** (public-key) cryptography solves this: each person has a pair of keys, a **public key** that everyone may know and a **private key** that is kept secret. What one key locks, only the other opens. To send a secret to Bob, you lock with **Bob's public key**, and only Bob's private key opens it."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A public key is like an open padlock you hand out to everybody. Anyone can snap it shut on a box for you. Only you hold the key that opens it."
+				},
+				{
+					"type": "heading",
+					"text": "Hashes and signatures"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **cryptographic hash function** (SHA-256 is one) turns a message of any size into a short, fixed-size **digest**, like a fingerprint. It must be easy to compute, practically impossible to invert, and **collision resistant** (very hard to find two messages with the same digest). Changing one letter changes the digest completely."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **digital signature** uses the key pair the other way around: you sign with your **private key** and everyone verifies with your **public key**. It gives authorship, integrity, and non-repudiation (you cannot deny it). In practice, the digest of the message is signed, not the whole message, because it is much shorter."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **MAC** (message authentication code) is like a signature made with a shared secret key: it proves that the message was not changed and that it came from someone who has the key."
+				},
+				{
+					"type": "heading",
+					"text": "Certificates and trust"
+				},
+				{
+					"type": "paragraph",
+					"text": "Public-key tricks only work if the public key you received really belongs to who claims it. Otherwise a man in the middle could give you his own key. A **certificate** fixes this: a trusted third party, the **certification authority (CA)**, signs a statement 'this key belongs to this name'. Your browser checks the signature by following a chain of certificates up to a root CA that it already trusts. The certificate attests the link between an identity and a public key, nothing more."
+				},
+				{
+					"type": "heading",
+					"text": "Proving who you are: challenge and response"
+				},
+				{
+					"type": "paragraph",
+					"text": "How to prove that you know a secret without sending it? In **challenge-response**, the verifier sends a value and the other side returns that value transformed with the secret. If the challenge were always the same, an attacker could record one good answer and play it again (a **replay**). So the verifier sends a fresh random number, a **nonce** (number used once), every time. An old answer is useless for a new challenge."
+				},
+				{
+					"type": "paragraph",
+					"text": "Protocols such as **TLS** (the lock in the browser) and **IPsec** combine these pieces. Public keys and certificates let the two sides agree on a key and know who the other is. Then fast symmetric encryption protects the data, and a MAC over every message detects any change before the data is used."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Encryption alone is not integrity. A strong cipher with a shared key but no MAC and no signature keeps the message secret, but an attacker may still flip bits in the ciphertext, and the receiver may accept the change without noticing. Also, never confuse the keys: encrypt with the recipient's public key, sign with your own private key."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Confidentiality = encrypt. Integrity = hash and MAC. Authenticity = signature and certificate. Secret to Bob: Bob's public key. Signature: your private key. Nonce stops replay. A CA vouches for key and identity."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Let us follow one click: you type www.example.com in your browser. Every layer does its small job, in order."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Application (DNS)**: the browser asks the resolver for the address of www.example.com. The cache or the DNS tree answers with an IP address.",
+						"**Network (ARP)**: the address is outside your subnet, so your machine finds the MAC address of the default router with ARP.",
+						"**Transport (TCP)**: a three-way handshake opens a connection to port 443 or 80.",
+						"**Application (HTTP)**: the request goes out and the answer comes back, with a status code.",
+						"**Network, link and physical**: each packet crosses routers (longest prefix match, TTL going down), each hop is a frame with new MAC addresses, and the bits are signals on cables, fibre or radio."
+					],
+					"ordered": true
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Layer",
+						"Problem it solves",
+						"Key ideas to remember"
+					],
+					"rows": [
+						[
+							"Physical",
+							"Send bits as signals",
+							"Nyquist, Shannon, Manchester, FDM/TDM/CDMA"
+						],
+						[
+							"Data link",
+							"Frames between neighbours; errors; flow",
+							"Stuffing, parity, Hamming, CRC, stop-and-wait, go-back-N, selective repeat"
+						],
+						[
+							"MAC",
+							"Sharing a channel",
+							"ALOHA 18.4% and 36.8%, CSMA/CD, switch learning, spanning tree, CSMA/CA"
+						],
+						[
+							"Network",
+							"Route across networks",
+							"Dijkstra, distance vector, link state, BGP, masks, CIDR, NAT, IPv6"
+						],
+						[
+							"Transport",
+							"Process to process, reliability",
+							"Ports, UDP, TCP handshake, windows, slow start, AIMD"
+						],
+						[
+							"Application",
+							"Services for people",
+							"DNS, SMTP/IMAP, HTTP, CDN, streaming"
+						],
+						[
+							"Security",
+							"Secrecy, integrity, identity",
+							"Public key, hash, signature, certificate, nonce, TLS"
+						]
+					],
+					"caption": "A map of the whole subject"
+				},
+				{
+					"type": "paragraph",
+					"text": "Some mistakes happen again and again in exams and in real life. Check this list before you answer."
+				},
+				{
+					"type": "list",
+					"items": [
+						"Mixing bandwidth (how much per second) with latency (how long it takes).",
+						"Forgetting that the usable hosts of a subnet are 2^(32−n) − 2.",
+						"Mixing the MAC address (one link only) with the IP address (end to end).",
+						"Thinking that the receive window and the congestion window are the same thing.",
+						"Thinking that slow start is slow: it doubles every RTT.",
+						"Using the whole sequence space as the window in selective repeat: the limit is half.",
+						"Believing that encryption alone protects against changes to the message."
+					],
+					"ordered": false
+				},
+				{
+					"type": "video",
+					"title": "Networking tutorial (Ben Eater): from bits on a wire to Ethernet, IP, routing and TCP",
+					"url": "https://www.youtube.com/playlist?list=PLowKtXNTBypH19whXTVoG3oKSuOcw_XeW"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Each layer trusts the one below and serves the one above. Almost every question of the quiz is one of these small ideas, applied with a short calculation. Now start the quiz."
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,357 @@
+{
+	"area": "load-balancing",
+	"intro": [
+		"Imagine a school canteen with one cashier and a very long line. The line moves slowly, the children get angry, and if the cashier goes home sick, nobody eats. Now imagine the canteen opens four cashiers and a teacher stands at the door saying \"you go to cashier 1, you go to cashier 2...\". The line moves four times faster, and if one cashier gets sick, the teacher simply stops sending children there. That teacher is a **load balancer**.",
+		"On the internet it is the same. A website or an app is run by a program on a computer called a [[server|a computer that waits for requests from other computers and answers them]]. One server can only do so much work. When millions of people ask for pages at the same time, we use many servers, and something has to decide which server answers each person. That something is the load balancer. You meet it every time you open a big website, a video app or an online game, even if you never see it.",
+		"In this summary you will learn, step by step: why we use many servers instead of one big one, what a load balancer is and how it differs from a reverse proxy and an API gateway, at which \"floor\" of the network it can work, how it picks a server (the algorithms), how it notices that a server died, how it keeps one user on the same server when needed, how it handles the secret padlock of HTTPS, how to avoid the balancer itself breaking everything, and how to write it in NGINX and Caddy. At the end you will be able to answer the quiz of this area."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture and the words we use",
+			"blocks": [
+				{ "type": "paragraph", "text": "Let us start with a few words you will see all the time. A **client** is whoever asks for something (your browser, your phone app). A **request** is one question the client sends, like \"give me the home page\". A **server** answers. When we put many equal servers behind one door, each of them is called a **back end** (or an instance, a copy of the same program). The door is the load balancer." },
+				{ "type": "diagram", "caption": "The simplest picture of load balancing", "content": "            ┌──────────┐      ┌─> back end 1\nclients ──> │   load   │ ─────┼─> back end 2\n            │ balancer │      └─> back end 3\n            └──────────┘\n  one address         many equal copies\n  the clients see     of the application" },
+				{ "type": "paragraph", "text": "The clients only know the address of the balancer. They never learn how many back ends exist. That is very useful: we can add or remove back ends and nobody outside notices." },
+				{ "type": "callout", "tone": "analogy", "text": "A restaurant host stands at the entrance and sends each new group of guests to a free table. The guests do not choose the waiter, the host does. The host is the load balancer, the tables with waiters are the back ends." },
+				{ "type": "heading", "text": "The two jobs of a load balancer" },
+				{ "type": "list", "items": [
+					"**Share the work**: so that no single server gets crushed while others sit idle. This gives more capacity (more requests per second).",
+					"**Survive failures**: when a server dies, stop sending requests to it. The users keep being served by the others. This gives [[availability|the fraction of time a service is working and usable]]."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "A load balancer receives requests at one address and spreads them over many equal back ends, to get more capacity and to survive the loss of a server." }
+			]
+		},
+		{
+			"id": "horizontal-vs-vertical-scaling",
+			"title": "Horizontal against vertical scaling",
+			"blocks": [
+				{ "type": "paragraph", "text": "Your shop gets more customers than it can serve. There are two things you can do. You can buy a giant, super-fast machine to replace the old one. Or you can buy more ordinary machines and use them together. These two roads have names." },
+				{ "type": "table", "headers": ["Aspect", "Vertical scaling (scale up)", "Horizontal scaling (scale out)"], "rows": [
+					["What you do", "Make one machine bigger: more cores, more memory, faster disks", "Add more instances of the same service"],
+					["Picture", "Replace the cashier with a super-cashier", "Open more cashiers"],
+					["Do you change the application?", "Usually no, it is the simplest way", "Yes: it must work with several copies at once"],
+					["Needs a load balancer?", "No, there is only one machine", "Yes, something must share the requests"],
+					["Limits", "A maximum size exists, the price rises fast near it, resizing often needs a stop, and it is still ONE machine (a single point of failure)", "No single-machine ceiling, but shared parts (like one database) can become the new limit"]
+				] },
+				{ "type": "heading", "text": "Why stateless services scale out easily" },
+				{ "type": "paragraph", "text": "A service is [[stateless|it keeps nothing between one request and the next that the next request needs]] when any copy can answer any request. The data that must survive (sessions, carts, orders) lives in shared storage, like a database. Then the balancer can send each request anywhere, and copies can appear or disappear freely." },
+				{ "type": "callout", "tone": "analogy", "text": "A bank where every clerk sees the same computer records: you can go to any window. Compare with a clerk who keeps your papers in a private drawer: you must always return to that clerk." },
+				{ "type": "heading", "text": "Sizing: N+1" },
+				{ "type": "paragraph", "text": "If one instance handles 400 requests per second and the busiest moment brings 1500, you need ceil(1500 / 400) = ceil(3.75) = 4 instances just to serve the peak (we always round up). Call this number N. To still serve the whole peak when one instance dies, you add one spare: N + 1 = 5." },
+				{ "type": "paragraph", "text": "The spare is cheaper when machines are small. To survive one failure with 2 big machines, each able to carry 100% of the peak, you pay 200% of the peak. With 8 small machines, each carrying 1/7 of the peak, you pay 8/7, about 114%. One spare in 8 is a smaller fraction than one spare in 2." },
+				{ "type": "chart", "title": "Capacity you must buy to survive the loss of one machine (peak = 100)", "unit": "% of the peak", "bars": [
+					{ "label": "2 big machines", "value": 200 },
+					{ "label": "8 small machines", "value": 114.3 }
+				] },
+				{ "type": "heading", "text": "Elasticity and its traps" },
+				{ "type": "paragraph", "text": "With horizontal scaling you can switch instances on at the busy hour and off in the quiet hours, one at a time, while the others keep working. This is called [[elasticity|capacity that follows demand up and down]]. A vertically scaled machine stays sized for the peak all day, or has to be stopped at every resize." },
+				{ "type": "callout", "tone": "warning", "text": "Scaling out one tier only helps that tier. If 10 instances all wait for one database that is at 100% CPU, adding an 11th instance changes nothing: the bottleneck is the database. Also, every instance multiplies what it takes from shared things. If each of 8 instances opens a pool of 20 database connections and the database accepts at most 100, the 160 requested connections do not fit. Check the limit for the largest size you plan, or use a connection pooler so many instances share a few real connections." },
+				{ "type": "callout", "tone": "remember", "text": "Vertical = a bigger machine, simple but with a ceiling and still one machine. Horizontal = more machines, needs a load balancer and works best when the service is stateless. Always find the real bottleneck before adding instances." }
+			]
+		},
+		{
+			"id": "reverse-proxy-load-balancer-api-gateway",
+			"title": "Reverse proxy, load balancer and API gateway",
+			"blocks": [
+				{ "type": "paragraph", "text": "A [[proxy|a middleman program that passes requests and answers between two sides]] stands between two parties. The question is: whom does it work for?" },
+				{ "type": "table", "headers": ["Kind", "Where it stands", "Whom it represents"], "rows": [
+					["Forward proxy", "Next to the clients (for example, a company network where everyone goes out to the internet through it)", "The clients. The server does not see who is behind it"],
+					["Reverse proxy", "Next to the servers", "The servers. The client talks only to it and does not need to know it exists"]
+				] },
+				{ "type": "paragraph", "text": "A reverse proxy is a natural place to do jobs that every request needs: TLS (the HTTPS padlock), caching, compression, hiding the real address of the origin and holding slow clients so the application is free for the next request. So a reverse proxy is useful even with a SINGLE server behind it. What it cannot give is redundancy, which needs more than one server." },
+				{ "type": "paragraph", "text": "A **layer 7 load balancer** is a reverse proxy that also decides which of several equivalent copies serves each request. That is why NGINX and Caddy play both roles with the same configuration." },
+				{ "type": "paragraph", "text": "An **API gateway** is a reverse proxy specialised in APIs. At one single point it applies rules common to all routes: who may call (authentication), how often (rate limiting), which service each route goes to and how requests or responses are adapted. The business logic stays in the services." },
+				{ "type": "diagram", "caption": "Two different decisions", "content": "                        ┌─> orders replica 1\n               /orders  │   (balancer of orders)\n clients ─> API ────────┼─> orders replica 2\n           gateway      │\n               /users   ├─> users replica 1\n                        │   (balancer of users)\n                        └─> users replica 2" },
+				{ "type": "callout", "tone": "remember", "text": "Routing decides among DIFFERENT services by looking at the route (the gateway). Balancing decides among EQUAL replicas of one service (the load balancer). One product can do both, but the two decisions stay different." },
+				{ "type": "heading", "text": "What changes when a proxy is in the middle" },
+				{ "type": "paragraph", "text": "The proxy keeps **two** separate connections: one with the client, one with the back end. This brings three practical consequences." },
+				{ "type": "list", "items": [
+					"**The application sees the proxy's address, not the client's.** The proxy passes the client address in a header called `X-Forwarded-For`. It is a list that grows to the right: each proxy appends the address of whoever handed it the request. With honest hops, `X-Forwarded-For: 203.0.113.7, 10.0.0.5, 10.0.0.9` means the client is `203.0.113.7` (the first), then came proxy `10.0.0.5`, and `10.0.0.9` is another hop. The last proxy does not appear in the list, because it is the peer of the connection the application sees.",
+					"**Never trust that header blindly.** Any client can send `X-Forwarded-For` with a made-up value, and proxies append at the END. So the leftmost entry is the one the client controls. For rate limits or access control, read from the right, skip the addresses of your own trusted proxies, and take the first one left.",
+					"**Hop-by-hop headers are removed.** Some headers (`Connection`, `Keep-Alive`, `Transfer-Encoding`, `Upgrade`) are valid only for one connection between two neighbours, as opposed to end-to-end headers that travel from the client to the origin. Since the proxy has two independent connections, it drops the hop-by-hop headers it received and creates the ones that fit the other connection."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Proxies often buffer (hold) the back end's response to protect the application from slow clients. For streaming responses such as server-sent events, this buffer keeps the data until it fills or the response ends, so events arrive in big late bursts, though none is lost. The fix is to turn response buffering off on those routes." }
+			]
+		},
+		{
+			"id": "layer-4-vs-layer-7",
+			"title": "Layer 4 against layer 7",
+			"blocks": [
+				{ "type": "paragraph", "text": "Networks are described as a building with floors, called layers. The [[OSI model|a standard way to describe networks in seven layers, from cables up to applications]] has seven: physical, data link, network, transport, session, presentation and application. Only two matter here. **Layer 4** is the transport floor, where TCP and UDP live, with addresses and ports. **Layer 7** is the application floor, where HTTP lives, with URLs, headers and cookies. \"L4\" and \"L7\" tell you up to which floor a balancer reads the traffic before deciding." },
+				{ "type": "callout", "tone": "analogy", "text": "A layer 4 balancer is a postal worker who sorts parcels by the address on the box and never opens it. A layer 7 balancer opens the box and reads the letter inside before choosing where it goes." },
+				{ "type": "table", "headers": ["Aspect", "Layer 4", "Layer 7"], "rows": [
+					["Sees", "Source and destination addresses and ports", "The whole HTTP message: path, Host header, cookies, other headers"],
+					["Unit of work", "The connection: one decision, then it just forwards bytes", "The request: every request is read, parsed and sent again"],
+					["Connections", "Forwards one connection's bytes", "Ends the client's TCP connection and opens (or reuses) another to the back end, so there are two connections"],
+					["Protocols", "Any (it does not care what is inside)", "The ones it understands, usually HTTP"],
+					["Cost per request", "Lower", "Higher (more CPU and memory)"],
+					["Routing rules", "Poor: address and port only", "Rich: by path, host, header, cookie"]
+				] },
+				{ "type": "paragraph", "text": "So the rule for choosing is simple: look at what your routing rule needs. Separating services by different addresses or ports works at layer 4. If the difference is in the URL path (`/api/*` here, `/static/*` there, same host and same port), in a header or in a cookie, that information only appears after reading HTTP, so you need at least layer 7." },
+				{ "type": "heading", "text": "The long connection trap" },
+				{ "type": "paragraph", "text": "A layer 4 balancer chooses once per connection. If clients keep one connection open and send thousands of requests through it (HTTP/1.1 keep-alive), they all go to the same back end, and connections with different volumes make uneven load. The same happens, more strongly, with HTTP/2 and gRPC, which multiplex many calls over one connection. One very busy client can overload one back end while two others sit idle. The fix is to balance at the right unit, the request or the stream: a layer 7 proxy, or a client that opens connections to several back ends and alternates." },
+				{ "type": "diagram", "caption": "Layer 4 sees one connection, layer 7 sees many requests", "content": "layer 4:  [conn A: req req req req req ...] -> back end 1\n          [conn B: req ................] -> back end 2\n\nlayer 7:  req -> back end 1\n          req -> back end 2\n          req -> back end 3   (one choice per request)" },
+				{ "type": "paragraph", "text": "With HTTPS, a layer 4 balancer can work in **passthrough**: it forwards the encrypted bytes and the secret tunnel goes from the client to the back end. It still sees what is outside the encryption (addresses, ports, when connections open and close), but path, headers and cookies are invisible to it." },
+				{ "type": "callout", "tone": "warning", "text": "After you put a layer 7 proxy in front of an application, the application's log shows every request coming from the proxy's address, because the proxy opened its own connection. The client's address travels in `X-Forwarded-For`, and the application should believe it only when the connection comes from a proxy it trusts." },
+				{ "type": "callout", "tone": "remember", "text": "Layer 4: decides per connection, sees addresses and ports, fast and protocol-blind. Layer 7: decides per request, sees HTTP, richer rules, higher cost, two connections." }
+			]
+		},
+		{
+			"id": "balancing-algorithms",
+			"title": "Balancing algorithms",
+			"blocks": [
+				{ "type": "paragraph", "text": "An [[algorithm|a fixed recipe of steps for solving a problem]] for balancing answers one question: which back end gets the next request? Let us meet the most common ones." },
+				{ "type": "heading", "text": "Round robin" },
+				{ "type": "paragraph", "text": "The back ends receive requests in turns, one after the other, and when the list ends it starts again, like dealing cards around a table. It ignores both the load and the speed of each server. With back ends A, B, C starting at A, request number k goes to position (k − 1) mod 3 of the list, counted from zero. For k = 7, (7 − 1) mod 3 = 0, so the 7th request goes to A." },
+				{ "type": "heading", "text": "Weighted round robin" },
+				{ "type": "paragraph", "text": "Each back end has a **weight**, a number written in the configuration. The share of a server is its weight divided by the sum of all weights. With weights 3, 2 and 1, the sum is 6, so the shares are 3/6, 2/6 and 1/6. Of 600 requests: 300, 200 and 100." },
+				{ "type": "chart", "title": "Weights 3, 2 and 1: how 600 requests are split", "unit": "requests", "bars": [
+					{ "label": "server weight 3", "value": 300 },
+					{ "label": "server weight 2", "value": 200 },
+					{ "label": "server weight 1", "value": 100 }
+				] },
+				{ "type": "paragraph", "text": "The weights are static: they are a guess made in advance and do not change by themselves when a server becomes slower." },
+				{ "type": "heading", "text": "Least connections" },
+				{ "type": "paragraph", "text": "The balancer keeps a counter for each back end: it adds 1 when it sends a request and subtracts 1 when the request ends. The next request goes to the back end with the fewest requests in progress. It is a simple estimate of how busy each server is. It clearly beats round robin when the requests have very different durations, because round robin equalises the number of requests sent, not the work." },
+				{ "type": "paragraph", "text": "**Weighted least connections** divides the active connections by the weight and picks the smallest result. Example: A has 12 connections and weight 1, B has 20 and weight 4, C has 9 and weight 1. The ratios are 12, 5 and 9, so B is chosen: a weight-4 server can hold four times more." },
+				{ "type": "heading", "text": "A slow server, two algorithms" },
+				{ "type": "paragraph", "text": "Take three back ends: two answer in 10 ms and one in 40 ms, and a fixed number of clients keep sending the next request as soon as the last one ends. With round robin, each back end gets one third of the requests. But the slow one needs four times longer per request, so requests pile up on it. With least connections, every back end holds the same number of requests in progress. A back end that holds a number of requests finishes them at a rate of (in progress) divided by (time per request), so the rates are in the proportion 1/40 : 1/10 : 1/10 = 1 : 4 : 4. These add up to 9 parts, so the slow back end gets 1/9 of the requests, about 11%, and each fast one 4/9, about 44%." },
+				{ "type": "chart", "title": "Share of requests that the slow back end receives", "unit": "%", "bars": [
+					{ "label": "round robin", "value": 33.3 },
+					{ "label": "least connections", "value": 11.1 }
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Plain round robin with no weights gives the same number of requests to every server, whatever its speed. Under heavy load a slower server falls behind. The fix is to state the difference with weights, or to use an algorithm that observes the load, like least connections." },
+				{ "type": "heading", "text": "Random and the power of two choices" },
+				{ "type": "paragraph", "text": "**Random** picks a server by chance for each request. Over a few requests the split looks uneven, but over many each of N equal servers gets about 1/N. It needs no counter and no position, so several balancers can apply it without talking to each other. The **power of two choices** (`random two` in NGINX, `random_choose 2` in Caddy) draws two servers by chance and keeps the less loaded of the two. This is far more balanced than plain random and costs only one comparison. It also reduces the \"herd effect\" in which several balancers all send everything to the one server that looks freest." },
+				{ "type": "heading", "text": "Hashing: IP hash and URL hash" },
+				{ "type": "paragraph", "text": "A [[hash|a function that turns any input into a number, always the same number for the same input]] of a key picks the server. With **IP hash** the key is the client address, so the same client returns to the same server without any table (this holds while the set of servers does not change). With a **URL hash** the key is the requested address, so the same URL always goes to the same server. This is the best fit for caches: each node keeps responses for the URLs it serves, and the hit rate rises." },
+				{ "type": "callout", "tone": "warning", "text": "A hash divides keys, not requests. If 80% of the traffic comes from one office behind a single public address (NAT), all of it becomes one key and lands on one back end. A hash of the URL has the same problem if a few URLs get most of the traffic." },
+				{ "type": "heading", "text": "Two more traps with least connections" },
+				{ "type": "list", "items": [
+					"**Not shared counters.** If two balancer processes keep separate counters, each decides with half of the picture and their decisions can pile on the same back end. The state must be shared (a shared memory zone), or you use a policy that tolerates partial information.",
+					"**The new empty server.** A fresh server has zero connections, so in a busy pool it attracts almost all the new traffic at once, while it is still cold (empty caches, no open connections). A **slow start** raises its share gradually."
+				] },
+				{ "type": "table", "headers": ["Algorithm", "Decides by", "Best when", "Weak point"], "rows": [
+					["Round robin", "A counter (turns)", "Equal servers, similar requests", "Blind to load and speed"],
+					["Weighted round robin", "Counter and weights", "Servers of different sizes", "Weights are fixed guesses"],
+					["Least connections", "Requests in progress", "Requests with very different durations", "Needs shared counters, new servers get flooded"],
+					["Random / two choices", "Chance (and a comparison)", "Several balancers with no coordination", "Short-term unevenness (plain random)"],
+					["IP hash / URL hash", "A hash of a key", "Affinity, caches", "Uneven when keys are concentrated"]
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Round robin shares requests equally, weights share them in proportion, least connections follows the work in progress, and hashes tie a key to a server. A slow server gets 1/3 of the requests under round robin and 1/9 under least connections in the 10 ms / 10 ms / 40 ms example." }
+			]
+		},
+		{
+			"id": "sticky-sessions",
+			"title": "Sticky sessions (session affinity)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Sometimes a user must come back to the **same** back end. **Session affinity** (also called a sticky session) is the rule by which the balancer sends all the requests of one client to the same back end, instead of choosing again every time. The balancer recognises the client by a cookie or by the IP address." },
+				{ "type": "paragraph", "text": "Why would anyone need it? Because of state kept inside an instance. If your login or shopping cart lives only in the memory of the process that served you, a request sent to another instance finds nothing. Pinning the client to the instance works around that problem but does not solve it." },
+				{ "type": "callout", "tone": "analogy", "text": "You leave your coat with one particular coat-check clerk who keeps it in a private cupboard. You must go back to that clerk. If the clerk goes home, your coat is lost, even if there are many other clerks." },
+				{ "type": "heading", "text": "Two ways to recognise the client" },
+				{ "type": "table", "headers": ["Aspect", "By cookie", "By IP address"], "rows": [
+					["How", "The balancer picks a back end at the first request and adds a cookie to the response that identifies the choice. The browser sends the cookie back every time, and the balancer repeats the destination. The state lives in the client, not in a table of the balancer", "A hash of the client address picks the back end (`ip_hash` in NGINX, `client_ip_hash` in Caddy)"],
+					["Needs layer 7?", "Yes (it reads and writes HTTP headers)", "No"],
+					["Weakness", "The cookie is data controlled by the client", "Assumes one address = one user, which fails in both directions: the same user changes address when changing network, and many users behind a NAT look like one"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "A cookie is data the client can read and change. If the cookie says `srv=10.0.3.17:8080` and the balancer forwards to whatever address it finds there, you leak your internal network and give the client a steering wheel. The value must be **opaque**, for example a hash or an HMAC of the address computed with a secret known only to the balancer. The balancer compares the received value with the one it computes for each known back end, because a hash cannot be reversed." },
+				{ "type": "heading", "text": "What affinity does not give you" },
+				{ "type": "list", "items": [
+					"**It does not protect the state.** If the session exists only in the memory of one instance and that instance crashes, the session dies. Failover only makes sure the user reaches a server that does not know them.",
+					"**It hurts autoscaling.** The overloaded instances keep every session they already had, and the new instances receive only clients that are not bound yet. The longer the sessions, the slower the redistribution. Stateless services rebalance on the very next request.",
+					"**It can unbalance the load** when addresses are shared (see IP hash)."
+				] },
+				{ "type": "heading", "text": "The real cure: remove the state" },
+				{ "type": "paragraph", "text": "Affinity is needed only while session state lives inside an instance. Move the state out, either to a **shared store** that every instance queries or to a **signed token** that the client sends with every request, and the instances become stateless. The balancer can choose any of them, and instances can crash or be added without losing sessions." },
+				{ "type": "callout", "tone": "remember", "text": "Sticky sessions are a patch for state kept in instances. Cookie affinity follows the user across networks and needs layer 7. IP affinity is weaker. A shared store or a signed token removes the need." }
+			]
+		},
+		{
+			"id": "consistent-hashing",
+			"title": "Consistent hashing",
+			"blocks": [
+				{ "type": "paragraph", "text": "Hashing a key to choose a server has one big problem. The simple recipe is `hash(key) mod N`, where N is the number of servers (mod means the remainder after division). If N changes, the answer for almost every key changes." },
+				{ "type": "paragraph", "text": "Check it with numbers. Keys 0, 1, 2, ... with `key mod N`. Going from N = 4 to N = 5, a key keeps its server only if the old and the new remainder are equal. The pattern repeats every 20 keys, and the remainders match only for keys 0, 1, 2 and 3, which is 4 in 20. So 80% of the keys change server. For a cache, that means losing almost all the warm content in one moment." },
+				{ "type": "paragraph", "text": "**Consistent hashing** was invented so that a change in the set of servers moves only a small fraction of the keys, about 1/N." },
+				{ "type": "diagram", "caption": "The ring (the hash output is treated as a circle)", "content": "              0\n        S1 *       * k1\n     *               *\n   k2 *               * S2\n     *               *\n        S3 *       * k3\n             half\n\n a key belongs to the first server\n found going clockwise from its position" },
+				{ "type": "paragraph", "text": "The same hash function gives a position on the circle to each server and to each key. In the classic design, each key belongs to the first server found going **clockwise** from the key's position. The rule depends only on positions, so when a server joins or leaves, only the keys in one stretch of the ring change owner." },
+				{ "type": "paragraph", "text": "Example: 4 equal servers share the keys evenly, and a 5th equal server joins. The only keys that move are the ones the new server now owns: 1/5. Each old server goes from 1/4 to 1/5, giving up 1/20 of the total, and 4 × 1/20 = 1/5." },
+				{ "type": "chart", "title": "Keys that change server when going from 4 to 5 servers", "unit": "%", "bars": [
+					{ "label": "key mod N", "value": 80 },
+					{ "label": "consistent hashing", "value": 20 }
+				] },
+				{ "type": "heading", "text": "Virtual nodes" },
+				{ "type": "paragraph", "text": "If every server has only ONE position on the ring, the stretches (arcs) can be very different in size, and when a server leaves, its clockwise neighbour inherits its whole share. That neighbour now carries two shares and, if it also fails, passes three to the next one: a cascade of failures." },
+				{ "type": "paragraph", "text": "The solution is **virtual nodes**: each server appears tens or hundreds of times on the ring, at many positions. Then the arcs become uniform, a bigger server can receive more positions (more share), and when a server leaves, its keys are spread over many others instead of one." },
+				{ "type": "callout", "tone": "remember", "text": "key mod N moves about 80% of the keys when N goes from 4 to 5. Consistent hashing moves about 1/N (here 1/5, about 20%). The owner of a key is the first server clockwise on the ring, and virtual nodes make the shares even and spread the load of a lost server. NGINX offers it as `hash ... consistent`." }
+			]
+		},
+		{
+			"id": "health-checks-and-failover",
+			"title": "Health checks and failover",
+			"blocks": [
+				{ "type": "paragraph", "text": "A balancer that keeps sending requests to a dead server is worse than no balancer. So it must find out who is alive. This is a **health check**. When it discovers a problem and moves the work to the others, that is **failover**: the automatic transfer of the work of a failed component to a healthy one. Failover needs two things: redundancy (another component can take over) and detection (something notices the failure)." },
+				{ "type": "table", "headers": ["Aspect", "Active check", "Passive check"], "rows": [
+					["What it does", "The balancer sends its own test requests (probes) at a fixed interval, for example to `/health`", "The balancer sends no probes. It watches real requests and counts failures (connection errors, timeouts)"],
+					["Needs traffic?", "No, it works even with no clients", "Yes, it needs real requests to learn"],
+					["Cost of discovering a dead server", "Test traffic only", "The first real requests sent to the dead server fail or wait for a timeout, so real users pay"],
+					["Example", "Caddy: `health_uri`, `health_interval`", "NGINX: `max_fails` within `fail_timeout`"]
+				] },
+				{ "type": "paragraph", "text": "The two complete each other. Passive is immediate but needs traffic. Active works with no traffic and is the only one that can bring a server back, because nobody sends real requests to a server that is out." },
+				{ "type": "paragraph", "text": "A back end marked **unhealthy** is not deleted. The balancer just stops choosing it for new requests and spreads the traffic over the others. When the health check passes again, it rejoins the rotation with no manual step." },
+				{ "type": "heading", "text": "At which layer do you check?" },
+				{ "type": "paragraph", "text": "A check only detects problems at the layer where it works. Opening a TCP connection proves that some process is listening on the port, nothing more. If the application answers HTTP status 500 to everything, a TCP check says \"healthy\". To notice application errors, the probe must make an HTTP request and verify the status code (and the body when needed)." },
+				{ "type": "heading", "text": "How long until a dead server is removed?" },
+				{ "type": "paragraph", "text": "In the worst case, detection time = probe interval × number of failures required + probe timeout. If probes go every 2 s, three consecutive failures are required and the timeout is tiny, a server that dies right after a good probe is removed 2 × 3 = 6 seconds later. During those 6 seconds it still receives requests. Short intervals detect faster but raise false alarms: that is the trade-off." },
+				{ "type": "paragraph", "text": "Thresholds also give the decision **hysteresis** (a delay that avoids changing the decision too easily). If a server that alternates between working and failing could enter and leave the pool at every probe, each entry would cost client requests. Requiring several consecutive successes before returning trades a slower return for stability." },
+				{ "type": "heading", "text": "To retry or not to retry" },
+				{ "type": "paragraph", "text": "When an attempt fails, may the balancer send the same request to another back end? It depends on what the first back end saw." },
+				{ "type": "table", "headers": ["What happened", "Did the back end see the request?", "Retry on another back end?"], "rows": [
+					["Connection refused or connect timeout", "No", "Always safe, any method"],
+					["The request was sent, then the connection broke or no answer came", "Maybe, and maybe it was executed", "Only for [[idempotent|an operation that gives the same result if run twice as if run once]] requests such as GET, HEAD and OPTIONS"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "A POST that may already have been executed must not be repeated blindly: you could create the order twice. NGINX, by default, does not pass an already-sent non-idempotent request to another server. Only the parameter `non_idempotent` of `proxy_next_upstream` allows it, and only for applications that tolerate duplicates." },
+				{ "type": "heading", "text": "Liveness, readiness and shallow checks" },
+				{ "type": "list", "items": [
+					"**Liveness** asks: is the process stuck and in need of a restart? **Readiness** asks: can it receive traffic now? An instance that is still loading caches and opening database connections is alive but not ready. The balancer should skip it, and nobody should restart it.",
+					"A **deep** health check (one that tests shared dependencies, such as running a query on the shared database) makes all back ends fail together when the dependency fails. Removing all of them does not help, and it also takes down routes that would still work (like cached pages). The check used by the balancer should be **shallow**: can THIS instance serve? Watch dependencies by other means."
+				] },
+				{ "type": "heading", "text": "Removing a server without losing requests" },
+				{ "type": "paragraph", "text": "**Connection draining** does it in two steps. First, the balancer stops choosing the instance for new requests. Then it waits for the requests in progress to finish, up to a deadline. Only then is the process stopped. Retries do not replace draining, because non-idempotent requests cannot be repeated safely." },
+				{ "type": "callout", "tone": "remember", "text": "Active = own probes, works with no traffic. Passive = watches real requests, real users pay for the discovery. Check at the layer that matters (HTTP status, not only TCP), keep checks shallow, and drain before stopping." }
+			]
+		},
+		{
+			"id": "high-availability-and-spof",
+			"title": "High availability and single points of failure",
+			"blocks": [
+				{ "type": "paragraph", "text": "A **single point of failure (SPOF)** is any part of the system that has no substitute: if it stops, everything stops, however redundant the other parts are. The useful question for each component is: what happens if only this one fails? **High availability** is the work of finding SPOFs and duplicating them." },
+				{ "type": "callout", "tone": "analogy", "text": "A house with five doors but only one key to all of them. The doors are redundant, the key is the single point of failure." },
+				{ "type": "paragraph", "text": "Here is the surprise: five application servers behind ONE load balancer. The balancer removes the SPOF of the application tier, but if it stands alone it becomes a new SPOF. So balancers are deployed in pairs or groups, with a way to make traffic reach the healthy one, like a [[virtual IP address|an address that is not tied to one machine and can move to another]] that changes owner, or DNS. Redundancy in one tier does not make up for the lack of it in another." },
+				{ "type": "heading", "text": "Active-passive and active-active" },
+				{ "type": "table", "headers": ["Aspect", "Active-passive", "Active-active"], "rows": [
+					["Who serves", "One node serves all traffic, the other waits on standby", "Both serve at the same time"],
+					["When one fails", "The standby takes over", "The other absorbs the whole load"],
+					["Resources", "The standby sits idle", "Better use of resources"],
+					["Catch", "Switching takes some time", "Each node needs enough headroom to carry everything alone"]
+				] },
+				{ "type": "heading", "text": "The arithmetic of availability" },
+				{ "type": "paragraph", "text": "**In parallel** (redundant components, the set works while at least one is up): the set fails only if ALL fail together. With independent failures, the unavailability of the set is the product of the unavailabilities. Two balancers of 99% each: unavailability 0.01 × 0.01 = 0.0001, so availability 1 − 0.0001 = 99.99%." },
+				{ "type": "paragraph", "text": "**In series** (both parts are required): the availability of the set is the product of the availabilities. The pair at 99.99% in front of ONE database at 99.9%: 0.9999 × 0.999 = 0.9989001, about 99.89%. It never exceeds the weakest part. Adding even more balancers barely helps. The gain is in making the database redundant." },
+				{ "type": "chart", "title": "Availability of the examples", "unit": "%", "bars": [
+					{ "label": "one balancer", "value": 99 },
+					{ "label": "pair of balancers", "value": 99.99 },
+					{ "label": "pair + one database", "value": 99.89 }
+				] },
+				{ "type": "callout", "tone": "warning", "text": "The parallel formula assumes the failures are **independent**. A common cause, such as the same network switch, the same power line or the same wrong configuration pushed to both, takes both nodes down at once." },
+				{ "type": "heading", "text": "Split brain" },
+				{ "type": "paragraph", "text": "Two balancers in an active-passive pair watch each other with a **heartbeat** (a regular \"I am alive\" message). Suppose the link between them breaks while both are healthy. Neither can tell the death of its peer from a failure of the link, since in both cases the heartbeat stops. Both may decide \"I must be the active one\" and fight over the same resource, such as the virtual IP address. This is **split brain**. To prevent it you need information from outside the link: a **quorum** with a third participant (a witness) that decides who may stay active, or **fencing**, which guarantees the other node was really shut down." },
+				{ "type": "callout", "tone": "remember", "text": "Find every SPOF, including the balancer. Parallel parts multiply the unavailability (99% + 99% = 99.99%). Series parts multiply the availabilities, and the weakest part limits the whole. Pairs need quorum or fencing to avoid split brain." }
+			]
+		},
+		{
+			"id": "tls-termination",
+			"title": "TLS termination",
+			"blocks": [
+				{ "type": "paragraph", "text": "[[TLS|the technology that encrypts a connection; it is the padlock behind HTTPS]] makes a secret tunnel between two ends. The one who is the end of the tunnel holds the **certificate** (the ID card of the site) and the **private key** (the secret that proves the ID is theirs). To **terminate** TLS is to be that end: you decrypt the data. Where should the tunnel end when there is a balancer? There are three ways." },
+				{ "type": "table", "headers": ["Mode", "What happens", "Can read HTTP (layer 7 rules)?", "Internal traffic encrypted?", "Where are certificate and key?"], "rows": [
+					["Passthrough", "The balancer (layer 4) does not decrypt. The tunnel goes from the client to the back end", "No", "Yes, end to end", "On every back end (distribute and renew on each)"],
+					["Termination (plain)", "The balancer decrypts, then speaks plain HTTP to the back ends", "Yes", "No, the internal stretch is plain", "Only on the balancer"],
+					["Re-encryption", "The balancer decrypts, inspects, then opens a new TLS connection to the back end", "Yes", "Yes", "On the balancer and on the back ends"]
+				] },
+				{ "type": "diagram", "caption": "Where the tunnel ends", "content": "passthrough:  client ═════════════════════> back end\n\ntermination:  client ═══════> balancer ───────> back end\n               (HTTPS)                (plain HTTP)\n\nre-encrypt:   client ═══════> balancer ═══════> back end\n               (HTTPS)                (new HTTPS)" },
+				{ "type": "paragraph", "text": "The main benefit of terminating at the balancer is operational: TLS (certificates, keys, versions, ciphers) is configured in a single place. The back ends get simpler and spend their CPU on the application. The price is that the internal stretch is no longer encrypted, unless you re-encrypt." },
+				{ "type": "callout", "tone": "analogy", "text": "A security guard at the front gate of a company checks every visitor's ID once. Inside, people walk freely. That is termination. Re-encryption is like asking each visitor to show the ID again at every office door." },
+				{ "type": "heading", "text": "Consequences you must know" },
+				{ "type": "list", "items": [
+					"**The scheme gets lost.** After termination the application sees only the internal connection, which is HTTP. If users browse over `https://` but the application builds redirects that start with `http://`, this is the cause. The proxy reports the original scheme in the header `X-Forwarded-Proto`, and the application should use it. Since any client can send that header, accept it only from trusted proxies.",
+					"**Encrypting is not authenticating.** If NGINX opens `proxy_pass https://backend;` with no `proxy_ssl_*` directive, it does not verify the back end's certificate. Someone inside the network who poses as the back end receives traffic they can decrypt. With re-encryption you must turn verification on explicitly (`proxy_ssl_verify on;`) and give the list of accepted certificate authorities."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Passthrough: end-to-end, no HTTP rules, keys on the back ends. Termination: one place for TLS, plain internal stretch. Re-encryption: layer 7 rules and encrypted inside, but verify the back end's certificate. Use `X-Forwarded-Proto` to tell the application what the client used." }
+			]
+		},
+		{
+			"id": "nginx-configuration",
+			"title": "NGINX configuration",
+			"blocks": [
+				{ "type": "paragraph", "text": "NGINX (here, the open source version 1.30) is told what to do through a configuration file. To balance, you do two things: **declare** a named group of servers, and **point** a proxy directive at that name." },
+				{ "type": "code", "language": "nginx", "caption": "A group and a location that uses it", "content": "upstream api {\n    server app1:3000;\n    server app2:3000;\n    server app3:3000;\n}\n\nserver {\n    location /api/ {\n        proxy_pass http://api/;\n        proxy_set_header Host $host;\n    }\n}" },
+				{ "type": "list", "items": [
+					"`upstream api { ... }` declares a group of servers and gives it a name. The group alone receives no traffic.",
+					"`proxy_pass` inside a `location` turns it into a reverse proxy. When the name in the URL is an upstream group, the destination is chosen among the group's servers by the balancing method.",
+					"The default method is **weighted round robin**, and each server has weight 1 unless you write `weight`. Other methods (`least_conn`, `ip_hash`, `hash`, `random`) apply only when you write the directive inside the block. For `ip_hash` on IPv4 the key is only the **first three octets** of the address, so `192.168.1.10` and `192.168.1.200` (same /24 network) go to the same server, and for IPv6 it is the whole address."
+				] },
+				{ "type": "heading", "text": "Server parameters" },
+				{ "type": "table", "headers": ["Parameter", "Meaning", "Default"], "rows": [
+					["`weight=3`", "Proportion among servers in the rotation", "1"],
+					["`max_fails=2`", "How many unsuccessful attempts, inside `fail_timeout`, make the server be considered unavailable", "1"],
+					["`fail_timeout=15s`", "At once the counting window AND how long the server stays unavailable", "10s"],
+					["`backup`", "A standby: stays out of the normal rotation and is used only when the primary servers are unavailable", "not backup"]
+				] },
+				{ "type": "paragraph", "text": "So a group with `server a weight=3;`, `server b;` and `server c backup;` sends traffic to a and b in the proportion 3 to 1, and c only receives requests when both a and b are unavailable." },
+				{ "type": "heading", "text": "Passive checks and retries" },
+				{ "type": "paragraph", "text": "Open source NGINX has **passive checking only** (the active `health_check` belongs to the commercial version). It judges a server by the real requests. When `max_fails` is reached within `fail_timeout`, the server is skipped for `fail_timeout`, and after that a real client request is used to try it again. While the server stays dead, this cycle repeats. Meanwhile `proxy_next_upstream` (default `error timeout`) passes the failed request to another server. Non-idempotent requests (POST, LOCK, PATCH) already sent are excluded from this retry unless you add `non_idempotent`." },
+				{ "type": "heading", "text": "Two details that bite" },
+				{ "type": "list", "items": [
+					"**The trailing slash of proxy_pass.** If `proxy_pass` has a URI part after the destination name (even a single `/`), NGINX replaces the part of the request that matched the location with that URI. With `location /api/ { proxy_pass http://backend/; }`, a request for `/api/users` reaches the back end as `/users`. Without the slash (`http://backend`) the path arrives as `/api/users`.",
+					"**The Host header.** NGINX rewrites `Host` with `$proxy_host`, the destination written in `proxy_pass`. An application that uses `Host` to choose the site or build links would see an internal name. `proxy_set_header Host $host;` passes the name the client really asked for."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "upstream declares the group, proxy_pass uses it. Default: weighted round robin, max_fails=1, fail_timeout=10s, retry on error and timeout, passive checks only. ip_hash on IPv4 uses the first three octets. A slash after the destination in proxy_pass changes the path the application receives." }
+			]
+		},
+		{
+			"id": "caddy-configuration",
+			"title": "Caddy configuration",
+			"blocks": [
+				{ "type": "paragraph", "text": "Caddy (version 2.11) does the same work with a shorter file, called the Caddyfile. There is no separate block to declare the group: the directive `reverse_proxy` is reverse proxy and load balancer at the same time. You list the addresses on the same line, and options go in a block between braces." },
+				{ "type": "code", "language": "caddy", "caption": "A Caddyfile with balancing, a health check and retries", "content": "example.com {\n    reverse_proxy app1:3000 app2:3000 app3:3000 {\n        lb_policy round_robin\n        health_uri /health\n        health_interval 5s\n        lb_try_duration 5s\n    }\n}" },
+				{ "type": "heading", "text": "Automatic HTTPS" },
+				{ "type": "paragraph", "text": "When the address of a site is a public domain name (like `example.com` above), Caddy turns HTTPS on with no extra configuration. It gets the certificate from a certificate authority using ACME, renews it automatically and redirects HTTP to HTTPS. As a load balancer, that is TLS termination without managing certificate files." },
+				{ "type": "heading", "text": "Defaults that are different from NGINX" },
+				{ "type": "table", "headers": ["Idea", "NGINX (open source)", "Caddy"], "rows": [
+					["Group of back ends", "`upstream name { server ...; }` plus `proxy_pass`", "`reverse_proxy a b c`"],
+					["Default algorithm", "Weighted round robin", "`random`"],
+					["Other policies", "`least_conn`, `ip_hash`, `hash`, `random two`", "`lb_policy round_robin`, `least_conn`, `client_ip_hash`, `cookie`, `random_choose 2`"],
+					["Active check", "No (commercial only)", "`health_uri` (off until you write it); `health_interval` default 30s, `health_timeout` default 5s"],
+					["Passive check", "On: `max_fails=1`, `fail_timeout=10s`", "Off until `fail_duration` is above 0"],
+					["Retry of a failed attempt", "On: `proxy_next_upstream error timeout`", "Off until `lb_try_duration` (or `lb_retries`) is set; `lb_try_interval` is the pause, 250 ms by default"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "In Caddy, tolerance to failures is not on by default. With three upstreams listed and no `health_uri`, no `fail_duration` and no `lb_try_duration`, when one process dies and its connections are refused, that upstream keeps receiving its share of requests and every one of them ends in 502. Listing several upstreams spreads the load, but alone it does not give high availability." },
+				{ "type": "paragraph", "text": "`lb_try_duration 5s` tells Caddy to keep choosing upstreams and trying again for up to 5 seconds. That hides the loss of a back end from the client, at the price of some waiting. For active checks, `health_uri` makes the proxy itself send requests to that path on each upstream, whether or not there is client traffic. An upstream that fails leaves the selection and returns when the probe succeeds again." },
+				{ "type": "callout", "tone": "remember", "text": "Caddy: one reverse_proxy line, random by default, HTTPS by default for domain names, and failure handling (health_uri, fail_duration, lb_try_duration) that you must turn on yourself." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{ "type": "paragraph", "text": "Now we can read the whole story. One server is not enough, so we scale horizontally (more instances) and put a load balancer in front. The balancer is a reverse proxy that decides which equal copy serves each request. At layer 4 it decides per connection, at layer 7 per request with richer rules. It chooses by an algorithm, it avoids dead servers thanks to health checks, it terminates TLS in one place, and it needs to be duplicated so it is not itself a single point of failure." },
+				{ "type": "table", "headers": ["If you need...", "Look at..."], "rows": [
+					["More capacity", "Horizontal scaling, N+1 sizing, find the real bottleneck"],
+					["Route by path, host or cookie", "Layer 7 balancer or API gateway"],
+					["Balance gRPC or other long connections", "Layer 7 proxy or a client that spreads calls"],
+					["Equal share with unequal servers", "Weights, or least connections"],
+					["A cache hit on the same node", "URL hash, consistent hashing"],
+					["Keep a user on one server", "Cookie affinity (but prefer shared state or a signed token)"],
+					["Survive a dead server", "Health checks, retries for idempotent requests only, draining"],
+					["Survive a dead balancer", "A pair with a virtual IP, quorum or fencing"],
+					["HTTPS in one place", "TLS termination, with `X-Forwarded-Proto`"]
+				] },
+				{ "type": "heading", "text": "Common mistakes to avoid" },
+				{ "type": "list", "items": [
+					"Believing `X-Forwarded-For` blindly: read it from the right, skipping trusted proxies.",
+					"Adding instances when the database is the real limit, or when the connection pools will not fit.",
+					"Using plain round robin with servers of different speeds.",
+					"Using IP hash when many users share one address.",
+					"Relying on sticky sessions to protect state: use shared storage or tokens.",
+					"Expecting Caddy to retry and check health with no configuration, or NGINX open source to do active checks.",
+					"Retrying a POST that may have run already.",
+					"Forgetting that a lone load balancer is a SPOF, and that dependent parts in series cap the availability.",
+					"Encrypting to the back end but not verifying its certificate."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "To learn by doing, try the mini-projects of this area: NGINX against Caddy (algorithms and failures) and a hand-written layer 7 load balancer. For an interactive visual essay see [Load Balancing by Sam Rose](https://samwho.dev/load-balancing/), and for the official introduction see [Using nginx as HTTP load balancer](https://nginx.org/en/docs/http/load_balancing.html)." }
+			]
+		}
+	]
+}

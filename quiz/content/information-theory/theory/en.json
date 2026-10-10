@@ -1,0 +1,1158 @@
+{
+	"area": "information-theory",
+	"intro": [
+		"Information theory is the science of **messages**: how much a message really tells you, how small you can make it, and how to send it across a place where things get damaged. It was invented by Claude Shannon in 1948, and the unit it uses is the [[bit|The smallest piece of information: one yes/no answer, written 0 or 1.]].",
+		"You meet it every day. A photo that shrinks into a small `.zip`, a video that plays on a weak connection, a text with an emoji that arrives correctly, a download that is checked so it is not broken, a password that is stored without being kept: all of these are information theory at work.",
+		"Think of it as three questions. First: how much information is in this message? Second: can I write the same message with fewer bits (compression)? Third: if the road is bumpy and some bits flip on the way, can the receiver notice and fix it (error detection and correction)? At the end of this page you will be able to answer all three, and you will know the difference between encoding, hashing and encryption, three things people often mix up."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: bits, redundancy and noise",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine you play a guessing game: I think of a number from 1 to 8 and you ask yes/no questions. You always need exactly 3 questions: \"is it more than 4?\", \"is it in the upper half of what is left?\", and so on. Each yes/no answer is **1 bit**. So picking one thing out of 8 equal possibilities carries 3 bits."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A bit is one light switch: on or off. Eight switches in a row can show 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 = 256 different patterns."
+				},
+				{
+					"type": "paragraph",
+					"text": "Two ideas explain the whole subject. The first is [[redundancy|Part of a message that you could have guessed, so it adds nothing new.]]. If I write \"Thank yoooooou\", the extra o letters tell you nothing. Redundancy can be **removed** to make a message smaller (compression), or **added on purpose** to protect a message (error correction)."
+				},
+				{
+					"type": "paragraph",
+					"text": "The second idea is [[noise|Anything on the road that changes bits by accident: electrical interference, a scratch on a disk, a cosmic ray.]]. A noisy road flips some bits. We cannot stop it, but we can design the message so that the damage shows up."
+				},
+				{
+					"type": "diagram",
+					"caption": "The journey of a message",
+					"content": "source --> compress --> add protection --> NOISY ROAD\n(photo,    (remove      (add smart extra     (bits may\n text)      waste)       bits back)           flip)\n                                                |\nuser  <-- decompress <-- check / repair <-------+\n"
+				},
+				{
+					"type": "table",
+					"caption": "Two opposite jobs",
+					"headers": [
+						"Job",
+						"What it does with redundancy",
+						"Example"
+					],
+					"rows": [
+						[
+							"Compression",
+							"Removes it, so the message is smaller",
+							"zip, gzip, PNG"
+						],
+						[
+							"Error control",
+							"Adds a little, in a clever way, so damage can be found or fixed",
+							"CRC in Ethernet, ECC memory"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Compression removes the waste that can be guessed. Error control adds back a small, planned amount of extra bits. They are two sides of the same coin."
+				}
+			]
+		},
+		{
+			"id": "shannon-entropy",
+			"title": "Information and Shannon entropy",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "If I tell you \"the sun rose today\", you learn nothing: you already knew. If I tell you \"it snowed in the desert today\", you learn a lot, because it was very unlikely. **The rarer the news, the more information it carries.**"
+				},
+				{
+					"type": "paragraph",
+					"text": "Shannon turned this into a number. An event with probability `p` carries `I = −log2(p)` bits, called its [[self-information|How surprising one particular event is, measured in bits.]]. The `log2` just asks: \"how many times do I halve the possibilities to reach this event?\""
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Probability of the event",
+						"How many halvings",
+						"Information"
+					],
+					"rows": [
+						[
+							"1 (it is certain)",
+							"0",
+							"0 bits"
+						],
+						[
+							"1/2",
+							"1",
+							"1 bit"
+						],
+						[
+							"1/4",
+							"2",
+							"2 bits"
+						],
+						[
+							"1/8",
+							"3",
+							"3 bits"
+						],
+						[
+							"1/1024",
+							"10",
+							"10 bits"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Entropy: the average surprise"
+				},
+				{
+					"type": "paragraph",
+					"text": "A source (a coin, a text, a file) produces many symbols. The [[entropy|The average information per symbol of a source, in bits. Written H.]] is the average self-information, weighted by how often each symbol appears:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "H = sum of  p * log2(1 / p)   over all symbols\n\nfair coin:   1/2*1 + 1/2*1             = 1 bit\n1/2, 1/4, 1/4:  0.5*1 + 0.25*2 + 0.25*2 = 1.5 bits\n1/2,1/4,1/8,1/8: 0.5 + 0.5 + 0.375 + 0.375 = 1.75 bits"
+				},
+				{
+					"type": "paragraph",
+					"text": "Entropy is measured in **bits per symbol**. It is a lower bound: no lossless code that looks at one symbol at a time can use fewer bits per symbol on average. Using the natural logarithm instead (base e) only changes the unit to **nats**; base 10 gives hartleys. The result is the same quantity multiplied by a constant."
+				},
+				{
+					"type": "heading",
+					"text": "When is entropy big or small?"
+				},
+				{
+					"type": "list",
+					"items": [
+						"A source with only one possible symbol has H = 0. There is no surprise, so a file of 5,000 identical bytes can be described in a few words.",
+						"With n equally likely symbols, H = log2(n). This is the **maximum**: a fair coin has 1 bit, a fair 4-sided die has 2 bits, 256 equally frequent byte values have 8 bits.",
+						"Any imbalance lowers H. A coin that lands heads 90% of the time has only about 0.47 bits per toss."
+					]
+				},
+				{
+					"type": "chart",
+					"title": "Entropy of one coin toss by chance of heads",
+					"unit": "bits",
+					"bars": [
+						{
+							"label": "p = 0.5",
+							"value": 1
+						},
+						{
+							"label": "p = 0.9",
+							"value": 0.469
+						},
+						{
+							"label": "p = 0.99",
+							"value": 0.081
+						},
+						{
+							"label": "p = 1",
+							"value": 0
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The formula for two outcomes is the **binary entropy**: `H(p) = −p·log2(p) − (1−p)·log2(1−p)`. It is symmetric: H(0.1) = H(0.9)."
+				},
+				{
+					"type": "heading",
+					"text": "Two variables together"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Joint entropy** H(X, Y) is the uncertainty of the pair. It is at most H(X) + H(Y), and equal exactly when X and Y are independent. A fair coin and a 4-option choice, independent, give 1 + 2 = 3 bits (8 equal pairs).",
+						"**Mutual information** I(X; Y) says how much knowing Y reduces your doubt about X. It is 0 for independent variables. If Y always determines X, it reaches H(X). It does not matter if Y is \"equal\" or \"the opposite\" of X: a wire that flips every bit still tells you everything."
+					]
+				},
+				{
+					"type": "callout",
+					"text": "**Order-0 entropy** looks at each symbol alone, ignoring its neighbours. A file ABABAB... has 1 bit per symbol at order 0, yet it is totally predictable: the real limit (the entropy rate) uses what came before. Order-0 entropy bounds symbol-by-symbol codes, not every compressor. Another example: a file with each of the 256 byte values exactly 4 times has order-0 entropy of 8 bits per byte, even if the bytes are in neat ascending order.",
+					"tone": "warning"
+				},
+				{
+					"type": "video",
+					"title": "Solving Wordle using information theory (3Blue1Brown)",
+					"url": "https://www.youtube.com/watch?v=v68zYyaEmEA"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Information = surprise = −log2(p). Entropy = average information per symbol. Maximum when everything is equally likely, zero when the outcome is certain."
+				}
+			]
+		},
+		{
+			"id": "source-coding-prefix-codes",
+			"title": "Source coding and prefix codes",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A [[code|A rule that gives each symbol a string of bits, its codeword.]] is a table: symbol on the left, bits on the right. Choosing the table well is called **source coding**. The simplest table gives every symbol the same number of bits (a **fixed-length** code). To store 26 letters you need ⌈log2(26)⌉ = 5 bits per letter, because 4 bits only make 16 patterns. This wastes 6 of the 32 patterns."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Think of a telephone book of nicknames. Your best friend gets a one-letter nickname because you say it all day. Someone you meet once a year gets the long full name. Short for common, long for rare: that is a **variable-length** code, and it makes the average message shorter whenever some symbols are more common than others. With all symbols equally likely there is no gain."
+				},
+				{
+					"type": "paragraph",
+					"text": "The average length of a code is `L = sum of p × length`. Example: A, B, C, D with probabilities 0.5, 0.25, 0.125, 0.125 and codes 0, 10, 110, 111. Then L = 0.5 + 0.5 + 0.375 + 0.375 = 1.75 bits, against 2 bits for a fixed code, a saving of 12.5%."
+				},
+				{
+					"type": "heading",
+					"text": "The problem of where a word ends"
+				},
+				{
+					"type": "paragraph",
+					"text": "With variable lengths, how does the reader know where one codeword stops? A [[prefix code|A code in which no codeword is the beginning of another codeword.]] solves it. Compare the codes `0, 10, 110, 111` (prefix code) and `0, 01, 10` (not one: 0 begins 01)."
+				},
+				{
+					"type": "diagram",
+					"caption": "A prefix code is a tree with symbols only on the leaves",
+					"content": "          (root)\n         0/    \\1\n         A     (*)\n             0/   \\1\n             B    (*)\n                0/   \\1\n                C     D\n\nA = 0   B = 10   C = 110   D = 111"
+				},
+				{
+					"type": "paragraph",
+					"text": "To decode `0101100111`, read bit by bit and stop at the first codeword you recognise: 0 = A, 10 = B, 110 = C, 0 = A, 111 = D. Because no word starts another, the first match is always right. This is called **instantaneous decoding**."
+				},
+				{
+					"type": "heading",
+					"text": "Three families of codes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Prefix (instantaneous) codes**: decode as you read, no waiting.",
+						"**Uniquely decodable codes**: only one way to split any message, but you may have to wait. The code `0, 01, 011, 0111` is not a prefix code, yet every 0 starts a new word, so it is uniquely decodable. After reading `01` you must see the next bit to know if it is B or the start of C.",
+						"**Non-singular codes**: different symbols have different words, nothing more. Prefix codes sit inside uniquely decodable codes, which sit inside non-singular codes."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The Kraft inequality"
+				},
+				{
+					"type": "paragraph",
+					"text": "Which lengths are possible? A codeword of length `l` uses up a fraction 2^(−l) of the tree. A binary prefix code with lengths l1, ..., ln exists **if and only if** `sum of 2^(−li) ≤ 1`. For lengths 1, 2, 3, 3: 1/2 + 1/4 + 1/8 + 1/8 = 1 (a full tree). For lengths 1, 1, 2, 2: 1/2 + 1/2 + 1/4 + 1/4 = 1.5 > 1, so it is impossible."
+				},
+				{
+					"type": "callout",
+					"text": "Kraft talks only about **lengths**. The code `0, 01, 10` has lengths 1, 2, 2 and sums to exactly 1, yet it is not a prefix code, because 0 starts 01 and the message `010` can be split in two ways. Changing B to `11` keeps the lengths and fixes it.",
+					"tone": "warning"
+				},
+				{
+					"type": "heading",
+					"text": "The source coding theorem"
+				},
+				{
+					"type": "paragraph",
+					"text": "For a source with entropy H, the best prefix code that codes one symbol at a time has an average length L with `H ≤ L < H + 1`. The lower bound can never be beaten. The upper bound is reached by giving each symbol the length ⌈log2(1/p)⌉; the extra part (less than 1 bit) comes from rounding to whole bits. Coding groups of symbols dilutes that waste."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Prefix code = no word begins another = symbols on leaves of a tree = decode without waiting. Kraft says which lengths fit. The average length can never go below the entropy."
+				}
+			]
+		},
+		{
+			"id": "huffman-coding",
+			"title": "Huffman coding",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "David Huffman found a simple recipe to build the best possible symbol-by-symbol prefix code. It is a **greedy** algorithm: at each step it does the locally best thing, and that turns out to be globally best."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Imagine a tournament played backwards. The two weakest teams (the two rarest symbols) always play each other first and merge into one team whose strength is the sum. Teams that merge early end up deep in the bracket, so they get long codes. The strong team joins last and gets a short code."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Make one leaf for each symbol, with its frequency.",
+						"Take the two nodes with the **smallest** frequency and give them a new parent whose frequency is the sum.",
+						"Repeat until one node remains: the root.",
+						"Label left edges 0 and right edges 1. A symbol's code is the path from the root."
+					]
+				},
+				{
+					"type": "diagram",
+					"caption": "Text with A=5, B=2, C=1, D=1 (9 characters)",
+					"content": "1. C(1) + D(1)    -> node 2\n2. B(2) + node 2   -> node 4\n3. A(5) + node 4   -> root 9\n\n        (9)\n       /   \\\n      A    (4)        A = 0    (1 bit)\n          /   \\       B = 10   (2 bits)\n         B    (2)     C = 110  (3 bits)\n             /   \\    D = 111  (3 bits)\n            C     D\n\n5*1 + 2*2 + 1*3 + 1*3 = 15 bits (plain bytes: 9*8 = 72)"
+				},
+				{
+					"type": "paragraph",
+					"text": "A quick check: the total cost also equals the sum of the weights of all internal nodes, 2 + 4 + 9 = 15. With probabilities 0.40, 0.30, 0.15, 0.10 and 0.05 the same method gives lengths 1, 2, 3, 4, 4 and an average of **2.05 bits**, while the entropy is about 2.01 bits."
+				},
+				{
+					"type": "heading",
+					"text": "Facts about the tree and its cost"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Every internal node has exactly two children (a full binary tree). With n distinct symbols there are **n leaves**, **n − 1 internal nodes** and 2n − 1 nodes in total. Six symbols give 5 internal nodes.",
+						"The \"two smallest, again and again\" step is done with a [[min-heap|A tree-shaped list that always lets you grab the smallest item quickly.]]. The heap gives the minimum in O(log n). There are n − 1 joins, so building the tree costs **O(n log n)**.",
+						"In practice n is small (at most 256 byte values), so the time is dominated by reading the file."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "What goes in the compressed file"
+				},
+				{
+					"type": "paragraph",
+					"text": "The reader needs the same tree. So the file stores a **header** with the frequency table, the tree, or only the code lengths (the canonical Huffman trick). The header is a fixed cost, so very small files may become **larger** after compression."
+				},
+				{
+					"type": "heading",
+					"text": "How close to the entropy?"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Always `H ≤ L < H + 1`.",
+						"L equals H exactly when all probabilities are powers of 1/2 (1/2, 1/4, 1/8, ...). Then the ideal lengths are whole numbers. The 800-byte example with probabilities 1/4, 1/4, 1/4, 1/8, 1/8 has H = 2.25 bits and Huffman reaches exactly 1,800 bits = 225 bytes.",
+						"Huffman can never use less than **1 bit per symbol**. For a coin with 99% heads the entropy is 0.08 bits, but Huffman still pays 1 bit, so it is 12 times worse than the limit. The cures are coding blocks of symbols or arithmetic coding."
+					]
+				},
+				{
+					"type": "callout",
+					"text": "Huffman is optimal only among codes that give each symbol its own whole number of bits. Better compression exists when you break that rule.",
+					"tone": "warning"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Huffman: join the two lightest nodes again and again with a min-heap, O(n log n). Rare symbols get long codes. Average length between H and H + 1, and exactly H when probabilities are powers of 1/2."
+				}
+			]
+		},
+		{
+			"id": "arithmetic-coding-lz-family",
+			"title": "Arithmetic coding and the LZ family",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Huffman only looks at how common each symbol is. Two other ideas go further. **Arithmetic coding** fixes the \"whole number of bits\" problem. The **LZ family** exploits parts of the message that come back."
+				},
+				{
+					"type": "heading",
+					"text": "Arithmetic coding: a number on a ruler"
+				},
+				{
+					"type": "paragraph",
+					"text": "Take the ruler from 0 to 1. For each symbol, keep only the slice of the ruler that matches its probability, then zoom into it for the next symbol. In the end the whole message is one small interval, and you write down any number inside it."
+				},
+				{
+					"type": "diagram",
+					"caption": "P(A) = 0.6 (first part), P(B) = 0.4 (last part); message AB",
+					"content": "0                                1\n|--------A--------|-----B------|   step 1: A = [0, 0.6)\n0                0.6\n|----A----|----B----|             step 2, inside [0, 0.6):\n0        0.36     0.6            B = last 40% = [0.36, 0.60)"
+				},
+				{
+					"type": "paragraph",
+					"text": "The rule for each symbol: `new low = low + width × (probability before the symbol)` and `new width = width × P(symbol)`. For AB: width 0.6 × 0.4 = 0.24, interval [0.36, 0.60). The final width equals the probability of the whole message. A wide interval needs few bits to point inside it, a narrow one needs more, so the cost is about `−log2(probability of the message)`, very close to the entropy."
+				},
+				{
+					"type": "paragraph",
+					"text": "The big difference from Huffman: the cost of each symbol is a **fraction** of a bit. With a symbol of probability 0.95, Huffman wastes a lot (at least 1 bit each time), while arithmetic coding stays within about 2 bits of the entropy of the **whole** message."
+				},
+				{
+					"type": "heading",
+					"text": "LZ77: point at what you already wrote"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "When you copy a long poem by hand and see \"the same line as three lines above\", you write \"see line 3 above\" instead of the whole line. LZ77 does exactly that, with a **window** of the recent past."
+				},
+				{
+					"type": "paragraph",
+					"text": "LZ77 keeps a sliding window of the last bytes it saw. When the text ahead already appeared in the window, it writes a short reference instead: **(distance, length)**, meaning \"go back `distance`, copy `length` symbols\". Classic LZ77 writes triples `(offset, length, symbol)`: copy `length` symbols from `offset` back, then add one literal symbol. When nothing repeats, it writes `(0, 0, symbol)`. So the triple `(5, 3, 'x')` appends 4 symbols: three copied plus x."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "output so far:  a b\ntriple (2, 4, 'c'):  copy one symbol at a time, 2 back\n  a b -> a b a -> a b a b -> a b a b a -> a b a b a b\n  then the literal c   => ababab c"
+				},
+				{
+					"type": "paragraph",
+					"text": "Notice that the copy can be **longer than the offset**, because the decoder reads symbols it has just written. That is how a run of the same letter becomes a tiny token (offset 1). The decoder needs no dictionary file: it rebuilds the window while it writes."
+				},
+				{
+					"type": "paragraph",
+					"text": "The window size is a trade-off. A window of 2^k bytes needs k bits per offset. A bigger window finds more repetitions but each reference costs more and the search is slower. DEFLATE uses 32 KiB."
+				},
+				{
+					"type": "heading",
+					"text": "LZ78 and LZW: an explicit dictionary"
+				},
+				{
+					"type": "paragraph",
+					"text": "LZ78 and LZW keep a **numbered table of phrases** that grows as they read. LZ77 has an implicit dictionary (the window) and forgets old data. The LZW table remembers phrases from anywhere in the past. Example with A = 1, B = 2 and input ABABAB:"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Phrase A, read B: AB is new. Output 1, add AB = 3.",
+						"Phrase B, read A: BA is new. Output 2, add BA = 4.",
+						"Phrase A, read B: AB exists, phrase becomes AB. Read A: ABA is new. Output 3, add ABA = 5.",
+						"Phrase A, read B: AB exists. The input ends: output 3.",
+						"Result: `1 2 3 3`."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "DEFLATE: two steps in a fixed order"
+				},
+				{
+					"type": "paragraph",
+					"text": "gzip, zip and PNG use **DEFLATE**: first LZ77, then Huffman. LZ77 removes repeated stretches, which a symbol code cannot see. What it outputs (literals, lengths, distances) still has uneven frequencies, so Huffman squeezes that. The order matters: Huffman's output looks random, so nothing could be done after it."
+				},
+				{
+					"type": "chart",
+					"title": "Compressed size of a 16,384-byte generated text (measured in this repository)",
+					"unit": "bytes",
+					"bars": [
+						{
+							"label": "Entropy bound (order 0)",
+							"value": 8513
+						},
+						{
+							"label": "Huffman",
+							"value": 8842
+						},
+						{
+							"label": "LZ77",
+							"value": 8920
+						},
+						{
+							"label": "LZ77 + Huffman",
+							"value": 6971
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "LZ77 plus Huffman goes **below** the order-0 bound, because repeated words are a redundancy that order 0 does not measure."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Arithmetic coding = an interval, fractional bits. LZ77 = (distance, length) references into a window. LZ78/LZW = an explicit table of phrases. DEFLATE = LZ77, then Huffman."
+				}
+			]
+		},
+		{
+			"id": "limits-of-compression",
+			"title": "Limits of compression",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "There are two big kinds of compression. **Lossless** gives back exactly the same bytes (Huffman, LZ77, DEFLATE). It is a must for text, programs and data. **Lossy** throws away details that people barely notice (JPEG, MP3, video), so what comes out is only similar to what went in. The entropy bound talks about lossless."
+				},
+				{
+					"type": "heading",
+					"text": "Compressing twice does not help"
+				},
+				{
+					"type": "paragraph",
+					"text": "Squeezing a 1 MB file to 300 kB and compressing the result again hardly changes anything. Compression removes redundancy. After a good job the bytes look almost random: close to 8 bits of entropy per byte, with no repeats to find. The second pass has nothing to remove, and the headers can even make the file a bit bigger. If repeating always shrank a file, every file would end up as 1 bit, which is absurd."
+				},
+				{
+					"type": "heading",
+					"text": "No compressor shrinks everything"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "You have 8 pigeons but only 7 holes: at least two pigeons must share a hole. This is the **pigeonhole principle**."
+				},
+				{
+					"type": "paragraph",
+					"text": "A lossless compressor must give different outputs for different inputs, or decoding would be ambiguous. There are 2^n files of n bits, but only 2^0 + 2^1 + ... + 2^(n−1) = 2^n − 1 shorter bit strings. There are not enough short outputs for everyone. So **if a compressor shortens some files, it must lengthen others**."
+				},
+				{
+					"type": "table",
+					"caption": "Compressors are bets on the shape of the data",
+					"headers": [
+						"Data",
+						"Huffman",
+						"LZ77",
+						"Why"
+					],
+					"rows": [
+						[
+							"Same byte repeated",
+							"Needs at least 1 bit per byte",
+							"Tiny, few tokens",
+							"Repetition is easy for the dictionary"
+						],
+						[
+							"Bytes 0 to 255 repeated",
+							"Header only, no gain (H = 8)",
+							"About 8% of the size",
+							"Order 0 sees no pattern, context does"
+						],
+						[
+							"Random bytes",
+							"Larger (headers)",
+							"Much larger in the teaching format",
+							"No redundancy exists"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Another example, run-length encoding (RLE), writes each run as a pair (count, value), 1 byte each. It is great for 50 equal bytes (2 bytes) but for 100 bytes where no byte equals its neighbour the output is **200 bytes**. Real formats protect themselves by storing a block \"uncompressed\" when compression does not pay."
+				},
+				{
+					"type": "heading",
+					"text": "Entropy is not the final limit"
+				},
+				{
+					"type": "paragraph",
+					"text": "The first million digits of π look random to statistics: the digits are almost evenly distributed, and common compressors do almost nothing. But there is a tiny program that prints them. The size of the shortest program that produces a sequence is its **Kolmogorov complexity**, the absolute limit of compression. It cannot be computed, so no compressor reaches it in general. Most sequences are close to incompressible; the files people care about are a tiny, highly regular corner of all the possible ones."
+				},
+				{
+					"type": "callout",
+					"text": "Statistical randomness is not the same as being incompressible. And \"I will compress it again\" never works as a plan.",
+					"tone": "warning"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Lossless compression cannot shrink all files (pigeonhole). Good compressed data looks random, so recompressing fails. Entropy bounds what a model sees; Kolmogorov complexity is the true limit but uncomputable."
+				}
+			]
+		},
+		{
+			"id": "channel-capacity-noise",
+			"title": "Channel capacity and noise",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **channel** is the road a message travels: a copper cable, radio waves, a fibre, a disk. Two things limit how fast you can send bits: how wide the road is (the [[bandwidth|The range of frequencies the channel can carry, in hertz (Hz).]]) and how noisy it is."
+				},
+				{
+					"type": "heading",
+					"text": "Nyquist: the speed limit of a clean channel"
+				},
+				{
+					"type": "paragraph",
+					"text": "A signal limited to B hertz is completely described by 2B samples per second. Sampling faster adds nothing. If each sample can take V different levels, it carries log2(V) bits. So the maximum rate of a **noiseless** channel is `2B · log2(V)` bits per second."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "B = 4,000 Hz, V = 8 levels\n2B = 8,000 samples per second\nlog2(8) = 3 bits per sample\nrate = 8,000 * 3 = 24,000 bps"
+				},
+				{
+					"type": "paragraph",
+					"text": "In a real channel noise stops you from using many levels, because you could not tell them apart. That is where Shannon comes in."
+				},
+				{
+					"type": "heading",
+					"text": "Shannon-Hartley: the limit of a noisy channel"
+				},
+				{
+					"type": "paragraph",
+					"text": "The capacity is `C = B · log2(1 + S/N)` bits per second, where S/N is the [[signal-to-noise ratio|How much stronger the signal is than the noise, as a plain ratio of powers.]]. No technique can send faster than C with a tiny error rate. Capacity grows **linearly** with bandwidth but only **logarithmically** with S/N: doubling the power does not double the speed."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "B = 4,000 Hz, S/N = 255 (plain ratio)\n1 + 255 = 256 = 2^8  ->  log2 = 8\nC = 4,000 * 8 = 32,000 bps"
+				},
+				{
+					"type": "paragraph",
+					"text": "The S/N is often given in decibels (dB), a log scale: `dB = 10 · log10(S/N)`. So 10 dB is a ratio of 10, 20 dB is 100 and **30 dB is 1,000**. The formula needs the plain ratio, so convert first."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"dB",
+						"Plain ratio S/N"
+					],
+					"rows": [
+						[
+							"0 dB",
+							"1"
+						],
+						[
+							"10 dB",
+							"10"
+						],
+						[
+							"20 dB",
+							"100"
+						],
+						[
+							"30 dB",
+							"1,000"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The binary symmetric channel"
+				},
+				{
+					"type": "paragraph",
+					"text": "The simplest noise model is the **binary symmetric channel (BSC)**: each bit is flipped with probability `p`, independently of all other bits. The number p is the bit error rate (BER). Its capacity is `C = 1 − H(p)` bits per use."
+				},
+				{
+					"type": "chart",
+					"title": "Capacity of a BSC (bits per use)",
+					"unit": "bits",
+					"bars": [
+						{
+							"label": "p = 0",
+							"value": 1
+						},
+						{
+							"label": "p = 0.1",
+							"value": 0.531
+						},
+						{
+							"label": "p = 0.5",
+							"value": 0
+						},
+						{
+							"label": "p = 0.9",
+							"value": 0.531
+						},
+						{
+							"label": "p = 1",
+							"value": 1
+						}
+					]
+				},
+				{
+					"type": "list",
+					"items": [
+						"At p = 0.5 the bit that arrives is a coin toss, so nothing survives: capacity **0**.",
+						"The curve is symmetric: p = 0.1 and p = 0.9 have the same capacity (0.531). What destroys information is the **unpredictability** of the noise. A channel that always flips (p = 1) is as good as a perfect one: just flip back."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "A small error per bit hurts big frames"
+				},
+				{
+					"type": "paragraph",
+					"text": "If bits are damaged independently, a frame of n bits arrives perfect with probability `(1 − p)^n`. For n = 1,000 and p = 0.001 that is about 0.368: almost two thirds of the frames are damaged, even though only 1 bit in 1,000 is wrong. What matters to a protocol is the frame error rate, not the bit error rate."
+				},
+				{
+					"type": "heading",
+					"text": "Shannon's second theorem"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **noisy-channel coding theorem** says: if you send at a rate R **below** the capacity C, there exist codes (with long enough blocks) that make the error probability as small as you like, without the rate dropping to zero. **Above** C it is impossible. The theorem only says such codes exist; finding them took decades (turbo, LDPC and polar codes get close to the limit)."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Nyquist: 2B·log2(V) for a clean channel. Shannon: B·log2(1 + S/N) for a noisy one. Convert dB first. The BSC capacity is 1 − H(p), zero at p = 0.5."
+				}
+			]
+		},
+		{
+			"id": "error-detection",
+			"title": "Error detection: parity, checksum, CRC",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Noise flips bits and we cannot prevent it. To notice damage, the sender adds a few **check bits** computed from the data. The receiver recomputes them: if they do not match, something changed. When the damage is only detected, the usual reaction is to **ask for the data again** (retransmission). On reliable links like fibre this is cheaper than correcting."
+				},
+				{
+					"type": "heading",
+					"text": "The parity bit"
+				},
+				{
+					"type": "paragraph",
+					"text": "One extra bit chosen so that the total number of 1s is even (**even parity**). It equals the XOR of all data bits. For `1011001` there are four 1s, so the parity bit is 0. The receiver counts the 1s in all 8 bits and complains if the count is odd."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Parity catches any **odd** number of flipped bits and misses any **even** number. Two flips cancel each other. That is why it is weak against bursts, when several neighbouring bits change together."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Two-dimensional parity** arranges the data in a matrix with one parity bit per row and per column. A single wrong bit makes exactly one row and one column fail, and their crossing is the culprit: it can **correct** one error."
+				},
+				{
+					"type": "heading",
+					"text": "The checksum"
+				},
+				{
+					"type": "paragraph",
+					"text": "A checksum adds up the bytes. Example with sum modulo 256: bytes 0xA0, 0x70, 0x15 are 160 + 112 + 21 = 293, and 293 mod 256 = 37 = 0x25. It is cheap, but it only sees the **total**. Swapping two bytes, or raising one byte by k and lowering another by k, keeps the sum, so the error is **not detected**."
+				},
+				{
+					"type": "heading",
+					"text": "CRC: division with no carries"
+				},
+				{
+					"type": "paragraph",
+					"text": "A [[CRC|Cyclic redundancy check: a short check value computed by polynomial division.]] treats the message as a polynomial whose coefficients are 0 and 1. In arithmetic modulo 2, adding and subtracting are the same: XOR. The steps: append r zeros (r is the degree of the generator G), divide by G, and append the remainder (r bits) to the message. The full frame is now divisible by G, and that is what the receiver checks."
+				},
+				{
+					"type": "diagram",
+					"caption": "Message 1101, generator 1011 (degree 3), so append 3 zeros",
+					"content": "1101000\n1011\n----\n 1100\n 1011\n ----\n  1110\n  1011\n  ----\n   1010\n   1011\n   ----\n    001   <- remainder\n\nframe sent: 1101 001"
+				},
+				{
+					"type": "list",
+					"items": [
+						"The CRC length is the degree of the generator: **CRC-16 adds 16 bits, CRC-32 adds 32 bits**, whatever the frame size. In a 12,000-bit frame, 32 bits are under 0.3%.",
+						"Standard test: the CRC-32 of the text `123456789` is `0xCBF43926`.",
+						"If the frame T(x) is a multiple of G(x) and the received frame is T(x) + E(x) (E is the error pattern), the error is **missed exactly when E(x) is a nonzero multiple of G(x)**.",
+						"A burst of length k is detected for sure when k ≤ r, if G has a constant term of 1. So CRC-16 catches every burst up to 16 bits.",
+						"For long random damage, an r-bit CRC lets a bad frame through with probability about 2^(−r): for CRC-32, 1 in 4.3 billion."
+					]
+				},
+				{
+					"type": "table",
+					"caption": "Comparing the three",
+					"headers": [
+						"Method",
+						"Check bits",
+						"Misses"
+					],
+					"rows": [
+						[
+							"Parity bit",
+							"1",
+							"Any even number of flips"
+						],
+						[
+							"Sum checksum",
+							"8 or 16",
+							"Swapped bytes, changes that keep the sum"
+						],
+						[
+							"CRC-32",
+							"32",
+							"Almost nothing accidental (about 1 in 2^32)"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"text": "A CRC protects against **accidents**, not against an enemy. The CRC is public and linear, so someone who changes the file on purpose can fix the CRC too. Against attackers use a cryptographic hash from a trusted source, a MAC or a digital signature.",
+					"tone": "warning"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Parity: odd flips only. Checksum: blind to anything that keeps the sum. CRC: polynomial remainder modulo 2, strong against bursts of up to r bits, not against attackers."
+				}
+			]
+		},
+		{
+			"id": "error-correction",
+			"title": "Error correction: repetition and Hamming codes",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Detecting an error is good. **Correcting** it without asking again is better when there is no way back (a spacecraft, a disk, memory). It costs more extra bits. The key idea is **distance**."
+				},
+				{
+					"type": "heading",
+					"text": "Hamming distance"
+				},
+				{
+					"type": "paragraph",
+					"text": "The [[Hamming distance|The number of positions in which two words of the same length differ.]] between `10110` and `11100` is 2 (positions 2 and 4 differ), the number of 1s in their XOR. A code only uses some words as valid. The smallest distance between two valid words is the **minimum distance** d."
+				},
+				{
+					"type": "table",
+					"caption": "What a minimum distance guarantees",
+					"headers": [
+						"Minimum distance",
+						"What it can do"
+					],
+					"rows": [
+						[
+							"2",
+							"Detect 1 error (a parity bit)"
+						],
+						[
+							"3",
+							"Detect 2 errors, OR correct 1 error"
+						],
+						[
+							"4",
+							"Correct 1 error AND detect 2 (SECDED)"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The rules: to **detect** d errors you need d_min ≥ d + 1. To **correct** d errors you need d_min ≥ 2d + 1, so that the damaged word is still closer to the right word than to any other. Detection and correction compete: if distance 3 is used to correct 1 error, you give up detecting two."
+				},
+				{
+					"type": "heading",
+					"text": "The repetition code"
+				},
+				{
+					"type": "paragraph",
+					"text": "The simplest idea: send each bit three times and take a majority vote. It is the (3,1) code: valid words are 000 and 111, at distance 3. Blocks `011`, `110`, `010` give bits 1, 1, 0. One error per block is fixed. Two errors in a block fool it."
+				},
+				{
+					"type": "paragraph",
+					"text": "With a bit error rate p = 0.1, a bit is delivered wrong when 2 or 3 of the copies are flipped: 3 × 0.01 × 0.9 + 0.001 = 0.028. The error falls from 10% to 2.8%, but you send **3 times** more bits. The **rate** of a code (n, k) is k/n; here 1/3."
+				},
+				{
+					"type": "heading",
+					"text": "Hamming(7,4)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Hamming(7,4) takes 4 data bits and adds 3 parity bits: 7 bits in a word, rate 4/7 ≈ 0.57, still correcting one error. Of the 128 possible 7-bit words, only 16 are valid, and any two differ in at least 3 positions. The parity bits sit at positions 1, 2 and 4 (powers of two)."
+				},
+				{
+					"type": "diagram",
+					"caption": "Layout and groups (even parity in each group)",
+					"content": "position   1   2   3   4   5   6   7\ncontent    p1  p2  d1  p4  d2  d3  d4\n\np1 checks positions 1, 3, 5, 7\np2 checks positions 2, 3, 6, 7\np4 checks positions 4, 5, 6, 7"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Encoding** data 1011 (d1=1, d2=0, d3=1, d4=1): p1 covers d1, d2, d4 = 1, 0, 1 so p1 = 0. p2 covers d1, d3, d4 = 1, 1, 1 so p2 = 1. p4 covers d2, d3, d4 = 0, 1, 1 so p4 = 0. Word: `0110011`."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Decoding**: recompute each group. A group with an odd number of 1s gives a 1. Read the three results as a binary number p4 p2 p1: the [[syndrome|The pattern of failed checks. In Hamming codes, read as a number, it is the position of the wrong bit.]]. Example: received `0110001`: p1 group is even (0), p2 group is odd (1), p4 group is odd (1). The syndrome is 110 = 6, so flip position 6 and get `0110011`."
+				},
+				{
+					"type": "paragraph",
+					"text": "Why does it work? Position 6 belongs exactly to the p2 and p4 groups, and the position of each bit is the sum of the parity bits that cover it."
+				},
+				{
+					"type": "heading",
+					"text": "How many parity bits?"
+				},
+				{
+					"type": "paragraph",
+					"text": "With m data bits and r parity bits, the syndrome has 2^r values. It must say \"no error\" or name one of the m + r positions, so `m + r + 1 ≤ 2^r`. For m = 8: r = 3 gives 12 > 8, no; r = 4 gives 13 ≤ 16, yes: the (12, 8) code. For m = 4, r = 3 fits exactly (8 ≤ 8), so Hamming(7,4) is called a **perfect code**."
+				},
+				{
+					"type": "heading",
+					"text": "Two errors are too many"
+				},
+				{
+					"type": "paragraph",
+					"text": "With two flipped bits the syndrome is the XOR of two positions, which names a **third** bit. The decoder flips it and now has three wrong bits, believing everything is fine. Example: errors at positions 1 and 2 give syndrome 3 and a flip at position 3."
+				},
+				{
+					"type": "paragraph",
+					"text": "The **extended Hamming (8,4)** adds one overall parity bit and raises the distance to 4 (**SECDED**: single error correction, double error detection). Syndrome zero and parity right: no error. Syndrome not zero and parity wrong: one error, fix it. Syndrome not zero and parity right: two errors, only detected. It is the scheme of ECC memory."
+				},
+				{
+					"type": "heading",
+					"text": "Bursts and interleaving"
+				},
+				{
+					"type": "paragraph",
+					"text": "Real errors often come in bursts. **Interleaving** writes k words as rows of a matrix and sends it column by column. Neighbours in the channel become different words, so a burst of up to k bits leaves at most one error per word, which Hamming fixes. No extra redundancy, but a delay: the whole matrix must arrive first."
+				},
+				{
+					"type": "video",
+					"title": "But what are Hamming codes? (3Blue1Brown)",
+					"url": "https://www.youtube.com/watch?v=X8jsijhllIA"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Correct d errors: d_min ≥ 2d + 1. Detect d: d_min ≥ d + 1. Hamming(7,4): rate 4/7, syndrome = position of the error, fails silently with two errors. Add an overall parity bit to detect them."
+				}
+			]
+		},
+		{
+			"id": "text-binary-encodings",
+			"title": "Text and binary encodings: ASCII, UTF-8, base64",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A computer only stores numbers. To keep text, everybody agrees on a table: letter to number, and number to bytes. That table is an **encoding**."
+				},
+				{
+					"type": "heading",
+					"text": "ASCII"
+				},
+				{
+					"type": "paragraph",
+					"text": "[[ASCII|The old text code with 128 characters, using 7 bits each.]] has 128 positions (7 bits): 33 control characters and 95 printable ones. A byte has 8 bits, so one bit was left over, and many countries used it in incompatible ways. ASCII has no accented letters, which is why Unicode and UTF-8 were created."
+				},
+				{
+					"type": "heading",
+					"text": "UTF-8"
+				},
+				{
+					"type": "paragraph",
+					"text": "Unicode gives a number (a **code point**) to every character in the world. UTF-8 is a way to write those numbers as **1 to 4 bytes**. The first 128 characters take 1 byte identical to ASCII, so old programs still work."
+				},
+				{
+					"type": "table",
+					"caption": "How UTF-8 builds a character (x bits carry the code)",
+					"headers": [
+						"Bytes",
+						"Code point up to",
+						"Byte layout",
+						"Example"
+					],
+					"rows": [
+						[
+							"1",
+							"U+007F",
+							"0xxxxxxx",
+							"A"
+						],
+						[
+							"2",
+							"U+07FF",
+							"110xxxxx 10xxxxxx",
+							"ç, ã"
+						],
+						[
+							"3",
+							"U+FFFF",
+							"1110xxxx 10xxxxxx 10xxxxxx",
+							"€"
+						],
+						[
+							"4",
+							"above",
+							"11110xxx 10xxxxxx 10xxxxxx 10xxxxxx",
+							"emojis"
+						]
+					]
+				},
+				{
+					"type": "list",
+					"items": [
+						"A byte starting with `0` is a whole character. `110`, `1110`, `11110` start a character of 2, 3, 4 bytes. `10` marks a **continuation** byte.",
+						"So the Portuguese word `ação` has 4 characters but **6 bytes**: a, ç (2), ã (2), o. Bytes and characters are different counts.",
+						"To count characters, count the bytes that are **not** continuation bytes. In `48 C3 A9 E2 82 AC 21` the leading bytes are 48, C3, E2 and 21, so there are 4 characters (H, é, €, !).",
+						"Because leading and continuation bytes use separate ranges, UTF-8 is **self-synchronising**: if you start in the middle, you find the next character within at most 3 bytes, and one character never appears inside another."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "base64"
+				},
+				{
+					"type": "paragraph",
+					"text": "Some old channels, like email, only carry safe text. **base64** rewrites any bytes using 64 safe characters: A-Z, a-z, 0-9, `+` and `/`. It takes 3 bytes (24 bits), splits them into four groups of 6 bits and writes one character for each. If the end is incomplete, `=` fills the block of 4."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "'Hi' = 0x48 0x69 = 01001000 01101001\ngroups of 6: 010010 | 000110 | 100100 (padded)\nvalues:      18       6        36\nletters:     S        G        k      then '='\nresult: SGk="
+				},
+				{
+					"type": "list",
+					"items": [
+						"Each output character carries 6 bits but takes a byte: efficiency 75%, so the output is **4/3 (about 33% bigger)** than the input.",
+						"Length with padding: `4 × ceil(n / 3)`. For 10 bytes: 4 × 4 = 16 characters (the last group has 1 byte, written as 2 characters and `==`)."
+					]
+				},
+				{
+					"type": "callout",
+					"text": "base64 is **not** compression and **not** secrecy. It is just a change of clothes that anyone can undo.",
+					"tone": "warning"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "ASCII: 7 bits, 128 characters. UTF-8: 1 to 4 bytes, 1-byte part equals ASCII, self-synchronising. base64: 3 bytes become 4 characters, 33% bigger, padded with =."
+				}
+			]
+		},
+		{
+			"id": "encoding-hashing-encryption",
+			"title": "Encoding, hashing and encryption compared",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Three words that people constantly mix up. All of them change data into something that looks different, but their goals are very different."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "**Encoding** is translating a book into another language: anyone with the dictionary can translate it back. **Encryption** is putting the book in a locked box: only the person with the key opens it. **Hashing** is taking a fingerprint of the book: it identifies the book, but you cannot rebuild the book from the fingerprint."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Feature",
+						"Encoding",
+						"Encryption",
+						"Hashing"
+					],
+					"rows": [
+						[
+							"Goal",
+							"Fit the data to a medium",
+							"Hide the content",
+							"Make a fixed-size fingerprint"
+						],
+						[
+							"Reversible?",
+							"Yes, by anyone",
+							"Yes, only with the key",
+							"No"
+						],
+						[
+							"Needs a secret?",
+							"No",
+							"Yes (the key)",
+							"No (optionally a salt)"
+						],
+						[
+							"Examples",
+							"base64, UTF-8, hex",
+							"AES",
+							"SHA-256"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Cryptographic hashes"
+				},
+				{
+					"type": "paragraph",
+					"text": "A hash such as SHA-256 turns any input into an output of **fixed size**. It is deterministic (same input, same output), one-way (finding an input for a given output is infeasible, called preimage resistance) and collision resistant (finding two inputs with the same output is infeasible). Infinitely many inputs share each output, so there is nothing to \"undo\"."
+				},
+				{
+					"type": "heading",
+					"text": "Storing passwords"
+				},
+				{
+					"type": "paragraph",
+					"text": "The system does not need to know your password, only to check that you typed the same one. So it stores the **hash**, and compares the hash of what you type. Two reinforcements: a [[salt|A random value, different for each user, mixed into the password before hashing.]] makes equal passwords have different hashes and kills ready-made tables; and a deliberately **slow** hash limits guesses per second."
+				},
+				{
+					"type": "callout",
+					"text": "\"A hash cannot be reversed\" is not enough. A 4-digit PIN has only 10,000 possibilities (about 13.3 bits). An attacker just hashes all 10,000 and compares. Without a salt, one table breaks every user. Salt and slowness help but create no entropy: low-entropy secrets also need an attempt limit on the server.",
+					"tone": "warning"
+				},
+				{
+					"type": "heading",
+					"text": "CRC against a cryptographic hash"
+				},
+				{
+					"type": "paragraph",
+					"text": "A file is shipped with its CRC-32. Does it prove nobody changed it on purpose? No. An accident does not choose which bits to change, and the CRC catches it. An attacker chooses: the CRC is public and linear, so they change the file and repair the CRC. To resist an adversary use a cryptographic hash obtained through a trusted channel, a MAC (a hash with a secret key) or a digital signature."
+				},
+				{
+					"type": "heading",
+					"text": "Compress first, then encrypt"
+				},
+				{
+					"type": "paragraph",
+					"text": "Compression needs redundancy to remove. A good cipher outputs bytes that look random, with no redundancy. So compress **before** you encrypt; the other order barely shrinks anything. A security note: if an attacker controls part of the text and can see the output size, compressing before encrypting may leak information through the length (the CRIME and BREACH attacks on HTTPS)."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Encoding is public and reversible. Encryption is reversible with a key. Hashing is one-way. CRC is for accidents, a cryptographic hash for adversaries. Passwords: salted, slow hash. Compress, then encrypt."
+				}
+			]
+		},
+		{
+			"id": "how-it-all-connects",
+			"title": "How everything connects",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Look at a file travelling from your computer to a friend. Each idea of this page has a place on the road."
+				},
+				{
+					"type": "diagram",
+					"content": "text --UTF-8--> bytes --LZ77+Huffman--> fewer bits\n  --encrypt--> random-looking bytes --CRC/Hamming--> frame\n  --NOISY CHANNEL (limit: Shannon)--> damaged frame\n  --check/fix--> bytes --decrypt--> --decompress--> text"
+				},
+				{
+					"type": "table",
+					"caption": "Quick map of the page",
+					"headers": [
+						"Question",
+						"Tool",
+						"Limit"
+					],
+					"rows": [
+						[
+							"How much information?",
+							"Entropy H",
+							"H bits per symbol"
+						],
+						[
+							"Smallest symbol code?",
+							"Huffman",
+							"H ≤ L < H + 1"
+						],
+						[
+							"Fractional bits, repeats?",
+							"Arithmetic, LZ77",
+							"About the entropy of the whole message / context"
+						],
+						[
+							"Fastest on a noisy road?",
+							"Good error codes",
+							"Shannon capacity C"
+						],
+						[
+							"Notice damage?",
+							"Parity, checksum, CRC",
+							"Distance d + 1"
+						],
+						[
+							"Fix damage?",
+							"Repetition, Hamming",
+							"Distance 2d + 1"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Common mistakes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Thinking that base64 or UTF-8 hide data (they only encode).",
+						"Believing a CRC or a plain hash protects against an enemy.",
+						"Using the dB value directly in Shannon's formula.",
+						"Forgetting that Huffman pays at least 1 bit per symbol.",
+						"Compressing already-compressed or encrypted data and expecting gains.",
+						"Trusting a Hamming decoder when two bits may be wrong.",
+						"Mixing order-0 entropy with the true limit of a compressor that uses context."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Compression removes redundancy that can be guessed, error control adds a planned amount back, and the entropy and the channel capacity are the two limits that tell you how far each can go."
+				}
+			]
+		}
+	]
+}

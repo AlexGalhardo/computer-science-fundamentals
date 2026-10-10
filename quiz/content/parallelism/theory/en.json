@@ -1,0 +1,390 @@
+{
+	"area": "parallelism",
+	"intro": [
+		"Imagine you have to put 1,000 stickers in an album. Alone, it takes a whole afternoon. If you ask 3 friends to help, each one takes a quarter of the stickers and you finish much sooner. That is **parallelism**: doing parts of the same job **at the same time**, using several helpers, so that the job ends earlier.",
+		"The helpers inside a computer are called [[cores|a core is one small brain of the processor, able to run one stream of instructions]]. Your phone has 8 or more of them. For many years, chips got faster by running one core faster and faster. That stopped, because the chip got too hot. So today the way to go faster is to share the work among many cores, among tiny \"lanes\" inside one core, among graphics chips, or among many machines.",
+		"But there is a catch: 4 friends do not always finish 4 times faster. Some jobs cannot be shared, helpers get in each other's way, and one helper may get a much harder part than the others. This area teaches you the rules of this game: how to split work, how to measure the gain, why the gain has a limit, and which traps make parallel programs slow or wrong.",
+		"At the end you will know the main laws (Amdahl and Gustafson), the main patterns (fork-join, map-reduce, reductions), the hardware ideas (cache lines, SIMD, GPUs, shared and distributed memory) and how to keep a parallel program correct and repeatable."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture and the vocabulary",
+			"blocks": [
+				{ "type": "paragraph", "text": "Think of a kitchen. One cook making 100 sandwiches does one at a time. Four cooks at four tables make them together. The sandwich is the **work**, each cook is a **worker**, and the cooks are working **in parallel** because they all cook at the very same moment." },
+				{ "type": "callout", "tone": "analogy", "text": "**Concurrent** is different from **parallel**. One cook can juggle three recipes by switching between them: the recipes are all \"in progress\", but only one is being touched at each instant. That is concurrency (a way of organising the work). Parallelism needs more than one cook really cooking at the same instant (a way of running the work)." },
+				{ "type": "heading", "text": "Words you will meet" },
+				{ "type": "table", "headers": ["Word", "Everyday meaning"], "rows": [
+					["Worker", "One helper: a thread, a core, a process or a whole machine"],
+					["Wall-clock time", "The time you read on a wall clock, from start to finish. Parallelism tries to make this smaller"],
+					["Serial part", "The part of the job that only one worker can do"],
+					["Overhead", "The extra cost of organising helpers: handing out jobs, waiting, talking to each other"],
+					["Load balance", "How evenly the work is shared. If one helper has much more, the others wait for it"],
+					["Granularity", "The size of each piece of work. Tiny pieces cost a lot of organising, huge pieces are hard to share"]
+				], "caption": "Vocabulary of the whole area" },
+				{ "type": "paragraph", "text": "A **speed-up** is \"how many times faster\". If a job takes 120 seconds alone and 20 seconds with helpers, the speed-up is 6. Most of this area is about why that number is usually smaller than the number of helpers." },
+				{ "type": "callout", "tone": "remember", "text": "Parallel means \"at the same instant, on different workers\". The goal is to finish sooner, and the price is organising the helpers." }
+			]
+		},
+		{
+			"id": "data-vs-task-parallelism",
+			"title": "Data parallelism and task parallelism",
+			"blocks": [
+				{ "type": "paragraph", "text": "There are two big ways to cut a job into pieces. In the sticker album, you can give each friend **a part of the stickers** (same job, different stickers). Or you can give each friend **a different chore**: one cuts, one glues, one writes labels." },
+				{ "type": "table", "headers": ["Aspect", "Data parallelism", "Task parallelism"], "rows": [
+					["What is divided", "The data (an array, the rows of an image, a range of numbers)", "The kinds of work (different code at the same time)"],
+					["Who does what", "Every worker runs the same operation on its own slice", "Each worker runs a different task"],
+					["What limits the gain", "How much data there is", "How many independent tasks there are, and the longest one"],
+					["Example", "Colouring each pixel of a picture", "A game that runs sound, physics and drawing together"]
+				], "caption": "Two ways to split work" },
+				{ "type": "heading", "text": "When can a loop be shared?" },
+				{ "type": "paragraph", "text": "A loop can become data parallelism when its iterations are **independent**: no turn reads a value that another turn writes. Then the turns can run in any order, even at the same time. Size and speed of the turns only affect performance, not correctness." },
+				{ "type": "heading", "text": "Task parallelism has a ceiling" },
+				{ "type": "paragraph", "text": "Say three independent tasks take 6 s, 3 s and 3 s. Each runs on its own core. The total time is the longest task, 6 s, even on a 16-core machine. The speed-up is 12 / 6 = 2. Only splitting the data inside the tasks could use the other cores." },
+				{ "type": "paragraph", "text": "Tasks can also depend on each other. The longest chain of dependent tasks is the [[critical path|the chain of tasks that must run one after another, with the largest total time]]. No number of processors makes the program faster than that chain. Example: A (4 s), B (3 s), D (5 s) are free, C (2 s) needs A and B, E (1 s) needs C and D. The chain A, C, E takes 4 + 2 + 1 = 7 s. The total work is 15 s, so the best speed-up is 15 / 7, about 2.1." },
+				{ "type": "diagram", "content": "A(4) --\\\n         +--> C(2) --\\\nB(3) --/             +--> E(1)\nD(5) ---------------/\n\nlongest chain: A -> C -> E = 7 s", "caption": "Tasks with dependencies: the critical path is 7 s" },
+				{ "type": "heading", "text": "Three traps" },
+				{ "type": "list", "items": [
+					"**Unequal pieces.** Counting primes by trial division costs more for big numbers. If 4 workers get 4 equal blocks of numbers, the worker with the highest block finishes last and the others sit idle.",
+					"**Pieces that are too small.** Creating one task for each of 10 million tiny iterations costs more than the work itself. Group the iterations into chunks. This is granularity.",
+					"**Too many threads.** If 8 requests each start 8 threads on an 8-core machine, 64 threads fight for 8 cores. This is called oversubscription. It adds switching and cache fights and gives no extra speed. Use one pool of workers sized to the cores."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Data parallelism needs no locks only when every memory slot has **one writer** and nobody reads what another worker writes. If two workers write the same variable, you have a data race. Give each worker its own local variable and combine them after the join." },
+				{ "type": "callout", "tone": "remember", "text": "Data parallelism divides the data and scales with its size. Task parallelism divides the kinds of work and is limited by the number of tasks and the critical path." }
+			]
+		},
+		{
+			"id": "speedup-efficiency-scalability",
+			"title": "Speed-up, efficiency and scalability",
+			"blocks": [
+				{ "type": "paragraph", "text": "How do we say that a parallel program is \"good\"? We measure it. Two numbers do most of the job." },
+				{ "type": "list", "items": [
+					"**Speed-up**: `S(N) = T(1) / T(N)`. It is the time with 1 worker divided by the time with N workers, both in wall-clock time. The dream is `S(N) = N`, called **linear speed-up**.",
+					"**Efficiency**: `E(N) = S(N) / N`. It tells how much of each worker turned into gain. With linear speed-up, E is 1, or 100%."
+				] },
+				{ "type": "paragraph", "text": "Example: a program takes 120 s with 1 worker and 20 s with 8 workers. Speed-up is 120 / 20 = 6. Efficiency is 6 / 8 = 75%. A quarter of the capacity you paid for did not turn into gain: 120 s of work used 8 x 20 = 160 s of workers." },
+				{ "type": "heading", "text": "Efficiency usually falls" },
+				{ "type": "paragraph", "text": "A table of speed-ups can fool you because the speed-up keeps rising while each new worker helps less. Look at efficiency:" },
+				{ "type": "table", "headers": ["Workers", "Speed-up", "Efficiency"], "rows": [
+					["2", "1.9", "95%"],
+					["4", "3.4", "85%"],
+					["8", "5.2", "65%"]
+				], "caption": "The speed-up grows, the efficiency falls" },
+				{ "type": "heading", "text": "Strong and weak scaling" },
+				{ "type": "table", "headers": ["Aspect", "Strong scaling", "Weak scaling"], "rows": [
+					["What you change", "Same problem, more workers", "Problem grows together with the workers"],
+					["Ideal result", "Time divided by N", "Time stays constant"],
+					["Linked law", "Amdahl", "Gustafson"],
+					["Efficiency", "`T(1) / (N x T(N))`", "`T(1) / T(N)` with the growing problems"]
+				], "caption": "Two kinds of scalability test" },
+				{ "type": "paragraph", "text": "Weak scaling example: 1 worker solves a problem of size n in 50 s. 8 workers solve a problem of size 8n in 62.5 s. The weak efficiency is 50 / 62.5 = 80%. The **scaled speed-up** (time one worker would need for the big problem, divided by the real time) is 8 x 0.8 = 6.4." },
+				{ "type": "heading", "text": "Compare against the right baseline" },
+				{ "type": "paragraph", "text": "The parallel program with 1 worker already pays for splitting and waiting. If you divide by that time, the program looks better than it is. This repository uses the **best sequential program** as the baseline (absolute speed-up). Example: the sequential program takes 10 s, the parallel one takes 12.5 s with 1 thread and 3.125 s with 4 threads. Relative to itself, 12.5 / 3.125 = 4 looks perfect. Real speed-up: 10 / 3.125 = 3.2." },
+				{ "type": "heading", "text": "Can the speed-up be more than N?" },
+				{ "type": "paragraph", "text": "Sometimes yes, and it is called **superlinear** speed-up. It happens when parallel work is cheaper, not just divided. The most common cause is the cache: the whole array does not fit in the cache of one core, but one eighth of it does, so each core reads from fast memory. Another cause is a search where one worker finds the answer early and stops the others." },
+				{ "type": "callout", "tone": "warning", "text": "Count the right workers. A CPU with 8 physical cores can show 16 logical cores (SMT, two threads sharing one core). A CPU-only job with 16 threads gains little over 8, because the two threads of a core share its parts. Always write down physical and logical cores in a benchmark." },
+				{ "type": "callout", "tone": "remember", "text": "S(N) = T(1) / T(N) and E(N) = S(N) / N. Use the best sequential program as the baseline, and look at efficiency, not only at speed-up." }
+			]
+		},
+		{
+			"id": "amdahl-gustafson",
+			"title": "Amdahl's and Gustafson's laws",
+			"blocks": [
+				{ "type": "paragraph", "text": "You are making a pizza. The dough must rest 10 minutes, and only one person can wait for it. Ten cooks cannot rest the dough faster. This waiting part is the **serial part**. The rest (cutting toppings) can be shared." },
+				{ "type": "heading", "text": "Amdahl's law" },
+				{ "type": "paragraph", "text": "Call `s` the share of the sequential time that cannot be parallelised (0.1 means 10%). Only the other part, `1 - s`, shrinks when we add N workers:" },
+				{ "type": "code", "language": "text", "content": "S(N) = 1 / ( s + (1 - s) / N )\n\nN -> very big:   S -> 1 / s", "caption": "Amdahl's law for a fixed-size problem" },
+				{ "type": "paragraph", "text": "The term `(1 - s) / N` is the parallel part after it is shared among N workers, as a fraction of the original time. The speed-up never goes above `1 / s`. With s = 10%, the ceiling is 10, even with a thousand processors, because the serial 10% still runs on one worker." },
+				{ "type": "chart", "title": "Speed-up with s = 10% (Amdahl's law)", "unit": "x", "bars": [
+					{ "label": "N = 1", "value": 1 },
+					{ "label": "N = 2", "value": 1.82 },
+					{ "label": "N = 4", "value": 3.08 },
+					{ "label": "N = 8", "value": 4.71 },
+					{ "label": "N = 16", "value": 6.4 },
+					{ "label": "N = 1000", "value": 9.91 }
+				] },
+				{ "type": "paragraph", "text": "Practice with numbers:" },
+				{ "type": "list", "items": [
+					"80% parallel, 4 processors: the time becomes 0.2 + 0.8 / 4 = 0.4, so the speed-up is 2.5.",
+					"A program of 100 s with 10 s of serial work must finish in 25 s. Then 10 + 90 / N is at most 25, so N is at least 6 (not the 4 of the linear guess).",
+					"Serial fraction 25%: with 8 processors S is 2.91, with 16 it is 3.37. Double hardware, only about 16% more speed. Near the limit, each new worker pays back less."
+				], "ordered": true },
+				{ "type": "heading", "text": "Gustafson's law" },
+				{ "type": "paragraph", "text": "Gustafson looks at the same story from another side. When we get more workers, we usually do not run the same small problem faster: we run a **bigger problem** in the same time (a sharper image, a finer weather map). The parallel part grows with the problem, the serial part hardly does. The scaled speed-up is:" },
+				{ "type": "code", "language": "text", "content": "S(N) = s' + (1 - s') * N\n\ns' = serial fraction measured in the PARALLEL run", "caption": "Gustafson's law" },
+				{ "type": "paragraph", "text": "Example: a run on 16 processors spends 10% of its time in serial code. S = 0.1 + 0.9 x 16 = 14.5." },
+				{ "type": "callout", "tone": "analogy", "text": "Amdahl asks: \"how much faster do I finish the same homework with more friends?\" Gustafson asks: \"how much more homework can I finish in the same hour?\"" },
+				{ "type": "heading", "text": "Do the two laws disagree?" },
+				{ "type": "paragraph", "text": "No. They are the same computation with the serial fraction measured on different baselines. Amdahl measures `s` on the time of the sequential run. Gustafson measures `s'` on the time of the parallel run and rebuilds what one processor would need. The link is `s = s' / (s' + (1 - s') x N)`. A fraction that looks big in parallel time is small in sequential time." },
+				{ "type": "heading", "text": "Fitting the law to real numbers" },
+				{ "type": "paragraph", "text": "The **Karp-Flatt metric** turns Amdahl upside down. From one measured speed-up S on N processors, it gives the serial fraction that would explain it: `s = (1/S - 1/N) / (1 - 1/N)`. Example: S = 4 on N = 8 gives (0.25 - 0.125) / 0.875, about 14%." },
+				{ "type": "paragraph", "text": "Then watch how `s` behaves as N grows. If it stays constant, the lost speed comes from really serial code. If it **grows** (5% on 2 processors, 8% on 4, 14% on 8), the cause is overhead: waiting, cache fights, unbalanced load. Making the serial code shorter would not fix that." },
+				{ "type": "callout", "tone": "remember", "text": "Amdahl: fixed problem, S(N) = 1 / (s + (1 - s) / N), ceiling 1 / s. Gustafson: growing problem, S(N) = s' + (1 - s') N. A growing Karp-Flatt value means overhead, not serial code." }
+			]
+		},
+		{
+			"id": "fork-join-work-stealing",
+			"title": "Fork-join and work stealing",
+			"blocks": [
+				{ "type": "paragraph", "text": "A teacher asks you to add up all the numbers of a long list. You cut the list in two and ask a friend to add one half while you add the other. Then you **wait** for the friend and add the two answers. You just did **fork-join**." },
+				{ "type": "list", "items": [
+					"**Fork**: a task creates sub-tasks that may run in parallel.",
+					"**Join**: the task waits for all of them before going on.",
+					"Every fork has its join, so the program becomes sequential again at clear points, and the result is easy to reason about."
+				] },
+				{ "type": "paragraph", "text": "The join is also a safety rule. When it returns, everything the other worker did has already happened and is visible. If you read the friend's partial count **before** the join, you may get a half-finished value or a data race." },
+				{ "type": "diagram", "content": "sum(0..800)\n  fork -> sum(0..400)     sum(400..800)\n            fork            fork\n          200  200        200  200\n          (leaves: add them in one loop)\n  join <- add the two halves", "caption": "Recursive fork-join sum" },
+				{ "type": "heading", "text": "The cutoff (grain size)" },
+				{ "type": "paragraph", "text": "We keep splitting until a piece is smaller than a limit called the **cutoff**, and then we add it with a plain loop. Cutoff too small: more time is spent creating and scheduling tasks than adding. Cutoff too large: too few tasks, and some cores have nothing to do. A good grain costs much more than the overhead of one task and still gives many more tasks than cores." },
+				{ "type": "heading", "text": "Static and dynamic splitting" },
+				{ "type": "paragraph", "text": "Imagine an image of 8 rows. Rows 0 to 3 cost 2 ms each, rows 4 to 7 cost 10 ms each. Two workers:" },
+				{ "type": "table", "headers": ["Split", "How", "Time until the last finishes"], "rows": [
+					["Static", "Worker A takes rows 0 to 3, worker B takes rows 4 to 7", "B: 40 ms (A waits after 8 ms)"],
+					["Dynamic", "A free worker takes the next row from a shared counter", "About 24 ms (the load balances itself)"]
+				], "caption": "Total work is 48 ms. The run lasts as long as the last worker" },
+				{ "type": "paragraph", "text": "The dynamic way costs one access to the shared counter per piece, a small price for balance." },
+				{ "type": "heading", "text": "Work stealing" },
+				{ "type": "paragraph", "text": "Modern pools (Java fork-join, Rayon in Rust, Go, Cilk) use **work stealing**. Each worker has its own list of tasks, a [[deque|a list where you can add and remove at both ends]]. It works from its own end, newest task first (LIFO). When its list is empty, it **steals** a task from another worker, taking from the **opposite end**, the oldest task." },
+				{ "type": "callout", "tone": "analogy", "text": "Each student has a pile of homework pages. When one finishes the pile, she walks to a friend and takes pages from the bottom of the pile, while the friend keeps working on the top. They almost never touch the same page." },
+				{ "type": "paragraph", "text": "Why the oldest task? In a divide-and-conquer recursion, the oldest task is usually the biggest, so one steal brings a lot of work. The newest task is small and its data is still warm in the owner's cache. Another gain: with a single central queue, every worker fights for the same door. With stealing, the normal path is local, and workers talk to each other only when someone is idle." },
+				{ "type": "heading", "text": "Work and span" },
+				{ "type": "list", "items": [
+					"**Work** `T1`: the time with 1 processor (the sum of all operations).",
+					"**Span** `Tinf`: the time with unlimited processors (the critical path).",
+					"A greedy scheduler guarantees `Tp <= T1 / P + Tinf`. No scheduler beats `max(T1 / P, Tinf)`.",
+					"**Parallelism** is `T1 / Tinf`. It caps the speed-up for any number of processors."
+				] },
+				{ "type": "paragraph", "text": "Examples: T1 = 240 s and Tinf = 6 s on P = 8 gives at most 240 / 8 + 6 = 36 s. T1 = 1,000 s and Tinf = 10 s has parallelism 100, so 100 processors are enough to get near the limit and the other 900 of a 1,000-processor machine are wasted." },
+				{ "type": "callout", "tone": "warning", "text": "A fork-join pool has about one thread per core because it assumes tasks use the CPU and never sleep. A task that blocks (network read, lock, sleep) holds its thread doing nothing, and the pool loses capacity. Move blocking work to another pool, use asynchronous I/O, or let the pool add a compensation thread." },
+				{ "type": "callout", "tone": "remember", "text": "Fork creates sub-tasks, join waits for them. Work stealing balances load on demand, from the opposite end of the deque. Speed-up is capped by T1 / Tinf." },
+				{ "type": "video", "title": "MIT 6.172 Performance Engineering: lectures on Cilk, races and multithreaded algorithms", "url": "https://www.youtube.com/playlist?list=PLUl4u3cNGP63VIBQVWguXxZZi0566y7Wf" }
+			]
+		},
+		{
+			"id": "parallel-sorting-reductions",
+			"title": "Parallel reductions and sorting",
+			"blocks": [
+				{ "type": "paragraph", "text": "A **reduction** squeezes many values into one: the sum of a list, the biggest number, the count of primes. In the sequential way you walk the list with one running total. In parallel, you give each worker a **chunk**, each one reduces its chunk into its own local variable, and at the end the partial results are combined." },
+				{ "type": "paragraph", "text": "Since each worker writes only to its own partial result, nobody fights during the work." },
+				{ "type": "heading", "text": "Which operators are safe?" },
+				{ "type": "paragraph", "text": "A chunked reduction computes `(a op b) op (c op d)` instead of `((a op b) op c) op d`. These agree for every input only if the operator is **associative**: the grouping does not matter." },
+				{ "type": "table", "headers": ["Operator", "Associative", "Commutative", "Parallel reduction"], "rows": [
+					["Integer sum, count", "yes", "yes", "any combining order"],
+					["Maximum, minimum, xor", "yes", "yes", "any combining order"],
+					["String concatenation", "yes", "no", "combine partials in chunk order"],
+					["Subtraction", "no", "no", "gives a different answer"]
+				], "caption": "Checking an operator" },
+				{ "type": "paragraph", "text": "Proof for subtraction with [8, 4, 2, 1]: sequential ((8 - 4) - 2) - 1 = 1. In two chunks, (8 - 4) - (2 - 1) = 3. Different, so subtraction cannot be reduced in parallel." },
+				{ "type": "callout", "tone": "warning", "text": "Associative is enough when you combine the partials **in chunk order**. If you combine them in the order the workers finish, you also need the operator to be **commutative** (order does not matter). Concatenation is not, so joining \"ab\" and \"cd\" in finishing order can print \"cdab\"." },
+				{ "type": "heading", "text": "The tree reduction" },
+				{ "type": "paragraph", "text": "With unlimited processors, combine the values in pairs, then the pairs of pairs, and so on. The number of values halves at every step." },
+				{ "type": "diagram", "content": "8 values:  a b c d e f g h\nstep 1:    ab  cd  ef  gh\nstep 2:     abcd    efgh\nstep 3:       abcdefgh", "caption": "Tree reduction: 3 steps for 8 values" },
+				{ "type": "paragraph", "text": "The number of steps (the depth) is `ceil(log2 n)`. The total number of operations is still `n - 1`, just like the sequential way. For 1,000 values: 10 steps and 999 operations." },
+				{ "type": "heading", "text": "Prefix sum (scan)" },
+				{ "type": "paragraph", "text": "A prefix sum gives at each position i the combination of elements 0 to i. The usual loop uses the previous result, so it looks impossible to parallelise. With an associative operator it is solved in two passes over a tree: the **up-sweep** stores the sum of each block, and the **down-sweep** gives each position the sum of everything to its left. Work is O(n), depth is O(log n): for n = 8, 3 levels in each pass." },
+				{ "type": "heading", "text": "Merge sort in parallel" },
+				{ "type": "paragraph", "text": "Merge sort is natural for parallelism. The array is cut in the middle, and the two halves are sorted without touching each other, so they can be two parallel tasks. The dependency appears only at the merge, which needs both halves done." },
+				{ "type": "paragraph", "text": "But if each merge is **sequential**, the critical path has one full merge per level: n + n/2 + n/4 + ..., less than 2n. For n = 1,024 the work is about 1,024 x 10 = 10,240 and the span about 2,047, so the best speed-up is near 5, no matter how many processors you have. To go further, the merge itself must be parallelised." },
+				{ "type": "heading", "text": "Sample sort" },
+				{ "type": "paragraph", "text": "With p workers, **sample sort** uses p - 1 values called **splitters** to divide the input into p buckets, one per worker. Each worker sorts its bucket, and the buckets joined in order are already sorted. The parallel time is that of the biggest bucket, so bad splitters ruin everything. The fix: take a random **sample** of the data, sort it, and use its quantiles as splitters. Then the buckets have almost the same size." },
+				{ "type": "callout", "tone": "remember", "text": "A parallel reduction needs an associative operator (and a commutative one if the order of combining is free). The tree has depth log2 n with n - 1 operations. Parallel sorting lives or dies by balanced pieces and a parallel merge." }
+			]
+		},
+		{
+			"id": "map-reduce-patterns",
+			"title": "Map-reduce and other parallel patterns",
+			"blocks": [
+				{ "type": "paragraph", "text": "A **pattern** is a recipe that people reuse. Imagine a school counting votes for the best fruit. Many helpers each read a few ballots and write down \"banana: 1\" for every one (that is **map**). Then all the \"banana\" notes are put in the same box (that is **shuffle**), and one helper per box adds them (that is **reduce**)." },
+				{ "type": "heading", "text": "MapReduce step by step" },
+				{ "type": "diagram", "content": "input   map (many machines)      shuffle        reduce\n\nbook 1 -> (the,1)(cat,1)(the,1) -+\nbook 2 -> (cat,1)(sat,1)        -+--> the: [1,1]  -> the: 2\nbook 3 -> (the,1)(mat,1)        -+     cat: [1,1]  -> cat: 2\n                                       sat: [1]    -> sat: 1", "caption": "Word count with map-reduce" },
+				{ "type": "list", "items": [
+					"**Map** applies the same function to each record and emits zero or more key-value pairs. Records do not depend on each other, so they run in any order on as many machines as you have.",
+					"**Shuffle** moves and groups the pairs so that all the values of one key arrive at the same place. A **partition function** (often a hash of the key) chooses the reducer. It is usually the step that uses the network most.",
+					"**Reduce** is called once per key, with all the values of that key. Different keys can be reduced in parallel."
+				] },
+				{ "type": "heading", "text": "The combiner" },
+				{ "type": "paragraph", "text": "Sending a million (the, 1) pairs through the network is silly. A **combiner** is a small reduce run inside each map task, before the shuffle. With 3 map tasks that each emit 1,000 pairs of 50 distinct words, the combiner leaves only 50 records per task, so 150 records go to the shuffle instead of 3,000. It is valid only when the operation is associative and commutative, like a sum. An average cannot be combined this way unless you also carry the count." },
+				{ "type": "heading", "text": "Failures and hot keys" },
+				{ "type": "list", "items": [
+					"**Re-execution.** If a worker dies in the middle of a map task, the master runs the same task on another node. This is safe because the input is not changed and the map function is **pure** (same input, same output, no side effects). It is called an **idempotent** task. A map that writes into a database or reads the clock could duplicate or change results.",
+					"**Hot key.** If one key holds 55% of all pairs, one reducer gets that much and the phase ends when it ends. Doubling the number of reducers only moves the other keys around. Fixes: a combiner, or splitting the hot key into subkeys and adding in two steps."
+				] },
+				{ "type": "heading", "text": "Other patterns" },
+				{ "type": "table", "headers": ["Pattern", "Idea", "What limits it"], "rows": [
+					["Pipeline", "Stages run on different threads, connected by queues, and every item passes all stages", "Throughput is that of the slowest stage (the bottleneck). Speed up or replicate that stage"],
+					["Scatter-gather", "A coordinator sends the same request to many independent executors and merges the replies", "Latency is that of the slowest executor (tail latency)"],
+					["Stencil", "A new cell value depends on the old values of its neighbours", "Read from the old array, write to a new one, swap at the end (double buffering)"],
+					["Reduction", "Combine many values into one", "Needs an associative operator"]
+				], "caption": "Some common patterns" },
+				{ "type": "paragraph", "text": "Scatter-gather example: a search sends one query to 20 index partitions and waits for all. Nineteen reply in 20 ms and one in 200 ms. The merge takes 5 ms. The answer arrives after 205 ms, because one slow helper decides." },
+				{ "type": "paragraph", "text": "Stencil example: `a[i] = (a[i-1] + a[i+1]) / 2` written into the same array breaks when threads split the index range, because a cell may already hold a new value when its neighbour reads it. Double buffering makes the result independent of the order." },
+				{ "type": "callout", "tone": "remember", "text": "Map-reduce: map independent records into pairs, shuffle by key, reduce each key. Pipeline speed is the slowest stage, scatter-gather latency is the slowest executor." }
+			]
+		},
+		{
+			"id": "determinism-reproducibility",
+			"title": "Determinism and reproducibility",
+			"blocks": [
+				{ "type": "paragraph", "text": "If you ask a calculator \"2 + 2\" ten times, you always get 4. A **deterministic** parallel program is like that: its output depends only on its input. The scheduler may interleave the threads differently on every run, but all ways lead to the same answer. This is what lets you test the parallel version by comparing it with the sequential one." },
+				{ "type": "heading", "text": "Data race and race condition" },
+				{ "type": "paragraph", "text": "A **data race** happens when two threads touch the same memory location, at least one writes, and nothing orders the accesses (no lock, no atomic operation, no join). The final value depends on luck. In C and C++ the behaviour is then undefined. Safe Rust rejects such code at compile time." },
+				{ "type": "paragraph", "text": "A **race condition** is wider: a result that depends on how the threads interleave. You can have a race condition **without** a data race. Look at this check-then-act code, where each method locks the account inside:" },
+				{ "type": "code", "language": "go", "content": "// two threads run this at the same time, balance starts at 100\nif acct.Balance() >= 100 { // locks, reads, unlocks\n\tacct.Withdraw(100) // locks, subtracts, unlocks\n}", "caption": "Every call is protected, the result is still wrong" },
+				{ "type": "paragraph", "text": "Both threads see 100, both withdraw, and the balance ends at -100. The decision made in the check was no longer true when the action ran. The fix is to make the check and the action **one** atomic step (a single critical section, or one method that checks and withdraws)." },
+				{ "type": "heading", "text": "Why parallel sums are exactly equal, or not" },
+				{ "type": "paragraph", "text": "Counting primes with local counters and adding them after the join gives exactly the sequential answer for any number of threads. Integer addition is associative and commutative, so the grouping does not matter. Comparing with exact equality is fine." },
+				{ "type": "paragraph", "text": "Decimal numbers (floating point, like `double`) are different. Every addition rounds its result to the nearest value the computer can store, so `(a + b) + c` may differ from `a + (b + c)`. Take [1e16, -1e16, 1.0] where the neighbours of 1e16 are 2 apart. Left to right: (1e16 - 1e16) + 1 = 1. Splitting as [1e16] and [-1e16, 1.0]: the second partial is -1e16 + 1, which rounds back to -1e16, and the total is 0. Another answer, by a lot." },
+				{ "type": "callout", "tone": "tip", "text": "To get reproducible floating-point sums, fix the **grouping** (chunks of a fixed size combined in a fixed order), not the number of threads." },
+				{ "type": "heading", "text": "Random numbers and output order" },
+				{ "type": "list", "items": [
+					"**Random numbers.** In a Monte Carlo simulation with tasks handed out dynamically, tie the randomness to the **task index**, not to the thread. Each task builds its generator from a seed computed from the base seed and its index, ideally with a generator made for independent streams.",
+					"**Output order.** Workers finish in an unpredictable order. Make each result carry its logical position: write result i to slot i, or return partial results with their index and combine them in index order after the join. The execution order stays free, and the output order stays fixed."
+				] },
+				{ "type": "heading", "text": "Time is not deterministic" },
+				{ "type": "paragraph", "text": "Even when the result is identical, the time varies: 410 ms in one run, 470 ms in the next. The scheduler, the load of the machine, the cache state and the CPU frequency all change. A reproducible benchmark uses the same input and machine, leaves the warm-up out, repeats the run several times, reports the **spread** together with the central value, and records the machine, versions and exact command." },
+				{ "type": "callout", "tone": "remember", "text": "A good parallel program has a deterministic result and a non-deterministic time. Data race: unordered access with a write. Race condition: result depends on the interleaving. Floating point and finishing order are the usual causes of different answers." }
+			]
+		},
+		{
+			"id": "false-sharing-cache-effects",
+			"title": "False sharing and cache effects",
+			"blocks": [
+				{ "type": "paragraph", "text": "Memory is slow, so each core keeps a small fast copy of what it uses, called the **cache**. But the cache does not keep single variables. It keeps blocks called **cache lines**, usually 64 bytes. Touch one byte and the whole 64-byte block comes in." },
+				{ "type": "callout", "tone": "analogy", "text": "The library lends books, not single pages. If two kids each want a different page of the same book, they still have to pass the whole book back and forth." },
+				{ "type": "heading", "text": "False sharing" },
+				{ "type": "paragraph", "text": "When a core writes to a line, the copies of that line in the other cores are invalidated (thrown away) so everybody stays coherent. If variables of **different** threads sit in the same line, the cores keep stealing the line from each other, though they share no real data. This is **false sharing**." },
+				{ "type": "table", "headers": ["Aspect", "True sharing", "False sharing"], "rows": [
+					["Data", "Two threads use the same data", "Data is independent, only the line is common"],
+					["Needs synchronisation for correctness", "Yes", "No"],
+					["Shows up in correctness tests", "Can", "Never: it is only a performance problem"]
+				], "caption": "Two kinds of sharing" },
+				{ "type": "diagram", "content": "one 64-byte cache line (8 counters of 8 bytes)\n[c0][c1][c2][c3][c4][c5][c6][c7]\n  ^   ^   ^   ^   ^   ^   ^   ^\n  8 threads on 8 cores, each adds to its own ci\n  -> the line bounces between the cores", "caption": "False sharing: eight counters in one line" },
+				{ "type": "paragraph", "text": "Counting who interferes with whom: the byte offset divided by 64 gives the line. 16 counters of 8 bytes starting at a line boundary: counters 0 to 7 are in line 0 and 8 to 15 in line 1. Thread 3 fights with the **7 other** threads of its group, and the two groups do not disturb each other." },
+				{ "type": "heading", "text": "How to spot it" },
+				{ "type": "paragraph", "text": "The signature: no locks, every core at 100%, parallel time equal to or worse than the sequential one (for example 2.0 s with 1 thread and 3.1 s with 4), and a drastic improvement (to 0.52 s) when you only move the counters 64 bytes apart. The cores are busy, but waiting for the line to come back." },
+				{ "type": "heading", "text": "How to fix it" },
+				{ "type": "list", "items": [
+					"**Accumulate in a local variable** inside the hot loop and hand over the total once, after the loop. The line a worker modifies is then its own, and merging happens once per worker.",
+					"**Pad or align** each counter to its own line, for example `alignas(64)` in C++. The price is memory: 8 bytes become 64, so an array of 8 such structs grows from 64 to 512 bytes."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "A shared **atomic** counter (fetch_add on every prime) is correct, but all the writes fight for one line, so they happen one at a time and the program scales badly. Same cure: count locally, merge once." },
+				{ "type": "heading", "text": "Spatial locality" },
+				{ "type": "paragraph", "text": "Because a miss loads a whole line, using neighbouring data is cheap. A 1024 x 1024 matrix of 4-byte integers stored by rows: one miss brings 16 integers, so walking row by row misses 1 time in 16, about 65,536 misses in total (1,048,576 / 16). Walking by columns jumps 4,096 bytes each step. If the cache cannot hold the 1,024 lines of one column, every access misses: 16 times more." },
+				{ "type": "heading", "text": "CPU-bound against memory-bound" },
+				{ "type": "paragraph", "text": "A loop that counts primes uses almost no memory, and each core brings its own computing power, so it scales almost linearly (7.6 times with 8 threads). A loop that sums a 16 GiB array depends on the throughput of the memory channels, one resource shared by all cores. When it saturates, more threads just split the same bandwidth: 2.9 times with 4 threads and no gain at 8." },
+				{ "type": "callout", "tone": "remember", "text": "The cache moves lines of 64 bytes. False sharing is a performance bug with no locks. Fix it with local accumulators or padding. Memory-bound loops stop scaling when the bandwidth is full." }
+			]
+		},
+		{
+			"id": "simd-vectorisation",
+			"title": "SIMD and vectorisation",
+			"blocks": [
+				{ "type": "paragraph", "text": "Parallelism also lives inside one core. Picture a stamp that prints 8 dots at once instead of 1. That is **SIMD**, short for **S**ingle **I**nstruction, **M**ultiple **D**ata. A vector register holds several numbers of the same type, and one instruction adds, multiplies or compares all of them together." },
+				{ "type": "paragraph", "text": "It is independent of threads, and the two can be combined. In [[Flynn's taxonomy|a way to classify computers by how many instruction streams and data streams run at once]]:" },
+				{ "type": "table", "headers": ["Class", "Meaning", "Example"], "rows": [
+					["SISD", "One instruction, one data item", "A plain scalar processor"],
+					["SIMD", "One instruction, many data items", "A vector instruction adding 8 pairs"],
+					["MIMD", "Many independent instruction streams", "The cores of a modern processor"]
+				], "caption": "Flynn's taxonomy. A modern CPU is MIMD, with SIMD units inside each core" },
+				{ "type": "heading", "text": "Lanes" },
+				{ "type": "paragraph", "text": "The number of elements per instruction (the **lanes**) is the register width divided by the element width. A 256-bit register and 32-bit floats give 256 / 32 = 8 lanes. That is also the ceiling of the gain for the loop body. In practice you get less because of the remainder loop, memory access and lower clock on some CPUs." },
+				{ "type": "paragraph", "text": "When n is not a multiple of the width, the compiler makes two loops: the vector loop runs `floor(n / 8)` times and the remainder loop handles the last `n mod 8` elements one by one. For 1,003 floats: 125 vector iterations (1,000 elements) and 3 scalar ones. On short arrays the remainder can hide the SIMD gain." },
+				{ "type": "heading", "text": "Auto-vectorisation" },
+				{ "type": "paragraph", "text": "The compiler can do this by itself. It analyses a scalar loop and, if it can prove the result does not change, it emits vector instructions. You help it by keeping the loop simple: independent iterations, no opaque function calls, no doubtful overlap of arrays." },
+				{ "type": "heading", "text": "What blocks vectorisation" },
+				{ "type": "list", "items": [
+					"**Loop-carried dependence.** In `a[i] = a[i-1] + b[i]` each element needs the one just written (a prefix sum), so 8 elements cannot be computed together. But `a[i] = a[i+1] + b[i]` is fine: the value read is always the original one.",
+					"**Pointer aliasing.** With `float *dst, const float *src`, the compiler must admit that the two may overlap, which would create a dependence. It adds a run-time check, or you remove the doubt with the `restrict` qualifier in C. Rust's `&mut` and `&` slices already guarantee no overlap.",
+					"**Branches per element.** A vector has one flow of control, so `if (a[i] > 0) b[i] = a[i] * 2` becomes data: the comparison builds a **mask**, the work is done in all lanes, and the mask decides what is stored (if-conversion). The cost is doing work that is thrown away, so the gain drops when the branch is expensive and rarely taken."
+				] },
+				{ "type": "code", "language": "c", "content": "// vectorises: iterations are independent\nfor (int i = 0; i < n; i++) c[i] = a[i] + b[i];\n\n// does not: each step needs the previous result\nfor (int i = 1; i < n; i++) a[i] = a[i - 1] + b[i];", "caption": "Independent against dependent iterations" },
+				{ "type": "callout", "tone": "remember", "text": "SIMD is data parallelism in one core. Lanes = register bits / element bits. It needs independent iterations, no aliasing doubts, and it handles branches with masks." }
+			]
+		},
+		{
+			"id": "gpu-computing",
+			"title": "GPU computing basics",
+			"blocks": [
+				{ "type": "paragraph", "text": "A CPU is like 8 very clever professors: each solves hard, different problems quickly. A **GPU** (graphics processing unit) is like a stadium full of thousands of students, each one simple, all told to do the same small calculation at the same time on different numbers." },
+				{ "type": "table", "headers": ["Aspect", "CPU", "GPU"], "rows": [
+					["Cores", "Few, sophisticated (out-of-order execution, branch prediction, big caches)", "Thousands, simple"],
+					["Goal", "Low latency for one sequential stream", "High throughput on regular work"],
+					["Good at", "Irregular, branchy, sequential code", "The same operation on millions of independent elements"],
+					["Bad at", "Huge uniform workloads", "Irregular, sequential or tiny jobs"]
+				], "caption": "CPU and GPU" },
+				{ "type": "heading", "text": "The kernel" },
+				{ "type": "paragraph", "text": "On a CPU you write `for (i = 0; i < n; i++) out[i] = f(in[i])`. On a GPU you write only the **body**, as a function called a **kernel**, and launch it over an index space of n positions. Each thread receives its own **thread index**, which plays the role of `i`, and handles one element. This is correct only when iterations are independent, the same condition as for CPU data parallelism." },
+				{ "type": "heading", "text": "Why branches and pointer chasing hurt" },
+				{ "type": "paragraph", "text": "A GPU groups threads that run the same instruction together, like the lanes of a vector. If a branch sends half the group one way and half the other, the hardware walks both paths one after the other, and throughput drops. The simple cores also lack the branch prediction and big caches that let a CPU absorb irregular code." },
+				{ "type": "heading", "text": "Is it worth the trip?" },
+				{ "type": "paragraph", "text": "The GPU has its own memory. The data must be copied there and back, and starting a kernel has a fixed cost. So the time on the GPU has three parts: compute, transfer, launch." },
+				{ "type": "paragraph", "text": "Example: the CPU costs 40 ns per element. The GPU computes in 4 ns per element, copying costs 6 ns per element, and launching costs a fixed 30 ms. The gain per element is 40 - (4 + 6) = 30 ns. The break-even point is 30 ms / 30 ns = 1,000,000 elements. Below that the CPU wins. If the copy cost more than the saving in compute, the GPU would never pay off." },
+				{ "type": "paragraph", "text": "Amdahl still applies to any accelerator. A program takes 100 s: 80 s in a kernel and 20 s that must stay on the CPU. The kernel gets 20 times faster (4 s), and transfers add 6 s. New time: 20 + 4 + 6 = 30 s, speed-up 3.33. Without the transfers it would be 24 s and 4.17. The limit with an infinitely fast kernel is 100 / 20 = 5. The transfer is a new serial term that did not exist in the sequential version." },
+				{ "type": "callout", "tone": "remember", "text": "A GPU wins on large, regular, independent work. Count the copy and the launch. Divergent branches and irregular access make it slow, and the CPU part limits the total, by Amdahl." }
+			]
+		},
+		{
+			"id": "shared-vs-distributed-memory",
+			"title": "Shared and distributed memory",
+			"blocks": [
+				{ "type": "paragraph", "text": "Two ways to organise helpers. In a **classroom with one big blackboard**, everybody reads and writes on the same board. That is **shared memory**. In a **group of friends in different houses**, each has a notebook, and they call each other to share things. That is **distributed memory**." },
+				{ "type": "table", "headers": ["Aspect", "Shared memory (multiprocessor)", "Distributed memory (multicomputer)"], "rows": [
+					["Address space", "One, seen by all CPUs", "One per node (own CPU and memory)"],
+					["How they cooperate", "Read and write the same variables", "Explicit messages over a network"],
+					["Main danger", "Data races: need mutexes or atomics", "Deadlock and the cost of copying data"],
+					["Scale", "Limited by one bus and its bandwidth", "Adding nodes adds resources"],
+					["Example", "Threads of one process", "A cluster running MPI"]
+				], "caption": "Two memory models" },
+				{ "type": "heading", "text": "Threads share, processes on other nodes send" },
+				{ "type": "paragraph", "text": "The threads of one process share the heap and the global variables; each one owns only its stack and registers. Communication is direct, and concurrent writes need synchronisation. In distributed memory each process sees only its own memory. Whoever has the data **sends** it and whoever needs it **receives** it. You decide what, to whom and when, and you pay the cost of copying it over the network." },
+				{ "type": "paragraph", "text": "Example: sum 1,000,000 integers of 8 bytes with 4 workers. With threads, each receives a pointer and a length: no byte is copied. With message passing, a master sends one quarter to each worker: 4 messages with 2,000,000 bytes each, 8,000,000 bytes out, plus 4 replies of 8 bytes, 32 bytes back, in 8 messages." },
+				{ "type": "heading", "text": "UMA and NUMA" },
+				{ "type": "paragraph", "text": "Shared memory has two forms. In **UMA** (uniform memory access) every CPU needs the same time to reach any address. In **NUMA** (non-uniform) each node has CPUs and a memory bank close together. Local access is fast, and reading a page that lives on another node is slower. The program stays correct, but performance depends on keeping data close to who uses it." },
+				{ "type": "heading", "text": "Why distributed machines reach more processors" },
+				{ "type": "paragraph", "text": "In shared memory, every new CPU competes for the same bus, memory bandwidth and cache-coherence traffic. In distributed memory each node is a complete computer, so there is no single point of contention. The price: all cooperation costs messages, so the algorithm must communicate little." },
+				{ "type": "heading", "text": "Distributed shared memory (DSM)" },
+				{ "type": "paragraph", "text": "A page-based DSM builds the illusion of shared memory on top of messages. Touching an absent page raises a fault, and the handler fetches the page from another node. The unit is the whole page, so two unrelated variables x and y on the same page, written by nodes A and B, make the page bounce over the network. This is false sharing again, at a larger scale, called **thrashing**." },
+				{ "type": "heading", "text": "Hybrid programs" },
+				{ "type": "paragraph", "text": "Many programs mix both: message-passing processes between nodes (for example MPI) and threads inside each node. Each layer brings its own bugs. A data race can only happen where memory is common, so among threads of the same process. A **deadlock** does not need common memory: two processes that each do a blocking receive from the other before sending will wait forever." },
+				{ "type": "callout", "tone": "remember", "text": "Shared memory: easy to talk, needs locks, limited scale. Distributed memory: messages, big scale, explicit copies. Data races need shared memory, deadlocks do not." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{ "type": "paragraph", "text": "This repository measured these ideas in the mini-project **scaling-by-cores**: it counts primes and renders a Mandelbrot image in Rust, Go and C++ with 1, 2, 4 and 8 workers, with a static split and a dynamic split. All 72 runs printed exactly the same results as the sequential programs (a deterministic reduction and one writer per pixel)." },
+				{ "type": "chart", "title": "Mandelbrot speed-up with 8 workers (measured, AMD Ryzen 7 5700X3D, 8 cores)", "unit": "x", "bars": [
+					{ "label": "C++ static", "value": 2.59 },
+					{ "label": "C++ dynamic", "value": 6.24 },
+					{ "label": "Go static", "value": 2.65 },
+					{ "label": "Go dynamic", "value": 5.37 },
+					{ "label": "Rust static", "value": 2.82 },
+					{ "label": "Rust dynamic", "value": 5.44 }
+				] },
+				{ "type": "paragraph", "text": "Same code, only the split changed, and the speed-up doubled. The static split gave the expensive middle rows to a few workers and the others waited. Amdahl's law read that waiting as serial code: a fitted serial fraction near 30%, in a program that has almost none. With the dynamic split it fell below 7%. The lesson: before blaming Amdahl, check that every worker is busy until the end." },
+				{ "type": "callout", "tone": "warning", "text": "These numbers were measured on a shared machine and vary between runs, so each cell compares the fastest runs. Do not treat them as exact. They show the shape of the effect." },
+				{ "type": "heading", "text": "A checklist for a slow parallel program" },
+				{ "type": "table", "headers": ["Symptom", "Likely cause", "Fix"], "rows": [
+					["Speed-up flat at a low number", "Serial part (Amdahl) or unbalanced load", "Shorten serial code, split dynamically"],
+					["Karp-Flatt value grows with N", "Overhead: waiting, cache fights, imbalance", "Find the contended resource"],
+					["No locks, cores at 100%, no speed-up", "False sharing", "Local accumulators, padding"],
+					["Slower with tiny tasks", "Granularity too fine", "Group into chunks, set a cutoff"],
+					["Slower with more threads than cores", "Oversubscription", "One pool sized to the cores"],
+					["Different result on each run", "Data race, floating-point grouping, finishing order", "Synchronise, fix the grouping, index the results"],
+					["Big array sum stops scaling", "Memory bandwidth", "Reduce data movement, improve locality"],
+					["Reduction gives another answer", "Operator is not associative", "Check the operator first"]
+				], "caption": "From symptom to cause" },
+				{ "type": "heading", "text": "Which tool for which problem" },
+				{ "type": "table", "headers": ["Need", "Tool"], "rows": [
+					["Same work on many items, on a few cores", "Data parallelism, a worker pool, reductions"],
+					["Recursive splitting", "Fork-join with work stealing"],
+					["Huge data over many machines", "Map-reduce, distributed memory"],
+					["Arithmetic on large arrays", "SIMD, then GPU if it is big and regular"],
+					["Different jobs at the same time", "Task parallelism, pipeline, scatter-gather"]
+				], "caption": "Choosing an approach" },
+				{ "type": "callout", "tone": "remember", "text": "Split the work evenly, keep the pieces big enough, keep workers from touching the same memory, make the result independent of the order, and measure against the best sequential program. Speed has a limit (Amdahl), and the limit is usually a bit of waiting you can still remove." }
+			]
+		}
+	]
+}

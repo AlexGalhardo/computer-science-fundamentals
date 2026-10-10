@@ -1,0 +1,992 @@
+{
+	"area": "concurrency",
+	"intro": [
+		"Piensa en una cocina muy ocupada por la noche. Un cocinero corta cebollas, otro revuelve la sopa, un tercero espera el horno. Todos trabajan en la misma sala, con los mismos cuchillos, las mismas ollas y el mismo refrigerador. Casi siempre funciona. Pero a veces dos cocineros estiran la mano al mismo tiempo hacia el último huevo, o cada uno sostiene una olla que el otro necesita. La **concurrencia** es el estudio de cómo organizar muchas actividades que están en marcha al mismo tiempo, para que se ayuden entre sí en lugar de estorbarse.",
+		"Tu computador es esa cocina. Tu teléfono reproduce música, descarga una foto y escucha tu dedo, todo a la vez. Un servidor web conversa con miles de personas al mismo tiempo. Dentro de un programa, cada actividad se llama [[thread|una línea de trabajo dentro de un programa, con su propio punto en el código; un programa puede tener varios threads]]. Los threads comparten la memoria del programa, y ahí empieza el problema: cuando dos threads cambian lo mismo al mismo tiempo, la respuesta puede salir mal, y mal solo algunos días.",
+		"En este resumen aprenderás: la diferencia entre concurrencia y paralelismo, por qué los números compartidos se corrompen (condiciones de carrera), las herramientas que lo evitan (locks, semáforos, monitores y operaciones atómicas), los bloqueos que crea un mal uso de los locks (deadlock, livelock e inanición), los acertijos clásicos que todos estudian, la otra gran idea (no compartir, enviar mensajes), cómo Go, Elixir y JavaScript organizan su trabajo y cómo un pool de trabajadores protege a un servidor del exceso de tareas. Al final estarás listo para el quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "El panorama: palabras que vas a necesitar",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Empecemos con algunas palabras, porque todo lo demás se construye sobre ellas. Un **programa** es una receta escrita. Un [[proceso|un programa en ejecución, con memoria, archivos y configuración privados]] es la receta que se está cocinando ahora. Dentro de un proceso puede haber uno o muchos threads. Un **thread** es un cocinero que sigue una línea de la receta."
+				},
+				{
+					"type": "table",
+					"headers": ["Palabra", "Imagen de la cocina", "Qué es en realidad"],
+					"rows": [
+						["Proceso", "Una cocina de restaurante entera, solo suya", "Un programa en ejecución con memoria privada"],
+						["Thread", "Un cocinero dentro de esa cocina", "Una línea de ejecución dentro de un proceso, que comparte la memoria del proceso"],
+						["Estado compartido", "El refrigerador que abre todo cocinero", "Datos que más de un thread puede leer y cambiar"],
+						["Planificador", "El gerente que dice a cada cocinero cuándo trabajar", "La parte del sistema operativo que elige qué thread corre a continuación"]
+					],
+					"caption": "Cuatro palabras para recordar."
+				},
+				{
+					"type": "paragraph",
+					"text": "El planificador es la sorpresa de esta historia. **Tú no decides cuándo corre un thread.** El planificador puede pausar un thread a mitad de una frase y darle el turno a otro, y volver más tarde. Por eso, el orden en que se mezclan los pasos de dos threads no está bajo tu control y puede cambiar de una ejecución a otra."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Dos cocineros comparten una cocina. Nadie sabe quién agarrará la sal primero. Si la receta solo funciona cuando la sal se añade una vez, los cocineros deben acordar una regla. Toda la concurrencia trata de encontrar buenas reglas."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Los threads comparten memoria, y el planificador decide el momento de cada uno. Un programa concurrente debe ser correcto para todos los momentos posibles, no solo para el que viste."
+				}
+			]
+		},
+		{
+			"id": "concurrency-vs-parallelism",
+			"title": "Concurrencia frente a paralelismo, procesos y threads",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Estas dos palabras se confunden mucho. Imagina a una profesora que corrige tareas de dos cursos. Corrige una página del curso A, luego una del curso B, luego A otra vez. Las dos pilas están **en marcha** juntas, pero ella trabaja en una sola página en cada momento. Eso es **concurrencia**: varias tareas en marcha, con sus pasos mezclados en el tiempo. Ahora imagina a dos profesoras, cada una con una pila, corrigiendo en el mismo instante. Eso es **paralelismo**: varias tareas avanzando realmente en el mismo momento físico, lo que exige más de un trabajador, es decir, más de un núcleo de procesador."
+				},
+				{
+					"type": "table",
+					"headers": ["Idea", "Concurrencia", "Paralelismo"],
+					"rows": [
+						["Trata de", "Cómo se estructura el programa", "Cómo se ejecuta el programa"],
+						["¿Basta un núcleo?", "Sí, turnándose", "No, necesita dos o más núcleos"],
+						["Objetivo", "Manejar muchas cosas, seguir respondiendo", "Terminar antes un trabajo grande"],
+						["Imagen", "Una profesora, dos pilas", "Dos profesoras, una pila cada una"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Con un solo núcleo, el computador finge simultaneidad: da a cada thread una [[porción de tiempo|unos milisegundos de procesador dados a un thread antes de que el siguiente tenga su turno]] corta, una y otra vez, tan rápido que todo parece simultáneo. A veces se llama pseudoparalelismo. Para trabajo que solo calcula, esto no ahorra tiempo: cuatro threads en un núcleo hacen el mismo trabajo total que un thread, más el costo de los cambios. La [charla de Rob Pike](https://go.dev/blog/waza-talk) es la explicación famosa: la concurrencia es estructura, el paralelismo es ejecución."
+				},
+				{
+					"type": "heading",
+					"text": "Lo que un thread tiene para sí y lo que comparte"
+				},
+				{
+					"type": "table",
+					"headers": ["Privado de cada thread", "Compartido por todos los threads del proceso"],
+					"rows": [
+						["Contador de programa (qué línea sigue)", "Espacio de direcciones (la memoria)"],
+						["Registros", "Variables globales y el heap"],
+						["Su propia pila de llamadas a funciones", "Archivos abiertos"],
+						["Su propio estado (ejecutando, listo, bloqueado)", "Otros recursos del proceso"]
+					],
+					"caption": "Un proceso agrupa recursos. Un thread es solo un flujo de ejecución dentro de él."
+				},
+				{
+					"type": "paragraph",
+					"text": "Compartir memoria facilita que los threads cooperen, porque no hay que copiar nada. También los vuelve peligrosos, que es el tema de las próximas secciones. Un thread puede estar en tres estados. **Ejecutando** significa que tiene un núcleo ahora. **Listo** significa que podría correr, pero todos los núcleos están ocupados, así que espera al planificador. **Bloqueado** significa que espera un evento (un archivo, un lock, un mensaje) y no correría ni con un núcleo libre. Cuando el evento ocurre, pasa a listo, no a ejecutando."
+				},
+				{
+					"type": "diagram",
+					"content": "      el planificador lo elige\n   listo -------------------------> ejecutando\n     ^  <--- termina la porción ---    |\n     |                                 | espera un\n     |        ocurre el evento         v evento\n     +------------------------------ bloqueado",
+					"caption": "Los tres estados de un thread."
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando el planificador detiene un thread e inicia otro en el mismo núcleo, eso es un **cambio de contexto**: el sistema guarda los registros, el contador de programa y el puntero de pila del que sale, y carga los del que entra. Este trabajo no pertenece a ninguna tarea, así que es costo puro. Cambiar entre dos threads del mismo proceso es más barato que entre dos procesos, porque los procesos además cambian el espacio de direcciones, y eso descarta las traducciones de memoria guardadas en caché."
+				},
+				{
+					"type": "heading",
+					"text": "Quién crea los threads"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Threads de kernel**: los crea y planifica el sistema operativo. Pueden usar varios núcleos, y uno bloqueado no detiene a los otros. El cambio cuesta más.",
+						"**Threads en espacio de usuario**: los crea una biblioteca, invisibles para el kernel. Baratos de crear y de cambiar, pero el kernel ve un solo thread. Si uno de ellos hace una llamada bloqueante, todo el proceso se detiene, y no usan varios núcleos.",
+						"**Threads verdes y goroutines**: los crea y planifica el runtime del lenguaje, muchos sobre pocos threads de kernel (modelo M:N). En Go, 100.000 goroutines que solo duermen funcionan bien en 8 núcleos: cuando una se bloquea en algo que el runtime conoce (sleep, canal, mutex), solo esa goroutine queda estacionada y el thread del kernel sigue trabajando."
+					]
+				},
+				{
+					"type": "code",
+					"language": "java",
+					"content": "Thread t = new Thread(() -> System.out.println(\"A\"));\nt.start();   // pide a la JVM un NUEVO thread, que ejecuta la tarea\n// t.run();  // solo una llamada a método normal: sigue UN thread!\nt.join();    // espera aquí hasta que t termine\nSystem.out.println(\"B\");   // siempre después de A",
+					"caption": "En Java la tarea vive en run(), pero es start() quien crea el thread. join() espera a que un thread termine."
+				},
+				{
+					"type": "paragraph",
+					"text": "Después de `start()`, el orden entre el nuevo thread y el thread que lo creó queda en manos del planificador y no se puede predecir. `join()` crea un punto de encuentro: todo lo que viene después de `t.join()` ocurre después de todo lo que hizo `t`."
+				},
+				{
+					"type": "video",
+					"title": "Concorrência e Paralelismo (Parte 2), Fabio Akita, Akitando (en portugués)",
+					"url": "https://www.youtube.com/watch?v=gYJSWs-gp1g"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "La concurrencia es estructura (muchas tareas en marcha). El paralelismo es ejecución (muchas tareas en el mismo instante, necesita varios núcleos). Los threads comparten la memoria de su proceso, y llamar a `run()` en lugar de `start()` no crea ningún thread."
+				}
+			]
+		},
+		{
+			"id": "race-conditions",
+			"title": "Condiciones de carrera y secciones críticas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Dos niños comparten una alcancía. Tiene 5 monedas. Los dos miran dentro y ven 5. Cada uno decide añadir una moneda, así que cada uno piensa 'ahora hay 6' y escribe 6 en la etiqueta. La alcancía tiene en realidad 7 monedas, pero la etiqueta dice 6. Se perdió una suma, y nadie hizo nada mal. Esto es una **condición de carrera**: la respuesta depende del orden no controlado en que los threads hacen sus pasos sobre datos compartidos."
+				},
+				{
+					"type": "paragraph",
+					"text": "La línea de programa `counter++` parece un solo paso, pero son tres: **leer** el valor, **sumar** 1, **escribir** el resultado. Mira lo que puede pasar cuando dos threads ejecutan esos tres pasos."
+				},
+				{
+					"type": "diagram",
+					"content": "thread A            thread B            counter\nlee 5                                   5\n                    lee 5               5\nsuma 1 (6)\n                    suma 1 (6)\nescribe 6                               6\n                    escribe 6           6   <- dos incrementos,\n                                           solo uno contado",
+					"caption": "Una actualización perdida. Los dos threads leyeron antes de que cualquiera escribiera."
+				},
+				{
+					"type": "paragraph",
+					"text": "Este tipo de bug se llama **actualización perdida**. Nada se cae y no aparece ningún error: los datos simplemente quedan mal, y distintos en cada ejecución. En el mini-proyecto counter-race de este repositorio, 8 trabajadores hacen 1.000.000 de incrementos en total y el contador roto suele terminar entre 150.000 y 700.000 en lugar de 1.000.000. El problema es el mismo en todos los lenguajes, porque los tres pasos son los mismos en la máquina."
+				},
+				{
+					"type": "heading",
+					"text": "¿Cuántos resultados son posibles?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para saber qué puede producir un trozo concurrente, lista las formas en que sus pasos pueden mezclarse (los entrelazados). Para dos threads que parten de `counter = 0` y hacen cada uno un `counter++`, solo hay dos resultados. Si la lectura de un thread viene después de la escritura del otro, el resultado es **2**. Si las dos lecturas ocurren antes de cualquier escritura, el resultado es **1**. Nunca puede ser 0, y nunca puede pasar de 2."
+				},
+				{
+					"type": "heading",
+					"text": "La sección crítica"
+				},
+				{
+					"type": "paragraph",
+					"text": "El trozo de código que toca lo compartido es la **sección crítica** (o región crítica). La cura es la [[exclusión mutua|una regla que deja a un solo thread a la vez dentro de la sección crítica]]: mientras un thread está dentro, los demás esperan afuera. Mantén la sección crítica pequeña, para que nadie espere mucho. Una buena solución al problema de la sección crítica debe cumplir cuatro condiciones:"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Nunca dos threads dentro a la vez (exclusión mutua).",
+						"No debe suponer nada sobre la velocidad de los threads ni sobre el número de núcleos.",
+						"Un thread que está fuera de la sección crítica no debe bloquear a otro thread.",
+						"Ningún thread espera para siempre."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Una idea simple que rompe la tercera condición es la **alternancia estricta**: una variable `turn` dice de quién es el turno, y cada thread entra solo en su turno. Un thread rápido queda atrapado detrás de uno lento que ni siquiera tiene interés en la sección crítica, porque el lento aún no ha usado su turno."
+				},
+				{
+					"type": "heading",
+					"text": "Dos trampas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Comprobar y luego actuar (check-then-act)**: pruebas una condición (`si la clave no existe`) y luego actúas (`pon la clave`), pero otro thread cambia las cosas entre la prueba y la acción. Aunque cada llamada a un mapa thread-safe sea segura por sí sola, la secuencia entera no lo es. La sección crítica es toda la secuencia, así que necesita una operación atómica o un lock alrededor de las dos llamadas.",
+						"**Data race frente a condición de carrera**: una [[data race|dos threads tocando la misma memoria al mismo tiempo, al menos uno escribiendo, sin sincronización]] es una falla de bajo nivel. Una condición de carrera es una idea mayor: el resultado depende del orden. Puedes tener una condición de carrera sin data race. Dos threads que hacen `setBalance(getBalance() - 100)`, con los dos métodos sincronizados, nunca tocan la memoria a la vez, y aun así pierden una actualización, porque la lectura y la escritura son secciones críticas separadas."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Una prueba que pasó 10.000 veces no demuestra que no haya carrera. Las pruebas solo muestrean algunos de los momentos posibles. El bug puede esconderse en tu computador y aparecer en un servidor con más núcleos. La corrección viene de razonar sobre la sección crítica, con ayuda de detectores de carreras. Un detector como la opción `-race` de Go solo informa de las carreras que ocurrieron de verdad en los caminos de código que se ejecutaron, así que ningún informe no significa ninguna carrera."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Una condición de carrera aparece cuando el resultado depende del momento. `counter++` son tres pasos (leer, sumar, escribir), y dos threads pueden perder una actualización. Arréglalo haciendo que todo el leer-modificar-escribir sea una sola sección crítica."
+				}
+			]
+		},
+		{
+			"id": "mutexes-and-locks",
+			"title": "Mutexes y locks",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Piensa en la llave del baño pequeño de una cafetería. Solo una persona puede tener la llave, y quien la tiene es el único adentro. Los demás esperan. Cuando la persona sale, la llave vuelve al gancho y la siguiente la toma. Un **mutex** (de mutual exclusion, exclusión mutua) es esa llave. Tiene dos estados, bloqueado y desbloqueado. Un thread llama a `lock` antes de la sección crítica y a `unlock` cuando sale. Si el mutex ya está bloqueado, el thread espera."
+				},
+				{
+					"type": "code",
+					"language": "go",
+					"content": "mu.Lock()\ndefer mu.Unlock()   // se ejecuta al terminar la función, termine como termine\ncounter++",
+					"caption": "Go: defer amarra el unlock al final de la función, así que ningún camino de salida lo olvida."
+				},
+				{
+					"type": "paragraph",
+					"text": "La regla más importante: **todo lock debe liberarse en todas las salidas**, incluidos los errores, o todos los demás esperan para siempre. Cada lenguaje ayuda a su manera."
+				},
+				{
+					"type": "table",
+					"headers": ["Lenguaje", "Cómo se toma y se libera el lock", "Quién protege contra el olvido"],
+					"rows": [
+						["Java `synchronized`", "Todo objeto tiene un lock incorporado (su monitor). Un método de instancia `synchronized` usa el lock de `this`", "Automático: se libera en cualquier salida, incluso por una excepción"],
+						["Java `ReentrantLock`", "`lock()` y `unlock()` explícitos, más extras como `tryLock()` y timeouts", "Tú: pon `unlock()` en un bloque `finally`"],
+						["Go `sync.Mutex`", "`mu.Lock()` y `mu.Unlock()`", "Tú, normalmente con `defer mu.Unlock()`"],
+						["Rust `Mutex<T>`", "El mutex es dueño de los datos. `lock()` devuelve un guard que actúa como referencia a ellos", "El compilador: el guard desbloquea cuando se descarta (sale de ámbito)"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Un lock es **reentrante** cuando el thread que ya lo tiene puede tomarlo de nuevo sin bloquearse a sí mismo. Recuerda al dueño y cuántas veces se tomó, y solo queda libre cuando las liberaciones igualan las adquisiciones. Los locks de Java son reentrantes. Por eso un método `synchronized` puede llamar a otro método `synchronized` del mismo objeto sin congelarse."
+				},
+				{
+					"type": "heading",
+					"text": "Esperar girando o durmiendo"
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Cómo debe esperar un thread por un lock? Una forma es la **espera activa** (busy waiting, o spinning): sigue preguntando '¿ya está libre?' en un bucle, como un niño en un viaje en auto que pregunta '¿ya llegamos?' cada diez segundos. Gasta tiempo de procesador. La otra forma es **bloquearse**: el thread se duerme y el sistema lo despierta cuando el lock queda libre. Dormir y despertar también cuesta tiempo. Así que girar solo es buena elección cuando la espera es menor que ese costo: una sección crítica muy corta cuyo dueño corre en otro núcleo. Un lock que gira con una instrucción de hardware es un **spinlock**. Muchos mutexes reales giran un instante y luego duermen."
+				},
+				{
+					"type": "heading",
+					"text": "¿De qué tamaño debe ser un lock?"
+				},
+				{
+					"type": "paragraph",
+					"text": "La **granularidad** de un lock es cuántos datos protege. Un lock grande es simple, pero hace que todos esperen a todos. Muchos locks pequeños dejan que los threads que tocan datos distintos trabajen juntos. El límite es la invariante, un hecho que siempre debe ser verdadero. Si un inventario mantiene `stock + reserved = total`, los dos números deben cambiar dentro de una sola sección crítica, o otro thread verá la suma rota a mitad de camino. Dividir en dos locks y actualizarlos uno tras otro rompe eso. La solución es sostener los dos locks a la vez, siempre en el mismo orden (las próximas secciones explican por qué)."
+				},
+				{
+					"type": "heading",
+					"text": "Inversión de prioridad"
+				},
+				{
+					"type": "paragraph",
+					"text": "Supón que el thread L (prioridad baja) tiene un mutex, el thread H (prioridad alta) lo pide y se bloquea, y el thread M (media) queda listo y ni siquiera usa el mutex. M corre antes que L, así que L no puede terminar y liberar el lock, y H queda atrapado detrás de M. Un thread de prioridad alta pasa a depender de uno medio. La cura es la **herencia de prioridad**: mientras L tiene un lock que H quiere, L corre temporalmente con la prioridad de H."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un mutex deja a un thread a la vez en la sección crítica, y el dueño debe liberarlo en todo camino de salida. Gira solo en esperas muy cortas. Los datos ligados por una invariante deben cambiar dentro de una sola sección crítica."
+				}
+			]
+		},
+		{
+			"id": "semaphores-and-monitors",
+			"title": "Semáforos y monitores",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagina una biblioteca con 3 salas de estudio. En la puerta hay un frasco con 3 fichas. Para entrar, tomas una ficha. Cuando el frasco está vacío, esperas. Cuando alguien sale, devuelve la ficha. Ese frasco es un **semáforo**: un contador con dos operaciones que no se pueden interrumpir. `down` (también llamada P) toma una unidad y, si el contador es cero, duerme al thread. `up` (también llamada V) devuelve una unidad y despierta a un thread que duerme. Como la prueba y el cambio del contador son una acción indivisible, ningún despertar se pierde."
+				},
+				{
+					"type": "table",
+					"headers": ["Tipo", "Semáforo contador", "Semáforo binario"],
+					"rows": [
+						["Valores", "0, 1, 2, ... hasta N", "Solo 0 y 1"],
+						["Significa", "Número de unidades libres de un recurso (cupos, conexiones)", "Un thread a la vez puede entrar"],
+						["Uso típico", "Limitar cuántos threads hay en una región", "Exclusión mutua, o una señal entre threads"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Un semáforo **no es lo mismo que un mutex**. Un mutex tiene dueño: solo el thread que lo bloqueó puede desbloquearlo. Un semáforo no recuerda ningún dueño, así que un thread puede hacer `down` y otro puede hacer `up`. Eso hace que el semáforo sirva para enviar una señal. En Java, el thread A se bloquea en `acquire()` de un semáforo con 0 permisos, y el thread B después llama a `release()` para que A continúe. Un `ReentrantLock` lo rechazaría, ya que B no es el dueño."
+				},
+				{
+					"type": "heading",
+					"text": "El despertar perdido"
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Por qué necesitamos estas herramientas en lugar de un `if` y un `sleep`? Imagina que un consumidor comprueba 'la caja está vacía' y, antes de poder dormirse, el productor pone un ítem en la caja y grita '¡despierta!'. Nadie duerme todavía, así que el grito se pierde. El consumidor entonces se duerme y quizá nunca despierte. La prueba y el acto de dormirse deben ser **una sola acción atómica**. El semáforo lo resuelve guardando la señal dentro de su contador, y el monitor lo resuelve haciendo la prueba y el `wait` bajo el mismo lock."
+				},
+				{
+					"type": "heading",
+					"text": "Monitores"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un [[monitor|un grupo de datos más los métodos que los usan, donde solo un thread a la vez puede estar dentro de los métodos]] junta el lock y la espera, así que el programador se equivoca menos. En Java, todo objeto es un monitor con un lock y un **conjunto de espera** (una sala de espera). Dentro de código `synchronized`:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"`wait()` libera el lock y duerme al thread en la sala de espera. Solo quien tiene el lock puede llamarlo.",
+						"`notify()` despierta a un thread que espera, elegido de forma arbitraria. `notifyAll()` despierta a todos. Un thread despertado debe ganar el lock de nuevo antes de seguir."
+					]
+				},
+				{
+					"type": "code",
+					"language": "java",
+					"content": "synchronized String take() throws InterruptedException {\n    while (items.isEmpty()) {   // WHILE, nunca IF\n        wait();\n    }\n    return items.removeFirst();\n}",
+					"caption": "La condición se prueba de nuevo cada vez que el thread despierta."
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Por qué `while` y no `if`? Los monitores de Java siguen la **semántica Mesa**: ser notificado solo deja al thread listo, no le entrega el lock al instante. Cuando recupera el lock, otro thread puede haberse llevado el ítem. Las reglas también permiten un **despertar espurio**, un despertar sin ninguna notificación. Así que el thread debe comprobar la condición de nuevo después de cada despertar. Con `if`, dos consumidores despertados por un solo `put()` intentarían sacar el mismo ítem, y uno de ellos fallaría."
+				},
+				{
+					"type": "paragraph",
+					"text": "Una trampa más: el monitor de un objeto tiene una sola sala de espera, aunque los threads esperen cosas distintas (buffer no lleno, buffer no vacío). Con un buffer de una posición, dos productores y dos consumidores, un `notify()` puede despertar a un thread del tipo equivocado. Ve que su condición es falsa y vuelve a dormir, y la señal se pierde, así que todos pueden terminar dormidos. Las salidas son `notifyAll()`, o un `Lock` con un objeto `Condition` para cada condición."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un semáforo es un contador con `down` y `up` atómicos, sin dueño. Un mutex tiene dueño. En un monitor de Java, llama siempre a `wait()` dentro de un `while`, y usa `notifyAll()` u objetos `Condition` separados cuando los threads esperan cosas distintas."
+				}
+			]
+		},
+		{
+			"id": "atomics-and-memory-models",
+			"title": "Operaciones atómicas, visibilidad y modelos de memoria",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un casillero con candado es lento si tienes que hacer fila solo para sumar uno a un número. ¿Puede la máquina hacer 'leer, sumar, escribir' como un solo movimiento? Sí. Una **operación atómica** es una que los demás threads ven como aún no empezada o ya terminada, nunca a medias. El procesador ofrece instrucciones especiales para esto, como TSL (test and set lock) y XCHG (exchange). Leen una palabra de memoria y escriben en ella sin que ningún otro núcleo pueda actuar en medio. Son la base de los mutexes y los semáforos."
+				},
+				{
+					"type": "table",
+					"headers": ["Lenguaje", "Incremento atómico", "Nota"],
+					"rows": [
+						["Java", "`AtomicLong.incrementAndGet()`", "No necesita `synchronized`. 8 threads por 1.000.000 dan siempre exactamente 8.000.000"],
+						["Go", "`atomic.AddInt64(&n, 1)`", "Cada llamada atómica es atómica por sí sola. Dos llamadas atómicas seguidas no forman una acción atómica"],
+						["Rust", "`counter.fetch_add(1, Ordering::Relaxed)`", "Toda operación atómica recibe un `Ordering`"],
+						["TypeScript", "`Atomics.add(view, 0, 1)`", "Funciona sobre un `SharedArrayBuffer`"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Compare-and-swap"
+				},
+				{
+					"type": "paragraph",
+					"text": "El bloque atómico más poderoso es el **compare-and-swap (CAS)**: 'si el valor sigue siendo el que esperaba, cámbialo por el nuevo, y dime si lo cambiaste'. Un incremento sin lock es un bucle: leer 41, calcular 42, intentar `compareAndSet(41, 42)`. Si devuelve `false`, alguien cambió el valor en medio, así que empiezas de nuevo con una lectura fresca. Ninguna actualización se pierde, porque una escritura basada en un valor viejo siempre se rechaza."
+				},
+				{
+					"type": "code",
+					"language": "java",
+					"content": "int old, next;\ndo {\n    old = value.get();          // lee\n    next = old + 1;             // calcula\n} while (!value.compareAndSet(old, next)); // repite si cambió",
+					"caption": "Un incremento sin lock construido con compare-and-swap."
+				},
+				{
+					"type": "paragraph",
+					"text": "El CAS tiene una trampa famosa, el **problema ABA**. Una pila sin lock hace pop comprobando que la cima sigue siendo `A`. El thread T1 lee `top = A`, `A.next = B` y se pausa. Mientras tanto, T2 hace pop de A, pop de B y apila A de nuevo. Cuando T1 despierta, la cima es `A` otra vez, así que su CAS tiene éxito, pero `B` ya fue retirado, y la pila ahora apunta a un nodo muerto. El valor parecía igual, pero el mundo cambió. Las defensas habituales son un contador de versión pegado al valor, o no reutilizar nunca un nodo mientras algún thread todavía se refiera a él."
+				},
+				{
+					"type": "heading",
+					"text": "Visibilidad: ver lo que otros escribieron"
+				},
+				{
+					"type": "paragraph",
+					"text": "Hay un segundo problema, más silencioso que las actualizaciones perdidas. Cada núcleo tiene una memoria pequeña y rápida propia (un caché), y el compilador y el procesador pueden reordenar o posponer escrituras. Así, un thread puede **no ver** un valor que otro thread ya escribió. Es un problema de visibilidad. Imagina un thread trabajador que corre `while (!stopped) { work(); }`, donde `stopped` es un `boolean` común. Otro thread hace `stopped = true`. El trabajador puede seguir leyendo su copia vieja para siempre, y nunca detenerse."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **modelo de memoria** es el conjunto de reglas que dice cuándo se garantiza que la escritura de un thread sea vista por otro. En Java se construye sobre la relación **happens-before**. La crean estas cosas: liberar y luego tomar el mismo lock, escribir y luego leer un campo `volatile`, iniciar un thread y esperarlo con `join()`. Sin ese vínculo, el programa no tiene ninguna garantía. Go tiene su propio [modelo de memoria](https://go.dev/ref/mem), con el mismo espíritu."
+				},
+				{
+					"type": "list",
+					"items": [
+						"`volatile` en Java da **visibilidad**: toda lectura ve la última escritura. **No** hace atómico a `count++`, porque eso sigue siendo leer, sumar, escribir. Dos threads que hacen `count++` 1.000 veces sobre un `volatile int` pueden terminar por debajo de 2.000.",
+						"En Rust, el `Ordering` no cambia si la operación es atómica. Dice qué garantías de orden da la operación a las demás lecturas y escrituras, desde `Relaxed` (nada más allá de la propia operación) hasta `SeqCst` (un único orden global). Un contador que se lee solo después de unir todos los threads puede usar `Relaxed`, porque el `join` ya da visibilidad."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Atómico no significa thread-safe para todo. Una variable atómica está bien. Dos variables que deben cambiar juntas aún necesitan un lock. Y en Go, el arreglo de `n++` es `atomic.AddInt64`, no `GOMAXPROCS(1)`: la data race sigue ahí."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Los atómicos hacen indivisible un paso pequeño (TSL, XCHG, CAS). `volatile` da visibilidad, no atomicidad. El modelo de memoria dice cuándo se garantiza que una escritura sea vista, mediante happens-before."
+				}
+			]
+		},
+		{
+			"id": "deadlock-livelock-starvation",
+			"title": "Deadlock, livelock e inanición",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Dos autos llegan a un puente angosto desde lados opuestos. Ninguno puede avanzar, y ninguno quiere retroceder. Esperan para siempre. Un **deadlock** es exactamente eso: un grupo de threads, cada uno esperando algo que otro del grupo tiene, así que ninguno puede moverse jamás. El programa está vivo, no usa procesador y no hace nada, y no lanza ningún error."
+				},
+				{
+					"type": "heading",
+					"text": "Las cuatro condiciones"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un deadlock de recursos necesita cuatro condiciones **al mismo tiempo** (son las condiciones de Coffman). Quita cualquiera y el deadlock es imposible."
+				},
+				{
+					"type": "table",
+					"headers": ["Condición", "Significado", "Cómo atacarla"],
+					"rows": [
+						["Exclusión mutua", "Un recurso tiene un dueño a la vez", "Spooling: deja que un ayudante (como una cola de impresión) sea dueño del recurso"],
+						["Retener y esperar", "Un thread guarda lo que tiene mientras pide más", "Pide todo de una vez antes de empezar, o suelta y reintenta"],
+						["Sin expropiación", "Nadie puede quitar un recurso por la fuerza", "Permite quitar recursos por la fuerza"],
+						["Espera circular", "Un círculo de threads, cada uno esperando al siguiente", "Numera los recursos y pide siempre en orden creciente"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Viendo un deadlock"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **grafo de asignación de recursos** dibuja threads y recursos como puntos. Una flecha de un recurso a un thread significa 'lo tiene'. Una flecha de un thread a un recurso significa 'lo quiere'. Cuando cada recurso tiene una sola unidad, un **ciclo** en el grafo significa deadlock."
+				},
+				{
+					"type": "diagram",
+					"content": "   quiere         lo tiene\nP1 ------> R2 ---------> P2\n ^                        |\n |        lo tiene        | quiere\n +-------- R1 <-----------+",
+					"caption": "P1 quiere R2, que tiene P2. P2 quiere R1, que tiene P1. Un ciclo, es decir, un deadlock."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un thread dump de Java muestra lo mismo en texto. Para cada thread lista los locks que tiene (`locked`) y el que espera (`waiting to lock`). Sigue la cadena: philosopher-0 tiene `0a` y espera `0b`, philosopher-1 tiene `0b` y espera `0c`, philosopher-2 tiene `0c` y espera `0a`. La cadena vuelve al primer thread, así que hay una espera circular, y los tres threads del ciclo no se moverán nunca más."
+				},
+				{
+					"type": "heading",
+					"text": "Cuatro estrategias"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Ignorarlo** (el algoritmo del avestruz): fingir que los deadlocks no ocurren. Es una decisión de ingeniería real cuando son raros y arreglarlos es caro.",
+						"**Detectar y recuperar**: dejar que se concedan las peticiones, buscar de vez en cuando un ciclo y luego recuperarse quitando un recurso, retrocediendo o matando un proceso. Las bases de datos lo hacen con transacciones.",
+						"**Evitar**: conocer el máximo que cada proceso puede pedir y conceder una petición solo si el estado resultante sigue siendo **seguro**. Es el algoritmo del banquero.",
+						"**Prevenir**: hacer estructuralmente imposible una de las cuatro condiciones, como en la tabla de arriba."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Un estado es **seguro** cuando existe algún orden en que todo proceso puede terminar, aunque cada uno pida su máximo. Ejemplo con 12 unidades de un recurso. P1 tiene 4 y puede necesitar hasta 10, P2 tiene 3 y puede necesitar hasta 5, P3 tiene 2 y puede necesitar hasta 8. Unidades en uso: 9, así que 3 están libres. Las necesidades restantes son 6, 2 y 6. P2 puede terminar con sus 2 unidades, devolviendo 3, y entonces quedan 6 libres. P1 termina, luego P3. El estado es seguro. Ahora P1 pide 2 más: quedaría 1 unidad, las necesidades serían 4, 2 y 6, y nadie podría estar seguro de terminar. El banquero **rechaza** la petición por ahora."
+				},
+				{
+					"type": "heading",
+					"text": "Orden de locks"
+				},
+				{
+					"type": "paragraph",
+					"text": "La prevención más usada en código real ataca la espera circular. Da a cada lock una posición y tómalos siempre en ese orden. En una transferencia bancaria, bloquea primero la cuenta de menor `id`, sea cual sea el orden de los argumentos. Dos transferencias entre las mismas dos cuentas bloquean entonces en el mismo orden y no pueden formar un círculo. El orden debe venir de una propiedad fija (como un `id`), no de la posición en una llamada. Y debe respetarlo **todo** el código: un solo camino que lo rompa, a menudo escondido en un callback llamado con un lock en la mano, puede volver a hacer posible un ciclo. Es una razón más para no llamar a código externo mientras se sostiene un lock."
+				},
+				{
+					"type": "heading",
+					"text": "Livelock e inanición"
+				},
+				{
+					"type": "paragraph",
+					"text": "Dos personas se encuentran en un pasillo. Las dos dan un paso a la izquierda, luego las dos a la derecha, luego a la izquierda otra vez. Nadie está atascado, las dos están ocupadas, y nadie pasa. Eso es un **livelock**: los threads siguen corriendo pero no avanzan, porque cada uno reacciona al otro de un modo que deshace su propio paso. A menudo viene de una cura de deadlock: tomar el primer lock, probar el segundo con `tryLock()` y, si falla, soltar el primero y empezar de nuevo de inmediato. Dos threads simétricos pueden repetir esto al unísono para siempre. Una espera aleatoria antes de reintentar (backoff aleatorio) lo hace improbable, y un orden global de locks hace innecesario retroceder."
+				},
+				{
+					"type": "paragraph",
+					"text": "La **inanición** (starvation) es cuando un thread nunca consigue el recurso o el procesador que necesita, aunque el recurso se libere una y otra vez, porque la política de elección siempre prefiere a otros. A diferencia del deadlock, el sistema en conjunto sigue funcionando. La cura es una política justa: primero en llegar, primero en ser atendido, o subir la prioridad de quien lleva mucho esperando."
+				},
+				{
+					"type": "table",
+					"headers": ["Problema", "¿Threads bloqueados?", "¿Threads ocupados?", "¿El sistema progresa?"],
+					"rows": [
+						["Deadlock", "Sí, para siempre", "No", "No, para los threads del ciclo"],
+						["Livelock", "No", "Sí, haciendo pasos inútiles", "No"],
+						["Inanición", "Uno o pocos lo están", "Los demás lo están", "Sí, pero no para el que pasa hambre"]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El deadlock necesita cuatro condiciones a la vez: exclusión mutua, retener y esperar, sin expropiación, espera circular. Rompe una y no ocurre. Un orden global de locks rompe la espera circular. El livelock es ocupado pero atascado. La inanición es un thread dejado afuera."
+				}
+			]
+		},
+		{
+			"id": "classic-problems",
+			"title": "Problemas clásicos: productor-consumidor, lectores-escritores, filósofos comensales",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Algunos acertijos aparecen tanto que todo científico de la computación los aprende. Cuando conozcas los tres de abajo, los reconocerás escondidos dentro de programas reales."
+				},
+				{
+					"type": "heading",
+					"text": "Productor-consumidor"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una pizzería: el cocinero (productor) pone pizzas en un estante con espacio para N pizzas, y el repartidor (consumidor) las retira. Si el estante está lleno, el cocinero debe esperar. Si está vacío, el repartidor debe esperar. El estante de tamaño fijo es un **buffer acotado**, y el límite hace que el lado más rápido espere al más lento."
+				},
+				{
+					"type": "paragraph",
+					"text": "La solución clásica usa tres semáforos. `empty` cuenta los cupos libres, `full` cuenta los ítems y `mutex` protege el estante mismo. Para un buffer de 8 posiciones que empieza vacío:"
+				},
+				{
+					"type": "table",
+					"headers": ["Semáforo", "Empieza en", "Por qué"],
+					"rows": [
+						["`empty`", "8", "Los 8 cupos están libres"],
+						["`full`", "0", "Todavía no hay ítems"],
+						["`mutex`", "1", "El estante está desbloqueado"]
+					]
+				},
+				{
+					"type": "code",
+					"language": "python",
+					"content": "# productor                # consumidor\ndown(empty)                 down(full)\ndown(mutex)                 down(mutex)\npone ítem en el buffer      saca ítem del buffer\nup(mutex)                   up(mutex)\nup(full)                    up(empty)",
+					"caption": "Primero el semáforo contador, después el mutex."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "El ORDEN de los `down` importa. Si el productor toma el `mutex` primero y luego espera en `empty` con el buffer lleno, se duerme sosteniendo el mutex que el consumidor necesita para liberar espacio. Los dos se detienen: un deadlock. Nunca te duermas esperando una condición mientras sostienes el lock que los demás necesitan para cambiar esa condición. El orden de los `up` al final es inofensivo."
+				},
+				{
+					"type": "paragraph",
+					"text": "En Java no necesitas construirlo: `ArrayBlockingQueue` es un buffer acotado ya hecho. `put()` se bloquea mientras está lleno y `take()` se bloquea mientras está vacío, y toda la sincronización está dentro de la clase. Es la forma recomendada."
+				},
+				{
+					"type": "heading",
+					"text": "Lectores-escritores"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un tablero compartido: muchos alumnos pueden leerlo juntos, pero cuando el profesor escribe en él, nadie más puede leer ni escribir. Varios lectores a la vez está bien; un escritor necesita el tablero para él solo. Con **preferencia para lectores**, un lector nuevo puede entrar siempre que otros lectores ya estén leyendo, aunque un escritor esté esperando. Si los lectores siguen llegando antes de que salga el último, el escritor espera para siempre: sufre **inanición**. Las versiones que hacen que los lectores nuevos esperen detrás de un escritor en espera lo arreglan, al precio de menos compartición entre lectores."
+				},
+				{
+					"type": "heading",
+					"text": "Filósofos comensales"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cinco filósofos se sientan a una mesa redonda con cinco tenedores, uno entre cada par. Para comer, cada uno necesita los dos tenedores que tiene al lado. Un tenedor es un lock."
+				},
+				{
+					"type": "diagram",
+					"content": "            P0\n       f0        f1\n    P4              P1\n       f4        f2\n         P3  f3  P2",
+					"caption": "El filósofo i se sienta entre el tenedor i (izquierda) y el tenedor i+1 (derecha). P4 se sienta entre el tenedor 4 y el tenedor 0."
+				},
+				{
+					"type": "paragraph",
+					"text": "La regla ingenua es 'toma el tenedor izquierdo, luego el derecho'. Si los cinco toman el tenedor izquierdo en el mismo instante, cada uno sostiene un tenedor y espera el del vecino: P0 espera a P1, P1 a P2, y así hasta que P4 espera a P0. Un círculo de espera, es decir, un deadlock. Están presentes las cuatro condiciones. Hay dos arreglos famosos:"
+				},
+				{
+					"type": "table",
+					"headers": ["Arreglo", "Idea", "Condición que rompe"],
+					"rows": [
+						["Orden de locks", "Numera los tenedores y toma siempre primero el de número menor. Solo cambia P4: toma el tenedor 0 antes que el tenedor 4", "Espera circular: nadie espera un tenedor menor que uno que ya tiene"],
+						["Un camarero (semáforo de N-1)", "Un semáforo contador con 4 permisos: el filósofo necesita un permiso antes de tocar un tenedor", "Espera circular: con 4 filósofos para 5 tenedores sobra un tenedor, así que no puede formarse un círculo de cinco"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El semáforo del camarero no protege una sección crítica. Limita cuántos threads hay en una región a la vez. Su valor inicial carga con toda la garantía: con 5 permisos no restringe nada y el deadlock vuelve, y con 1 permiso el deadlock desaparece, pero también desaparece todo el paralelismo."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Sin deadlock no es lo mismo que justicia. En la medición de este repositorio, con orden de locks nadie se congeló, pero una ejecución de 60 segundos en Go dio a los filósofos 3830, 7664, 15333, 45993 y 3830 comidas. Un filósofo que casi no come está cerca de la inanición. El camarero dio comidas casi iguales."
+				},
+				{
+					"type": "chart",
+					"title": "Comidas de cada filósofo en una ejecución de 60 segundos con orden de locks (Go)",
+					"unit": "comidas",
+					"bars": [
+						{ "label": "P0", "value": 3830 },
+						{ "label": "P1", "value": 7664 },
+						{ "label": "P2", "value": 15333 },
+						{ "label": "P3", "value": 45993 },
+						{ "label": "P4", "value": 3830 }
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Productor-consumidor: buffer acotado, `empty` empieza en N, `full` en 0, `mutex` en 1, semáforo contador antes que el mutex. Lectores-escritores: la preferencia para lectores puede causar inanición al escritor. Filósofos comensales: rompe el círculo con orden de locks o con un camarero de N-1 permisos."
+				}
+			]
+		},
+		{
+			"id": "message-passing-and-channels",
+			"title": "Paso de mensajes y canales",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "En lugar de compartir un refrigerador y pelear por los huevos, da a cada cocinero su propia estación y deja que se pasen platos entre ellos. Nadie toca lo mismo, así que nadie necesita un lock. Esto es el **paso de mensajes**. El lema de Go lo dice bien: 'no te comuniques compartiendo memoria; comparte memoria comunicándote'. Las tareas no acceden a la misma variable. Envían y reciben valores, y la sincronización forma parte de la comunicación."
+				},
+				{
+					"type": "paragraph",
+					"text": "En Go la forma de enviar es un **canal**: un tubo entre goroutines. La convención es que quien recibe un valor pasa a ser el único que lo usa. Los canales vienen en dos sabores."
+				},
+				{
+					"type": "table",
+					"headers": ["Propiedad", "Sin buffer `make(chan int)`", "Con buffer `make(chan int, 3)`"],
+					"rows": [
+						["¿Guarda valores?", "No", "Sí, hasta su capacidad (3)"],
+						["Un envío termina cuando...", "Un receptor está listo en ese mismo momento", "Hay espacio en el buffer"],
+						["Una recepción termina cuando...", "Un emisor está listo en ese mismo momento", "Hay un valor en el buffer"],
+						["Nombre del encuentro", "Rendezvous", "Buzón con espacio limitado"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Con un canal sin buffer, emisor y receptor deben encontrarse: quien llega primero espera al otro. Este encuentro se llama **rendezvous** y además sincroniza las dos goroutines. Con un canal con buffer de capacidad 3, tres envíos pasan sin receptor, porque los valores esperan en la cola interna. El **cuarto** envío se bloquea hasta que una recepción libera un espacio."
+				},
+				{
+					"type": "diagram",
+					"content": "canal de capacidad 3, nadie recibe:\n\nenvía 1  -> [1][ ][ ]   ok\nenvía 2  -> [1][2][ ]   ok\nenvía 3  -> [1][2][3]   ok\nenvía 4  -> [1][2][3]   SE BLOQUEA hasta una recepción",
+					"caption": "Un buffer lleno hace esperar al emisor."
+				},
+				{
+					"type": "code",
+					"language": "go",
+					"content": "ch := make(chan int)   // sin buffer\nch <- 1                // se bloquea: nadie recibe todavía\ngo func() { <-ch }()   // nunca se llega aquí!",
+					"caption": "Main envía antes de que exista el receptor. Todas las goroutines duermen, y Go se detiene con un error fatal de deadlock."
+				},
+				{
+					"type": "paragraph",
+					"text": "Ese ejemplo muestra una regla: en un canal sin buffer, el receptor debe existir **antes** de que el envío pueda terminar. Cuando todas las goroutines del programa están bloqueadas, el runtime de Go lo nota y termina el programa con un error."
+				},
+				{
+					"type": "heading",
+					"text": "Cerrar un canal"
+				},
+				{
+					"type": "paragraph",
+					"text": "`close(ch)` dice 'no vendrán más valores', y es trabajo del **emisor**. Los valores que ya están en el canal se siguen entregando. Un bucle `for v := range ch` termina cuando el canal está cerrado y vacío. Sin `close`, el bucle esperaría para siempre un valor más."
+				},
+				{
+					"type": "heading",
+					"text": "Un dueño, ningún lock"
+				},
+				{
+					"type": "paragraph",
+					"text": "Esta es una forma de arreglar la carrera del contador sin lock. Una goroutine es **dueña** de la variable `count`. Ocho trabajadores envían el valor 1 por un canal 1.000 veces cada uno, y la dueña suma lo que recibe. Las actualizaciones se aplican una a la vez, en el orden en que llegan. La variable nunca se lee y se escribe en el mismo momento, así que la respuesta siempre es exactamente 8.000. El canal hace el papel de cola de peticiones."
+				},
+				{
+					"type": "heading",
+					"text": "Rust: enviar mueve la propiedad"
+				},
+				{
+					"type": "paragraph",
+					"text": "En Rust, `tx.send(data)` **mueve** el valor al receptor. El thread que envió pierde el acceso, y si la línea siguiente intenta `data.push(1)`, el compilador se niega a compilar el programa. Así, dos threads nunca modifican el mismo dato enviado, y no hay data race, sin copia y sin lock."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "El paso de mensajes no elimina toda carrera. Si un proceso pide el valor al dueño y luego envía de vuelta 'valor más uno', dos procesos pueden leer 41 y los dos fijar 42. Cada mensaje se trata por separado, pero la operación completa eran dos mensajes. La regla es la misma en todo modelo: la operación completa debe ser UN paso indivisible. Con lock, una sección crítica. Con mensajes, un mensaje."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El paso de mensajes cambia variables compartidas por envíos y recepciones. Sin buffer significa rendezvous. Un canal con buffer de capacidad n bloquea el envío número n+1. Quien cierra es el emisor. La propiedad por una goroutine o actor no necesita lock."
+				}
+			]
+		},
+		{
+			"id": "actor-model-and-beam",
+			"title": "Modelo de actores y la BEAM",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagina una empresa donde cada empleado tiene su escritorio, su cuaderno y un buzón. Nadie lee el cuaderno de otra persona. Si quieres algo, dejas una carta en su buzón, y esa persona lee sus cartas de una en una. Ese es el **modelo de actores**. Un **actor** guarda un estado propio, habla solo con mensajes asíncronos y trata los mensajes de su buzón de uno en uno. Como ningún otro actor puede ver su estado, no hay memoria compartida que proteger con locks."
+				},
+				{
+					"type": "paragraph",
+					"text": "El hogar más conocido de los actores es la **BEAM**, la máquina virtual de Erlang y Elixir. Un **proceso** de la BEAM no es un proceso del sistema operativo. Lo crea y planifica la propia BEAM, tiene pila, heap y recolector de basura propios, empieza con muy poca memoria y no comparte datos con los demás. Un sistema puede mantener cientos de miles de ellos, por ejemplo uno por conexión abierta."
+				},
+				{
+					"type": "table",
+					"headers": ["Cosa de Elixir", "Qué hace"],
+					"rows": [
+						["`send(pid, msg)`", "Pone el mensaje en el buzón del proceso `pid` y retorna al instante, sin saber cuándo se tratará"],
+						["`receive`", "Toma de su propio buzón el primer mensaje que coincide con uno de sus patrones"],
+						["`Agent`", "Un proceso que es dueño de un estado. `Agent.update` le envía una función, ejecutada sobre el estado actual, un mensaje a la vez"],
+						["`GenServer`", "Un proceso con estado que trata un mensaje a la vez, con `call` y `cast`"],
+						["Supervisor", "Un proceso que vigila hijos y los reinicia cuando mueren"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Como un `Agent` ejecuta la lectura, el cálculo y la escritura dentro de un solo proceso, un incremento no puede entrelazarse con otro. Ocho tareas que llaman cada una a `Agent.update(counter, &(&1 + 1))` 1.000 veces terminan siempre con exactamente 8.000."
+				},
+				{
+					"type": "heading",
+					"text": "call y cast"
+				},
+				{
+					"type": "list",
+					"items": [
+						"`GenServer.call`: quien llama espera la respuesta. Esto frena de forma natural el ritmo de quien está pidiendo.",
+						"`GenServer.cast`: el mensaje solo se pone en el buzón, y quien lo envió nunca sabe cuándo, ni si, se trató."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Un actor trata un mensaje a la vez, así que su velocidad máxima es 1 dividido entre el tiempo de tratamiento. Si un GenServer necesita 1 ms por mensaje, maneja como máximo 1.000 mensajes por segundo. Si mil productores envían 5.000 por segundo con `cast`, los 4.000 de más cada segundo se acumulan en el buzón. Nadie frena a los productores (no hay backpressure), así que la memoria crece y las respuestas llegan cada vez más tarde. Las salidas: usar `call` para que los productores esperen, repartir el trabajo entre varios procesos, o descartar parte de la carga."
+				},
+				{
+					"type": "heading",
+					"text": "Planificación justa y let it crash"
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Y si un proceso ejecuta un cálculo interminable sin ningún `receive`? La BEAM hace **planificación expropiativa sin interrupciones de reloj**: cuenta el trabajo de cada proceso en **reducciones** (pequeñas unidades de trabajo). Cuando un proceso gasta su presupuesto, va al final de la cola y otro toma el planificador. Un proceso que solo calcula no puede acaparar un núcleo, y los demás siguen rápidos."
+				},
+				{
+					"type": "paragraph",
+					"text": "Como los procesos no comparten nada, un proceso que falla muere solo. Los links y monitores avisan a los procesos interesados, y un **supervisor** reinicia al hijo según su estrategia. Con `one_for_one`, solo se reinicia el hijo que murió. La filosofía se llama **let it crash** (déjalo caer): separa el código que hace el trabajo del código que maneja las fallas, y vuelve a un estado inicial confiable en lugar de intentar reparar uno roto."
+				},
+				{
+					"type": "chart",
+					"title": "Memoria por conexión inactiva medida en este repositorio (ten-thousand-connections)",
+					"unit": "KiB",
+					"bars": [
+						{ "label": "TypeScript en Bun (event loop)", "value": 4 },
+						{ "label": "Elixir en la BEAM (proceso)", "value": 10 },
+						{ "label": "Go (goroutine)", "value": 16 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "La medición mantiene 10.000 conexiones inactivas, cada una esperando 30 segundos. Los tres modelos pasan con holgura, con latencia mediana por debajo de un milisegundo, porque ninguno gasta un thread del sistema operativo en una conexión que espera. Los números no dicen nada sobre cálculo pesado dentro de un handler, y dependen de lo que un handler real mantenga vivo."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un actor es dueño de su estado, recibe mensajes en un buzón y trata uno a la vez. Los procesos de la BEAM son baratos, aislados y planificados por reducciones. `call` espera, `cast` no. Los supervisores reinician lo que se cae. El rendimiento de un actor es 1 sobre su tiempo de tratamiento."
+				}
+			]
+		},
+		{
+			"id": "async-and-event-loop",
+			"title": "Async, promesas y el event loop",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "El mesero de un restaurante no se queda de pie junto a tu mesa esperando que la sopa se cocine. Toma tu pedido, va a atender otras mesas y vuelve cuando la cocina toca la campana. Un mesero puede cuidar muchas mesas porque la mayor parte del tiempo es espera. Un servidor Node.js o Bun funciona así. Usa **un thread** y llamadas de E/S que no se bloquean. El **event loop** pregunta al sistema operativo qué operaciones quedaron listas y ejecuta el callback de cada una, de a una. Una conexión inactiva no retiene ningún thread, así que miles de ellas cuestan poca memoria."
+				},
+				{
+					"type": "heading",
+					"text": "Promesas y async/await"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una **promesa** representa un resultado que existirá en el futuro, como el comprobante de un pastel que aún está en el horno. Nace **pendiente** y se resuelve una sola vez: o **cumplida** con un valor, o **rechazada** con un error. Después de eso su estado nunca cambia. Las funciones declaradas `async` siempre devuelven una promesa, y `await` pausa solo esa función hasta que la promesa se resuelve, dejando el thread libre para otros eventos. El código parece secuencial, pero es la misma cadena que escribirías con `then`."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "async function sequential() {\n\tawait sleep(300);\n\tawait sleep(200);\n\tawait sleep(100);          // total cerca de 600 ms\n}\nasync function together() {\n\tawait Promise.all([sleep(300), sleep(200), sleep(100)]); // cerca de 300 ms\n}",
+					"caption": "Una operación empieza cuando se llama a la función, no cuando haces await sobre ella."
+				},
+				{
+					"type": "chart",
+					"title": "Tiempo para terminar los tres sleeps",
+					"unit": "ms",
+					"bars": [
+						{ "label": "un await tras otro", "value": 600 },
+						{ "label": "Promise.all (las esperas se superponen)", "value": 300 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Con un `await` por línea, cada espera empieza solo después de que termina la anterior, así que los tiempos se suman. Cuando creas todas las promesas primero y esperas con `Promise.all`, las esperas se superponen, y el total es el tiempo de la más lenta."
+				},
+				{
+					"type": "heading",
+					"text": "Las dos colas"
+				},
+				{
+					"type": "paragraph",
+					"text": "El loop tiene dos tipos de fila. Las **macrotareas** son timers y callbacks de E/S. Las **microtareas** son continuaciones de promesas (el `then` y la parte después de un `await`). Después de cada trozo de código síncrono, el loop vacía toda la cola de microtareas, y solo entonces toma la siguiente macrotarea. Por eso una promesa ya resuelta siempre pasa delante de un `setTimeout(..., 0)`."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "console.log(\"A\");\nsetTimeout(() => console.log(\"B\"), 0);        // macrotarea\nPromise.resolve().then(() => console.log(\"C\")); // microtarea\n(async () => { console.log(\"D\"); await null; console.log(\"E\"); })();\nconsole.log(\"F\");\n// imprime: A D F C E B",
+					"caption": "Primero el código síncrono (A, D, F), luego las microtareas (C, E), luego el timer (B)."
+				},
+				{
+					"type": "video",
+					"title": "What the heck is the event loop anyway? (Philip Roberts, JSConf EU, en inglés)",
+					"url": "https://www.youtube.com/watch?v=8aGhZQkoFbQ"
+				},
+				{
+					"type": "heading",
+					"text": "El gran límite: un callback lento bloquea a todos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada callback corre hasta el final antes de que se trate el siguiente evento. Esperar E/S no retiene el thread, pero una **computación síncrona sí**. Si un handler calcula durante 2 segundos y tres peticiones llegan en el mismo instante, se atienden una tras otra: cerca de 2, 4 y 6 segundos. En general, n handlers de t segundos de trabajo de procesador tardan n veces t. El event loop da concurrencia para E/S, no paralelismo para cálculo. Para trabajo que mantiene ocupado al procesador, mándalo a otro thread, como un **worker thread**, que conversa con el thread principal mediante mensajes."
+				},
+				{
+					"type": "chart",
+					"title": "Cuándo se responde cada una de tres peticiones (2 s de computación síncrona cada una, un event loop)",
+					"unit": "segundos",
+					"bars": [
+						{ "label": "1.ª petición", "value": 2 },
+						{ "label": "2.ª petición", "value": 4 },
+						{ "label": "3.ª petición", "value": 6 }
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Un solo thread aún puede tener carrera"
+				},
+				{
+					"type": "paragraph",
+					"text": "Entre dos `await` el código corre sin interrupción, pero **en cada `await` pueden correr otras tareas**. Mira: `const current = balance; await audit(); balance = current - amount;`. Si se llama dos veces a `withdraw(80)` con saldo 100, las dos leen 100, las dos esperan, las dos escriben 20. El saldo final es 20, no -60. Es una carrera de check-then-act sin ningún thread paralelo. La solución es no dejar ningún `await` entre la lectura y la escritura, o poner las operaciones en una cola para que corran de a una."
+				},
+				{
+					"type": "heading",
+					"text": "La misma idea en una ventana: Swing"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un programa Java Swing usa el mismo modelo. Un solo thread, el **event dispatch thread (EDT)**, saca eventos de una cola y ejecuta los handlers uno tras otro. Toda lectura o cambio de un componente de la ventana debe ocurrir en él, así que los componentes no necesitan locks. Si el handler de un botón descarga un archivo durante 10 segundos, la ventana se congela 10 segundos: no se redibuja ni responde a clics. El trabajo largo va a un thread en segundo plano. `SwingWorker` lo hace: `doInBackground` corre fuera del EDT y `done` corre de vuelta en él, donde actualizar componentes es seguro."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un thread más E/S no bloqueante atiende muchas conexiones. `async` devuelve una promesa. Las microtareas corren antes de la siguiente macrotarea. Una computación síncrona bloquea todas las demás peticiones, así que el trabajo de CPU va a un worker. Pueden existir carreras incluso con un solo thread, a través de un `await`."
+				}
+			]
+		},
+		{
+			"id": "thread-pools-and-backpressure",
+			"title": "Pools de threads y backpressure",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un restaurante no contrata un cocinero nuevo para cada plato y lo despide después del plato. Mantiene un equipo fijo en la cocina y una fila de pedidos. Un **pool de threads** hace lo mismo: un número limitado de threads saca tareas de una cola y se reutiliza. Crear un thread cuesta tiempo y memoria, y demasiados threads pelean por el procesador y agotan recursos. En un pool el costo de creación se paga una vez, y la concurrencia tiene un techo conocido."
+				},
+				{
+					"type": "paragraph",
+					"text": "En Java, `Executors.newFixedThreadPool(4)` crea un pool con exactamente 4 threads y una cola de tareas **sin límite de tamaño**. Envía diez tareas largas: 4 corren, 6 esperan en la cola por orden de llegada. `submit` no se bloquea, encola la tarea y devuelve un `Future` (un boleto para el resultado)."
+				},
+				{
+					"type": "heading",
+					"text": "¿Cuánto tardará?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un thread bloqueado en E/S no hace nada, pero sigue ocupado. Con n tareas que esperan t segundos cada una, en un pool de k threads, el tiempo total es cerca de ceil(n / k) veces t. Doce tareas que duermen 1 segundo cada una en 4 threads necesitan 3 segundos."
+				},
+				{
+					"type": "chart",
+					"title": "Tiempo para 12 tareas que se bloquean 1 segundo cada una, según el tamaño del pool",
+					"unit": "segundos",
+					"bars": [
+						{ "label": "1 thread", "value": 12 },
+						{ "label": "2 threads", "value": 6 },
+						{ "label": "4 threads", "value": 3 },
+						{ "label": "12 threads", "value": 1 }
+					]
+				},
+				{
+					"type": "table",
+					"headers": ["Tipo de trabajo", "Buen tamaño de pool", "Por qué"],
+					"rows": [
+						["Solo calcula (limitado por CPU)", "Cerca del número de núcleos", "Más threads que núcleos no ganan nada y añaden cambios"],
+						["Casi solo espera (limitado por E/S)", "Mayor que el número de núcleos", "Los threads que esperan no hacen nada, así que los extra mantienen ocupados a los núcleos"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Apagar un pool"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un `ExecutorService` mantiene vivos sus threads, así que debes detenerlo. `shutdown` es la forma educada: no se acepta nada nuevo, y lo que ya se envió se completa. `shutdownNow` es la forma inmediata: envía `interrupt` a los threads activos y devuelve las tareas que nunca empezaron. La interrupción es cooperativa, así que una tarea que la ignora sigue corriendo."
+				},
+				{
+					"type": "heading",
+					"text": "Backpressure"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ahora el gran peligro. Un pool de 10 threads puede terminar 100 tareas por segundo. Durante mucho tiempo, los productores envían 150 por segundo. Con una **cola sin límite**, nada los detiene. Las 50 tareas de más cada segundo se acumulan en la cola y consumen memoria, y la espera de cada tarea nueva crece sin límite. Al final el programa se queda sin memoria. Una cola sin límite esconde la sobrecarga."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Backpressure** (contrapresión) es hacer que la señal 'estoy lleno' llegue al productor. Una tubería de agua es una buena imagen: si el lavamanos está lleno, el grifo debe aflojar. Hay dos formas. Una **cola acotada** que bloquea al productor cuando está llena (como el buffer bloqueante del acertijo productor-consumidor). O el **descarte de carga** (load shedding): rechazar a propósito el trabajo extra, para seguir respondiendo bien a lo que aceptas."
+				},
+				{
+					"type": "diagram",
+					"content": "productores (150/s)   cola              trabajadores (100/s)\n   ===========>  [acotada: 100] ===========>  10 threads\n                      |\n               ¿llena? -> bloquea al productor\n                          o rechaza la tarea",
+					"caption": "Una cola acotada devuelve la sobrecarga al productor."
+				},
+				{
+					"type": "heading",
+					"text": "Un pool puede hacerse deadlock a sí mismo"
+				},
+				{
+					"type": "paragraph",
+					"text": "Dos tareas externas se envían a un pool de 2 threads. Cada tarea externa envía una tarea interna al **mismo** pool y llama a `get()` en su Future para esperarla. Las dos tareas externas retienen un thread y esperan. Las tareas internas quedan en la cola y ningún thread está libre para correrlas. Una espera circular entre los threads y la cola: un **deadlock por agotamiento del pool**. Las curas: no bloquearse dentro de las tareas (componer los resultados de forma asíncrona), o usar pools separados para tareas externas e internas."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un pool reutiliza un número fijo de threads. Con n tareas bloqueantes en k threads, el tiempo es cerca de ceil(n/k) veces t. Una cola sin límite esconde la sobrecarga: usa una cola acotada o rechaza trabajo para aplicar backpressure. Nunca esperes, desde dentro de una tarea, a una tarea del mismo pool."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Uniendo todo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Conociste muchas herramientas. ¿Cómo encajan? Empieza por el problema. Las tareas concurrentes comparten algo, o esperan algo. Si comparten datos, o los proteges o dejas de compartirlos."
+				},
+				{
+					"type": "table",
+					"headers": ["Modelo", "Cómo evita actualizaciones perdidas", "Peligro principal", "Dónde lo encuentras"],
+					"rows": [
+						["Locks (mutex, `synchronized`)", "Un thread a la vez en la sección crítica", "Deadlock, unlock olvidado, inversión de prioridad", "Java, Go, Rust, C++"],
+						["Atómicos (CAS, `fetch_add`)", "Un paso de máquina indivisible", "Solo para una variable. ABA. Reglas de visibilidad", "Contadores, estructuras sin lock"],
+						["Semáforos y monitores", "Cuenta y espera incorporadas", "Despertar perdido, `if` en vez de `while`", "Buffers, límites de recursos"],
+						["Canales", "Los valores se entregan, un solo dueño", "Bloquearse para siempre, cerrar mal", "Go, Rust `mpsc`"],
+						["Actores", "Estado privado, un mensaje a la vez", "Buzón que crece, operaciones compuestas", "Elixir, Erlang, Akka"],
+						["Event loop", "Un thread ejecuta un callback a la vez", "Un callback largo bloquea todo, carreras a través de `await`", "Node.js, Bun, navegadores, Swing"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Errores comunes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Creer que `counter++` es un solo paso. Son leer, sumar, escribir.",
+						"Creer que `volatile` hace seguro a `count++`. Solo da visibilidad.",
+						"Creer que una colección thread-safe hace segura una secuencia de llamadas (check-then-act).",
+						"Llamar a `run()` en lugar de `start()`.",
+						"Usar `if` en vez de `while` alrededor de `wait()`.",
+						"Tomar el `mutex` antes que el semáforo contador en productor-consumidor.",
+						"Bloquear en órdenes distintos en lugares distintos.",
+						"Llamar a código desconocido (un callback) mientras se sostiene un lock.",
+						"Colas sin límite, que esconden la sobrecarga hasta que se acaba la memoria.",
+						"Ejecutar cálculo pesado en el event loop.",
+						"Confiar en una prueba que pasó muchas veces, o en un detector de carreras que no imprimió nada."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Una receta corta"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"¿Puedes evitar compartir? Da al dato un solo dueño y envía mensajes.",
+						"Si debes compartir, encuentra la sección crítica entera: todos los pasos que deben ocurrir como uno solo.",
+						"Protégela con la herramienta más simple: un lock, o un atómico si es una sola variable.",
+						"Si tomas varios locks, define un orden global.",
+						"Limita las colas y el número de threads, para que la sobrecarga se note pronto.",
+						"Usa un detector de carreras y piensa en el momento de cada paso, porque solo las pruebas no demuestran que un programa concurrente sea correcto."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Los mini-proyectos de este repositorio te dejan ver todo esto en marcha: la carrera del contador (la actualización perdida y sus cuatro arreglos), los filósofos comensales (deadlock y dos curas) y las diez mil conexiones (event loop, goroutines y procesos de la BEAM). Para ir más allá, el libro gratuito [The Little Book of Semaphores](https://greenteapress.com/wp/semaphores/) y el juego [The Deadlock Empire](https://deadlockempire.github.io/) son excelentes formas de practicar."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "La concurrencia es fácil de escribir y difícil de demostrar. Prefiere no compartir, protege la sección crítica entera cuando debas compartir, ordena tus locks, limita tus colas y nunca confíes en el momento de cada paso."
+				}
+			]
+		}
+	]
+}

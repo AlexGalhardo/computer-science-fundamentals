@@ -1,0 +1,1166 @@
+{
+	"area": "rate-limiting",
+	"intro": [
+		"Imagine a school canteen with one cook. If every child tries to order at the same second, the cook cannot cook anything, and the children at the back never eat. So the school makes a rule: each child may ask for one plate at a time, and the line moves at the speed of the cook. **Rate limiting** is that rule for computers: it decides how many requests one client may send to a service in a given time.",
+		"A [[request|one message from a program asking a server to do something, like 'give me this page']] costs the server work. A [[client|the program, person or company that sends requests to a service]] that sends too many can slow the service down for everybody, or even knock it over. Rate limiting is how real services (payment APIs, login pages, chat apps, cloud providers) stay up and treat every customer fairly. You meet it when a website says 'too many attempts, try again later'.",
+		"In this summary you will learn: why we limit and where the limiter should live, five ways to count (fixed window, sliding log, sliding counter, token bucket and leaky bucket), how to make a limiter work when many servers share it (with Redis), how the server says 'no' (the HTTP 429 answer) and how a good client waits before trying again, and the neighbours of rate limiting: quotas, throttling and load shedding. At the end you will be ready for the quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: words you will meet",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **rate limiter** is a small gatekeeper placed in front of a service. For every request it asks one question: 'has this client already used its share?'. If not, the request goes in. If yes, the request is turned away. Everything in this summary is about how the gatekeeper counts, and about what happens to the ones it turns away."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Think of a bouncer at a party who lets in at most 10 guests per minute. The bouncer does not check who is a good person. He only counts. A different person (the one at the ID desk) checks who you are. Counting and checking identity are two different jobs."
+				},
+				{
+					"type": "heading",
+					"text": "Words you will meet"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Key**: the name the limiter counts under. It can be an IP address, a user, an API key or a customer company. Each key has its own count.",
+						"**Limit**: the largest number of requests allowed, for example 100.",
+						"**Window**: the stretch of time the limit is about, for example 'per minute'. So '100 per minute' means limit 100, window 60 seconds.",
+						"**Rate**: how many requests per unit of time, for example 5 per second.",
+						"**[[Burst|a lot of requests that arrive almost at the same moment]]**: many requests together. Some limiters allow a small burst, others do not.",
+						"**Admit and reject**: to admit a request is to let it through. To reject it is to refuse it (for example, with the answer 429).",
+						"**Throughput**: how many requests per second really get done."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The two questions every limiter answers"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Question",
+						"Why it matters",
+						"Example"
+					],
+					"rows": [
+						[
+							"How is the count kept?",
+							"Decides how much memory it needs and how exact it is",
+							"One number per client, or one timestamp per request"
+						],
+						[
+							"What happens to a burst?",
+							"Decides whether a client can send many requests at once",
+							"Block it, allow a little, or hold it in a line"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A rule like '10 requests per second' does not say what happens when 20 requests arrive in 200 milliseconds. Each algorithm answers that in its own way, and that answer is what you really choose when you pick an algorithm."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A rate limiter counts and decides. It does not know who you are, it does not hide your data and it does not make anything faster."
+				}
+			]
+		},
+		{
+			"id": "why-and-where",
+			"title": "Why and where to limit",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Why would a service refuse requests on purpose? Because a server has a fixed amount of work it can do each second. If one client takes too much, the others wait or get errors. A limiter gives four things: it keeps the service **available**, it keeps clients **fair** with each other, it keeps the **cost** under control (some requests cost real money), and it slows down **brute force** (trying thousands of passwords) and **scraping** (copying a whole site by machine)."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Rate limiting is not the same thing as other protections. Authentication says who you are. Encryption hides the data on the way. A cache makes answers faster. A load balancer spreads work between servers. A limiter does none of these: it only caps how much each key may use."
+				},
+				{
+					"type": "heading",
+					"text": "Which key do we count?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Key",
+						"Good",
+						"Bad"
+					],
+					"rows": [
+						[
+							"IP address",
+							"Exists before anyone logs in, so it is easy",
+							"Many people can share one address (a school, a company or a phone company use [[NAT|a trick where a whole network reaches the Internet through one public address]]), so they are punished together. An attacker can change address easily."
+						],
+						[
+							"User or API key",
+							"Identifies the real caller",
+							"Only works after the caller is identified"
+						],
+						[
+							"Tenant (customer company)",
+							"Caps a whole customer",
+							"Needs the tenant to be known on each request"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Be careful with the header `X-Forwarded-For`. It is an ordinary line in the request, and whoever sends the request writes whatever they like in it. It can be trusted only when a proxy that you control filled it in. If a service is open to the Internet with no proxy in front, it must use the address of the real connection. If it uses the header, an attacker just changes the header each time and gets endless fresh keys."
+				},
+				{
+					"type": "heading",
+					"text": "Stacking limits"
+				},
+				{
+					"type": "paragraph",
+					"text": "A limiter only controls the total of the key it counts. If every user may send 100 per minute and one customer company has 400 users, that company can send up to 40,000 per minute. So big systems **stack** keys: one limit per user, one per tenant, sometimes one global. A request must pass all of them. Also, a different limit for each endpoint helps: `POST /login` and SMS sending should have very low limits, because every attempt is a risk or costs money, while a cheap read can have a high one. One loose limit for everything ends up far too loose for the sensitive endpoints."
+				},
+				{
+					"type": "heading",
+					"text": "Where does the limiter live?"
+				},
+				{
+					"type": "diagram",
+					"caption": "Several places for a limiter, from the client to a dependency",
+					"content": "client --> CDN/edge --> gateway --> application --> dependency\n  (1)       (2)          (3)         (4)           (5)\n\n(1) in the client itself (polite, not enforced)\n(2) at the edge: cheap to reject, little context\n(3) in the API gateway or reverse proxy\n(4) in the application: knows user and operation\n(5) right before a costly dependency (SMS, database)"
+				},
+				{
+					"type": "paragraph",
+					"text": "The closer to the origin of the traffic, the cheaper it is to say no, but the less the limiter knows about the request. So layers are combined: a coarse and cheap limit at the edge, and fine limits per user and per operation in the application. To protect a **dependency** with limited capacity or cost (for example an SMS provider that charges per message), put the limiter right before it, count in the unit it charges (messages, not requests), and share it between every code path, because a nightly job may reach the provider without passing the gateway."
+				},
+				{
+					"type": "heading",
+					"text": "Fair is not the same as safe"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagine a service that can handle 400 requests per second, and 10 clients that are each allowed 100 per second. The limits are fair, but together they allow 1,000 per second, which is more than 400. Per-client limits are normally sold above the capacity, hoping that not everybody uses the maximum at once. To protect the service you also need a **global limit** or load shedding. And a flood from 200,000 different addresses, each below its limit, still brings the service down, because the damage comes from the sum. A limiter inside the application also decides late: the request already used a connection and some work."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "The limiter goes where it protects what you care about, counts a key that the caller cannot fake, and a per-client limit alone does not protect against the sum of all clients."
+				}
+			]
+		},
+		{
+			"id": "fixed-window",
+			"title": "Fixed window",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "The simplest way to count is to cut time into equal slices, like the pages of a calendar, and keep one tally per slice. Each slice is a **window** of size W. Window number k covers the time from k times W up to (but not including) k+1 times W. For W = 10 seconds the windows are [0,10), [10,20), [20,30) and so on. The round bracket means 'not included'. So an instant exactly at 10 belongs to the window that is **starting**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A teacher gives each child 3 stickers per hour, and at the strike of every hour she wipes the board and everybody starts again from zero."
+				},
+				{
+					"type": "paragraph",
+					"text": "The rule: when a request arrives, find its window, look at the counter of that window, and admit the request if the counter is below the limit. Then add one. At every boundary the counter starts from zero. The state is tiny: **one counter and the window number per client**. That is the great quality of the algorithm. The memory does not depend on the limit or on the window size, so going from a limit of 500 to 5,000 costs nothing extra."
+				},
+				{
+					"type": "heading",
+					"text": "The weak point: the boundary"
+				},
+				{
+					"type": "diagram",
+					"caption": "Limit 3 per window of 10 s. Six requests are admitted in about 4 seconds",
+					"content": "  window [0,10)            window [10,20)\n|------------------------|------------------------|\n                   8 9 9 | 10 11 12\n                   ^^^^^   ^^^^^^^^\n                   3 admitted  3 admitted\n\ncounter: 0 .. 1 2 3      | 0 -> 1 2 3  (back to zero)"
+				},
+				{
+					"type": "paragraph",
+					"text": "A client can spend its whole limit at the very end of one window and again at the very start of the next. In a span much shorter than W it gets up to **2 times the limit** through. The rule seems to promise L per window but allows twice that around a boundary. This is the classic flaw of the fixed window."
+				},
+				{
+					"type": "heading",
+					"text": "Where do the windows begin?"
+				},
+				{
+					"type": "paragraph",
+					"text": "There are two usual ways to build it on Redis. In the first, the window number goes in the key name (for example `rl:client42:7`), so the windows are aligned to the clock and the same for everybody. In the second there is one key per client, the key gets a time to live with `EXPIRE` only when `INCR` returns 1, and the window begins at the client's **first** request:"
+				},
+				{
+					"type": "code",
+					"language": "lua",
+					"caption": "Window opened by the first request",
+					"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], ARGV[1])\nend\nreturn n"
+				},
+				{
+					"type": "paragraph",
+					"text": "Both forms still allow a double burst, just at different places. With the second form the first burst is held to the limit, but there is still a boundary when the key expires. The two lines sit together in one script so that the key is never left without an expiry."
+				},
+				{
+					"type": "heading",
+					"text": "Small details that change the numbers"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Same average, different window.** '600 per minute' as one window of 60 s allows up to 1,200 around a boundary. '10 per second' as 1-second windows keeps the burst small, but rejects a good client that sends a small batch at once. The window size chooses how big a burst you tolerate.",
+						"**Counting rejected requests.** In a fixed window it does not change who is admitted, because the counter is zeroed at the boundary anyway. It only changes the stored number, which can be a useful measure of the excess.",
+						"**Synchronised clients.** With windows aligned to the clock, everybody gets their limit back at the same instant. Clients that wait for the renewal then all try again together, a stampede at the boundary. A random delay on the client (jitter) or an algorithm without a boundary helps."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Fixed window: one counter per client, very cheap, but up to 2 times the limit can pass around a boundary."
+				}
+			]
+		},
+		{
+			"id": "sliding-window",
+			"title": "Sliding log and sliding counter",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "The fixed window forgets everything at the boundary. What if the window **moved along with each request**? Instead of 'this calendar hour', ask 'in the last W seconds before now, how many requests were admitted?'. That window slides forward all the time, so it has no boundary to exploit. There are two ways to do it."
+				},
+				{
+					"type": "heading",
+					"text": "Sliding log: exact, but heavy"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **sliding log** keeps the timestamp of every admitted request, like a notebook where the doorman writes the time each guest came in. When a request arrives at time t, he rubs out the entries that are too old, counts what is left, and admits the newcomer if the count is below the limit L. The convention used here: an entry exactly W seconds old has already expired, so the window is (t - W, t]. Only **admitted** requests are written down."
+				},
+				{
+					"type": "table",
+					"caption": "Limit 3, W = 10 s",
+					"headers": [
+						"Arrives at t",
+						"Entries still in the window",
+						"Decision"
+					],
+					"rows": [
+						[
+							"0",
+							"none",
+							"admitted"
+						],
+						[
+							"2",
+							"0",
+							"admitted"
+						],
+						[
+							"5",
+							"0, 2",
+							"admitted"
+						],
+						[
+							"9",
+							"0, 2, 5 (three already)",
+							"rejected"
+						],
+						[
+							"10",
+							"2, 5 (the entry 0 is exactly 10 old, so it expired)",
+							"admitted"
+						],
+						[
+							"11",
+							"2, 5, 10",
+							"rejected"
+						],
+						[
+							"12",
+							"5, 10 (the entry 2 expired)",
+							"admitted"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The log forgets each request on its own, exactly W seconds after admitting it, so in **any** interval of W seconds there are never more than L admitted requests. The price is memory: up to **L timestamps per client**. A limit of 10,000 per hour can mean 10,000 entries for one client. On Redis this is usually one sorted set per client, with the timestamp as the score."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "What you write down matters. If rejected requests are also written in the log, every denied attempt renews the block, and a client that keeps trying never recovers. That may be a wanted punishment, but make it a decision, not an accident."
+				},
+				{
+					"type": "heading",
+					"text": "Sliding counter: cheap, and almost exact"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **sliding counter** keeps only two numbers per client: the count of the previous fixed window (prev) and the count of the current one (cur). To estimate the last W seconds it uses part of the previous window plus all of the current one:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"caption": "elapsed = time since the current window started",
+					"content": "estimate = prev * (1 - elapsed / W) + cur\nadmit when estimate < limit   (estimate is computed before counting the new request)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Example: limit 100, W = 60 s, prev = 80, cur = 30, and the request comes 15 s into the window. Three quarters of the previous window still count (1 - 15/60 = 0.75), so the estimate is 80 x 0.75 + 30 = 90, which is below 100: admitted. The weight of the previous window falls steadily from 1 to 0, so a client that used up its limit gets the slots back little by little, not all at once."
+				},
+				{
+					"type": "paragraph",
+					"text": "The estimate relies on a guess: that the previous window's requests were **spread evenly** over it, because the counter only knows how many there were, not when. When the guess is wrong, the answer is wrong, in a bounded way:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Previous requests bunched at the **end** of the window: they are all still inside the last W seconds, but only a fraction is counted. The counter **underestimates** and may admit more than the limit.",
+						"Previous requests bunched at the **start**: none of them is still inside the last W seconds, but a fraction is still counted. The counter **overestimates** and rejects requests that the exact log would admit."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The three window algorithms side by side"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"Fixed window",
+						"Sliding log",
+						"Sliding counter"
+					],
+					"rows": [
+						[
+							"State per client",
+							"1 counter + window number",
+							"up to L timestamps",
+							"2 counters"
+						],
+						[
+							"Limit 1,000 per hour, fully used",
+							"1 counter",
+							"1,000 timestamps",
+							"2 counters"
+						],
+						[
+							"Burst at the boundary",
+							"up to 2 x L",
+							"never more than L",
+							"small error"
+						],
+						[
+							"Exact?",
+							"no",
+							"yes",
+							"approximate"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Log: exact, memory grows with the limit. Counter: two numbers, small error. Fixed: one number, but a double burst at the boundary. Admitting more in total does not mean protecting better."
+				}
+			]
+		},
+		{
+			"id": "token-bucket",
+			"title": "Token bucket",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Picture a bucket of play tokens. To make a request you must pay one token. A tap drops new tokens into the bucket at a steady speed, but the bucket can hold only so many, and extra tokens spill over. If the bucket is empty, you wait for the next token. This is the **token bucket**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A game arcade: you get one coin every 10 seconds, and your pocket holds at most 5 coins. If you do not play for a long time, you still only have 5 coins. If you play 5 games in a row, you have none and must wait for new coins."
+				},
+				{
+					"type": "heading",
+					"text": "The two knobs"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Parameter",
+						"Name",
+						"What it limits"
+					],
+					"rows": [
+						[
+							"B",
+							"capacity (bucket size)",
+							"The biggest burst that can pass at once"
+						],
+						[
+							"r",
+							"refill rate (tokens per second)",
+							"The average speed when the client keeps pushing"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Having two knobs is the strength of the algorithm: the burst you tolerate and the average you sustain stop being the same number. An empty bucket means the client has used its burst: the request is refused (in an API limiter) or delayed (in a traffic shaper) until a token appears. While the bucket stays empty, the throughput is exactly r."
+				},
+				{
+					"type": "heading",
+					"text": "The balance and the cap"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Lazy refill: no timer is needed",
+					"content": "// balance = min(B, balance + r * elapsed)\nfunction allow(b: { tokens: number; last: number }, now: number): boolean {\n\tconst elapsed = now - b.last;\n\tb.tokens = Math.min(B, b.tokens + elapsed * r);\n\tb.last = now;\n\tif (b.tokens >= 1) { b.tokens -= 1; return true; }\n\treturn false;\n}"
+				},
+				{
+					"type": "paragraph",
+					"text": "Nobody needs a timer that drops a token each moment. Because tokens come at a constant speed, the **previous balance and the time of the last update** are enough to compute the balance now. This is called **lazy refill**, and the state per client is just two fields. Fractions of a token count: with r = 0.5 per second, two seconds give one whole token."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "The `Math.min(B, ...)` is the cap, and forgetting it is a classic bug. Without it, a client that stays idle for an hour piles up an hour of tokens and then spends them all at once. The bug does not show in tests with steady traffic, only after a quiet period."
+				},
+				{
+					"type": "table",
+					"caption": "B = 4, r = 1 token/s, bucket full at t = 0. A refused request spends no token",
+					"headers": [
+						"Time",
+						"Balance before",
+						"Requests",
+						"Admitted",
+						"Balance after"
+					],
+					"rows": [
+						[
+							"0 s",
+							"4",
+							"4",
+							"4",
+							"0"
+						],
+						[
+							"1 s",
+							"0 + 1 = 1",
+							"2",
+							"1",
+							"0"
+						],
+						[
+							"3 s",
+							"0 + 2 = 2",
+							"1",
+							"1",
+							"1"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "How many can pass?"
+				},
+				{
+					"type": "paragraph",
+					"text": "In any interval of T seconds a token bucket admits **at most B + r x T** requests: the saved burst plus what the tap produced meanwhile. The longer the interval, the less the B term matters, and the average approaches r."
+				},
+				{
+					"type": "chart",
+					"title": "Most requests a bucket with B = 10 and r = 2 per second can admit in T seconds",
+					"unit": "requests",
+					"bars": [
+						{
+							"label": "T = 1 s",
+							"value": 12
+						},
+						{
+							"label": "T = 5 s",
+							"value": 20
+						},
+						{
+							"label": "T = 10 s",
+							"value": 30
+						},
+						{
+							"label": "T = 60 s",
+							"value": 130
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "This is why you cannot choose r from the ceiling alone. If an API tolerates at most N requests in any T seconds, you need B + r x T <= N, not only r x T <= N. Example: at most 100 per 10 seconds and a burst of 40 means r x 10 <= 60, so r = 6 per second. Every token given to the burst is one less for the sustained rate."
+				},
+				{
+					"type": "heading",
+					"text": "More ideas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Time to wait.** If the balance is s (below 1), the next request will be admitted after (1 - s) / r seconds. This is the number a server can send in `Retry-After`.",
+						"**Weighted cost.** A request can cost more than one token. An export may cost 25 tokens and a read 1. The rule is: admit when balance >= cost, with no partial payment. When the balance is low, cheap calls keep passing while expensive ones wait.",
+						"**Traffic shaping with bytes.** Tokens can be bytes. With bucket B = 16 MB, token rate R = 2 MB/s and a link that sends at most M = 10 MB/s, a full bucket lets the host send at full speed for B / (M - R) = 16 / 8 = 2 seconds, then it drops to R."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Token bucket: capacity B is the largest burst, rate r is the long-run average, and at most B + r x T pass in T seconds."
+				}
+			]
+		},
+		{
+			"id": "leaky-bucket",
+			"title": "Leaky bucket",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Now turn the picture around. Imagine a bucket with a small hole in the bottom. Water can be poured in as fast as you like, but it drips out of the hole at one steady speed. If you pour too much, the bucket overflows. That is the **leaky bucket**, and it has two readings that use the same picture."
+				},
+				{
+					"type": "heading",
+					"text": "Reading 1: a queue (a shaper)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Requests enter a waiting line of limited size. They **leave the line at a constant rate**, one every fixed interval. A burst is not refused: it waits in the queue and comes out evenly. If the queue is full, the arriving request is dropped, like water over the rim."
+				},
+				{
+					"type": "diagram",
+					"caption": "Queue of capacity 6, one departure every 0.5 s. Nine requests arrive together at t = 0",
+					"content": "arrivals (9 at once)\n       |\n       v\n  +---------+\n  | 6 slots |  3 requests do not fit: dropped\n  +----+----+\n       | one every 0.5 s\n       v\n  out: 0.5  1.0  1.5  2.0  2.5  3.0 s"
+				},
+				{
+					"type": "paragraph",
+					"text": "The system behind the bucket never gets more than the output rate, no matter how bursty the input is. The price is **delay**: if the queue drains at r requests per second, the request with k - 1 ahead of it waits k / r seconds (the first departure is one interval after the arrival at an empty queue). The worst possible wait is capacity / r, so the queue size is also a choice of maximum latency."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A school gate where children walk out one by one, even if a hundred rush to it. Nobody is blocked forever, but the last one waits."
+				},
+				{
+					"type": "heading",
+					"text": "Reading 2: a meter (a policer)"
+				},
+				{
+					"type": "paragraph",
+					"text": "As a **meter**, the bucket holds no requests at all. It keeps just one number, the **level**. Each admitted request adds 1 to the level, and the level drains at a constant rate. A request is admitted when level + 1 <= capacity, and the decision is immediate: nothing waits."
+				},
+				{
+					"type": "table",
+					"caption": "Meter: capacity 3, drains 1 per second, level 0 at t = 0. Refused requests do not change the level",
+					"headers": [
+						"Time",
+						"Level after draining",
+						"Request",
+						"Decision",
+						"Level after"
+					],
+					"rows": [
+						[
+							"0 s",
+							"0",
+							"1st",
+							"admitted",
+							"1"
+						],
+						[
+							"0 s",
+							"1",
+							"2nd",
+							"admitted",
+							"2"
+						],
+						[
+							"0 s",
+							"2",
+							"3rd",
+							"admitted",
+							"3"
+						],
+						[
+							"0 s",
+							"3",
+							"4th",
+							"refused (3 + 1 > 3)",
+							"3"
+						],
+						[
+							"2 s",
+							"3 - 2 = 1",
+							"5th",
+							"admitted",
+							"2"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The meter is the mirror image of the token bucket. With tokens = capacity - level, the rules of one turn into the rules of the other. Both admit exactly the same requests and both allow a burst of up to the capacity with an average rate r. Only the **queue** reading behaves differently, because it holds and delays requests."
+				},
+				{
+					"type": "heading",
+					"text": "Shaping and policing"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"Shaping",
+						"Policing"
+					],
+					"rows": [
+						[
+							"What happens to the excess",
+							"It is delayed in a queue",
+							"It is dropped or marked right away"
+						],
+						[
+							"Cost",
+							"Latency and memory",
+							"None to hold, but the caller loses the request"
+						],
+						[
+							"Example",
+							"Leaky bucket as a queue",
+							"A limiter that answers 429"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "In Tanenbaum's words, shaping regulates the average rate and the burst size of a flow **before** it enters the network, usually by delaying packets. Policing is the network checking that the flow keeps the agreed pattern, and dropping or marking the excess."
+				},
+				{
+					"type": "heading",
+					"text": "Token bucket or leaky bucket?"
+				},
+				{
+					"type": "paragraph",
+					"text": "After a long quiet time a client sends 10 requests at once. A token bucket of capacity 10 saved tokens while idle, so it lets all 10 through immediately. A leaky bucket as a queue saves no credit at all: it keeps the 10 in the queue and releases them at its constant rate, say one per second. Idle time earns tokens in one and earns nothing in the other."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Use the token bucket when bursts are fine and you want to limit the average. Use the leaky bucket as a queue when the system behind it has a rigid, constant capacity (it fails above 5 per second, even for a moment), and accept delay and drops as the price. Set the output rate from the next system's capacity and the queue size from the longest wait you accept."
+				}
+			]
+		},
+		{
+			"id": "redis-distributed",
+			"title": "Distributed limiting with Redis and atomicity",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "So far there was one program with one counter. Real services run on several copies, called **instances**, behind a [[load balancer|a machine that sends each request to one of several identical servers]]. If every instance counts in its own memory, a client can get N times the limit through N instances: with 3 instances and a limit of 100 per minute, up to 300 per minute."
+				},
+				{
+					"type": "paragraph",
+					"text": "The fix is to move the counter out of the instances into one **shared store** that all of them read and write. [[Redis|a very fast database that keeps data in memory and is often used for counters]] is the usual choice. Redis then becomes the single source of truth, and the instances stay simple and can be added or removed without changing the limit."
+				},
+				{
+					"type": "heading",
+					"text": "Why INCR does not lose counts"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis runs commands one at a time and never mixes two commands on the data. So `INCR` (add one to a number) is an atomic read, add and write. If two instances send `INCR` for the same key at the same instant, neither add is lost. **Atomic** means 'all in one piece, nothing can come in the middle'."
+				},
+				{
+					"type": "heading",
+					"text": "The trap: check, then act"
+				},
+				{
+					"type": "diagram",
+					"caption": "Each command is atomic, but the sequence is not",
+					"content": "counter = 9, limit = 10\n\ninstance A: GET   -> 9\ninstance B: GET   -> 9   (A has not written yet)\ninstance A: 9 < 10, INCR, admit  -> 10\ninstance B: 9 < 10, INCR, admit  -> 11   <- over the limit"
+				},
+				{
+					"type": "paragraph",
+					"text": "Reading, deciding in the application and then writing is a **race condition** (a bug that depends on who is faster). In this repository's test, two instances received 400 concurrent requests for a limit of 50 per minute. The version with one Lua script admitted exactly 50 in each of five rounds. The naive version admitted up to 192 in the measured rounds, and exactly 50 in a few of them, which is why such bugs are hard to catch."
+				},
+				{
+					"type": "heading",
+					"text": "The cure: a Lua script"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis can run a small program written in [[Lua|a tiny programming language that Redis understands]] with `EVAL`. A script runs from start to end and no other command is served in the middle, so the read, the decision and the write become one atomic step. It can also set the expiry in the same step as the first increment, so a client that crashes cannot leave a counter that never expires."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "If `INCR` and `EXPIRE` are two commands sent by the client and the process dies between them, the key counts forever and never expires. The window never restarts, and the client stays blocked. Put both in one script."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Detail",
+						"What to know"
+					],
+					"rows": [
+						[
+							"Short scripts",
+							"While a script runs, every other client waits. A limiter script does a few O(1) commands on one or two keys."
+						],
+						[
+							"`KEYS` and `ARGV`",
+							"Key names go in `KEYS`, other values (limit, window) go in `ARGV`. Declaring the keys lets Redis Cluster find the right node. A script may only touch keys of one slot, and a hash tag in braces keeps related keys together."
+						],
+						[
+							"`EVALSHA` and `NOSCRIPT`",
+							"The client loads the script once and calls it by its SHA1 code. The script cache is not permanent: after a restart Redis answers `NOSCRIPT`, and the client must load the script again and retry."
+						],
+						[
+							"`MULTI` / `EXEC`",
+							"Runs a group of commands without mixing, but one command cannot use the result of another to decide. `WATCH` adds optimistic locking (EXEC fails if the key changed and you retry). A Lua script needs no retry."
+						],
+						[
+							"Round trips",
+							"Each trip to Redis adds latency (say 0.4 ms). Three separate commands cost three trips, one script costs one. A script or a pipeline reduces them."
+						],
+						[
+							"Sliding log on Redis",
+							"One sorted set per client with the timestamp as score: `ZREMRANGEBYSCORE` removes old entries, `ZCARD` counts, `ZADD` records. The member must be unique per request, because a set keeps each member only once."
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Clocks and failures"
+				},
+				{
+					"type": "paragraph",
+					"text": "Windows only agree if every instance agrees on the time. Clocks of different machines drift apart (**clock skew**). If instance B is 20 seconds ahead, it builds a different window key than instance A for the same instant, and the shared counter is split in two. The fix is to read the time inside the script with the Redis `TIME` command, so every instance uses one clock."
+				},
+				{
+					"type": "paragraph",
+					"text": "Two more things can go wrong. First, Redis copies data to a replica **asynchronously**: the primary confirms to the client and sends to the replica after. If the primary crashes and the replica takes over, the last increments may be lost and the limit is briefly exceeded. This small, rare deviation is usually accepted. Second, Redis may be unreachable, and the limiter must decide beforehand what to do:"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Policy",
+						"What it does",
+						"Good for"
+					],
+					"rows": [
+						[
+							"Fail-open",
+							"Admits everything while Redis is down",
+							"Cheap reads, where staying up matters more"
+						],
+						[
+							"Fail-closed",
+							"Rejects everything while Redis is down",
+							"Sensitive or expensive operations, protecting the backend"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A common middle road is a rough local limit in each instance's memory while Redis is away."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Shared counter in Redis, decision in one Lua script, expiry set in the same step, time read from Redis, and a written plan for when Redis is down."
+				}
+			]
+		},
+		{
+			"id": "http-429-and-backoff",
+			"title": "HTTP 429, headers and client backoff",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "When a limiter says no, it must say so in a way the client understands. On the web this is done with an HTTP **status code**, a number at the start of the answer (200 means OK, 404 means not found). For 'you sent too many', the code is **429 Too Many Requests**, added by RFC 6585. The RFC does not say how the server finds out who you are or how it counts. The answer should explain the situation and may say when to try again."
+				},
+				{
+					"type": "heading",
+					"text": "429 or 503?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Code",
+						"Kind",
+						"Meaning",
+						"Who is at fault"
+					],
+					"rows": [
+						[
+							"429 Too Many Requests",
+							"client error (4xx)",
+							"This client went over its own limit while others are still served",
+							"the client"
+						],
+						[
+							"503 Service Unavailable",
+							"server error (5xx)",
+							"The server is overloaded or in maintenance",
+							"not the requester"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A per-client limiter answers 429. A server that sheds load because it is overloaded answers 503. A 429 should never be stored by a cache, because it describes one client at one instant: if a shared cache (such as a CDN) kept it, other clients, or the same client after waiting, would be refused for no reason. RFC 6585 says 429 responses must not be stored."
+				},
+				{
+					"type": "heading",
+					"text": "Telling the client when to return"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"caption": "A refusal that helps the client",
+					"content": "HTTP/1.1 429 Too Many Requests\nRetry-After: 30\nContent-Type: application/json\n\n{\"error\":\"rate limit exceeded\"}"
+				},
+				{
+					"type": "paragraph",
+					"text": "The `Retry-After` header tells the client how long to wait. RFC 9110 allows two forms: a whole number of **seconds** counted from receiving the answer, or an absolute **HTTP-date**. The seconds form does not depend on the client and server clocks agreeing. This repository's limiter sends whole seconds, rounded up."
+				},
+				{
+					"type": "paragraph",
+					"text": "Many APIs also send headers about the limit itself, such as `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`. These spread by imitation and have no standard. The worst case is `Reset`: some services mean 'seconds from now' and others mean a Unix timestamp such as 1791374400. A client that reads a timestamp as seconds would sleep for decades. The IETF is working on an Internet-Draft (not yet an RFC when this was written) with the fields `RateLimit-Policy` and `RateLimit`. A generic client should prefer `Retry-After`, which is standard, and read the documentation before trusting the `X-` fields."
+				},
+				{
+					"type": "heading",
+					"text": "What a polite client does"
+				},
+				{
+					"type": "paragraph",
+					"text": "A 429 asks the client to slow down, not to insist and not to give up forever. If `Retry-After` is present, wait at least that long. It comes from whoever controls the limit, so it beats the client's own guess. If there is no `Retry-After`, use **exponential backoff**: the wait doubles at each failure. With the convention that the first retry is n = 1:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "wait(n) = min(cap, base * 2^(n-1))\nbase = 0.5 s, cap = 10 s"
+				},
+				{
+					"type": "chart",
+					"title": "Wait before each retry (base 0.5 s, cap 10 s)",
+					"unit": "seconds",
+					"bars": [
+						{
+							"label": "retry 1",
+							"value": 0.5
+						},
+						{
+							"label": "retry 2",
+							"value": 1
+						},
+						{
+							"label": "retry 3",
+							"value": 2
+						},
+						{
+							"label": "retry 4",
+							"value": 4
+						},
+						{
+							"label": "retry 5",
+							"value": 8
+						},
+						{
+							"label": "retry 6",
+							"value": 10
+						},
+						{
+							"label": "retry 7",
+							"value": 10
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The 6th retry would be 0.5 x 32 = 16 s, but the **cap** cuts it to 10 s. Always say whether you count attempts from 0 or from 1, because the numbers shift. Also set a maximum number of attempts, so a client is never stuck retrying forever."
+				},
+				{
+					"type": "heading",
+					"text": "Jitter: add some randomness"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagine 200 clients all refused at the same instant, all using the same doubling waits. They retry together at 1 s, 3 s, 7 s, in waves, and the server is hit again and again (a **thundering herd**). **Jitter** makes each wait random. With **full jitter** the wait is drawn between 0 and min(cap, base x 2^attempt). The retries spread out and the server can serve a share of them at each moment."
+				},
+				{
+					"type": "diagram",
+					"caption": "Without and with jitter, 200 clients",
+					"content": "no jitter:  |200|    |200|        |200|\n             1s      3s           7s      (waves)\n\njitter:     |12|31|18|25|9|41|22|...      (spread out)"
+				},
+				{
+					"type": "heading",
+					"text": "Retries can hurt"
+				},
+				{
+					"type": "paragraph",
+					"text": "Immediate retries multiply the load at the worst moment. If a service gets 100 requests per second and every client repeats a refused request up to 3 times at once, the service sees up to 400 per second while it is already failing. This is a **retry storm**. Backoff, jitter, a limit of attempts and respect for `Retry-After` break the cycle."
+				},
+				{
+					"type": "paragraph",
+					"text": "There is one more safety rule. Retrying is only safe when running a request twice has the same effect as running it once, which is called being **idempotent**. A 429 says nothing was processed, but after a timeout the client does not know. For something like `POST /charges`, which creates a charge, the client sends an **idempotency key**, a unique code that lets the server recognise the repeat and not charge twice."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "429 means 'you, slow down'; 503 means 'I am overloaded'. Obey Retry-After first, otherwise back off exponentially with a cap, jitter and a limited number of attempts, and retry only what is safe to repeat."
+				}
+			]
+		},
+		{
+			"id": "quotas-throttling-load-shedding",
+			"title": "Quotas, throttling and load shedding",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Rate limiting has neighbours that protect a system in other ways. Knowing which one does what is half the work."
+				},
+				{
+					"type": "heading",
+					"text": "Three different limits"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Limit",
+						"Measures",
+						"Example"
+					],
+					"rows": [
+						[
+							"Rate limit",
+							"A rate over a short time",
+							"100 requests per second"
+						],
+						[
+							"Quota",
+							"A total over a long period",
+							"1,000,000 requests per month"
+						],
+						[
+							"Concurrency limit",
+							"How many requests are in progress right now",
+							"at most 30 at the same time"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "One API often has all three, and a request must pass each. They are checked separately. A client that obeys the rate limit all the time can still use up its monthly quota early: with a quota of 500,000 per day and a steady 10 requests per second, the quota is gone after 50,000 seconds, about 13.9 hours. That is why APIs tell clients how much of the quota is left."
+				},
+				{
+					"type": "heading",
+					"text": "Why a concurrency limit is special"
+				},
+				{
+					"type": "paragraph",
+					"text": "The average number of requests in progress equals the arrival rate times the time each one spends in the system. This is [[Little's law|a simple rule: people in a shop = people arriving per minute x minutes each person stays]]. If 120 requests arrive per second and each takes 0.5 s, about 60 are in progress at once. If the service gets twice as slow, 120 are in progress at the same arrival rate, and a rate limit notices nothing."
+				},
+				{
+					"type": "paragraph",
+					"text": "A concurrency limit C with service time S lets through at most C / S requests per second. With C = 30 and S = 0.25 s that is 120 per second. If the service slows down and S grows, the admitted throughput falls in the same proportion, which protects a server that is already struggling. A fixed rate limit would keep admitting the same rate and requests would pile up."
+				},
+				{
+					"type": "heading",
+					"text": "Congestion control, from slow to fast"
+				},
+				{
+					"type": "paragraph",
+					"text": "Tanenbaum orders the answers to congestion from the slowest to the fastest: add capacity, choose routes that avoid the busy spots, **admission control**, **traffic throttling** and **load shedding**. Admission control refuses new work before it starts, which is cheaper than accepting it and then throwing it away half-way. The word **throttling** is used loosely in API documentation for either delaying (shaping) or refusing (policing)."
+				},
+				{
+					"type": "heading",
+					"text": "Backpressure"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagine a producer writing into a queue of 1,000 slots that a slower consumer empties. When the queue is full, the producer's write call simply waits until there is room, and nothing is thrown away. This is **backpressure**: the full part tells the sender to slow down, with a signal or by a call that blocks. The delay travels back to the source. When the source cannot wait, as with users on the Internet, backpressure ends as a rejection at the entrance, which is rate limiting or load shedding."
+				},
+				{
+					"type": "heading",
+					"text": "Load shedding"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Load shedding** is the last defence: the server refuses work on purpose, normally with 503, so the work it accepted finishes in time. It differs from rate limiting because it looks at the health of the **server**, not at the behaviour of one client. Good shedding is done **early** and **by priority**, with the least important work first."
+				},
+				{
+					"type": "diagram",
+					"caption": "Rejecting costs CPU too, and costs more the deeper the request goes",
+					"content": "request --> [reject here: 1 ms] --> parse --> auth --> database\n                                             [reject here: 40 ms]"
+				},
+				{
+					"type": "chart",
+					"title": "CPU time spent on rejections, 200 rejections per second",
+					"unit": "CPU seconds per second",
+					"bars": [
+						{
+							"label": "reject at the entrance (1 ms each)",
+							"value": 0.2
+						},
+						{
+							"label": "reject late (40 ms each)",
+							"value": 8
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A server that rejects late may spend all its capacity saying no and stay overloaded. So shed before parsing the body, before authenticating, before touching a dependency."
+				},
+				{
+					"type": "heading",
+					"text": "When overload is not handled"
+				},
+				{
+					"type": "paragraph",
+					"text": "Suppose a server serves 100 requests per second but gets 150, with an unbounded first-in-first-out queue, and clients give up after 2 seconds. The queue grows, every answer is late, and the server keeps serving requests whose clients have already left. Its throughput is at the maximum but its **goodput** (answers that arrive in time) falls to almost zero. The cure: a bounded queue, a deadline for each request (drop what is already past its timeout) and refusing the excess at the entrance."
+				},
+				{
+					"type": "heading",
+					"text": "Who to drop? The noisy neighbour"
+				},
+				{
+					"type": "paragraph",
+					"text": "Tanenbaum describes two policies for choosing packets to drop. The **wine** policy prefers to keep the **old** packets, because old wine is better. It fits file transfer, where losing an old packet forces everything after it to be sent again. The **milk** policy prefers to keep the **new** ones, because old milk is bad. It fits real-time media, where late data is useless. Servers have the same idea: to shed by priority you must know what each request is worth."
+				},
+				{
+					"type": "paragraph",
+					"text": "In a shared service, one big tenant can hurt all the small ones, the **noisy neighbour**. With random shedding everyone loses in the same proportion, so 30 small tenants lose half of their requests because of one big one. **Fair shedding** serves the small tenants in full and takes the excess from whoever went past their share. That needs counting per tenant, which is why quotas and plan limits go with load shedding."
+				},
+				{
+					"type": "heading",
+					"text": "Circuit breaker"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **circuit breaker** is the opposite side of the same idea. Service A calls service B. After 5 calls in a row fail, A stops calling B for 30 seconds and answers with a fallback, then lets one trial call through. It sits on the **caller's** side and watches results, to protect against a sick dependency. A rate limiter sits on the **called** side and watches volume, to protect against a client that asks too much."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Rate limit = speed per client. Quota = total over a long time. Concurrency limit = how many at once. Load shedding = the server refusing work to stay alive, early and by priority."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "In this repository's burst experiment, all five algorithms got the same 80 requests with the same settings (limit 10, window 1 s, so capacity 10 and rate 10 per second for the buckets). The chart shows the largest number of admitted requests found in any 1-second interval."
+				},
+				{
+					"type": "chart",
+					"title": "Worst 1-second interval in the burst experiment (limit 10 per second)",
+					"unit": "admitted requests",
+					"bars": [
+						{
+							"label": "Fixed window",
+							"value": 20
+						},
+						{
+							"label": "Sliding log",
+							"value": 10
+						},
+						{
+							"label": "Sliding counter",
+							"value": 11
+						},
+						{
+							"label": "Token bucket",
+							"value": 19
+						},
+						{
+							"label": "Leaky bucket (output)",
+							"value": 10
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The fixed window let 20 through around a boundary. The sliding log never went above 10. The sliding counter reached 11, a small error. The token bucket reached 19 because it spends its saved tokens first and then earns more while the burst goes on. The leaky bucket's output stayed at 10 because it releases requests at a constant pace."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Algorithm",
+						"State per client",
+						"Burst behaviour",
+						"Good for"
+					],
+					"rows": [
+						[
+							"Fixed window",
+							"1 counter + window number",
+							"Up to 2 x limit at a boundary",
+							"Rough guards; the cheapest on Redis (one `INCR`)"
+						],
+						[
+							"Sliding log",
+							"1 timestamp per admitted request",
+							"Never more than the limit in any window",
+							"Small limits that must be exact (login, password reset)"
+						],
+						[
+							"Sliding counter",
+							"2 counters",
+							"Close to the limit, small error",
+							"Large limits, the usual compromise"
+						],
+						[
+							"Token bucket",
+							"A balance and a time",
+							"Passes a burst of B, then rate r",
+							"APIs, where clients are bursty"
+						],
+						[
+							"Leaky bucket (queue)",
+							"A level and a time",
+							"Absorbs the burst, outputs an even stream",
+							"A system behind with a rigid constant capacity"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Common mistakes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Thinking a limiter is authentication, encryption, a cache or a load balancer. It only counts.",
+						"Counting by an IP address behind NAT, or by `X-Forwarded-For` with no trusted proxy.",
+						"Using one limit for every endpoint, or only per-client limits and no global protection.",
+						"Forgetting the cap in a token bucket, so an idle client saves unlimited tokens.",
+						"Doing read, decide, write as separate Redis commands (a race), or `INCR` and `EXPIRE` as two commands (a key that never expires).",
+						"Reading the time on each instance instead of on Redis, so windows disagree.",
+						"Retrying at once with no jitter, no cap on attempts and no respect for `Retry-After`.",
+						"Rejecting late, after the request has already used the expensive parts of the server."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "How the ideas connect"
+				},
+				{
+					"type": "paragraph",
+					"text": "The algorithm decides who is admitted. Redis and an atomic script make that decision hold across many servers. The status 429 with `Retry-After` tells the client what happened. The client's backoff with jitter keeps its retries from becoming a new problem. Quotas, concurrency limits and load shedding protect the long term and the whole service when per-client limits are not enough."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Choosing a limiter is choosing what to do with a burst: let it through (fixed window, token bucket), cut it exactly (sliding log), approximate it (sliding counter) or smooth it into a queue (leaky bucket)."
+				}
+			]
+		}
+	]
+}

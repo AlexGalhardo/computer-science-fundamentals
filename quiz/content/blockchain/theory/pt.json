@@ -1,0 +1,916 @@
+{
+	"area": "blockchain",
+	"intro": [
+		"Imagine que a sua turma tem um caderno em que todos anotam quem deu uma figurinha para quem. Se um único colega é o dono do caderno, ele pode trapacear: apagar uma linha, inventar outra ou dizer 'eu nunca escrevi isso'. Agora imagine que cada colega tem uma cópia exata do caderno, e uma linha nova só vale quando quase todos concordam com ela. Trapacear fica muito difícil. Uma **blockchain** é essa ideia para computadores: um caderno compartilhado (um [[livro-razão|um livro em que cada pagamento é anotado, em ordem]]) em que estranhos podem confiar sem confiar em uma pessoa só.",
+		"O dinheiro digital tem um problema especial. Um arquivo pode ser copiado, então como impedir que alguém pague com a mesma moeda digital duas vezes? Os bancos resolvem sendo o chefe único que vê tudo. Em 2008, um artigo assinado por Satoshi Nakamoto mostrou como uma rede de estranhos pode concordar, sem chefe, sobre qual pagamento veio primeiro. Esse artigo, de cerca de nove páginas, é o livro que este quiz segue.",
+		"Neste resumo você vai aprender as peças uma a uma: funções de hash (impressões digitais), assinaturas digitais (nomes impossíveis de falsificar), transações e saídas não gastas (como as moedas se movem), blocos e árvores de Merkle (como a história é empacotada), prova de trabalho (um quebra-cabeça que torna a trapaça cara), gasto duplo e confirmações, como a rede concorda sobre uma única história, por que os mineradores são pagos e o que as blockchains não conseguem fazer. No final você estará pronto para o quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "Visão geral: concordar sem chefe",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Pense de novo no caderno da turma. Três coisas precisam ser verdade para ele funcionar. Ninguém pode escrever uma linha no nome de outra pessoa. Ninguém pode usar a mesma figurinha duas vezes. E todos devem terminar com o mesmo caderno, mesmo que duas crianças escrevam ao mesmo tempo. Uma blockchain dá uma resposta de computador para cada uma."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Problema",
+						"Ideia na sala de aula",
+						"Ferramenta da blockchain"
+					],
+					"rows": [
+						[
+							"Escrever no nome de outra pessoa",
+							"Cada um tem uma assinatura secreta",
+							"Assinaturas digitais"
+						],
+						[
+							"Mudar uma linha antiga sem ser visto",
+							"Cada página cita a anterior",
+							"Hashes que ligam os blocos"
+						],
+						[
+							"Usar a mesma figurinha duas vezes",
+							"Conferir se a figurinha ainda não foi gasta",
+							"Saídas não gastas (UTXO)"
+						],
+						[
+							"Trapacear fingindo ser muita gente",
+							"Escrever uma página custa esforço de verdade",
+							"Prova de trabalho"
+						],
+						[
+							"Duas páginas escritas ao mesmo tempo",
+							"Todos ficam com o caderno mais longo",
+							"Regra da cadeia mais longa"
+						],
+						[
+							"Por que alguém faria o trabalho?",
+							"Um prêmio para cada página pronta",
+							"Recompensa do bloco e taxas"
+						]
+					],
+					"caption": "Cada problema de um livro-razão compartilhado e a ferramenta que o resolve."
+				},
+				{
+					"type": "heading",
+					"text": "As palavras que você vai encontrar"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Nó** (node): um computador que roda o software, guarda uma cópia do livro-razão e confere todas as regras.",
+						"**Transação**: uma mensagem dizendo 'estas moedas agora pertencem àquela pessoa'.",
+						"**Bloco**: uma caixa com muitas transações e uma etiqueta pequena chamada [[cabeçalho|a etiqueta pequena de um bloco: hash do bloco anterior, raiz de Merkle, hora, nonce e mais alguns campos]].",
+						"**Cadeia** (chain): os blocos em ordem, cada um apontando para o anterior.",
+						"**Minerador**: um nó que tenta construir o próximo bloco e ganha um prêmio se conseguir."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Uma blockchain é como um diário muito público que é fotocopiado para milhares de casas. Para mudar uma página, você teria de mudá-la na maioria das casas no mesmo instante, e as outras casas perceberiam."
+				},
+				{
+					"type": "paragraph",
+					"text": "O sistema funciona porque **as regras são conferidas por todos**. Ninguém precisa confiar em um minerador ou em um amigo: cada nó repete as conferências sozinho. Essa é a ideia-chave para levar por todo o resumo."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Uma blockchain é um livro-razão em que estranhos concordam sem chefe, feita de hashes, assinaturas, prova de trabalho e uma regra para escolher uma única história."
+				}
+			]
+		},
+		{
+			"id": "hash-functions",
+			"title": "Funções de hash: impressões digitais",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Toda pessoa tem uma impressão digital: pequena, diferente para cada um e impossível de transformar de volta na pessoa. Uma **função de hash** dá uma impressão digital aos dados. Você entrega qualquer coisa (uma palavra, uma foto, um filme inteiro) e ela devolve um código curto chamado **digest** (ou simplesmente hash)."
+				},
+				{
+					"type": "paragraph",
+					"text": "A função de hash usada no Bitcoin é o **SHA-256**. O digest tem sempre 256 bits, seja a entrada de 3 bytes ou de 3 gigabytes. Os digests costumam ser escritos em [[hexadecimal|contar com 16 símbolos, de 0 a 9 e de a a f, então um dígito guarda 4 bits]]: 256 bits são 32 bytes, que são 64 dígitos hexadecimais."
+				},
+				{
+					"type": "diagram",
+					"content": "  'hello'        --> [ SHA-256 ] --> 2cf24dba5fb0a30e...b9824\n  'Hello'        --> [ SHA-256 ] --> 185f8db32271fe25...81969\n  um filme 3 GB  --> [ SHA-256 ] --> de novo 64 digitos hexadecimais",
+					"caption": "Qualquer tamanho entra, sai sempre o mesmo tamanho. Uma letra trocada dá um resultado totalmente diferente."
+				},
+				{
+					"type": "heading",
+					"text": "O que uma boa função de hash promete"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Determinística**: os mesmos bytes dão sempre o mesmo digest, em qualquer computador, em qualquer dia. É assim que todo nó consegue conferir a mesma coisa.",
+						"**Efeito avalanche**: trocar um único bit da entrada muda cerca de metade dos bits da saída, então entradas vizinhas têm digests sem relação visível. O único jeito de achar um digest com um padrão desejado é tentar muitas entradas. Essa é a raiz da prova de trabalho.",
+						"**Resistência à pré-imagem** (mão única): dado um digest, ninguém consegue achar uma entrada que o produza, a não ser chutando. Para uma saída de n bits isso custa cerca de 2^n tentativas.",
+						"**Resistência à segunda pré-imagem**: dada uma entrada, ninguém consegue achar outra entrada diferente com o mesmo digest. Isso protege dados já publicados, como uma transação dentro de um bloco.",
+						"**Resistência a colisões**: ninguém consegue achar duas entradas diferentes com o mesmo digest."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Colisões existem: há infinitas entradas e só 2^256 digests, então algumas entradas precisam dividir um. 'Resistente a colisões' quer dizer que ninguém consegue achar um par na prática. Achar um par qualquer é mais fácil do que acertar um digest escolhido. Custa só cerca de 2^(n/2) tentativas (o **limite do aniversário**, que vem da surpresa de que numa sala de 23 crianças duas provavelmente fazem aniversário no mesmo dia). Para o SHA-256 isso é 2^128, impossível. Para um digest cortado em 32 bits são 2^16 = 65.536 tentativas, trivial."
+				},
+				{
+					"type": "chart",
+					"title": "Tentativas para achar uma colisão, por tamanho do digest",
+					"unit": "tentativas",
+					"bars": [
+						{
+							"label": "16 bits",
+							"value": 256
+						},
+						{
+							"label": "32 bits",
+							"value": 65536
+						},
+						{
+							"label": "64 bits",
+							"value": 4294967296
+						}
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Um hash dá **integridade** (os dados são os mesmos que geraram o digest). Ele não dá **autenticidade** (quem os criou) nem **sigilo** (não esconde nada). Se o segredo tem poucos valores possíveis, como um voto 'sim' ou 'não', qualquer um pode calcular o hash de cada opção e comparar. Para esconder um segredo pequeno, faça o hash dele junto com um número aleatório longo e revele esse número depois."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **checksum** como o CRC-32 também gera um código curto e pega acidentes em um cabo. Mas ele nunca foi feito para resistir a um atacante, e as colisões podem ser calculadas diretamente. Uma blockchain precisa de um hash criptográfico porque quem muda os dados é um inimigo, não ruído. Funções antigas como MD5 e SHA-1 foram aposentadas quando surgiram ataques contra elas."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Um hash é uma impressão digital determinística de tamanho fixo. Mude um bit e tudo muda. A pré-imagem custa 2^n tentativas, a colisão custa 2^(n/2) tentativas."
+				}
+			]
+		},
+		{
+			"id": "digital-signatures-and-keys",
+			"title": "Assinaturas digitais e chaves: nomes impossíveis de falsificar",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "No papel você assina um cheque e o banco compara a sua assinatura. Um computador não pode confiar na foto de uma assinatura, porque fotos são copiadas. Uma **assinatura digital** é um número calculado a partir do seu segredo e da mensagem exata, então só serve para aquela mensagem."
+				},
+				{
+					"type": "paragraph",
+					"text": "Ela usa um par de chaves. A **chave privada** é um número secreto que só você conhece. A **chave pública** é feita a partir dela e pode ser mostrada a todos. É a [[criptografia assimétrica|um sistema com duas chaves diferentes: uma assina e a outra confere]]."
+				},
+				{
+					"type": "diagram",
+					"content": "  mensagem ---> hash ---> [ assina com chave PRIVADA ] ---> assinatura\n\n  mensagem ---> hash ---+\n                        +--> [ confere com chave PUBLICA ] ---> valida / invalida\n  assinatura -----------+",
+					"caption": "Só o dono da chave privada consegue assinar. Qualquer um com a chave pública consegue conferir."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A chave pública é como a fenda da caixa de correio: todos podem jogar uma carta nela. A chave privada é a chavinha que abre a caixa. Aqui funciona ao contrário: a chave privada faz o carimbo, e a chave pública confere o carimbo."
+				},
+				{
+					"type": "heading",
+					"text": "O que uma assinatura válida diz"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Autenticidade**: quem assinou tinha a chave privada que combina com a chave pública.",
+						"**Integridade**: os dados assinados não mudaram. Se um nó no caminho troca 5 moedas por 50, o hash da transação muda e a assinatura antiga não encaixa mais. Fazer uma nova exige a chave privada.",
+						"Ela **não** esconde os dados (tudo é público) e **não** prova que a moeda não foi gasta antes."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma assinatura não é uma senha para reutilizar. Ela é calculada sobre uma mensagem específica, então copiá-la para outra transação não autoriza nada. Além disso, o validador deve conferir a assinatura contra a chave a que a saída gasta está **trancada**. Se ele aceitar qualquer chave válida, passa 'alguém assinou' em vez de 'o dono assinou'."
+				},
+				{
+					"type": "paragraph",
+					"text": "No artigo, **uma moeda eletrônica é uma cadeia de assinaturas digitais**. Para pagar o próximo dono, o dono atual assina o hash da transação anterior junto com a chave pública do próximo dono e acrescenta isso à moeda. O recebedor confere as assinaturas para seguir quem teve a moeda. O que a cadeia não mostra é se algum dono assinou a mesma moeda para duas pessoas. Esse é o problema do gasto duplo, e só assinaturas não o resolvem."
+				},
+				{
+					"type": "heading",
+					"text": "Perder chaves e privacidade"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ter uma moeda é poder assinar por ela. Sem banco, não existe botão 'esqueci a senha'. Perca a chave privada sem cópia e as moedas estão perdidas para sempre. Deixe alguém copiá-la e essa pessoa passa a ser dona das moedas. Esse é o preço de não ter intermediário."
+				},
+				{
+					"type": "paragraph",
+					"text": "Toda transação é pública, mas chaves públicas não são nomes. As pessoas veem que alguma chave enviou um valor para outra chave, não quem está por trás delas. Isso é **pseudonimato**. O artigo aconselha um novo par de chaves para cada transação, para que os pagamentos não sejam ligados a um único dono. Alguma ligação é inevitável: uma transação com várias entradas mostra que essas entradas eram do mesmo dono. Então isso não é anonimato garantido."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A chave privada assina, a chave pública confere. Uma assinatura válida prova quem autorizou e que nada mudou, não que a moeda ainda não foi gasta."
+				}
+			]
+		},
+		{
+			"id": "transactions-and-unspent-outputs",
+			"title": "Transações e saídas não gastas: como as moedas se movem",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "O seu cofrinho não guarda um número: guarda notas e moedas. Uma nota de 10 não pode ser rasgada para pagar 3. Você entrega a nota inteira e recebe 7 de troco. O Bitcoin funciona do mesmo jeito. Não existem contas com saldo. Existem **saídas** (outputs), como notas, e uma transação gasta saídas inteiras."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **transação** tem **entradas** e **saídas**. Cada entrada aponta para uma saída de uma transação anterior e prova o direito de gastá-la (com uma assinatura). Cada saída tem um valor e a chave de quem pode gastá-la depois. Uma saída que ainda não foi gasta é uma **saída de transação não gasta**, ou **UTXO**. O conjunto de todas as UTXOs é o estado atual do sistema. O que uma carteira chama de saldo é a soma das UTXOs que você pode gastar."
+				},
+				{
+					"type": "diagram",
+					"content": "  tx1 (criacao de moeda) -> saida 0: 50 para Alice\n  tx2  entrada: tx1:0    -> saida 0: 20 para Bob\n                            saida 1: 30 para Alice\n  tx3  entrada: tx2:0    -> saida 0:  5 para Carol\n                            saida 1: 15 para Bob\n\n  Nao gastas agora: tx2:1 (30 Alice), tx3:0 (5 Carol), tx3:1 (15 Bob)",
+					"caption": "Saídas gastas saem do conjunto, saídas novas entram. tx2:0 sumiu."
+				},
+				{
+					"type": "heading",
+					"text": "As regras de uma transação válida"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Cada entrada aponta para uma saída que está **no conjunto UTXO** (existe e não foi gasta).",
+						"Cada entrada é assinada pela chave a que a saída gasta está trancada.",
+						"As saídas somam **no máximo** o valor das entradas.",
+						"A diferença, entradas menos saídas, é a **taxa** (fee) do minerador. Nenhum campo a guarda."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Exemplo: entradas de 50 e 30, saídas de 60 e 18. A taxa é 80 - 78 = 2. Uma transação costuma ter uma saída para o pagamento e outra para o **troco**, que volta ao pagador. Se uma carteira com bug esquece o troco, tudo o que não foi enviado vira taxa, e o erro não pode ser desfeito."
+				},
+				{
+					"type": "paragraph",
+					"text": "A primeira transação de um bloco é especial: a transação de **criação de moeda** (coinbase) não tem entradas. Ela cria moedas novas para o minerador. É o único lugar onde moedas são criadas, e o limite dela é uma regra conferida por todos os nós."
+				},
+				{
+					"type": "heading",
+					"text": "Modelo UTXO contra modelo de contas"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Modelo de contas (um banco)",
+						"Modelo UTXO (este artigo)"
+					],
+					"rows": [
+						[
+							"Estado",
+							"Uma tabela de saldos",
+							"Um conjunto de saídas não gastas"
+						],
+						[
+							"Um pagamento",
+							"Subtrai de um saldo, soma em outro",
+							"Remove algumas saídas, cria saídas novas"
+						],
+						[
+							"Conferir um gasto",
+							"O saldo é suficiente?",
+							"Cada entrada aponta para uma saída que ainda está no conjunto?"
+						],
+						[
+							"Repetição de uma mensagem assinada",
+							"Precisa de um número de sequência por conta",
+							"Protegido pelo modelo: uma saída só pode ser gasta uma vez"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Um nó não precisa percorrer a história inteira para conferir uma transação nova. Ele guarda o conjunto UTXO, montado enquanto validou cada bloco, e confere a transação nova contra ele. A história só serviu para chegar ao estado."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Uma assinatura correta não basta. Se uma entrada aponta para uma saída que já saiu do conjunto UTXO, a transação é rejeitada, mesmo que o dono tenha mesmo assinado. Dinheiro que você recebeu e depois gastou não pode ser contado duas vezes."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Entradas consomem saídas inteiras, saídas criam saídas novas, o troco é uma saída explícita, e taxa = entradas - saídas."
+				}
+			]
+		},
+		{
+			"id": "blocks-chain-and-merkle-trees",
+			"title": "Blocos, a cadeia e árvores de Merkle",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Escrever cada pagamento em uma página própria seria bagunçado, então os pagamentos são colocados em grupos. Um **bloco** é um grupo de transações mais uma etiqueta pequena, de tamanho fixo, o **cabeçalho**. O cabeçalho guarda o hash do bloco anterior, a raiz de Merkle das transações, um carimbo de tempo, o nonce (explicado na próxima seção) e mais alguns campos. Um cabeçalho ocupa cerca de 80 bytes."
+				},
+				{
+					"type": "diagram",
+					"content": "  Bloco 7                 Bloco 8                 Bloco 9\n +----------------+      +----------------+      +----------------+\n | ant: hash(6)   |<-----| ant: hash(7)   |<-----| ant: hash(8)   |\n | raiz de Merkle |      | raiz de Merkle |      | raiz de Merkle |\n | hora, nonce    |      | hora, nonce    |      | hora, nonce    |\n +----------------+      +----------------+      +----------------+\n | transacoes     |      | transacoes     |      | transacoes     |\n +----------------+      +----------------+      +----------------+",
+					"caption": "Cada cabeçalho guarda o hash do bloco anterior. Essa ligação forma a cadeia."
+				},
+				{
+					"type": "paragraph",
+					"text": "Como o bloco 8 guarda o hash do bloco 7, mudar qualquer coisa no bloco 7 muda o hash dele, e aí o bloco 8 aponta para um hash que não existe mais. Para esconder isso você teria de mudar o bloco 8, o que muda o bloco 9, e assim por diante. O artigo descreve isso primeiro como um **servidor de carimbo de tempo**: ele publica o hash de um grupo de itens, o que prova que os dados existiam naquele momento, e cada carimbo inclui o anterior."
+				},
+				{
+					"type": "heading",
+					"text": "A árvore de Merkle"
+				},
+				{
+					"type": "paragraph",
+					"text": "Como um cabeçalho, que é minúsculo, representa milhares de transações? Com uma **árvore de Merkle**. Faça o hash de cada transação (são as folhas). Junte-as em pares e faça o hash de cada par. Repita em cada nível até sobrar um hash: a **raiz de Merkle**. Ela resume todas as transações em 32 bytes, e mudar qualquer transação muda todo o caminho até a raiz."
+				},
+				{
+					"type": "diagram",
+					"content": "              raiz = H(H_AB + H_CD)\n              /                  \\\n   H_AB = H(H_A + H_B)     H_CD = H(H_C + H_D)\n      /        \\              /        \\\n    H_A        H_B          H_C        H_D\n     |          |            |          |\n   tx A       tx B         tx C       tx D",
+					"caption": "Para provar que a tx C está dentro, basta H_D e H_AB."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Níveis ímpares**: quando um nível tem um número ímpar de nós, este resumo usa a mesma convenção do Bitcoin e duplica o último nó para formar um par. Com 5 folhas os níveis têm 5, 3, 2 e 1 nós, então são calculados 3 + 2 + 1 = 6 hashes de par, e a altura da árvore é 3. Um efeito colateral: a lista [A, B, C] e a lista [A, B, C, C] dão a mesma raiz, então um validador deve rejeitar transações repetidas em um bloco."
+				},
+				{
+					"type": "heading",
+					"text": "Clientes leves e armazenamento compacto"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **ramo de Merkle** (prova de inclusão) tem um hash irmão por nível, cerca de log2(n) hashes para n transações. Para 1.024 transações são 10 hashes de 32 bytes, 320 bytes, não o bloco inteiro. Por isso um celular consegue conferir um pagamento com a **verificação simplificada de pagamento (SPV)**: ele guarda só os cabeçalhos da melhor cadeia e pede o ramo que liga a transação a um cabeçalho. Os cabeçalhos são pequenos: 80 bytes x 6 blocos por hora x 24 x 365 dá cerca de 4,2 MB por ano."
+				},
+				{
+					"type": "paragraph",
+					"text": "O cliente leve não confere a transação em si. Ele vê que a rede a aceitou e continuou construindo em cima. Isso é confiável enquanto nós honestos controlam a rede, e pode ser enganado por transações falsas se um atacante dominar a rede. Além disso, como o cabeçalho guarda só a raiz, blocos antigos podem ser compactados cortando os ramos de transações gastas sem mudar o hash do bloco."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Cabeçalho = hash anterior + raiz de Merkle + hora + nonce. Mudar uma transação antiga quebra a raiz, depois o hash do bloco, depois cada ligação seguinte."
+				}
+			]
+		},
+		{
+			"id": "proof-of-work-and-difficulty",
+			"title": "Prova de trabalho e dificuldade: um quebra-cabeça que custa esforço",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Hashes mostram que algo foi mudado, mas um atacante poderia simplesmente recalcular todos os hashes depois da mudança. Por isso tornamos cada bloco **caro** de criar. A regra é: um bloco só é válido se o hash dele, lido como número, for muito pequeno, ou seja, começar com muitos zeros. Ninguém consegue prever um hash, então o único jeito é tentar de novo e de novo, mudando um número livre do cabeçalho chamado **nonce**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Imagine jogar um dado até sair seis. Você não consegue planejar o lance, só continuar jogando. Uma regra mais difícil, como 'dez seis seguidos', exige muito mais jogadas. Quem está olhando confere o resultado na hora, só olhando os dados."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "// PT: tenta nonces ate o hash comecar com d digitos hex zero.\nlet nonce = 0;\nwhile (!sha256(header + nonce).startsWith(\"0\".repeat(d))) {\n\tnonce++;\n}\n// PT: conferir exige apenas UM hash.",
+					"caption": "Minerar é um laço de palpites. Verificar é um único hash."
+				},
+				{
+					"type": "paragraph",
+					"text": "Isso é **assimétrico**: achar o nonce exige um trabalho enorme, conferi-lo exige um hash. Assim milhares de nós verificam um bloco em uma fração de segundo, enquanto forjar um é caro. O trabalho é exponencial no número de bits zero. Mais um **bit** zero dobra o trabalho. Mais um **dígito hexadecimal** zero (4 bits) o multiplica por 16."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Dígitos hex zero (d)",
+						"Chance por tentativa",
+						"Tentativas médias (16^d)"
+					],
+					"rows": [
+						[
+							"1",
+							"1 em 16",
+							"16"
+						],
+						[
+							"2",
+							"1 em 256",
+							"256"
+						],
+						[
+							"3",
+							"1 em 4.096",
+							"4.096"
+						],
+						[
+							"4",
+							"1 em 65.536",
+							"65.536"
+						],
+						[
+							"5",
+							"1 em 1.048.576",
+							"1.048.576"
+						],
+						[
+							"6",
+							"1 em 16.777.216",
+							"16.777.216"
+						]
+					],
+					"caption": "Da dificuldade 4 para 6 o trabalho é multiplicado por 16 x 16 = 256."
+				},
+				{
+					"type": "chart",
+					"title": "Tentativas médias para minerar um bloco",
+					"unit": "tentativas",
+					"bars": [
+						{
+							"label": "d = 1",
+							"value": 16
+						},
+						{
+							"label": "d = 2",
+							"value": 256
+						},
+						{
+							"label": "d = 3",
+							"value": 4096
+						},
+						{
+							"label": "d = 4",
+							"value": 65536
+						},
+						{
+							"label": "d = 5",
+							"value": 1048576
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Para transformar tentativas em tempo, divida pela taxa de hashes. A 1.000.000 de hashes por segundo e d = 6, a média é 16.777.216 / 1.000.000, cerca de 16,8 segundos. É só uma média. Cada tentativa é um sorteio independente, então o número de tentativas é **geométrico** e o tempo de espera é próximo de **exponencial**. Ele **não tem memória**: se passaram nove minutos sem bloco, a espera esperada continua sendo dez minutos. A chance de terminar dentro do número médio de tentativas é de só cerca de 63%, então alguns blocos levam várias vezes a média."
+				},
+				{
+					"type": "paragraph",
+					"text": "O artigo chama a prova de trabalho de 'uma CPU, um voto'. Contar 'um endereço IP, um voto' falharia, porque qualquer um pode inventar identidades ilimitadas (um **ataque Sybil**). Trabalho não se falsifica: o voto pesa tanto quanto o poder de computação que o sustenta."
+				},
+				{
+					"type": "heading",
+					"text": "Ajuste de dificuldade"
+				},
+				{
+					"type": "paragraph",
+					"text": "Os computadores ficam mais rápidos e mineradores entram e saem. Para manter os blocos saindo num ritmo estável, a rede **ajusta a dificuldade**. O Bitcoin mira um bloco a cada 10 minutos e ajusta a cada 2.016 blocos (14 dias) com: nova dificuldade = dificuldade antiga x (tempo esperado / tempo real). Se os últimos 2.016 blocos levaram 7 dias em vez de 14, a nova dificuldade é 14 / 7 = 2 vezes a antiga."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma cadeia de brinquedo que conta dígitos hexadecimais zero só anda em passos de 16. Se os blocos saem 3 vezes rápido demais, nenhum passo serve. Redes reais guardam no cabeçalho um **alvo** (target) de 256 bits e exigem hash <= alvo, então o alvo pode mudar por qualquer fator. Dois ramos válidos são comparados pelo **trabalho acumulado** (a soma de 16^d, ou o equivalente real), não pelo número de blocos."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Só o começo do hash conta. Um hash com zeros no meio ou no fim não é uma prova. Com um alvo, um hash com ainda mais zeros no começo também é válido, pois é um número ainda menor."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Minerar custa cerca de 16^d tentativas (2^k para k bits zero), conferir custa um hash, e a dificuldade é ajustada para manter o ritmo dos blocos estável."
+				}
+			]
+		},
+		{
+			"id": "double-spending-and-confirmations",
+			"title": "Gasto duplo e confirmações",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Você dá uma figurinha ao seu amigo e depois dá a mesma figurinha a outro amigo. Com figurinhas de verdade isso é impossível. Com as digitais, copiar é de graça. **Gasto duplo** (double spending) é usar a mesma moeda mais de uma vez. Uma assinatura prova que você autorizou um pagamento, não que ele foi o único."
+				},
+				{
+					"type": "paragraph",
+					"text": "A cura de sempre era uma **casa da moeda**, uma autoridade central que confere cada transação e reemite as moedas. Funciona, mas o sistema inteiro depende de quem a administra. O artigo mantém o resultado (saber qual pagamento veio primeiro) e remove o chefe: as transações são anunciadas publicamente e a rede concorda sobre uma única história."
+				},
+				{
+					"type": "heading",
+					"text": "O primeiro visto vale, depois o bloco decide"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um nó que recebe duas transações em conflito, T1 e depois T2, guarda a primeira e ignora a segunda. Mas os nós podem vê-las em ordens diferentes. A palavra final vem dos blocos: a transação que entrar na cadeia mais longa é a válida, e a outra passa a gastar uma saída que não existe mais. Um bloco que carrega duas transações em conflito é inválido."
+				},
+				{
+					"type": "heading",
+					"text": "Confirmações"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma transação tem **n confirmações** quando está em um bloco que tem n - 1 blocos por cima, então o bloco com o pagamento conta como a primeira. Quanto mais fundo ela está, mais trabalho um atacante precisa refazer para removê-la. Uma loja cuidadosa espera várias."
+				},
+				{
+					"type": "diagram",
+					"content": "  ... - [B10] - [B11 tem o pagamento] - [B12] - [B13] - ponta\n                      1 conf              2       3\n\n  A cadeia secreta do atacante precisa alcançar a partir de 3 blocos atrás.",
+					"caption": "Contagem: o bloco que contém o pagamento é a confirmação número 1."
+				},
+				{
+					"type": "paragraph",
+					"text": "O artigo modela a corrida como a **ruína do jogador**: cada bloco novo é achado pelo atacante com probabilidade q ou pelos nós honestos com probabilidade p = 1 - q. A diferença muda de um em um a cada bloco. Se p > q, a chance de o atacante alcançar a cadeia estando z blocos atrás é (q/p)^z. Ela diminui **exponencialmente** com z. Com q = 0,25 e p = 0,75, z = 3 dá (1/3)^3 = 1/27, cerca de 3,7%."
+				},
+				{
+					"type": "chart",
+					"title": "Chance de alcançar com q = 25% (fórmula simples)",
+					"unit": "%",
+					"bars": [
+						{
+							"label": "z = 1",
+							"value": 33.33
+						},
+						{
+							"label": "z = 2",
+							"value": 11.11
+						},
+						{
+							"label": "z = 3",
+							"value": 3.7
+						},
+						{
+							"label": "z = 4",
+							"value": 1.23
+						},
+						{
+							"label": "z = 5",
+							"value": 0.41
+						},
+						{
+							"label": "z = 6",
+							"value": 0.14
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "O cálculo completo do artigo dá um valor um pouco maior que (q/p)^z. O recebedor não sabe até onde o atacante já chegou, e esse progresso segue uma **distribuição de Poisson** com média z x q/p. Para q = 0,1 e z = 5, a fórmula simples dá cerca de 0,0017%, e a completa dá cerca de 0,09%, ainda abaixo de 0,1%. O artigo também manda o recebedor criar um **par de chaves novo** logo antes do pagamento, para o atacante não preparar uma cadeia secreta com antecedência."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Se o atacante tem pelo menos metade do poder (q >= p), a probabilidade é 1, não importa o valor de z. Esse é o **ataque de 51%**. A segurança se apoia na suposição de que nós honestos têm a maior parte do poder de computação."
+				},
+				{
+					"type": "paragraph",
+					"text": "Mesmo com a maioria, o atacante não pode fazer o que quiser. Os nós recusam transações e blocos inválidos, então ele não consegue criar moedas do nada nem tomar as moedas dos outros. Só pode tentar recuperar os próprios gastos recentes, e isso é gasto duplo, nada além."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Mais confirmações tornam uma reversão exponencialmente menos provável, nunca impossível. Com maioria honesta, esperar mais é a solução. Com maioria do atacante, nada é seguro."
+				}
+			]
+		},
+		{
+			"id": "network-and-consensus",
+			"title": "Rede e consenso: a cadeia mais longa e as bifurcações",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Não existe chefe, então como milhares de computadores chegam à mesma cadeia? Eles seguem os mesmos seis passos."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"As transações novas são transmitidas a todos os nós.",
+						"Cada nó as junta em um bloco.",
+						"Cada nó trabalha na prova de trabalho do seu bloco.",
+						"Quando um nó a encontra, ele transmite o bloco.",
+						"Os nós aceitam o bloco só se todas as transações dele são válidas e ainda não foram gastas.",
+						"Os nós mostram que o aceitaram trabalhando no próximo bloco em cima dele."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "As mensagens viajam por **fofoca** (gossip): um nó repassa aos vizinhos o que aceitou. A entrega não é perfeita. Uma transação só precisa chegar a muitos nós para entrar logo em um bloco. Se um nó perde um bloco, ele o pede quando vê o próximo bloco e nota o buraco. Um nó que ficou desligado por dois dias simplesmente toma a cadeia com mais prova de trabalho como a verdade sobre o que aconteceu enquanto ele estava fora."
+				},
+				{
+					"type": "heading",
+					"text": "Bifurcações"
+				},
+				{
+					"type": "paragraph",
+					"text": "Os blocos levam tempo para cruzar o mundo. Dois mineradores podem achar um bloco válido quase no mesmo instante, e alguns nós ouvem falar de um primeiro e outros do outro. A cadeia fica com dois ramos do mesmo tamanho: uma **bifurcação** (fork). É normal."
+				},
+				{
+					"type": "diagram",
+					"content": "  ... - B4 - B5a            (B5a chegou primeiro: o no minera nele)\n            \\\n             B5b - B6b      (B5b chegou depois, depois B6b)\n\n  B6b deixa o ramo b mais longo: todos trocam para b.",
+					"caption": "Um empate é mantido até o próximo bloco desempatar."
+				},
+				{
+					"type": "list",
+					"items": [
+						"Em um empate, o nó continua trabalhando no **primeiro bloco que viu** e guarda o outro ramo.",
+						"Quando um ramo fica mais longo, todos os nós **trocam** para ele (uma **reorganização**).",
+						"Transações que estavam só no ramo abandonado voltam ao conjunto de transações pendentes, se ainda forem válidas.",
+						"Bifurcações acidentais costumam durar um bloco."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma única confirmação é frágil, porque o bloco dela pode ser substituído por um concorrente. Uma **partição da rede** deixa isso mais claro. Se uma falha divide os nós em dois grupos e ambos continuam minerando, uma loja no grupo menor pode ver 3 confirmações. Quando os grupos se reconectam, todos adotam o ramo com mais trabalho, e os blocos do lado menor são descartados. Aquelas confirmações eram só provisórias."
+				},
+				{
+					"type": "heading",
+					"text": "Duas camadas: primeiro válida, depois mais longa"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Pense numa competição com um regulamento. Um corredor que corta caminho pelo campo está fora, mesmo que fosse o mais rápido. Só os corredores que seguiram as regras são comparados, e quem foi mais longe vence."
+				},
+				{
+					"type": "paragraph",
+					"text": "Primeiro, as **regras de validade** (assinaturas, saídas não gastas, prova de trabalho, o limite de moedas novas) decidem quais cadeias são candidatas. Cada nó as confere sozinho. Depois, a **regra do maior trabalho** escolhe entre as candidatas. Assim, um nó que recebe uma cadeia de 12 blocos contra a sua de 10 ainda a recusa se o bloco 11 paga ao minerador o dobro da recompensa permitida. A maioria do poder de computação pode reordenar transações, mas não pode fazer os nós aceitarem moedas inválidas."
+				},
+				{
+					"type": "paragraph",
+					"text": "O artigo diz 'mais longa', mas o que ele quer dizer é a cadeia com mais esforço de prova de trabalho. Se a dificuldade varia, contar blocos está errado: 10 blocos de 3 dígitos zero (10 x 16^3) são menos trabalho que 8 blocos de 4 dígitos zero (8 x 16^4). As implementações reais comparam o trabalho acumulado. Senão, um atacante poderia forjar uma cadeia longa de blocos fáceis."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Os nós validam sozinhos, seguem a cadeia com mais trabalho, ficam com o primeiro bloco num empate e trocam quando outro ramo passa à frente."
+				}
+			]
+		},
+		{
+			"id": "incentives-and-mining",
+			"title": "Incentivos e mineração: por que alguém faz o trabalho",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Resolver o quebra-cabeça custa eletricidade e tempo de computador. Por que alguém faria isso? Porque existe um **prêmio**, como num jogo que dá um troféu à primeira criança que termina. No artigo o prêmio tem duas partes."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Recompensa do bloco**: a primeira transação de um bloco cria moedas novas que pertencem a quem criou o bloco. Isso também resolve como as moedas entram no mundo sem um banco central.",
+						"**Taxas de transação**: se as saídas de uma transação somam menos que as entradas, a diferença é somada ao prêmio do minerador."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A transação de criação de moeda do minerador pode pagar no máximo a recompensa do bloco mais a soma das taxas das transações do bloco. Todos os outros nós refazem a soma e rejeitam o bloco se ela for maior. Por exemplo, com recompensa de 50 e taxas de 2, 1 e 3, o máximo que um minerador pode reivindicar é 50 + 6 = 56. Quando o espaço no bloco é limitado, os mineradores preferem as transações que pagam mais."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "O artigo compara com a mineração de ouro: os garimpeiros gastam recursos para colocar ouro no mundo. Aqui, o que se gasta é tempo de CPU e eletricidade, e o 'ouro' são moedas novas."
+				},
+				{
+					"type": "heading",
+					"text": "Uma oferta fixa: o halving"
+				},
+				{
+					"type": "paragraph",
+					"text": "O artigo diz que, quando um número predeterminado de moedas estiver em circulação, o prêmio pode ser só taxas, sem inflação. O Bitcoin faz a recompensa **cair pela metade a cada 210.000 blocos**: 50, depois 25, depois 12,5 e assim por diante. Cada período emite metade do anterior: 210.000 x 50 = 10.500.000, depois 5.250.000, e assim por diante. A soma 1 + 1/2 + 1/4 + ... é 2, então o total converge para 2 x 10.500.000 = **21.000.000 de moedas**. Essa é uma regra que todo nó aplica, e nenhuma pessoa sozinha pode mudá-la."
+				},
+				{
+					"type": "chart",
+					"title": "Moedas emitidas em cada período de 210.000 blocos (milhões)",
+					"unit": "milhões de moedas",
+					"bars": [
+						{
+							"label": "Período 1 (50)",
+							"value": 10.5
+						},
+						{
+							"label": "Período 2 (25)",
+							"value": 5.25
+						},
+						{
+							"label": "Período 3 (12,5)",
+							"value": 2.625
+						},
+						{
+							"label": "Período 4 (6,25)",
+							"value": 1.3125
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Chance de ganhar"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um minerador acha cada bloco com probabilidade igual à sua fatia do poder de computação total. Se os blocos saem a cada 10 minutos, são 144 por dia. Um minerador com 10% do poder espera 14,4 blocos por dia, em média. É uma média, porque cada bloco é um sorteio."
+				},
+				{
+					"type": "paragraph",
+					"text": "Se muitos mineradores novos entram e o poder total dobra, a dificuldade sobe para manter 144 blocos por dia. As moedas emitidas por dia continuam as mesmas, porque as regras as fixam. O minerador antigo, com a mesma máquina, agora tem metade da fatia. Mais poder não cria mais moedas. Ele divide o mesmo prêmio entre mais gente, e a eletricidade gasta por bloco sobe."
+				},
+				{
+					"type": "paragraph",
+					"text": "O artigo também argumenta que um atacante ganancioso com maioria ganharia mais seguindo as regras do que quebrando-as. Atacar destruiria a confiança nas moedas que o próprio atacante possui. É um bom argumento de incentivos, mas não uma garantia."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Prêmio do minerador = recompensa do bloco + taxas. A recompensa cai pela metade a cada 210.000 blocos, o total tende a 21 milhões e a dificuldade mantém constante o ritmo de moedas novas."
+				}
+			]
+		},
+		{
+			"id": "limits-and-alternatives",
+			"title": "Limites e alternativas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma blockchain é uma ferramenta engenhosa, não mágica. Saber o que ela não consegue fazer é tão importante quanto saber o que consegue."
+				},
+				{
+					"type": "heading",
+					"text": "Velocidade: vazão"
+				},
+				{
+					"type": "paragraph",
+					"text": "Todo nó completo precisa receber, conferir e guardar todos os blocos. Por isso o tamanho do bloco e o intervalo entre blocos são mantidos modestos. Vazão = (tamanho do bloco / tamanho médio da transação) / intervalo entre blocos. Com blocos de 1.000.000 de bytes, transações de 250 bytes e um bloco a cada 600 segundos: (1.000.000 / 250) / 600 = 4.000 / 600, cerca de 6,7 transações por segundo. As redes de cartão fazem milhares. A diferença é o preço de replicar tudo e não confiar em ninguém."
+				},
+				{
+					"type": "paragraph",
+					"text": "Por que não fazer blocos a cada 5 segundos? O intervalo deve ser bem maior que o tempo que um bloco leva para cruzar a rede (alguns segundos). Senão os mineradores trabalham com frequência em blocos velhos, surgem muitos ramos concorrentes, e o trabalho gasto nos perdedores não protege a cadeia principal. O poder honesto é desperdiçado, e mineradores bem conectados ganham vantagem. Então escalabilidade não é um parâmetro que se gira."
+				},
+				{
+					"type": "heading",
+					"text": "Energia"
+				},
+				{
+					"type": "paragraph",
+					"text": "Na prova de trabalho, a segurança é comprada com energia. Reescrever a história custa tanto quanto o trabalho já feito. Esse gasto é permanente e cresce com o poder da rede. Essa é a principal crítica de engenharia à prova de trabalho."
+				},
+				{
+					"type": "heading",
+					"text": "Prova de participação"
+				},
+				{
+					"type": "paragraph",
+					"text": "Sistemas abertos precisam de algo escasso para pesar os votos, senão identidades falsas vencem. A prova de trabalho usa energia e hardware, que vivem fora do sistema. A **prova de participação** (proof of stake) usa as moedas do próprio sistema: validadores trancam moedas como depósito, e o peso deles é proporcional ao que podem perder."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Prova de trabalho",
+						"Prova de participação"
+					],
+					"rows": [
+						[
+							"Recurso escasso",
+							"Poder de computação e energia",
+							"Moedas trancadas"
+						],
+						[
+							"Custo de apoiar dois ramos",
+							"Real: o poder se divide",
+							"Quase de graça, então precisam de punições"
+						],
+						[
+							"Proteção da história antiga",
+							"O trabalho acumulado precisa ser refeito",
+							"Assinaturas, então precisa de checkpoints"
+						],
+						[
+							"Principais problemas extras",
+							"Uso de energia",
+							"Nada a perder (nothing-at-stake) e ataques de longo alcance"
+						]
+					]
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Nothing at stake** (nada a perder): assinar é de graça, então um validador racional apoiaria todos os ramos e as bifurcações nunca se resolveriam. A cura é o **slashing**: um validador que assina dois blocos em conflito na mesma posição perde parte das moedas trancadas.",
+						"**Ataque de longo alcance**: o atacante compra chaves antigas de validadores que já retiraram suas moedas e assina uma história diferente de anos atrás. Na prova de trabalho, a história é protegida pelo trabalho acumulado. Na prova de participação, a proteção são assinaturas de quem não tem mais nada a perder. Por isso essas cadeias usam checkpoints, e nós novos devem partir de um estado recente confiável."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Lixo entra, lixo sai"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma blockchain é um registro que mostra adulteração. Ela prova que alguns dados existiam em certo momento e não mudaram. Ela não confere se os dados são verdadeiros. Se uma empresa registra 'este lote de café é orgânico', a cadeia só garante que essa frase foi escrita e guardada. Se era falsa, continua falsa, agora fixada no lugar. Esse é o **problema do oráculo**: fatos do mundo de fora precisam de alguém em quem confiar. Com moedas isso não aparece, porque moedas existem só dentro da cadeia."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Não diga 'está na blockchain, então é verdade'. Uma blockchain garante o histórico dos registros, não a honestidade do que foi registrado."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A vazão é limitada pelo tamanho e pelo intervalo dos blocos, a prova de trabalho gasta energia, a prova de participação troca energia por moedas trancadas e precisa de slashing e checkpoints, e uma cadeia não consegue conferir o mundo real."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando tudo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Acompanhe um pagamento do começo ao fim. Alice quer pagar 3 moedas a Bob e tem uma saída de 10 moedas."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Alice monta uma transação: entrada = a saída de 10 moedas dela, saídas = 3 para Bob e 7 de volta para ela como troco.",
+						"Ela assina o hash da transação com a sua **chave privada**.",
+						"Ela a transmite. Cada nó confere a **assinatura**, se a entrada está no **conjunto UTXO** e se as saídas não passam das entradas. A primeira vista vale.",
+						"Um minerador a coloca em um bloco com outras transações, calcula a **raiz de Merkle** e tenta **nonces** até o hash do bloco ficar abaixo do alvo.",
+						"O bloco é transmitido. Os nós conferem um hash, o aceitam e mineram em cima dele. O pagamento de Alice tem 1 confirmação, depois 2, depois 3.",
+						"Se surgir uma bifurcação, vence o ramo com mais trabalho, e uma transação que ficou só no perdedor volta ao conjunto de pendentes."
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "  hash        -> impressoes digitais (ids, raiz de Merkle, hash do bloco)\n  assinatura  -> quem pode gastar\n  UTXO        -> o que ainda pode ser gasto\n  bloco+cadeia -> historia em ordem, que mostra adulteracao\n  prova de trabalho -> reescrever a historia fica caro\n  cadeia mais longa -> uma unica historia combinada\n  recompensa+taxas -> um motivo para fazer o trabalho",
+					"caption": "Cada peça resolve um problema."
+				},
+				{
+					"type": "heading",
+					"text": "Qual ferramenta impede qual ataque?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Ataque",
+						"O que o impede"
+					],
+					"rows": [
+						[
+							"Mudar o valor de uma transação no caminho",
+							"A assinatura não bate mais com o hash alterado"
+						],
+						[
+							"Copiar a assinatura de alguém para outra transação",
+							"Uma assinatura só vale para a mensagem que ela assinou"
+						],
+						[
+							"Gastar a mesma saída duas vezes",
+							"A conferência UTXO: a saída já sumiu"
+						],
+						[
+							"Editar um bloco antigo",
+							"A raiz de Merkle, o hash do bloco e cada ligação seguinte quebram, e o trabalho precisa ser refeito"
+						],
+						[
+							"Inventar muitas identidades para ganhar votos",
+							"A prova de trabalho pesa os votos pelo poder de computação"
+						],
+						[
+							"Forçar um bloco inválido na rede",
+							"Cada nó valida as regras por conta própria"
+						],
+						[
+							"Reverter um pagamento",
+							"Exponencialmente improvável com confirmações suficientes e maioria honesta"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Erros para evitar"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Achar que um hash esconde dados ou prova quem os fez. Ele só mostra integridade.",
+						"Achar que uma assinatura válida prova que a moeda não foi gasta antes.",
+						"Esquecer a saída de troco. O que não é enviado como saída vira taxa.",
+						"Contar errado as confirmações. O bloco com o pagamento é o número 1.",
+						"Acreditar que 'mais longa' quer dizer mais blocos. Quer dizer mais trabalho.",
+						"Acreditar que mais mineradores criam mais moedas. Eles só dividem o mesmo prêmio.",
+						"Acreditar que uma blockchain torna os dados verdadeiros. Ela só torna difícil mudá-los."
+					]
+				},
+				{
+					"type": "video",
+					"title": "But how does bitcoin actually work? (3Blue1Brown)",
+					"url": "https://www.youtube.com/watch?v=bBC-nXj3Ng4"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para brincar com as ideias, experimente o [Blockchain Demo](https://andersbrownworth.com/blockchain/) de Anders Brownworth: mude um bloco e veja os hashes da cadeia inteira quebrarem. O artigo original é [Bitcoin: Um Sistema de Dinheiro Eletrônico Peer-to-Peer](https://bitcoin.org/files/bitcoin-paper/bitcoin_pt_br.pdf), com só nove páginas."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Nenhuma ideia sozinha faz uma blockchain. Hashes tornam as mudanças visíveis, assinaturas dizem quem pode gastar, UTXOs impedem o gasto duplo, a prova de trabalho torna caro reescrever e a regra da cadeia mais longa faz estranhos concordarem."
+				}
+			]
+		}
+	]
+}

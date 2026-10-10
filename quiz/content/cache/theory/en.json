@@ -1,0 +1,1296 @@
+{
+	"area": "cache",
+	"intro": [
+		"Imagine you are doing homework and you need a pencil. The best pencils are in a big box in the storage room down the hall. Walking there every single time is slow. So you keep a few pencils in your pencil case, right on your desk. That pencil case is a **cache**: a small, fast place that keeps copies of things that are slow to get.",
+		"Computers do this everywhere. Your browser keeps pictures so it does not download them again. A website keeps the answer to a heavy question so it does not ask the database again. Even the processor inside your computer has caches. A good cache can make a slow website feel instant, and it can protect a small database from a huge crowd of visitors.",
+		"But a cache has a catch. A copy can get old. If the real pencil box changes and your pencil case does not, you are using outdated stuff. Almost everything difficult about caches comes from one question: how do we keep the copy close enough to the truth?",
+		"In this summary you will learn why and where to cache, the four main ways to write data, how to throw old copies away, which caches get full and who leaves, the famous crowd problems (stampede, penetration and avalanche), the HTTP headers that control browser caches, what Redis offers, and what can go wrong with consistency. At the end you will be able to read a cache design and say what it does well and where it can break."
+	],
+	"sections": [
+		{
+			"id": "why-and-where-to-cache",
+			"title": "Why and where to cache",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Think of a school library. The **origin** is the big library in the city, with every book ever printed. Going there takes an hour. Your classroom has a small shelf with the books everybody keeps asking for. That shelf is the cache. The city library is still the **source of truth**: if the two disagree, the library is right and the shelf is only a copy."
+				},
+				{
+					"type": "paragraph",
+					"text": "A cache works because of [[locality|the habit of programs and people of asking for the same few things again and again]]. A few popular items get most of the questions. If the cache holds those few items, most questions are answered fast."
+				},
+				{
+					"type": "heading",
+					"text": "The words you need"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Hit**: the thing you asked for is in the cache. Fast!",
+						"**Miss**: it is not there, so we must go to the origin. Slow.",
+						"**Hit rate**: how many lookups were hits, out of all lookups. It is hits divided by (hits plus misses).",
+						"**Cold cache**: an empty cache, for example right after a restart. Almost everything is a miss.",
+						"**Warm-up**: the time while misses fill the cache and the hit rate climbs.",
+						"**Stale**: a copy that is older than the real data."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Hit rate = hits / (hits + misses). If a counter says 18,400 hits and 4,600 misses, the total is 23,000 lookups and the hit rate is 18,400 / 23,000 = 80%."
+				},
+				{
+					"type": "heading",
+					"text": "Does a cache really make things faster?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Every request pays for the cache lookup first. Only the hits save the trip to the origin. So the average time is a weighted mean: hit rate times the time of a hit, plus miss rate times the time of a miss. A miss costs more than not having a cache at all, because we paid the failed lookup and then the origin too."
+				},
+				{
+					"type": "paragraph",
+					"text": "Example: a hit costs 2 ms and a miss costs 2 ms plus 100 ms at the origin. With a 90% hit rate the average is 0.9 x 2 + 0.1 x 102 = 12 ms. The chart shows how much the hit rate matters."
+				},
+				{
+					"type": "chart",
+					"title": "Average latency by hit rate (hit = 2 ms, miss = 102 ms)",
+					"unit": "ms",
+					"bars": [
+						{
+							"label": "0% hits",
+							"value": 102
+						},
+						{
+							"label": "50% hits",
+							"value": 52
+						},
+						{
+							"label": "90% hits",
+							"value": 12
+						},
+						{
+							"label": "99% hits",
+							"value": 3
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A cache can even make things worse. Suppose the origin answers in 20 ms and a remote cache lookup costs 5 ms. The average is 5 + (1 - h) x 20, where h is the hit rate. It only beats 20 ms when h is above 25%. With a 10% hit rate the average becomes 23 ms: slower than having no cache."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Before adding a cache, measure whether the same things are really asked again. A cache with a low hit rate only adds a trip."
+				},
+				{
+					"type": "heading",
+					"text": "The layers of cache"
+				},
+				{
+					"type": "paragraph",
+					"text": "A request can be answered by several caches, one after the other. The closer to the user the answer is found, the less work and network are used."
+				},
+				{
+					"type": "diagram",
+					"content": "user -> browser cache -> CDN / proxy -> app cache -> database\n         (private)       (shared)      (in-process     (buffer pool,\n                                        or Redis)       page cache)\n\nCloser to the user = faster and cheaper.",
+					"caption": "Where a request can stop"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Layer",
+						"Who can use the copy",
+						"Good for"
+					],
+					"rows": [
+						[
+							"Browser",
+							"Only that one user (a **private** cache)",
+							"Images, scripts, styles the user already downloaded"
+						],
+						[
+							"CDN or reverse proxy",
+							"Many users (a **shared** cache)",
+							"Static files served from servers around the world, close to people"
+						],
+						[
+							"Application cache",
+							"One instance (in-process) or all instances (Redis)",
+							"Results of slow queries and heavy calculations"
+						],
+						[
+							"Database buffer pool",
+							"The database itself",
+							"Disk pages of tables and indexes read recently"
+						]
+					],
+					"caption": "Layers of cache"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **CDN** (content delivery network) is a group of servers spread over the world. The one nearest to you answers, so the data travels a short way. Its cache is shared by all users."
+				},
+				{
+					"type": "paragraph",
+					"text": "The database also has its own cache, the **buffer pool**, which keeps recently read disk pages in memory. It speeds up every query, but the query is still parsed and run. Storing the finished result in the application cache saves that work too, at the price of the result becoming old."
+				},
+				{
+					"type": "heading",
+					"text": "In-process or distributed?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"In-process cache",
+						"Distributed cache (for example Redis)"
+					],
+					"rows": [
+						[
+							"Speed",
+							"Fastest: no network, no conversion",
+							"One network trip for each lookup"
+						],
+						[
+							"Copies",
+							"One copy per instance, so memory is repeated and copies can differ",
+							"One copy that every instance sees"
+						],
+						[
+							"After the app restarts",
+							"Everything is lost",
+							"Data is still there"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Picture an app running on 4 instances, each with its own in-process cache. One instance changes a product in the database and removes it from its own cache. The other three still hold the old product until their copies expire."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Personal pages are dangerous in a shared cache. If `/account` shows your name and balance and a CDN stores it under that URL, the next person who asks for `/account` can receive your page. Personal answers may live only in a private cache, unless the cache key includes who the user is."
+				},
+				{
+					"type": "heading",
+					"text": "A cache can hide a weak database"
+				},
+				{
+					"type": "paragraph",
+					"text": "Say a service gets 10,000 reads per second with a 95% hit rate. The database only sees 500 queries per second and can handle 1,000. Then Redis restarts and comes back empty. For a moment, all 10,000 reads fall on the database, ten times what it can take, until the cache warms up. So plan for a cold cache: warm it before sending traffic, limit the requests, or keep spare capacity in the database."
+				},
+				{
+					"type": "heading",
+					"text": "What is worth caching?"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Good**: data read much more often than it changes, expensive to build, and fine if it is a few moments old (a product catalogue page).",
+						"**Bad**: data that changes on every request, data that is different for every request, and data that must be exact at the moment of use."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A cache is a fast copy of something slow. It pays off only with a good hit rate, and the origin always stays the truth."
+				}
+			]
+		},
+		{
+			"id": "caching-strategies",
+			"title": "Strategies: cache-aside, read-through, write-through, write-behind",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Now you have a cache and a database. Two questions follow. On a read: who fills the cache? On a write: who is changed first, and when do we tell the user \"done\"? Each **caching strategy** is an answer to these questions."
+				},
+				{
+					"type": "heading",
+					"text": "Reading: cache-aside and read-through"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagine you ask a helper for a book. In **cache-aside** (also called lazy loading) there is no helper: you check the shelf yourself, and if the book is missing you go to the library, bring it, and put a copy on the shelf. The application code does all three steps. Only data that was really asked for enters the cache."
+				},
+				{
+					"type": "code",
+					"language": "python",
+					"content": "def get_user(id):\n    value = cache.get(\"user:\" + id)      # 1. look in the cache\n    if value is not None:\n        return value                      # hit\n    value = db.query(\"SELECT ... WHERE id = ?\", id)  # 2. miss: ask the database\n    cache.set(\"user:\" + id, value, ttl=300)         # 3. fill the cache\n    return value",
+					"caption": "Cache-aside: the application does the three steps"
+				},
+				{
+					"type": "paragraph",
+					"text": "In **read-through** you do have a helper. You only ask the cache for the key. If it is missing, the cache layer (or its library) calls a loader function to get the value from the source. Both strategies load at the same moment, on a miss. The difference is who is responsible: the application code (cache-aside) or the cache layer (read-through)."
+				},
+				{
+					"type": "paragraph",
+					"text": "Cache-aside is great when there are many more reads than writes, like a product catalogue read thousands of times per second and changed a few times a day. It also keeps working if the cache is down: the app just reads the database, more slowly."
+				},
+				{
+					"type": "heading",
+					"text": "Writing: four ways"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Strategy",
+						"What a write does",
+						"User hears \"done\" after",
+						"Good",
+						"Cost"
+					],
+					"rows": [
+						[
+							"Write-through",
+							"Writes the database and the cache",
+							"Both are updated",
+							"The next read is a hit with fresh data",
+							"Slower write; the cache may hold data nobody reads"
+						],
+						[
+							"Write-behind (write-back)",
+							"Writes only the cache; the database later",
+							"The cache only",
+							"Very fast; many writes become few",
+							"Acknowledged data can be lost if the cache dies before the flush"
+						],
+						[
+							"Write-around",
+							"Writes only the database",
+							"The database",
+							"The cache is not filled with data nobody reads",
+							"First read after a write is always a miss"
+						],
+						[
+							"Cache-aside write",
+							"Updates the database, then deletes the key",
+							"Database and delete",
+							"Next read loads the new value",
+							"First read after a write is a miss"
+						]
+					],
+					"caption": "Write strategies"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Think of a teacher grading tests. Write-through: grade, then write the mark in the school book and on the board before telling the student. Write-behind: tell the student \"done\" and write the marks in the school book at the end of the day. If the teacher loses the notes before the end of the day, the marks are gone."
+				},
+				{
+					"type": "heading",
+					"text": "Write-behind in detail"
+				},
+				{
+					"type": "paragraph",
+					"text": "In write-behind a worker flushes the pending changes to the database every few seconds. If the same key was changed several times between two flushes, only the last value is sent. This is called **coalescing**. Suppose the flush runs every 10 s and these writes arrive:"
+				},
+				{
+					"type": "diagram",
+					"content": "0-10 s : A=9, B=4, A=8, A=7     flush at 10 s -> UPDATE A=7, UPDATE B=4\n10-20 s: B=3, A=6, B=2          flush at 20 s -> UPDATE A=6, UPDATE B=2\n20-30 s: C=5, D=1               flush at 30 s -> UPDATE C=5, UPDATE D=1\n\n9 cache writes -> 6 database updates",
+					"caption": "Several writes to one key in one interval become a single update"
+				},
+				{
+					"type": "paragraph",
+					"text": "This makes write-behind perfect for things like view counters: thousands of increments per second, and losing a few seconds of counts is fine. It is wrong for money or orders."
+				},
+				{
+					"type": "paragraph",
+					"text": "There are two dangers. First, between flushes the cache is **ahead** of the database. A report reading the database directly sees the old value. Second, if the cache loses its memory before the flush, every write the clients were told was saved is gone. A write made directly in the database between two flushes is also overwritten by the next flush, with no error for anybody."
+				},
+				{
+					"type": "heading",
+					"text": "Why cache-aside deletes instead of storing"
+				},
+				{
+					"type": "paragraph",
+					"text": "When data changes, cache-aside usually updates the database and then **deletes** the key. Why not store the new value? Because two writers can reach the database in one order and the cache in the opposite order, so the older value would win in the cache. A delete carries no value, so it cannot be wrong: whoever deletes last, the key is gone and the next read loads the truth."
+				},
+				{
+					"type": "paragraph",
+					"text": "Write-through has this problem. With two writers and no lock, the database can end with 3 while the cache ends with 4, the value that was committed first. Without a time to live it stays wrong until the next write. Another problem: the database and the cache are two systems with no shared transaction. If the database commits and the cache update fails, the cache stays old. The usual order is to write the source of truth first."
+				},
+				{
+					"type": "heading",
+					"text": "Refresh-ahead"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Refresh-ahead** reloads a popular entry in the background just before it expires, so readers never wait for a miss. The risk is wasting work on entries nobody asks for again, so it is usually applied only to recently used keys."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "To recognise a strategy, look at where the \"done\" sits compared with the database write. Database first, then done: write-through (or write-around if the cache is not written). Done first, database later: write-behind."
+				}
+			]
+		},
+		{
+			"id": "invalidation-ttl",
+			"title": "Invalidation and time to live",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A cached milk carton has a date on it. After the date, you throw it away, even if it still looks fine. A cache does the same with a **TTL**, the time to live: how many seconds an entry may stay. Another way is to throw the carton away as soon as you know the shop has new milk. That is **invalidation**: removing or rewriting an entry when the origin changes."
+				},
+				{
+					"type": "paragraph",
+					"text": "A TTL does not make data correct. It only limits for how long it can be wrong. With a TTL of 60 s, a copy can be up to 60 s behind. That is why a TTL is kept as a safety net even when explicit invalidation exists."
+				},
+				{
+					"type": "heading",
+					"text": "The TTL dial"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"TTL",
+						"Hit rate",
+						"Freshness",
+						"Load on the origin"
+					],
+					"rows": [
+						[
+							"Short (30 s)",
+							"Lower",
+							"Fresher",
+							"Higher"
+						],
+						[
+							"Long (10 min)",
+							"Higher",
+							"Staler",
+							"Lower"
+						]
+					],
+					"caption": "Raising the TTL trades freshness for speed"
+				},
+				{
+					"type": "heading",
+					"text": "Redis commands for expiry"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis is a very popular in-memory store used as a cache. These are the commands and rules to know:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"`SET key value EX 300` stores a value that expires in 300 seconds.",
+						"`TTL key` returns the seconds left. **-1** means the key exists but has no expiry. **-2** means the key does not exist.",
+						"`EXPIRE key seconds` sets the deadline counting from now. If the key already had one, the new one replaces it. Example: `SET k v EX 60` at t = 0 and `EXPIRE k 100` at t = 20 give `TTL` = 70 at t = 50.",
+						"Since Redis 7.0, `EXPIRE` has conditions: `NX` (only if there is no expiry), `XX` (only if there is one), `GT` (only if the new time is greater) and `LT` (only if it is smaller). A key with no expiry counts as infinite for `GT` and `LT`."
+					]
+				},
+				{
+					"type": "code",
+					"language": "sh",
+					"content": "SET cart:7 \"a\" EX 300\nSET cart:7 \"b\"        # replaces the value AND erases the expiry\nTTL cart:7             # -> -1  (never expires!)\n\nSET cart:7 \"b\" KEEPTTL # keeps the old deadline",
+					"caption": "A plain SET clears the TTL"
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A command that replaces the whole value (`SET`) erases the expiry. Commands that only change the existing value (`INCR`, `LPUSH`) keep it. Forgetting this creates entries that never expire. Use `KEEPTTL` or give `EX` again."
+				},
+				{
+					"type": "heading",
+					"text": "How Redis removes expired keys"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis does it in two ways. The **passive** way: when a client asks for an expired key, Redis deletes it right then. The **active** way: from time to time, Redis tests a few random keys that have a TTL and deletes the expired ones. So an expired key is never returned, but it may use memory for a while after its deadline."
+				},
+				{
+					"type": "heading",
+					"text": "Absolute and sliding expiration"
+				},
+				{
+					"type": "paragraph",
+					"text": "With **absolute** expiration the entry dies a fixed time after being written. With **sliding** expiration, every read renews the deadline (for example `GETEX key EX 60`). Sliding suits sessions. But if a key is read every 10 s with a 60 s sliding TTL, it never expires, and an old value can be served forever. For data that changes at the origin, add explicit invalidation or an absolute maximum life."
+				},
+				{
+					"type": "heading",
+					"text": "Hard things about invalidation"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**One row, many keys.** A product can be in `product:5`, in a list `category:2:page:1` and in a search result `search:shoes`. If the price changes and the code deletes only `product:5`, the list and the search keep the old price until they expire. The cache does not know which entries came from which data.",
+						"**Negative caching.** Saving the answer \"does not exist\" avoids repeating a useless query. But if user 77 is created two minutes after \"not found\" was cached for 24 h, readers keep seeing \"not found\". Give these entries a short TTL (seconds or minutes), and delete them on creation when possible.",
+						"**Many instances with local caches.** With a fixed 30 s TTL and no messages, two instances can disagree for up to 30 s. Publish an invalidation message to all instances and keep the TTL as a safety net.",
+						"**Searching for keys.** `KEYS product:*` walks every key in one command (cost O(N)) and blocks the other clients. Use `SCAN`, which moves by a cursor and returns a few keys per call, or keep a set with the keys of each group."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Two useful tricks"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Versioned keys.** Put a version in the names: `cat:v{N}:...`, where N is stored in `cat:version`. To invalidate the whole catalogue, run `INCR cat:version`. Nobody builds the old names anymore, so the whole group is invalid at once. The old keys still use memory, so they need a TTL."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Soft purge.** A hard purge deletes the entry and the next request waits for the origin. A soft purge only marks it stale: it is still served for a short time while a background refresh runs. Latency stays stable and the origin is less pressured."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "TTL = a safety net that bounds how old a copy can be. Invalidation = fixing the copy as soon as the source changes. Use both."
+				}
+			]
+		},
+		{
+			"id": "eviction-policies",
+			"title": "Eviction policies: LRU, LFU, FIFO",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Your pencil case is small. When it is full and you get a new pencil, one has to go. **Eviction** is when the cache removes entries because memory is full. Do not confuse it with **expiration**, which removes an entry because its time ran out. An evicted entry may still be fresh, and an expired one leaves even if there is plenty of memory."
+				},
+				{
+					"type": "paragraph",
+					"text": "The rule that picks who leaves is the **eviction policy**. Here are three classic ones."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Policy",
+						"Who leaves",
+						"Bet it makes",
+						"What it records"
+					],
+					"rows": [
+						[
+							"**LRU** (least recently used)",
+							"The one whose last use is the oldest",
+							"What was used a moment ago will be used again soon",
+							"The order of use"
+						],
+						[
+							"**LFU** (least frequently used)",
+							"The one with the fewest uses",
+							"What was used a lot will keep being used",
+							"A counter per entry"
+						],
+						[
+							"**FIFO** (first in, first out)",
+							"The one that entered first",
+							"None: it is just a queue",
+							"The order of arrival"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Tracing LRU by hand"
+				},
+				{
+					"type": "paragraph",
+					"text": "Keep the keys in a line from least to most recent. A hit moves the key to the end. A miss with a full cache removes the first key of the line. Cache with room for 3, accesses A B C A D B A E:"
+				},
+				{
+					"type": "diagram",
+					"content": "A       -> [A]\nB       -> [A B]\nC       -> [A B C]\nA (hit) -> [B C A]\nD       -> [C A D]    B leaves\nB       -> [A D B]    C leaves\nA (hit) -> [D B A]\nE       -> [B A E]    D leaves\n\nFinal: A, B, E",
+					"caption": "LRU with 3 slots (left = least recent)"
+				},
+				{
+					"type": "heading",
+					"text": "FIFO is different from LRU"
+				},
+				{
+					"type": "paragraph",
+					"text": "In FIFO a hit does **not** change the position. With room for 3 and accesses A B C A B D, the queue is [A B C]. The hits on A and B change nothing, so D removes A, the oldest arrival. Under LRU the victim would have been C. Even though A was just used, FIFO throws it out."
+				},
+				{
+					"type": "paragraph",
+					"text": "Compare on the sequence A B C A D A E with 3 slots: LRU has 5 misses and 2 hits. FIFO has 6 misses and 1 hit, because it evicted A while A was in use and had to load it again."
+				},
+				{
+					"type": "heading",
+					"text": "Tracing LFU by hand"
+				},
+				{
+					"type": "paragraph",
+					"text": "Each access adds 1 to a counter (the first insertion counts as one). On a full-cache miss, the lowest counter leaves, and ties are broken by the least recently used. With 3 slots and accesses A A B C B D E: A=2, B=2, C=1, then D arrives and C (lowest) leaves; then E arrives and D (count 1) leaves. The final keys are A, B, E. New keys start with count 1, so they are the first to be thrown away."
+				},
+				{
+					"type": "heading",
+					"text": "A scan and an old star"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagine 20 hot keys read thousands of times, then a report that reads 500 different cold keys, once each. Under **LRU** the cold keys push the hot ones out, because recency cannot tell \"read once\" from \"read all the time\". Under **LFU** the hot keys survive because their counters are high. The price of LFU appears in the opposite case: a key that was popular months ago keeps its high counter and never leaves. That is why real LFUs make the counters fade over time."
+				},
+				{
+					"type": "heading",
+					"text": "How to build an LRU fast"
+				},
+				{
+					"type": "paragraph",
+					"text": "We want `get` and `put` in O(1). Use two structures together. A **hash map** finds a key instantly and points to its place in the list. A **doubly linked list** keeps the recency order; with pointers to the previous and next nodes, we can unlink a node and put it at the end without walking the list. The victim is always the node at the other end."
+				},
+				{
+					"type": "heading",
+					"text": "Eviction in Redis"
+				},
+				{
+					"type": "paragraph",
+					"text": "`maxmemory` sets the memory limit and `maxmemory-policy` says what to do when it is reached. The name of a policy has two parts: the **prefix** tells who may be a victim (`allkeys` for any key, `volatile` for only keys that have an expiry) and the **suffix** tells the criterion (`lru`, `lfu`, `random` or `ttl`)."
+				},
+				{
+					"type": "list",
+					"items": [
+						"`noeviction`: commands that would add data fail with an error; reads still work. Good when Redis holds data that must not disappear.",
+						"`allkeys-lru` and `allkeys-lfu`: the usual choice for a pure cache.",
+						"`volatile-lru`: only keys with a TTL can be evicted. Right when one instance mixes permanent keys (configuration) and cache entries. If no key has a TTL, it behaves like `noeviction`. Two separate instances are better when possible.",
+						"`maxmemory-samples`: Redis does not keep an exact LRU. It examines a random sample of keys (5 by default) and evicts the oldest one among them. Raising it to 10 gets closer to the true LRU, at the cost of a little more CPU."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Eviction = memory is full. Expiration = time ran out. LRU looks at recency, LFU at count, FIFO at arrival order, and only FIFO ignores hits."
+				}
+			]
+		},
+		{
+			"id": "stampede-penetration-avalanche",
+			"title": "Stampede, penetration and avalanche",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Caches usually protect the database. But there are three famous moments when the cache stops protecting it, and a crowd of requests falls on the origin all at once. They have scary names, but the ideas are simple."
+				},
+				{
+					"type": "heading",
+					"text": "1. Cache stampede (thundering herd, dogpile)"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A popular toy stands in the school shop window. One day the toy is removed for cleaning. Hundreds of children arrive at the same time and every one of them walks to the warehouse to ask for it. The warehouse is flooded with the same question."
+				},
+				{
+					"type": "paragraph",
+					"text": "A very popular key expires. Until someone writes a new copy, every request sees a miss and runs the same expensive query. The data exists and is valid. The problem is the concurrency in the recomputation window. The size of the herd is the request rate multiplied by the rebuild time."
+				},
+				{
+					"type": "paragraph",
+					"text": "Example: the key `home:feed` expires, 300 requests arrive in the next 200 ms, and rebuilding takes 2 s. With no protection, 300 queries run. With a lock, only 1."
+				},
+				{
+					"type": "heading",
+					"text": "Fix A: a lock"
+				},
+				{
+					"type": "paragraph",
+					"text": "On a miss, a request tries to create a lock with one atomic command: `SET lock:home:feed token NX PX 5000`. `NX` means \"only if it does not exist yet\" and `PX 5000` means \"expire in 5000 ms\". Only one request gets `OK`. It queries the database, stores the value and releases the lock. The others wait a little and read the cache again."
+				},
+				{
+					"type": "list",
+					"items": [
+						"The lock has an **expiry**, so if the holder crashes, nobody waits forever.",
+						"The lock holds a unique **token**. To release it, we compare the token and delete only if it is still ours, and this check and delete must happen together (a script run by the server). Otherwise a slow request, whose lock already expired, could delete the lock another request just got.",
+						"The expiry is a guess about how long the work takes. If the rebuild takes 8 s and the lock lasts 5 s, a second request starts rebuilding at about 5 s and part of the protection is lost. Choose an expiry with a safety margin, or renew the lock while working.",
+						"After winning the lock, check the cache again: the previous winner may have just stored the value."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Fix B: refresh before expiry"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Early refresh** (refresh-ahead) rebuilds the value while the old one is still being served, so there is no moment without a copy. One version is **probabilistic early expiration**: each request may decide, at random, to refresh early, with a chance that grows as the deadline gets closer, so almost always only one request does it, with no lock."
+				},
+				{
+					"type": "paragraph",
+					"text": "Another version splits the expiry in two. The entry stores `{ value, logicalExpiry }`. The **logical** deadline (say 5 minutes after the write) says when to refresh. The **physical** TTL in Redis (say 10 minutes) says when Redis deletes it. At minute 6 the entry is stale but still there: the first request takes the refresh lock, and the second one receives the old value immediately while the first refreshes."
+				},
+				{
+					"type": "diagram",
+					"content": "write            logical expiry       physical TTL\n |-----------------|--------------------|\n 0 min            5 min               10 min\n  fresh            stale but served,    gone\n                   one request refreshes",
+					"caption": "Two deadlines: when to refresh, and when to delete"
+				},
+				{
+					"type": "heading",
+					"text": "What is NOT a fix"
+				},
+				{
+					"type": "paragraph",
+					"text": "Raising the TTL from 60 s to one hour does not stop the stampede. The herd size depends on request rate and rebuild time, not on the TTL. The event becomes rarer and the data older, but each time it is as bad as before. Another trap: **single flight** inside each process (concurrent loads of one key share a single query) only works within one process. With 8 instances you can still get up to 8 queries per expiry. To get to one, you need a lock shared by all instances."
+				},
+				{
+					"type": "chart",
+					"title": "Database queries after one expiry, 300 readers (measured in this repository's lab)",
+					"unit": "queries",
+					"bars": [
+						{
+							"label": "No protection",
+							"value": 299
+						},
+						{
+							"label": "Lock",
+							"value": 1
+						},
+						{
+							"label": "Early refresh",
+							"value": 1
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "2. Cache penetration"
+				},
+				{
+					"type": "paragraph",
+					"text": "Here a client keeps asking for things that **do not exist** anywhere, like `/users/-1` or `/users/99999999`. The cache never has anything to store, so every request goes to the database. It may be a bug or an attack. Three defences:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Validate the input and reject impossible ids at once.",
+						"Cache the empty result with a **short TTL** (negative caching).",
+						"Put a **Bloom filter** in front. It is a compact structure that answers \"is this in the set?\" with an error in one direction only. \"Absent\" is always true. \"Maybe present\" can sometimes be wrong. So requests for ids that certainly do not exist are stopped, and the few false positives cost just one query."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "3. Cache avalanche"
+				},
+				{
+					"type": "paragraph",
+					"text": "An avalanche happens when **many keys** become unavailable together. Cause 1: a job fills the cache at 03:00 with 200,000 keys, all with a 1 h TTL, so at 04:00 they all expire at once. Cause 2: the cache server goes down."
+				},
+				{
+					"type": "paragraph",
+					"text": "For cause 1, add **jitter**: a random value on each TTL. A base of 600 s with ±10% jitter gives TTLs from 540 s to 660 s, so 200,000 keys written together expire spread over 120 s instead of all in the same second. Also warm the cache gradually. For cause 2, make the cache highly available and protect the origin with a circuit breaker and rate limiting."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Problem",
+						"What happens",
+						"Main defences"
+					],
+					"rows": [
+						[
+							"Stampede",
+							"One hot key expires; many requests rebuild it",
+							"Lock, early refresh, probabilistic expiry"
+						],
+						[
+							"Penetration",
+							"Requests for keys that do not exist always reach the database",
+							"Input validation, short negative cache, Bloom filter"
+						],
+						[
+							"Avalanche",
+							"Many keys expire together, or the cache is gone",
+							"TTL jitter, gradual warm-up, high availability, rate limiting"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Stampede: one key, many rebuilds. Penetration: keys that do not exist. Avalanche: many keys at once."
+				}
+			]
+		},
+		{
+			"id": "http-cache-headers",
+			"title": "HTTP cache headers",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "When a server sends a web page, it can attach little notes called **headers**. Some headers tell browsers and CDNs how to cache. The rules are written in the standards RFC 9111 (HTTP caching) and RFC 5861 (stale content)."
+				},
+				{
+					"type": "paragraph",
+					"text": "A cache uses the method plus the URL as its basic key. A response is **fresh** while its freshness lifetime is bigger than its current age. A **stale** response is not thrown away: the cache can **validate** it, that is, ask the origin \"has this changed?\"."
+				},
+				{
+					"type": "heading",
+					"text": "Cache-Control directives"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Directive",
+						"Meaning"
+					],
+					"rows": [
+						[
+							"`max-age=N`",
+							"Fresh for N seconds, in any cache"
+						],
+						[
+							"`s-maxage=N`",
+							"Like `max-age`, but only for shared caches (CDN, proxy). There it wins over `max-age` and `Expires`"
+						],
+						[
+							"`no-store`",
+							"Do not keep the response at all"
+						],
+						[
+							"`no-cache`",
+							"You may keep it, but **validate before every reuse**. If the origin answers `304`, no body is downloaded again"
+						],
+						[
+							"`private`",
+							"Only a private cache (the browser) may store it"
+						],
+						[
+							"`public`",
+							"Any cache may store it, even in cases where it would normally not be allowed"
+						],
+						[
+							"`immutable`",
+							"It will not change while fresh, so do not even revalidate on reload"
+						],
+						[
+							"`must-revalidate`",
+							"Never serve a stale copy without a successful validation"
+						],
+						[
+							"`stale-while-revalidate=N`",
+							"For N seconds after freshness ends, serve the stale copy at once and revalidate in the background"
+						],
+						[
+							"`stale-if-error=N`",
+							"Serve the stale copy if the origin fails (errors 500, 502, 503, 504)"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "`no-cache` does NOT mean \"do not cache\". It means \"cache, but ask first\". The directive that forbids storing is `no-store`. Neither one is about encryption: `private` and `public` are not about security of the connection."
+				},
+				{
+					"type": "heading",
+					"text": "Browser and CDN can have different times"
+				},
+				{
+					"type": "code",
+					"language": "http",
+					"content": "HTTP/1.1 200 OK\nContent-Type: text/css\nCache-Control: max-age=60, s-maxage=600",
+					"caption": "The CDN keeps it 600 s, the browser 60 s"
+				},
+				{
+					"type": "paragraph",
+					"text": "The CDN (shared cache) uses `s-maxage`, so 600 s. The browser (private cache) ignores it and uses `max-age`, so 60 s. This is handy because the site owner can purge a CDN but cannot reach inside every visitor's browser."
+				},
+				{
+					"type": "heading",
+					"text": "Where the freshness time comes from"
+				},
+				{
+					"type": "paragraph",
+					"text": "A cache takes the first of these that exists, in this order:"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"`s-maxage` (only shared caches)",
+						"`max-age`",
+						"`Expires` minus `Date`",
+						"A **heuristic** guess, usually a fraction of the time since `Last-Modified` (10% is typical, but it is not a rule)"
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "So with `Cache-Control: max-age=120` and `Expires` one hour later, a private cache uses 120 s: `max-age` wins over `Expires`."
+				},
+				{
+					"type": "heading",
+					"text": "Age: counting how old a copy is"
+				},
+				{
+					"type": "paragraph",
+					"text": "The `Age` header says how long the response already sat in caches upstream. The current age is that initial age plus the time the response has stayed in this cache. Time spent in other caches is subtracted from freshness."
+				},
+				{
+					"type": "code",
+					"language": "http",
+					"content": "HTTP/1.1 200 OK\nDate: Tue, 06 Oct 2026 12:00:00 GMT\nCache-Control: max-age=300\nAge: 120",
+					"caption": "Arrives at 12:02:00"
+				},
+				{
+					"type": "paragraph",
+					"text": "The browser gets it with age 120 and a lifetime of 300, so it stays fresh for 300 - 120 = **180 more seconds**. Another example: a shared cache stores `max-age=600, s-maxage=120` with `Age: 30`. After 100 s in the cache, the age is 30 + 100 = 130 and the lifetime is 120 (`s-maxage`), so it is already **stale**."
+				},
+				{
+					"type": "heading",
+					"text": "Validation: asking \"did it change?\""
+				},
+				{
+					"type": "paragraph",
+					"text": "A **validator** names one version of the content. `ETag` is an opaque label. `Last-Modified` is a date. A stale copy is validated like this:"
+				},
+				{
+					"type": "diagram",
+					"content": "cache  -> origin : GET /logo.png\n                    If-None-Match: \"v7\"\norigin -> cache  : 304 Not Modified   (no body)\n                   -> reuse my copy, update its headers\n   or\norigin -> cache  : 200 OK + new body  -> replace the copy",
+					"caption": "Conditional request"
+				},
+				{
+					"type": "paragraph",
+					"text": "With `Last-Modified`, the request uses `If-Modified-Since`. On `304`, the cache merges the new headers into the stored response (which becomes fresh again) and serves the body it already had. An ETag starting with `W/` is **weak**: it means \"equivalent\", not \"identical byte by byte\"."
+				},
+				{
+					"type": "heading",
+					"text": "Vary and Authorization"
+				},
+				{
+					"type": "paragraph",
+					"text": "The same URL can return different things, for example compressed or not. `Vary: Accept-Encoding` tells the cache: reuse this response only for requests whose `Accept-Encoding` matches the original one. Without `Vary`, a client that does not accept gzip could receive a compressed page."
+				},
+				{
+					"type": "paragraph",
+					"text": "A request with an `Authorization` header is usually about one user. A shared cache must not reuse that response unless the origin allows it explicitly with `public`, `s-maxage` or `must-revalidate`. For example, `Cache-Control: public, max-age=300` lets the proxy reuse it. Use these only when the answer is the same for every allowed user."
+				},
+				{
+					"type": "heading",
+					"text": "Stale on purpose"
+				},
+				{
+					"type": "paragraph",
+					"text": "With `Cache-Control: max-age=600, stale-while-revalidate=30`, a request that arrives when the copy is 615 s old (15 s past freshness, inside the 30 s window) may get the stale copy immediately, while the cache revalidates in the background. The user does not wait."
+				},
+				{
+					"type": "heading",
+					"text": "A deploy recipe"
+				},
+				{
+					"type": "paragraph",
+					"text": "A website has `index.html` (always the same URL) and `app.3f9a1c.js` (the name includes a hash of the content, and changes at every deploy). The script never changes under its name, so it can be cached for a year. The HTML must always be checked, because it is what points to the new script name."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"File",
+						"Cache-Control",
+						"Why"
+					],
+					"rows": [
+						[
+							"`index.html`",
+							"`no-cache`",
+							"Always revalidate; it points to the new file names"
+						],
+						[
+							"`app.3f9a1c.js`",
+							"`max-age=31536000, immutable`",
+							"Never changes under this name; one year, no revalidation even on reload"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Fresh means age is less than lifetime. Stale means ask the origin (`304` saves the body). `no-cache` = validate first. `no-store` = never keep."
+				}
+			]
+		},
+		{
+			"id": "redis-data-structures-persistence",
+			"title": "Redis data structures and persistence",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Redis is a database that lives in memory (RAM), which makes it very fast. It is more than a box of text: each key can hold a different **data type**, and each type has commands made for it. Using the right type means the server does the work, instead of your code."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Type",
+						"What it is",
+						"Typical use",
+						"Example commands"
+					],
+					"rows": [
+						[
+							"String",
+							"Text or number",
+							"A cached page, a counter",
+							"`SET`, `GET`, `INCR`"
+						],
+						[
+							"List",
+							"Items in order, add and remove at both ends",
+							"Queues",
+							"`LPUSH`, `RPOP`"
+						],
+						[
+							"Hash",
+							"A small table of fields",
+							"An object, such as pending writes",
+							"`HSET`, `HGET`"
+						],
+						[
+							"Set",
+							"Unique items, no order",
+							"Tags, who already voted",
+							"`SADD`, `SISMEMBER`"
+						],
+						[
+							"Sorted set",
+							"Unique members, each with a score; kept in order",
+							"Rankings",
+							"`ZADD`, `ZRANGE`"
+						],
+						[
+							"HyperLogLog",
+							"A tiny summary that estimates how many distinct items",
+							"Unique visitors",
+							"`PFADD`, `PFCOUNT`"
+						]
+					],
+					"caption": "Common Redis types"
+				},
+				{
+					"type": "heading",
+					"text": "Examples"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Ranking**: show the top 10 players. A sorted set keeps members ordered by points. `ZADD` inserts or updates; `ZRANGE ... REV` returns from the highest score.",
+						"**Counter**: `INCR visits` on a key that does not exist treats it as 0, stores 1 and returns 1.",
+						"**Distinct visitors**: tens of millions per day, error of about 1% is fine, memory must stay small. A **HyperLogLog** stores only a probabilistic summary of bounded size. The price: you cannot list the visitors or ask whether one was seen. For that you need a set."
+					]
+				},
+				{
+					"type": "code",
+					"language": "sh",
+					"content": "LPUSH jobs a   # list: [a]\nLPUSH jobs b   # list: [b, a]\nLPUSH jobs c   # list: [c, b, a]\nRPOP jobs      # takes from the right -> a   (list: [c, b])",
+					"caption": "A queue: put in on the left, take out on the right (first in, first out)"
+				},
+				{
+					"type": "heading",
+					"text": "Atomic commands"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis runs one command completely before the next one. So each command is **atomic**. But a sequence of commands sent by a client is not. Two clients doing the following with `counter` = 10:"
+				},
+				{
+					"type": "code",
+					"language": "sh",
+					"content": "v = GET counter     # read\nv = v + 1           # compute in the app\nSET counter v       # write",
+					"caption": "Read, compute, write: a lost update is possible"
+				},
+				{
+					"type": "paragraph",
+					"text": "Both may read 10 and both write 11, so the final value is 11 or 12. One increment was lost. The fix is to do the whole operation on the server: `INCR`, or `MULTI`/`EXEC` with `WATCH`, or a Lua script when several commands are involved."
+				},
+				{
+					"type": "heading",
+					"text": "Persistence: what survives a restart?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Memory is erased when power is lost. Redis can write to disk in two ways, or both, or neither."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"RDB (snapshot)",
+						"AOF (append-only file)"
+					],
+					"rows": [
+						[
+							"What it saves",
+							"A compact picture of all data at one instant, from time to time",
+							"A log of every write, replayed on restart"
+						],
+						[
+							"File",
+							"Small, loads fast",
+							"Larger"
+						],
+						[
+							"Loss in a crash",
+							"Everything after the last snapshot",
+							"Much less"
+						],
+						[
+							"Use",
+							"Backups; a cache where minutes of loss are fine",
+							"Data that matters"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "RDB is a photograph of your room taken every 5 minutes. AOF is a diary where you write down every single thing you move. After a mess, the photo brings back the room as it was minutes ago. The diary lets you rebuild it almost exactly."
+				},
+				{
+					"type": "paragraph",
+					"text": "Example: RDB only. The last snapshot is from 12:00:00, the next would be at 12:05:00, and at 12:03:40 the process is killed. After restart, Redis goes back to 12:00:00 and loses 3 min 40 s of writes."
+				},
+				{
+					"type": "heading",
+					"text": "AOF and fsync"
+				},
+				{
+					"type": "paragraph",
+					"text": "Writing to a file is not the same as being safe: the operating system holds data in memory until an **fsync**. `appendfsync` chooses how often:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"`always`: sync after every batch of commands. Safest, slowest.",
+						"`everysec`: once per second. The default. If the power fails, about the last second of writes can be lost.",
+						"`no`: the operating system decides."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "If both RDB and AOF are enabled, on restart Redis rebuilds the data from the **AOF**, because it is the most complete. Combining both is recommended when the data matters."
+				},
+				{
+					"type": "heading",
+					"text": "Snapshots and memory"
+				},
+				{
+					"type": "paragraph",
+					"text": "To take a snapshot without stopping, Redis **forks**: a child process sees memory as it was at that instant and writes it to a temporary file, which replaces the old one at the end. The system shares memory pages between parent and child and copies a page only when someone changes it. On a write-heavy instance, many pages get copied, so memory use can grow a lot during `BGSAVE`, much more than the data size."
+				},
+				{
+					"type": "heading",
+					"text": "Persistence is not replication"
+				},
+				{
+					"type": "paragraph",
+					"text": "`fsync` protects when a process or machine comes back with the same disk. A **replica** on another machine protects against losing the machine. But Redis replication is **asynchronous** by default: a client can get `OK` while the write exists only on the primary. If the primary's machine is destroyed right then, and the replica is promoted, that write is lost, even with `appendfsync always`."
+				},
+				{
+					"type": "heading",
+					"text": "Is persistence needed for a cache?"
+				},
+				{
+					"type": "paragraph",
+					"text": "If Redis is a pure cache in front of PostgreSQL with cache-aside, every write goes to PostgreSQL first. A restart just means a cold cache. But with write-behind, Redis briefly holds the **only copy** of some writes. A restart loses them. Then it is no longer just a cache, and it needs persistence and replication."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "RDB = photos, AOF = diary. A command is atomic, a sequence is not. Persistence and replication solve different failures."
+				}
+			]
+		},
+		{
+			"id": "consistency-trade-offs",
+			"title": "Consistency trade-offs",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A cache trades **freshness** for **speed**. It answers with a copy without asking the source. A read that returns a cached value older than the current value in the database is a **stale read**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Why can't we update the database and the cache in one step? They are two separate systems. An ordinary database transaction covers only the database, not Redis. Between the two writes there is always a small time when they disagree, and a failure in that time can make the difference last. We say they are **eventually consistent**: they agree later, after invalidation or TTL, not at the same instant."
+				},
+				{
+					"type": "heading",
+					"text": "The race in cache-aside"
+				},
+				{
+					"type": "paragraph",
+					"text": "The cache entry has just expired. The price in the database is 10. Follow the two actors:"
+				},
+				{
+					"type": "diagram",
+					"content": "time   Reader R                  Writer W\nt1     GET price:7 -> miss\nt2     SELECT price -> 10\nt3                                 UPDATE price = 12 (commit)\nt4                                 DEL price:7\nt5     SET price:7 = 10",
+					"caption": "A reader holding the old value stores it after the delete"
+				},
+				{
+					"type": "paragraph",
+					"text": "At the end the database has 12 and the cache has 10. The delete came too early and no other invalidation is on its way. The old value stays until the TTL ends, which is why the TTL is the safety net."
+				},
+				{
+					"type": "heading",
+					"text": "Order of the steps"
+				},
+				{
+					"type": "paragraph",
+					"text": "A write can be (A) update the database, then delete the key, or (B) delete the key, then update the database. Order A is preferred. In B, the window is as long as the whole database write, and any read that misses inside it puts the old value back in the cache. In A, the problem needs a slow reader that read the database before the commit and writes to the cache after the delete. That is rare, because reads are usually faster than writes."
+				},
+				{
+					"type": "heading",
+					"text": "Techniques that reduce stale values"
+				},
+				{
+					"type": "paragraph",
+					"text": "None of these makes cache and database atomic. They reduce the chance or the duration of staleness:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Delayed double delete**: delete the key, update the database, wait a little, delete the key again, to remove what slow readers wrote in the meantime.",
+						"**Versions**: store a version with each value and reject older writes.",
+						"**Invalidation from the change log**: a separate process watches the database changes and deletes keys, so the application does not have to remember.",
+						"**Short TTL**: limits the worst case."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Replicas that lag"
+				},
+				{
+					"type": "paragraph",
+					"text": "Suppose writes go to the primary and cache misses are filled from a replica that is 2 s behind. The writer commits and deletes the key at t = 0. At t = 0.5 s a reader misses, reads the replica (which still says 'Ana'), and stores it with a TTL of 600 s. At t = 2 s the replica finally gets the update. The cache keeps 'Ana' for about 600 s. Fixes: fill the cache from the primary after a write, delay the invalidation beyond the replica lag, or invalidate from the change log."
+				},
+				{
+					"type": "heading",
+					"text": "Concurrent writers and write-through"
+				},
+				{
+					"type": "paragraph",
+					"text": "Two writers use write-through, with no lock or version. A commits 4 in the database first, then B commits 3. But B's cache write arrives before A's. The database ends with 3 and the cache with 4, the older write. It stays wrong until the next write. Deleting the key, or using a version, avoids this."
+				},
+				{
+					"type": "heading",
+					"text": "Write-behind and direct database writes"
+				},
+				{
+					"type": "paragraph",
+					"text": "In write-behind the cache holds the newest version and the database lags. If a script updates the database directly between two flushes, the cache does not see it, and the next flush overwrites the script's change: a **lost update**, with no error. Write-behind works only if every write goes through the cache."
+				},
+				{
+					"type": "heading",
+					"text": "Read-your-own-writes"
+				},
+				{
+					"type": "paragraph",
+					"text": "The most annoying inconsistency is when you save a form and the next screen shows the old value. **Read-your-own-writes** promises that a user who just wrote sees that write in their own next reads. A common way: for a short time after a write, that user's reads skip the cache or go to the primary database. Everybody else may still see slightly older data."
+				},
+				{
+					"type": "heading",
+					"text": "What can be stale?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ask: what happens if I act on a late value? A view counter or a product list can be a few seconds old with no harm. An account balance used to authorise a withdrawal must not be stale, or money that is not there could be paid. Such reads must go to the source, inside the same transaction that takes the decision."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Data",
+						"Stale OK?",
+						"Where to read"
+					],
+					"rows": [
+						[
+							"View counter, listings, recommendations",
+							"Yes, for seconds",
+							"Cache"
+						],
+						[
+							"Balance before a withdrawal, stock at purchase, permissions",
+							"No",
+							"The database, in the same transaction"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Cache and database are eventually consistent. Update the database first, then delete the key. Keep a TTL as safety net. Decisions that cannot be undone read the source."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "You have seen the pieces. Here is how they fit, like a checklist for any cache design."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Question",
+						"Tools you learned"
+					],
+					"rows": [
+						[
+							"Is a cache worth it?",
+							"Measure hit rate; compute average latency; check the break-even point"
+						],
+						[
+							"Where does the copy live?",
+							"Browser, CDN, in-process, Redis, buffer pool"
+						],
+						[
+							"Who fills it and writes it?",
+							"Cache-aside, read-through, write-through, write-behind, write-around, refresh-ahead"
+						],
+						[
+							"How does an old copy leave?",
+							"TTL, invalidation, versioned keys, soft purge"
+						],
+						[
+							"What if memory is full?",
+							"Eviction: LRU, LFU, FIFO, Redis maxmemory policies"
+						],
+						[
+							"What if everyone misses at once?",
+							"Lock, early refresh, jitter, Bloom filter, negative cache"
+						],
+						[
+							"How do browsers and CDNs cache?",
+							"Cache-Control, ETag, 304, Vary, stale-while-revalidate"
+						],
+						[
+							"What survives a restart?",
+							"RDB, AOF, replication"
+						],
+						[
+							"How wrong can it be?",
+							"Eventual consistency, TTL window, read-your-own-writes"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Common mistakes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Thinking `no-cache` means \"never store\". It means \"validate first\".",
+						"Writing a key with `SET` and forgetting that it erased the TTL.",
+						"Using only a longer TTL to stop a stampede.",
+						"Storing personal pages in a shared cache.",
+						"Using write-behind for data that cannot be lost.",
+						"Invalidating `product:5` and forgetting the lists and searches that contain it.",
+						"Running `KEYS *` on a big production Redis.",
+						"Adding a cache without measuring the hit rate."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A cache is like a notebook where you copy answers from the big book. It makes homework fast. But you must decide when to copy, when to erase, what to do when the notebook is full, and how to notice that the big book changed."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Every cache design answers the same three questions: what to keep, when to throw it away, and how stale is acceptable."
+				}
+			]
+		}
+	]
+}

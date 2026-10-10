@@ -1,0 +1,436 @@
+{
+	"area": "file-systems",
+	"intro": [
+		"Think about your school backpack. Inside there are notebooks, and in each notebook there are pages. If you want to find your maths homework, you do not read the whole bag from the start: you know which notebook it is in, and you open it at the right page. A computer has the same problem. It keeps millions of facts (photos, songs, game saves, bank records) on a drive, and it has to find any one of them fast, and not lose them when the power goes out. The part of the computer that solves this is called the **file system**, and the clever ways to arrange the facts inside a file are called **file organisation**.",
+		"This is a big deal because a drive is very, very slow compared with the memory of the computer. Fetching something from the drive can take as long as a hundred thousand fetches from memory. So the whole subject is built on one idea: **count how many times you go to the drive**, and try to go as few times as possible. Phones, web browsers, databases (like the one behind a shop), video games and your own laptop all use the tricks in this summary.",
+		"By the end you will know how a disk and a flash drive work and what an access costs, what a file is and what you can do with it, the four ways of placing a file on a disk (contiguous, linked, FAT and i-nodes), how folders and links work, how the computer remembers which space is free and how it survives a crash (journaling), how to arrange records inside a file, how to compress them, how indexes and B-trees find a record in a few steps, and how to sort a file that is too big for memory. Then you will be ready for the quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: two halves of one subject",
+			"blocks": [
+				{ "type": "paragraph", "text": "To the computer, a [[file|a named bag of bytes that stays on the drive after the power is turned off]] is just a long row of **bytes** (a byte is one small number, from 0 to 255). The computer does not know if the bytes are a photo, a song or a list of names. The meaning is decided by the programs that write and read them." },
+				{ "type": "callout", "tone": "analogy", "text": "A file system is like a library. The shelves are the drive. The catalogue card says which shelf holds which book (that is the directory and the i-node). The librarian keeps a list of empty shelf spaces (free space) and a diary of what she is doing, so that if she is interrupted she can finish the job later (the journal)." },
+				{ "type": "paragraph", "text": "This subject has two halves. The **first half** is the work of the operating system: files, names, folders, placing the bytes on the drive, free space and crash safety. The **second half** is the work of the programmer who designs the inside of a file: records, indexes, B-trees, sorting and compression. Both halves obey the same law: the drive is slow, so we count drive accesses." },
+				{ "type": "heading", "text": "Words you will meet" },
+				{ "type": "table", "headers": ["Word", "What it means", "Everyday picture"], "rows": [
+					["Block (or cluster)", "The smallest piece of drive that the file system hands out or reads at one time, for example 4,096 bytes", "One page of a notebook"],
+					["Record", "One item of information in a file, such as all the data of one customer", "One line of a class list"],
+					["Field", "One part of a record, such as the name or the city", "One column of the class list"],
+					["Key", "A field used to find a record, such as an identity number", "The student number"],
+					["Index", "A small sorted list of keys and where their records are", "The table of contents of a book"],
+					["Directory", "A list of names and where the files are", "A folder"],
+					["I-node", "A small card that holds the facts about one file and the addresses of its blocks", "A library card for one book"]
+				] },
+				{ "type": "callout", "tone": "remember", "text": "A file is only a row of bytes. Fields, records and keys are decided by the program. And the cost of everything is measured in drive accesses, not in how many small calculations the processor does." }
+			]
+		},
+		{
+			"id": "secondary-storage",
+			"title": "Secondary storage: disks, flash and the cost of an access",
+			"blocks": [
+				{ "type": "paragraph", "text": "Memory (RAM) is like the desk where you work: small, but anything on it is one second away. The drive, also called [[secondary storage|storage that is bigger and cheaper than memory and keeps its data without power]], is like a library across town: huge, but every trip takes a long time. A typical memory access takes about 100 nanoseconds. A typical access to a magnetic disk takes about 10 milliseconds. That is a ratio of 100,000 to 1." },
+				{ "type": "chart", "title": "Time of one access (in nanoseconds)", "unit": "ns", "bars": [
+					{ "label": "Main memory", "value": 100 },
+					{ "label": "Magnetic disk", "value": 10000000 }
+				] },
+				{ "type": "paragraph", "text": "Because of this gap, the work the processor does between two disk accesses is almost free. What decides how fast a file program is, is **how many disk accesses it makes**. Indexes, B-trees and external sorting all come from this one fact." },
+				{ "type": "heading", "text": "Inside a magnetic disk" },
+				{ "type": "diagram", "content": "   a disk with 2 platters (4 surfaces)\n\n   surface = a flat circle covered with magnetic material\n   track   = one ring on a surface\n   sector  = one slice of a track (often 512 bytes)\n   cylinder = the same track on every surface,\n              stacked like the rings of a tin can\n\n        track 5 on surface 0   --+\n        track 5 on surface 1   --+-- cylinder 5\n        track 5 on surface 2   --+\n        track 5 on surface 3   --+", "caption": "The tracks of the same radius on all surfaces form a cylinder" },
+				{ "type": "paragraph", "text": "The disk spins and an arm with a reading head moves in and out. The arm can read all the tracks of a cylinder without moving, so it pays to write a file along one cylinder before going to the next." },
+				{ "type": "paragraph", "text": "The **capacity** of a disk is the product: sector size x sectors per track x tracks per cylinder x number of cylinders. For example, 512 bytes x 32 sectors x 4 tracks x 100 cylinders = 6,553,600 bytes, which is 6.25 MiB (1 MiB = 2^20 = 1,048,576 bytes). The first PC BIOS could address at most 1,024 cylinders, 16 heads and 63 sectors, and that limit is where the old **504 MiB barrier** came from." },
+				{ "type": "heading", "text": "The three parts of an access" },
+				{ "type": "table", "headers": ["Part", "What happens", "Time"], "rows": [
+					["Seek", "The arm moves to the right track", "Milliseconds (about 8 ms on average)"],
+					["Rotational delay", "We wait for the wanted sector to pass under the head", "On average half a turn"],
+					["Transfer", "The bytes are read or written", "Very small per block"]
+				], "caption": "Access time = seek + rotational delay + transfer" },
+				{ "type": "paragraph", "text": "One full turn takes 60,000 / rpm milliseconds, where rpm is turns per minute. A disk at 5,400 rpm needs 60,000 / 5,400 = 11.1 ms per turn, so the average rotational delay (half a turn) is about 5.6 ms. A faster disk, at 10,000 rpm, cuts it in the same proportion." },
+				{ "type": "paragraph", "text": "Seek and rotation are mechanical, so they are slow. Transfer is quick. So reading **neighbouring blocks** pays seek and rotation once, but reading **scattered blocks** pays them again every time. Take 100 blocks, a seek of 10 ms, a rotational delay of 5 ms and a transfer of 0.2 ms per block. Reading them in a row costs 10 + 5 + 100 x 0.2 = 35 ms. Reading them one by one in random places costs 100 x (10 + 5 + 0.2) = 1,520 ms. That is about 43 times longer, with the same data." },
+				{ "type": "callout", "tone": "analogy", "text": "Reading in a row is like a bus that stops once and loads the whole class. Random reading is like sending one taxi for each child: every child pays for the whole trip." },
+				{ "type": "heading", "text": "Blocking: many records per block" },
+				{ "type": "paragraph", "text": "A disk read always brings a whole block, not one record. If a block holds 20 records (the **blocking factor**), a file of 6,000 records takes 300 blocks. A sequential search for a key that exists examines about half of the file on average, so it does about 150 reads, not 3,000. Blocking divides the reads by the blocking factor, but the search is still linear." },
+				{ "type": "heading", "text": "Flash memory (SSD)" },
+				{ "type": "paragraph", "text": "A [[SSD|solid state drive: a drive with no moving parts, made of flash chips]] has no arm and no spinning, so it has no seek. But NAND flash has a strange rule: it reads and writes in small **pages**, yet it can only **erase** a whole **erase block** (many pages together), and each erase block can be erased only a limited number of times." },
+				{ "type": "list", "items": [
+					"A page that already has data cannot be rewritten in place. The drive writes the new version in a free page, and marks the old page as invalid.",
+					"The **flash translation layer (FTL)** is a small program inside the SSD. It keeps a table from the logical block that the file system asks for to the real page, so the SSD looks like an ordinary disk.",
+					"**Garbage collection** copies the valid pages out of an erase block that is mostly invalid and erases it.",
+					"**Wear levelling** spreads the writes over all blocks so that none wears out first.",
+					"The **TRIM** command tells the SSD which blocks the file system has released, so the SSD does not copy dead pages for nothing."
+				] },
+				{ "type": "heading", "text": "Magnetic tape" },
+				{ "type": "paragraph", "text": "On tape, every block is followed by an empty **gap**, because the tape needs room to stop and speed up again. The length used is S = n x (b + g), where n is the number of blocks, b is the length of data in one block and g is the gap. Example: 1,000 records of 100 bytes, at 1,000 bytes per inch, with a gap of 0.4 inch. One record per block: b = 0.1 inch, S = 1,000 x 0.5 = 500 inches. Ten records per block: n = 100, b = 1 inch, S = 100 x 1.4 = 140 inches. Blocking makes the tape 3.6 times shorter, because there are ten times fewer gaps." },
+				{ "type": "callout", "tone": "remember", "text": "Access time = seek + rotational delay + transfer. Disk against memory is about 100,000 to 1. So good file structures reduce the number of seeks, not the number of bytes." }
+			]
+		},
+		{
+			"id": "files-attributes-and-operations",
+			"title": "Files, attributes and operations",
+			"blocks": [
+				{ "type": "paragraph", "text": "When you write `fopen(\"clientes.dat\", \"r\")` in C, two different things meet. The **physical file** is the real row of bytes that the operating system keeps on the drive. The **logical file** is the name your program uses for it, for example the variable `fp` of type `FILE *`. The **open** operation ties them together. The same program can be tied to a different physical file just by changing the name." },
+				{ "type": "callout", "tone": "analogy", "text": "The physical file is a real book on a shelf. The logical file is the library card you hold while you read it. Opening is the moment the librarian ties your card to that book." },
+				{ "type": "heading", "text": "What is inside: bytes, and file types" },
+				{ "type": "paragraph", "text": "UNIX and Windows treat a regular file as a plain **sequence of bytes**. The system does not know what the bytes mean, so fields, records and lines are decided by the **application**. This is the most flexible model, and that is why it won. The system knows only a few file types: **regular** files, **directories**, and **special files** that stand for devices (character special for keyboards, block special for disks). Among regular files, the only format the kernel really must understand is the **executable**, and it recognises it by the **magic number** at the start of the file. A file extension such as `.txt` is just a habit that programs may follow or ignore." },
+				{ "type": "heading", "text": "Attributes" },
+				{ "type": "paragraph", "text": "Besides its bytes, a file has facts about it, called **attributes** or metadata: size, owner, permissions, the number of links, and three timestamps. The facts live in the file's i-node, not in the file's bytes." },
+				{ "type": "table", "headers": ["Timestamp", "Meaning", "What changes it"], "rows": [
+					["atime", "Last access to the contents", "Reading the file"],
+					["mtime", "Last modification of the contents", "Writing to the file (this also changes ctime)"],
+					["ctime", "Last change of the i-node (metadata)", "Writing, and also `chmod`, `chown`, `ln`. It is not the creation date"]
+				], "caption": "Running chmod on a file changes only its ctime, because the contents were neither read nor written" },
+				{ "type": "heading", "text": "Operations and the current offset" },
+				{ "type": "paragraph", "text": "Every open file has a **current offset**: the place where the next read or write happens. `read` and `write` move it forward. `lseek` only **changes the offset**. It does no input or output, so it is cheap. The real cost appears on the next read, when the system turns the offset into a block and fetches it from the drive (unless it is already in the cache)." },
+				{ "type": "heading", "text": "Opening modes of fopen" },
+				{ "type": "table", "headers": ["Mode", "File must exist?", "What happens to old contents", "Where writes go"], "rows": [
+					["`r`", "Yes", "Kept", "Read only"],
+					["`r+`", "Yes", "Kept", "At the current offset"],
+					["`w`, `w+`", "No (it is created)", "Cut to zero bytes", "At the current offset"],
+					["`a`, `a+`", "No (it is created)", "Kept", "Always at the end, even after `fseek`"]
+				] },
+				{ "type": "heading", "text": "Descriptors, open-file entries and i-nodes" },
+				{ "type": "diagram", "content": "process table            open-file table        i-node table\n(per process)            (shared by system)     (one per file)\n\n fd 3 ------------+--->  entry A: offset 2 ----+\n fd 4 (dup of 3) -+                            +--> i-node of f\n fd 5 ----------------->  entry B: offset 0 ----+", "caption": "dup and fork copy the descriptor; every new open creates a new entry" },
+				{ "type": "paragraph", "text": "There are three levels. A **descriptor** is a small number in the table of the process. It points to an **open-file entry**, which holds the current offset and the opening mode. That points to the **i-node**, which has the attributes and the blocks. `dup` and `fork` copy the descriptor, so both copies share one entry and one offset. A separate `open` of the same file makes a new entry with its own offset." },
+				{ "type": "code", "language": "c", "content": "// the file holds the bytes 0123456\nint a = open(\"f\", O_RDONLY);\nint b = dup(a);                 // same open-file entry as a\nint c = open(\"f\", O_RDONLY);    // a new entry, offset 0\nchar buf[2], x, y;\nread(a, buf, 2);                // buf = '0','1'; shared offset is now 2\nread(b, &x, 1);                 // x = '2', because the offset is shared\nread(c, &y, 1);                 // y = '0', because c has its own offset" },
+				{ "type": "paragraph", "text": "This is why a parent and a child process, after `fork`, write one after the other into the same output file instead of writing over each other." },
+				{ "type": "heading", "text": "Two layers of buffer" },
+				{ "type": "list", "items": [
+					"The **C library buffer** lives in the memory of your process. `fwrite` puts bytes there to avoid one system call per call. `fflush` or `fclose` sends them to the kernel. If the process is killed first (for example by SIGKILL), these bytes are lost.",
+					"The **kernel cache** (page cache) receives the bytes on `write` and survives the death of the process. `fsync` forces it to the drive. These bytes are lost only if the whole machine fails first."
+				] },
+				{ "type": "heading", "text": "Sparse files and memory mapping" },
+				{ "type": "paragraph", "text": "If you create an empty file, `lseek` to offset 40,960 and write one byte, the file becomes a **sparse file**. Its logical size (shown by `ls -l`) is 40,961 bytes, but with 4 KB blocks only the block that holds that last byte is allocated, so `du` shows one block. The skipped part is a **hole**, and reading inside it returns zeros without touching the disk. Copying a sparse file byte by byte can fill a disk." },
+				{ "type": "paragraph", "text": "With `mmap` a process can **map** a file into memory: a range of addresses corresponds to the bytes of the file, and the system loads pages when they are touched (demand paging). There is no copy between the kernel cache and a buffer of the program, and random access is simple. But the program no longer decides when the data reaches the drive, unless it calls `msync`." },
+				{ "type": "callout", "tone": "warning", "text": "A successful `write` does not mean the data is safe on the drive. It may still be in a buffer. Only `fflush` plus `fsync` push it all the way down." }
+			]
+		},
+		{
+			"id": "allocation-methods",
+			"title": "Allocation: contiguous, linked, FAT and i-nodes",
+			"blocks": [
+				{ "type": "paragraph", "text": "A file may need many blocks. **Allocation** is the choice of which blocks of the drive belong to which file, and how the system remembers it. There are four classic answers." },
+				{ "type": "callout", "tone": "analogy", "text": "Imagine a cinema and a class that wants to sit together. Contiguous: the class gets seats 10 to 19, side by side. Linked: each child holds a note saying where the next child sits. FAT: all the notes are collected on one list at the front desk. I-node: the teacher holds one card with the address of every child." },
+				{ "type": "heading", "text": "1. Contiguous allocation" },
+				{ "type": "paragraph", "text": "The file lies in a row of neighbouring blocks. The directory entry needs only two numbers: the **starting block** and the **number of blocks**. The address of block k is start + k, one addition. So random access and sequential reading are very fast. The problems: a file that must grow may find no room after it, and when files are deleted the free space is chopped into **holes**. This is **external fragmentation**: the total free space may be enough, but no hole is big enough for a new file. The cure, **compaction**, is expensive." },
+				{ "type": "heading", "text": "2. Linked allocation" },
+				{ "type": "paragraph", "text": "Each block carries the number of the next block, and the directory holds the number of the first. Any free block can be used, so there is no external fragmentation. But to reach logical block k (counting from 0) the system must read blocks 0, 1, ... up to k, because every pointer is on the disk: that is **k + 1 reads**. Also, the pointer takes a few bytes of every block, so the data part is no longer a power of two, which annoys programs that read whole blocks." },
+				{ "type": "heading", "text": "3. FAT (file allocation table)" },
+				{ "type": "paragraph", "text": "The FAT takes all the pointers out of the blocks and puts them in a **table with one entry per disk block**. Entry i says which block follows block i, or marks the end or a free block. The whole block is now free for data, and the system follows the chain **in memory**." },
+				{ "type": "diagram", "content": "entry:   0     1     2     3     4     5     6     7\nvalue:   -     5     EOF   FREE  1     2     FREE  -\n\nfile starts at block 4 (from the directory):\n   4 --> 1 --> 5 --> 2 --> EOF       file = blocks 4, 1, 5, 2", "caption": "Following a chain in a FAT" },
+				{ "type": "paragraph", "text": "The price: the **entire table must be in memory**, and it is as big as the disk, not as the number of files in use. The width of the entry limits the volume: FAT-12, FAT-16 and FAT-32 use 12, 16 and 28 bits of address. The largest volume is the **number of clusters x the cluster size**. Example: 12-bit entries and 4 KB clusters give 2^12 x 2^12 bytes = 16 MiB. That is why bigger volumes needed bigger clusters (more waste), until the entry was widened." },
+				{ "type": "heading", "text": "4. I-nodes" },
+				{ "type": "paragraph", "text": "An **i-node** is a small card for one file: its attributes plus the addresses of its blocks. Only the i-nodes of **files in use** need to be in memory, so the memory needed is proportional to the number of open files, while a FAT is proportional to the size of the disk. That is the big advantage." },
+				{ "type": "paragraph", "text": "The i-node has a few **direct pointers** to data blocks, then a **single indirect** pointer (to a block full of pointers), a **double indirect** (a block of blocks of pointers) and a **triple indirect**. Small files, which are the majority, live entirely in the direct pointers. A block holds (block size / pointer size) numbers. With 1 KB blocks and 4-byte numbers that is 256." },
+				{ "type": "chart", "title": "Blocks covered by each kind of pointer (1 KB blocks, 4-byte numbers, 10 direct pointers)", "unit": "blocks", "bars": [
+					{ "label": "Direct (10 pointers)", "value": 10 },
+					{ "label": "Single indirect", "value": 256 },
+					{ "label": "Double indirect", "value": 65536 },
+					{ "label": "Triple indirect", "value": 16777216 }
+				] },
+				{ "type": "paragraph", "text": "How to find a byte, step by step. Take 2 KB blocks, 4-byte numbers (so 512 numbers per block) and 8 direct pointers, and find the byte at offset 3,000,000. First turn the offset into a logical block: 3,000,000 div 2,048 = 1,464. The direct pointers cover blocks 0 to 7, the single indirect covers 8 to 519, and the double indirect starts at 520. So the block is in the double indirect area at position 1,464 - 520 = 944. Split 944 by 512: quotient 1, remainder 432. Read the double indirect block, take its entry 1, read that block, take its entry 432, and read the data block." },
+				{ "type": "paragraph", "text": "Convention used in this summary and in the quiz: the i-node is already in memory and nothing is cached, and the count of blocks read includes the data block. So the example above reads 3 blocks: the double indirect, one single indirect, and the data. A direct block costs 1 read, a single indirect costs 2, a double 3 and a triple 4." },
+				{ "type": "paragraph", "text": "**The largest file** is the smallest of three independent limits: how much the pointer tree can reach, how many blocks the block-number width can name, and how large a number the **size field** of the i-node can hold. Real systems were limited by each one in turn, which is why size fields moved to 64 bits." },
+				{ "type": "heading", "text": "Extents, i-node shortage and small files" },
+				{ "type": "list", "items": [
+					"An **extent** (called a **run** in NTFS) records a stretch of contiguous blocks with two numbers: the start and the length. A file in few pieces needs very little metadata. It is a middle path between contiguous allocation and one pointer per block. ext4 and NTFS use it.",
+					"A classic UNIX volume has two things that can run out: data blocks and i-nodes. The number of i-nodes is fixed when the disk is formatted. A disk full of tiny files can say 'no space left' when creating a new file although thousands of blocks are free. The command `df -i` shows the i-nodes.",
+					"In **NTFS**, everything about a file is an attribute of its record in the **MFT**, the data included. A tiny file (say 200 bytes) is stored **inside the MFT record** (resident). Big data goes to clusters described by runs (non-resident)."
+				] },
+				{ "type": "heading", "text": "Fragmentation: the two kinds" },
+				{ "type": "paragraph", "text": "**Internal fragmentation** is space that is given to a file and not used by it: the leftover in its last block. Example: clusters of 4,096 bytes, files of 100, 5,000 and 8,192 bytes. They take 1, 2 and 2 clusters, so the waste is 3,996 + 3,192 + 0 = 7,188 bytes. On average half a block is lost per file. **External fragmentation** is free space cut into pieces between files that are too small to use." },
+				{ "type": "table", "headers": ["Method", "Where the addresses are", "Random access", "Weak point"], "rows": [
+					["Contiguous", "Start and length in the directory", "Very fast", "External fragmentation, hard to grow"],
+					["Linked", "Inside each block", "Slow (k + 1 reads)", "Pointer eats the block; scattered file"],
+					["FAT", "One table for the whole disk", "Fast (chain in memory)", "Whole table in memory, grows with the disk"],
+					["I-node", "One card per file, with indirect blocks", "A few reads", "Number of i-nodes fixed at format time"]
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Contiguous: start + length. Linked: pointer in the block. FAT: all pointers in one table in memory. I-node: one card per file, with direct and indirect pointers. Only the i-nodes of open files must be in memory." }
+			]
+		},
+		{
+			"id": "directories-and-links",
+			"title": "Directories and links",
+			"blocks": [
+				{ "type": "paragraph", "text": "You do not want to remember that your homework is in i-node 48,213. You want to call it `homework.txt`. A **directory** is the thing that joins names to files. In a classic UNIX file system a directory is just a table of pairs: a **name** and an **i-node number**. The attributes and the block addresses live in the i-node, not in the directory entry." },
+				{ "type": "callout", "tone": "analogy", "text": "A directory is a phone book. It lists names and numbers. It does not hold the person. The i-node number is the phone number; the i-node is the person who answers." },
+				{ "type": "heading", "text": "Paths" },
+				{ "type": "paragraph", "text": "An **absolute path** starts at the root `/` and does not depend on where the process is. A **relative path** is resolved from the **working directory** of the process. Every directory has two special entries: `.` (the directory itself) and `..` (its parent). They are ordinary names stored in the directory. So if the working directory is `/home/ana`, the path `docs/../notes.txt` goes into `docs`, back up, and ends at `/home/ana/notes.txt`." },
+				{ "type": "heading", "text": "How the system resolves a path" },
+				{ "type": "paragraph", "text": "To open `/usr/ast/mbox` the system walks the path name by name. For each name it needs two reads: the **block of the current directory** (to find the i-node number of the next name) and then **that i-node** (to learn where the blocks of the next level are)." },
+				{ "type": "diagram", "content": "open(\"/a/b/c\")      root i-node already in memory\n\n 1. read block of /      -> finds i-node number of a\n 2. read i-node of a\n 3. read block of a      -> finds i-node number of b\n 4. read i-node of b\n 5. read block of b      -> finds i-node number of c\n 6. read i-node of c     -> now in memory", "caption": "3 components cost 6 reads when nothing is cached. About 2n reads for n components." },
+				{ "type": "paragraph", "text": "This is why systems keep a **name cache**. We assume every directory fits in one block." },
+				{ "type": "heading", "text": "Hard links and symbolic links" },
+				{ "type": "table", "headers": ["Property", "Hard link", "Symbolic (soft) link"], "rows": [
+					["What it is", "Another directory entry with the **same i-node number**", "A small file whose content is a **path**"],
+					["Cross to another partition?", "No: the i-node number only means something inside one file system", "Yes: a path can point anywhere"],
+					["Point to a directory?", "Not allowed for ordinary users", "Yes"],
+					["If the target is deleted", "The data stays while another name exists", "The link is left broken (dangling)"],
+					["Cost", "No new i-node", "One more i-node and one more path resolution on every use"]
+				] },
+				{ "type": "heading", "text": "The link count" },
+				{ "type": "paragraph", "text": "The i-node keeps a **link count**: how many directory entries point to it. When a name is removed (`unlink`) the count goes down, and when it reaches zero (and nobody has the file open) the system frees the file. For a directory: one link comes from its name in the parent, one from its own `.` entry, and one from the `..` entry of **each direct subdirectory**. So an empty directory has a count of 2, and a directory with 3 subdirectories has 2 + 3 = 5. The count minus 2 is the number of subdirectories." },
+				{ "type": "paragraph", "text": "Why can an ordinary user not make a hard link to a directory? Because the count works as the rule 'free it at zero' only when the directory graph has **no cycles**. A cycle would keep a count above zero for something nobody can reach, and a garbage collector would be needed to find it. A symbolic link may point to a directory because it does not enter the count, and programs that walk the tree can simply refuse to follow it." },
+				{ "type": "heading", "text": "Moving a file" },
+				{ "type": "paragraph", "text": "`mv` inside one file system calls `rename`: it adds an entry in the new directory and removes the old one. No data block is touched, so moving a 4 GB file is instant. Across two file systems the i-node number is not valid, so the system must **copy** the data and delete the original." },
+				{ "type": "callout", "tone": "remember", "text": "Directory entry = name + i-node number. Hard link = another name for the same i-node (same file system only). Symbolic link = a file that contains a path. Moving inside one file system changes only directory entries." }
+			]
+		},
+		{
+			"id": "free-space-and-journaling",
+			"title": "Free space management and journaling",
+			"blocks": [
+				{ "type": "paragraph", "text": "When you save a new file, the system must find empty blocks. So it needs a record of which blocks are free. There are two classic ways." },
+				{ "type": "heading", "text": "Bitmap" },
+				{ "type": "paragraph", "text": "A **bitmap** has **one bit per block**: 1 means used, 0 means free (or the other way round). Its size is fixed, whatever the occupancy of the disk, and it makes it easy to find neighbouring free blocks, which keeps files contiguous. Example: a disk of 2^38 bytes (256 GB) with 4 KB blocks (2^12 bytes) has 2^26 blocks, so the bitmap has 2^26 bits = 2^23 bytes = 8 MiB, which fits in 2^23 / 2^12 = 2,048 blocks. It costs about 0.003% of the disk." },
+				{ "type": "heading", "text": "Linked list of free blocks" },
+				{ "type": "paragraph", "text": "The free blocks are kept in a list. Each block of the list holds many free block numbers and one pointer to the next list block. With 2 KB blocks and 32-bit numbers, a list block holds 512 numbers: 511 free block numbers and 1 pointer. To record 102,200 free blocks you need 102,200 / 511 = 200 list blocks. The cost grows with the **free space**, not with the disk size, and the list can live inside the free blocks themselves, so it takes nothing from files." },
+				{ "type": "paragraph", "text": "Which is smaller? The bitmap costs B bits for a disk of B blocks. The list costs 32 bits per free block. The list wins only if 32 x (free blocks) < B, that is, when **less than 1/32 of the disk (about 3%) is free**. That is almost a full disk, so the bitmap is the common choice." },
+				{ "type": "heading", "text": "Crashes: why one operation is many writes" },
+				{ "type": "paragraph", "text": "Deleting a file in a UNIX file system without a journal takes several writes at different places of the disk: (1) remove the directory entry, (2) free the i-node, (3) return the data blocks to the free list. The power can fail between two of them." },
+				{ "type": "table", "headers": ["Crash happens after", "State of the disk", "How bad"], "rows": [
+					["Write 1 only", "The name is gone, but the i-node and the blocks still look in use", "Lost space (a leak)"],
+					["Writes 1 and 2", "No name, i-node free, but the blocks are in no file and not in the free list", "Lost space (a leak); no file is damaged"],
+					["If the order were wrong: blocks freed first", "A name still points to blocks that another file may receive", "Two files share a block: real data corruption"]
+				] },
+				{ "type": "paragraph", "text": "The order of the writes decides the damage. Releasing things **last** can only lose space, which is better than leaving a name that points to something already released. The space comes back only after a full check with **fsck**." },
+				{ "type": "heading", "text": "The consistency checker" },
+				{ "type": "paragraph", "text": "fsck builds two tables with a counter per block: how many times the block appears in some file, and how many times it appears in the free list. On a healthy disk every block has exactly (1, 0) or (0, 1)." },
+				{ "type": "table", "headers": ["In files", "In free list", "Meaning", "Fix"], "rows": [
+					["1", "0", "Normal, block in use", "None"],
+					["0", "1", "Normal, block free", "None"],
+					["0", "0", "**Missing block**: nobody has it, space is wasted", "Add it to the free list"],
+					["0", "2 or more", "Duplicate in the free list", "Rebuild the free list"],
+					["2 or more", "0", "Block in two files (dangerous)", "Copy the block, give each file its own"],
+					["1", "1", "Used and free at once (dangerous)", "Remove it from the free list"]
+				] },
+				{ "type": "heading", "text": "Journaling (write-ahead logging)" },
+				{ "type": "paragraph", "text": "A journal is a diary. Before touching the real structures, the system writes in the diary what it is about to do. Only after the diary entry is safe does it make the real changes. When they are done, the entry can be thrown away." },
+				{ "type": "diagram", "content": " 1. write the intended changes into the journal\n 2. write a COMMIT record   <-- the operation now counts\n 3. apply the changes to their real places\n 4. free the journal entry\n\n crash before 2 : no commit -> discard the entry (nothing happened)\n crash after 2  : commit    -> redo the entry (it all happens)", "caption": "Redo journal: each operation happens completely or not at all" },
+				{ "type": "paragraph", "text": "After a crash the system reads the journal, **redoes the committed transactions** and **discards the ones without a commit record**. That is much faster than scanning the whole disk." },
+				{ "type": "paragraph", "text": "Many file systems journal **only metadata** (i-nodes, directories, block maps): the journal stays small and fast, and the structures always return to a consistent state. But the **content** of a file that was still in the cache may be lost. Durability of the content needs `fsync` or a mode that journals data too, which writes each block twice." },
+				{ "type": "heading", "text": "Quotas" },
+				{ "type": "paragraph", "text": "To stop one user from filling the disk, the system keeps for each user the current use of blocks and i-nodes and two limits. The **soft limit** can be exceeded for a short time (the user gets warnings). The **hard limit** can never be exceeded: the allocation simply fails." },
+				{ "type": "callout", "tone": "remember", "text": "Bitmap: 1 bit per block, fixed size. Free list: 32 bits per free block, wins only if under 1/32 of the disk is free. A journal writes the intention first; recovery redoes committed work and drops the rest. A metadata journal protects the structures, not your data." }
+			]
+		},
+		{
+			"id": "record-organisation",
+			"title": "Record organisation: fixed, variable, RRN",
+			"blocks": [
+				{ "type": "paragraph", "text": "Suppose a program writes names and cities one after the other and the file looks like `AnaSilvaRecifeBrunoLimaNatal`. Where does the name end and the city begin? Nobody can tell. A file is just bytes, so the program must **write the structure down**. There are four classic ways to separate fields:" },
+				{ "type": "list", "items": [
+					"**Fixed-length fields**: every field has the same number of bytes, padded with spaces.",
+					"**Length indicator**: a number before each field says how many bytes it has.",
+					"**Delimiter**: a special character such as `|` after each field.",
+					"**Keyword and value**: pairs such as `city=Recife`."
+				] },
+				{ "type": "heading", "text": "Fixed-length records and the RRN" },
+				{ "type": "paragraph", "text": "If every record has the same size, the position of any record is **computed, not searched**. The **RRN** (relative record number) is the ordinal number of the record in the file. In this course the RRN starts at 0. If the file has a header of H bytes and each record has R bytes, the record with number RRN starts at byte" },
+				{ "type": "diagram", "content": "offset = H + RRN x R\n\nexample: H = 32, R = 100, RRN = 7\noffset = 32 + 7 x 100 = 732\n\nbyte 0       32        132       232\n     +--------+---------+---------+---------+\n     | header | RRN 0   | RRN 1   | RRN 2   | ...\n     +--------+---------+---------+---------+" },
+				{ "type": "paragraph", "text": "One seek goes straight to the record: constant time. This is the reason why direct access by RRN **requires** fixed-length records. Also, the number of records in a file is (file size - header) / record size. If the division is not exact, the file is damaged. Example: a file of 4,032 bytes with a header of 32 and records of 100 has (4,032 - 32) / 100 = 40 records." },
+				{ "type": "paragraph", "text": "The price is **internal waste**: every field is sized for the biggest value expected, so the leftover is padding. If a record has fields of 30, 20 and 14 bytes (64 in total) and the values use 3, 6 and 11 bytes, 64 - 20 = 44 bytes are padding." },
+				{ "type": "heading", "text": "Variable-length records" },
+				{ "type": "paragraph", "text": "Here each record has only the size it needs, often with a **length indicator** at the start. The file is smaller, but you lose direct access: the start of the next record is known only after reading the indicator of the current one. Example: records of 1 + 4, 1 + 7 and 1 + 3 bytes start at offsets 0, 5 and 13. To reach the 500th record you must walk through 499 records, so the time is proportional to n. The fix is a separate **index** with the offset of every record." },
+				{ "type": "table", "headers": ["Property", "Fixed length", "Variable length"], "rows": [
+					["Find record n", "One seek (offset by formula)", "Walk from the start, or use an index"],
+					["Space", "Padding is wasted (internal waste)", "Compact"],
+					["Deleting and reusing space", "Any free slot fits any record", "Holes of many sizes (external fragmentation)"]
+				] },
+				{ "type": "heading", "text": "The header record" },
+				{ "type": "paragraph", "text": "A **header record** at the start of the file holds facts about the whole file: a magic number, a version, the record size, the number of records, and so on. It makes the file **self-describing**: whoever opens it reads the header first and learns how to read the rest. The price is that the first data record no longer starts at byte 0." },
+				{ "type": "heading", "text": "Byte order (endianness)" },
+				{ "type": "paragraph", "text": "A number of 4 bytes can be stored with the big end first (**big-endian**) or the little end first (**little-endian**). If a program writes an integer by copying its bytes from memory, the file depends on the machine. The number 258 is 0x00000102. A big-endian machine writes the bytes 00 00 01 02. A little-endian machine that reads those bytes straight into an integer builds 0x02010000 = 33,619,968. A **portable format** fixes the byte order of each field, and programs convert on reading and writing. With one agreed format, N architectures need 2N converters instead of one for each pair." },
+				{ "type": "heading", "text": "The canonical form of a key" },
+				{ "type": "paragraph", "text": "A search compares bytes. 'maria silva', 'MARIA SILVA' and 'Maria  Silva ' look the same to you but not to the computer. The **canonical form** is the single, agreed way to write a key (for example capital letters, no accents, no extra spaces). Every program applies it before writing and before searching." },
+				{ "type": "callout", "tone": "remember", "text": "Fixed length: offset = header + RRN x record size, with RRN from 0. Variable length: the n-th record costs a walk, unless there is an index. Always write the structure of the file down: delimiters, indicators or a header." }
+			]
+		},
+		{
+			"id": "compression-and-space-reclamation",
+			"title": "Compression and reclaiming space",
+			"blocks": [
+				{ "type": "paragraph", "text": "What happens to the space of a record you delete? There are three answers, from the lazy one to the tidy one." },
+				{ "type": "list", "items": [
+					"**Mark it as deleted** and do nothing else. It is fast and can be undone. The space is still there, wasted.",
+					"**Compaction**: from time to time, rewrite the file without the marked records. The space returns, but the addresses change, so the **indexes must be rebuilt**.",
+					"**Reuse** the space on the next insertion, using a list of free records."
+				], "ordered": true },
+				{ "type": "heading", "text": "Fixed-length records: the free list as a stack" },
+				{ "type": "paragraph", "text": "With fixed-length records any free slot fits any new record, so a **stack** is enough. The header holds the RRN of the top. Each deleted slot holds the RRN of the one below it. Delete = push. Insert = pop. The list takes no extra space, since it lives inside the free slots. The file grows only when the stack is empty." },
+				{ "type": "code", "language": "text", "content": "start: top = -1 (empty)\nremove RRN 4   -> stack (top first): 4\nremove RRN 1   -> stack: 1, 4\ninsert P       -> P goes to RRN 1, stack: 4\nremove RRN 6   -> stack: 6, 4\ninsert Q       -> Q goes to RRN 6, stack: 4\ninsert R       -> R goes to RRN 4, stack: empty (top = -1)\ninsert S       -> stack empty, so S goes to the end of the file" },
+				{ "type": "heading", "text": "Variable-length records: which hole to use?" },
+				{ "type": "paragraph", "text": "Now the holes have different sizes, so the system must choose one that fits. Take a free list 50 -> 25 -> 90 -> 35 (sizes in bytes) and a new record of 30 bytes." },
+				{ "type": "table", "headers": ["Strategy", "Rule", "Picks here", "Leftover"], "rows": [
+					["First-fit", "The first hole that fits (fastest)", "50", "20"],
+					["Best-fit", "The smallest hole that fits", "35", "5"],
+					["Worst-fit", "The biggest hole", "90", "60"]
+				] },
+				{ "type": "paragraph", "text": "Best-fit leaves tiny leftovers that no record can use (if the smallest record is 10 bytes, a leftover of 5 is useless). Worst-fit tries to keep the leftover useful. No strategy removes **external fragmentation**, so we still join neighbouring holes and compact." },
+				{ "type": "paragraph", "text": "To be clear about the two kinds of waste in a file of records: **internal fragmentation** is the waste **inside** an allocated area (the padding of a fixed-length record). **External fragmentation** is the waste **between** allocated areas, in holes too small to use. Fixed-length records suffer only the internal kind. Variable-length records trade the internal for the external." },
+				{ "type": "heading", "text": "Compression: making the file smaller" },
+				{ "type": "paragraph", "text": "**Compact notation.** Replace a readable value by a binary code with just enough bits. For n different values you need ceil(log2 n) bits. For 100 values: 2^6 = 64 is too small and 2^7 = 128 is enough, so 7 bits. The file shrinks, but a text editor can no longer read it, and every program needs the code table." },
+				{ "type": "paragraph", "text": "**Run-length encoding (RLE).** A run of equal bytes becomes a short code: a marker, the value and the count. In the version used here a run of 4 or more equal bytes becomes 3 bytes, and shorter runs are copied as they are (a code of 3 bytes is not worth it for 2 or 3 bytes). Example, with marker FF: the bytes `41 41 41 41 41 42 43 43` become `FF 41 05` (the five 41), `42`, `43 43`, which is 3 + 1 + 2 = 6 bytes instead of 8. Data with no repetition does not shrink. RLE works well on images with uniform areas and on records full of padding." },
+				{ "type": "paragraph", "text": "**Huffman coding.** Give **short codes to frequent symbols** and long codes to rare ones. Build a tree: join the two least frequent nodes into a new node whose weight is their sum, and repeat until one tree is left. The code of a symbol is its path from the root (left = 0, right = 1)." },
+				{ "type": "diagram", "content": "frequencies: A 40, B 30, C 20, D 10  (total 100)\n\n step 1: C + D = 30\n step 2: B + (CD) = 60\n step 3: A + 60 = 100\n\n            (100)\n            /   \\\n          A(40)  (60)          A = 0\n                 /  \\          B = 10\n               B(30) (30)      C = 110\n                     /  \\      D = 111\n                  C(20) D(10)", "caption": "Huffman tree. Ties can be broken either way; the total size is the same." },
+				{ "type": "paragraph", "text": "The size of the encoded file is the sum of **frequency x code length**: 40x1 + 30x2 + 20x3 + 10x3 = 190 bits (a fixed 2-bit code would need 200). A shortcut: the sum also equals the weights of all the internal nodes, 30 + 60 + 100 = 190. A Huffman code is **prefix-free**: no code is the beginning of another. That matters because the decoder must know where each code ends. With the prefix property, reading left to right is never ambiguous and no bits are spent on separators. In the tree it simply means the symbols are only at the **leaves**." },
+				{ "type": "chart", "title": "Size of a 672,096-byte data file after compression (percent of the original)", "unit": "%", "bars": [
+					{ "label": "Original", "value": 100 },
+					{ "label": "Run-length encoding", "value": 67.3 },
+					{ "label": "Huffman coding", "value": 57.1 },
+					{ "label": "RLE then Huffman", "value": 53.1 }
+				] },
+				{ "type": "paragraph", "text": "These numbers were measured in this repository, on a file of fixed-length records with a lot of padding. RLE removes the padding and Huffman exploits the unequal frequencies of the bytes, and using one after the other is best." },
+				{ "type": "callout", "tone": "warning", "text": "After compaction, record addresses change. Every index that stores an address must be fixed or rebuilt." }
+			]
+		},
+		{
+			"id": "indexes",
+			"title": "Indexes: primary, secondary, inverted lists",
+			"blocks": [
+				{ "type": "paragraph", "text": "Finding a record by reading the whole file is slow. A book solves this with a table of contents at the front. An **index** is that table for a data file." },
+				{ "type": "heading", "text": "The simple (primary) index" },
+				{ "type": "paragraph", "text": "A **simple index** is a list of small fixed-length entries (key, address of the record), **sorted by the key**. The data file stays in the order the records arrived. The index separates two things: the search order (in the index) and the data (unchanged). The address can be an RRN or a byte offset." },
+				{ "type": "paragraph", "text": "Why binary search works on the index but not on the data file: it needs the items in key order and a way to jump to the middle one. Variable-length records in arrival order offer neither. The index offers both, and gives the address, so the record is read with one seek." },
+				{ "type": "paragraph", "text": "A binary search discards half of what is left at each step. For N entries the worst case is **floor(log2 N) + 1** examined entries. Example: N = 1,000 and 2^9 = 512 < 1,000 <= 1,024 = 2^10, so at most 10 entries. In memory this is nothing. But if the index is on disk, 10 or 17 accesses per search are still a lot, and that is why B-trees exist." },
+				{ "type": "heading", "text": "Keeping the index correct" },
+				{ "type": "table", "headers": ["What the update changes", "What must change in the primary index"], "rows": [
+					["The content, and the record stays where it is", "Nothing"],
+					["The record moves (for example it grew and was rewritten at the end)", "Only the address in its entry; the order stays"],
+					["The key", "The entry must go to another position: remove it and insert it again"]
+				] },
+				{ "type": "paragraph", "text": "If the index is kept in memory and written to disk only when the file is closed, there is a danger: the program may fail and leave the disk index old. The solution is an **out-of-date flag** in the header of the index file. Set it on disk before the first change of a session, clear it when the index is written. If the flag is set when the file is opened, the last session did not end well. Since the index can be built from the data, the program **rebuilds the index by reading the data file**." },
+				{ "type": "heading", "text": "Secondary indexes" },
+				{ "type": "paragraph", "text": "The primary key identifies **one** record. But people ask by other things: all the songs of one composer, all the customers of one city. A **secondary index** is sorted by such a field. Since the value can repeat, the answer is a **list** of records." },
+				{ "type": "heading", "text": "Inverted lists" },
+				{ "type": "paragraph", "text": "In an **inverted list** the secondary index has one fixed-length entry per secondary key, with the position of the first element of a linked list. The list lives in another file. Each element holds a **primary key** and the position of the next element (-1 means the end)." },
+				{ "type": "diagram", "content": "secondary index          list file (position: primary key, next)\nCITY -> head\nNATAL  -> 2              0: P40, 3\nRECIFE -> 0              1: P77, -1\n                         2: P10, 1\n                         3: P55, -1\n\nsearch RECIFE: start at 0 -> P40, go to 3 -> P55, next -1: end\nresult, in list order: P40, P55", "caption": "Walking an inverted list" },
+				{ "type": "paragraph", "text": "Adding a record appends one element to the list file and changes one pointer. Nothing is shifted. The price: the elements of one list are scattered over the file." },
+				{ "type": "paragraph", "text": "The list holds **primary keys**, not addresses. This is called **late binding**: the address is found only at search time, going through the primary index. A secondary search costs one more lookup, but when the data file is compacted and the records change address, **only the primary index** must be fixed. The secondary indexes stay correct because the primary keys did not change." },
+				{ "type": "heading", "text": "Combining searches: cosequential processing" },
+				{ "type": "paragraph", "text": "If each list is sorted by primary key, two lists can be combined in one single pass. Compare the current item of each list and advance the one with the smaller key. Take CITY = RECIFE -> 10, 20, 30, 40 and YEAR = 2020 -> 20, 25, 40, 50, 60." },
+				{ "type": "list", "items": [
+					"**AND (matching)**: keys that appear in both lists: 20 and 40. That is 2 keys.",
+					"**OR (merging)**: every key seen, once: 10, 20, 25, 30, 40, 50, 60. That is 4 + 5 - 2 = 7 keys.",
+					"Only after combining the lists are the records read, and only those that matter."
+				] },
+				{ "type": "paragraph", "text": "This repository's `file-organisation` mini-project builds exactly this: 10,500 records, a primary index searched with at most 14 probes, and a search by city that reads about 880 slots through the index, against 10,500 for a full scan." },
+				{ "type": "callout", "tone": "remember", "text": "Primary index: key to address, sorted, binary search with floor(log2 N) + 1 steps. Secondary index: repeated keys, inverted lists of primary keys, late binding. When the index is too big for memory, use a B-tree." }
+			]
+		},
+		{
+			"id": "b-trees",
+			"title": "B-trees",
+			"blocks": [
+				{ "type": "paragraph", "text": "A binary search tree has two children per node and can be tall: a million keys need about 20 levels. On a disk each level is one access, so 20 accesses is too many. The trick is to make each node **as big as one disk page** and put hundreds of keys in it. This is the **B-tree**." },
+				{ "type": "callout", "tone": "analogy", "text": "Think of a dictionary. You do not find a word by going through 'is it before or after this word?' two ways. You open to the right letter, then the right page, then the word. Every step throws away almost everything. A B-tree does the same, with hundreds of ways at every step." },
+				{ "type": "heading", "text": "Order and the rules" },
+				{ "type": "paragraph", "text": "In this summary the **order m** is the **maximum number of children** of a node (books differ, so always say which definition you use). The rules:" },
+				{ "type": "list", "items": [
+					"A node has at most m children and so at most **m - 1 keys**. The keys in a node are in order, and the subtrees fall between them.",
+					"Every node except the root has at least **ceil(m/2) children**, so at least ceil(m/2) - 1 keys. Order 8: from 4 to 8 children, so from 3 to 7 keys.",
+					"The root has at least 2 children (unless it is a leaf).",
+					"**All the leaves are at the same level.**"
+				] },
+				{ "type": "paragraph", "text": "A tree with h levels, all nodes full, has 1 + m + m^2 + ... nodes, each with m - 1 keys, which gives **m^h - 1 keys**. The capacity grows exponentially with the height. Order 5 and 3 levels: 5^3 - 1 = 124 keys." },
+				{ "type": "chart", "title": "Most keys a B-tree of order 200 can hold, by number of levels", "unit": "keys", "bars": [
+					{ "label": "1 level", "value": 199 },
+					{ "label": "2 levels", "value": 39999 },
+					{ "label": "3 levels", "value": 7999999 }
+				] },
+				{ "type": "heading", "text": "Choosing the order" },
+				{ "type": "paragraph", "text": "On disk the order is the largest number of children that **fits in one page**. Example: a page of 4,096 bytes, a header of 12 bytes, keys of 4 bytes and pointers of 4 bytes. We need 12 + 4(m - 1) + 4m <= 4,096, so 8m <= 4,088 and m <= 511. Check: 12 + 4 x 510 + 4 x 511 = 4,096. Smaller keys give a larger order and a shorter tree. This is why indexes prefer short keys." },
+				{ "type": "heading", "text": "How tall can the tree be?" },
+				{ "type": "paragraph", "text": "The worst case is when every node has the minimum. Call c = ceil(m/2). The root has 1 key and 2 children, and the other nodes have at least c - 1 keys. Take order 10 (c = 5). With 3 levels the least number of keys is 1 (root) + 2 x 4 (two nodes) + 10 x 4 (ten nodes) = 49, and with 4 levels it is 249. So a B-tree of order 10 with 100 keys can have at most 3 levels. For order 200 and a million keys, the tree has at most 3 levels: a search reads at most 3 nodes, and 2 if the root stays in memory." },
+				{ "type": "heading", "text": "Insertion: always in a leaf, and splitting" },
+				{ "type": "paragraph", "text": "A new key goes to the right **leaf**. If the leaf now has too many keys (overflow), it is **split**: the middle key goes up to the parent and the rest form two nodes. If the parent overflows, it splits too. If the split reaches the root, a **new root** with a single key is created. This is the only way a B-tree grows in height. That is why all leaves stay at the same level: the tree grows from the top, as a consequence of how it is built, not by a repair afterwards." },
+				{ "type": "paragraph", "text": "Convention of the quiz: a node 'overflows' when it gets one key more than the maximum (m keys). Then the middle key goes up. With an even number of keys, the left node keeps the first half and the key right after goes up." },
+				{ "type": "diagram", "content": "order 4 (max 3 keys). Insert 8 into the leaf [5 | 6 | 7]:\n\n   before:        [ 20 ]                  leaf [5 | 6 | 7] is full\n                  /    \\\n          [5|6|7]      [30|40]\n\n   leaf gets 4 keys: 5 6 7 8  -> overflow\n   split: left [5|6], third key 7 goes up, right [8]\n\n   after:         [ 7 | 20 ]\n                 /    |     \\\n            [5|6]   [8]   [30|40]", "caption": "Split of a leaf. Each key appears only once in a B-tree." },
+				{ "type": "heading", "text": "Removal" },
+				{ "type": "list", "items": [
+					"**Key in an internal node**: replace it with its successor (or predecessor), which is always in a leaf, and remove that one. So every removal ends in a leaf.",
+					"**Leaf below the minimum**: first try **redistribution**. If an adjacent sibling has more than the minimum, the separator in the parent comes down into the leaf and the nearest key of the sibling goes up to replace it.",
+					"If no adjacent sibling can give a key, do **concatenation**: join the leaf, the separator and the sibling into one node. The parent loses a key and may underflow too, so the problem can move up."
+				], "ordered": true },
+				{ "type": "heading", "text": "The B+ tree" },
+				{ "type": "paragraph", "text": "In a **B+ tree** the internal nodes hold only copies of keys to **route the search** (no data), and **all the keys and data are in the leaves**, which are linked in order. Because internal nodes carry no data, more separators fit per page, so the tree is shorter. For a **range query** (all keys from 100 to 900) you search the first key, then follow the leaf links without going back up: one access per leaf. That is why databases use B+ trees for range queries and for sorting by an indexed field." },
+				{ "type": "callout", "tone": "warning", "text": "A B-tree stores each key once, in any node. A B+ tree keeps the real data only in the leaves and repeats keys above as signposts. Do not mix them up." },
+				{ "type": "callout", "tone": "remember", "text": "B-tree = node as big as a disk page, hundreds of keys, all leaves at the same level. Insert in a leaf, split upward, a new root is the only growth in height. Capacity m^h - 1. Delete: redistribute first, concatenate if not possible." }
+			]
+		},
+		{
+			"id": "external-sorting",
+			"title": "External sorting",
+			"blocks": [
+				{ "type": "paragraph", "text": "How do you sort a file that is bigger than the memory? If you load it all, the program dies. If you sort it in place by jumping around, every comparison is a disk access, and that is 100,000 times slower than memory. **External merge sort** keeps two promises: memory use does not depend on the size of the file, and the file is always read and written **in sequence**." },
+				{ "type": "callout", "tone": "analogy", "text": "You have 1,000 exam papers and a desk that fits 50. You take 50 at a time, sort them on the desk, and put each sorted pile in a box. Then you merge the piles: look at the top paper of each pile, take the smallest, and repeat." },
+				{ "type": "heading", "text": "Phase 1: generate runs" },
+				{ "type": "paragraph", "text": "Read a piece as big as the memory, sort it in memory and write it out as a **run**: a sorted file. Repeat until the input ends. If the file has N records and the memory holds M, the number of runs is **ceil(N / M)**. Example: 2,000,000 records and room for 150,000 gives 2,000,000 / 150,000 = 13.3, so 14 runs (13 full and one smaller)." },
+				{ "type": "heading", "text": "Phase 2: merge the runs" },
+				{ "type": "paragraph", "text": "Read all runs from start to end at once. Always write the smallest of the current front records. A **min-heap** holds one entry per run (that run's current record). The top is the smallest: write it, read the next record of the same run, and let it sink to its place. This costs about **log2 k** comparisons per record, instead of **k - 1** by looking at all the k fronts. A heap of 64 items has 6 levels, so a record goes down at most 6 steps, not 63 comparisons. The memory used is proportional to k, not to the file." },
+				{ "type": "diagram", "content": "run 0:  3  8  9 ...     heap holds the front of each run:\nrun 1:  1  4  7 ...     [ 3 , 1 , 2 ]   smallest = 1 (run 1)\nrun 2:  2  5  6 ...     write 1, read 4 from run 1:\n                        [ 3 , 4 , 2 ]   smallest = 2 (run 2) ...\n\noutput: 1 2 3 4 5 6 ...", "caption": "A k-way merge with a heap, here k = 3" },
+				{ "type": "heading", "text": "Several passes" },
+				{ "type": "paragraph", "text": "If memory allows only **k runs at a time** (the **fan-in**), a merge pass joins groups of k runs into longer ones. After a pass the number of runs is ceil(R / k). The number of passes is **ceil(log base k of R)**. Example: 60 runs with fan-in 4: 60 -> 15 -> 4 -> 1, that is 3 passes. We do not count run generation among the merge passes." },
+				{ "type": "paragraph", "text": "Each pass reads and writes the whole file once, and so does run generation. So an external sort with 2 merge passes moves the file 3 times in each direction: for a file of 8 GB that is 3 x 8 = 24 GB written. **The number of passes is the real cost.**" },
+				{ "type": "heading", "text": "The trade of a large fan-in" },
+				{ "type": "paragraph", "text": "A bigger fan-in means fewer passes. But the memory is split among the k input buffers, so each buffer is smaller and is refilled more often. On a **magnetic disk** every refill from a different run is a **seek**. Merging 800 runs in one go can be slower than merging in two steps (for example 25 groups of 32 runs, then the 25 results), although the second way reads and writes everything twice: its reads are longer and more sequential." },
+				{ "type": "chart", "title": "Measured time to sort 1,000,000 lines (50 MB) with runs of 1 MiB, in Rust (milliseconds)", "unit": "ms", "bars": [
+					{ "label": "Fan-in 2 (6 passes)", "value": 971 },
+					{ "label": "Fan-in 4 (3 passes)", "value": 669 },
+					{ "label": "Fan-in 16 (2 passes)", "value": 496 },
+					{ "label": "Fan-in 64 (1 pass)", "value": 588 }
+				] },
+				{ "type": "paragraph", "text": "These results come from the `external-sorting` mini-project of this repository (mean of 7 runs). Going from fan-in 2 to 16 cuts the passes from 6 to 2 and the time by about half. Fan-in 64 saves one more pass but is not faster, because the memory is split in 65 small buffers. The spread between runs was large on a shared machine, so small differences are not real differences." },
+				{ "type": "heading", "text": "Replacement selection: longer runs" },
+				{ "type": "paragraph", "text": "A smarter phase 1 uses a heap of M records. Write the smallest record of the heap, then read a new record in its place. If the new record is smaller than the one just written, it cannot join the current run, so it is held back for the next run. The result depends on how ordered the input already is:" },
+				{ "type": "table", "headers": ["Input", "Runs produced", "Why"], "rows": [
+					["Random", "Runs of about 2M on average", "Records often fit into the current run"],
+					["Already sorted", "One single run", "Every new record is bigger than the last"],
+					["Reverse order (decreasing)", "Runs of exactly M each: N / M runs", "Every new record is smaller, so it is always held back (no gain)"]
+				] },
+				{ "type": "paragraph", "text": "Example: 50,000 records in decreasing order and M = 1,000 give 50 runs. Fewer runs mean a cheaper merge." },
+				{ "type": "callout", "tone": "remember", "text": "Runs = ceil(N / M). Merge passes = ceil(log base k of R). Total written = file size x (1 + passes). A heap picks the smallest of k fronts in about log2 k steps. More memory or a larger fan-in means fewer passes, but on a magnetic disk a very large fan-in means more seeks." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{ "type": "paragraph", "text": "Every idea in this area answers one question: **how do I keep the number of drive accesses low?** Here is the whole story in one table." },
+				{ "type": "table", "headers": ["Problem", "Tool", "Key fact"], "rows": [
+					["The drive is slow", "Blocks, buffers, sequential reads", "Access = seek + rotation + transfer; memory against disk is about 100,000 to 1"],
+					["Where are the blocks of a file?", "Contiguous, linked, FAT, i-node", "FAT is as big as the disk; i-nodes only for open files"],
+					["Names for files", "Directories, links", "Entry = name + i-node number; hard link in one file system only"],
+					["Which blocks are free?", "Bitmap or free list", "Bitmap is 1 bit per block; list wins only below 1/32 free"],
+					["A crash in the middle of a job", "Journal, fsck", "Redo committed work, discard the rest"],
+					["Where is record n?", "Fixed records and the RRN", "offset = header + RRN x record size"],
+					["Find a record by key", "Index, binary search", "floor(log2 N) + 1 steps"],
+					["Search by another field", "Secondary index and inverted lists", "Late binding keeps only the primary index to fix"],
+					["The index is too big for memory", "B-tree, B+ tree", "m^h - 1 keys in h levels; a few accesses for millions of keys"],
+					["The file is too big to sort", "External merge sort", "Runs = ceil(N/M); passes = ceil(log_k R)"],
+					["The file is too big to store", "RLE, Huffman, compact notation", "Prefix-free codes; ceil(log2 n) bits"]
+				] },
+				{ "type": "heading", "text": "Mistakes to avoid" },
+				{ "type": "list", "items": [
+					"Thinking `lseek` reads the disk. It only changes the offset.",
+					"Thinking ctime is the creation date. It is the last change of the i-node.",
+					"Thinking a hard link can cross partitions. The i-node number only has meaning inside one file system.",
+					"Forgetting the data block when you count the reads of an i-node lookup, or forgetting that the i-node is already in memory by assumption.",
+					"Starting the RRN at 1 when the problem says 0, or forgetting the header when you compute an offset.",
+					"Forgetting the plus 1 in the binary search worst case, floor(log2 N) + 1.",
+					"Mixing the order of a B-tree (children) with the number of keys (one less).",
+					"Thinking a journal protects the content of your files. A metadata journal protects the structures."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "When a result depends on a convention, say it: does the RRN start at 0? Is there a header? Is the i-node already in memory? Is the order the number of children? Does the count of reads include the data block? The same problem has different answers under different conventions." },
+				{ "type": "heading", "text": "Where to learn more" },
+				{ "type": "list", "items": [
+					"[Operating Systems: Three Easy Pieces](https://pages.cs.wisc.edu/~remzi/OSTEP/) has free chapters on disks, files, file system implementation, journaling and flash.",
+					"[Files are hard](https://danluu.com/file-consistency/), by Dan Luu, shows how hard it is to write a file safely.",
+					"[ext4 Data Structures and Algorithms](https://docs.kernel.org/filesystems/ext4/) describes the real layout of a production file system.",
+					"[SQLite Database File Format](https://www.sqlite.org/fileformat2.html) shows how tables and indexes are stored as B-tree pages in one file."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Count the disk accesses. Keep related data together, read in order when you can, write the intention before the change, and use an index so that you never read the whole file." }
+			]
+		}
+	]
+}

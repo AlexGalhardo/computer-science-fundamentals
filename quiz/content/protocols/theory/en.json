@@ -1,0 +1,404 @@
+{
+	"area": "protocols",
+	"intro": [
+		"When you ask a friend to pass you the salt, you both follow hidden rules: you say please, they look at you, they hand it over, you say thanks. If one of you broke the rules, the salt would never arrive. Computers need rules like that too. A **protocol** is a set of rules that says who speaks first, how a message looks, and what the answer means. Because every program follows the same rules, a browser written in one country can talk to a server written by someone else in another.",
+		"This area is about the protocols you use every time you open a web page, watch a video, chat or call an app's server. We start with **HTTP**, the language of the web: its methods, its numbered answers called status codes, and its notes called headers. Then we see how the web saves time with caches, how cookies remember you, and how browsers protect you with CORS. After that comes **TLS**, the lock that keeps secrets safe, and the three versions of HTTP (1.1, 2 and 3) that carry the same messages in faster and faster ways.",
+		"On top of HTTP people build **APIs**, which are menus of things a program can ask another program to do. You will meet the styles REST, GraphQL, JSON-RPC and gRPC, and also WebSocket and server-sent events, which let a server talk to you without being asked first. At the end you will know what each one is good at and what each one costs, which is exactly what the quiz asks."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: talking over a network",
+			"blocks": [
+				{ "type": "paragraph", "text": "Think of a restaurant. You are the **client**: you ask for things. The waiter takes your order to the kitchen, which is the **server**: it prepares the thing and sends it back. On the web it is the same. Your browser sends a **request** ('give me this page') and the server sends a **response** ('here it is'). The conversation always starts with the client." },
+				{ "type": "paragraph", "text": "Messages do not fly by magic. They travel through layers, like a letter that goes in an envelope, which goes in a bag, which goes on a truck. Each layer has its own job." },
+				{ "type": "diagram", "content": "  your program     'GET /photo'            <- HTTP (this area)\n       |\n  encryption       scrambles the bytes     <- TLS\n       |\n  transport        delivers the bytes      <- TCP or QUIC (UDP)\n       |\n  the network      carries packets         <- IP, wires, Wi-Fi", "caption": "The layers a web request crosses, from your program down to the wire." },
+				{ "type": "table", "headers": ["Word", "Meaning"], "rows": [
+					["Protocol", "A set of rules for a conversation between programs."],
+					["[[TCP|a transport protocol that delivers bytes in order and resends the ones that get lost]]", "Reliable, but it makes you wait for the first missing piece."],
+					["[[UDP|a very simple transport that just sends packets, with no promise they arrive]]", "Fast and simple. QUIC is built on top of it."],
+					["[[Round trip (RTT)|the time for a message to go to the other side and the answer to come back]]", "The unit we use to count how slow a handshake is."],
+					["Latency", "The delay of the network. High latency means every round trip is slow."]
+				] },
+				{ "type": "callout", "tone": "analogy", "text": "A round trip is like shouting a question across a big field and waiting for the answer. If the field is huge, every question costs time, so a smart protocol asks fewer questions." },
+				{ "type": "callout", "tone": "remember", "text": "Almost everything in this area is about two things: what the messages mean, and how many round trips it takes to send them." }
+			]
+		},
+		{
+			"id": "http-semantics",
+			"title": "HTTP semantics: methods, status codes and headers",
+			"blocks": [
+				{ "type": "paragraph", "text": "**HTTP** (HyperText Transfer Protocol) is the language of the web. Every HTTP message has three parts: a **first line** that says what is being asked (or how it went), then **headers**, which are small notes, then an optional **body**, which is the real content, like a photo or some text." },
+				{ "type": "code", "language": "http", "content": "GET /photo.png HTTP/1.1\nHost: example.test\nAccept: image/png\n", "caption": "A request (the invisible end-of-line characters are left out). The first line is the request line: method, target, version." },
+				{ "type": "list", "items": [
+					"Every line ends with two invisible characters, CR and LF (written `\\r\\n`). An **empty line** means 'the headers are over'.",
+					"The first line of a response is the **status line**: the version, a three-digit **status code**, and a short text.",
+					"In HTTP/1.1 the `Host` header is **required**. One computer can host many sites, and `Host` says which site you want. Without it (or with two), the server must answer `400 Bad Request`."
+				] },
+				{ "type": "heading", "text": "Methods: the verbs" },
+				{ "type": "paragraph", "text": "The **method** says what you want to do. The official rules (RFC 9110) describe three properties. A method is **safe** if it only reads and asks for no change. It is **idempotent** if doing it many times has the same effect as doing it once. It is **cacheable** if the answer may be stored for reuse." },
+				{ "type": "table", "headers": ["Method", "What it does", "Safe", "Idempotent"], "rows": [
+					["GET", "Read a resource", "yes", "yes"],
+					["HEAD", "Same as GET, but only the headers come back, with no body", "yes", "yes"],
+					["OPTIONS", "Ask what is allowed", "yes", "yes"],
+					["PUT", "Replace a resource with what you send", "no", "yes"],
+					["DELETE", "Remove a resource", "no", "yes"],
+					["POST", "Send something to be processed, often to create", "no", "no"],
+					["PATCH", "Change part of a resource", "no", "no"]
+				], "caption": "Every safe method is idempotent, but not the other way round. PUT and DELETE are idempotent but not safe." },
+				{ "type": "callout", "tone": "analogy", "text": "Pressing the lift button is idempotent: pressing it five times is the same as once. Buying a sweet is not: five presses means five sweets. That is why a client may resend GET, HEAD, PUT and DELETE alone after a connection failure, but must be careful with POST." },
+				{ "type": "paragraph", "text": "Idempotent is about the **effect**, not the answer. The first DELETE may answer `204` and the second `404`, and the method is still idempotent, because the final state is the same: the thing is gone." },
+				{ "type": "heading", "text": "Status codes: how it went" },
+				{ "type": "paragraph", "text": "The first digit tells the family: `1xx` information, `2xx` success, `3xx` go somewhere else, `4xx` the client made a mistake, `5xx` the server made a mistake." },
+				{ "type": "table", "headers": ["Code", "Meaning", "When"], "rows": [
+					["200 / 201 / 204", "OK / Created / No Content", "Created comes with a `Location` header with the new URL"],
+					["206", "Partial Content", "Answer to a `Range` request (resume a download)"],
+					["301, 302, 303, 307, 308", "Redirects", "301 and 308 are permanent; 302 and 307 temporary. 307 and 308 keep the method and body; 303 always means 'now GET another page'"],
+					["304", "Not Modified", "Your stored copy is still good"],
+					["400", "Bad Request", "The message is broken (bad line, missing `Host`)"],
+					["401", "Unauthorized", "Really means 'not authenticated': tell me who you are. Comes with `WWW-Authenticate`"],
+					["403", "Forbidden", "I know who you are, and the answer is no"],
+					["404 / 405", "Not Found / Method Not Allowed", "No such path / the path exists but not for that method"],
+					["406 / 415", "Not Acceptable / Unsupported Media Type", "Server cannot give the `Accept` format / server does not accept the `Content-Type` you sent"],
+					["409 / 412", "Conflict / Precondition Failed", "Clashes with the current state / an `If-Match` condition was false"],
+					["413 / 414 / 431", "Too large", "Body / URL / headers are too big"],
+					["422", "Unprocessable Content", "Right format, but the content breaks a rule"],
+					["500 / 501 / 505", "Server error", "Bug / not implemented / HTTP version not supported"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "401 and 403 are different. 401 is about **who you are** (authentication). 403 is about **what you may do** (authorisation). Sending the same password again does not fix a 403." },
+				{ "type": "heading", "text": "Where does the body end?" },
+				{ "type": "paragraph", "text": "In HTTP/1.1 the connection stays open (this is called **keep-alive** and it is the default: opening a connection costs a round trip, so we reuse it). The next message comes right after the first one, so the reader must know exactly where each body stops. There are two ways." },
+				{ "type": "table", "headers": ["Question", "Content-Length", "Transfer-Encoding: chunked"], "rows": [
+					["Use when", "The size is known before sending", "The size is not known yet (a stream)"],
+					["How it ends", "Read exactly that many bytes", "Chunks, each with its size in [[hexadecimal|counting in base 16, with the digits 0 to 9 and a to f; so b means 11]]; a chunk of size 0 ends it"],
+					["On the wire", "`hello world`", "`b\\r\\nhello world\\r\\n0\\r\\n\\r\\n`"]
+				] },
+				{ "type": "paragraph", "text": "If a message has **both** headers, `Transfer-Encoding` wins and the server should preferably refuse it with 400. Why? If a proxy believes one header and the server behind it believes the other, they disagree about where the request ends, and the leftover bytes are read as a new request. That attack is called **request smuggling**. Closing the connection at the end of the body also works, but then it cannot be reused." },
+				{ "type": "heading", "text": "Useful headers" },
+				{ "type": "list", "items": [
+					"`Content-Type` describes the body you are **sending**; `Accept` says which formats you are **willing to receive**.",
+					"`ETag` is a label (a fingerprint) of the current version of a resource. Sending it back in `If-Match` on a PUT means 'only write if nobody changed it since I read it'. If someone did, the server answers `412`. This prevents the **lost update**, where two people edit and the second erases the first.",
+					"`Range: bytes=1000-` asks for the rest of a file. `If-Range: \"a\"` adds: 'only if the version is still `\"a\"`'. If it is, you get `206` with the part; if the file changed, you get `200` with the whole new file."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Method = what to do. Status code = how it went. Headers = notes about the message. Safe = read only. Idempotent = repeating is harmless." }
+			]
+		},
+		{
+			"id": "http-caching-cookies-cors",
+			"title": "HTTP caching, cookies and CORS",
+			"blocks": [
+				{ "type": "heading", "text": "Caching: do not carry the same water twice" },
+				{ "type": "paragraph", "text": "A **cache** keeps a copy of an answer so the next person who asks gets it fast, without bothering the server. Your browser has a **private** cache (only for you). A [[CDN|a network of servers around the world that keep copies of pages close to the readers]] or [[proxy|a middleman server that passes requests and answers along]] has a **shared** cache (for many people). The server controls it with `Cache-Control`." },
+				{ "type": "table", "headers": ["Cache-Control", "What it tells caches"], "rows": [
+					["`max-age=600`", "The copy is **fresh** for 600 seconds. During that time it is reused with no network. After that it is **stale**, and the cache tries to check it, not throw it away"],
+					["`no-cache`", "You may store it, but you must **ask the server** before each reuse"],
+					["`no-store`", "Do **not store** it at all (use for secrets)"],
+					["`private`", "Only the user's own browser may store it, not shared caches"],
+					["`public`, `s-maxage`", "Shared caches may store it. Only for content that is the same for everyone"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "`no-cache` does not mean 'do not cache'. It means 'check first'. The one that forbids storing is `no-store`. A page that shows 'Hello, Alice' must never be `public`: a CDN would show Alice's page to other people." },
+				{ "type": "paragraph", "text": "When a copy is stale, the cache **revalidates** it with a **conditional GET**. It sends the label it saved: `If-None-Match: \"abc\"` (from `ETag`) or `If-Modified-Since` (from `Last-Modified`). If nothing changed, the server answers `304 Not Modified` with only headers, and the copy is fresh again. If it changed, a `200` brings the new body." },
+				{ "type": "diagram", "content": "cache copy is stale\n   cache  --- GET /app.css  If-None-Match: \"abc\" --->  server\n   cache  <-- 304 Not Modified (no body) -------------  server   (reuse the copy)\n   cache  <-- 200 OK + new body + new ETag ----------   server   (it changed)", "caption": "Revalidation costs one round trip but almost no bytes." },
+				{ "type": "paragraph", "text": "A cache normally finds a copy by **method + URL**. If the server sends different versions for the same URL (for example gzip or Brotli compression depending on `Accept-Encoding`), it must add `Vary: Accept-Encoding`. Then that header becomes part of the key, and a client that only understands gzip never receives Brotli." },
+				{ "type": "heading", "text": "Cookies: a sticker the browser remembers" },
+				{ "type": "paragraph", "text": "HTTP forgets you between requests. A **cookie** is a small note the server hands you with `Set-Cookie`, and your browser sends it back on later requests. That is how a site knows you are logged in." },
+				{ "type": "list", "items": [
+					"**Session cookie**: has no `Expires` or `Max-Age`. It disappears when the browser session ends.",
+					"**Persistent cookie**: has `Max-Age` (seconds from now) or `Expires` (a date). It survives closing the browser. If both exist, `Max-Age` wins.",
+					"`Secure`: only sent over HTTPS (limits the **channel**).",
+					"`HttpOnly`: JavaScript cannot read it, only the browser attaches it to requests (limits **who reads**).",
+					"`SameSite`: limits **when it is sent** on requests that start from another site."
+				] },
+				{ "type": "table", "headers": ["SameSite", "Sent on requests that come from another site?"], "rows": [
+					["`Strict`", "Never"],
+					["`Lax`", "Only when the user **navigates** to your site with a safe method, like clicking a link. Not for images, `fetch` or a form POST from the other site"],
+					["`None`", "Always (and it requires `Secure`)"]
+				], "caption": "Lax blocks most CSRF attacks and still lets outside links keep you logged in." },
+				{ "type": "paragraph", "text": "Careful: 'same **site**' is not 'same **origin**'. `shop.example.com` and `other.example.net` are different sites, so a `Lax` cookie is not sent when the other page makes a request." },
+				{ "type": "heading", "text": "CORS: the browser's neighbourhood rule" },
+				{ "type": "paragraph", "text": "The **origin** of a page is three things together: **scheme + host + port**. `https://app.example.com` and `https://app.example.com:8443` are different origins. The path does not count. The **same-origin policy** says a script from one origin may not read answers from another origin. **CORS** (Cross-Origin Resource Sharing) is how a server opens an exception, using headers such as `Access-Control-Allow-Origin`." },
+				{ "type": "list", "items": [
+					"A **simple** request (GET, HEAD or POST with only safe headers and a form-like `Content-Type`) is sent straight away, because a page could already do that with a form before CORS existed.",
+					"Anything else (a JSON `Content-Type`, a custom header, PUT or DELETE) first triggers a **preflight**: the browser sends an `OPTIONS` request to ask 'do you accept this?'.",
+					"`Access-Control-Allow-Origin: *` together with `Access-Control-Allow-Credentials: true` is **forbidden**. With cookies, the server must name one specific origin (checked against a list) and add `Vary: Origin`."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "CORS is enforced by the **browser**, and it protects the **reading** of the answer, not the **running** of the request. A simple cross-origin POST still reaches the server even without CORS headers; the browser only hides the answer. The server must protect itself with login checks, permission checks and CSRF defences ([[CSRF|an attack where another site tricks your browser into sending a request while you are logged in]]) like `SameSite` and tokens. Tools like curl ignore CORS completely." },
+				{ "type": "callout", "tone": "remember", "text": "Fresh = reuse with no network. Stale = revalidate (304). `no-store` forbids storing. `Vary` extends the cache key. HttpOnly, Secure and SameSite each limit a different thing." }
+			]
+		},
+		{
+			"id": "tls-handshake",
+			"title": "TLS: the lock on the connection",
+			"blocks": [
+				{ "type": "paragraph", "text": "Normal HTTP travels as plain text. Anyone on the path (a Wi-Fi owner, a router) could read it or change it. **TLS** (Transport Layer Security) wraps the conversation in a lock. HTTP inside TLS is **HTTPS**. Before any web data moves, the two sides do a short dance called the **handshake**." },
+				{ "type": "paragraph", "text": "A finished handshake gives three things: they **agree** on a version and secret-scrambling methods, the client **authenticates the server** (checks it is really who it says), and both sides end up with the **same secret key** that nobody else knows. Making the client prove itself with a certificate also exists, but on the web it is optional and rare." },
+				{ "type": "heading", "text": "Two kinds of secret-keeping" },
+				{ "type": "table", "headers": ["Kind", "Asymmetric", "Symmetric"], "rows": [
+					["Idea", "A public key and a private key that belong together", "One shared key for both sides"],
+					["Speed", "Slow and expensive", "Very fast"],
+					["Used in TLS for", "Signing (to prove identity) and [[Diffie-Hellman|a clever maths trick that lets two sides agree on a secret number while talking in public]] (to agree on a secret) during the handshake", "Protecting all the data afterwards, with an AEAD mode that gives secrecy and tamper detection together"]
+				] },
+				{ "type": "callout", "tone": "analogy", "text": "It is like two kids who must invent a secret code in a crowded room. First they use a clever trick (Diffie-Hellman) to agree on a secret number without anyone being able to guess it. Then they use that number as the key of a fast code for the rest of the game." },
+				{ "type": "heading", "text": "How the client trusts the server" },
+				{ "type": "paragraph", "text": "The server shows a **certificate**: an ID card with its name and public key, signed by a **certificate authority (CA)**. Usually the chain has three links: a **root** CA signs an **intermediate**, which signs the site's certificate. Your operating system or browser already ships with a list of trusted roots. The client checks the signatures up the chain, that the dates are valid, and that the name in the certificate matches the host it wanted." },
+				{ "type": "heading", "text": "Useful extensions in the first message (ClientHello)" },
+				{ "type": "list", "items": [
+					"**SNI** (Server Name Indication): the client writes the host name in the first message. The server needs it to pick the right certificate **before** any HTTP is read, so it cannot wait for the `Host` header. It is virtual hosting, one layer lower.",
+					"**ALPN**: the client lists the application protocols it speaks (`h2`, `http/1.1`) and the server picks one. It costs no extra round trip. If the server does not know ALPN, the connection simply stays on HTTP/1.1."
+				] },
+				{ "type": "heading", "text": "How many round trips?" },
+				{ "type": "paragraph", "text": "Here we count **after** the TCP handshake, with no session resumption. TLS 1.2 needs **2** round trips. TLS 1.3 needs only **1**: the client guesses the key method and sends its part (`key_share`) already in the first message, so the server can answer with everything at once." },
+				{ "type": "diagram", "content": "TLS 1.3                           TLS 1.2\n client                  server    client                  server\n   |-- ClientHello + key -->|        |-- ClientHello ------->|\n   |<-- ServerHello, cert,  |        |<-- ServerHello, cert -|   round trip 1\n   |    Finished -----------|        |-- key exchange ------>|\n   |-- Finished + data ---->|        |<-- Finished ----------|   round trip 2\n   |   (1 round trip)       |        |-- data -------------->|", "caption": "TLS 1.3 saves one whole round trip." },
+				{ "type": "heading", "text": "Forward secrecy and 0-RTT" },
+				{ "type": "paragraph", "text": "Imagine a spy records your encrypted talk for months and later steals the server's private key. With **forward secrecy** the old talks stay safe, because every connection used a fresh, throwaway Diffie-Hellman pair that was deleted, and the certificate key only **signs**. Old TLS 1.2 with static RSA key exchange did not have this: stolen key, all recordings readable. TLS 1.3 removed static RSA and made forward secrecy mandatory." },
+				{ "type": "paragraph", "text": "When you reconnect, TLS 1.3 can use a saved secret (a **PSK**, from a ticket) and send data in the very first flight. This is **0-RTT** or **early data**. It is faster, but the server cannot add a fresh value, so an attacker can **replay** (resend) that first flight. Early data also lacks forward secrecy. So it should only carry requests that are safe to repeat." },
+				{ "type": "callout", "tone": "remember", "text": "TLS = agree + authenticate the server + share a key. Asymmetric a few times, symmetric for the data. TLS 1.2: 2 round trips. TLS 1.3: 1. SNI picks the certificate, ALPN picks the protocol." }
+			]
+		},
+		{
+			"id": "http2",
+			"title": "HTTP/2: many requests on one connection",
+			"blocks": [
+				{ "type": "paragraph", "text": "HTTP/1.1 has a queue problem: one connection carries **one request at a time**. To go faster, browsers open about **six connections** per origin. A page with 200 small images then needs 34 rounds of six, and each round costs a round trip. With 50 ms of delay that adds up to seconds." },
+				{ "type": "callout", "tone": "analogy", "text": "HTTP/1.1 is a shop with six tills where each customer buys one thing at a time. HTTP/2 is one till where all customers hand over their items together, and the cashier works on all of them in turns." },
+				{ "type": "heading", "text": "Frames, streams and messages" },
+				{ "type": "paragraph", "text": "HTTP/2 keeps the same meaning (methods, status codes, headers) and changes only how it is sent. It is **binary**, not text. The smallest piece is the **frame**, with a fixed 9-byte header that has length, type, flags and a stream number. A **stream** is a two-way logical channel inside the connection. A **message** (a request or a response) is the group of frames on one stream. Frames from different streams are mixed together, which is called **multiplexing**." },
+				{ "type": "diagram", "content": "one TCP connection:\n [S1 HEADERS][S3 HEADERS][S1 DATA][S5 HEADERS][S3 DATA][S1 DATA]...\n    ^ stream 1     ^ stream 3 ... frames of many streams interleaved", "caption": "Many requests share one connection." },
+				{ "type": "list", "items": [
+					"Stream numbers are 31-bit. The **client** uses **odd** numbers, the **server** uses **even** ones, and **0** is for the connection itself. They only grow and are never reused.",
+					"HTTP/2 has no request line or status line. They become **pseudo-headers** that start with a colon: `:method`, `:scheme`, `:authority` (replaces `Host`), `:path`, and `:status` in the response.",
+					"Frame types: `HEADERS` and `DATA` carry the message. `RST_STREAM` cancels **one** stream (in HTTP/1.1 you had to close the connection). `GOAWAY` shuts the connection down. `SETTINGS`, `PING` and `WINDOW_UPDATE` handle settings, liveness and flow control.",
+					"You start HTTP/2 over TLS using **ALPN** with the id `h2`. `h2c` is HTTP/2 without TLS, used between internal services, not by browsers."
+				] },
+				{ "type": "heading", "text": "HPACK: shrinking headers" },
+				{ "type": "paragraph", "text": "Headers repeat a lot: the same `user-agent` and `cookie` are sent in every request. HTTP/2 compresses them with **HPACK**. It keeps two tables. The **static** table has 61 fixed entries for very common headers, like `:method: GET`. The **dynamic** table starts empty and fills with the headers seen on this connection (the oldest are evicted when it is full). Both sides keep the same table, so a header seen before costs only a small **index number**." },
+				{ "type": "paragraph", "text": "Why not just use gzip, as the older SPDY did? Because compressing a secret (like a cookie) together with text the attacker controls leaks information through the size. This is the **CRIME** attack. HPACK never searches for partial repeats inside a value: it replaces a whole header by an index or uses a fixed [[Huffman code|a table that writes common symbols with few bits and rare symbols with many]], and it can mark sensitive fields as 'never indexed'." },
+				{ "type": "heading", "text": "Flow control" },
+				{ "type": "paragraph", "text": "Flow control stops a fast sender from drowning a slow receiver. It applies only to `DATA` frames and works with **two windows**: one for each stream and one for the whole connection. Both start at **65,535 bytes**. Each byte sent is subtracted from **both**. The receiver gives credit back with `WINDOW_UPDATE`. The sender may send at most the **smaller** of the two balances. (Priority is a different thing: only a hint about which stream to serve first.)" },
+				{ "type": "code", "language": "text", "content": "connection window: 65535\nstream 1 sends 16384 + 16384 + 7232 = 40000 bytes\nconnection window left: 25535\nstream 3 (never used) window: 65535\nstream 3 may send: min(65535, 25535) = 25535 bytes", "caption": "The smaller balance wins." },
+				{ "type": "heading", "text": "What did not work out" },
+				{ "type": "list", "items": [
+					"**Server push**: the server sent resources the client had not asked for yet. But the server does not know what the client already has cached, so it often wasted data. Browsers removed it. The replacement is `103 Early Hints` and `rel=preload`, where the browser decides.",
+					"**Domain sharding** (splitting images over several host names, a trick for HTTP/1.1) now hurts: each new host costs a [[DNS|the internet phone book that turns a name like example.test into an address]] lookup, a TCP and TLS handshake and a new slow start, and it breaks the single warm connection and the single HPACK table.",
+					"**Head-of-line blocking in TCP**: HTTP/2 fixed the queue in the application, but all streams share one ordered TCP byte stream. If one packet is lost, TCP holds back everything after it, even frames of streams that lost nothing. On a lossy link, one HTTP/2 connection can be worse than six HTTP/1.1 connections."
+				] },
+				{ "type": "chart", "title": "Rounds needed to ask for 200 images", "unit": "rounds", "bars": [ { "label": "HTTP/1.1 (6 connections)", "value": 34 }, { "label": "HTTP/2 (1 connection)", "value": 1 } ] },
+				{ "type": "callout", "tone": "remember", "text": "HTTP/2 = same meaning, binary frames, many streams on one connection, HPACK, flow control on DATA. Its weak point: one lost TCP packet stalls every stream." }
+			]
+		},
+		{
+			"id": "http3-quic",
+			"title": "HTTP/3 and QUIC",
+			"blocks": [
+				{ "type": "paragraph", "text": "To remove the problem of the single TCP queue, the Internet built a new transport called **QUIC**. It runs **on top of UDP**, but UDP is only an envelope that crosses the existing network. Everything else lives inside QUIC: streams, resending lost data, flow control, [[congestion control|slowing down when the network seems crowded, so the sender does not make it worse]] and encryption. Because QUIC usually runs in user space (inside the browser or server, not in the operating system), it can evolve with an app update. The cost: it uses more CPU per packet than kernel TCP. **HTTP/3** is HTTP carried over QUIC." },
+				{ "type": "table", "headers": ["Feature", "HTTP/1.1", "HTTP/2", "HTTP/3"], "rows": [
+					["Transport", "TCP", "TCP", "QUIC over UDP"],
+					["Format", "Text", "Binary frames", "Binary frames"],
+					["Requests at once on a connection", "1", "Many", "Many"],
+					["Header compression", "none", "HPACK", "QPACK"],
+					["Round trips before the first request (TLS 1.3, first visit)", "2", "2", "1"],
+					["One lost packet delays", "its connection", "every stream", "only its own stream"]
+				] },
+				{ "type": "heading", "text": "Three big wins" },
+				{ "type": "list", "items": [
+					"**No head-of-line blocking in the transport.** Each QUIC stream is ordered by itself. When a packet is lost, only the streams whose data it carried wait. The rest keep arriving.",
+					"**A shorter handshake.** With TCP, first comes TCP (1 round trip) and then TLS 1.3 (1 round trip): **2** in total before the first HTTP request. QUIC carries the TLS 1.3 handshake inside its own first packets: **1**. (Counted for a first visit, with no resumption and no TCP Fast Open. On a resumed connection both can use 0-RTT, with the replay risk you saw in the TLS section.)",
+					"**Connection migration.** A TCP connection is tied to four things: two IP addresses and two ports. If your phone moves from Wi-Fi to mobile data, the IP changes and TCP is lost. QUIC uses **connection IDs** carried in the packets, so the server checks the new path and goes on with the same keys and streams."
+				] },
+				{ "type": "diagram", "content": "TCP + TLS 1.3                 QUIC\n client          server        client          server\n  |--SYN--------->|             |--Initial+ClientHello->|\n  |<--SYN/ACK-----|  1 RTT      |<--Initial+ServerHello-|  1 RTT\n  |--ACK+Hello--->|             |--Finished + request-->|\n  |<--ServerHello-|  2 RTT      |\n  |--Finished+GET>|\n", "caption": "Counting full round trips before the first request is sent." },
+				{ "type": "paragraph", "text": "There is **no unencrypted QUIC**: the TLS 1.3 handshake is part of connecting, and earlier TLS versions are not accepted. QUIC also encrypts almost all its own control information (packet numbers, acknowledgements). The reason is **ossification**: when boxes in the middle of the Internet get used to reading a protocol's format, they break any change, even a valid one. TCP suffered from this because its header is in the clear. QUIC leaves visible only the minimum, like the connection ID, so the network cannot depend on the rest." },
+				{ "type": "heading", "text": "QPACK, Alt-Svc and fallback" },
+				{ "type": "list", "items": [
+					"**QPACK** replaces HPACK. HPACK's table is changed by the header blocks themselves, so they must be decoded in exact order, but QUIC only orders data inside each stream. QPACK sends table updates on a separate stream, and each block says which entries it needs, so the decoder knows if it must wait.",
+					"**Finding out that HTTP/3 exists.** An `https://` address does not say the version, so the browser starts with TCP. The server then announces `alt-svc: h3=\":443\"; ma=86400` (protocol, UDP port, how long it is valid). Another way is a special DNS record of type HTTPS. Then the next connection can use QUIC.",
+					"**It is only a hint.** Some networks block UDP. The browser tries QUIC, and if it does not work it uses the TCP connection (HTTP/2 or HTTP/1.1), usually racing both so the user does not wait for a timeout."
+				] },
+				{ "type": "chart", "title": "Round trips before the first HTTP request (first visit, TLS 1.3 convention)", "unit": "round trips", "bars": [ { "label": "TCP + TLS 1.3 (HTTP/1.1 or HTTP/2)", "value": 2 }, { "label": "QUIC (HTTP/3)", "value": 1 } ] },
+				{ "type": "paragraph", "text": "When is HTTP/3 best? When **latency is high** (the handshake saves a round trip) or when there is **packet loss** (streams do not block each other), as on mobile networks. On fast, clean networks HTTP/2 and HTTP/3 perform about the same, and user-space QUIC can even use more CPU." },
+				{ "type": "callout", "tone": "warning", "text": "In this repository's own measurement (50 ms round trip, 2% loss) HTTP/3 was **not** clearly ahead of HTTP/2: the page waits for the last image, and the one image hit by a loss decides the total. Textbook advantages show up only when the conditions favour them. HTTP/1.1 was about 3.3 times slower than HTTP/2 and HTTP/3 with latency, and connection setup took about 102 ms (TCP + TLS 1.3) against about 52 ms (QUIC)." },
+				{ "type": "callout", "tone": "remember", "text": "HTTP/3 = HTTP over QUIC over UDP. Per-stream ordering, 1 round trip to start, connection IDs for migration, QPACK, always encrypted, announced with Alt-Svc, with TCP as the fallback." }
+			]
+		},
+		{
+			"id": "rest",
+			"title": "REST: an API made of things",
+			"blocks": [
+				{ "type": "paragraph", "text": "An **API** is a menu of things a program may ask of another program. **REST** is a style for building web APIs, described by Roy Fielding in his doctoral thesis (2000). Its main idea: do not think of actions, think of **things** (called **resources**), such as books, orders or users. Every thing has an address, a URL." },
+				{ "type": "table", "headers": ["Want to...", "Request", "Answer"], "rows": [
+					["Read book 42", "`GET /books/42`", "`200 OK` and the book"],
+					["Create a book", "`POST /books`", "`201 Created` with a `Location` header with the new URL"],
+					["Replace book 42", "`PUT /books/42` (the whole book)", "`200` or `204`"],
+					["Change one field", "`PATCH /books/42` (only the changes)", "`200` or `204`"],
+					["Remove book 42", "`DELETE /books/42`", "`204 No Content`"]
+				], "caption": "The URL is a noun, the HTTP method is the verb." },
+				{ "type": "paragraph", "text": "Do not put the action in the path (`/getBook?id=42`). Doing so throws away what browsers, caches and proxies already know about the methods: for example, that GET is safe and cacheable." },
+				{ "type": "heading", "text": "Stateless" },
+				{ "type": "paragraph", "text": "In REST the server keeps **no conversation memory** about the client. Each request carries everything needed to understand it (credentials, parameters), so any server copy can answer it. That helps to scale with many servers and to recover from failures. The cost: some data is repeated in each request. This is about **session** state; the server still stores resources like books normally." },
+				{ "type": "heading", "text": "Richardson maturity model" },
+				{ "type": "list", "ordered": true, "items": [
+					"Level 0: one address used as a tunnel for everything.",
+					"Level 1: separate **resources**, each with its own URL.",
+					"Level 2: proper **HTTP methods and status codes**.",
+					"Level 3: **hypermedia controls** (HATEOAS): the answer tells the client what it can do next, with links."
+				] },
+				{ "type": "heading", "text": "Picking the right status" },
+				{ "type": "paragraph", "text": "`400` for a malformed request, `404` when the target does not exist, `409` when a valid request clashes with the current state (for example, a second book with an ISBN that must be unique), and `422` when the format is right but the content breaks a rule. Precise codes let clients react without reading the error text." },
+				{ "type": "heading", "text": "Retries: DELETE and Idempotency-Key" },
+				{ "type": "paragraph", "text": "After a timeout the client does not know if the server finished the job. DELETE is safe to repeat: the second one may return `404`, and that does not break idempotency, because the final state is the same. **POST** is not idempotent, and repeating it can create two orders. The fix is an **idempotency key**: the client invents a unique value (`Idempotency-Key: abc123`) and repeats it on every retry. The server recognises the repeat and returns the result of the first run. This header is a common convention, not part of core HTTP." },
+				{ "type": "heading", "text": "PUT or PATCH?" },
+				{ "type": "paragraph", "text": "**PUT** replaces the state with the representation you send, so you must send the full resource, and it is idempotent. **PATCH** sends only the changes, which saves bytes and avoids overwriting fields other people changed, but by definition it is not idempotent." },
+				{ "type": "heading", "text": "Pagination" },
+				{ "type": "paragraph", "text": "Big lists are returned in pages. **Offset** pagination says 'skip 3, give me 3'. If two new items are added at the top between two page requests, the window shifts and you receive items you already saw. **Cursor** pagination says 'give me 3 items after id 8', so it continues from the last item you saw and stays stable, but you cannot jump to page 50 directly." },
+				{ "type": "diagram", "content": "newest first:  12 11 10 9 8 7 6 5 4 3 2 1     (12 and 11 added after page 1)\n page 1 was:  10 9 8\n offset=3 :   skips 12 11 10  -> returns 9 8 7   (9 and 8 repeated)\n before=8 :   id < 8          -> returns 7 6 5   (nothing repeated)", "caption": "Why cursors are more stable." },
+				{ "type": "heading", "text": "Over-fetching and under-fetching" },
+				{ "type": "paragraph", "text": "In REST the **server** decides the shape of each answer. If it gives more than the screen needs, bytes are wasted: **over-fetching**. If it gives less, the client must make more requests: **under-fetching**. Example: a screen with an author, their 5 books and each book's publisher (5 different ones) needs 1 + 5 + 5 = **11 requests** with endpoints that return only ids. Fixes: composite endpoints, an `expand` parameter, or GraphQL." },
+				{ "type": "callout", "tone": "remember", "text": "REST = resources with URLs, HTTP methods as verbs, status codes as outcomes, stateless requests. Great for caching and standard tools. Costs: fixed shapes (over- and under-fetching)." }
+			]
+		},
+		{
+			"id": "graphql",
+			"title": "GraphQL: ask for exactly what you want",
+			"blocks": [
+				{ "type": "paragraph", "text": "**GraphQL** has one address and a typed **schema**, a list of all the types and fields that exist. The client sends a **query** that lists the exact fields it wants, even through relations, and the answer has the same shape. One request can replace the several requests of REST." },
+				{ "type": "callout", "tone": "analogy", "text": "REST is a set meal: the restaurant decides what is on the plate. GraphQL is a buffet with a tray: you write down exactly which dishes you want, and you get those and nothing else." },
+				{ "type": "code", "language": "graphql", "content": "query {\n\tbook(id: 7) {\n\t\ttitle\n\t\tauthor { name }\n\t}\n}", "caption": "The client chooses the fields (a selection set). The answer mirrors this shape." },
+				{ "type": "heading", "text": "The schema and the root types" },
+				{ "type": "list", "items": [
+					"Every type is **nullable** by default. A `!` makes it **non-null**: `title: String!` means the server promises never to return null there (on an argument, the client must supply a value).",
+					"A schema has up to three **root operation types**: `Query` (read), `Mutation` (write, then read) and `Subscription` (a long stream of events). Only `Query` is required. Their fields are the entry points of the API."
+				] },
+				{ "type": "heading", "text": "Resolvers" },
+				{ "type": "paragraph", "text": "The server runs the query **field by field**. For each field it calls a function called a **resolver**, giving it the parent object and the arguments. The schema describes the shape of the data; the resolvers say where the data comes from." },
+				{ "type": "heading", "text": "Errors and null" },
+				{ "type": "paragraph", "text": "An answer is an object with `data` and, if something failed, `errors`. Because an operation can succeed **partly**, the usual convention (JSON over HTTP) answers **`200`** even with errors, so the client must always read `errors`, not only the HTTP code." },
+				{ "type": "paragraph", "text": "When a resolver fails, its field becomes `null`. If the field is `!` (non-null), `null` is not allowed, so the null **propagates up** to the parent, and again, until the first nullable field. If none is found, the whole `data` is `null`. So marking everything with `!` has a cost: one small failure can erase a big part of the answer." },
+				{ "type": "diagram", "content": "type User { name: String!  posts: [Post!]! }\ntype Post { title: String! }\n\nthe title of post 2 fails:\n  title  is String!   -> post 2 cannot be null\n  [Post!]!            -> the list cannot hold a null item, so it cannot be null\n  User.posts is !     -> posts cannot be null\n  user(id) is nullable-> user becomes null\n\nresult:  { \"data\": { \"user\": null }, \"errors\": [ ... ] }", "caption": "Null climbs until it finds a field that is allowed to be null." },
+				{ "type": "heading", "text": "Variables, aliases and execution order" },
+				{ "type": "list", "items": [
+					"**Variables** (`$term`) keep the structure of the query separate from the data. The values travel in a JSON map next to the document and are checked against the declared type. If you glued the text into the query instead, a user could inject pieces of query. Variables also let the same document be cached or registered as a persisted query.",
+					"**Aliases** (`first: user(id: 1)` and `second: user(id: 2)`) change the key in the answer. Without them, asking for the same field twice with different arguments is rejected, because both would use the key `user`.",
+					"**Order.** Query fields may run in any order, even in parallel, because they have no side effects. The top-level fields of a **mutation** run **one after the other, in the order written**. This is only for the top level; subfields run normally."
+				] },
+				{ "type": "heading", "text": "The N+1 problem" },
+				{ "type": "paragraph", "text": "Because each field has its own resolver, a list of N items with a nested field makes 1 query for the list and then N queries for the nested field. With 20 posts and their authors, that is 1 + 20 = **21** SQL queries, even if there are only 4 different authors. The fix is a **DataLoader**: resolvers ask the loader for a key, the loader collects all the keys of the current step, removes repeats and runs one query (`WHERE id IN (...)`). Now it is 1 + 1 = **2**. A loader lives for **one request**, so it never leaks rows to other clients." },
+				{ "type": "chart", "title": "SQL statements for a list of 100 books with authors and reviews (this repository's mini-project)", "unit": "statements", "bars": [ { "label": "Without batching", "value": 201 }, { "label": "With a batching loader", "value": 3 } ] },
+				{ "type": "heading", "text": "Cost, depth and caching" },
+				{ "type": "paragraph", "text": "Since the client writes the query, the client also decides how expensive it is. A type that points to itself allows endless nesting, and cost multiplies: four levels of `friends(first: 100)` ask for 100 x 100 x 100 x 100 = 100^4 = **100 million** objects. Counting requests is not enough, because **one request** can be abusive. Servers analyse the **depth** and an estimated **complexity** of the document and refuse it before running it." },
+				{ "type": "paragraph", "text": "Caching is harder than in REST. The HTTP cache is designed around GET and one URL per resource, but typical GraphQL sends everything with POST to `/graphql`, and the difference is in the body. Ways out: send queries by GET, use **persisted queries** identified by a hash in the URL, or cache on the client by type and `id`." },
+				{ "type": "chart", "title": "Size of a list answer in this repository's benchmark", "unit": "kB", "bars": [ { "label": "REST (whole books)", "value": 27.6 }, { "label": "GraphQL (2 fields)", "value": 3 } ] },
+				{ "type": "callout", "tone": "remember", "text": "GraphQL = one endpoint, typed schema, the client picks the fields. Watch out for: errors inside a 200, null propagation, N+1 (use batching), query cost (limit depth and complexity), and hard HTTP caching." }
+			]
+		},
+		{
+			"id": "json-rpc-grpc",
+			"title": "JSON-RPC and gRPC: calling a function far away",
+			"blocks": [
+				{ "type": "paragraph", "text": "An **RPC** (Remote Procedure Call) makes a call to another computer feel like calling a normal function. You do not think of resources or fields: you name an action (`book.get`, `sum`) and give it parameters." },
+				{ "type": "heading", "text": "JSON-RPC 2.0" },
+				{ "type": "paragraph", "text": "A very small specification. A request has `jsonrpc: \"2.0\"`, `method`, optional `params` and an `id`. The answer has `jsonrpc`, the same `id` (so you can match answers to requests) and **exactly one** of `result` or `error`, never both. An `error` has an integer `code`, a `message` and optional `data`." },
+				{ "type": "code", "language": "json", "content": "{ \"jsonrpc\": \"2.0\", \"method\": \"book.get\", \"params\": { \"id\": 7 }, \"id\": 1 }\n{ \"jsonrpc\": \"2.0\", \"result\": { \"title\": \"Example\" }, \"id\": 1 }", "caption": "A request and its answer." },
+				{ "type": "table", "headers": ["Error code", "Meaning"], "rows": [
+					["-32700", "Parse error: the text is not valid JSON"],
+					["-32600", "Invalid Request: it is JSON but not a valid request object"],
+					["-32601", "Method not found"],
+					["-32602", "Invalid params: for example `\"abc\"` where an integer is expected"],
+					["-32603", "Internal error"],
+					["-32000 to -32099", "Reserved for the server's own errors. Application errors use codes outside the reserved range"]
+				] },
+				{ "type": "list", "items": [
+					"**Notification**: a request **without `id`**. The server must not answer at all, not even an error. Good for events and logs, but the client never knows if it failed.",
+					"**Batch**: an array of requests sent together. The server returns an array with one answer for each request that has an `id`, in any order. Notifications get nothing. An error in one element does not affect the others. If the batch holds only notifications, the server returns nothing.",
+					"A batch only saves round trips for calls that **do not depend on each other**."
+				] },
+				{ "type": "table", "headers": ["Topic", "REST", "JSON-RPC"], "rows": [
+					["Remove book 42", "`DELETE /books/42`", "`POST /rpc` with `{\"method\":\"book.delete\",\"params\":{\"id\":42},\"id\":1}`"],
+					["The action is in", "the HTTP method", "the body (`method`)"],
+					["The outcome is in", "the status code", "`result` or `error` in the body"],
+					["Transport", "HTTP", "any (HTTP, sockets...)"]
+				], "caption": "JSON-RPC is simple and independent of the transport, but loses what HTTP gives for free, like GET caching and status meanings." },
+				{ "type": "heading", "text": "gRPC" },
+				{ "type": "paragraph", "text": "**gRPC** starts from a contract written in **Protocol Buffers** (a `.proto` file). The same file defines the services and messages and the compact **binary** encoding, where each field is identified by a **number** instead of a name. A compiler writes typed code in many languages, so calling the remote service looks like calling a local function. gRPC travels over **HTTP/2**: each call is a stream (headers with the method name, messages in DATA frames, and a final status in trailers), and multiplexing lets many calls share one connection." },
+				{ "type": "code", "language": "proto", "content": "message Book {\n\tstring title = 1;\n\tint32 year = 2;\n}\nservice Library {\n\trpc Get (BookId) returns (Book);                 // unary\n\trpc Upload (stream Chunk) returns (Summary);     // client streaming\n}", "caption": "The numbers 1 and 2 are what travels on the wire." },
+				{ "type": "table", "headers": ["Call type", "Messages", "Signature"], "rows": [
+					["Unary", "1 request, 1 response", "`rpc A (Req) returns (Res)`"],
+					["Server streaming", "1 request, many responses", "`rpc A (Req) returns (stream Res)`"],
+					["Client streaming", "many requests, 1 response", "`rpc A (stream Req) returns (Res)`"],
+					["Bidirectional", "many both ways, independent", "`rpc A (stream Req) returns (stream Res)`"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "A field number must never change meaning. Old clients and new servers can talk because unknown fields are ignored and missing fields get the default value. If you remove `year = 2` and reuse number 2 for `pages`, an old client's `year = 1965` is read by the new server as `pages = 1965`. When you remove a field, mark its number as `reserved`." },
+				{ "type": "paragraph", "text": "**Deadlines.** The client says until when it is willing to wait. If time runs out, the call ends with `DEADLINE_EXCEEDED` and the server is told to stop working. In a chain A to B to C the deadline is passed along as the **remaining time**. If A gives 500 ms and B uses 200 ms, C gets 300 ms. If C needs 400 ms, the call ends at the 500 ms mark with `DEADLINE_EXCEEDED`." },
+				{ "type": "diagram", "content": "t=0     A calls B (deadline = t 500)\nt=200   B calls C  (300 ms left)\nt=500   deadline hits -> DEADLINE_EXCEEDED, C is cancelled\n        (C would have finished at t 600)", "caption": "Nobody keeps working for someone who has stopped waiting." },
+				{ "type": "chart", "title": "Round trips to read a book with its author (this repository's mini-project)", "unit": "round trips", "bars": [ { "label": "REST", "value": 3 }, { "label": "JSON-RPC", "value": 2 }, { "label": "GraphQL", "value": 1 } ] },
+				{ "type": "callout", "tone": "remember", "text": "JSON-RPC: `id` matches answers, no `id` = notification, `result` xor `error`, five reserved codes. gRPC: Protocol Buffers + HTTP/2, four call types, field numbers never reused, deadlines propagate." }
+			]
+		},
+		{
+			"id": "websocket-sse",
+			"title": "WebSocket and server-sent events: the server talks first",
+			"blocks": [
+				{ "type": "paragraph", "text": "In plain HTTP the client always asks first. But a chat, a game or a stock board needs the server to send news **by itself**. There are four ways to do it." },
+				{ "type": "table", "headers": ["Technique", "How it works", "Good for"], "rows": [
+					["Polling", "The client asks again every few seconds", "Rare changes"],
+					["Long polling", "The server holds the request open until it has news; one request per message", "Simple notifications"],
+					["Server-sent events (SSE)", "One HTTP response that never ends; **one-way**, server to client", "Dashboards, feeds, progress bars"],
+					["WebSocket", "One connection, **two-way**, text or binary", "Chat, games, collaboration"]
+				] },
+				{ "type": "heading", "text": "WebSocket" },
+				{ "type": "paragraph", "text": "A WebSocket starts as an ordinary HTTP/1.1 `GET` that asks to **upgrade**. If the server agrees, it answers `101 Switching Protocols`, and from then on the same TCP connection speaks the WebSocket protocol. `ws://` runs over plain TCP and `wss://` runs inside TLS (like `http://` and `https://`)." },
+				{ "type": "code", "language": "http", "content": "GET /chat HTTP/1.1\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: AAECAwQFBgcICQoLDA0ODw==\n\nHTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nSec-WebSocket-Accept: Bz3qJYTGdOe8gUSpLosEdiLKDrk=", "caption": "The handshake: request, then 101." },
+				{ "type": "list", "items": [
+					"`Sec-WebSocket-Accept` is a [[SHA-1|a function that turns any text into a short fingerprint]] of the client's key plus a fixed public text, written in [[Base64|a way to write bytes using only letters, digits and a few symbols]]. It only proves that the server **understood WebSocket** and answered **this** request. It authenticates nobody and encrypts nothing. That is the job of TLS and of your app.",
+					"After the handshake, data moves in **frames** that are text (UTF-8) or binary. Three **control frames** exist: **ping** and **pong** (a heartbeat: 'are you there?' / 'yes') and **close** (start an orderly goodbye with a code and a reason).",
+					"**Masking**: every frame from the **client** is XORed with a random 32-bit key sent in the same frame. This does not hide data. It protects broken proxies from being tricked into treating the bytes as HTTP (cache poisoning), because the page's script is not trusted to choose the exact bytes. Server frames are not masked."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "WebSocket is **outside** the same-origin policy and CORS. Any page can open a connection to any server, and the browser attaches the cookies that `SameSite` allows. So the **server** must check the `Origin` header in the handshake and refuse unknown origins. If it does not, an evil site can use your logged-in session. This is called cross-site WebSocket hijacking." },
+				{ "type": "heading", "text": "Server-sent events" },
+				{ "type": "paragraph", "text": "SSE is just a normal HTTP response that does not end. The server uses `Content-Type: text/event-stream` and keeps writing text. The browser reads it through the `EventSource` API. To talk back, the client makes other ordinary HTTP requests." },
+				{ "type": "code", "language": "text", "content": ": keep-alive            <- a comment (starts with a colon)\nretry: 5000            <- reconnect after 5 seconds\n\nid: 42\nevent: price\ndata: 11\n\n", "caption": "An event is a block of lines ended by an empty line." },
+				{ "type": "list", "items": [
+					"Fields: `data` (the content), `event` (the name; without it the name is `message`), `id` (the position in the stream) and `retry`.",
+					"An event is delivered **only when the empty line** that closes its block arrives. Several `data` lines in the same block become one value joined with line breaks. A block that is not yet closed has not been delivered.",
+					"Without `event:` the handler `onmessage` is called. With `event: update` only listeners added with `addEventListener('update', ...)` are called.",
+					"If the connection drops, `EventSource` waits for the `retry` time and asks again, sending **`Last-Event-ID`** with the last `id` it saw. The server can resume without losing events."
+				] },
+				{ "type": "callout", "tone": "analogy", "text": "SSE is a radio: the station talks, you listen, and if the signal drops the radio tunes back by itself. WebSocket is a phone call: both people can talk at any time." },
+				{ "type": "callout", "tone": "tip", "text": "A dashboard that only receives quotes several times a second, with automatic reconnection and ordinary HTTP, fits SSE best. Choose WebSocket when both sides send often, as in a chat or a game." },
+				{ "type": "video", "title": "Hussein Nasser: videos on HTTP, TLS, WebSocket, gRPC and their trade-offs", "url": "https://www.youtube.com/@hnasr" },
+				{ "type": "callout", "tone": "remember", "text": "WebSocket = upgrade with 101, two-way, ping/pong/close, check `Origin`. SSE = `text/event-stream`, one-way, automatic reconnect with `Last-Event-ID`." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{ "type": "paragraph", "text": "Now we can see how the pieces stack. When you open `https://example.test` for the first time, your browser starts a TCP connection, does a TLS 1.3 handshake (SNI picks the certificate, ALPN picks `h2`), then sends HTTP/2 requests. The answers carry `Cache-Control` so next time it is faster. The server may add `alt-svc` so that later you use HTTP/3." },
+				{ "type": "table", "headers": ["Need", "Choose", "Why"], "rows": [
+					["Public, long-lived API with resources and HTTP caching", "REST", "Standard tools and GET caching"],
+					["Many screens, each needing a different slice of connected data", "GraphQL", "One request, only the fields wanted. Needs batching and cost limits"],
+					["Actions that are not resources, or internal services", "JSON-RPC", "Simplest to build, independent of transport"],
+					["Fast service-to-service calls with a strict contract", "gRPC", "Binary, typed, HTTP/2 streaming and deadlines"],
+					["Server only pushes updates", "SSE", "Plain HTTP, auto-reconnect"],
+					["Both sides send often", "WebSocket", "Two-way, low overhead per message"]
+				] },
+				{ "type": "table", "headers": ["Layer", "Question it answers", "Key ideas"], "rows": [
+					["HTTP semantics", "What does the message mean?", "Methods (safe, idempotent), status codes, headers, framing"],
+					["Caching, cookies, CORS", "What may be reused, remembered or read?", "max-age, no-store, revalidation, Vary, SameSite, origin"],
+					["TLS", "Is it private and is it the right server?", "Certificates, key agreement, 1 vs 2 round trips, forward secrecy"],
+					["HTTP/1.1, 2, 3", "How are messages put on the wire?", "Multiplexing, HPACK/QPACK, QUIC, head-of-line blocking"],
+					["API styles", "What does the client name and who shapes the answer?", "Resource, fields, procedure"]
+				] },
+				{ "type": "heading", "text": "Common mistakes" },
+				{ "type": "list", "items": [
+					"Thinking `no-cache` forbids storing (it means 'check first').",
+					"Mixing 401 (who are you?) with 403 (you may not).",
+					"Believing CORS protects the server (it protects the reading of the answer, in browsers).",
+					"Thinking GraphQL errors use 4xx or 5xx codes (the convention is `200` with `errors`).",
+					"Thinking HTTP/3 is always faster (it helps most with high latency or loss).",
+					"Forgetting that WebSocket needs an `Origin` check on the server.",
+					"Reusing a Protocol Buffers field number."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Protocols are agreements. Each choice trades something: fewer round trips, smaller messages, easier caching, simpler code. Knowing the trade is what the quiz tests." }
+			]
+		}
+	]
+}

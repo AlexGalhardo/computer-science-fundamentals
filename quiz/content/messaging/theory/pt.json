@@ -1,0 +1,396 @@
+{
+	"area": "messaging",
+	"intro": [
+		"Imagine uma pizzaria. Quem anota o seu pedido não corre até a cozinha e fica esperando a pizza assar. Ela escreve um bilhete e prende num varal. O pizzaiolo pega os bilhetes do varal quando está livre. Se ele está ocupado, os bilhetes esperam. Se ele sai para ir ao banheiro, os bilhetes continuam lá quando ele volta. Esse varal é o assunto de todo este resumo. Na computação, isso se chama **mensageria** (messaging).",
+		"No software, os programas precisam conversar entre si. O site de uma loja precisa avisar o programa de cobrança, o de entrega e o de e-mail que chegou um pedido. Eles poderiam ligar uns para os outros, como numa chamada de telefone, mas aí todo mundo precisaria estar acordado ao mesmo tempo e ser rápido. Na mensageria, um programa escreve uma [[mensagem|um pacotinho de dados, como um bilhete ou um recado]] e entrega a um intermediário chamado [[broker|um programa cuja função é guardar as mensagens em segurança e entregá-las]]. Os outros programas leem depois, no seu próprio ritmo.",
+		"Você encontra mensageria todo dia sem ver: o e-mail que chega depois de uma compra, a notificação no celular, o vídeo que está sendo convertido enquanto você usa o site, a transferência bancária processada em segundo plano. Grandes empresas movem milhões de mensagens por segundo.",
+		"Neste resumo você vai aprender: os três formatos básicos (fila, publish/subscribe e stream), quais promessas de entrega um sistema pode fazer, como funciona a ordem e por que ela quebra, o que fazer quando uma mensagem falha (confirmações, retentativas e dead-letter queues), como deixar um programa seguro contra mensagens repetidas, como impedir que quem envia rápido afogue quem recebe devagar, e como funcionam as ferramentas de verdade: RabbitMQ, Kafka, BullMQ, SQS e SNS. No final você também vai conhecer três padrões para sistemas grandes: outbox, saga e event sourcing. Então estará pronto para o quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "O quadro geral: quem fala com quem?",
+			"blocks": [
+				{ "type": "paragraph", "text": "Vamos dar nome aos personagens, usando a pizzaria. O **producer** (produtor) é quem cria as mensagens (a pessoa que anota os pedidos). O **consumer** (consumidor) é quem lê e trata as mensagens (o pizzaiolo). O **broker** é o varal do meio, que guarda os bilhetes. E a mensagem é o próprio bilhete." },
+				{ "type": "diagram", "content": "  PRODUCER            BROKER             CONSUMER\n  (balcão)            (o varal)          (o pizzaiolo)\n\n  [ bilhete ] ----->  [ t3 | t2 | t1 ] ------> [ bilhete ]\n   escreve            guarda em                  lê e faz\n   e vai embora       segurança até              o trabalho\n                      alguém pegar", "caption": "Produtor e consumidor nunca precisam se encontrar. O broker fica entre eles." },
+				{ "type": "paragraph", "text": "Por que colocar um intermediário aí? Por dois grandes presentes. O primeiro é o [[desacoplamento|deixar duas partes independentes, de modo que uma pode mudar ou quebrar sem a outra perceber]]: o produtor não sabe quem lê e não se importa com quantos leitores existem. O segundo é a **independência no tempo**: o pizzaiolo pode sumir por dez minutos e nada se perde, porque os bilhetes esperam no varal." },
+				{ "type": "callout", "tone": "analogy", "text": "Uma caixa de correio. Você joga a carta e vai embora. O amigo não precisa estar em casa naquele momento. A carta espera. É exatamente isso que um broker faz pelos programas." },
+				{ "type": "heading", "text": "Palavras que você vai encontrar" },
+				{ "type": "list", "items": [
+					"**Producer** (também chamado de publisher ou remetente): cria as mensagens.",
+					"**Consumer** (também chamado de subscriber ou worker): lê e processa as mensagens.",
+					"**Broker**: o servidor que guarda as mensagens e as entrega, por exemplo RabbitMQ, Kafka ou Amazon SQS.",
+					"**Acknowledgement (ack)**: o consumidor dizendo 'terminei esta, pode esquecê-la'.",
+					"**Entrega** (delivery): uma mensagem chegando a um consumidor. Se uma mensagem é enviada a três consumidores, são três entregas.",
+					"**Tópico** (topic): um lugar com nome onde ficam as mensagens de um assunto."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Mensageria = o produtor deixa uma mensagem com um broker, e o consumidor a pega depois. Os dois nunca precisam estar acordados ao mesmo tempo." }
+			]
+		},
+		{
+			"id": "queue-pubsub-stream",
+			"title": "Fila, publish/subscribe e stream",
+			"blocks": [
+				{ "type": "paragraph", "text": "Existem três formatos básicos para mover mensagens. De longe eles parecem iguais, mas se comportam de jeitos muito diferentes. Escolher o formato errado é o erro de iniciante mais comum." },
+				{ "type": "heading", "text": "1. Fila: dividir o trabalho" },
+				{ "type": "paragraph", "text": "Uma **fila** (queue) é como a fila da cantina da escola com três balcões. Cada criança vai a um balcão só. Se você abre um quarto balcão, a fila anda mais rápido, mas cada criança ainda é atendida uma vez. Em mensageria isso se chama [[consumidores concorrentes|vários trabalhadores disputando as mesmas mensagens, e cada mensagem vai para apenas um deles]] (competing consumers). Cada mensagem é processada por exatamente um consumidor. É o jeito de repartir uma pilha grande de trabalho entre vários trabalhadores." },
+				{ "type": "heading", "text": "2. Publish/subscribe: avisar todo mundo" },
+				{ "type": "paragraph", "text": "No **publish/subscribe** (pub/sub), um publicador envia uma mensagem a um tópico e cada assinante recebe a sua própria cópia. É como a professora anunciando 'hoje não tem lição de casa' para a turma toda: ela fala uma vez e todas as crianças ouvem. Se um tópico tem quatro assinantes, uma mensagem gera quatro entregas. Uma fila **divide** o trabalho, um tópico **multiplica**." },
+				{ "type": "heading", "text": "3. Stream: um registro que dá para reler" },
+				{ "type": "paragraph", "text": "Um **stream** (como um tópico do Kafka) é um **log append-only**: os registros novos só são adicionados no fim, e ficam lá por um tempo mesmo depois de alguém ler. Pense num diário. Ler uma página não arranca a página. Cada leitor guarda um marcador, chamado **offset**, então muitos leitores podem ler as mesmas páginas, e um leitor pode voltar e reler páginas antigas. Uma fila clássica é o oposto: a mensagem é removida depois de tratada." },
+				{ "type": "table", "headers": ["Característica", "Fila", "Tópico pub/sub", "Stream (log)"], "rows": [
+					["Quem recebe a mensagem?", "Um consumidor", "Todo assinante", "Todo grupo de leitores; um leitor dentro de cada grupo"],
+					["Depois de lida", "É removida", "Some, a não ser que cada assinante tenha a sua fila", "Fica até acabar o tempo de retenção"],
+					["Dá para ler de novo depois?", "Não", "Não", "Sim, basta voltar o marcador"],
+					["Bom para", "Repartir tarefas entre trabalhadores", "Avisar vários serviços sobre um evento", "Histórico, replay, criar relatórios novos a partir de eventos antigos"]
+				], "caption": "Os três formatos lado a lado." },
+				{ "type": "chart", "title": "Entregas por minuto quando chegam 600 mensagens por minuto", "unit": "entregas/min", "bars": [
+					{ "label": "Fila, 2 consumidores", "value": 600 },
+					{ "label": "Fila, 3 consumidores", "value": 600 },
+					{ "label": "Tópico, 2 assinantes", "value": 1200 },
+					{ "label": "Tópico, 3 assinantes", "value": 1800 }
+				] },
+				{ "type": "paragraph", "text": "Acrescentar um consumidor a uma fila não muda o total (600): o mesmo trabalho é cortado em pedaços menores. Acrescentar um assinante a um tópico acrescenta uma cópia inteira do fluxo." },
+				{ "type": "heading", "text": "Misturando os modelos, e outras ideias" },
+				{ "type": "list", "items": [
+					"**Sistemas reais combinam os modelos.** Um evento é copiado para uma fila por serviço (pub/sub entre serviços), e dentro de cada serviço várias instâncias disputam as mensagens da sua fila. O número de vezes que uma mensagem é processada é igual ao número de **filas** (ou grupos de consumidores), não ao número de processos. Dois serviços com 3 instâncias cada processam a mensagem 2 vezes no total.",
+					"**Para escalar um serviço**, as instâncias dele precisam dividir uma fila (ou um grupo de consumidores). Se cada instância ganha a sua própria assinatura, você não escala: você duplica, e cada e-mail é enviado três vezes.",
+					"**Independência no tempo.** Com uma fila durável, se o serviço de e-mail ficar fora do ar por dez minutos, os pedidos esperam e são tratados quando ele volta. O [[Redis Pub/Sub|um recurso bem simples de transmissão do Redis que não guarda nada]] puro é diferente: só recebe a mensagem quem está conectado naquele instante. Quem estava desconectado perde para sempre.",
+					"**Comando e evento.** Um comando (`SendInvoice`) é uma ordem com um destinatário pretendido e combina com uma fila. Um evento (`OrderPlaced`) é um fato no passado, não sabe quem escuta, e combina com pub/sub. A diferença está na intenção, não na tecnologia.",
+					"**Replay.** Só um stream consegue encher um serviço de relatórios novinho com os eventos dos últimos 30 dias, porque os registros antigos ainda estão lá. Uma fila já os jogou fora."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Um consumidor lento machuca de jeitos diferentes. Numa fila sem limite, quem paga é o broker: a memória e o disco dele enchem. Num log com retenção de 24 horas, quem paga é o consumidor: ele fica para trás, e se atrasar mais de 24 horas, os registros mais antigos que ele ainda não leu são apagados." },
+				{ "type": "callout", "tone": "remember", "text": "Fila = um receptor por mensagem. Tópico = cada assinante ganha uma cópia. Stream = um diário que os leitores podem reler." }
+			]
+		},
+		{
+			"id": "delivery-guarantees",
+			"title": "Garantias de entrega: quantas vezes chega?",
+			"blocks": [
+				{ "type": "paragraph", "text": "Redes falham. Uma carta pode se perder, e o recibo que diz que a carta chegou também. Então um broker precisa escolher o que promete sobre quantas vezes a mensagem chega. Existem três promessas." },
+				{ "type": "table", "headers": ["Promessa", "O que significa", "Preço"], "rows": [
+					["**At-most-once** (no máximo uma vez)", "Nunca tenta de novo. A mensagem chega uma vez ou não chega.", "Pode perder mensagens. É a mais barata."],
+					["**At-least-once** (pelo menos uma vez)", "Tenta até ter certeza. Nunca perde uma mensagem.", "Pode entregar duplicatas. O consumidor precisa lidar com isso."],
+					["**Exactly-once** (exatamente uma vez)", "Chega uma vez e somente uma.", "Não dá para garantir numa rede que falha. É construída a partir das outras duas."]
+				] },
+				{ "type": "callout", "tone": "analogy", "text": "Você grita 'o jantar está pronto!' para um amigo em outro cômodo. At-most-once: você grita uma vez e torce. At-least-once: você grita até ouvir 'tá!'. Se o 'tá' se perdeu no caminho, você grita de novo e seu amigo ouve duas vezes." },
+				{ "type": "heading", "text": "Por que 'exactly once' é uma armadilha" },
+				{ "type": "paragraph", "text": "O remetente manda uma mensagem e não recebe resposta. A mensagem se perdeu, ou a resposta se perdeu? Do lado do remetente as duas coisas são idênticas. Só tentar de novo evita perder a mensagem, mas tentar de novo pode criar uma duplicata. Então o que as pessoas fazem de verdade é: **entregar pelo menos uma vez e fazer o consumidor ignorar duplicatas**. O resultado é que o efeito acontece uma vez, mesmo que a entrega tenha acontecido duas. O efeito é exactly-once, a entrega não é." },
+				{ "type": "heading", "text": "Onde você coloca o ack decide a promessa" },
+				{ "type": "code", "language": "ts", "content": "// A: ack primeiro, trabalho depois -> at-most-once\nawait broker.ack(msg);\nawait sendEmail(msg.body);   // crash antes desta linha: mensagem PERDIDA\n\n// B: trabalho primeiro, ack depois -> at-least-once\nawait sendEmail(msg.body);\nawait broker.ack(msg);       // crash antes desta linha: mensagem REPETIDA", "caption": "Duas linhas trocadas de lugar dão duas garantias diferentes." },
+				{ "type": "paragraph", "text": "Na versão B existe uma janelinha entre 'o trabalho foi feito' e 'o ack chegou'. Um crash nessa janela repete um trabalho que já estava feito, por exemplo cobrar um cartão de crédito duas vezes. Você não consegue fechar essa janela. Só consegue torná-la inofensiva com um consumidor idempotente (veja a seção de consumidores idempotentes)." },
+				{ "type": "paragraph", "text": "As duplicatas também podem nascer no **produtor**. Se o produtor publica e a confirmação estoura o tempo, ele não sabe se o broker recebeu a mensagem. Para não perder, ele precisa tentar de novo, e agora o broker pode ter duas cópias." },
+				{ "type": "heading", "text": "Duas confirmações diferentes" },
+				{ "type": "paragraph", "text": "Um broker tem dois sinais separados de 'recebi'. O **publisher confirm** vai do broker para o produtor: 'sua mensagem está guardada com segurança'. O **consumer ack** vai do consumidor para o broker: 'terminei de processar'. Para ficar seguro de ponta a ponta, você precisa dos dois." },
+				{ "type": "heading", "text": "Sobrevivendo a uma reinicialização ou a um crash do broker" },
+				{ "type": "list", "items": [
+					"**RabbitMQ**: duas coisas separadas precisam ser verdadeiras ao mesmo tempo. A fila precisa ser **durável** (sobrevive a uma reinicialização) e a mensagem precisa ser **persistente** (é gravada em disco). Uma sem a outra não basta.",
+					"**`acks` do produtor Kafka**: com `acks=1`, só a cópia do líder tem o registro quando ele responde; se o líder morrer antes de os seguidores copiarem, um registro confirmado desaparece. Com `acks=all`, o líder só responde depois que todas as réplicas em sincronia (in-sync) têm o registro.",
+					"**Commit do consumidor Kafka**: o Kafka só lembra o progresso de um grupo como um offset confirmado (committed). Commit depois de processar dá at-least-once. Commit antes de terminar de processar dá at-most-once. O commit automático confirma o que o `poll()` devolveu, então se você passa o trabalho para uma thread de segundo plano, registros que ainda não terminaram podem ser confirmados e depois perdidos num crash.",
+					"**Transações do Kafka** tornam atômico o 'ler offsets e escrever registros', mas só dentro do Kafka. Um e-mail que já saiu por um servidor externo não pode ser desfeito, então efeitos colaterais fora do Kafka continuam at-least-once e precisam da própria proteção."
+				] },
+				{ "type": "callout", "tone": "tip", "text": "Escolha a garantia perguntando o que custa mais: perder uma mensagem ou repeti-la. Dez mil sensores mandando uma temperatura por segundo podem perder uma leitura de vez em quando, então at-most-once é um bom projeto. Um pagamento não pode ser perdido, então use at-least-once mais um consumidor que ignora duplicatas." },
+				{ "type": "callout", "tone": "remember", "text": "Ack depois do trabalho = pode repetir. Ack antes do trabalho = pode perder. 'Exactly once' na verdade quer dizer at-least-once mais um consumidor que ignora duplicatas." }
+			]
+		},
+		{
+			"id": "ordering-partitioning",
+			"title": "Ordem e particionamento",
+			"blocks": [
+				{ "type": "paragraph", "text": "Numa fila única do cinema, as pessoas entram na ordem em que chegaram. Isso é **FIFO** (first in, first out: o primeiro que entra é o primeiro que sai). A promessa de ordem mais simples é exatamente essa: uma fila e **um consumidor** tratando uma mensagem de cada vez. Qualquer outro arranjo (vários consumidores, várias partições, retentativas) abre mão de um pouco de ordem em troca de mais velocidade ou disponibilidade." },
+				{ "type": "heading", "text": "Uma fila ordena a distribuição, não o término" },
+				{ "type": "paragraph", "text": "Dois trabalhadores pegam a mensagem M1 ('criar conta 7') e a M2 ('fechar conta 7') da mesma fila. M1 é entregue primeiro, mas o trabalho dela leva 300 ms. M2 leva só 50 ms. Então M2 termina primeiro, e a conta é fechada antes de existir. A fila entregou as mensagens em ordem, mas os **efeitos** aconteceram em outra ordem. A cura é fazer as mensagens relacionadas irem para o mesmo consumidor." },
+				{ "type": "heading", "text": "Kafka: ordem só dentro de uma partição" },
+				{ "type": "paragraph", "text": "Um tópico do Kafka é dividido em **partições**, como uma biblioteca dividida em estantes. Dentro de uma estante os livros ficam na ordem em que foram colocados. Entre estantes não há promessa. Então o Kafka garante ordem **por partição** apenas. Com 3 partições, um leitor vê cada partição em ordem, mas as três podem se misturar de qualquer jeito." },
+				{ "type": "paragraph", "text": "Para manter eventos relacionados juntos você dá a cada registro uma **chave** (key). O particionador padrão calcula `hash(chave) mod número de partições`, então todo registro com a mesma chave cai na mesma partição e mantém a ordem. Sem chave, o Kafka só espalha os registros pelas partições: ótimo para velocidade, mas não há ordem entre registros relacionados." },
+				{ "type": "diagram", "content": "chave \"order-42\" --hash--> partição 1  [placed][paid][shipped]\nchave \"order-77\" --hash--> partição 3  [placed][paid]\nchave \"order-90\" --hash--> partição 1  [placed]\n\nMesma chave  =  mesma partição  =  mesma ordem.", "caption": "Escolha como chave a coisa cuja história precisa ficar em ordem." },
+				{ "type": "paragraph", "text": "A chave deve ser a identidade da coisa cuja história precisa ficar ordenada: o pedido, a conta, o dispositivo. Assim os eventos de um pedido ficam em ordem, enquanto pedidos diferentes rodam em paralelo." },
+				{ "type": "heading", "text": "Amazon SQS" },
+				{ "type": "list", "items": [
+					"**Fila standard**: muito rápida, at-least-once, e a ordem é apenas de melhor esforço (best effort).",
+					"**Fila FIFO**: entrega ordenada **por grupo de mensagens**, com um limite de vazão menor. O `MessageGroupId` faz o papel da chave do Kafka: um grupo por cliente dá ordem para cada cliente e paralelismo entre clientes."
+				] },
+				{ "type": "heading", "text": "O que quebra a ordem" },
+				{ "type": "list", "items": [
+					"**Vários consumidores numa fila**, como explicado acima.",
+					"**Retentativa devolvendo a mensagem à fila.** M1 falha e volta para o fim; M2 e M3 funcionam; depois M1 funciona. Os efeitos rodaram como M2, M3, M1. Ordem estrita exigiria que o consumidor parasse e repetisse M1 até dar certo, o que bloqueia tudo o que vem atrás. Não dá para ter ordem estrita e retentativas sem bloqueio ao mesmo tempo.",
+					"**Adicionar partições.** Digamos que `hash(\"order-42\") = 10`. Com 4 partições ele cai na partição 2 (10 mod 4). Depois que o tópico cresce para 6 partições, cai na partição 4 (10 mod 6). Os registros antigos não se mexem, então o evento novo vai para outra estante e a ordem daquela chave quebra em volta da mudança. Planeje o número de partições com antecedência.",
+					"**Uma chave quente (hot key).** Se um cliente gera 80% dos registros, uma partição recebe 80% do trabalho. O único consumidor dela vira o gargalo, e nem mais consumidores nem mais partições ajudam, porque uma partição tem só um leitor dentro de um grupo. A solução está no desenho da chave ou num tratador mais rápido."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Nunca presuma que 'uma fila' quer dizer 'em ordem'. Pergunte: em ordem para quem? Para um consumidor, para uma partição ou para um grupo de mensagens?" },
+				{ "type": "callout", "tone": "remember", "text": "A ordem vive numa fila única. Uma partição ou um grupo de mensagens é uma fila única. Mesma chave, mesma fila, mesma ordem." }
+			]
+		},
+		{
+			"id": "ack-retry-dlq",
+			"title": "Confirmação, retentativa e dead-letter queue",
+			"blocks": [
+				{ "type": "paragraph", "text": "Quando você pega um livro emprestado na biblioteca, a bibliotecária anota seu nome num caderno. Se você nunca devolver, ela ainda tem o registro e pode ir atrás de você. Um broker faz o mesmo com as mensagens. Até o consumidor dizer 'pronto', o broker guarda a mensagem e a entrega de novo se o consumidor desaparecer. Esse 'pronto' é a **confirmação (ack)**." },
+				{ "type": "heading", "text": "Quando o consumidor desaparece" },
+				{ "type": "paragraph", "text": "No RabbitMQ com acks manuais, uma conexão aberta funciona como um aluguel das mensagens entregues a ela. Se a conexão cai enquanto um consumidor segura 5 mensagens não confirmadas, o RabbitMQ devolve as 5 à fila e as entrega a outro. Elas chegam com a marca `redelivered`, avisando o próximo consumidor de que o trabalho pode ter sido feito pela metade." },
+				{ "type": "paragraph", "text": "O **Amazon SQS** funciona diferente, sem conexão para vigiar. Quando um consumidor recebe uma mensagem, o SQS não a remove. Ele a **esconde** durante o **visibility timeout** (por exemplo 30 segundos). Se o consumidor apaga a mensagem (a chamada `DeleteMessage` é o ack), ela some de vez. Se o tempo acaba antes, a mensagem fica visível de novo e outro consumidor a recebe. Por isso o timeout precisa ser maior que o trabalho. Se leva 45 segundos com timeout de 30, um segundo consumidor começa a mesma mensagem enquanto o primeiro ainda trabalha. Dá para estender o timeout durante o trabalho." },
+				{ "type": "heading", "text": "Tentar de novo sem piorar as coisas" },
+				{ "type": "paragraph", "text": "Algumas falhas passam se você esperar: um banco reiniciando, um soluço na rede. São erros **transitórios**, e merecem retentativas. Outras nunca vão funcionar, como uma mensagem sem um campo obrigatório. São erros **permanentes**, e tentar de novo só gasta esforço. Um bom consumidor primeiro classifica o erro: o transitório vai para retentativa com espera, o permanente vai direto para a dead-letter queue." },
+				{ "type": "paragraph", "text": "A espera deve crescer. O **backoff exponencial** dobra a espera a cada falha, para dar tempo de um serviço doente se recuperar. Com base de 1 segundo, a espera antes da retentativa n é `1 s x 2^(n-1)`." },
+				{ "type": "chart", "title": "Espera antes de cada retentativa (base de 1 segundo)", "unit": "segundos", "bars": [
+					{ "label": "Retentativa 1", "value": 1 },
+					{ "label": "Retentativa 2", "value": 2 },
+					{ "label": "Retentativa 3", "value": 4 },
+					{ "label": "Retentativa 4", "value": 8 }
+				] },
+				{ "type": "paragraph", "text": "O tempo total esperado antes de a retentativa 4 começar é 1 + 2 + 4 + 8 = 15 segundos. A fórmula geral para n retentativas é base x (2^n - 1), que para base 1 e n = 4 dá 15." },
+				{ "type": "paragraph", "text": "Há mais um truque. Imagine que 500 consumidores falham no mesmo instante porque uma API caiu. Se todos usam o mesmo backoff, todos tentam de novo no mesmo instante e derrubam a API outra vez. Isso é uma [[manada estourando|uma multidão enorme fazendo a mesma coisa no mesmo instante]] (thundering herd). O **jitter** é um pouco de aleatoriedade somada a cada espera, para a multidão se espalhar." },
+				{ "type": "heading", "text": "Mensagens venenosas e a dead-letter queue" },
+				{ "type": "paragraph", "text": "Uma **mensagem venenosa** (poison message) falha todas as vezes, por exemplo um texto que não é JSON válido. Com reentrega automática, vira um laço. No RabbitMQ, se o consumidor responde a falha com uma confirmação negativa (nack) e `requeue = true`, a mesma mensagem volta para a fila e falha de novo tão rápido quanto o consumidor consegue falhar. Ela queima CPU e atrasa as mensagens saudáveis que vêm atrás." },
+				{ "type": "paragraph", "text": "A cura é um limite de retentativas e uma **dead-letter queue (DLQ)**: um lugar separado onde ficam guardadas as mensagens que falharam vezes demais ou que nunca vão funcionar. A fila principal continua andando, e a evidência é preservada para uma pessoa descobrir a causa e reenviar a mensagem depois." },
+				{ "type": "list", "items": [
+					"**RabbitMQ**: uma fila pode ter uma dead-letter exchange (`x-dead-letter-exchange`). Uma mensagem vai para lá quando é rejeitada **sem requeue**, quando **expira** (TTL), quando o **limite de tamanho** da fila a empurra para fora, ou quando o **limite de entregas** de uma quorum queue é excedido. Devolver a mensagem à fila não é uma causa.",
+					"**SQS**: não existe sinal de 'falhei'. Uma falha é apenas uma mensagem que foi recebida e não foi apagada antes de o visibility timeout acabar. Uma **redrive policy** com `maxReceiveCount: 3` conta os recebimentos e move a mensagem para a DLQ depois que ela foi recebida 3 vezes e está prestes a ser recebida a 4ª. Ou seja, o consumidor a vê 3 vezes na fila de origem."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Se você tenta para sempre, sem limite e sem DLQ, uma única mensagem ruim pode travar a fila inteira. Sempre ponha um teto nas tentativas e um lugar para onde as falhas vão." },
+				{ "type": "callout", "tone": "remember", "text": "Confirme quando terminar. Tente de novo os erros transitórios mais tarde, com esperas crescentes e jitter. Mande os erros permanentes e as tentativas esgotadas para uma dead-letter queue." }
+			]
+		},
+		{
+			"id": "idempotent-consumers",
+			"title": "Consumidores idempotentes: seguros para repetir",
+			"blocks": [
+				{ "type": "paragraph", "text": "Apertar cinco vezes o botão do elevador dá no mesmo que apertar uma. O elevador já está vindo. Isso é **idempotência**: uma operação é idempotente quando fazê-la muitas vezes deixa o sistema no mesmo estado final que fazê-la uma vez." },
+				{ "type": "paragraph", "text": "Por que nos importamos? Porque a entrega at-least-once manda duplicatas. O broker promete que a mensagem chega. O consumidor precisa prometer que chegar duas vezes não faz mal." },
+				{ "type": "table", "headers": ["Comando", "Idempotente?", "Por quê"], "rows": [
+					["`UPDATE accounts SET balance = 100 WHERE id = 7`", "Sim", "Define um valor absoluto. Dez vezes ainda dá 100."],
+					["`UPDATE accounts SET balance = balance - 10 WHERE id = 7`", "Não", "Depende do valor atual. Dez vezes tira 100."],
+					["`INSERT INTO log VALUES (...)`", "Não", "Acrescenta mais uma linha a cada vez."],
+					["Definir o status de um usuário como 'shipped'", "Sim", "Mesmo estado final."]
+				] },
+				{ "type": "paragraph", "text": "Quando a operação não é naturalmente idempotente, nós a tornamos assim com uma **tabela de deduplicação**: antes de fazer o trabalho, guarde o id da mensagem, e se já o viu, pule." },
+				{ "type": "code", "language": "sql", "content": "BEGIN;\nINSERT INTO processed_messages (message_id) VALUES ('m-81'); -- PRIMARY KEY\nUPDATE accounts SET balance = balance - 10 WHERE id = 7;\nCOMMIT;\n-- Uma segunda entrega faz o INSERT falhar com chave duplicada:\n-- a transação inteira é interrompida e a mensagem é pulada.", "caption": "A marca e o efeito estão na mesma transação." },
+				{ "type": "heading", "text": "Três detalhes que importam" },
+				{ "type": "list", "items": [
+					"**Mesma transação.** A marca e o efeito precisam ser salvos juntos. Assim o registro e o efeito nunca discordam.",
+					"**Deixe o banco decidir.** Se você faz 'verificar se já viu' e depois 'escrever' como dois passos, duas cópias da mensagem que chegam no mesmo instante passam as duas na verificação, e as duas aplicam o efeito. Isso é uma **corrida do tipo check-then-act**. Uma chave primária ou restrição de unicidade no id da mensagem resolve, porque o banco rejeita o segundo insert de forma atômica.",
+					"**Um só armazenamento, não dois.** Se você marca no Redis e aplica o efeito no PostgreSQL, um crash entre os dois deixa você preso. Marcar primeiro pode perder o efeito para sempre. Aplicar primeiro pode fazê-lo duas vezes. Dois armazenamentos diferentes não conseguem confirmar como um só. Mantenha a marca e o efeito na mesma transação do banco."
+				] },
+				{ "type": "heading", "text": "O que é uma boa chave de idempotência?" },
+				{ "type": "paragraph", "text": "A chave precisa identificar o **evento de negócio**, não a entrega. Crie-a uma vez, onde o evento nasce (por exemplo, um id de pedido de pagamento criado pelo cliente), e deixe-a viajar dentro da mensagem. Assim toda duplicata carrega o mesmo valor. O delivery tag do broker ou um timestamp muda a cada entrega, então nunca casaria." },
+				{ "type": "heading", "text": "Por quanto tempo é preciso lembrar?" },
+				{ "type": "paragraph", "text": "Se você guarda os ids processados com validade (um TTL de 1 hora no Redis, por exemplo), só está protegido dentro dessa janela. Suponha que o broker ficou fora do ar para manutenção e uma duplicata de uma mensagem processada às 09:00 chega às 11:30. O id já foi esquecido, e o trabalho é feito de novo. A janela precisa ser maior que o maior atraso com que uma duplicata pode voltar, incluindo quedas e replays." },
+				{ "type": "callout", "tone": "analogy", "text": "O porteiro do cinema carimba a sua mão quando você entra. Se tentar entrar de novo, o carimbo mostra que você já entrou. Mas o carimbo precisa durar o filme inteiro, e não sair com a água depois de cinco minutos." },
+				{ "type": "callout", "tone": "remember", "text": "Entrega at-least-once mais um consumidor idempotente = o efeito acontece uma vez. Salve a marca de deduplicação e o efeito numa só transação, usando um id criado onde o evento nasceu." }
+			]
+		},
+		{
+			"id": "backpressure",
+			"title": "Backpressure: quando quem envia é mais rápido",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine um funil. Se você despeja água mais rápido do que ela sai, o funil transborda. Um buffer entre um produtor e um consumidor é um funil. Uma rajada curta cabe dentro. Mas se o produtor é mais rápido por muito tempo, qualquer buffer enche." },
+				{ "type": "paragraph", "text": "**Backpressure** (contrapressão) é o sinal que viaja para trás, do estágio lento para o rápido, dizendo 'espera, estou cheio'. Ele mantém a memória limitada freando a origem em vez de empilhar dados no meio." },
+				{ "type": "heading", "text": "A aritmética de um backlog" },
+				{ "type": "paragraph", "text": "Um backlog cresce na diferença entre a taxa de chegada e a taxa de processamento. Se um produtor envia 500 mensagens por segundo e o único consumidor trata 300 por segundo, a fila cresce 200 por segundo." },
+				{ "type": "chart", "title": "Mensagens esperando numa fila sem limite (200 a mais por segundo)", "unit": "mensagens", "bars": [
+					{ "label": "Depois de 1 minuto", "value": 12000 },
+					{ "label": "Depois de 10 minutos", "value": 120000 },
+					{ "label": "Depois de 1 hora", "value": 720000 }
+				] },
+				{ "type": "paragraph", "text": "Um buffer sem limite não resolve esse problema. Ele só o **adia** e deixa a queda maior: a memória cresce até o processo morrer. Quando o produtor é mais rápido para sempre, só há três escolhas: crescer (até a memória acabar), descartar mensagens, ou **frear o produtor**. A terceira é o backpressure." },
+				{ "type": "heading", "text": "Três lugares para aplicar" },
+				{ "type": "list", "items": [
+					"**Dentro de um programa**: uma fila limitada cujo `push` espera quando ela está cheia. O produtor para sozinho, e a memória fica estável.",
+					"**Entre um broker e um consumidor, com prefetch.** O RabbitMQ empurra mensagens para os consumidores, então sem limite ele empurra tudo. O **prefetch count** (`basic.qos`) diz: nunca mais do que esta quantidade de mensagens não confirmadas por consumidor. Com `prefetch(10)`, o broker manda 10 e só manda a próxima quando chega um ack. O backlog espera no broker, que foi feito para guardá-lo e pode dividi-lo com outros consumidores.",
+					"**Entre estágios, com demanda.** No GenStage do Elixir, os dados descem e a **demanda sobe**. Um consumidor diz 'me mande até 10' (`max_demand`) e o produtor manda no máximo isso. O estágio mais lento define a velocidade do pipeline, e os buffers ficam tão pequenos quanto os números que você configurou."
+				] },
+				{ "type": "chart", "title": "Mensagens seguradas por um consumidor lento (3.000 na fila, medido no laboratório deste repositório)", "unit": "mensagens", "bars": [
+					{ "label": "Sem limite de prefetch", "value": 2908 },
+					{ "label": "prefetch(10)", "value": 10 }
+				] },
+				{ "type": "paragraph", "text": "Os números acima foram medidos no mini-projeto pubsub-backpressure deste repositório: a quantidade de trabalho feito foi a mesma, só mudou o lugar onde o backlog esperou." },
+				{ "type": "paragraph", "text": "Por isso um consumidor sem limite de prefetch é perigoso: o primeiro consumidor a se conectar fica com quase a fila inteira na memória, e um segundo consumidor que conecta depois não encontra nada para fazer. Com limite, o backlog fica no broker, onde todos podem dividi-lo." },
+				{ "type": "callout", "tone": "warning", "text": "Backpressure não deixa o sistema mais rápido. Ele torna a parte lenta visível para a parte rápida, em vez de esconder o problema num buffer que cresce até algo quebrar." },
+				{ "type": "callout", "tone": "remember", "text": "Limite todo buffer. Ponha o backlog onde é mais barato e mais fácil de ver: no broker, não na memória do consumidor." }
+			]
+		},
+		{
+			"id": "rabbitmq-exchanges-routing",
+			"title": "RabbitMQ: exchanges, filas e roteamento",
+			"blocks": [
+				{ "type": "paragraph", "text": "O RabbitMQ é um broker que segue o modelo AMQP. Ele tem uma surpresa que confunde todo iniciante: um produtor **nunca escreve numa fila**. Ele envia a mensagem para uma **exchange**, e a exchange decide quais filas recebem uma cópia." },
+				{ "type": "callout", "tone": "analogy", "text": "Uma agência dos correios. Você entrega a carta ao atendente (a exchange). Ele lê o endereço (a routing key) e coloca a carta nas caixas certas (as filas). Você nunca entra nas caixas por conta própria." },
+				{ "type": "diagram", "content": "              routing key = \"invoice.created\"\nproducer ---> [ EXCHANGE ] --binding--> [ fila A ] --> consumer\n                           \\--binding--> [ fila B ] --> consumer\n\nbinding = a ligação entre uma exchange e uma fila,\n          muitas vezes com uma binding key para comparar.", "caption": "Produtor, exchange, bindings, filas, consumidores." },
+				{ "type": "paragraph", "text": "Três peças formam o mapa de roteamento: **exchanges**, **filas** e **bindings**. Um binding é a ligação entre uma exchange e uma fila, e pode carregar uma **binding key** que a exchange compara com a **routing key** da mensagem." },
+				{ "type": "heading", "text": "Tipos de exchange" },
+				{ "type": "table", "headers": ["Tipo", "Como decide", "Exemplo"], "rows": [
+					["**direct**", "A routing key é exatamente igual à binding key", "a chave `sms` vai para a fila ligada com `sms`"],
+					["**fanout**", "Ignora a chave e copia para toda fila ligada", "Três filas ligadas: as três recebem toda mensagem, mesmo que a chave seja `invoice.created`"],
+					["**topic**", "Compara a chave com um padrão de palavras separadas por pontos", "Padrão `shop.*.paid`"],
+					["**default exchange**", "Uma direct exchange sem nome (nome `\"\"`) em que toda fila já está ligada pelo próprio nome", "Publicar em `\"\"` com a chave `emails` vai para a fila `emails`"]
+				] },
+				{ "type": "paragraph", "text": "Numa exchange **topic**, a chave é feita de palavras separadas por pontos. A estrela `*` substitui **exatamente uma** palavra. A cerquilha `#` substitui **zero ou mais** palavras. O jeito confiável de avaliar um padrão é contar as palavras. Pegue a chave `shop.eu.paid` (3 palavras):" },
+				{ "type": "table", "headers": ["Padrão do binding", "Casa?", "Por quê"], "rows": [
+					["`shop.*.paid`", "Sim", "Uma palavra entre `shop` e `paid`"],
+					["`shop.#`", "Sim", "`#` leva o resto, qualquer quantidade de palavras"],
+					["`*.paid`", "Não", "Só 2 palavras; a chave tem 3"],
+					["`#.paid`", "Sim", "`#` leva `shop.eu`"],
+					["`shop.*`", "Não", "`*` é uma palavra, mas sobram 2"]
+				] },
+				{ "type": "heading", "text": "Fila ou cópia? Conte as filas" },
+				{ "type": "paragraph", "text": "No RabbitMQ uma cópia existe **por fila**, não por consumidor. Dois consumidores na **mesma fila** formam uma fila de trabalho: as mensagens são distribuídas em rodízio e cada uma chega a um único consumidor. Se `audit`, `search` e `mail` precisam receber cada `user.registered`, dê a cada serviço **a sua própria fila** e ligue todas a uma exchange (fanout, ou topic com o mesmo padrão)." },
+				{ "type": "paragraph", "text": "Um assinante que precisa receber o que foi publicado enquanto reiniciava precisa de uma **fila durável e com nome**. Filas temporárias (exclusive, auto-delete, com nome dado pelo servidor) servem a assinantes que só se importam com as mensagens enquanto estão conectados." },
+				{ "type": "heading", "text": "A falha silenciosa: mensagens sem rota" },
+				{ "type": "paragraph", "text": "Se uma mensagem é publicada numa direct exchange com a chave `sms`, e nenhuma fila está ligada com essa chave, a publicação dá certo e a mensagem simplesmente desaparece. Para perceber, ative a flag `mandatory` (o broker devolve a mensagem ao produtor) ou configure uma **alternate exchange** que pega o que não pôde ser roteado." },
+				{ "type": "heading", "text": "Dead-letter exchanges e quorum queues" },
+				{ "type": "paragraph", "text": "Uma fila com `x-dead-letter-exchange` manda as mensagens mortas para lá: rejeitadas sem requeue, expiradas, empurradas pelo limite de tamanho, ou acima do limite de entregas de uma quorum queue (a seção anterior sobre retentativas tem os detalhes)." },
+				{ "type": "paragraph", "text": "Uma **quorum queue** é replicada em vários servidores usando o algoritmo **Raft**. Uma escrita só vale quando a **maioria** dos membros a tem, e um líder precisa da maioria para ser eleito. Um grupo de n membros sobrevive à perda de `floor((n - 1) / 2)` deles." },
+				{ "type": "chart", "title": "Membros que podem estar fora do ar sem a quorum queue ficar indisponível", "unit": "membros", "bars": [
+					{ "label": "3 membros", "value": 1 },
+					{ "label": "5 membros", "value": 2 },
+					{ "label": "7 membros", "value": 3 }
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Produtor, exchange, binding, fila, consumidor. A exchange escolhe as filas, e existe uma cópia por fila." }
+			]
+		},
+		{
+			"id": "kafka-topics-partitions-offsets",
+			"title": "Kafka: tópicos, partições, consumer groups e offsets",
+			"blocks": [
+				{ "type": "paragraph", "text": "O Kafka é o stream da seção anterior, na vida real. Um **tópico** (topic) é uma categoria de registros com nome, como uma pasta chamada `orders`. Cada tópico é dividido em **partições**, e cada partição é um log ordenado, append-only, guardado nos brokers. As partições são o que permite escrever e ler um tópico em paralelo." },
+				{ "type": "diagram", "content": "tópico \"orders\"\n\npartição 0:  [0][1][2][3][4][5] -> registros novos entram aqui\npartição 1:  [0][1][2][3]       -> registros novos entram aqui\npartição 2:  [0][1][2][3][4]    -> registros novos entram aqui\n\n(partição, offset) = o endereço exato de um registro", "caption": "Cada registro ganha um número na sua partição: o offset." },
+				{ "type": "paragraph", "text": "Um **offset** é o número sequencial que um registro recebe ao ser acrescentado a uma partição. O par (partição, offset) identifica um registro. O progresso de um consumidor é só um marcador: o próximo offset que ele vai ler em cada partição." },
+				{ "type": "heading", "text": "Consumer groups: competir e transmitir ao mesmo tempo" },
+				{ "type": "paragraph", "text": "Um **consumer group** é o jeito do Kafka de fazer consumidores concorrentes. As partições do tópico são divididas entre os membros do grupo, e a cada instante cada partição tem só um leitor dentro daquele grupo. Três consumidores num grupo, num tópico com 3 partições, ficam com uma partição cada." },
+				{ "type": "paragraph", "text": "**Grupos diferentes são independentes.** Se os grupos `billing` e `analytics` leem `orders` com 1.000 registros, cada grupo lê os 1.000. Então dentro de um grupo os consumidores competem (comportamento de fila), e entre grupos todos recebem tudo (comportamento de pub/sub)." },
+				{ "type": "list", "items": [
+					"**As partições são o teto do paralelismo.** Um tópico com 4 partições e um grupo de 6 consumidores: só 4 recebem registros. Os outros 2 ficam de reserva, esperando para substituir um membro que falhe.",
+					"**Consumir não apaga.** Os registros ficam durante o **tempo de retenção** configurado e depois são removidos, tenha alguém lido ou não. Por isso vários grupos podem ler os mesmos dados, e um grupo pode voltar e ler de novo.",
+					"**Sem chave, sem ordem** entre registros relacionados, como vimos na seção de ordenação."
+				] },
+				{ "type": "heading", "text": "Offsets confirmados, rebalance e reinícios" },
+				{ "type": "paragraph", "text": "Um grupo salva seu progresso ao **confirmar** (commit) um offset: o próximo offset a ler. Se um consumidor cai, ou um membro entra ou sai, o grupo faz um **rebalance**: as partições são redistribuídas. O novo dono de uma partição começa do último offset confirmado." },
+				{ "type": "paragraph", "text": "Imagine que um consumidor processou os offsets 40 a 49, mas o último commit dele dizia 'próximo a ler: 45'. Depois de um reinício ele retoma do 45, então os registros 45 a 49 são processados uma segunda vez. Confirmar com frequência custa mais; confirmar raramente significa mais reprocessamento." },
+				{ "type": "paragraph", "text": "E se um grupo novinho não tem nenhum offset confirmado? A configuração `auto.offset.reset` responde só a essa pergunta. `earliest` começa no registro disponível mais antigo. `latest` começa no fim, então um grupo novo com `latest` ignora os 10.000 registros antigos e lê só o que for produzido depois que ele entrou. Depois que o grupo faz o primeiro commit, essa configuração não é mais usada." },
+				{ "type": "heading", "text": "Lag: quão atrasados estamos?" },
+				{ "type": "paragraph", "text": "O **log end offset** é o offset que o próximo registro produzido vai receber. O **consumer lag** é esse número menos o offset confirmado do grupo. Se o log end é 1.500 e o grupo confirmou 1.320, o lag é de 180 registros. Um lag que só cresce significa que os consumidores são mais lentos que os produtores." },
+				{ "type": "heading", "text": "Não perder dados: replicação" },
+				{ "type": "paragraph", "text": "Cada partição é copiada em vários brokers (**fator de replicação**, por exemplo 3). As cópias em dia são as **réplicas em sincronia** (in-sync replicas). Com `acks=all`, o líder só responde depois que todas as réplicas em sincronia têm o registro. A configuração `min.insync.replicas=2` acrescenta uma regra: se menos de 2 réplicas estão em sincronia, a partição **rejeita** escritas em vez de aceitar dados que mais uma falha perderia. Ela escolhe segurança no lugar de disponibilidade." },
+				{ "type": "heading", "text": "Compactação e o produtor idempotente" },
+				{ "type": "paragraph", "text": "Com `cleanup.policy=compact`, o Kafka guarda só o **último registro de cada chave**, como uma tabela. Um registro com chave e valor `null` é um **tombstone** (lápide), e apaga aquela chave. Assim um tópico com `user-1: Lisboa`, depois `user-1: Porto`, depois `user-1: null` termina, após a compactação, sem nenhum `user-1`." },
+				{ "type": "paragraph", "text": "`enable.idempotence=true` torna seguras as retentativas internas do próprio produtor: se ele reenvia um lote depois de um timeout, o broker percebe o número do lote e não o guarda duas vezes. Isso **não** remove duplicatas feitas pela aplicação, por outro processo, ou pela reentrega ao consumidor. Essas ainda precisam de um consumidor idempotente." },
+				{ "type": "callout", "tone": "remember", "text": "Tópico > partições > offsets. Um grupo divide as partições; grupos não atrapalham uns aos outros. Ponto de retomada = último offset confirmado. Lag = log end - confirmado." }
+			]
+		},
+		{
+			"id": "bullmq-redis",
+			"title": "BullMQ sobre Redis",
+			"blocks": [
+				{ "type": "paragraph", "text": "Às vezes você não quer um broker grande. Só quer dizer 'envie este e-mail depois' a partir de um programa Node.js. O **BullMQ** é uma biblioteca que transforma o **Redis** (um banco de dados muito rápido que vive na memória) numa fila de jobs. Um **job** é uma tarefa com alguns dados." },
+				{ "type": "list", "items": [
+					"Um objeto **`Queue`** escreve jobs no Redis (usa listas, conjuntos ordenados e hashes por baixo dos panos).",
+					"Um **`Worker`**, em qualquer processo, pega jobs do Redis e roda uma função (o processador) para cada um.",
+					"**O Redis é o broker.** O BullMQ não tem servidor próprio."
+				] },
+				{ "type": "code", "language": "ts", "content": "const queue = new Queue(\"payments\", { connection });\nawait queue.add(\"charge\", { orderId: 7 }, {\n  attempts: 3,                                   // roda no máximo 3 vezes\n  backoff: { type: \"exponential\", delay: 1000 }, // 1 s, depois 2 s\n  delay: 60_000,                                 // não antes de 60 s\n});\n\nnew Worker(\"payments\", async (job) => {\n  await gateway.charge(job.data);\n}, { connection, concurrency: 5 });", "caption": "Opções de um job e de um worker do BullMQ." },
+				{ "type": "heading", "text": "O que as opções significam" },
+				{ "type": "list", "items": [
+					"**`delay`**: o job não pode rodar antes desse tempo. O BullMQ o guarda num conjunto ordenado pela hora de vencimento e o move para a lista de espera quando chega a hora. O delay é um mínimo, não um agendamento exato.",
+					"**`attempts`**: conta **toda** execução do job, a primeira inclusive. Com `attempts: 3` e um processador que sempre lança erro, o job roda 3 vezes no total.",
+					"**`backoff`**: a espera entre as tentativas (fixa ou exponencial). Quando as tentativas acabam, o job vai para o conjunto **failed**, que faz o papel de uma dead-letter queue.",
+					"**`concurrency`**: quantos jobs um worker trata ao mesmo tempo. No Node.js isso quer dizer várias chamadas assíncronas dividindo um event loop, o que é ideal para I/O como enviar e-mail. O paralelismo total é a concurrency multiplicada pelo número de processos worker."
+				] },
+				{ "type": "heading", "text": "O Redis precisa estar configurado para guardar jobs" },
+				{ "type": "paragraph", "text": "O Redis guarda dados na memória. Se ele roda com persistência desligada (sem snapshots RDB e sem log AOF) e reinicia, todos os jobs em espera somem. Para uma fila você quer a persistência ligada (AOF ou RDB), e quer `maxmemory-policy noeviction`, para que, quando a memória encher, o Redis recuse novas escritas em vez de jogar fora chaves que guardam jobs." },
+				{ "type": "heading", "text": "Jobs travados: o lock" },
+				{ "type": "paragraph", "text": "Enquanto um worker processa um job, ele segura um **lock** sobre ele e o renova de tempos em tempos, como alguém no balcão da biblioteca que fica dizendo 'ainda estou usando este livro'. Se o worker morre, ninguém renova. O lock expira, o BullMQ declara o job **stalled** (travado) e o devolve para ser processado de novo." },
+				{ "type": "callout", "tone": "warning", "text": "Por causa dos jobs stalled, o BullMQ é at-least-once. Se o worker enviou o e-mail e morreu antes de o job ser marcado como concluído, o e-mail é enviado de novo. Um processador com efeitos colaterais precisa ser idempotente." },
+				{ "type": "callout", "tone": "remember", "text": "BullMQ = Queue (adiciona jobs) + Worker (roda jobs) + Redis (guarda jobs). attempts conta todas as execuções. Jobs que falham terminam no conjunto failed. Jobs stalled voltam." }
+			]
+		},
+		{
+			"id": "sqs-sns",
+			"title": "Amazon SQS e SNS",
+			"blocks": [
+				{ "type": "paragraph", "text": "A Amazon Web Services oferece dois serviços simples de mensageria, e eles são dois formatos diferentes da primeira seção." },
+				{ "type": "table", "headers": ["Característica", "SQS (Simple Queue Service)", "SNS (Simple Notification Service)"], "rows": [
+					["Formato", "Uma **fila** ponto a ponto", "Um tópico de **publish/subscribe**"],
+					["Como as mensagens são entregues", "**Pull**: os consumidores pedem as mensagens", "**Push**: o serviço envia a cada assinante"],
+					["Quem recebe a mensagem", "Um consumidor", "Todos os endpoints assinantes (filas, funções, endereços HTTP)"],
+					["Guarda mensagens para depois?", "Sim, até serem apagadas ou expirarem", "Não, só repassa"]
+				] },
+				{ "type": "heading", "text": "Como um consumidor SQS funciona" },
+				{ "type": "list", "items": [
+					"**Receber** uma mensagem: o SQS não a remove, ele a esconde durante o **visibility timeout**.",
+					"**Processá-la.**",
+					"**Apagá-la** com `DeleteMessage` e o receipt handle. Essa chamada é o ack.",
+					"Se você esquece de apagar, a mensagem volta depois do timeout e é processada de novo, e de novo."
+				] },
+				{ "type": "code", "language": "ts", "content": "const { Messages } = await sqs.send(new ReceiveMessageCommand({\n  QueueUrl,\n  WaitTimeSeconds: 20,        // long polling\n}));\nfor (const m of Messages ?? []) {\n  await sendEmail(m.Body);\n  await sqs.send(new DeleteMessageCommand({\n    QueueUrl, ReceiptHandle: m.ReceiptHandle,   // o ack\n  }));\n}" },
+				{ "type": "heading", "text": "Long polling contra short polling" },
+				{ "type": "paragraph", "text": "Com **short polling**, uma fila vazia responde na hora, então um laço faz muitas requisições inúteis, e você paga por requisições. Com **long polling** (`WaitTimeSeconds` até 20), a requisição fica aberta até chegar uma mensagem ou o tempo acabar. Custa menos, e a mensagem ainda é entregue no instante em que chega." },
+				{ "type": "heading", "text": "Filas standard e FIFO" },
+				{ "type": "paragraph", "text": "Uma fila **standard** é muito rápida, mas entrega at-least-once com ordem de melhor esforço. Uma fila **FIFO** mantém a ordem por grupo de mensagens (`MessageGroupId`) e também remove duplicatas do produtor: dois envios com o mesmo `MessageDeduplicationId` em até **5 minutos** contam como uma só mensagem. Isso torna seguras as retentativas do produtor dentro desse intervalo, mas não substitui um consumidor idempotente." },
+				{ "type": "heading", "text": "A receita padrão: SNS mais SQS" },
+				{ "type": "paragraph", "text": "Na AWS, `OrderPlaced` precisa chegar a cobrança, entrega e analytics, e cada um precisa trabalhar no seu ritmo e sobreviver a ficar offline. A resposta padrão é publicar em **um tópico SNS** e assinar **uma fila SQS por serviço**. O tópico distribui, e cada fila guarda a sua cópia até o serviço estar pronto." },
+				{ "type": "diagram", "content": "               +--> [SQS cobrança]  --> serviço de cobrança\nOrderPlaced -> [SNS]--> [SQS entrega]   --> serviço de entrega\n               +--> [SQS analytics] --> serviço de analytics", "caption": "Fan-out com assinaturas duráveis. É o mesmo formato de uma fanout exchange do RabbitMQ com uma fila por serviço." },
+				{ "type": "callout", "tone": "remember", "text": "SQS = fila, pull, apagar é o ack, visibility timeout é o aluguel. SNS = tópico, push. Juntos = fan-out com uma fila durável por serviço." }
+			]
+		},
+		{
+			"id": "outbox-saga-event-sourcing",
+			"title": "Outbox, saga e event sourcing",
+			"blocks": [
+				{ "type": "paragraph", "text": "Agora três padrões que sistemas grandes usam em cima da mensageria. Cada um resolve um problema que aparece quando vários serviços precisam continuar consistentes." },
+				{ "type": "heading", "text": "O outbox: salvar e anunciar juntos" },
+				{ "type": "paragraph", "text": "Um serviço de pedidos precisa salvar o pedido no banco **e** publicar `OrderPlaced`. São dois sistemas diferentes, e nenhuma transação única cobre os dois. Se ele salva e cai antes de publicar, o evento se perde. Se publica primeiro e o salvamento falha, anunciou algo que não aconteceu." },
+				{ "type": "paragraph", "text": "O **transactional outbox** resolve isso. Dentro de uma única transação do banco, o serviço salva o pedido **e** uma linha numa tabela `outbox` que guarda o evento. Um programa separado, o **relay**, lê as linhas não enviadas, as publica e as marca como enviadas." },
+				{ "type": "code", "language": "ts", "content": "for (const row of unsentRows) {\n  await broker.publish(row.event);                      // 1\n  // <- um crash aqui significa: publicado, mas não marcado\n  await db.query(\"UPDATE outbox SET sent = true WHERE id = $1\", [row.id]); // 2\n}", "caption": "O relay de um outbox." },
+				{ "type": "paragraph", "text": "O outbox garante que o evento **nunca se perde**, porque foi salvo junto com os dados de negócio. Ele **não** garante uma única publicação: se o relay cai entre as linhas 1 e 2, o evento é publicado de novo quando reinicia. Os consumidores adiante precisam deduplicar." },
+				{ "type": "heading", "text": "A saga: uma história longa entre serviços" },
+				{ "type": "paragraph", "text": "Num checkout, o pedido, o pagamento e a entrega vivem em serviços diferentes, cada um com seu banco. Não existe uma transação gigante. Uma **saga** é uma sequência de passos locais. Se um passo falha, os passos anteriores são desfeitos com **compensações** (por exemplo, um reembolso). Há dois estilos:" },
+				{ "type": "table", "headers": ["Estilo", "Como funciona", "Bom", "Custo"], "rows": [
+					["**Coreografia**", "Sem chefe. Cada serviço reage aos eventos dos outros: `OrderPlaced`, depois `PaymentCompleted`, depois a entrega", "Baixo acoplamento, nenhuma peça central", "O processo todo fica espalhado e é difícil de enxergar"],
+					["**Orquestração**", "Um coordenador manda comandos a cada serviço e guarda o estado", "O fluxo é explícito e fica num só lugar", "Um componente central que precisa ficar no ar"]
+				] },
+				{ "type": "heading", "text": "Event sourcing: guardar o que aconteceu" },
+				{ "type": "paragraph", "text": "Um sistema normal guarda o **estado atual**: 'saldo = 70'. Um sistema com **event sourcing** guarda cada **evento**: 'depositou 100', 'sacou 30'. O log de eventos é a fonte da verdade. O estado atual, e qualquer número de relatórios (read models), são calculados reproduzindo os eventos." },
+				{ "type": "callout", "tone": "analogy", "text": "Um extrato bancário. A página lista cada depósito e cada saque, e o saldo é o que você obtém somando tudo. A lista é a verdade. O saldo é só um resultado." },
+				{ "type": "paragraph", "text": "Reproduzir um milhão de eventos a cada vez seria lento, então salvamos um **snapshot**: o estado numa posição conhecida do log. Para carregar uma conta com 1.000.000 de eventos e um snapshot depois do evento 999.900, carregue o snapshot e reproduza só os 100 eventos depois dele. Um snapshot é só um cache, já que os eventos continuam sendo a verdade. Se for perdido, pode ser calculado de novo reproduzindo o log." },
+				{ "type": "callout", "tone": "remember", "text": "Outbox: nunca perde o evento, mas ele pode ser publicado duas vezes. Saga: passos mais compensações, coreografados ou orquestrados. Event sourcing: os eventos são a verdade, o estado é calculado, snapshots são cache." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando tudo",
+			"blocks": [
+				{ "type": "paragraph", "text": "Vamos comparar as ferramentas num só lugar e depois listar os erros que mais acontecem." },
+				{ "type": "table", "headers": ["Característica", "BullMQ", "RabbitMQ", "Kafka", "SQS"], "rows": [
+					["Onde a mensagem vive", "Listas e conjuntos do Redis", "Uma fila dentro do broker", "Uma partição de um log, mantida pela retenção", "Uma fila atrás de uma API HTTP"],
+					["Como o consumidor a recebe", "O worker a pega do Redis", "O broker a empurra, até o prefetch", "O consumidor busca a partir de um offset", "O consumidor faz polling"],
+					["O que é o ack", "Job movido para completed", "`ack` da entrega", "Commit do próximo offset", "`DeleteMessage`"],
+					["Como se percebe um consumidor morto", "Lock não renovado (stalled)", "A conexão fecha", "Os heartbeats param, a sessão expira", "Nada: o visibility timeout acaba"],
+					["Ordem", "Uma fila, FIFO", "Uma fila, FIFO (um consumidor)", "Por partição", "Melhor esforço (standard), por grupo (FIFO)"]
+				], "caption": "Uma interface pode esconder a API dos brokers, nunca as suas garantias." },
+				{ "type": "heading", "text": "O terreno comum" },
+				{ "type": "paragraph", "text": "Os quatro são at-least-once na prática: um consumidor que morre antes do ack faz a mensagem voltar. A diferença é quanto tempo demora: na hora no RabbitMQ, depois de um timeout nos outros. A consequência prática é a mesma em todo lugar: um tratador pode rodar duas vezes para uma mensagem, então o efeito dele precisa ser idempotente." },
+				{ "type": "heading", "text": "Uma lista de verificação para um consumidor seguro" },
+				{ "type": "list", "ordered": true, "items": [
+					"Decida a garantia: posso perder, ou posso repetir?",
+					"Dê o ack só depois que o trabalho estiver salvo.",
+					"Torne o trabalho idempotente (tabela de deduplicação com chave única, na mesma transação).",
+					"Classifique os erros: tente de novo os transitórios com backoff e jitter, mande os permanentes para a dead-letter queue.",
+					"Limite as tentativas e tenha uma dead-letter queue.",
+					"Limite o que o consumidor segura (prefetch, buffers limitados).",
+					"Se a ordem importa, escolha a chave, a partição ou o grupo de mensagens de propósito."
+				] },
+				{ "type": "heading", "text": "Erros comuns" },
+				{ "type": "list", "items": [
+					"Achar que 'entrega exactly-once' existe e pular a idempotência.",
+					"Achar que mais consumidores ou mais partições sempre consertam um leitor lento. Não consertam quando o problema é uma hot key ou uma partição só.",
+					"Contar consumidores em vez de filas ou grupos ao prever quantas vezes uma mensagem é processada.",
+					"Tentar para sempre, sem backoff, sem jitter e sem DLQ.",
+					"Usar um buffer sem limite ou nenhum limite de prefetch.",
+					"Pôr a marca de deduplicação e o efeito em dois armazenamentos diferentes.",
+					"Esquecer que uma fila do RabbitMQ e as suas mensagens precisam ser ambas duráveis, e que o Redis precisa de persistência para o BullMQ."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Uma fila divide trabalho, um tópico avisa todo mundo, um log lembra. As mensagens podem ser perdidas, repetidas ou reordenadas, a menos que você decida o contrário. Sistemas seguros esperam a falha: ack depois do trabalho, repetir com segurança, tentar de novo com educação e guardar à parte o que nunca funciona." }
+			]
+		}
+	]
+}

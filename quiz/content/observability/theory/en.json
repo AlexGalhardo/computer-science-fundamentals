@@ -1,0 +1,429 @@
+{
+	"area": "observability",
+	"intro": [
+		"Imagine you built a toy robot, and one day it stops walking. If it has no window and no lights, you have to guess what is wrong inside. If it has little lights, a counter of its steps and a diary of what it did, you can look and **understand**. **Observability** is that: building software so that, when something strange happens, you can look at the data it already gives out and explain what happened, without guessing and without changing the program first.",
+		"This matters because today one click on a website can travel through many small programs, called [[services|small programs that each do one job and talk to each other over the network]], on many computers. When the click is slow, nobody knows which service to blame. Online shops, banks, video apps and games all use observability to find problems fast, and to promise users that the service will work (and to know when that promise is in danger).",
+		"In this summary you will learn: the difference between monitoring and observability, the three kinds of data (logs, metrics and traces), how to write logs a computer can search, how metrics work and why too many labels cause trouble, how one request is followed through many services, what OpenTelemetry is, how to promise reliability with SLIs, SLOs and error budgets, how to alert people without waking them for nothing, the RED, USE and golden signals checklists, how profiling finds slow code, and how Prometheus, Grafana, Loki and Tempo fit together."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: telemetry and vocabulary",
+			"blocks": [
+				{ "type": "paragraph", "text": "Think of a doctor. The doctor cannot open you up to see inside, so she uses a thermometer, a heartbeat monitor and your story of how you feel. Software is the same: we cannot look inside a running program, so it sends out signals. All these signals together are called [[telemetry|data a running system sends out about itself, so people can understand it from far away]]." },
+				{ "type": "table", "headers": ["Word", "Simple meaning", "Example"], "rows": [
+					["Telemetry", "Everything the system sends out about itself", "A log line, a number, a trace"],
+					["Instrumentation", "The code (yours or from a library) that produces the telemetry", "A line that counts each request"],
+					["Backend", "The place that stores and shows the telemetry", "Prometheus, Loki, Tempo, Grafana"],
+					["Service", "A small program that does one job", "`orders`, `inventory`, `gateway`"],
+					["Incident", "A moment when users are hurt by a failure", "Checkout fails for 10 minutes"]
+				], "caption": "The words used in the rest of the summary" },
+				{ "type": "diagram", "content": "your code --> instrumentation --> telemetry\n                                       |\n                                       v\n                         store (backend) --> screens\n                                              and alerts\n                                       |\n                                       v\n                                 a person understands", "caption": "From code to understanding" },
+				{ "type": "callout", "tone": "remember", "text": "Observability is not a tool you buy. It is the ability to explain what your software is doing from the data it emits." }
+			]
+		},
+		{
+			"id": "monitoring-vs-observability",
+			"title": "Monitoring against observability",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine a school with an alarm on each door. The alarm rings if a door opens at night. That is **monitoring**: you decide before what could go wrong and you put a watcher there. But what if something odd happens that nobody imagined, like a window opening because of the wind? No alarm was made for it." },
+				{ "type": "paragraph", "text": "The word **observability** comes from control theory, a branch of engineering. There, a system is observable if you can work out what is happening inside it by looking only at what it gives out. For software it means: you can understand and explain any state the system gets into, even one you have never seen, using the telemetry it already emits. If you must ship new code just to investigate, observability was missing." },
+				{ "type": "heading", "text": "Known-unknowns and unknown-unknowns" },
+				{ "type": "table", "headers": ["Kind", "What it is", "Example", "Who handles it"], "rows": [
+					["Known-unknown", "A question you knew you would ask", "Did CPU go above 90%?", "Monitoring: a panel or an alert"],
+					["Unknown-unknown", "A failure nobody imagined, so it has no panel or alert", "Only one customer on one app version fails", "Observability: you investigate it anyway"]
+				] },
+				{ "type": "heading", "text": "Cardinality and dimensionality" },
+				{ "type": "paragraph", "text": "[[Cardinality|how many different values one field can have]] is about one field. The field `http_method` has few values (GET, POST, and a few more): low cardinality. The field `user_id` in a service with millions of users has millions of values: high cardinality. The high-cardinality fields are the most useful for debugging, because they point to one single case among millions." },
+				{ "type": "paragraph", "text": "[[Dimensionality|how many different fields each event carries]] is about how many fields there are. A **wide event** is a record with hundreds of fields (customer, version, region, route, duration, and so on). Observability needs both: high cardinality and high dimensionality." },
+				{ "type": "callout", "tone": "analogy", "text": "A class photo with only the total count of children tells you 'we have 30 kids'. A list with name, age, row, and what each child ate lets you ask any new question later, like 'who ate the cake and sits near the window?'." },
+				{ "type": "heading", "text": "Why aggregates hide problems" },
+				{ "type": "paragraph", "text": "An aggregate answers 'how is the system in general?'. If one customer, on one app version, fails on every request, the global error rate may still be 0.1% and the dashboard looks fine. The problem hides inside the average. To find it you must keep the data with its fields and be able to slice by any combination of them." },
+				{ "type": "paragraph", "text": "Pre-aggregation has the same problem in time. If you store only a counter of requests per endpoint and status, you decided before the incident which questions are allowed. A field that did not become a label at write time cannot be recovered later. Keeping the raw event, with all its fields, and aggregating when you ask, lets you invent the question during the investigation." },
+				{ "type": "heading", "text": "The core analysis loop" },
+				{ "type": "list", "ordered": true, "items": [
+					"Start from the overall view of what looks wrong (for example, slow requests).",
+					"Check what you know so far.",
+					"Look for the fields whose values differ between the bad group and the rest.",
+					"Filter by those fields, so now you look at a smaller group.",
+					"Repeat until the cause is clear."
+				] },
+				{ "type": "paragraph", "text": "This loop is driven by data, not by guesses from experience. It does not need you to know the system beforehand, so it works even for brand-new failures." },
+				{ "type": "heading", "text": "Why an event store can take a customer id" },
+				{ "type": "paragraph", "text": "A time series database stores data by [[series|one stream of numbers over time, identified by a metric name plus a set of labels]]. Every new label value creates a new series, so the index grows with cardinality. An event store (usually columnar, which means it keeps each field in its own column) writes one row per event. The cardinality of a field does not change the cost of writing, and the grouping happens when you ask." },
+				{ "type": "callout", "tone": "warning", "text": "'We have logs, metrics and traces' does not mean 'we are observable'. Three tools with no shared identifiers force a person to join the clues in their head, and that is where investigations stall. The test is functional: can you ask any question and reach the cause of a new problem?" },
+				{ "type": "callout", "tone": "tip", "text": "Observability does not replace monitoring. Use classic thresholds for infrastructure, where problems are predictable (disk full, host down). Use observability for the application code, where problems are new and depend on combinations of fields." }
+			]
+		},
+		{
+			"id": "three-signals",
+			"title": "The three signals: logs, metrics and traces",
+			"blocks": [
+				{ "type": "paragraph", "text": "Telemetry comes in three main kinds, called **signals**. Think of a car trip. The dashboard of the car shows speed and fuel: numbers over time. The travel diary says 'at 3 pm we stopped for lunch': things that happened. The map with your route shows each step of one trip. They answer different questions." },
+				{ "type": "table", "headers": ["Signal", "What it is", "Good for", "Not good for"], "rows": [
+					["Metric", "A number measured over time, with a name and labels", "How much? What trend? Alerts", "The detail of one request"],
+					["Log", "A record of an event, with a time and fields", "What happened, with which message?", "Cheap long-term trends"],
+					["Trace", "The story of ONE request across services, made of spans", "Where did the time go? Which service?", "Trends over months"]
+				], "caption": "Three signals, three jobs" },
+				{ "type": "heading", "text": "Metrics" },
+				{ "type": "paragraph", "text": "A metric is a number over time: how many requests, how much memory, how long a request took. Each [[series|one stream of numbers over time, identified by a metric name plus a set of labels]] is identified by a name and a set of labels. Because metrics keep aggregates and not each event, they are small and fast, which makes them ideal for trends and alerts." },
+				{ "type": "paragraph", "text": "The cost of a metric depends on the number of series and on how often it is read (the scrape frequency), **not on traffic**. If traffic grows ten times, a request counter costs almost the same. Logs and traces produce data for every request, so their cost follows traffic volume." },
+				{ "type": "heading", "text": "Traces" },
+				{ "type": "paragraph", "text": "A trace tells the story of one request. Each operation becomes a **span**, with a start, a duration and a pointer to its parent span. All spans of the same request share a trace id. A trace shows the order of calls and where the time went, which no aggregate shows." },
+				{ "type": "chart", "title": "Time of each span of one request (milliseconds, 'self time')", "unit": "ms", "bars": [
+					{ "label": "gateway (own work)", "value": 40 },
+					{ "label": "orders (own work)", "value": 40 },
+					{ "label": "db.insert", "value": 60 },
+					{ "label": "inventory GET /stock (own work)", "value": 40 },
+					{ "label": "inventory stock.read", "value": 720 }
+				] },
+				{ "type": "paragraph", "text": "The chart uses the numbers of a trace that took 900 ms. A parent span includes the time of its children, so the root is always the longest. **Self time** is the duration of a span minus the duration of its direct children. The span with the biggest self time, usually a leaf of the tree, is where the time was really spent. Here it is `stock.read`, with 720 ms." },
+				{ "type": "heading", "text": "Logs" },
+				{ "type": "paragraph", "text": "A log is a record of something that happened. Logs say 'why' and 'with which message'. They are the most detailed signal, and also the most expensive to keep, since there is a line for each event." },
+				{ "type": "heading", "text": "Making the signals work together" },
+				{ "type": "paragraph", "text": "Signals become much stronger when they share identifiers. If the logger writes the trace id and the span id of the active context on each line, the log is no longer loose text: it belongs to one request, and tools can open the logs from a span and the trace from a log line." },
+				{ "type": "paragraph", "text": "A metric says 'something is slow', but not which request. An [[exemplar|a trace id stored next to one sample of a metric, so you can jump from the number to a real example request]] solves it: the metrics system stores the trace id of a request next to a sample. On the chart, you click the point and open the trace." },
+				{ "type": "callout", "tone": "warning", "text": "Do not add `trace_id` as a label of a metric. A label that changes on every request creates one series per request. Aggregation is lost and the memory explodes. Use exemplars to link a metric to a trace." },
+				{ "type": "heading", "text": "What a histogram can and cannot say" },
+				{ "type": "paragraph", "text": "A cumulative histogram counts how many requests took up to 0.5 s, up to 2.5 s, and so on. From it you can tell **how many** and **what share**, which is enough for panels and alerts. You cannot tell **which** requests, **where inside** the request or **with what message**. For those you need traces and logs." },
+				{ "type": "heading", "text": "Sampling and estimating totals" },
+				{ "type": "paragraph", "text": "Keeping every trace is expensive, so many systems keep only a fraction: this is **sampling**. Suppose we keep 1 trace in 100 and a query finds 480 stored traces of `/pay`. Each stored trace stands for about 100 real requests, so the estimate is 480 × 100 = 48,000. For that, the **sample rate** must be recorded on each stored event. Metrics do not have this problem, because they count every request before any sampling." },
+				{ "type": "callout", "tone": "remember", "text": "Metrics tell you THAT something is wrong and how much. Traces tell you WHERE. Logs tell you WHY. Alerts usually come from metrics because they are cheap and fast." }
+			]
+		},
+		{
+			"id": "structured-logs",
+			"title": "Structured logs",
+			"blocks": [
+				{ "type": "paragraph", "text": "A free-text log is like a letter: 'Checkout request from alice for 2 pens'. A person reads it easily, but a computer cannot easily ask 'how many requests took more than 500 ms?'. You would write a [[regular expression|a search pattern written in a special mini-language]] that breaks as soon as someone changes the wording of the sentence." },
+				{ "type": "paragraph", "text": "A **structured log** is like a form with boxes. Each record is a list of name and value pairs, usually in JSON or logfmt. A tool can filter by `status`, add up `duration_ms` or group by `route` without caring about any sentence." },
+				{ "type": "code", "language": "json", "content": "{\"ts\":\"2026-10-07T17:03:22.418Z\",\"level\":\"info\",\n \"route\":\"/orders\",\"status\":200,\n \"duration_ms\":1240,\"correlation_id\":\"7f3a\"}", "caption": "One request, one structured line" },
+				{ "type": "heading", "text": "The correlation id" },
+				{ "type": "paragraph", "text": "When many requests happen at once, their lines mix together in the log. A **correlation id** (or request id) is a value created when the request enters the system and repeated on every log line about that request, in every service it passes through. Then one search for that value returns the whole story." },
+				{ "type": "callout", "tone": "analogy", "text": "It is like writing your name on every page of your homework. If the teacher drops all the pages on the floor, she can still put your pages back together." },
+				{ "type": "paragraph", "text": "The id only works if it **travels across each boundary** between processes. Over HTTP it goes in a header, for example `X-Correlation-Id`. Through a queue it goes in a header or property of the message: the producer fills it and the consumer reads it before processing. Nothing does this by magic. Your code or an instrumentation library must copy the value." },
+				{ "type": "paragraph", "text": "Two sides must work: the caller **injects** the id into the call, and the receiver **extracts** it and uses it. A service creates a new id only when it is the entry point, meaning the request arrived without one. If every service creates its own, the logs are correct inside each service but cut apart between them." },
+				{ "type": "heading", "text": "Good habits for fields" },
+				{ "type": "list", "items": [
+					"**Time in UTC and ISO 8601 (RFC 3339)**, such as `2026-10-07T17:03:22.418Z`, with milliseconds or better. All machines mean the same instant, and alphabetical order matches time order.",
+					"**Never write secrets**: passwords, tokens, card numbers and personal data stay out, even as an example. Logs usually have weaker access control than the database.",
+					"**Write what helps an investigation**: identifiers, route, status, duration."
+				] },
+				{ "type": "heading", "text": "Searching with LogQL" },
+				{ "type": "paragraph", "text": "[[Loki|a system that stores logs and indexes only their labels]] uses a query language called LogQL. A query is a **stream selector** in braces followed by a **pipeline**, and each stage receives only what the previous one let through." },
+				{ "type": "code", "language": "logql", "content": "{service=\"orders\"} |= \"timeout\" | json | status >= 500", "caption": "Pick the stream, keep lines with 'timeout', read the JSON, keep status 500 or more" },
+				{ "type": "list", "items": [
+					"`{service=\"orders\"}` picks the streams by their indexed labels.",
+					"`|= \"timeout\"` keeps only lines that contain the text.",
+					"`| json` turns the JSON fields into labels that can be compared. Nested fields are flattened with `_`, so `http.status` becomes `http_status`.",
+					"`| status >= 500` is a number comparison, not a fragile regular expression. The same works for durations, for example `| duration_ms > 500`."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Do not make a field with unbounded values, like `correlation_id`, a Loki label. Each label combination is a separate stream, so you get a huge index of tiny pieces. Keep labels few and low in cardinality (`service`, `env`) and leave the id in the line, filtering at query time." },
+				{ "type": "callout", "tone": "remember", "text": "A structured log is data with names. A correlation id must be created once at the entry and passed on at every hop." }
+			]
+		},
+		{
+			"id": "metric-types-cardinality",
+			"title": "Metric types and cardinality",
+			"blocks": [
+				{ "type": "paragraph", "text": "Prometheus has a few types of metric, like different kinds of measuring tools in a kitchen: a counter is a click counter at the door, a gauge is a thermometer, a histogram is a set of jars sorted by size." },
+				{ "type": "table", "headers": ["Type", "What it is", "Example", "How to read it"], "rows": [
+					["Counter", "A total that only goes up (it resets to zero when the process restarts)", "`http_requests_total`", "Use `rate()` or `increase()`, not the raw value"],
+					["Gauge", "A value that goes up and down", "Queue size, memory in use, open connections", "Read the current value, average or maximum"],
+					["Histogram", "Counts of observations inside ranges (buckets)", "`http_request_duration_seconds`", "`histogram_quantile()` estimates percentiles"],
+					["Summary", "Percentiles computed inside the app", "Ready-made quantile 0.99 of one instance", "Cannot be combined across instances"]
+				] },
+				{ "type": "heading", "text": "Counters and rate" },
+				{ "type": "paragraph", "text": "The raw value of a counter says little. What matters is how fast it grows. The rate is the change divided by the time. If a counter was 1200 at t = 0 s and 1500 at t = 60 s, the increase is 300, and 300 / 60 = 5 requests per second. The `rate()` function does this over a window, with adjustments for resets and for the edges. `increase()` is the same without dividing by the time." },
+				{ "type": "paragraph", "text": "When the value of a counter goes **down**, Prometheus understands that the process restarted, and counts the whole next sample as increase. For samples 980, 1000, 15, 40: the steps are 20, then 15 (after the reset), then 25, so the total is 60. For this reason you apply `rate()` first, and sum after. If you add up the counters of several instances first, the resets are hidden." },
+				{ "type": "callout", "tone": "warning", "text": "Do not use `rate()` on a gauge. A gauge goes down on purpose, and `rate()` would read every drop as a counter reset." },
+				{ "type": "heading", "text": "Histograms in detail" },
+				{ "type": "paragraph", "text": "A classic histogram has buckets whose limits you choose in the code. Each bucket is a series `_bucket{le=\"bound\"}`, and it is **cumulative**: it counts every observation less than or equal to the bound (`le` means 'less than or equal'). The last bucket is `le=\"+Inf\"`. There are also `_sum` (the total of the observed values) and `_count` (the number of observations), and all are counters." },
+				{ "type": "code", "language": "text", "content": "..._bucket{le=\"0.1\"}    40\n..._bucket{le=\"0.25\"}   70\n..._bucket{le=\"0.5\"}    90\n..._bucket{le=\"1\"}     100\n..._bucket{le=\"+Inf\"}  100", "caption": "Cumulative buckets: 100 observations in total" },
+				{ "type": "paragraph", "text": "To find the 80th percentile (quantile 0.8) from this table: the total is 100, so we look for rank 80. Up to 0.25 there are 70 and up to 0.5 there are 90, so rank 80 is inside the bucket from 0.25 to 0.5, which holds 90 - 70 = 20 observations. We assume the observations are spread evenly in the bucket: (80 - 70) / 20 = 0.5 of the way. The estimate is 0.25 + 0.5 × (0.5 - 0.25) = **0.375 s**. It is only an estimate: the error depends on how wide the bucket is." },
+				{ "type": "heading", "text": "Histogram against summary" },
+				{ "type": "paragraph", "text": "A summary computes quantiles in the application and exposes them ready, per instance. A histogram exposes counts per bucket, and the quantile is estimated later on the server. Percentiles are **not additive**: the average, sum or maximum of the p99 of each instance is not the p99 of the whole service. Bucket counts are additive. So, to get the percentile of a whole service, use a histogram, with this recipe:" },
+				{ "type": "code", "language": "promql", "content": "histogram_quantile(0.99,\n  sum by (le) (\n    rate(http_request_duration_seconds_bucket[5m])\n  )\n)", "caption": "Rate on each bucket, sum by le, quantile last" },
+				{ "type": "heading", "text": "Cardinality: counting series" },
+				{ "type": "paragraph", "text": "Each different combination of label values is its own time series, with its own memory and index cost. The maximum is the **product** of the numbers of values. A counter with `method` (4 values), `status` (5 values) and `instance` (3 instances) can make 4 × 5 × 3 = 60 series. Add a `user_id` label with 10,000 values and it becomes 600,000." },
+				{ "type": "chart", "title": "Maximum number of series of one counter", "unit": "series", "bars": [
+					{ "label": "method × status × instance", "value": 60 },
+					{ "label": "same + user_id (10,000 values)", "value": 600000 }
+				] },
+				{ "type": "paragraph", "text": "A classic histogram multiplies this even more, because each label combination carries one series per bucket (the finite bounds plus `+Inf`) plus `_sum` and `_count`. With 10 finite bounds, `route` (20 values) and `method` (3 values) you get (10 + 1 + 2) = 13 series per combination, 20 × 3 = 60 combinations, so 13 × 60 = 780 series per instance." },
+				{ "type": "callout", "tone": "tip", "text": "Labels with a small, closed set of values are safe (method, status class, region). Identifiers of users, requests or orders have unbounded values: put them in logs and traces, not in metric labels." },
+				{ "type": "heading", "text": "Metric instruments in OpenTelemetry" },
+				{ "type": "table", "headers": ["Instrument", "How values are recorded", "Example"], "rows": [
+					["Counter", "Only adds", "Requests served"],
+					["UpDownCounter", "Adds and subtracts; balances of instances can be summed", "Requests in flight"],
+					["Histogram", "Records a distribution of values", "Request duration"],
+					["Gauge", "The current absolute value, not additive", "Temperature"]
+				], "caption": "Exported to Prometheus, an UpDownCounter shows up as a gauge" },
+				{ "type": "callout", "tone": "remember", "text": "Counter: only goes up, read its rate. Gauge: a current value. Histogram: buckets you can add across instances. More label values multiply the series." }
+			]
+		},
+		{
+			"id": "distributed-tracing",
+			"title": "Distributed tracing: spans and context propagation",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine passing a note in class from the first desk to the last. Each child who touches it writes the time and their name on it. At the end you can see the whole path and who held the note for a long time. A **distributed trace** does this for a request that crosses many services." },
+				{ "type": "heading", "text": "Trace, span and the tree" },
+				{ "type": "paragraph", "text": "A **trace** is the record of one request as it crosses the system. It is made of **spans**. A span is a unit of work with a start and a duration. Each span has three identifiers: the **trace id** (the same for the whole request), its own **span id**, and the span id of its **parent**. The backend groups spans by trace id and builds a tree by following the parent ids. Without a shared trace id, spans from different services would be loose events." },
+				{ "type": "paragraph", "text": "The only span with no parent is the **root span**. It represents the whole request, as seen where it entered the system. All others are its children, grandchildren, and so on." },
+				{ "type": "diagram", "content": "span                      start    end\ngateway   GET /checkout        0    900 ms\n  orders    POST /orders       20    880\n    orders    db.insert        30     90\n    inventory GET /stock      100    860\n      inventory stock.read    120    840", "caption": "A trace as a tree. Indentation means 'child of'" },
+				{ "type": "paragraph", "text": "Reading it: `gateway` is the root. Its duration is 900 ms, but its **self time** is only 900 - 860 = 40 ms. Self time of `POST /orders` is 860 - (60 + 760) = 40 ms, of `db.insert` is 60 ms, of `GET /stock` is 760 - 720 = 40 ms and of `stock.read` is 720 ms. The slow part is `stock.read`, even though six lines look slow." },
+				{ "type": "heading", "text": "Context propagation" },
+				{ "type": "paragraph", "text": "How do three different programs agree on the same trace id? The caller **injects** the trace id and its own span id into the headers of the call. The receiver **extracts** them and uses them as the parent of its spans. Inside one process, the context passes from function to function. Between processes, it travels in the headers of the protocol. This is called **context propagation**." },
+				{ "type": "paragraph", "text": "The standard is [[W3C Trace Context|a public rule for how to write the trace headers, so any tool can read them]]. Its header is called `traceparent`:" },
+				{ "type": "code", "language": "text", "content": "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\n             |  |                                |                |\n             |  trace id (32 hex digits)         |                flags (2)\n             version (2)                         parent id (16 hex digits)", "caption": "Version 00 has four fields separated by hyphens" },
+				{ "type": "paragraph", "text": "The parent id is the span id of the caller, which becomes the parent of the span the receiver creates. An id made only of zeros is invalid. The last field holds flags, and one of them is the **sampled** flag, which says whether the trace is being recorded." },
+				{ "type": "callout", "tone": "warning", "text": "Propagation is a chain. If `orders` receives `traceparent` but does not forward it when calling `inventory`, `inventory` starts a brand-new trace with its own root. The symptom: one trace that ends too early and another short trace that starts in the middle of the path." },
+				{ "type": "heading", "text": "Span kind" },
+				{ "type": "table", "headers": ["Span kind", "Role", "Example"], "rows": [
+					["`CLIENT`", "Makes a synchronous call", "`orders` calling `inventory`"],
+					["`SERVER`", "Receives and handles a synchronous call", "`inventory` handling the HTTP request"],
+					["`PRODUCER`", "Sends an asynchronous job or message", "Publishing to a queue"],
+					["`CONSUMER`", "Receives an asynchronous job or message", "A worker reading the queue"],
+					["`INTERNAL`", "Work that stays inside the process", "A calculation"]
+				], "caption": "With the kind, a backend can separate network time from processing time" },
+				{ "type": "heading", "text": "Attributes, baggage and links" },
+				{ "type": "list", "items": [
+					"**Attributes** describe one span and are exported with it. They go nowhere else.",
+					"**Baggage** is a set of key and value pairs that follows the context from service to service, so whoever is downstream can read it. Because it goes in headers to any destination of the call, never put sensitive data in baggage.",
+					"**Span links** point to other span contexts, in the same trace or in other ones. They are for asynchronous work with several causes. A worker that processes 50 messages in one batch span links that span to the 50 requests that published them, because a normal parent has only one."
+				] },
+				{ "type": "heading", "text": "Clocks lie a little" },
+				{ "type": "paragraph", "text": "The tree comes from ids, which are exact. But the position of each span on the timeline comes from the clock of the machine that made it. Clocks of different machines drift, so a child span can look like it starts before its parent. The duration of each span stays reliable, because it is measured on a single clock." },
+				{ "type": "heading", "text": "Sampling" },
+				{ "type": "paragraph", "text": "Recording every trace costs a lot, so we keep some. If we keep 1 in 20 and write the rate 20 on each kept trace, then 350 stored error traces stand for 350 × 20 = 7,000 real requests with an error. Adding up the rates gives the estimate of the total." },
+				{ "type": "table", "headers": ["Kind", "When it decides", "Good", "Cost"], "rows": [
+					["Head sampling", "At the start of the request, without knowing how it ends", "Cheap and simple", "May throw away the interesting traces"],
+					["Tail sampling", "After the trace is complete, looking at all of it", "Can keep 'every trace with an error'", "Holds spans in memory; all spans of a trace must reach the same place"]
+				] },
+				{ "type": "paragraph", "text": "With tail sampling and several collector instances, a layer before them must route by **trace id**, not round-robin. If spans of one trace go to different instances, each instance sees only part of the trace and decides wrong." },
+				{ "type": "paragraph", "text": "A **parent-based** sampler uses its own rule only for root spans. When there is a parent, it repeats the parent's decision, read from the sampled flag of `traceparent`. With the gateway at ratio 0.1 and `orders` at 0.5, `orders` still records only the traces the gateway chose, so 100 of every 1,000 requests, complete in both services. The decision made at the entrance holds for the whole trace." },
+				{ "type": "callout", "tone": "remember", "text": "Trace = tree of spans with one trace id. Self time finds the culprit. Propagation must pass through every service, and a sampled-out parent means sampled-out children." }
+			]
+		},
+		{
+			"id": "opentelemetry",
+			"title": "OpenTelemetry",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine every country had a different plug for electricity. You would need a new charger for each trip. Before OpenTelemetry, each monitoring vendor had its own way to collect data. **OpenTelemetry** (often written OTel) is the universal plug: an open, neutral set of specifications and tools to produce and carry telemetry. It does **not** store or draw anything. Storing, querying and showing are done by a backend you choose." },
+				{ "type": "table", "headers": ["Piece", "What it does"], "rows": [
+					["API", "A small, stable set of calls that code uses to say what could be measured"],
+					["SDK", "The implementation: sampling, processors, exporters; the application configures it"],
+					["OTLP", "The protocol that carries traces, metrics and logs"],
+					["Collector", "A program that receives, processes and exports telemetry"],
+					["Semantic conventions", "Agreed names for attributes"]
+				] },
+				{ "type": "heading", "text": "API against SDK" },
+				{ "type": "paragraph", "text": "Libraries depend only on the **API**, which is light and stable. The application decides whether and how to measure by configuring the **SDK**. If a database library creates spans through the API and the application never installs the SDK, the calls do nothing. That is the point: a library can be instrumented without forcing a cost on anyone." },
+				{ "type": "heading", "text": "Resource and semantic conventions" },
+				{ "type": "paragraph", "text": "A **resource** is the set of attributes that describes who produces the telemetry, and it applies to all spans, metrics and logs of that program. The most important one is `service.name`. Without it the SDK uses `unknown_service`, and the data of different services gets mixed in the backend. You can set it with the `OTEL_SERVICE_NAME` variable." },
+				{ "type": "paragraph", "text": "If each team picks its own names (`status`, `statusCode`, `http_status`), a query that crosses services must know all of them. The **semantic conventions** fix a shared vocabulary, such as `http.request.method`, `http.response.status_code` and `service.name`. The same query and panel then work for any service." },
+				{ "type": "heading", "text": "OTLP and ports" },
+				{ "type": "paragraph", "text": "OTLP has two transport variants. **gRPC** uses port **4317**. **HTTP** uses port **4318**, and each signal has its own path, such as `/v1/traces`. Pointing an HTTP exporter at the gRPC port, or the reverse, is a very common reason why telemetry never arrives." },
+				{ "type": "heading", "text": "The Collector" },
+				{ "type": "paragraph", "text": "The Collector sits between applications and backends. Applications speak only OTLP to one address. Everything specific to a vendor lives in the Collector configuration. To change or add a backend you edit the Collector, and you do not deploy the services again." },
+				{ "type": "code", "language": "yaml", "content": "receivers:\n  otlp:\n    protocols:\n      http:\nprocessors:\n  batch:\nexporters:\n  otlp/tempo:\n    endpoint: tempo:4317\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [batch]\n      exporters: [otlp/tempo]", "caption": "Components are defined first, then wired in the service section" },
+				{ "type": "callout", "tone": "warning", "text": "Defining an exporter does not turn it on. A component works only if it appears in a pipeline under `service`. If the exporter to Tempo is defined but the pipeline lists only `debug`, spans appear in the Collector log and never reach Tempo. A pipeline may list several exporters, and the data goes to all." },
+				{ "type": "heading", "text": "Automatic and manual instrumentation" },
+				{ "type": "paragraph", "text": "**Automatic** (zero-code) instrumentation intercepts well-known libraries, such as HTTP servers, database clients and queues, and gives you the skeleton of the trace without changing code. It does not know your business: the total of an order, the plan of a customer, a calculation step. That data enters through **manual** instrumentation with the API. Both live together in the same trace." },
+				{ "type": "heading", "text": "Short programs: flush before exit" },
+				{ "type": "paragraph", "text": "The batch span processor keeps finished spans in a queue and sends them in groups from time to time, so the application is not slowed on every span. The price: recent spans are still in memory when the process ends. In a short-lived script, shut the provider down before exiting (this empties the queue), or use the simple processor, which exports each span as it ends." },
+				{ "type": "heading", "text": "Logs in OpenTelemetry" },
+				{ "type": "paragraph", "text": "For logs, OpenTelemetry does not ask you to rewrite your logging calls. The Logs API exists so that existing logging libraries connect to the SDK through a **bridge**. Every log record written while a span is active receives the trace id and span id of that context. With those two fields the backend jumps from a log line to its trace and back." },
+				{ "type": "callout", "tone": "remember", "text": "OpenTelemetry produces and transports telemetry. It never stores it. Libraries use the API, applications configure the SDK, and the Collector gives you freedom to change backends." }
+			]
+		},
+		{
+			"id": "sli-slo-error-budgets",
+			"title": "SLI, SLO and error budgets",
+			"blocks": [
+				{ "type": "paragraph", "text": "Say a lemonade stand promises 'at least 99 of every 100 cups will be cold'. To keep the promise you must count the cups, you need a target, and you need to know how many warm cups you are still allowed to serve. Reliability works in the same way, with three words that look similar and are different." },
+				{ "type": "table", "headers": ["Word", "Stands for", "What it is", "Example"], "rows": [
+					["SLI", "Service level indicator", "The measurement: good events divided by valid events", "Requests without error / all requests"],
+					["SLO", "Service level objective", "The internal target for the SLI over a time window", "99.9% over 30 days"],
+					["SLA", "Service level agreement", "The contract with the customer, with consequences", "Below 99.5%, refund 10% of the invoice"]
+				] },
+				{ "type": "paragraph", "text": "The SLO is usually tighter than the SLA. This way the team notices the problem and acts before the contract is broken." },
+				{ "type": "heading", "text": "Error budget" },
+				{ "type": "paragraph", "text": "The **error budget** is what the SLO allows to fail: 1 minus the SLO. With 99.9%, the budget is 0.1%. Think of it as a piggy bank of failures that you are allowed to spend on releases, experiments and surprises." },
+				{ "type": "list", "items": [
+					"**Request-based SLO**: with 1,000,000 valid requests and a 99.9% target, 0.001 × 1,000,000 = **1,000** requests may fail.",
+					"**Time-based SLO**: 99.9% of good minutes in 30 days (43,200 minutes) allows 0.001 × 43,200 = **43.2 bad minutes**."
+				] },
+				{ "type": "chart", "title": "Bad minutes allowed in 30 days (43,200 minutes)", "unit": "minutes", "bars": [
+					{ "label": "SLO 99%", "value": 432 },
+					{ "label": "SLO 99.9%", "value": 43.2 },
+					{ "label": "SLO 99.99%", "value": 4.32 },
+					{ "label": "SLO 99.999%", "value": 0.432 }
+				] },
+				{ "type": "paragraph", "text": "Each extra nine divides the budget by ten. A team should **not** choose 100%. The budget would be zero, so no deploy, experiment or maintenance could ever go wrong, and the team would stop changing the system. Also, the user cannot tell 100% from 99.99%, because the network and the user's own phone fail more often than that." },
+				{ "type": "paragraph", "text": "When the budget runs out before the end of the window, the team puts effort on stability instead of new features. While there is budget left, the team may ship and experiment. The budget turns the argument between speed and reliability into a decision made with a number." },
+				{ "type": "heading", "text": "Budget consumed" },
+				{ "type": "paragraph", "text": "An example: SLO 99.5%, with 2,000,000 valid requests and 6,000 failures in the window. Allowed failures are 0.005 × 2,000,000 = 10,000. So 6,000 / 10,000 = **60%** of the budget is gone. The same answer comes from the error rate (0.3%) divided by the budget fraction (0.5%)." },
+				{ "type": "heading", "text": "Burn rate" },
+				{ "type": "paragraph", "text": "The **burn rate** tells how many times faster than allowed the budget is being spent: observed error rate divided by (1 - SLO). With burn rate 1, the budget lasts exactly the SLO window. For a 99.9% SLO and 0.5% errors in the last hour: 0.005 / 0.001 = 5. At that pace the 30-day budget is gone in 30 / 5 = 6 days." },
+				{ "type": "paragraph", "text": "With burn rate B, a whole budget lasts window / B. If 40% was already used and the burn rate is a steady 6, the remaining 60% lasts 0.6 × 720 hours / 6 = **72 hours**. This calculation tells you whether a problem can wait for office hours or must wake someone up." },
+				{ "type": "heading", "text": "Choosing the unit of the SLI" },
+				{ "type": "paragraph", "text": "Imagine a day with 1,440 minutes and 1,000,000 requests. During the night the service was down for 36 minutes, and only 2,000 requests arrived (all failed). By time: (1,440 - 36) / 1,440 = 97.5% good. By requests: (1,000,000 - 2,000) / 1,000,000 = 99.8% good. The same incident gives two numbers. Measured by time, every minute weighs the same. Measured by requests, every minute weighs what traffic it had, which follows the impact on users more closely." },
+				{ "type": "heading", "text": "Latency SLI and percentiles" },
+				{ "type": "paragraph", "text": "A latency SLI is a ratio too: requests under the threshold divided by the total. With a cumulative histogram, the numerator is the bucket of the threshold and the denominator is the `+Inf` bucket. If 9,700 of 10,000 requests took up to 0.3 s, the SLI is 97%. Against a target of '95% within 300 ms', that passes." },
+				{ "type": "paragraph", "text": "A **percentile** says 'below which value do p% of measurements fall'. With the **nearest-rank** convention, the percentile p is the value at position ⌈p × n⌉ counting from 1. For 10 sorted values (20, 22, 25, 27, 30, 31, 35, 40, 48, 900 ms), the p90 is at position 9: **48 ms**. The mean is 117.8 ms, a number no request ever had. For this reason latency SLIs use percentiles or the share under a threshold, not the mean." },
+				{ "type": "callout", "tone": "remember", "text": "SLI = measurement. SLO = internal target. SLA = contract. Error budget = 1 - SLO. Burn rate = error rate / (1 - SLO)." }
+			]
+		},
+		{
+			"id": "alerting",
+			"title": "Alerting",
+			"blocks": [
+				{ "type": "paragraph", "text": "A smoke detector that rings every time you make toast soon gets ignored. An alert is a message that asks a person to act. If most alerts need no action, people stop reading them, and then the one real alert is lost in the noise. This is **alert fatigue**. So an alert that pages a person must be **rare, urgent and actionable**." },
+				{ "type": "heading", "text": "Symptoms against causes" },
+				{ "type": "table", "headers": ["Kind", "Fires when", "Example"], "rows": [
+					["Symptom-based", "The user is suffering: errors, slowness, wrong data", "Checkout error ratio above the objective"],
+					["Cause-based", "An internal state that might lead to trouble", "CPU above 90%"]
+				] },
+				{ "type": "paragraph", "text": "Alerting on symptoms, with SLOs, gives fewer alerts and each one matches a real problem. The causes are left for the investigation." },
+				{ "type": "heading", "text": "Prometheus alerting rules and the for clause" },
+				{ "type": "code", "language": "yaml", "content": "- alert: HighErrorRatio\n  expr: job:http_errors:ratio_rate5m > 0.05\n  for: 5m\n  labels:\n    severity: page", "caption": "Fire only if the expression stays true for 5 minutes" },
+				{ "type": "paragraph", "text": "An alert goes through three states. **Inactive**: the expression returns nothing. **Pending**: it returns something, but for less time than `for`. **Firing**: it returned something for at least `for`. If the expression became true 2 minutes ago and `for` is 5 minutes, the alert is **pending**. The `for` clause avoids paging for a spike that goes away alone, at the price of delaying every alert by that time." },
+				{ "type": "paragraph", "text": "`for` needs the expression to be true at every consecutive evaluation. A single false evaluation resets the wait. Look at a service where every 5 minutes there is a 60-second burst with half of the requests failing. Overall 10% of requests fail, yet with a 1-minute window and `for: 10m` the alert never fires, because it is false between bursts. That is 12 minutes of bursts per hour burning the budget with no alert." },
+				{ "type": "heading", "text": "Burn-rate alerts" },
+				{ "type": "paragraph", "text": "A burn-rate alert asks: 'is the budget being spent too fast?'. Choose a share of the budget and a time, and compute the burn rate that matches. To open a ticket when **5%** of the budget of a 99.9% SLO (30 days = 720 hours) is spent in **6 hours**: the service must go 0.05 × 720 / 6 = **6** times faster than allowed. In error rate that is 6 × 0.1% = 0.6%. Another well-known case: spending 2% of the budget in 1 hour means burn rate 14.4." },
+				{ "type": "code", "language": "yaml", "content": "- alert: ErrorBudgetBurn\n  expr: |\n    ratio_rate1h > (14.4 * 0.001)\n    and\n    ratio_rate5m > (14.4 * 0.001)\n  labels:\n    severity: page", "caption": "Multi-window: long and short window with the same threshold" },
+				{ "type": "paragraph", "text": "Why two windows? The **long window** (1 hour) shows that a relevant part of the budget was spent and protects against brief spikes. Alone, it would stay above the threshold for up to an hour after the problem ended. The **short window** (5 minutes) confirms that the burn is happening **now**, so the alert clears within minutes of recovery." },
+				{ "type": "paragraph", "text": "A **predictive** alert measures the burn pace over a baseline window and asks whether, at that pace, the budget runs out within a lookahead window. Example: 2,000 failures left and 150 in the last hour. 2,000 / 150 = 13.3 hours, which is 13 h 20 min. A 4-hour lookahead would not fire. A 24-hour lookahead would." },
+				{ "type": "heading", "text": "Alertmanager" },
+				{ "type": "paragraph", "text": "Prometheus decides which alerts are firing. **Alertmanager** decides what to notify. Three tools reduce noise:" },
+				{ "type": "table", "headers": ["Feature", "What it does", "Example"], "rows": [
+					["Grouping", "Bundles similar alerts into one notification", "300 `InstanceDown` alerts become one message listing 300 instances"],
+					["Inhibition", "Silences alerts while a broader one is already firing", "Hide 'service slow' while 'datacenter down' fires"],
+					["Silences", "Mute alerts for a time chosen by a person", "During planned maintenance"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "An alert with a short window and a long `for` lets intermittent failures through, even when they add up to many errors. A burn-rate alert over a long window sees the accumulated total." },
+				{ "type": "callout", "tone": "remember", "text": "Page people only for symptoms that are urgent and need action. Use `for` and multi-window burn rates to avoid noise, and Alertmanager to group, inhibit and silence." }
+			]
+		},
+		{
+			"id": "red-use-golden-signals",
+			"title": "RED, USE and golden signals",
+			"blocks": [
+				{ "type": "paragraph", "text": "When you open a dashboard, what should be on it? Checklists help. There are three famous ones, and each looks at the system from a different place. Think of a restaurant: RED is how the customers feel (how many orders, how many wrong, how long they wait). USE is how the kitchen equipment is doing (stove busy, orders waiting, burnt dishes)." },
+				{ "type": "table", "headers": ["Method", "Author", "Letters", "Looks at"], "rows": [
+					["RED", "Tom Wilkie", "Rate, Errors, Duration", "Request-driven services, from the caller's side"],
+					["USE", "Brendan Gregg", "Utilization, Saturation, Errors", "Resources (CPU, memory, disk, network), from the inside"],
+					["Four golden signals", "Google SRE book", "Latency, Traffic, Errors, Saturation", "User-facing systems"]
+				] },
+				{ "type": "paragraph", "text": "**RED** says what to measure in every request-driven service: the request rate, the number of errors and the duration (best as a histogram). These three are the base of standard dashboards and of SLOs." },
+				{ "type": "paragraph", "text": "**USE** is a checklist to find bottlenecks: for every resource, look at **utilization** (how much of it is busy), **saturation** (how much work is queued because it did not fit) and **errors**." },
+				{ "type": "paragraph", "text": "The **golden signals** are almost RED with other names: latency is duration, traffic is rate, errors are errors. The extra one is **saturation**, how close the service is to its limit. RED leaves saturation to USE, applied to resources." },
+				{ "type": "heading", "text": "Utilization is not saturation" },
+				{ "type": "paragraph", "text": "Imagine a host with 4 CPU cores, all busy 100% of the time, and an average of 12 runnable threads waiting for a core. Utilization is 100%. The **12** is saturation: work that did not fit and waits in a queue. A resource at 100% with no queue is at its limit. A resource at 100% with a long queue is already delaying everyone who depends on it." },
+				{ "type": "heading", "text": "Which method for what" },
+				{ "type": "list", "items": [
+					"A checkout HTTP API is a request-driven service: use **RED** or golden signals.",
+					"The disks of the database host underneath are resources: use **USE**.",
+					"In a real system, use both, each at its own layer."
+				] },
+				{ "type": "heading", "text": "Latency and errors contaminate each other" },
+				{ "type": "paragraph", "text": "Suppose a dependency goes down. 40% of requests now return HTTP 500 in 5 ms, and the rest still take 300 ms. The average latency becomes 0.4 × 5 + 0.6 × 300 = 182 ms. The graph of the average shows an 'improvement' from 300 ms to 182 ms, while 40% of users are failing. The advice is to measure latency **split by outcome** (success against error) and to read the signals together: the 40% error rate explains the fake improvement." },
+				{ "type": "chart", "title": "Average latency in the example", "unit": "ms", "bars": [
+					{ "label": "Before the failure", "value": 300 },
+					{ "label": "During the failure (all requests mixed)", "value": 182 },
+					{ "label": "Successful requests only", "value": 300 },
+					{ "label": "Failed requests only", "value": 5 }
+				] },
+				{ "type": "callout", "tone": "warning", "text": "A fast failure pulls the average down and hides the incident. A slow failure (a timeout) pushes it up. Always look at errors next to latency." },
+				{ "type": "callout", "tone": "remember", "text": "RED for services, USE for resources, golden signals add saturation to RED. Saturation is the queue, utilization is how busy." }
+			]
+		},
+		{
+			"id": "profiling",
+			"title": "Profiling",
+			"blocks": [
+				{ "type": "paragraph", "text": "A trace tells you which service was slow. But inside that service, which line of code is the slow one? Think of a photographer who takes a picture of your busy classroom 100 times a second and writes who is doing what in each picture. After a while she knows where the class spends its time. That is a **profiler**." },
+				{ "type": "paragraph", "text": "A **sampling CPU profiler** interrupts the program many times per second and writes down the call stack at that moment (the list of functions currently running, one calling the next). Adding up the samples shows where the CPU time concentrates. It is cheap enough to run in production. A trace tells where a request was slow across services. A profile tells which code spent the CPU inside one process." },
+				{ "type": "heading", "text": "Flame graphs" },
+				{ "type": "paragraph", "text": "A flame graph draws the samples. Each rectangle is a function in a stack. The vertical axis is stack depth. The **width** is the share of samples that contain that function. The horizontal axis is **not** time: equal stacks are merged and sorted to be easy to read. So look for what is **wide**, not for what is on the left." },
+				{ "type": "diagram", "content": "root                      1000\n+- handleSearch            520\n|  +- parseQuery            60\n|  +- compileRegex         230\n|  +- rankResults          230\n+- handleExport            400\n|  +- compileRegex         210\n|  +- writeCsv             190\n+- gc                       80", "caption": "Samples out of 1,000 in which each frame was on the stack" },
+				{ "type": "paragraph", "text": "The **self time** of a frame is its width minus the width of its children: the exposed top of the flame. A flame graph splits the same function when it is called through different paths. Here `compileRegex` appears twice, with 230 + 210 = 440 samples, which is 44% of the CPU. Adding up per function is what `pprof top` does." },
+				{ "type": "chart", "title": "Self-time samples per function (out of 1,000)", "unit": "samples", "bars": [
+					{ "label": "compileRegex", "value": 440 },
+					{ "label": "rankResults", "value": 230 },
+					{ "label": "writeCsv", "value": 190 },
+					{ "label": "gc", "value": 80 },
+					{ "label": "parseQuery", "value": 60 }
+				] },
+				{ "type": "heading", "text": "Reading pprof: flat and cum" },
+				{ "type": "code", "language": "text", "content": "  flat   flat%     cum   cum%\n 0.05s   0.50%   9.80s 98.00%  net/http.(*conn).serve\n 0.30s   3.00%   9.40s 94.00%  main.buildRows\n 6.50s  65.00%   6.50s 65.00%  main.normalizeKey\n 1.20s  12.00%   1.20s 12.00%  runtime.mallocgc", "caption": "Part of the output of go tool pprof" },
+				{ "type": "list", "items": [
+					"`flat` is the time spent in the function's own code.",
+					"`cum` (cumulative) also includes everything the function calls.",
+					"Functions near the root, such as the HTTP server loop, have a huge `cum` and a `flat` near zero. The hot spot is the function with a high `flat`. Here it is `main.normalizeKey`, with 6.50 s."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "A CPU profile counts only time on the CPU. A request that waits 800 ms for a database is long in a trace and almost invisible in a CPU profile." },
+				{ "type": "callout", "tone": "remember", "text": "Sampling profiler: stacks many times per second. In a flame graph, width is the share of samples, not time. Look at flat for the hot function, and add up self time per function." }
+			]
+		},
+		{
+			"id": "prometheus-grafana-loki-tempo",
+			"title": "Prometheus, Grafana, Loki and Tempo basics",
+			"blocks": [
+				{ "type": "paragraph", "text": "A school library has different shelves for books, magazines and maps, but one desk where you ask for anything. In an observability stack each signal has its own store, and one tool puts everything on one screen." },
+				{ "type": "table", "headers": ["Tool", "Signal", "Query language", "Role"], "rows": [
+					["Prometheus", "Metrics", "PromQL", "Collects and stores numbers over time"],
+					["Loki", "Logs", "LogQL", "Stores log lines, indexes labels"],
+					["Tempo", "Traces", "TraceQL", "Stores traces"],
+					["Grafana", "None", "Queries the others", "Interface: dashboards; does not keep telemetry"]
+				] },
+				{ "type": "diagram", "content": "services --metrics--> Prometheus --+\n         --logs-----> Loki       ----+--> Grafana\n         --traces---> Tempo      ----+  (one screen)", "caption": "Each signal has its store; Grafana reads them all" },
+				{ "type": "paragraph", "text": "Because Grafana queries all three, you can jump from a metric to a trace and to its logs on the same screen." },
+				{ "type": "heading", "text": "Prometheus: pull and scrape" },
+				{ "type": "paragraph", "text": "By default Prometheus works in a **pull** model. Every configured interval it makes a **scrape**: an HTTP request to the metrics endpoint of each target. It stores the samples with the time of collection. The service only needs to expose its current values. A useful side effect: the scrape itself shows whether a target is alive, through the `up` metric." },
+				{ "type": "heading", "text": "Loki: index labels, scan content" },
+				{ "type": "paragraph", "text": "Loki indexes only the **labels** of the streams, not the content of the lines. The index answers one question: which streams exist in a time range. Everything else, including `|=` and the parsers, is done by reading and scanning the content of the selected streams. Take the query:" },
+				{ "type": "code", "language": "logql", "content": "{env=\"prod\"} |= \"4bf92f3577b34da6a3ce929d0e0e4736\"" },
+				{ "type": "paragraph", "text": "Going from 15 minutes to 7 days makes it much slower, because it must scan 7 days of lines of all `prod` streams. The cost depends on how much data the selector and the range let through. More specific selectors (add `service`) and short ranges make queries fast." },
+				{ "type": "heading", "text": "Tempo and TraceQL" },
+				{ "type": "paragraph", "text": "In TraceQL, a pair of braces is a **span selector**, and the conditions inside apply to one and the same span. Attributes are scoped: `resource.` for the emitter, `span.` for the operation. Intrinsics such as `duration`, `name` and `status` come from the span itself." },
+				{ "type": "code", "language": "traceql", "content": "{ resource.service.name = \"inventory\" && duration > 500ms }", "caption": "Spans of the inventory service that took more than 500 ms. The result is the traces that contain them" },
+				{ "type": "callout", "tone": "remember", "text": "Prometheus pulls metrics (PromQL). Loki keeps logs and indexes only labels (LogQL). Tempo keeps traces (TraceQL). Grafana only draws." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{ "type": "paragraph", "text": "Now let us follow one real problem from the beginning. Users say checkout is slow, but only sometimes. Here is how the pieces work as a team." },
+				{ "type": "list", "ordered": true, "items": [
+					"**An SLO alert fires.** A burn-rate alert over two windows says the latency budget is being spent too fast (alerting, SLO).",
+					"**A dashboard shows RED and USE.** Rate and errors look normal, but the duration histogram has a fat tail (metrics, RED).",
+					"**An exemplar opens a trace.** The trace shows `inventory stock.read` has the largest self time (traces, self time).",
+					"**The logs of that span explain it.** Searching the trace id or correlation id in Loki gives the structured lines of that exact request (logs, correlation).",
+					"**A profile points at the code.** A flame graph shows one function with a wide frame (profiling)."
+				] },
+				{ "type": "table", "headers": ["Question", "Best signal or tool"], "rows": [
+					["Is something wrong, and how bad?", "Metrics and SLOs"],
+					["Should a person be woken up?", "Burn-rate alert on a symptom"],
+					["Which service and which step was slow?", "Trace, by self time"],
+					["Why did that request fail?", "Structured log with the correlation id or trace id"],
+					["Which function burns the CPU?", "CPU profile and flame graph"],
+					["How do I get all this out of the code?", "OpenTelemetry (API, SDK, OTLP, Collector)"]
+				], "caption": "Which tool answers which question" },
+				{ "type": "heading", "text": "Common mistakes" },
+				{ "type": "list", "items": [
+					"Putting an id with unbounded values (user id, request id, trace id) in a metric label or a Loki label.",
+					"Averaging or summing percentiles across instances instead of summing histogram buckets.",
+					"Calling the longest span the culprit instead of the span with the most self time.",
+					"Forgetting to forward the trace headers, which cuts one trace into two.",
+					"Alerting on causes such as CPU, which wakes people without user pain.",
+					"Choosing a 100% SLO, which leaves no error budget.",
+					"Defining a Collector exporter but not listing it in a pipeline."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Observability is the ability to ask new questions about a running system. Share identifiers across signals, keep high-cardinality data in logs and traces, promise reliability with SLOs, and alert on the symptoms users feel." }
+			]
+		}
+	]
+}

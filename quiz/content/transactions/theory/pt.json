@@ -1,0 +1,1243 @@
+{
+	"area": "transactions",
+	"intro": [
+		"Imagine que você dá 10 moedas do seu cofrinho para um amigo. Duas coisas precisam acontecer: o seu cofrinho perde 10 moedas e o cofrinho do seu amigo ganha 10 moedas. E se a luz acabar bem no meio? Suas moedas sumiriam e seu amigo não receberia nada. Ninguém quer isso. Uma **transação** é um jeito de dizer: 'faça todos estes passos juntos, ou não faça nenhum'.",
+		"As transações vivem dentro de um [[banco de dados|um programa que guarda informações de forma organizada, como um arquivo digital gigante]]. Toda vez que você paga numa loja online, reserva um lugar no cinema ou manda dinheiro pelo celular, uma transação protege os dados. Elas resolvem três problemas de uma vez: uma falha no meio do trabalho, muitas pessoas mexendo nos mesmos dados ao mesmo tempo e vários computadores que precisam concordar.",
+		"Neste resumo você vai aprender: quais são as quatro promessas do ACID, o que pode dar errado quando muita gente divide os mesmos dados (as anomalias) e como os níveis de isolamento controlam isso, como os bloqueios e as várias versões de uma linha (MVCC) mantêm a ordem, como os deadlocks acontecem e como sair deles, como o log deixa o banco sobreviver a uma queda, como vários bancos podem fazer commit juntos (two-phase commit), o que fazer quando não dá (saga e outbox), por que repetir um pedido precisa ser seguro (idempotência) e o que o teorema CAP diz sobre cópias dos dados. No final você estará pronto para o quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "O panorama: o que é uma transação?",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma **transação** é um grupo de operações que o banco trata como uma única unidade de trabalho. Você a começa com `BEGIN`. E a termina de apenas duas formas: `COMMIT` (guarda tudo) ou `ROLLBACK` (joga tudo fora, como se nada tivesse acontecido)."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Pense em construir uma torre de blocos. Uma transação é uma promessa: 'ou a torre inteira fica de pé no final, ou eu guardo todos os blocos de volta na caixa'. Ninguém pode ver uma torre meio construída e meio caída."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "BEGIN;\nUPDATE accounts SET balance = balance - 10 WHERE id = 1;\nUPDATE accounts SET balance = balance + 10 WHERE id = 2;\nCOMMIT;",
+					"caption": "Uma transferência de dinheiro: duas escritas que precisam ficar juntas."
+				},
+				{
+					"type": "heading",
+					"text": "Três inimigos dos seus dados"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Inimigo",
+						"Exemplo",
+						"Quem nos defende"
+					],
+					"rows": [
+						[
+							"Uma falha no meio do trabalho",
+							"O servidor perde energia depois do débito e antes do crédito",
+							"Atomicidade e durabilidade, construídas com o log"
+						],
+						[
+							"Muitos usuários ao mesmo tempo",
+							"Dois compradores levam o último item no mesmo milissegundo",
+							"Isolamento, construído com bloqueios ou versões"
+						],
+						[
+							"Muitos computadores",
+							"A loja e o banco são dois sistemas diferentes",
+							"Two-phase commit, ou saga e outbox"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Uma transação é 'tudo ou nada' para um grupo de operações. Ela termina com COMMIT ou ROLLBACK, e nada além disso."
+				},
+				{
+					"type": "video",
+					"title": "Transactions: myths, surprises and opportunities (Martin Kleppmann, Strange Loop), em inglês",
+					"url": "https://www.youtube.com/watch?v=5ZjhNTM8XU8"
+				}
+			]
+		},
+		{
+			"id": "acid-properties",
+			"title": "ACID: as quatro promessas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "ACID é uma palavra feita com quatro primeiras letras. Cada letra é uma promessa que a transação faz. Vamos conhecê-las pensando na transferência entre cofrinhos."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Letra",
+						"Promessa",
+						"Em palavras simples"
+					],
+					"rows": [
+						[
+							"**A**tomicidade",
+							"Todas as operações têm efeito, ou nenhuma tem",
+							"Nunca existe trabalho pela metade"
+						],
+						[
+							"**C**onsistência",
+							"No momento do COMMIT as regras de integridade são respeitadas",
+							"O banco vai de um estado válido para outro estado válido"
+						],
+						[
+							"**I**solamento",
+							"Transações que rodam juntas não atrapalham umas às outras",
+							"Cada uma trabalha como se estivesse sozinha (na forma mais forte)"
+						],
+						[
+							"**D**urabilidade",
+							"Um resultado confirmado não se perde",
+							"Depois do 'COMMIT feito', uma queda não desfaz"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Atomicidade: tudo ou nada"
+				},
+				{
+					"type": "paragraph",
+					"text": "Se o servidor cair depois do débito e antes do COMMIT, o banco age como se a transação nunca tivesse existido. Ao reiniciar, ele usa o seu [[log|um caderno em que o banco anota cada mudança que faz]] para desfazer o trabalho incompleto. O comando `ROLLBACK` (sem savepoint) pede a mesma coisa de propósito."
+				},
+				{
+					"type": "paragraph",
+					"text": "A atomicidade só cobre o que está **dentro** de uma transação. No [[autocommit|um modo em que cada comando SQL é uma transaçãozinha própria, confirmada na hora]] não existe `BEGIN`, então um débito e um crédito enviados como dois comandos são duas transações separadas. Se o programa morrer entre eles, o débito fica e o crédito se perde. Para manter duas escritas juntas, envolva-as em `BEGIN` e `COMMIT`."
+				},
+				{
+					"type": "heading",
+					"text": "Savepoints e erros dentro de uma transação"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **savepoint** é um marcador de página dentro da transação. O `ROLLBACK TO SAVEPOINT` desfaz só o trabalho depois do marcador e mantém a transação aberta."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "BEGIN;\nINSERT INTO logs (msg) VALUES ('a');\nSAVEPOINT s1;\nINSERT INTO logs (msg) VALUES ('b');\nROLLBACK TO SAVEPOINT s1;   -- desfaz só o 'b'\nINSERT INTO logs (msg) VALUES ('c');\nCOMMIT;                     -- guarda 'a' e 'c'",
+					"caption": "Depois do COMMIT a tabela tem as linhas a e c."
+				},
+				{
+					"type": "paragraph",
+					"text": "No PostgreSQL, quando um comando falha dentro de uma transação (por exemplo, uma chave duplicada), a transação inteira entra em **estado abortado**. Todo comando seguinte é recusado com 'current transaction is aborted', e até um `COMMIT` apenas desfaz tudo. Se você espera um erro e quer continuar, coloque um savepoint antes do comando arriscado."
+				},
+				{
+					"type": "heading",
+					"text": "Consistência: as regras continuam verdadeiras"
+				},
+				{
+					"type": "paragraph",
+					"text": "Consistência no ACID quer dizer: quando a transação termina, o banco respeita as suas **regras de integridade** (chaves primárias, `CHECK`, chaves estrangeiras). Durante a transação as regras podem ser quebradas por um instante, mas não no COMMIT. É a única letra do ACID compartilhada entre o banco e o programa. O banco só conhece as regras que foram **declaradas**. Se a regra 'a soma de todos os saldos nunca muda' não foi declarada, e uma transação com bug debita 100 e credita 90, o banco confirma sem reclamar. As outras três letras existem para que um programa **correto** não seja atrapalhado."
+				},
+				{
+					"type": "heading",
+					"text": "Durabilidade: confirmado quer dizer guardado"
+				},
+				{
+					"type": "paragraph",
+					"text": "Quando o banco diz 'COMMIT feito', a informação necessária para refazer a transação já está em armazenamento persistente (normalmente no log). Cada COMMIT custa uma escrita em disco que precisa chegar de verdade ao disco. O PostgreSQL tem uma configuração, `synchronous_commit = off`, que responde **antes** dessa escrita. Fica mais rápido, mas você aceita uma pequena janela em que as últimas transações podem se perder numa queda. Atomicidade e consistência não são afetadas, porque o log continua sendo escrito na ordem certa."
+				},
+				{
+					"type": "heading",
+					"text": "Uma armadilha com ORMs"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma transação pertence a **uma conexão**. Com um ORM como o Prisma, o objeto recebido pelo callback (`tx`) é o único que fala por essa conexão."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "await prisma.$transaction(async (tx) => {\n\tconst order = await tx.order.create({ data: { total: 100 } });\n\tawait prisma.payment.create({ data: { orderId: order.id } }); // BUG: cliente global\n\tthrow new Error(\"stock check failed\");\n});",
+					"caption": "O pagamento usa o cliente global, então roda em outra conexão e é confirmado sozinho. O erro desfaz o pedido, mas não o pagamento."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Atomicidade: tudo ou nada. Consistência: as regras declaradas valem no COMMIT. Isolamento: não atrapalhar os outros. Durabilidade: o que foi confirmado continua confirmado. E, dentro de uma transação, use só o handle da própria transação."
+				}
+			]
+		},
+		{
+			"id": "isolation-levels-anomalies",
+			"title": "Níveis de isolamento e anomalias",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine dois cozinheiros que dividem o mesmo cartão de receita. Um risca um número enquanto o outro está lendo. Se eles não combinarem regras, o bolo dá errado. **Isolamento** é o conjunto de regras que decide quanto duas transações que rodam ao mesmo tempo podem enxergar do trabalho uma da outra. Um erro causado por essa mistura se chama **anomalia**."
+				},
+				{
+					"type": "heading",
+					"text": "As cinco anomalias"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Anomalia",
+						"O que dá errado"
+					],
+					"rows": [
+						[
+							"**Dirty read (leitura suja)**",
+							"Você lê uma mudança que outra transação **não confirmou**. Se ela der rollback, você usou um valor que oficialmente nunca existiu"
+						],
+						[
+							"**Non-repeatable read (leitura não repetível)**",
+							"Você lê a mesma linha duas vezes e recebe dois valores, porque outra transação confirmou uma mudança no meio"
+						],
+						[
+							"**Phantom read (leitura fantasma)**",
+							"Você faz a mesma busca duas vezes e o **conjunto de linhas** muda, porque outra transação inseriu ou apagou uma linha que combina"
+						],
+						[
+							"**Lost update (atualização perdida)**",
+							"Duas transações leem o mesmo valor, cada uma calcula um valor novo no programa e o escreve. A última escrita apaga a outra"
+						],
+						[
+							"**Write skew**",
+							"Duas transações leem o mesmo conjunto, decidem e escrevem em **linhas diferentes**. Cada escrita está certa sozinha, mas juntas quebram uma regra"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "O padrão SQL só nomeia as três primeiras (dirty read, non-repeatable read e phantom). Lost update e write skew ficaram fora da tabela dele. Por isso um banco pode seguir a letra de um nível e mesmo assim não ser serializável."
+				},
+				{
+					"type": "heading",
+					"text": "Os quatro níveis do padrão SQL"
+				},
+				{
+					"type": "paragraph",
+					"text": "O padrão define cada nível pela lista de fenômenos que ele **proíbe**. Do mais fraco ao mais forte: `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`. Um nível mais alto permite menos anomalias e em geral custa mais (espera ou transações abortadas)."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Nível (padrão SQL)",
+						"Dirty read",
+						"Non-repeatable read",
+						"Phantom"
+					],
+					"rows": [
+						[
+							"READ UNCOMMITTED",
+							"possível",
+							"possível",
+							"possível"
+						],
+						[
+							"READ COMMITTED",
+							"impossível",
+							"possível",
+							"possível"
+						],
+						[
+							"REPEATABLE READ",
+							"impossível",
+							"impossível",
+							"possível"
+						],
+						[
+							"SERIALIZABLE",
+							"impossível",
+							"impossível",
+							"impossível"
+						]
+					],
+					"caption": "'Possível' é uma permissão, não uma obrigação. Um banco pode ser mais rígido."
+				},
+				{
+					"type": "heading",
+					"text": "O PostgreSQL é mais rígido que o padrão"
+				},
+				{
+					"type": "list",
+					"items": [
+						"O nível **padrão** é `READ COMMITTED` (configuração `default_transaction_isolation`).",
+						"`READ UNCOMMITTED` é aceito, mas funciona exatamente como `READ COMMITTED`. Uma dirty read nunca acontece, em nenhum nível.",
+						"`REPEATABLE READ` é **snapshot isolation**: a transação enxerga o banco como ele estava no seu primeiro comando. Então também não há phantoms, embora o padrão os permitisse.",
+						"`SERIALIZABLE` é **serializable snapshot isolation** (SSI): snapshots, mais o acompanhamento de quem leu e quem escreveu o quê."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A grande diferença entre os dois primeiros níveis reais é quanto tempo a foto dura. No `READ COMMITTED` cada **comando** tira um snapshot novo, então dois `SELECT count(*)` na mesma transação podem dar respostas diferentes. No `REPEATABLE READ` um único snapshot serve a **transação inteira**."
+				},
+				{
+					"type": "heading",
+					"text": "Lost update, passo a passo"
+				},
+				{
+					"type": "diagram",
+					"content": "tempo  Sessão A                      Sessão B\n1      SELECT stock -> 10\n2                                    SELECT stock -> 10\n3      UPDATE SET stock = 9; COMMIT\n4                                    UPDATE SET stock = 9; COMMIT\n\nestoque final = 9   (duas vendas, deveria ser 8)",
+					"caption": "Ler, calcular no programa, escrever: a última escrita vence e uma venda some."
+				},
+				{
+					"type": "paragraph",
+					"text": "Isso é possível no `READ COMMITTED`. No `REPEATABLE READ` do PostgreSQL, se uma transação tenta mudar uma linha que outra transação mudou e confirmou **depois do seu snapshot**, ela é abortada com o SQLSTATE `40001` (um código que significa 'não foi possível serializar o acesso'). Não é um bug: é o contrato. O programa deve **repetir a transação inteira**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Existe também um truque que evita o problema sem um nível alto. Um único comando como o abaixo faz a verificação e a escrita dentro do banco. Se outra transação segura a linha, o comando espera; quando ela confirma, o `WHERE` é verificado de novo sobre a nova versão da linha."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "UPDATE accounts\nSET balance = balance - 100\nWHERE id = 1 AND balance >= 100;",
+					"caption": "Seguro no READ COMMITTED do PostgreSQL: verificar e escrever é um passo só."
+				},
+				{
+					"type": "heading",
+					"text": "Write skew: os médicos de plantão"
+				},
+				{
+					"type": "diagram",
+					"content": "regra: pelo menos um médico de plantão\n\ntempo  Ana                           Beto\n1      count on_call -> 2\n2                                    count on_call -> 2\n3      UPDATE Ana  on_call = false\n4                                    UPDATE Beto on_call = false\n5      COMMIT                        COMMIT\n\nresultado: 0 médicos de plantão",
+					"caption": "Linhas diferentes foram escritas, então não há conflito de escrita com escrita."
+				},
+				{
+					"type": "paragraph",
+					"text": "O `REPEATABLE READ` não percebe isso, porque só confere duas escritas na **mesma** linha. O `SERIALIZABLE` do PostgreSQL vigia as dependências entre leituras e escritas e aborta uma das duas com `40001`. É o único nível que impede o write skew, e de novo o programa precisa repetir."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "PostgreSQL: padrão READ COMMITTED; READ UNCOMMITTED se comporta como READ COMMITTED; REPEATABLE READ é snapshot isolation (sem phantoms, impede lost update, permite write skew); SERIALIZABLE impede o write skew. O erro 40001 significa 'tente de novo'."
+				}
+			]
+		},
+		{
+			"id": "locking",
+			"title": "Bloqueios: duas fases, pessimista e otimista",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Há dois grandes jeitos de impedir que transações se pisem: **bloquear** os dados para os outros esperarem, ou **deixar todo mundo trabalhar** e conferir no final. Vamos começar pelos bloqueios."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Um livro da biblioteca. Várias crianças podem ler o mesmo livro ao mesmo tempo, lado a lado. Mas se uma criança quer escrever anotações dentro dele, ninguém mais pode tocar nele até ela terminar."
+				},
+				{
+					"type": "heading",
+					"text": "Bloqueios compartilhados e exclusivos"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Bloqueio",
+						"Usado para",
+						"Junto com S",
+						"Junto com X"
+					],
+					"rows": [
+						[
+							"**S** (shared, compartilhado)",
+							"leitura",
+							"compatível",
+							"precisa esperar"
+						],
+						[
+							"**X** (exclusive, exclusivo)",
+							"escrita",
+							"precisa esperar",
+							"precisa esperar"
+						]
+					],
+					"caption": "Quem pede um bloqueio incompatível espera."
+				},
+				{
+					"type": "heading",
+					"text": "Two-phase locking (2PL)"
+				},
+				{
+					"type": "paragraph",
+					"text": "A regra: a vida de uma transação tem uma **fase de crescimento**, em que ela só adquire bloqueios, e uma **fase de encolhimento**, em que ela só os libera. Depois da primeira liberação, nenhum bloqueio novo pode ser adquirido. Se **toda** transação seguir essa regra, a execução concorrente equivale a alguma ordem serial: ela é serializável. Mas o 2PL **não** evita deadlocks."
+				},
+				{
+					"type": "diagram",
+					"content": "bloqueios\nsegurados\n   ^\n   |        /\\\n   |       /  \\\n   |      /    \\\n   |     /      \\\n   |    /        \\\n   +---+----------+--------> tempo\n    crescimento  encolhimento\n    (só          (só\n    adquire)     libera)",
+					"caption": "O formato do two-phase locking."
+				},
+				{
+					"type": "paragraph",
+					"text": "No 2PL básico, um bloqueio de escrita pode ser liberado antes do fim, o que expõe dados ainda não confirmados. O **2PL estrito** mantém os bloqueios exclusivos até o `COMMIT` ou o `ROLLBACK`. Isso elimina o problema de outras transações dependerem de dados que ainda podem ser desfeitos."
+				},
+				{
+					"type": "heading",
+					"text": "Pessimista e otimista"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Abordagem",
+						"Ideia",
+						"O preço",
+						"Bom quando"
+					],
+					"rows": [
+						[
+							"**Pessimista**",
+							"Espera um conflito. Bloqueia primeiro e faz os outros esperarem",
+							"Esperar numa fila",
+							"Conflitos são comuns"
+						],
+						[
+							"**Otimista**",
+							"Espera que não haja conflito. Trabalha livre, confere na hora de escrever e rejeita quem chegou atrasado",
+							"Trabalho desperdiçado e novas tentativas",
+							"Conflitos são raros"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "**Pessimista em SQL** é o `SELECT ... FOR UPDATE`: a transação lê as linhas e as reserva no mesmo comando, o que fecha a janela entre ler e escrever, onde nascem as lost updates."
+				},
+				{
+					"type": "paragraph",
+					"text": "O controle **otimista** costuma usar uma **coluna de versão**. Você lê a linha e a versão sem bloquear. Ao escrever, exige que a versão ainda seja a mesma e a aumenta."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "UPDATE products\nSET stock = stock - 1, version = version + 1\nWHERE id = 1 AND version = 7;\n-- UPDATE 0   <- alguém escreveu antes",
+					"caption": "Zero linhas afetadas significa conflito. O banco não levanta nenhum erro."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "No controle otimista o banco não reclama. O programa precisa conferir o número de linhas afetadas. Se ele ignora esse número, não existe controle nenhum."
+				},
+				{
+					"type": "heading",
+					"text": "Detalhes que importam no PostgreSQL"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Bloqueios de linha só fazem fila para quem também quer um bloqueio de linha: `UPDATE`, `DELETE`, `SELECT FOR UPDATE` e `FOR SHARE`. Um `SELECT` comum é atendido por versões e não é bloqueado. Por isso o `FOR UPDATE` só protege se toda transação concorrente também o usar.",
+						"Envolver leitura, verificação e escrita numa transação **não basta** no `READ COMMITTED`, porque uma leitura comum não reserva a linha. É assim que um checkout vende mais estoque do que existe. Três correções: `FOR UPDATE`, uma coluna de versão, ou `SERIALIZABLE` com nova tentativa.",
+						"Com 200 compradores disputando 10 unidades numa só linha, o controle otimista desperdiça trabalho (uma escrita vence por rodada, o resto refaz), enquanto o `FOR UPDATE` os faz esperar numa fila. No laboratório de overselling deste repositório, o código ingênuo criou de 150 a 180 pedidos para 10 unidades, e toda correção criou exatamente 10.",
+						"Bloqueios de linha não impedem **phantoms**. Um phantom é uma linha nova que passa a combinar com a consulta, e ela ainda não existe para ser bloqueada. Para impedi-lo é preciso bloquear a própria condição: predicate locks, bloqueios de intervalo de índice (next-key) ou a tabela inteira."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "S permite vários leitores, X permite um escritor. O 2PL dá serializabilidade, mas permite deadlocks. O 2PL estrito segura os bloqueios de escrita até o fim. Pessimista espera, otimista tenta de novo."
+				}
+			]
+		},
+		{
+			"id": "mvcc",
+			"title": "MVCC: várias versões de uma linha",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Bloqueios fazem leitores e escritores esperarem uns pelos outros. O **controle de concorrência multiversão** (MVCC) tem uma ideia mais esperta: uma escrita nunca destrói o valor antigo. Ela adiciona uma **nova versão** da linha. Cada transação enxerga a versão que combina com o seu próprio momento no tempo."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Um álbum de fotos compartilhado em que ninguém apaga figurinhas. Quando algo muda, uma foto nova é colada no final. Cada criança olha o álbum como ele estava quando ela o abriu, então pode olhar em paz enquanto outras colam fotos novas."
+				},
+				{
+					"type": "heading",
+					"text": "Por que o MVCC é bom"
+				},
+				{
+					"type": "paragraph",
+					"text": "Com bloqueio puro, uma leitura longa segura as escritas e uma escrita segura as leituras. Com MVCC, as leituras são atendidas por versões já confirmadas, então **leitores não bloqueiam escritores e escritores não bloqueiam leitores**. Mas o conflito entre **duas escritas** na mesma linha continua: a segunda espera a primeira. Depois, conforme o nível, ela segue sobre a nova versão ou é abortada."
+				},
+				{
+					"type": "heading",
+					"text": "Snapshots"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **snapshot** é apenas uma regra de visibilidade: diz quais transações contam como já confirmadas para quem lê. Para cada linha, o leitor recebe a versão mais nova criada por uma dessas transações. Nenhuma cópia física é feita. O snapshot também lembra quem estava rodando quando foi tirado: essas transações são tratadas como não confirmadas para sempre, mesmo que confirmem um instante depois, e o mesmo vale para as que começam depois."
+				},
+				{
+					"type": "heading",
+					"text": "Como o PostgreSQL guarda versões"
+				},
+				{
+					"type": "paragraph",
+					"text": "O PostgreSQL guarda todas as versões **na própria tabela**. Cada versão tem duas colunas escondidas: `xmin`, a transação que a criou, e `xmax`, a transação que a expirou (apagou ou substituiu). Um `UPDATE` na verdade é: marcar a versão atual como expirada e inserir uma nova."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "SELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  (0,1) | 740 | 10\nUPDATE products SET stock = 9 WHERE id = 1;\nSELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  (0,2) | 752 | 9",
+					"caption": "Depois do UPDATE a linha tem um novo xmin e uma nova posição física (ctid): é uma nova versão."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma versão é **visível** para um snapshot quando a transação em `xmin` está confirmada para ele **e** a transação em `xmax` não está. Se o `xmax` pertence a uma transação ainda em andamento (ou abortada), a versão continua visível. É assim que um `DELETE` ou `UPDATE` pendente fica invisível para os outros."
+				},
+				{
+					"type": "diagram",
+					"content": "versão da linha: xmin = 100  xmax = 105  stock = 10\n\ntransação 100: CONFIRMADA\ntransação 105: EM ANDAMENTO\ntransação 110: executa SELECT agora\n\n100 confirmada          -> criada: OK\n105 ainda não confirmou -> não expirou para a 110\n=> a transação 110 VÊ esta versão",
+					"caption": "Uma mudança pendente de outra transação não esconde a versão antiga."
+				},
+				{
+					"type": "heading",
+					"text": "O custo: versões mortas e o VACUUM"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada `UPDATE` ou `DELETE` deixa uma versão morta para trás. O `VACUUM` (normalmente disparado pelo autovacuum) encontra versões que **nenhum snapshot ativo consegue ver** e libera o espaço delas. Uma versão só pode ser descartada quando ninguém precisa dela. Então uma transação deixada aberta por horas no `REPEATABLE READ`, sem fazer nada, prende o 'ponto mais antigo necessário' no passado: toda versão criada desde então é mantida. As tabelas e os índices crescem (bloat) e as consultas ficam mais lentas."
+				},
+				{
+					"type": "heading",
+					"text": "Snapshot isolation e seu limite"
+				},
+				{
+					"type": "paragraph",
+					"text": "A snapshot isolation aplica uma regra: entre transações concorrentes que escrevem a **mesma linha**, só uma pode confirmar. Isso impede a lost update. Mas ela não sabe **o que cada transação leu**, então não consegue perceber o write skew. Detectar o write skew exige acompanhar as leituras, e é isso que o `SERIALIZABLE` do PostgreSQL acrescenta."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "MVCC: escritas adicionam versões, leituras usam um snapshot, leitores e escritores não se bloqueiam, dois escritores na mesma linha ainda se bloqueiam. O VACUUM limpa versões mortas, e transações longas atrapalham a limpeza."
+				}
+			]
+		},
+		{
+			"id": "deadlocks",
+			"title": "Deadlocks",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Duas crianças, dois brinquedos. A Ana segura o carrinho e quer a boneca. O Beto segura a boneca e quer o carrinho. Nenhum solta o seu antes de ganhar o outro, então esperam para sempre. Isso é um **deadlock**: um grupo de transações, cada uma segurando um bloqueio e pedindo um bloqueio que pertence a outra do grupo, formando um **ciclo**. A espera nunca termina sozinha."
+				},
+				{
+					"type": "diagram",
+					"content": "T1 segura o bloqueio A, quer o B\nT2 segura o bloqueio B, quer o A\n\n   grafo de espera (wait-for):\n\n   +----+   espera   +----+\n   | T1 | ----------> | T2 |\n   |    | <---------- |    |\n   +----+   espera   +----+\n\n   um ciclo = deadlock",
+					"caption": "Cada nó é uma transação. Uma seta T1 para T2 significa 'T1 espera um bloqueio que T2 segura'."
+				},
+				{
+					"type": "paragraph",
+					"text": "O **grafo de espera** (wait-for graph) é a ferramenta clássica para detectar deadlocks. Enquanto ele não tem ciclo, sempre há alguém que não espera ninguém e consegue terminar. Um ciclo significa espera circular. A cura é escolher uma **vítima** no ciclo e abortá-la."
+				},
+				{
+					"type": "heading",
+					"text": "O que o PostgreSQL faz"
+				},
+				{
+					"type": "paragraph",
+					"text": "O PostgreSQL não previne deadlocks, ele os **detecta**. Quando uma espera por bloqueio passa de `deadlock_timeout` (1 segundo por padrão), o servidor procura um ciclo. Se encontra, aborta uma transação com o erro `40P01` (`deadlock detected`). O rollback da vítima libera os bloqueios dela e as outras seguem."
+				},
+				{
+					"type": "heading",
+					"text": "Como lidar com deadlocks na sua aplicação"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Tentar de novo.** A vítima é abortada por inteiro, não só o comando que estava esperando. O erro 40P01 é transitório. Capture-o, faça `ROLLBACK` e rode a transação de novo desde o `BEGIN`, com um número limitado de tentativas.",
+						"**Bloquear sempre na mesma ordem.** Um ciclo só se forma quando as transações pedem os mesmos bloqueios em ordens diferentes. Se toda transferência sempre bloqueia primeiro a conta de menor id, a segunda transação para no primeiro bloqueio e não segura nada de que a primeira precise. É a prevenção mais simples."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Prevenção pela idade: wait-die e wound-wait"
+				},
+				{
+					"type": "paragraph",
+					"text": "Outro jeito é dar a cada transação um **timestamp** (a sua idade) quando ela começa e permitir esperar em uma direção só. Como todas as esperas vão para o mesmo lado na linha das idades, um ciclo é impossível."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Esquema",
+						"A mais velha pede um bloqueio da mais nova",
+						"A mais nova pede um bloqueio da mais velha"
+					],
+					"rows": [
+						[
+							"**Wait-die**",
+							"A mais velha **espera**",
+							"A mais nova **morre** (é abortada)"
+						],
+						[
+							"**Wound-wait**",
+							"A mais velha **fere** a mais nova (a aborta)",
+							"A mais nova **espera**"
+						]
+					],
+					"caption": "Uma transação reiniciada mantém o timestamp original, então um dia ela vira a mais velha e não passa fome para sempre."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Deadlock = um ciclo de esperas. Detecte com um grafo de espera. O PostgreSQL aborta uma vítima com 40P01 e você tenta de novo. Previna bloqueando numa ordem global."
+				}
+			]
+		},
+		{
+			"id": "logging-recovery",
+			"title": "Log e recuperação: o write-ahead log",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Como um banco pode prometer atomicidade e durabilidade se a energia pode acabar a qualquer momento? A resposta é um caderno chamado **log**. Antes de mudar qualquer coisa importante, o banco anota o que pretende fazer."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Um cozinheiro que está se mudando para uma cozinha nova primeiro escreve num bloco de notas: 'mudei o sal; mudei o açúcar'. Se for interrompido, o bloco diz exatamente onde continuar, ou o que devolver ao lugar."
+				},
+				{
+					"type": "heading",
+					"text": "A regra do write-ahead log (WAL)"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Write-ahead logging**: o registro de log de uma mudança precisa chegar ao armazenamento estável (o disco) **antes** de a página de dados alterada ser escrita. E no COMMIT, o **registro de commit** precisa estar no disco antes de o servidor dizer ao cliente 'COMMIT feito'. O ponto de commit de uma transação é o momento em que o seu registro de commit está seguro. Dali em diante o resultado é garantido, mesmo que nenhuma página de dados tenha sido escrita ainda."
+				},
+				{
+					"type": "heading",
+					"text": "Por que escrever o log e não as páginas?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma transação pode mudar poucos bytes em muitas páginas diferentes. Escrever todas essas páginas no commit significa muitas escritas aleatórias de páginas inteiras. O log transforma isso em **uma escrita sequencial** só com as mudanças, o que é rápido. As páginas vão para o disco depois, em segundo plano."
+				},
+				{
+					"type": "heading",
+					"text": "Checkpoints"
+				},
+				{
+					"type": "paragraph",
+					"text": "Sem ajuda, depois de uma queda o banco teria de reler o log **inteiro**. Um **checkpoint** escreve no disco as páginas que foram alteradas na memória e marca esse ponto no log. Depois de uma queda, só o log **depois do último checkpoint** é reaplicado. O log mais antigo pode ser reciclado."
+				},
+				{
+					"type": "heading",
+					"text": "O que a recuperação faz depois de uma queda"
+				},
+				{
+					"type": "diagram",
+					"content": "checkpoint        queda\n    |                |\n----+----------------+------> tempo\n    T1 confirmou     T2 ainda estava ativa\n\n    páginas da T1 podem NÃO estar no disco -> REDO pelo log\n    páginas da T2 PODEM estar no disco     -> UNDO pelo log",
+					"caption": "Dois problemas opostos depois de uma queda, um log para resolver os dois."
+				},
+				{
+					"type": "paragraph",
+					"text": "As transações se dividem em **vencedoras** (têm um registro de commit no log) e **perdedoras** (não têm). O **redo** reaplica as vencedoras que podem não ter chegado às páginas. O **undo** remove os efeitos das perdedoras que chegaram. Uma transação que tinha mudado três linhas e não tinha feito COMMIT é desfeita por completo. Assim a atomicidade sobrevive a uma queda."
+				},
+				{
+					"type": "heading",
+					"text": "Queda do sistema contra falha de mídia"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Falha",
+						"O que se perde",
+						"Como recuperar"
+					],
+					"rows": [
+						[
+							"Queda do sistema (energia, processo)",
+							"Só a memória. O disco está bem",
+							"Reaplicar o log desde o último checkpoint"
+						],
+						[
+							"Falha de mídia (disco destruído)",
+							"Os arquivos de dados",
+							"Restaurar o último backup completo e reaplicar o log arquivado desde então (roll forward)"
+						]
+					],
+					"caption": "O log deve ficar num dispositivo diferente do dos dados. O roll forward é a base da recuperação para um ponto no tempo (point-in-time recovery)."
+				},
+				{
+					"type": "heading",
+					"text": "ARIES em poucas linhas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Três fases**: análise (descobrir o que estava acontecendo na queda), redo, undo.",
+						"**Repetir a história**: o redo reaplica o log inteiro, de vencedoras **e** perdedoras, até o banco ficar idêntico ao instante da queda. Só então o undo percorre o log para trás, desfazendo as perdedoras e escrevendo cada passo como um registro de compensação (CLR). Assim a recuperação continua correta mesmo se for interrompida e recomeçar.",
+						"**LSN**: cada registro de log tem um número de sequência (log sequence number), e cada página guarda o LSN da última mudança que recebeu. No redo, um registro só é aplicado se o seu LSN for **maior** que o da página. Rodar a recuperação duas vezes não aplica nada duas vezes: o redo é idempotente."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Páginas rasgadas e full-page writes"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um registro de log comum diz 'mude este trecho em relação ao conteúdo antigo', então supõe que a página no disco está intacta. Se a queda acontece no meio da escrita de uma página, ela fica parte nova e parte velha (uma **torn page**, página rasgada) e o redo incremental não funciona. No PostgreSQL, com `full_page_writes = on`, a primeira mudança numa página depois de um checkpoint escreve a **imagem inteira da página** no WAL. Isso dá à recuperação um ponto de partida intacto."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "WAL: log primeiro, página depois. Commit = registro de commit no disco. Checkpoints encurtam a recuperação. Depois de uma queda: redo nas vencedoras, undo nas perdedoras. Um disco destruído precisa de um backup mais o log arquivado."
+				}
+			]
+		},
+		{
+			"id": "distributed-transactions-2pc",
+			"title": "Transações distribuídas e two-phase commit",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Dentro de um banco, o log local dá a atomicidade. Mas e se uma transação muda dados em **dois bancos diferentes**? Cada um poderia confirmar ou falhar por conta própria, e você terminaria com um débito num lugar e nenhum crédito no outro. O **two-phase commit** (2PC, commit em duas fases) é um protocolo que faz todos concordarem em um só resultado: todos confirmam ou todos abortam."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Uma professora organiza um passeio da escola. Primeiro ela pergunta ao responsável de cada criança: 'Seu filho pode ir?' (fase 1). Só se **todos** responderem sim, ela anuncia 'o passeio está confirmado' (fase 2). Se um disser não, o passeio é cancelado para todos."
+				},
+				{
+					"type": "heading",
+					"text": "As duas fases"
+				},
+				{
+					"type": "diagram",
+					"content": "Coordenador            Participantes A, B, C\n    |  PREPARE?  ------>  \n    |  <------ sim/não\n    |      (fase 1: votação)\n    |\n    |  todos sim -> COMMIT  ---->\n    |  algum não -> ABORT   ---->\n    |      (fase 2: decisão)",
+					"caption": "O coordenador conduz o protocolo. Cada participante tem direito a veto."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Fase 1, prepare.** O coordenador pergunta a cada participante se ele consegue confirmar. Cada um se prepara e vota **sim** ou **não**.",
+						"**Fase 2, decisão.** Se **todos** votaram sim, o coordenador manda todos **confirmarem**. Se algum votou não (ou não respondeu a tempo), manda todos **abortarem**.",
+						"A decisão é unânime: um único 'não' faz tudo abortar, porque só cada participante sabe se a sua parte pode ser confirmada (uma restrição pode ter falhado, por exemplo)."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "O que significa um 'sim'"
+				},
+				{
+					"type": "paragraph",
+					"text": "Antes de votar, o participante pode abortar quando quiser. Depois de votar **sim**, ele fez uma promessa: 'eu consigo confirmar, aconteça o que acontecer'. Ele não pode mais confirmar nem abortar sozinho, precisa esperar o coordenador. Para manter a promessa mesmo que caia logo depois, o participante deve **forçar a escrita** das mudanças e de um registro de prepare no seu **log antes de responder sim**. Quando volta, ele encontra a transação preparada e pergunta ao coordenador o que foi decidido."
+				},
+				{
+					"type": "heading",
+					"text": "O grande problema: o bloqueio"
+				},
+				{
+					"type": "paragraph",
+					"text": "O 2PC é um protocolo **bloqueante**. Se todos os participantes votaram sim e o coordenador cai antes de enviar a decisão, os participantes ficam **em dúvida** (in doubt). Eles não podem escolher sozinhos, então esperam o coordenador voltar e ler a decisão do seu log. Enquanto isso, os dados deles ficam bloqueados. Essa janela de incerteza, com bloqueios mantidos, é o principal custo do 2PC."
+				},
+				{
+					"type": "heading",
+					"text": "Peças do 2PC no PostgreSQL"
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "BEGIN;\nUPDATE accounts SET balance = balance - 10 WHERE id = 1;\nPREPARE TRANSACTION 'tx42';   -- durável, a sessão fica livre\n-- depois, de qualquer sessão:\nCOMMIT PREPARED 'tx42';       -- ou: ROLLBACK PREPARED 'tx42';",
+					"caption": "O PostgreSQL oferece as peças. Um coordenador externo executa o protocolo."
+				},
+				{
+					"type": "list",
+					"items": [
+						"`PREPARE TRANSACTION` deixa a transação pronta para confirmar e durável. Exige `max_prepared_transactions` maior que zero (o padrão é zero).",
+						"Se o coordenador nunca voltar, a transação preparada **órfã** continua segurando os bloqueios de linha. Ela também continua 'em andamento', então o `VACUUM` não consegue limpar versões antigas e as tabelas incham.",
+						"Quem usa o recurso precisa monitorar a view `pg_prepared_xacts`."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "2PC: votar, depois decidir. Um 'não' aborta tudo. Depois do 'sim' o participante fica preso até o coordenador falar. Se o coordenador morre, todos esperam."
+				}
+			]
+		},
+		{
+			"id": "saga-outbox",
+			"title": "Saga e outbox",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "O two-phase commit acopla todos os participantes: se um está fora do ar, ninguém confirma, e a maioria dos brokers de mensagens nem participa dele. Sistemas modernos com muitos serviços pequenos (microsserviços) costumam abrir mão da transação única e construir a segurança com peças menores. As duas peças famosas são a **saga** e o **outbox**."
+				},
+				{
+					"type": "heading",
+					"text": "O bug da escrita dupla (dual write)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Seu serviço precisa salvar um pedido no seu banco **e** anunciar `OrderCreated` a um [[broker|um correio de mensagens: serviços deixam mensagens nele e outros serviços as retiram]]. São dois sistemas diferentes e nenhuma transação em volta dos dois. Isso é uma **dual write**."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "await db.insert(orders).values(order);          // 1: COMMIT no banco\n// <- queda aqui\nawait broker.publish(\"order.created\", order);   // 2: publica no broker",
+					"caption": "Se o processo morrer entre as linhas, o pedido existe e o evento não. O serviço de pagamento nunca fica sabendo."
+				},
+				{
+					"type": "paragraph",
+					"text": "Inverter a ordem não resolve. Publique primeiro e caia, e um evento anuncia um pedido que nunca existiu, o que costuma ser pior. **Nenhuma ordem de duas escritas resolve a falta de atomicidade entre dois sistemas.**"
+				},
+				{
+					"type": "heading",
+					"text": "O transactional outbox"
+				},
+				{
+					"type": "paragraph",
+					"text": "O truque: transformar duas escritas em dois sistemas em **uma escrita em um sistema**. O evento vira uma linha numa tabela `outbox`, inserida na **mesma transação local** do pedido. O banco passa a garantir 'os dois ou nenhum'."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "BEGIN;\nINSERT INTO orders (id, total) VALUES (1, 100);\nINSERT INTO outbox (event_id, routing_key, payload) VALUES (...);\nCOMMIT;",
+					"caption": "Pedido e evento são salvos juntos ou não são salvos."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um laço separado, o **relay**, lê as linhas pendentes, publica cada uma no broker, espera a confirmação e marca a linha como enviada. Uma queda só **atrasa** o evento, não consegue perdê-lo. Mas o relay pode morrer depois de publicar e antes de marcar a linha, e então publica o mesmo evento de novo. Por isso o outbox dá entrega **at-least-once** (pelo menos uma vez), não exactly-once. O consumidor precisa, portanto, ser idempotente (próximas seções)."
+				},
+				{
+					"type": "heading",
+					"text": "A saga"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **saga** divide uma operação de negócio em **transações locais**, uma por serviço, encadeadas por mensagens. Cada passo realmente confirma no seu banco, então não dá para desfazê-lo com ROLLBACK. Se um passo posterior falha, rodam **transações compensatórias**: novas operações de negócio inversas, como cancelar, reembolsar ou devolver ao estoque. Elas desfazem o efeito pelo significado e deixam o histórico visível."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Passo",
+						"Serviço",
+						"Transação local",
+						"Compensação"
+					],
+					"rows": [
+						[
+							"1",
+							"pedidos",
+							"Cria o pedido como PENDING e emite OrderCreated",
+							"Cancelar o pedido"
+						],
+						[
+							"2",
+							"pagamento",
+							"Cobra o cartão, emite PaymentCompleted ou PaymentFailed",
+							"Reembolsar (se um passo posterior falhar)"
+						],
+						[
+							"3",
+							"pedidos",
+							"Em PaymentCompleted marca PAID. Em PaymentFailed marca CANCELLED",
+							"não precisa"
+						]
+					],
+					"caption": "Se o cartão é recusado, a falha viaja como mensagem e o serviço de pedidos cancela o pedido. No fim os dois bancos concordam."
+				},
+				{
+					"type": "heading",
+					"text": "Coreografia e orquestração"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Estilo",
+						"Quem conhece o fluxo",
+						"Bom",
+						"Ruim"
+					],
+					"rows": [
+						[
+							"**Coreografia**",
+							"Ninguém. Cada serviço escuta eventos e publica novos",
+							"Os serviços ficam desacoplados",
+							"O fluxo fica espalhado, difícil de ver"
+						],
+						[
+							"**Orquestração**",
+							"Um orquestrador central envia comandos a cada serviço",
+							"Fácil de seguir e depurar",
+							"Um ponto central para manter"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "O que a saga abre mão: o isolamento"
+				},
+				{
+					"type": "paragraph",
+					"text": "Comparada a uma transação 2PC, a saga perde o **isolamento** da operação como um todo. Não há bloqueio global, então os efeitos do passo 1 ficam visíveis antes de a saga terminar, e alguém pode agir sobre um estado que será compensado. As defesas são escolhas de projeto: mostrar um estado intermediário explícito como `PENDING` (um bloqueio semântico), reler antes de agir e escolher com cuidado a ordem dos passos."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Dual write é inseguro em qualquer ordem. Outbox: evento na mesma transação dos dados, um relay publica, at-least-once. Saga: transações locais mais compensações, sem isolamento."
+				}
+			]
+		},
+		{
+			"id": "idempotency",
+			"title": "Idempotência e efeitos exactly-once",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Você aperta o botão do elevador. Parece que nada acontece, então aperta de novo, e de novo. O elevador vem uma vez só. Apertar o botão muitas vezes tem o **mesmo resultado** que apertar uma. Isso é **idempotência**: uma operação é idempotente se fazê-la uma, duas ou dez vezes deixa o sistema no mesmo estado."
+				},
+				{
+					"type": "heading",
+					"text": "Por que precisamos dela: as novas tentativas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Numa rede, quando uma resposta não chega, você não sabe se o pedido se perdeu ou se funcionou e foi a **resposta** que se perdeu. O seguro é tentar de novo. Isso só é seguro se a operação for idempotente. Até a recuperação do banco depende disso: redo e undo precisam ser repetíveis."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Comando",
+						"Idempotente?",
+						"Por quê"
+					],
+					"rows": [
+						[
+							"`UPDATE accounts SET balance = 100 WHERE id = 1`",
+							"Sim",
+							"Uma atribuição absoluta: 'o saldo é 100'"
+						],
+						[
+							"`UPDATE accounts SET balance = balance - 10 WHERE id = 1`",
+							"Não",
+							"Relativa: cada execução subtrai de novo"
+						],
+						[
+							"`INSERT INTO orders (...) VALUES (...)`",
+							"Não",
+							"Cada execução cria mais uma linha"
+						]
+					],
+					"caption": "Uma operação não idempotente pode virar idempotente se for ligada a um id único e recusar uma segunda execução com o mesmo id."
+				},
+				{
+					"type": "heading",
+					"text": "Garantias de entrega"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Garantia",
+						"O que pode acontecer",
+						"Quando o ack é enviado"
+					],
+					"rows": [
+						[
+							"**At-most-once** (no máximo uma vez)",
+							"Nunca há duplicata, mas uma falha pode perder a mensagem",
+							"Antes de processar"
+						],
+						[
+							"**At-least-once** (pelo menos uma vez)",
+							"Nada se perde, mas uma mensagem pode chegar duas vezes",
+							"Depois de processar"
+						],
+						[
+							"**Exactly-once** (exatamente uma vez)",
+							"Difícil ou impossível em geral (veja abaixo)",
+							"-"
+						]
+					],
+					"caption": "Um ack é o receptor dizendo ao broker 'recebi'. Se ele não chega, o broker envia a mensagem de novo."
+				},
+				{
+					"type": "paragraph",
+					"text": "O momento do ack define a garantia. Se o consumidor confirma assim que recebe e depois cai durante o processamento, a mensagem se perdeu (at-most-once). Se confirma depois de processar, uma queda entre o processamento e o ack causa reentrega (at-least-once)."
+				},
+				{
+					"type": "heading",
+					"text": "Por que a entrega exactly-once é impossível em geral"
+				},
+				{
+					"type": "paragraph",
+					"text": "Quando a confirmação não chega, quem enviou não sabe dizer se a mensagem se perdeu ou se foi processada e a resposta se perdeu. Reenviar dá at-least-once. Não reenviar dá at-most-once. Não existe uma terceira opção numa rede não confiável. O que **é** possível é um **efeito exactly-once**: entrega at-least-once combinada com processamento idempotente."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Entrega at-least-once mais um consumidor idempotente é igual a efeito exactly-once."
+				},
+				{
+					"type": "heading",
+					"text": "Duas ferramentas"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Chave de idempotência numa API.** O cliente gera um valor único, por exemplo no cabeçalho `Idempotency-Key`, e envia o mesmo em toda tentativa da mesma operação. O servidor guarda a chave junto com o resultado. Uma repetição recebe o resultado guardado e a cobrança acontece uma só vez."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Deduplicação num consumidor.** O consumidor guarda o id de cada mensagem numa tabela `processed_messages` com uma **chave única**, na **mesma transação local** do efeito. Assim 'eu processei' e 'o efeito aconteceu' são uma única decisão atômica."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "INSERT INTO processed_messages (message_id) VALUES ($1)\nON CONFLICT (message_id) DO NOTHING;\n-- 1 linha inserida: primeira vez, faça o trabalho\n-- 0 linhas: já vista, pule e só dê o ack",
+					"caption": "A chave única deixa o banco decidir quem chegou primeiro."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Conferir com um SELECT ('já foi processada?') e depois inserir é o mesmo padrão ler-conferir-escrever que causa o overselling. Com duas instâncias do consumidor, as duas leem 'não processada' e as duas aplicam o efeito. Sem uma restrição única em `message_id`, a deduplicação está quebrada. Deixe o banco arbitrar."
+				}
+			]
+		},
+		{
+			"id": "cap-consistency-models",
+			"title": "Teorema CAP e modelos de consistência",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Para serem rápidos e seguros contra falhas, os grandes sistemas guardam **cópias** (réplicas) dos dados em vários computadores chamados **nós**. As cópias trazem uma pergunta nova: se eu escrevo em um nó, quando os outros nós mostram o valor novo? A resposta depende do **modelo de consistência** que o sistema oferece."
+				},
+				{
+					"type": "heading",
+					"text": "O teorema CAP"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Letra",
+						"Propriedade",
+						"Em palavras simples"
+					],
+					"rows": [
+						[
+							"**C**onsistency (consistência)",
+							"Toda leitura enxerga a escrita mais recente",
+							"Os clientes não percebem que existem várias cópias"
+						],
+						[
+							"**A**vailability (disponibilidade)",
+							"Todo pedido a um nó que funciona recebe resposta",
+							"Sem erro e sem espera infinita"
+						],
+						[
+							"**P**artition tolerance (tolerância a partições)",
+							"O sistema continua funcionando quando a rede separa grupos de nós",
+							"Os nós não conseguem conversar por um tempo"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A palavra 'consistência' tem dois significados. No ACID ela quer dizer que uma transação mantém as regras de integridade. No CAP ela quer dizer que todas as cópias parecem uma só, então uma escrita concluída é vista por toda leitura. Não misture os dois."
+				},
+				{
+					"type": "paragraph",
+					"text": "O lema 'escolha dois de três' engana. Falhas de rede acontecem querendo você ou não, então não dá para abrir mão da tolerância a partições num sistema distribuído real. O teorema diz só isto: **enquanto uma partição dura, é preciso escolher** entre responder com dados possivelmente velhos (disponibilidade) ou recusar pedidos (consistência)."
+				},
+				{
+					"type": "diagram",
+					"content": "   [Nó 1] ---- X ---- [Nó 3]\n       \\                  /\n        \\                /\n         +----- [Nó 2] -+\n\npartição de rede: o Nó 3 está isolado\n\nsistema CP: o Nó 3 (minoria) responde com erro\nsistema AP: todos respondem, os conflitos são resolvidos depois",
+					"caption": "Um sistema CP aceita operações só do lado que tem a maioria (o quórum)."
+				},
+				{
+					"type": "paragraph",
+					"text": "O **PACELC** amplia a ideia: se há uma Partição, escolha Disponibilidade (Availability) ou Consistência; Senão (Else, sem partição), escolha Latência ou Consistência. Mesmo num dia bom, ser mais consistente custa tempo de espera."
+				},
+				{
+					"type": "heading",
+					"text": "Quóruns: R + W > N"
+				},
+				{
+					"type": "paragraph",
+					"text": "Considere N cópias. Uma escrita espera W confirmações e uma leitura consulta R nós. Se **R + W > N**, qualquer conjunto de R nós se sobrepõe a qualquer conjunto de W nós, então toda leitura ouve pelo menos um nó que tem a última escrita confirmada. Se R + W é N ou menos, uma leitura pode cair só em nós que nunca viram a escrita."
+				},
+				{
+					"type": "chart",
+					"title": "R + W para N = 5 nós (precisa ser maior que 5 para haver sobreposição)",
+					"unit": "R + W",
+					"bars": [
+						{ "label": "R=1, W=1", "value": 2 },
+						{ "label": "R=2, W=2", "value": 4 },
+						{ "label": "R=2, W=3", "value": 5 },
+						{ "label": "R=3, W=3", "value": 6 },
+						{ "label": "R=1, W=5", "value": 6 }
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Modelos de consistência, do fraco ao forte"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Modelo",
+						"Promessa",
+						"Exemplo"
+					],
+					"rows": [
+						[
+							"**Consistência eventual**",
+							"Uma escrita vai a uma réplica e se espalha em segundo plano. Réplicas diferentes podem responder diferente por um tempo. Se as escritas param, todas convergem para o mesmo estado",
+							"Um contador de rede social que atualiza alguns segundos depois"
+						],
+						[
+							"**Garantias de sessão**",
+							"Valem para um cliente por vez. **Read-your-writes**: você nunca deixa de ver as suas próprias mudanças",
+							"Depois de mudar o nome do perfil, você vê o nome novo"
+						],
+						[
+							"**Linearizabilidade**",
+							"Uma garantia de recência: cada operação parece acontecer num instante entre o seu início e o seu fim, então uma leitura depois de uma escrita sempre a vê",
+							"Um serviço de locks ou uma eleição de líder"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "O read-your-writes costuma ser feito lendo do primário logo depois de escrever, ou lendo só de réplicas que já aplicaram a posição da sua última escrita."
+				},
+				{
+					"type": "heading",
+					"text": "Linearizabilidade contra serializabilidade"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Propriedade",
+						"Serializabilidade",
+						"Linearizabilidade"
+					],
+					"rows": [
+						[
+							"Tipo de garantia",
+							"**Isolamento**: transações concorrentes equivalem a alguma ordem serial",
+							"**Recência**: as operações respeitam o tempo real"
+						],
+						[
+							"Trata de",
+							"Grupos de operações (transações)",
+							"Uma única operação em um único objeto"
+						],
+						[
+							"Respeita o relógio?",
+							"Não, a ordem pode ser qualquer",
+							"Sim"
+						]
+					],
+					"caption": "Ter as duas costuma ser chamado de serializabilidade estrita (strict serializability)."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "CAP: durante uma partição escolha C ou A. R + W > N faz leituras e escritas se sobreporem. Consistência eventual só promete convergência. Serializabilidade é sobre isolamento, linearizabilidade é sobre recência."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando tudo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Cada ferramenta deste resumo existe para responder a uma pergunta: 'o que pode dar errado e quem impede?'. Aqui está o mapa."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Problema",
+						"Ferramenta",
+						"Onde funciona"
+					],
+					"rows": [
+						[
+							"Queda no meio de uma transação",
+							"Write-ahead log, redo e undo",
+							"Um banco"
+						],
+						[
+							"Ler trabalho inacabado dos outros",
+							"Níveis de isolamento",
+							"Um banco"
+						],
+						[
+							"Dois escritores na mesma linha",
+							"Bloqueios (pessimista) ou checagem de versão (otimista)",
+							"Um banco"
+						],
+						[
+							"Leitores e escritores se bloqueando",
+							"MVCC",
+							"Um banco"
+						],
+						[
+							"Espera circular",
+							"Detecção e nova tentativa, ou uma ordem global de bloqueios",
+							"Um banco"
+						],
+						[
+							"Vários bancos precisam concordar",
+							"Two-phase commit",
+							"Poucos sistemas confiáveis, com risco de bloqueio"
+						],
+						[
+							"Serviços e brokers que não entram numa transação",
+							"Saga e outbox",
+							"Entre serviços"
+						],
+						[
+							"Pedidos repetidos ou reentregues",
+							"Chaves de idempotência e deduplicação",
+							"Entre serviços"
+						],
+						[
+							"Cópias dos dados",
+							"Quóruns e um modelo de consistência escolhido",
+							"Sistemas replicados"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Erros comuns"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Achar que só `BEGIN ... COMMIT` impede o overselling. No `READ COMMITTED` uma leitura comum não reserva nada.",
+						"Achar que `READ UNCOMMITTED` mostra dirty reads no PostgreSQL. Ele se comporta como `READ COMMITTED`.",
+						"Ignorar o erro `40001` ou `40P01`. Eles significam 'repita a transação inteira'.",
+						"Ignorar o número de linhas afetadas no controle otimista.",
+						"Usar o cliente global em vez do `tx` dentro de uma transação de ORM.",
+						"Publicar num broker e confirmar num banco como dois passos separados.",
+						"Deduplicar mensagens com SELECT e depois INSERT, sem chave única.",
+						"Misturar o C do ACID com o C do CAP."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "tip",
+					"text": "Quando uma questão parecer difícil, pergunte três coisas: onde está a fronteira da transação, qual nível ou bloqueio está em uso e o que acontece se o processo morrer entre dois passos."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Dentro de um banco: ACID com log e isolamento. Entre sistemas: não existe ACID de graça. Você constrói a segurança com saga, outbox e idempotência, e escolhe um modelo de consistência de propósito."
+				}
+			]
+		}
+	]
+}

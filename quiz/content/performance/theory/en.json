@@ -1,0 +1,1058 @@
+{
+	"area": "performance",
+	"intro": [
+		"Imagine two bakeries. In the first one, every bread is ready in 2 minutes, but on Saturday morning the line goes out the door and some people wait an hour. In the second one, bread takes 3 minutes, but nobody ever waits more than 5. Which bakery is \"faster\"? The honest answer is: it depends on what you measure. **Performance** is the study of how fast a computer system is, how much work it can do, and where its time goes.",
+		"Every app you use depends on it. A page that takes 3 seconds to open makes people leave. A shop that freezes during a big sale loses money. A program that is fast on your laptop can crawl when a thousand people use it at once. Engineers who care about performance do not guess. They **measure first**, find the real slow part, fix that part, and measure again.",
+		"In this summary you will learn: the words used to talk about speed (latency, throughput, percentiles), how to run a fair test (benchmarking), how to find what is slow (profiling and flame graphs), how the computer's memory and cache change speed, how a JavaScript server really works, why databases get slow, the different kinds of load tests and how to write them with the tool k6, and the math that tells you how many servers you need. At the end you will be ready for the quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: measure, find, fix, measure",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Fixing performance is like being a doctor. A doctor does not give medicine before checking what is wrong. In the same way, a good engineer follows a loop: **measure** how the system behaves, **find** the part that wastes the most time, **change** only that part, and **measure again** to see if it really got better."
+				},
+				{
+					"type": "diagram",
+					"content": "  measure --> find the --> change one --> measure\n     ^        slow part      thing          again\n     |                                         |\n     +-----------------------------------------+",
+					"caption": "The performance loop. Never skip the first and the last step."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "If your bike is slow, you check the tires, the chain and the brakes before buying a new seat. Polishing the seat feels nice but changes nothing. Programs are the same: the slow part is almost never where you first think."
+				},
+				{
+					"type": "heading",
+					"text": "Four layers of the same story"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Layer",
+						"Example question",
+						"Where you will meet it below"
+					],
+					"rows": [
+						[
+							"The CPU and its memory",
+							"Why is walking a matrix by rows faster than by columns?",
+							"CPU cache and memory locality"
+						],
+						[
+							"The program runtime",
+							"Why does one slow request freeze a Node.js server?",
+							"Runtime performance"
+						],
+						[
+							"The database",
+							"Why does a list page run 21 queries?",
+							"Database performance"
+						],
+						[
+							"The whole service",
+							"How many servers do we need on sale day?",
+							"Load tests, k6 and capacity planning"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Across all layers you need two skills. First, you need good **numbers**: the right measurements, taken in a fair way (benchmarking). Second, you need to know **where the time goes** (profiling). The rest of this summary builds those skills step by step."
+				},
+				{
+					"type": "video",
+					"title": "Performance Matters, Emery Berger (Strange Loop)",
+					"url": "https://www.youtube.com/watch?v=r-TLSBdHe1A"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Measure before you change, and measure again after. Optimising a part that uses 2% of the time can give you at most 2%."
+				}
+			]
+		},
+		{
+			"id": "latency-throughput-percentiles",
+			"title": "Latency, throughput and percentiles",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Go back to the bakery. Two different things matter. One is how long **one person** waits from entering until leaving with the bread. The other is how many people the bakery serves **per hour**. Computers have the same two measures."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Word",
+						"Meaning",
+						"Bakery",
+						"Usual unit"
+					],
+					"rows": [
+						[
+							"[[Latency|how long one request takes, from sending it until the answer arrives]]",
+							"Time for one request",
+							"One person's waiting time",
+							"milliseconds (ms)"
+						],
+						[
+							"[[Throughput|how much work the system finishes per unit of time]]",
+							"Work done per time",
+							"People served per hour",
+							"requests per second (req/s)"
+						],
+						[
+							"Error rate",
+							"Fraction of requests that failed",
+							"People who left without bread",
+							"failures divided by total"
+						]
+					],
+					"caption": "Latency and throughput are independent: a system can do many requests per second and still leave some of them very slow."
+				},
+				{
+					"type": "paragraph",
+					"text": "The time a client sees is the **response time**. In this summary we use the convention: response time = **waiting time in the queue + service time** (the time the server really spends working on the request). When the server is busy, the service time hardly changes. It is the waiting that grows."
+				},
+				{
+					"type": "heading",
+					"text": "Why the average lies"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagine 10 requests: nine take 10 ms and one takes 910 ms. The **mean** (add everything and divide by 10) is 100 ms. But no request took 100 ms! The **median** (the middle value after sorting) is 10 ms, which describes the typical request much better. A few huge values drag the mean up, and latencies almost always have a few huge values."
+				},
+				{
+					"type": "heading",
+					"text": "Percentiles"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **percentile** answers: below which value are p% of the measurements? The **p50** is the median. The **p95** is the value that 95 out of 100 requests beat, so 1 request in 20 is slower than the p95. The **p99** leaves 1 in 100 slower. The slow end of the distribution is called the **tail**, and high percentiles describe it. This is called **tail latency**."
+				},
+				{
+					"type": "paragraph",
+					"text": "To compute a percentile with the **nearest-rank method**: sort the values, then take the value at position `ceil(p / 100 × n)`, counting from 1. Example with 10 sorted values:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "values: 5 6 7 8 9 10 11 12 13 50     (n = 10)\np50 -> position ceil(0.50 x 10) = 5  -> 9\np90 -> position ceil(0.90 x 10) = 9  -> 13\np99 -> position ceil(0.99 x 10) = 10 -> 50",
+					"caption": "Other tools interpolate between neighbours and may give a slightly different number, so always say which convention you use."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "You cannot compute the p99 of a whole service by averaging the p99 of each server. A percentile is a position in the sorted list of ALL measurements. To combine servers, merge the raw measurements or histograms with the same buckets."
+				},
+				{
+					"type": "heading",
+					"text": "Throughput from numbers"
+				},
+				{
+					"type": "paragraph",
+					"text": "The average throughput of a test is the **total completed requests divided by the duration**. In k6, `http_reqs` counts HTTP requests, while `iterations` counts complete runs of the script, and one iteration can make several requests. For example, 18,000 requests in 150 seconds is 120 req/s. Do not mix the two counts up."
+				},
+				{
+					"type": "paragraph",
+					"text": "In a **closed model** with no pause, each of U users sends one request at a time, so throughput is about `U / response time`. With 20 users and 100 ms responses: 20 / 0.1 = 200 req/s. If the server gets slower, the users also send less."
+				},
+				{
+					"type": "heading",
+					"text": "The tail grows when you fan out"
+				},
+				{
+					"type": "paragraph",
+					"text": "If one call has a 1% chance of being slow (its p99), a page that makes many calls is slow much more often, because it only escapes if every call is fast. The chance of at least one slow call is `1 - 0.99^n`."
+				},
+				{
+					"type": "chart",
+					"title": "Chance that a page has at least one call in the slowest 1%",
+					"unit": "%",
+					"bars": [
+						{
+							"label": "1 call",
+							"value": 1
+						},
+						{
+							"label": "10 calls",
+							"value": 9.6
+						},
+						{
+							"label": "50 calls",
+							"value": 39.5
+						},
+						{
+							"label": "100 calls",
+							"value": 63.4
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Two traps"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Failures are fast.** A request that fails with an error often answers in 5 ms. If errors rise from 0% to 60%, the median can drop and look like an improvement. Read latency and error rate together, and measure successful responses separately.",
+						"**Coordinated omission.** A load generator that waits for the slow answer before sending the next request stops sending exactly during the slow moment, so it never records how bad it was. The percentiles come out too optimistic. The cure is an **open model**: requests leave at a fixed rate, whatever the answers do."
+					]
+				},
+				{
+					"type": "video",
+					"title": "How NOT to Measure Latency, Gil Tene",
+					"url": "https://www.youtube.com/watch?v=lJ8ydIuPFeU"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Report latency percentiles (p50, p95, p99) together with throughput and error rate. A requirement like \"95% of requests under 100 ms\" is checked with the p95, not with the mean."
+				}
+			]
+		},
+		{
+			"id": "benchmarking-methodology",
+			"title": "Benchmarking methodology",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **benchmark** is a fair race between programs. If one runner starts with a backpack and the other without, the race proves nothing. Benchmarking is the craft of making the race fair, so that a difference in the numbers really comes from the code."
+				},
+				{
+					"type": "heading",
+					"text": "Warm-up, repetitions and noise"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Warm-up.** A program that just started is not in its normal state. Files are not in the system cache, the CPU caches are cold, and runtimes with a [[JIT compiler|a compiler that translates hot parts of the code to fast machine code while the program runs]] have not optimised yet. So a runner runs the work a few times and throws those timings away. If start-up time is what you care about, measure it separately and say so.",
+						"**Repeat.** One run proves little. Another program on the same machine (a video call, an antivirus) can slow one run down. This is called a **noisy neighbour**. Run several times on a machine as idle as possible.",
+						"**Report the spread, not only the best run.** Say the mean and the [[standard deviation|a number that tells how far the runs typically are from their mean]], and ideally the minimum and maximum."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The **sample standard deviation** divides by `n - 1` (not `n`), because the mean was estimated from the same runs. Example with runs 4, 6, 8 ms: mean = 6; distances to the mean are 2, 0, 2, so the squares are 4, 0, 4, which sum to 8; divide by 3 - 1 = 2 to get 4; the square root is **2 ms**."
+				},
+				{
+					"type": "paragraph",
+					"text": "How to read a result: if A has mean 102 ms and B has mean 99 ms, but the standard deviation of both is about 6 ms, then the 3 ms difference is smaller than the noise. Repeating the test could flip the order. Report a tie, or measure more with a quieter machine."
+				},
+				{
+					"type": "heading",
+					"text": "Speed-up and Amdahl's law"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Speed-up** is the old time divided by the new time, for the same work. Going from 800 ms to 200 ms is a speed-up of 4. Careful: cutting the time by 50% is a speed-up of 2, and cutting it by 90% is a speed-up of 10. Say which measure you use."
+				},
+				{
+					"type": "paragraph",
+					"text": "Speeding up one part has a limit. If a part takes a fraction `p` of the time and you make that part `s` times faster, the whole program gets `1 / ((1 - p) + p / s)` times faster. This is **Amdahl's law**. Example: a 10 s job has 5 s of computing. Making the computing 5 times faster gives `1 / (0.5 + 0.1)` = 1.67, not 5. Even an infinitely fast computation leaves the other 5 s, so the ceiling is 2."
+				},
+				{
+					"type": "heading",
+					"text": "A fair comparison"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Change **one thing at a time**. To compare two runtimes, use the same workload, data size, concurrency and machine.",
+						"Time the **whole process** (from outside) to know how long a user waits. It includes loading the runtime and reading input, a near-fixed cost that dominates with small inputs. Time only the **section** (inside the program) to know the cost of the algorithm. Both are useful if you say which one you show.",
+						"Make every variant print a **checksum** of its result. If one variant is much faster but its checksum is different, it is not an optimisation, it is a bug.",
+						"Consume the result. An optimising compiler may delete code whose result nobody uses, so a microbenchmark can print \"0 ms\" because it timed an empty loop. Add the results to a checksum and print it at the end."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Reproducible results"
+				},
+				{
+					"type": "paragraph",
+					"text": "A published number is worth something only if another person can repeat it. Always record the **machine** (CPU, memory, system), the **exact versions** of compilers and runtimes, and the **full command** with its input and options. The tool [hyperfine](https://github.com/sharkdp/hyperfine) times terminal commands for you with warm-up runs, repetitions and statistics (mean, standard deviation, minimum, maximum), and exports JSON or Markdown. It measures the whole process, so start-up is included."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Fair benchmark: same work, same machine, warm-up discarded, many runs, spread reported, checksum checked, versions and command written down."
+				}
+			]
+		},
+		{
+			"id": "profiling-flame-graphs",
+			"title": "Profiling and flame graphs",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "You know the program is slow, but where? A **profiler** is a tool that watches a program and tells you where the time goes. It is like a security camera in a kitchen: afterwards you can see which step takes most of the minutes. Profile first, optimise later."
+				},
+				{
+					"type": "heading",
+					"text": "Sampling and instrumenting"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Kind",
+						"How it works",
+						"Good",
+						"Bad"
+					],
+					"rows": [
+						[
+							"Sampling profiler",
+							"Peeks at the program many times per second and writes down the [[call stack|the list of functions that are running right now, each one called by the one below it]]",
+							"Low and steady cost, even with millions of calls",
+							"A statistical estimate, no exact call counts"
+						],
+						[
+							"Instrumenting profiler",
+							"Adds code to every function to count and time each call",
+							"Exact counts and times",
+							"The cost grows with the number of calls and distorts tiny functions that are called very often"
+						]
+					],
+					"caption": "A function called 50 million times looks far more expensive with an instrumenting profiler. That is why sampling is the usual choice on systems under real load."
+				},
+				{
+					"type": "heading",
+					"text": "Which profile for which problem"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**CPU profile**: where does the processor spend its time?",
+						"**Heap profile**: who allocates memory, and which objects stay alive? Use it when memory grows for hours (a leak) while CPU is low.",
+						"**Wall-clock vs CPU time**: wall-clock is the real time between start and end. CPU time is only the time the processor ran your program (`user` in your code, `sys` in the kernel). The difference is **off-CPU time**: waiting for disk, network, a database or a lock."
+					]
+				},
+				{
+					"type": "code",
+					"language": "sh",
+					"content": "$ time ./script\nreal 5.0 s    # the clock on the wall\nuser 0.3 s    # CPU running your code\nsys  0.1 s    # CPU running the kernel for you",
+					"caption": "A single-threaded program with real far above user + sys spent almost all the time waiting, not computing. A CPU profile will not help here."
+				},
+				{
+					"type": "heading",
+					"text": "Reading a flame graph"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **flame graph** draws the sampled call stacks. Each box is a function. A box sits on top of the function that called it, so **height** is how deep the stack is. The **width** of a box is the fraction of samples where that function was on the stack, so wide means \"a lot of time\". Identical stacks are merged, and boxes are sorted by name."
+				},
+				{
+					"type": "diagram",
+					"content": "                [ escape  ]\n  [ parse ]     [ render .............. ][ send ]\n  [ handleRequest ............................ ]\n  [ main ..................................... ]\n   (the root is always 100% wide)",
+					"caption": "Reading: handleRequest called parse, render and send. render is wide, escape sits on top of render."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "The horizontal axis is NOT time. parse being drawn to the left of render does not mean it ran first, only that its name sorts earlier. A chart where the horizontal axis is time is a different thing, called a flame chart."
+				},
+				{
+					"type": "paragraph",
+					"text": "The **total time** of a function includes everything it calls. The **self time** is only its own code: total minus the sum of its direct children. If renderHtml has total 600 ms and its children take 450 + 100 ms, its self time is 50 ms. The CPU is really working where self time is high, which in a flame graph is the **free edge at the top** of a box. Look for the widest plateau at the top, not for the widest box (the root is always widest) and not for the tallest tower (that is just a deep stack)."
+				},
+				{
+					"type": "callout",
+					"tone": "tip",
+					"text": "Slow endpoint but the CPU is nearly idle (for example 6% of a core)? Then the time is off-CPU: a database, the network, a queue for a pool connection. A CPU profile shows a correct report about the wrong resource. Use tracing or wait metrics instead."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Profile to find where the time goes. Wide boxes with a free top edge are the hot spots. Total time includes children, self time does not."
+				}
+			]
+		},
+		{
+			"id": "runtime-performance",
+			"title": "Runtime performance: event loop, garbage collection, cluster",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Node.js and Bun run the JavaScript of your server on **one thread**. A thread is like one cook. How can one cook serve thousands of customers? Because most of the time the cook is not cooking, only waiting."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A waiter with one pen takes your order, gives it to the kitchen and goes to the next table. He does not stand and stare at the oven. When a dish is ready, he serves it. One waiter can handle many tables, as long as none of his own tasks takes a long time."
+				},
+				{
+					"type": "heading",
+					"text": "The event loop"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **event loop** is a queue of ready tasks (callbacks) that runs them one at a time. When your code asks for a database answer, the waiting is handed to the operating system and the loop moves on to other requests. This is **I/O-bound** work: the time goes to waiting, not computing. One thread keeps thousands of such requests going, and the limit becomes the database or the connection pool."
+				},
+				{
+					"type": "diagram",
+					"content": "I/O-bound:  [start query][ other requests run here ][answer]\n                         (event loop is free)\n\nCPU-bound:  [ computing 200 ms, nobody else runs ]\n            /ping waits behind it",
+					"caption": "CPU-bound work holds the only JavaScript thread from start to finish."
+				},
+				{
+					"type": "paragraph",
+					"text": "**CPU-bound** work is the opposite: the thread is busy calculating, so no other callback runs, no timer fires, no I/O result is read. If two requests of 300 ms of synchronous CPU arrive together, followed by a tiny `/ping`, the ping is answered only after about 600 ms. One slow endpoint ruins the latency of the whole server."
+				},
+				{
+					"type": "heading",
+					"text": "Using more cores"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Tool",
+						"What it does",
+						"Memory",
+						"Good for"
+					],
+					"rows": [
+						[
+							"`worker_threads`",
+							"Extra threads inside the same process, each with its own event loop",
+							"Can share binary memory",
+							"Taking a heavy computation off the main thread"
+						],
+						[
+							"`cluster` / `pm2 start app.js -i max`",
+							"Several copies of the whole server, usually one per core, all listening on the same port",
+							"Each process has its own memory, nothing is shared",
+							"Handling more requests, isolating failures"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Cluster multiplies CPU capacity, so it helps when the **CPU is the bottleneck**. If one request needs 25 ms of CPU, one process serves at most 1 / 0.025 = 40 req/s. Four workers on four cores give up to 160 req/s (a bit less in real life). But for I/O-bound work (5 ms of CPU and 95 ms waiting), one process is free most of the time, so more workers change nothing. Before adding workers, compute how much of a core the process really uses: `request rate × CPU time per request`."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Cluster costs memory. A process with 100 MB base plus a 200 MB in-memory cache becomes 4 × 300 = 1,200 MB with 4 workers. Sessions or caches kept in memory differ between workers, so teams move them to an external service such as Redis."
+				},
+				{
+					"type": "heading",
+					"text": "Garbage collection"
+				},
+				{
+					"type": "paragraph",
+					"text": "Programs create objects and forget them. The **garbage collector** (GC) finds objects nobody uses and frees their memory. V8, the engine of Node.js, is **generational**, based on the observation that most objects die young. New objects go into a small area, the **young generation**, cleaned often by quick **minor** collections. Survivors move to the **old generation**, cleaned rarely by **major** collections, which are slower because the heap is much bigger."
+				},
+				{
+					"type": "paragraph",
+					"text": "Much GC work is incremental or runs on helper threads, but some phases are **stop-the-world**: JavaScript stops completely. Major collections over a big old heap can pause for a long time. Because they are rare, they hardly change the mean or the median, and they show up as periodic spikes in the **p99**. Do not confuse this with a **leak**: after a leak, the memory in use after each collection keeps growing. If memory returns to the same level after every collection, it is not a leak."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "One JavaScript thread per process. I/O waits are cheap, synchronous CPU work blocks everyone. Cluster helps CPU-bound work and costs memory. GC pauses appear in high percentiles."
+				}
+			]
+		},
+		{
+			"id": "cpu-cache-locality",
+			"title": "CPU cache and memory locality",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Big O counts steps, as if every step cost the same. But reading from memory is not equally fast everywhere. Think of your desk, your bookshelf, and the city library. The pencil on the desk takes one second. A book on the shelf takes a minute. A book from the library takes an afternoon."
+				},
+				{
+					"type": "heading",
+					"text": "The memory hierarchy"
+				},
+				{
+					"type": "diagram",
+					"content": "registers < L1 < L2 < L3 < RAM < disk\nsmallest, fastest, most expensive  -->\n                   <-- biggest, slowest, cheapest",
+					"caption": "L1, L2 and L3 are caches inside or next to the processor."
+				},
+				{
+					"type": "paragraph",
+					"text": "Fast memory is small and expensive, big memory is cheap and slow. So the computer keeps the data in use right now in the small fast levels. In round numbers, L1 answers in about 1 nanosecond and main memory (RAM) in about 100, roughly a hundred times slower. A program is fast when most of its reads are served by the upper levels. A read that finds its data in the cache is a **hit**, and one that must go further is a **miss**."
+				},
+				{
+					"type": "heading",
+					"text": "Cache lines and locality"
+				},
+				{
+					"type": "paragraph",
+					"text": "The cache does not copy single bytes. It copies blocks called **cache lines**, normally **64 bytes**. If you read one byte that is missing, the processor loads the whole 64-byte line that contains it. Programs enjoy two habits, together called **locality**:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Temporal locality**: you use the same address again soon (a loop counter).",
+						"**Spatial locality**: you use neighbouring addresses one after another (the elements of an array)."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Count the misses of a sequential scan: it is the number of **lines touched**, not the number of elements. A `double` has 8 bytes, so a line holds 8 of them. Scanning 4,096 doubles reads `4096 × 8 / 64` = 512 lines: 1 miss for each 8 elements, and the next 7 are hits."
+				},
+				{
+					"type": "heading",
+					"text": "Row-major order"
+				},
+				{
+					"type": "paragraph",
+					"text": "C, C++ and Rust store a matrix **row after row** (row-major). Element `(i, j)` lives at index `i × n + j`. Walking along a row uses neighbours. Walking down a column jumps a whole row each time."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"content": "/* A: inner loop on j, follows the memory order */\nfor (i = 0; i < N; i++)\n    for (j = 0; j < N; j++) sum += a[i][j];\n\n/* B: inner loop on i, jumps N values each step */\nfor (j = 0; j < N; j++)\n    for (i = 0; i < N; i++) sum += a[i][j];",
+					"caption": "Both are O(N²). When the matrix is bigger than the cache, A is several times faster."
+				},
+				{
+					"type": "paragraph",
+					"text": "The same idea explains why summing 1 million numbers in an **array** beats a **linked list** with nodes scattered in memory. Both are O(n), but the list may pay one miss per element."
+				},
+				{
+					"type": "heading",
+					"text": "Matrix multiplication: interchange and blocking"
+				},
+				{
+					"type": "paragraph",
+					"text": "Multiplying two `n × n` matrices has three nested loops and `n³` multiplications, whatever the loop order. In the order `i, j, k`, the inner loop goes down a column of `b`, the worst walk. **Loop interchange** to `i, k, j` makes every inner access sequential or fixed. Same result, same Big O, very different speed."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Blocking** (or tiling) goes further: do the work on small `B × B` tiles that fit in the cache, and reuse each loaded piece many times before moving on. Three tiles of doubles use `3 × B² × 8` bytes. For a 32 KiB (32,768 bytes) L1: `B = 32` needs 24,576 bytes and fits, while `B = 64` needs 98,304 and does not. The block size comes from the cache capacity, and blocking does not change the number of operations."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Same Big O does not mean same speed. Read memory in the order it is stored, reuse data while it is in the cache, and remember that a cache line is 64 bytes."
+				}
+			]
+		},
+		{
+			"id": "database-performance",
+			"title": "Database performance: indexes, N+1, connection pooling",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Many slow apps are slow because of the database. A table with 10 million rows is like a library with 10 million books. Finding one book by walking along every shelf takes forever. The librarian needs a catalogue."
+				},
+				{
+					"type": "heading",
+					"text": "Indexes"
+				},
+				{
+					"type": "paragraph",
+					"text": "An **index** is that catalogue. A B-tree index keeps the values of a column sorted in a balanced tree, so finding one value costs `O(log n)` instead of `O(n)`. Each node holds hundreds of keys, so the tree is shallow even for huge tables. Without a useful index, PostgreSQL does a **sequential scan**: it reads every row and throws away the ones that do not match."
+				},
+				{
+					"type": "paragraph",
+					"text": "`EXPLAIN` shows the plan the database chose, without running the query. Each node shows an estimated cost (abstract units), the estimated rows and the row width in bytes. A `Seq Scan` with a `Filter` that returns few rows from a huge table is the classic sign of a missing index."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "EXPLAIN SELECT * FROM orders WHERE customer_id = 42;\n-- Seq Scan on orders (cost=0.00..23864.00 rows=95 width=64)\n--   Filter: (customer_id = 42)\nCREATE INDEX idx_orders_customer ON orders (customer_id);"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Indexes cost writes.** Every `INSERT`, and every `UPDATE` or `DELETE` that touches indexed columns, must update each index, and each index uses disk and memory. Create indexes for queries that exist, and drop the unused ones.",
+						"**Selectivity.** It is the fraction of rows a filter lets through. An index pays off when that fraction is small. On a column with three values where 'delivered' is 95% of rows, the planner prefers the sequential scan, because millions of random reads are worse than one straight read.",
+						"**Composite indexes and the leftmost prefix.** An index on `(tenant_id, status, created_at)` is sorted by the first column, then the second inside each first value, like a phone book sorted by surname and then first name. It serves filters that fix a prefix starting from the left. A filter that skips the first column finds its rows scattered across the index and is the worst served.",
+						"**`SELECT *`** brings every column, even the ones the app throws away. Wide columns (long text, JSON) cost disk reads, memory and network. Ask only for the columns you need."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The N+1 problem"
+				},
+				{
+					"type": "paragraph",
+					"text": "The code fetches a list with 1 query, then makes more queries for each of the N items. Each query is fast, but each pays a round trip to the database. A list of 10 posts that loads the author of each post in a loop runs `1 + 10` = **11** queries, and 100 posts would run 101. The fix is a fixed number of queries: a `JOIN`, a filter `WHERE id IN (...)` with all the ids, or the eager loading of the ORM."
+				},
+				{
+					"type": "heading",
+					"text": "Pagination"
+				},
+				{
+					"type": "paragraph",
+					"text": "With `OFFSET 100000`, the database must produce 100,000 rows and throw them away before the page, so deeper pages cost more. **Keyset pagination** remembers the last value seen: `WHERE id > 100000 ORDER BY id LIMIT 20`. The index goes straight to that point, and the cost is the same on every page. The trade-off: you can only go to the next or previous page, and the order needs indexed columns without ties."
+				},
+				{
+					"type": "heading",
+					"text": "Connection pooling"
+				},
+				{
+					"type": "paragraph",
+					"text": "Opening a database connection costs several network round trips and, in PostgreSQL, a new process on the server. That can cost more than the query itself. A **connection pool** opens a limited number of connections, keeps them open and lends one to each request, which gives it back when done."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A pool is a stack of 10 bicycles at a bike station. If all 10 are taken, the 11th person waits in line. The wait is part of the latency the client sees."
+				},
+				{
+					"type": "paragraph",
+					"text": "The **capacity of a pool** is the number of connections divided by the time each request holds one. With 20 connections and 40 ms each: 20 / 0.04 = **500 req/s**. Above that rate requests pile up and latency grows without bound, even though each query still takes the same time. In a load test this appears as a **knee**: stable latency up to a point, then a steep rise while throughput stops growing. Shortening the time a connection is held raises capacity as much as enlarging the pool."
+				},
+				{
+					"type": "paragraph",
+					"text": "The limit `max_connections` of PostgreSQL belongs to the whole server, but every application instance has its own pool. What must fit is the sum: `pool size × instances + reserve`. With `max_connections = 100`, a reserve of 10 and 6 instances: (100 - 10) / 6 = 15, so at most 15 per instance. A huge pool is not the answer: too many active connections fight for CPU, memory and disk in the database."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Index the columns your queries filter by, avoid N+1, ask only for needed columns, paginate with keysets, and size the pool by arrival rate times holding time."
+				}
+			]
+		},
+		{
+			"id": "load-test-types",
+			"title": "Load, stress, spike and soak tests",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **load test** sends many fake users to a service and watches how it behaves. It is like a fire drill: you want to find the problems before the real fire. Different questions need different shapes of traffic, so there are different test types. They differ in two things: **how much** load, and **for how long**."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Type",
+						"Shape of the load",
+						"Question it answers"
+					],
+					"rows": [
+						[
+							"Smoke",
+							"Minimal load, very short",
+							"Does the script, the environment and the metric collection work at all? It also gives a baseline"
+						],
+						[
+							"Load (average load)",
+							"The normal expected traffic, held for a while",
+							"Does the service meet its targets at the usual load?"
+						],
+						[
+							"Stress",
+							"Rises gradually to above normal and held",
+							"What happens above the expected traffic? Where is the saturation point?"
+						],
+						[
+							"Spike",
+							"Very high, very short, almost no ramp",
+							"Does it survive a sudden burst, and does it recover?"
+						],
+						[
+							"Soak (endurance)",
+							"Average load for hours",
+							"What degrades slowly with time, like a memory leak?"
+						],
+						[
+							"Breakpoint",
+							"Grows slowly and continuously until a criterion fails",
+							"What is the limit? The value at failure is the answer"
+						]
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "users\n  |            spike                    stress\n  |             /\\                       ____\n  |   load     /  \\          load       /\n  |  _____    /    \\       _____      /\n  | /     \\__/      \\_____/     \\____/\n  +----------------------------------> time\n   (soak = the plateau of 'load' lasting hours)",
+					"caption": "Rough shapes. The height of the plateau tells load from stress, the length tells load from soak, the slope of the ramp tells stress from spike."
+				},
+				{
+					"type": "heading",
+					"text": "What each one reveals"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Stress and the knee.** While there is spare capacity, more users give more throughput at almost the same latency. At the **saturation point** some resource runs out (CPU, pool connections, threads): throughput levels off, and extra users only lengthen the queue, so latency shoots up. In a table: 100 users give 800 req/s at 30 ms, 150 users give 1200 req/s at 32 ms, but 200 users give only 1250 req/s at 190 ms. The elbow is at about 150 users.",
+						"**Spike.** Watch three moments: before, during and after. Surviving the burst is not enough. If p95 stays ten times above normal for 15 minutes after the load drops, there are unbounded queues, long timeouts, retry storms, or pools slow to release. A shop opening a sale at an exact time needs a spike test.",
+						"**Soak.** Memory at first grows and then stays flat? That is warm-up (caches filling), not a leak. A leak is growth that continues under constant load. That is why a soak test lasts hours: in a few minutes both curves look the same.",
+						"**Breakpoint.** Unlike stress, it has no planned plateau. An arrival-rate executor is usually used, so the pressure keeps rising even when responses get slow."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Open and closed models, again"
+				},
+				{
+					"type": "paragraph",
+					"text": "In a **closed model** the number of users is fixed, and each waits for its answer. When the server slows down, the generator slows down too, which relieves the server at the worst moment. In an **open model** arrivals follow a fixed rate, like real people who do not know the site is slow. So for stress and spike tests, an arrival-rate executor is the better choice."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Load tests must target only systems you own, ideally local. The only difference between a load test and a denial-of-service attack is the authorisation and the target, not the tool. Good scripts read the target from a variable with a local default and refuse to run against any other host."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Smoke checks it works, load checks the normal day, stress finds the limit, spike tests a sudden burst and the recovery, soak finds slow leaks over hours."
+				}
+			]
+		},
+		{
+			"id": "k6-fundamentals",
+			"title": "k6: virtual users, stages, thresholds, checks",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "[[k6|an open-source load testing tool from Grafana, whose test scripts are written in JavaScript]] is the tool of this area. A k6 script is a JavaScript file that says what one fake user does and how many fake users there are. Think of a puppet theatre: you write the play once, and k6 runs many puppets at the same time."
+				},
+				{
+					"type": "heading",
+					"text": "Virtual users and iterations"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **virtual user (VU)** is an independent executor that runs the default function of your script in a loop. Each complete pass through the function is one **iteration**. One iteration can contain several requests, checks and pauses, so k6 counts iterations and requests in different metrics."
+				},
+				{
+					"type": "code",
+					"language": "js",
+					"content": "import http from 'k6/http';\nimport { sleep } from 'k6';\n\nexport const options = { vus: 10, duration: '60s' };\n\nexport default function () {\n  http.get('http://localhost:3000/products');\n  sleep(1); // a pause, in seconds, like a person thinking\n}"
+				},
+				{
+					"type": "paragraph",
+					"text": "An iteration lasts as long as its requests plus its `sleep`. Here, if the request takes 500 ms, one iteration is 1.5 s, so the number of iterations is `VUs × duration / iteration time`, about 10 × 60 / 1.5 = 400."
+				},
+				{
+					"type": "heading",
+					"text": "Stages and executors"
+				},
+				{
+					"type": "paragraph",
+					"text": "The `stages` option draws a ramp: each stage has a `duration` and a `target`, and k6 moves the number of VUs in a straight line from where it is to the target. A stage that repeats the previous target is a **plateau**, and a last stage with target 0 is the **ramp-down**."
+				},
+				{
+					"type": "code",
+					"language": "js",
+					"content": "export const options = {\n  stages: [\n    { duration: '1m', target: 20 }, // ramp-up\n    { duration: '3m', target: 20 }, // plateau\n    { duration: '1m', target: 0 },  // ramp-down\n  ],\n};",
+					"caption": "With ramping-vus stages 1m to 20, 2m to 80, 1m to 0: after 2 minutes you are 1 minute into the second stage, halfway from 20 to 80, so 50 VUs."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Executor",
+						"Model",
+						"What it controls",
+						"Note"
+					],
+					"rows": [
+						[
+							"`constant-vus`, `ramping-vus`",
+							"Closed",
+							"Number of VUs",
+							"A new iteration starts only when the previous ends, so rate = VUs / iteration time"
+						],
+						[
+							"`constant-arrival-rate`, `ramping-arrival-rate`",
+							"Open",
+							"Iterations started per time unit",
+							"Needs enough VUs: about rate × iteration duration. If they run out, iterations are dropped and counted in `dropped_iterations`"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Example: 50 `constant-vus` with no sleep. At 100 ms per request they send 50 / 0.1 = 500 req/s. If the server slows to 500 ms, they send only 100 req/s: the test eases the pressure exactly when the system suffers. A `constant-arrival-rate` of 30 per second with a response of 1 s needs about 30 VUs. If it only has 20, k6 drops the rest."
+				},
+				{
+					"type": "heading",
+					"text": "Thresholds and checks"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **threshold** is a pass or fail rule on a metric: an aggregation (`avg`, `p(95)`, `rate`, `count`), an operator and a limit. `http_req_duration: ['p(95)<500']` means that the p95 of all request durations must be under 500 ms. When any threshold is crossed, k6 ends with **exit code 99**, so a CI pipeline sees a failure. By default k6 keeps running. The long form `{ threshold: 'rate<0.05', abortOnFail: true, delayAbortEval: '30s' }` stops the test early, and `delayAbortEval` waits first, so a few early failures cannot abort the test before enough samples exist."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **check** verifies something about a response, like \"body has items\". It does **not** stop the test or fail it: it only records the pass rate in the `checks` metric. To make wrong content fail the test, add a threshold on checks, for example `checks: ['rate>0.99']`."
+				},
+				{
+					"type": "heading",
+					"text": "The four phases and metric types"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Phase",
+						"When it runs",
+						"Use"
+					],
+					"rows": [
+						[
+							"Init (top level)",
+							"Once per VU",
+							"Imports, reading files, defining `options`"
+						],
+						[
+							"`setup()`",
+							"Once, before the load",
+							"Create shared data, such as a test account. Its return value must be JSON-serialisable"
+						],
+						[
+							"default function",
+							"Repeated by all VUs",
+							"The load itself"
+						],
+						[
+							"`teardown()`",
+							"Once, at the end",
+							"Clean up"
+						]
+					]
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Counter**: adds values up (how much).",
+						"**Gauge**: keeps the last value (how much right now).",
+						"**Rate**: the share of true values (how often). `http_req_failed` and `checks` are Rates.",
+						"**Trend**: statistics such as mean and percentiles (what distribution). Use it for the time of a login flow."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Other useful pieces: `__ENV` holds environment variables (`k6 run -e NAME=value`), so `const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000'` makes the safe, local case the default. And `handleSummary(data)` receives all metrics at the end and returns an object whose keys are destinations (a file, `stdout`) and whose values are content, which is how JSON or HTML reports are made. It replaces the default summary, so include a `stdout` key if you want both."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "VUs run iterations. Stages draw the ramp. Thresholds decide pass or fail (exit code 99). Checks only record. Closed executors follow the response time, arrival-rate executors keep the pace."
+				}
+			]
+		},
+		{
+			"id": "capacity-planning-queueing",
+			"title": "Capacity planning and queueing",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "**Capacity planning** answers: how many servers do we need? To answer, we use a few simple laws from queueing theory, which is the maths of waiting in line. Picture a single ticket window at a cinema."
+				},
+				{
+					"type": "heading",
+					"text": "Two laws that always hold"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **utilisation law**: the fraction of time a server is busy is `arrival rate × mean service time` (same time units). A window that gets 10 customers per second and takes 50 ms each is busy `10 × 0.05` = 0.5, so 50% of the time. It is the first calculation of capacity planning: how much is already committed."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Little's law**: in a stable system, `L = λ × W`, where L is the average number of items inside, λ (lambda) the arrival rate and W the average time each item spends inside (waiting plus service). It does not depend on how arrivals are distributed or how many servers there are. If 100 requests arrive per second and each spends 0.05 s in the system, on average `100 × 0.05` = 5 requests are inside. It converts between concurrency, throughput and latency."
+				},
+				{
+					"type": "heading",
+					"text": "Why latency explodes near 100%"
+				},
+				{
+					"type": "paragraph",
+					"text": "Arrivals are never evenly spaced. When two customers arrive together, one must wait. The queue is emptied during idle time. At low utilisation, idle time is plentiful and a burst is absorbed fast. At high utilisation, the queue from one burst is not empty when the next one comes. For a simple model, the **M/M/1 queue** (one server, random Poisson arrivals, exponential service times), the mean response time is:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "R = S / (1 - U)\n\nS = mean service time, U = utilisation (between 0 and 1)\nexample: S = 20 ms, 40 req/s -> U = 0.8 -> R = 20 / 0.2 = 100 ms"
+				},
+				{
+					"type": "chart",
+					"title": "Response time as a multiple of the service time, M/M/1 queue",
+					"unit": "times S",
+					"bars": [
+						{
+							"label": "U = 50%",
+							"value": 2
+						},
+						{
+							"label": "U = 70%",
+							"value": 3.33
+						},
+						{
+							"label": "U = 80%",
+							"value": 5
+						},
+						{
+							"label": "U = 90%",
+							"value": 10
+						},
+						{
+							"label": "U = 95%",
+							"value": 20
+						},
+						{
+							"label": "U = 99%",
+							"value": 100
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Look at the shape: nearly flat at first, then very steep. Going from 50% to 90% utilisation (traffic not even twice as high) multiplies latency by 5. The formula depends on the model, but the shape is a good intuition for real systems. That is why we keep **headroom**: spare capacity."
+				},
+				{
+					"type": "heading",
+					"text": "Sizing from a load test"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Measure the capacity of one instance **within the latency target**, for example 250 req/s.",
+						"Apply the headroom rule: if each instance may run at most 70%, usable capacity is 175 req/s.",
+						"Divide the expected peak by it and **round up**. For a peak of 1,000 req/s: 1000 / 175 = 5.7, so 6 instances."
+					],
+					"ordered": true
+				},
+				{
+					"type": "paragraph",
+					"text": "This assumes load spreads evenly and scaling is linear. Check that: a shared database may saturate first."
+				},
+				{
+					"type": "paragraph",
+					"text": "The same method sizes a **connection pool**. The average number of busy connections is `arrival rate × holding time`. With 100 req/s holding a connection 30 ms: 3 busy on average. To keep at most 60% busy, divide by 0.6: 5 connections. A pool sized exactly for the average would be 100% busy, and the queue would grow long long before that."
+				},
+				{
+					"type": "heading",
+					"text": "Amdahl's law for scaling out"
+				},
+				{
+					"type": "paragraph",
+					"text": "If a fraction `s` of the work cannot be parallelised, the speed-up with `N` processors is `1 / (s + (1 - s) / N)`. With 10% serial, it never exceeds 10, however many processors you add."
+				},
+				{
+					"type": "chart",
+					"title": "Speed-up when 10% of the work is serial (Amdahl)",
+					"unit": "times",
+					"bars": [
+						{
+							"label": "1 core",
+							"value": 1
+						},
+						{
+							"label": "2 cores",
+							"value": 1.82
+						},
+						{
+							"label": "4 cores",
+							"value": 3.08
+						},
+						{
+							"label": "8 cores",
+							"value": 4.71
+						},
+						{
+							"label": "16 cores",
+							"value": 6.4
+						},
+						{
+							"label": "Infinite",
+							"value": 10
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "In a cluster of processes, the serial part is usually a shared resource: the database, or a lock."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "U = arrival rate × service time. L = arrival rate × time in system. R = S / (1 - U) in M/M/1. Always plan headroom, and round the number of instances up."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Now you have a toolbox. Here is how the pieces connect when a service is slow, step by step."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Define fast**: pick a goal with a percentile, for example \"95% of requests under 300 ms\".",
+						"**Produce load** with a test of the right type (load, stress, spike, soak) in an open model, against a local target.",
+						"**Read the result** with percentiles, throughput and error rate together, and look for the knee.",
+						"**Find the bottleneck**: CPU high means a CPU profile and a flame graph. CPU low and latency high means waiting: database, pool, network.",
+						"**Fix one thing**, measure fairly again (warm-up, repetitions, same machine, checksum) and report the spread.",
+						"**Size** the service with utilisation, Little's law and headroom."
+					],
+					"ordered": true
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Symptom",
+						"Likely cause",
+						"Tool or idea"
+					],
+					"rows": [
+						[
+							"p99 high, p50 fine",
+							"A few slow requests: GC pause, lock, tail",
+							"Percentiles, GC logs"
+						],
+						[
+							"One slow endpoint freezes all requests (Node.js)",
+							"Synchronous CPU work on the single thread",
+							"Flame graph, worker threads, cluster"
+						],
+						[
+							"Latency flat, then a sudden climb as load rises",
+							"A resource saturated (pool, CPU)",
+							"Stress test, utilisation law"
+						],
+						[
+							"Latency high but CPU low",
+							"Waiting: database, pool, network",
+							"Wall-clock vs CPU time, tracing"
+						],
+						[
+							"A list page makes dozens of queries",
+							"N+1",
+							"JOIN or IN, eager loading"
+						],
+						[
+							"Same Big O, very different speed",
+							"Cache misses, bad memory order",
+							"Loop interchange, blocking"
+						],
+						[
+							"Memory grows without end",
+							"Leak",
+							"Heap profile, soak test"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Common mistakes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Optimising without profiling.",
+						"Looking only at the mean, or averaging percentiles of different servers.",
+						"Comparing two programs that do different work, or never checking the checksum.",
+						"Timing code the compiler removed, or including start-up by accident.",
+						"A closed-model test that hides the problem it should find (coordinated omission).",
+						"Aiming a load test at a system you do not own.",
+						"Adding workers or a bigger pool without checking where the bottleneck is."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Performance work is a loop of measuring, finding, fixing and measuring again, with honest numbers: percentiles instead of means, fair comparisons, headroom instead of hope."
+				}
+			]
+		}
+	]
+}

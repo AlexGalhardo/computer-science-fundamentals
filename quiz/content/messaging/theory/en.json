@@ -1,0 +1,396 @@
+{
+	"area": "messaging",
+	"intro": [
+		"Imagine a pizza shop. The person who takes your order does not run to the kitchen and wait while the pizza bakes. She writes a ticket and sticks it on a rail. The cook takes tickets from the rail when he is free. If the cook is busy, the tickets wait. If the cook goes to the bathroom, the tickets are still there when he comes back. That rail is what this whole subject is about. In computers, it is called **messaging**.",
+		"In software, programs often need to talk to each other. A shop website must tell the billing program, the shipping program and the e-mail program that an order arrived. They could call each other directly, like phone calls, but then everyone must be awake at the same time and everyone must be fast. With messaging, one program writes a [[message|a small packet of data, like a ticket or a note]] and hands it to a middleman called a [[broker|a program whose job is to keep messages safe and deliver them]]. The other programs read it later, at their own speed.",
+		"You meet messaging every day without seeing it: the e-mail that arrives after you buy something, the notification on your phone, the video that is being converted while you use the site, the bank transfer that is processed in the background. Big companies run millions of messages every second.",
+		"In this summary you will learn: the three basic shapes (queue, publish/subscribe and stream), what delivery promises a system can make, how order works and why it breaks, what to do when a message fails (acknowledgements, retries and dead-letter queues), how to make a program safe against repeated messages, how to stop a fast sender from drowning a slow receiver, and how the real tools work: RabbitMQ, Kafka, BullMQ, SQS and SNS. At the end you will also meet three patterns for big systems: outbox, saga and event sourcing. Then you will be ready for the quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: who talks to whom?",
+			"blocks": [
+				{ "type": "paragraph", "text": "Let us name the actors, using the pizza shop. The **producer** is the one who creates messages (the person taking orders). The **consumer** is the one who reads and handles them (the cook). The **broker** is the rail in the middle that holds the tickets. And the message is the ticket itself." },
+				{ "type": "diagram", "content": "  PRODUCER            BROKER             CONSUMER\n  (order desk)        (the rail)         (the cook)\n\n  [ ticket ] ------>  [ t3 | t2 | t1 ] ------> [ ticket ]\n   writes             keeps them safe          reads and\n   and leaves         until someone            does the job\n                      takes them", "caption": "A producer and a consumer never need to meet. The broker sits between them." },
+				{ "type": "paragraph", "text": "Why put a middleman there? Because of two big gifts. The first is [[decoupling|making two parts independent, so one can change or break without the other noticing]]: the producer does not know who reads, and does not care how many readers there are. The second is **time independence**: the cook can be away for ten minutes and nothing is lost, because the tickets wait on the rail." },
+				{ "type": "callout", "tone": "analogy", "text": "A mailbox. You drop a letter and walk away. The friend does not have to be home at that moment. The letter waits. That is exactly what a broker does for programs." },
+				{ "type": "heading", "text": "Words you will meet" },
+				{ "type": "list", "items": [
+					"**Producer** (also called publisher or sender): creates messages.",
+					"**Consumer** (also called subscriber or worker): reads and processes messages.",
+					"**Broker**: the server that stores messages and hands them out, for example RabbitMQ, Kafka or Amazon SQS.",
+					"**Acknowledgement (ack)**: the consumer saying 'I am done with this one, you can forget it'.",
+					"**Delivery**: one message reaching one consumer. If a message is sent to three consumers, that is three deliveries.",
+					"**Topic**: a named place where messages about one subject are sent."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Messaging = a producer leaves a message with a broker, and a consumer picks it up later. The two never have to be awake at the same time." }
+			]
+		},
+		{
+			"id": "queue-pubsub-stream",
+			"title": "Queue, publish/subscribe and stream",
+			"blocks": [
+				{ "type": "paragraph", "text": "There are three basic shapes for moving messages. They look similar from far away, but they behave very differently. Choosing the wrong one is the most common beginner mistake." },
+				{ "type": "heading", "text": "1. Queue: share the work" },
+				{ "type": "paragraph", "text": "A **queue** is like the line at a school canteen with three serving tables. Each child goes to one table only. If you add a fourth table, the line moves faster, but each child is still served once. In messaging this is called [[competing consumers|many workers fighting for the same messages, and each message goes to only one of them]]. Each message is processed by exactly one consumer. It is the way to share a big pile of work among many workers." },
+				{ "type": "heading", "text": "2. Publish/subscribe: tell everyone" },
+				{ "type": "paragraph", "text": "In **publish/subscribe** (pub/sub) a publisher sends one message to a topic and every subscriber gets its own copy. It is like the teacher announcing 'no homework today' to the whole class: she says it once, and all children hear it. If a topic has four subscribers, one message makes four deliveries. A queue **divides** work, a topic **multiplies** it." },
+				{ "type": "heading", "text": "3. Stream: a log you can read again" },
+				{ "type": "paragraph", "text": "A **stream** (such as a Kafka topic) is an **append-only log**: new records are only added at the end, and they stay there for a while even after someone reads them. Think of a diary. Reading a page does not tear it out. Each reader keeps a bookmark, called an **offset**, so many readers can read the same pages, and a reader can go back and read old pages again. A classic queue is the opposite: a message is removed after it is handled." },
+				{ "type": "table", "headers": ["Feature", "Queue", "Pub/sub topic", "Stream (log)"], "rows": [
+					["Who gets a message?", "One consumer", "Every subscriber", "Every group of readers; one reader inside a group"],
+					["After it is read", "Removed", "Gone, unless each subscriber has its own queue", "Stays until the retention time ends"],
+					["Read it again later?", "No", "No", "Yes, move the bookmark back"],
+					["Good for", "Sharing tasks among workers", "Telling many services about an event", "History, replay, building new reports from old events"]
+				], "caption": "The three shapes side by side." },
+				{ "type": "chart", "title": "Deliveries per minute when 600 messages per minute arrive", "unit": "deliveries/min", "bars": [
+					{ "label": "Queue, 2 consumers", "value": 600 },
+					{ "label": "Queue, 3 consumers", "value": 600 },
+					{ "label": "Topic, 2 subscribers", "value": 1200 },
+					{ "label": "Topic, 3 subscribers", "value": 1800 }
+				] },
+				{ "type": "paragraph", "text": "Adding a consumer to a queue does not change the total (600): the same work is split into smaller pieces. Adding a subscriber to a topic adds a whole new copy of the flow." },
+				{ "type": "heading", "text": "Mixing them, and other ideas" },
+				{ "type": "list", "items": [
+					"**Real systems combine the models.** An event is copied to one queue per service (pub/sub between services), and inside each service several instances compete for the messages of its queue. The number of times a message is processed equals the number of **queues** (or consumer groups), not the number of processes. Two services with 3 instances each process the message 2 times in total.",
+					"**To scale one service**, its instances must share one queue (or one consumer group). If each instance gets its own subscription, you do not scale: you duplicate, and every e-mail is sent three times.",
+					"**Time decoupling.** With a durable queue, if the e-mail service is down for ten minutes the orders wait and are handled when it returns. Plain [[Redis Pub/Sub|a very simple broadcast feature of Redis that keeps nothing]] is different: only subscribers connected at that moment get the message. Whoever was disconnected misses it forever.",
+					"**Command and event.** A command (`SendInvoice`) is an order with one intended receiver and fits a queue. An event (`OrderPlaced`) is a fact in the past, does not know who listens, and fits pub/sub. The difference is in intent, not in the technology.",
+					"**Replay.** Only a stream can fill a brand new reporting service with the events of the last 30 days, because old records are still there. A queue already threw them away."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "A slow consumer hurts in different ways. In a queue with no limit, the broker pays: its memory and disk fill up. In a log with 24-hour retention, the consumer pays: it falls behind, and if it falls more than 24 hours behind, the oldest records it has not read are deleted." },
+				{ "type": "callout", "tone": "remember", "text": "Queue = one receiver per message. Topic = every subscriber gets a copy. Stream = a diary that readers can read again." }
+			]
+		},
+		{
+			"id": "delivery-guarantees",
+			"title": "Delivery guarantees: how many times does it arrive?",
+			"blocks": [
+				{ "type": "paragraph", "text": "Networks fail. A letter can be lost, and so can the receipt that says the letter arrived. So a broker has to choose what it promises about how many times a message arrives. There are three promises." },
+				{ "type": "table", "headers": ["Promise", "What it means", "Price"], "rows": [
+					["**At-most-once**", "Never retries. The message arrives once or not at all.", "May lose messages. Cheapest."],
+					["**At-least-once**", "Retries until sure. Never loses a message.", "May deliver duplicates. The consumer must cope."],
+					["**Exactly-once**", "Arrives once and only once.", "Cannot be guaranteed over a network that fails. It is built from the other two."]
+				] },
+				{ "type": "callout", "tone": "analogy", "text": "You shout 'dinner is ready!' to a friend in another room. At-most-once: you shout once and hope. At-least-once: you shout until you hear 'OK!'. If the 'OK' was lost on the way, you shout again and your friend hears it twice." },
+				{ "type": "heading", "text": "Why 'exactly once' is a trap" },
+				{ "type": "paragraph", "text": "The sender sends a message and gets no answer. Was the message lost, or was the answer lost? From the sender's side they look identical. Only retrying avoids losing the message, but retrying may create a duplicate. So what people really do is: **deliver at least once, and make the consumer ignore duplicates**. The result is that the effect happens once, even if the delivery happened twice. The effect is exactly-once, the delivery is not." },
+				{ "type": "heading", "text": "Where you place the ack decides the promise" },
+				{ "type": "code", "language": "ts", "content": "// A: ack first, work after -> at-most-once\nawait broker.ack(msg);\nawait sendEmail(msg.body);   // crash before this line: message LOST\n\n// B: work first, ack after -> at-least-once\nawait sendEmail(msg.body);\nawait broker.ack(msg);       // crash before this line: message REPEATED", "caption": "Two lines, swapped, give two different guarantees." },
+				{ "type": "paragraph", "text": "With version B there is a small window between 'the work is done' and 'the ack arrived'. A crash in that window repeats work that was already done, for example charging a credit card twice. You cannot close that window. You can only make it harmless with an idempotent consumer (see the section on idempotent consumers)." },
+				{ "type": "paragraph", "text": "Duplicates can also start at the **producer**. If the producer publishes and the confirmation times out, it does not know if the broker got the message. To avoid loss it must try again, and now the broker may hold two copies." },
+				{ "type": "heading", "text": "Two different acknowledgements" },
+				{ "type": "paragraph", "text": "A broker has two separate 'I got it' signals. The **publisher confirm** goes from the broker to the producer: 'I have your message safe'. The **consumer ack** goes from the consumer to the broker: 'I finished processing it'. To be safe from end to end, you need both." },
+				{ "type": "heading", "text": "Surviving a restart or a crash of the broker" },
+				{ "type": "list", "items": [
+					"**RabbitMQ**: two separate things must both be true. The queue must be **durable** (it survives a restart) and the message must be **persistent** (it is written to disk). One without the other is not enough.",
+					"**Kafka producer `acks`**: with `acks=1` only the leader copy has the record when it answers, so if the leader dies before the followers copy it, an acknowledged record disappears. With `acks=all` the leader answers only after all the in-sync replicas have it.",
+					"**Kafka consumer commit**: Kafka only remembers a group's progress as a committed offset. Commit after processing gives at-least-once. Commit before processing finishes gives at-most-once. Automatic commit commits what `poll()` returned, so if you pass the work to a background thread, records that are not finished can be committed and then lost in a crash.",
+					"**Kafka transactions** make 'read offsets and write records' atomic, but only inside Kafka. An e-mail that already left through an outside server cannot be taken back, so side effects outside Kafka are still at-least-once and need their own protection."
+				] },
+				{ "type": "callout", "tone": "tip", "text": "Choose the guarantee by asking what costs more: losing a message or repeating it. Ten thousand sensors sending a temperature every second can lose an occasional reading, so at-most-once is a fine design. A payment cannot be lost, so use at-least-once plus a consumer that ignores duplicates." },
+				{ "type": "callout", "tone": "remember", "text": "Ack after the work = may repeat. Ack before the work = may lose. 'Exactly once' really means at-least-once plus a consumer that ignores duplicates." }
+			]
+		},
+		{
+			"id": "ordering-partitioning",
+			"title": "Order and partitioning",
+			"blocks": [
+				{ "type": "paragraph", "text": "In a single line at the cinema, people enter in the order they arrived. That is **FIFO** (first in, first out). The simplest ordering promise is exactly this: one queue and **one consumer** handling one message at a time. Every other setup (many consumers, many partitions, retries) gives up a little order in exchange for more speed or availability." },
+				{ "type": "heading", "text": "A queue orders the handing out, not the finishing" },
+				{ "type": "paragraph", "text": "Two workers take message M1 ('create account 7') and M2 ('close account 7') from one queue. M1 is handed out first, but its work takes 300 ms. M2 takes only 50 ms. So M2 finishes first, and the account is closed before it exists. The queue gave out the messages in order, but the **effects** happened in another order. The cure is to make related messages go to the same consumer." },
+				{ "type": "heading", "text": "Kafka: order only inside a partition" },
+				{ "type": "paragraph", "text": "A Kafka topic is split into **partitions**, like a library split into shelves. Inside one shelf the books stay in the order they were put. Between shelves there is no promise. So Kafka guarantees order **per partition** only. With 3 partitions, a reader sees each partition in order, but the three may interleave in any way." },
+				{ "type": "paragraph", "text": "To keep related events together you give each record a **key**. The default partitioner computes `hash(key) mod number of partitions`, so every record with the same key lands on the same partition and keeps its order. Without a key, Kafka just spreads records across partitions: great for speed, but there is no order between related records." },
+				{ "type": "diagram", "content": "key \"order-42\"  --hash--> partition 1  [placed][paid][shipped]\nkey \"order-77\"  --hash--> partition 3  [placed][paid]\nkey \"order-90\"  --hash--> partition 1  [placed]\n\nSame key  =  same partition  =  same order.", "caption": "Choose the key as the thing whose history must stay in order." },
+				{ "type": "paragraph", "text": "The key should be the identity of the thing whose story must stay ordered: the order, the account, the device. Then events of one order are in order, while different orders run in parallel." },
+				{ "type": "heading", "text": "Amazon SQS" },
+				{ "type": "list", "items": [
+					"**Standard queue**: very fast, at-least-once, and order is only best effort.",
+					"**FIFO queue**: ordered delivery **per message group**, with a lower throughput limit. The `MessageGroupId` plays the role of the Kafka key: one group per customer gives order for each customer and parallelism across customers."
+				] },
+				{ "type": "heading", "text": "Things that break order" },
+				{ "type": "list", "items": [
+					"**Many consumers on one queue**, as explained above.",
+					"**Retry by putting the message back.** M1 fails and goes back to the end; M2 and M3 succeed; then M1 succeeds. The effects ran as M2, M3, M1. Strict order would need the consumer to stop and retry M1 until it works, which blocks everything behind it. You cannot have strict order and non-blocking retries at the same time.",
+					"**Adding partitions.** Say `hash(\"order-42\") = 10`. With 4 partitions it lands on partition 2 (10 mod 4). After the topic grows to 6 partitions it lands on partition 4 (10 mod 6). The old records do not move, so the new event is on a different shelf and the order of that key breaks around the change. Plan the number of partitions ahead.",
+					"**A hot key.** If one customer makes 80% of the records, one partition gets 80% of the work. Its single consumer is the bottleneck, and neither more consumers nor more partitions help, because one partition has only one reader in a group. The fix is in the key design or a faster handler."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Never assume that 'a queue' means 'in order'. Ask: in order for whom? For one consumer, for one partition, or for one message group?" },
+				{ "type": "callout", "tone": "remember", "text": "Order lives in a single line. A partition or a message group is a single line. Same key, same line, same order." }
+			]
+		},
+		{
+			"id": "ack-retry-dlq",
+			"title": "Acknowledgement, retry and dead-letter queue",
+			"blocks": [
+				{ "type": "paragraph", "text": "When you borrow a book from the library, the librarian writes your name in a notebook. If you never bring it back, she still has the record and can chase you. A broker does the same with messages. Until the consumer says 'done', the broker keeps the message and will deliver it again if the consumer disappears. That 'done' is the **acknowledgement (ack)**." },
+				{ "type": "heading", "text": "When the consumer disappears" },
+				{ "type": "paragraph", "text": "In RabbitMQ with manual acks, an open connection is like a lease on the messages delivered to it. If the connection drops while a consumer holds 5 messages that were not acknowledged, RabbitMQ puts all 5 back in the queue and gives them to someone else. They carry a `redelivered` flag, warning the next consumer that the work may have been partly done." },
+				{ "type": "paragraph", "text": "**Amazon SQS** works differently, with no connection to watch. When a consumer receives a message, SQS does not remove it. It **hides** it for the **visibility timeout** (for example 30 seconds). If the consumer deletes the message (this `DeleteMessage` call is the ack), it is gone for good. If the time runs out first, the message becomes visible again and another consumer gets it. So the timeout must be longer than the work. If it takes 45 seconds with a 30-second timeout, a second consumer starts the same message while the first is still working. You can extend the timeout while working." },
+				{ "type": "heading", "text": "Retrying without making things worse" },
+				{ "type": "paragraph", "text": "Some failures go away if you wait: a database restarting, a network hiccup. These are **transient** errors, and they deserve retries. Others will never work, like a message with a missing required field. These are **permanent** errors, and retrying only wastes effort. A good consumer first classifies the error: transient goes to retry with waiting, permanent goes straight to the dead-letter queue." },
+				{ "type": "paragraph", "text": "Waiting should grow. **Exponential backoff** doubles the wait after every failure, to give a sick service time to recover. With a base of 1 second, the wait before retry n is `1 s x 2^(n-1)`." },
+				{ "type": "chart", "title": "Wait before each retry (base 1 second)", "unit": "seconds", "bars": [
+					{ "label": "Retry 1", "value": 1 },
+					{ "label": "Retry 2", "value": 2 },
+					{ "label": "Retry 3", "value": 4 },
+					{ "label": "Retry 4", "value": 8 }
+				] },
+				{ "type": "paragraph", "text": "The total time waited before retry 4 starts is 1 + 2 + 4 + 8 = 15 seconds. The general formula for n retries is base x (2^n - 1), which for base 1 and n = 4 gives 15." },
+				{ "type": "paragraph", "text": "There is one more trick. Imagine 500 consumers fail at the same moment because an API went down. If they all use the same backoff, they all retry at the same moment, and knock the API down again. This is a [[thundering herd|a huge crowd doing the same thing at the same instant]]. **Jitter** is a bit of randomness added to each wait, so the crowd spreads out." },
+				{ "type": "heading", "text": "Poison messages and the dead-letter queue" },
+				{ "type": "paragraph", "text": "A **poison message** fails every single time, for example a text that is not valid JSON. With automatic redelivery it becomes a loop. In RabbitMQ, if the consumer answers a failure with a negative acknowledgement and `requeue = true`, the same message jumps back to the queue and fails again as fast as the consumer can fail. It burns CPU and delays the healthy messages behind it." },
+				{ "type": "paragraph", "text": "The cure is a limit on retries and a **dead-letter queue (DLQ)**: a separate place where the messages that failed too many times or can never work are parked. The main queue keeps moving, and the evidence is kept so that a person can find the cause and replay the message later." },
+				{ "type": "list", "items": [
+					"**RabbitMQ**: a queue can have a dead-letter exchange (`x-dead-letter-exchange`). A message goes there when it is rejected **without requeue**, when it **expires** (TTL), when the queue's **length limit** pushes it out, or when a quorum queue's **delivery limit** is exceeded. Putting a message back in the queue is not a cause.",
+					"**SQS**: there is no 'I failed' signal. A failure is just a message that was received and not deleted before the visibility timeout ended. A **redrive policy** with `maxReceiveCount: 3` counts the receives and moves the message to the DLQ after it has been received 3 times and is about to be received a 4th time. In other words, the consumer sees it 3 times from the source queue."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Retry forever with no limit and no DLQ, and one bad message can block a whole queue. Always put a cap on the attempts and somewhere for failures to go." },
+				{ "type": "callout", "tone": "remember", "text": "Ack when done. Retry transient errors later, with growing waits and jitter. Send permanent errors and exhausted retries to a dead-letter queue." }
+			]
+		},
+		{
+			"id": "idempotent-consumers",
+			"title": "Idempotent consumers: safe to repeat",
+			"blocks": [
+				{ "type": "paragraph", "text": "Pressing the button of an elevator five times does the same as pressing it once. The elevator is already coming. That is **idempotence**: an operation is idempotent when doing it many times leaves the system in the same final state as doing it once." },
+				{ "type": "paragraph", "text": "Why do we care? Because at-least-once delivery sends duplicates. The broker promises that the message arrives. The consumer must promise that arriving twice does no harm." },
+				{ "type": "table", "headers": ["Statement", "Idempotent?", "Why"], "rows": [
+					["`UPDATE accounts SET balance = 100 WHERE id = 7`", "Yes", "Sets an absolute value. Ten times still gives 100."],
+					["`UPDATE accounts SET balance = balance - 10 WHERE id = 7`", "No", "Depends on the current value. Ten times takes 100 off."],
+					["`INSERT INTO log VALUES (...)`", "No", "Adds one more row each time."],
+					["Setting a user's status to 'shipped'", "Yes", "Same final state."]
+				] },
+				{ "type": "paragraph", "text": "When the operation is not naturally idempotent, we make it so with a **deduplication table**: before doing the work, remember the message's id, and if you have seen it, skip." },
+				{ "type": "code", "language": "sql", "content": "BEGIN;\nINSERT INTO processed_messages (message_id) VALUES ('m-81'); -- PRIMARY KEY\nUPDATE accounts SET balance = balance - 10 WHERE id = 7;\nCOMMIT;\n-- A second delivery makes the INSERT fail with a duplicate key:\n-- the whole transaction is stopped and the message is skipped.", "caption": "The mark and the effect are in the same transaction." },
+				{ "type": "heading", "text": "Three details that matter" },
+				{ "type": "list", "items": [
+					"**Same transaction.** The mark and the effect must be saved together. Then the record and the effect can never disagree.",
+					"**Let the database decide.** If you do 'check if seen' and then 'write' as two steps, two copies of the message arriving at the same moment both pass the check, and both apply the effect. This is a **check-then-act race**. A primary key or unique constraint on the message id fixes it, because the database rejects the second insert atomically.",
+					"**One store, not two.** If you mark in Redis and apply the effect in PostgreSQL, a crash between them leaves you stuck. Mark first and the effect may be lost forever. Apply first and it may be done twice. Two different stores cannot be committed as one. Keep the mark and the effect in the same database transaction."
+				] },
+				{ "type": "heading", "text": "What is a good idempotency key?" },
+				{ "type": "paragraph", "text": "The key must identify the **business event**, not the delivery. Create it once, where the event is born (for example a payment request id made by the client), and let it travel inside the message. Then every duplicate carries the same value. A broker's delivery tag or a timestamp changes on each delivery, so it would never match." },
+				{ "type": "heading", "text": "How long must you remember?" },
+				{ "type": "paragraph", "text": "If you keep processed ids with an expiry (a TTL of 1 hour in Redis, for example), you are only protected inside that window. Suppose the broker was down for maintenance and a duplicate of a message processed at 09:00 arrives at 11:30. The id is already forgotten, and the work is done again. The window must be longer than the longest delay with which a duplicate can come back, including outages and replays." },
+				{ "type": "callout", "tone": "analogy", "text": "A cinema usher stamps your hand when you enter. If you try to enter again, the stamp shows you already came in. But the stamp has to last the whole movie, and not wash off after five minutes." },
+				{ "type": "callout", "tone": "remember", "text": "At-least-once delivery plus an idempotent consumer = the effect happens once. Save the dedupe mark and the effect in one transaction, using an id made where the event was born." }
+			]
+		},
+		{
+			"id": "backpressure",
+			"title": "Backpressure: when the sender is faster",
+			"blocks": [
+				{ "type": "paragraph", "text": "Picture a funnel. If you pour water faster than it flows out, the funnel overflows. A buffer between a producer and a consumer is a funnel. A short burst fits inside. But if the producer is faster for a long time, any buffer eventually fills." },
+				{ "type": "paragraph", "text": "**Backpressure** is the signal that travels backwards, from the slow stage to the fast one, saying 'wait, I am full'. It keeps memory bounded by slowing the source down instead of piling data up in the middle." },
+				{ "type": "heading", "text": "The arithmetic of a backlog" },
+				{ "type": "paragraph", "text": "A backlog grows at the difference between the arrival rate and the processing rate. If a producer sends 500 messages per second and the only consumer handles 300 per second, the queue grows by 200 per second." },
+				{ "type": "chart", "title": "Messages waiting in an unbounded queue (200 extra per second)", "unit": "messages", "bars": [
+					{ "label": "After 1 minute", "value": 12000 },
+					{ "label": "After 10 minutes", "value": 120000 },
+					{ "label": "After 1 hour", "value": 720000 }
+				] },
+				{ "type": "paragraph", "text": "An unbounded buffer does not solve this problem. It only **postpones** it and makes the crash bigger: memory grows until the process dies. When the producer is faster for good, there are only three choices: grow (until memory ends), drop messages, or **slow the producer down**. The third is backpressure." },
+				{ "type": "heading", "text": "Three places to apply it" },
+				{ "type": "list", "items": [
+					"**Inside one program**: a bounded queue whose `push` waits when it is full. The producer stops automatically, and memory stays flat.",
+					"**Between a broker and a consumer, with prefetch.** RabbitMQ pushes messages to consumers, so with no limit it pushes everything. The **prefetch count** (`basic.qos`) says: never more than this many unacknowledged messages per consumer. With `prefetch(10)`, the broker sends 10, and sends the next only when an ack arrives. The backlog waits in the broker, which is built to store it and can share it with other consumers.",
+					"**Between stages, with demand.** In Elixir's GenStage, data flows down and **demand flows up**. A consumer says 'send me up to 10' (`max_demand`) and the producer sends at most that many. The slowest stage sets the speed of the pipeline, and the buffers stay as small as the numbers you configured."
+				] },
+				{ "type": "chart", "title": "Messages held by one slow consumer (3,000 queued, measured in this repository's lab)", "unit": "messages", "bars": [
+					{ "label": "No prefetch limit", "value": 2908 },
+					{ "label": "prefetch(10)", "value": 10 }
+				] },
+				{ "type": "paragraph", "text": "The numbers above were measured in this repository's pubsub-backpressure mini-project: the amount of work done was the same, only the place where the backlog waited changed." },
+				{ "type": "paragraph", "text": "That is why a consumer without a prefetch limit is dangerous: the first consumer to connect gets nearly the whole queue in its memory, and a second consumer that connects later finds nothing to do. With a limit, the backlog stays in the broker where everyone can share it." },
+				{ "type": "callout", "tone": "warning", "text": "Backpressure does not make a system faster. It makes the slow part visible to the fast part, instead of hiding the problem in a buffer that grows until something breaks." },
+				{ "type": "callout", "tone": "remember", "text": "Bound every buffer. Put the backlog where it is cheapest and easiest to see: in the broker, not in the consumer's memory." }
+			]
+		},
+		{
+			"id": "rabbitmq-exchanges-routing",
+			"title": "RabbitMQ: exchanges, queues and routing",
+			"blocks": [
+				{ "type": "paragraph", "text": "RabbitMQ is a broker that follows the AMQP model. It has one surprise that confuses every beginner: a producer **never writes into a queue**. It sends the message to an **exchange**, and the exchange decides which queues get a copy." },
+				{ "type": "callout", "tone": "analogy", "text": "A post office. You hand your letter to the clerk (the exchange). The clerk reads the address (the routing key) and puts the letter in the right mailboxes (the queues). You never walk into the mailboxes yourself." },
+				{ "type": "diagram", "content": "              routing key = \"invoice.created\"\nproducer ---> [ EXCHANGE ] --binding--> [ queue A ] --> consumer\n                           \\--binding--> [ queue B ] --> consumer\n\nbinding = the link between an exchange and a queue,\n          often with a binding key to compare.", "caption": "Producer, exchange, bindings, queues, consumers." },
+				{ "type": "paragraph", "text": "Three pieces form the routing map: **exchanges**, **queues** and **bindings**. A binding is the link between an exchange and a queue, and it can carry a **binding key** that the exchange compares with the message's **routing key**." },
+				{ "type": "heading", "text": "Types of exchange" },
+				{ "type": "table", "headers": ["Type", "How it decides", "Example"], "rows": [
+					["**direct**", "Routing key is exactly equal to the binding key", "key `sms` goes to the queue bound with `sms`"],
+					["**fanout**", "Ignores the key and copies to every bound queue", "Three queues bound: all three get every message, even if the key is `invoice.created`"],
+					["**topic**", "Matches the key against a pattern of words separated by dots", "Pattern `shop.*.paid`"],
+					["**default exchange**", "A nameless direct exchange (name `\"\"`) where every queue is already bound by its own name", "Publishing to `\"\"` with key `emails` goes to the queue `emails`"]
+				] },
+				{ "type": "paragraph", "text": "In a **topic** exchange the key is made of words split by dots. The star `*` replaces **exactly one** word. The hash `#` replaces **zero or more** words. The reliable way to evaluate a pattern is to count words. Take the key `shop.eu.paid` (3 words):" },
+				{ "type": "table", "headers": ["Binding pattern", "Matches?", "Why"], "rows": [
+					["`shop.*.paid`", "Yes", "One word between `shop` and `paid`"],
+					["`shop.#`", "Yes", "`#` takes the rest, any number of words"],
+					["`*.paid`", "No", "Only 2 words; the key has 3"],
+					["`#.paid`", "Yes", "`#` takes `shop.eu`"],
+					["`shop.*`", "No", "`*` is one word, but 2 remain"]
+				] },
+				{ "type": "heading", "text": "Queue or copy? Count the queues" },
+				{ "type": "paragraph", "text": "In RabbitMQ a copy exists **per queue**, not per consumer. Two consumers on the **same queue** are a work queue: the messages are dealt out in turn and each one reaches a single consumer. If `audit`, `search` and `mail` must each get every `user.registered`, give each service **its own queue** and bind all of them to one exchange (fanout, or topic with the same pattern)." },
+				{ "type": "paragraph", "text": "A subscriber that must receive what was published while it was restarting needs a **durable, named queue**. Temporary queues (exclusive, auto-delete, named by the server) are for subscribers that only care about the messages while they are connected." },
+				{ "type": "heading", "text": "The silent failure: unroutable messages" },
+				{ "type": "paragraph", "text": "If a message is published to a direct exchange with the key `sms`, and no queue is bound with that key, the publish succeeds and the message simply disappears. To notice, set the `mandatory` flag (the broker returns the message to the producer) or configure an **alternate exchange** that catches what could not be routed." },
+				{ "type": "heading", "text": "Dead-letter exchanges and quorum queues" },
+				{ "type": "paragraph", "text": "A queue with `x-dead-letter-exchange` sends the dead messages there: rejected without requeue, expired, pushed out by the length limit, or over a quorum queue's delivery limit (the earlier section on retries has the details)." },
+				{ "type": "paragraph", "text": "A **quorum queue** is replicated on several servers using the **Raft** algorithm. A write counts when a **majority** of members has it, and a leader needs a majority to be elected. A group of n members survives the loss of `floor((n - 1) / 2)` of them." },
+				{ "type": "chart", "title": "Members that can be down while a quorum queue stays available", "unit": "members", "bars": [
+					{ "label": "3 members", "value": 1 },
+					{ "label": "5 members", "value": 2 },
+					{ "label": "7 members", "value": 3 }
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Producer, exchange, binding, queue, consumer. The exchange picks the queues, and a copy exists per queue." }
+			]
+		},
+		{
+			"id": "kafka-topics-partitions-offsets",
+			"title": "Kafka: topics, partitions, consumer groups and offsets",
+			"blocks": [
+				{ "type": "paragraph", "text": "Kafka is the stream from the earlier section, made real. A **topic** is a named category of records, like a folder called `orders`. Each topic is split into **partitions**, and each partition is an append-only, ordered log stored on the brokers. Partitions are what let a topic be written and read in parallel." },
+				{ "type": "diagram", "content": "topic \"orders\"\n\npartition 0:  [0][1][2][3][4][5] -> new records go here\npartition 1:  [0][1][2][3]       -> new records go here\npartition 2:  [0][1][2][3][4]    -> new records go here\n\n(partition, offset) = the exact address of one record", "caption": "Every record gets a number in its partition: the offset." },
+				{ "type": "paragraph", "text": "An **offset** is the sequential number a record receives when it is appended to a partition. The pair (partition, offset) identifies a record. A consumer's progress is just a bookmark: the next offset it will read in each partition." },
+				{ "type": "heading", "text": "Consumer groups: competing and broadcasting at once" },
+				{ "type": "paragraph", "text": "A **consumer group** is Kafka's way of doing competing consumers. The partitions of the topic are divided among the members of the group, and at any moment each partition has only one reader inside that group. Three consumers in one group on a topic with 3 partitions get one partition each." },
+				{ "type": "paragraph", "text": "**Different groups are independent.** If the groups `billing` and `analytics` both read `orders` with 1,000 records, each group reads all 1,000. So inside a group consumers compete (queue behaviour), and between groups everyone gets everything (pub/sub behaviour)." },
+				{ "type": "list", "items": [
+					"**Partitions are the ceiling of parallelism.** A topic with 4 partitions and a group of 6 consumers: only 4 receive records. The other 2 are standbys, waiting to replace a member that fails.",
+					"**Consuming does not delete.** Records stay for the configured **retention time** and are then removed, whether or not anyone read them. That is why several groups can read the same data, and a group can rewind and read again.",
+					"**No key means no order** between related records, as we saw in the ordering section."
+				] },
+				{ "type": "heading", "text": "Committed offsets, rebalance and restarts" },
+				{ "type": "paragraph", "text": "A group saves its progress by **committing** an offset: the next offset to read. If a consumer crashes, or a member joins or leaves, the group does a **rebalance**: the partitions are handed out again. The new owner of a partition starts from the last committed offset." },
+				{ "type": "paragraph", "text": "Imagine a consumer processed offsets 40 to 49, but its last commit said 'next to read: 45'. After a restart it resumes from 45, so the records 45 to 49 are processed a second time. Committing often costs more overhead; committing rarely means more reprocessing." },
+				{ "type": "paragraph", "text": "What if a brand-new group has no committed offset at all? The setting `auto.offset.reset` answers only that question. `earliest` starts at the oldest available record. `latest` starts at the end, so a new group with `latest` ignores the 10,000 old records and reads only what is produced after it joined. Once the group has committed, the setting is not used again." },
+				{ "type": "heading", "text": "Lag: how far behind are we?" },
+				{ "type": "paragraph", "text": "The **log end offset** is the offset the next produced record will get. **Consumer lag** is that number minus the group's committed offset. If the log end is 1,500 and the group committed 1,320, the lag is 180 records. A lag that keeps growing means consumers are slower than producers." },
+				{ "type": "heading", "text": "Not losing data: replication" },
+				{ "type": "paragraph", "text": "Each partition is copied to several brokers (**replication factor**, for example 3). The copies that are up to date are the **in-sync replicas**. With `acks=all` the leader answers only after all the in-sync replicas have the record. The setting `min.insync.replicas=2` adds a rule: if fewer than 2 replicas are in sync, the partition **rejects** writes instead of accepting data that one more failure would lose. It chooses safety over availability." },
+				{ "type": "heading", "text": "Compaction and the idempotent producer" },
+				{ "type": "paragraph", "text": "With `cleanup.policy=compact`, Kafka keeps only the **latest record for each key**, like a table. A record with a key and a `null` value is a **tombstone**, and it deletes that key. So a topic with `user-1: Lisbon`, then `user-1: Porto`, then `user-1: null` ends, after compaction, with no `user-1` at all." },
+				{ "type": "paragraph", "text": "`enable.idempotence=true` makes the producer's own internal retries safe: if it sends a batch again after a timeout, the broker notices the batch number and does not store it twice. It does **not** remove duplicates made by the application, by another process, or by consumer redelivery. Those still need an idempotent consumer." },
+				{ "type": "callout", "tone": "remember", "text": "Topic > partitions > offsets. A group splits the partitions; groups do not disturb each other. Resume point = last committed offset. Lag = log end - committed." }
+			]
+		},
+		{
+			"id": "bullmq-redis",
+			"title": "BullMQ on Redis",
+			"blocks": [
+				{ "type": "paragraph", "text": "Sometimes you do not want a big broker. You just want to say 'send this e-mail later' from a Node.js program. **BullMQ** is a library that turns **Redis** (a very fast in-memory database) into a job queue. A **job** is a task with some data." },
+				{ "type": "list", "items": [
+					"A **`Queue`** object writes jobs into Redis (it uses lists, sorted sets and hashes behind the scenes).",
+					"A **`Worker`**, in any process, takes jobs from Redis and runs a function (the processor) for each one.",
+					"**Redis is the broker.** BullMQ has no server of its own."
+				] },
+				{ "type": "code", "language": "ts", "content": "const queue = new Queue(\"payments\", { connection });\nawait queue.add(\"charge\", { orderId: 7 }, {\n  attempts: 3,                                   // runs at most 3 times\n  backoff: { type: \"exponential\", delay: 1000 }, // 1 s, then 2 s\n  delay: 60_000,                                 // not before 60 s\n});\n\nnew Worker(\"payments\", async (job) => {\n  await gateway.charge(job.data);\n}, { connection, concurrency: 5 });", "caption": "Options of a BullMQ job and a worker." },
+				{ "type": "heading", "text": "What the options mean" },
+				{ "type": "list", "items": [
+					"**`delay`**: the job must not run before that time. BullMQ keeps it in a sorted set ordered by the due time and moves it to the waiting list when the time comes. The delay is a minimum, not an exact schedule.",
+					"**`attempts`**: counts **every** execution of the job, the first one included. With `attempts: 3` and a processor that always throws, the job runs 3 times in total.",
+					"**`backoff`**: the wait between attempts (fixed or exponential). When the attempts are used up, the job goes to the **failed** set, which plays the role of a dead-letter queue.",
+					"**`concurrency`**: how many jobs one worker handles at the same time. In Node.js this means several asynchronous calls sharing one event loop, which is ideal for I/O like sending e-mail. The total parallelism is the concurrency multiplied by the number of worker processes."
+				] },
+				{ "type": "heading", "text": "Redis must be configured to keep jobs" },
+				{ "type": "paragraph", "text": "Redis keeps data in memory. If it runs with persistence off (no RDB snapshots and no AOF log) and restarts, all the waiting jobs are gone. For a queue you want persistence on (AOF or RDB), and you want `maxmemory-policy noeviction`, so that when memory is full Redis refuses new writes instead of throwing away keys that hold jobs." },
+				{ "type": "heading", "text": "Stalled jobs: the lock" },
+				{ "type": "paragraph", "text": "While a worker processes a job, it holds a **lock** on it and renews the lock now and then, like a person at a library desk who keeps saying 'I am still using this book'. If the worker dies, nobody renews. The lock expires, BullMQ declares the job **stalled** and puts it back to be processed again." },
+				{ "type": "callout", "tone": "warning", "text": "Because of stalled jobs, BullMQ is at-least-once. If the worker sent the e-mail and died before the job was marked as completed, the e-mail is sent again. A processor with side effects must be idempotent." },
+				{ "type": "callout", "tone": "remember", "text": "BullMQ = Queue (adds jobs) + Worker (runs jobs) + Redis (stores jobs). attempts counts all runs. Failed jobs end in the failed set. Stalled jobs come back." }
+			]
+		},
+		{
+			"id": "sqs-sns",
+			"title": "Amazon SQS and SNS",
+			"blocks": [
+				{ "type": "paragraph", "text": "Amazon Web Services offers two simple messaging services, and they are two different shapes from the first section." },
+				{ "type": "table", "headers": ["Feature", "SQS (Simple Queue Service)", "SNS (Simple Notification Service)"], "rows": [
+					["Shape", "A point-to-point **queue**", "A **publish/subscribe** topic"],
+					["How messages are delivered", "**Pull**: consumers ask for messages", "**Push**: the service sends to every subscriber"],
+					["Who gets a message", "One consumer", "All subscribed endpoints (queues, functions, HTTP addresses)"],
+					["Stores messages for later?", "Yes, until deleted or expired", "No, it only forwards"]
+				] },
+				{ "type": "heading", "text": "How an SQS consumer works" },
+				{ "type": "list", "items": [
+					"**Receive** a message: SQS does not remove it, it hides it for the **visibility timeout**.",
+					"**Process** it.",
+					"**Delete** it with `DeleteMessage` and the receipt handle. This call is the ack.",
+					"If you forget to delete, the message returns after the timeout and is processed again and again."
+				] },
+				{ "type": "code", "language": "ts", "content": "const { Messages } = await sqs.send(new ReceiveMessageCommand({\n  QueueUrl,\n  WaitTimeSeconds: 20,        // long polling\n}));\nfor (const m of Messages ?? []) {\n  await sendEmail(m.Body);\n  await sqs.send(new DeleteMessageCommand({\n    QueueUrl, ReceiptHandle: m.ReceiptHandle,   // the ack\n  }));\n}" },
+				{ "type": "heading", "text": "Long polling versus short polling" },
+				{ "type": "paragraph", "text": "With **short polling** an empty queue answers right away, so a loop makes many useless requests, and you pay for requests. With **long polling** (`WaitTimeSeconds` up to 20) the request is held open until a message arrives or the time ends. It costs less, and a message is still delivered the moment it comes." },
+				{ "type": "heading", "text": "Standard and FIFO queues" },
+				{ "type": "paragraph", "text": "A **standard** queue is very fast but delivers at-least-once with best-effort order. A **FIFO** queue keeps order per message group (`MessageGroupId`) and also removes producer duplicates: two sends with the same `MessageDeduplicationId` within **5 minutes** count as one message. This makes producer retries safe inside that interval, but does not replace an idempotent consumer." },
+				{ "type": "heading", "text": "The standard recipe: SNS plus SQS" },
+				{ "type": "paragraph", "text": "On AWS, `OrderPlaced` must reach billing, shipping and analytics, and each must work at its own pace and survive being offline. The standard answer is to publish to **one SNS topic** and subscribe **one SQS queue per service**. The topic fans out, each queue stores its own copy until the service is ready." },
+				{ "type": "diagram", "content": "               +--> [SQS billing]   --> billing service\nOrderPlaced -> [SNS]--> [SQS shipping]  --> shipping service\n               +--> [SQS analytics] --> analytics service", "caption": "Fan-out with durable subscriptions. It is the same shape as a RabbitMQ fanout exchange with one queue per service." },
+				{ "type": "callout", "tone": "remember", "text": "SQS = queue, pull, delete is the ack, visibility timeout is the lease. SNS = topic, push. Together = fan-out with one durable queue per service." }
+			]
+		},
+		{
+			"id": "outbox-saga-event-sourcing",
+			"title": "Outbox, saga and event sourcing",
+			"blocks": [
+				{ "type": "paragraph", "text": "Now three patterns that big systems use on top of messaging. Each one solves a problem that appears when many services must stay consistent." },
+				{ "type": "heading", "text": "The outbox: saving and announcing together" },
+				{ "type": "paragraph", "text": "An order service must save the order in its database **and** publish `OrderPlaced`. These are two different systems, and no single transaction covers both. If it saves and then crashes before publishing, the event is lost. If it publishes first and the save fails, it announced something that did not happen." },
+				{ "type": "paragraph", "text": "The **transactional outbox** fixes this. Inside one database transaction, the service saves the order **and** a row in an `outbox` table that holds the event. A separate **relay** program reads the unsent rows, publishes them and marks them as sent." },
+				{ "type": "code", "language": "ts", "content": "for (const row of unsentRows) {\n  await broker.publish(row.event);                      // 1\n  // <- a crash here means: published, but not marked\n  await db.query(\"UPDATE outbox SET sent = true WHERE id = $1\", [row.id]); // 2\n}", "caption": "The relay of an outbox." },
+				{ "type": "paragraph", "text": "The outbox guarantees the event is **never lost**, because it was saved with the business data. It does **not** guarantee a single publication: if the relay crashes between lines 1 and 2, the event is published again on restart. Consumers downstream must deduplicate." },
+				{ "type": "heading", "text": "The saga: a long story across services" },
+				{ "type": "paragraph", "text": "In a checkout, the order, the payment and the shipping live in different services, each with its own database. There is no big transaction. A **saga** is a sequence of local steps. If a step fails, the earlier steps are undone with **compensations** (for example, a refund). There are two styles:" },
+				{ "type": "table", "headers": ["Style", "How it works", "Good", "Cost"], "rows": [
+					["**Choreography**", "No boss. Each service reacts to the events of the others: `OrderPlaced` then `PaymentCompleted` then shipping", "Loose coupling, no central piece", "The whole process is spread out and hard to see"],
+					["**Orchestration**", "A coordinator sends commands to each service and keeps the state", "The flow is explicit and in one place", "A central component that must be kept running"]
+				] },
+				{ "type": "heading", "text": "Event sourcing: store what happened" },
+				{ "type": "paragraph", "text": "A normal system stores the **current state**: 'balance = 70'. A system with **event sourcing** stores every **event**: 'deposited 100', 'withdrew 30'. The log of events is the source of truth. The current state, and any number of reports (read models), are computed by replaying the events." },
+				{ "type": "callout", "tone": "analogy", "text": "A bank statement. The page lists every deposit and withdrawal, and the balance is what you get by adding them up. The list is the truth. The balance is just a result." },
+				{ "type": "paragraph", "text": "Replaying a million events each time would be slow, so we save a **snapshot**: the state at a known position in the log. To load an account with 1,000,000 events and a snapshot after event 999,900, load the snapshot and replay only the 100 events after it. A snapshot is only a cache, since the events remain the truth. If it is lost, it can be computed again by replaying the log." },
+				{ "type": "callout", "tone": "remember", "text": "Outbox: never lose the event, but it may be published twice. Saga: steps plus compensations, either choreographed or orchestrated. Event sourcing: events are the truth, state is computed, snapshots are a cache." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{ "type": "paragraph", "text": "Let us compare the tools in one place, and then list the mistakes that happen most often." },
+				{ "type": "table", "headers": ["Feature", "BullMQ", "RabbitMQ", "Kafka", "SQS"], "rows": [
+					["Where a message lives", "Redis lists and sets", "A queue in the broker", "A partition of a log, kept by retention", "A queue behind an HTTP API"],
+					["How a consumer gets it", "Worker takes it from Redis", "Broker pushes it, up to the prefetch", "Consumer fetches from an offset", "Consumer polls"],
+					["What the ack is", "Job moved to completed", "`ack` of the delivery", "Commit of the next offset", "`DeleteMessage`"],
+					["How a dead consumer is noticed", "Lock not renewed (stalled)", "Connection closes", "Heartbeats stop, session times out", "Nothing: the visibility timeout ends"],
+					["Order", "One queue, FIFO", "One queue, FIFO (one consumer)", "Per partition", "Best effort (standard), per group (FIFO)"]
+				], "caption": "An interface can hide the API of brokers, never their guarantees." },
+				{ "type": "heading", "text": "The common ground" },
+				{ "type": "paragraph", "text": "All four are at-least-once in practice: a consumer that dies before the ack makes the message come back. The difference is how long it takes: at once in RabbitMQ, after a timeout in the others. The practical consequence is the same everywhere: a handler can run twice for one message, so its effect must be idempotent." },
+				{ "type": "heading", "text": "A checklist for a safe consumer" },
+				{ "type": "list", "ordered": true, "items": [
+					"Decide the guarantee: can I lose it, or can I repeat it?",
+					"Ack only after the work is saved.",
+					"Make the work idempotent (dedupe table with a unique key, in the same transaction).",
+					"Classify errors: retry the transient ones with backoff and jitter, dead-letter the permanent ones.",
+					"Cap the attempts and have a dead-letter queue.",
+					"Limit what the consumer holds (prefetch, bounded buffers).",
+					"If order matters, choose the key, the partition or the message group on purpose."
+				] },
+				{ "type": "heading", "text": "Common mistakes" },
+				{ "type": "list", "items": [
+					"Thinking 'exactly-once delivery' exists and skipping idempotency.",
+					"Thinking that more consumers or more partitions always fix a slow reader. They do not when a hot key or a single partition is the problem.",
+					"Counting consumers instead of queues or groups when predicting how many times a message is processed.",
+					"Retrying forever with no backoff, no jitter and no DLQ.",
+					"Using an unbounded buffer or no prefetch limit.",
+					"Putting the dedupe mark and the effect in two different stores.",
+					"Forgetting that a RabbitMQ queue and its messages must both be durable, and that Redis needs persistence for BullMQ."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "A queue shares work, a topic tells everyone, a log remembers. Messages can be lost, repeated or reordered unless you decide otherwise. Safe systems expect failure: ack after the work, repeat safely, retry politely, and park what never works." }
+			]
+		}
+	]
+}

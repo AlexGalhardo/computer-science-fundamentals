@@ -1,0 +1,1129 @@
+{
+	"area": "algorithms",
+	"intro": [
+		"Um **algoritmo** é uma receita para o computador: uma lista de passos pequenos que, seguidos em ordem, resolvem um problema. Colocar nomes em ordem alfabética, achar o caminho mais curto para casa no mapa, escolher quais jogos cabem na mochila. Toda vez que você faz uma dessas coisas, você segue um algoritmo, mesmo que nunca o tenha escrito.",
+		"Por que estudá-los? Porque duas receitas para o mesmo problema podem custar muito diferente. Uma pode terminar num piscar de olhos e a outra pode levar mais tempo que a idade do universo. A diferença quase nunca é a velocidade do computador. É a **ideia** por trás da receita. Essa ideia é o que esta área ensina.",
+		"Você encontra algoritmos em todo lugar. O celular ordena seus contatos, o aplicativo de mapas acha a rota mais curta, um jogo acha o caminho em volta de uma parede, uma ferramenta de build decide quais arquivos compilar primeiro, e um banco de dados acha uma linha entre milhões em poucos passos. Todos usam as ideias que você vai ver aqui.",
+		"No final você vai conhecer as formas clássicas de **ordenar** e **buscar**, e as quatro grandes **técnicas de projeto** (divisão e conquista, guloso, programação dinâmica e backtracking). Vai saber também percorrer um **grafo** para achar caminhos mínimos, redes baratas e uma ordem válida de tarefas. O mais importante: vai saber escolher a ferramenta certa e explicar por quê."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "O panorama e o vocabulário",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine que você precisa achar um nome numa lista telefônica. Você pode ler cada linha desde o começo, ou pode abrir o livro no meio e decidir qual metade manter. Os dois jeitos estão corretos, mas o segundo é muito mais rápido. Comparar receitas assim é o coração do estudo de algoritmos."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Um algoritmo é como uma receita de bolo. Muitas receitas fazem o mesmo bolo, mas algumas levam dez minutos e outras dez horas. Queremos a receita que está certa e não desperdiça tempo nem espaço na bancada da cozinha."
+				},
+				{
+					"type": "paragraph",
+					"text": "Para cada algoritmo fazemos três perguntas. Ele está **correto**, ou seja, sempre dá a resposta certa? Quanto **tempo** ele leva quando a entrada cresce? Quanta **memória** extra ele usa? Para responder a segunda, contamos passos e descrevemos como essa contagem cresce com o tamanho n da entrada, usando a notação [[Big O|Um jeito curto de dizer o quanto o número de passos cresce quando a entrada cresce, ignorando detalhes pequenos]]."
+				},
+				{
+					"type": "chart",
+					"title": "Passos necessários para n = 1.000 em cada taxa de crescimento",
+					"unit": "passos",
+					"bars": [
+						{ "label": "log₂ n (busca binária)", "value": 10 },
+						{ "label": "n (uma passada)", "value": 1000 },
+						{ "label": "n·log₂ n (boas ordenações)", "value": 9966 },
+						{ "label": "n² (ordenações simples)", "value": 1000000 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Veja como a última barra é gigante perto das outras. Com só mil itens, um algoritmo quadrático já faz cem vezes mais trabalho que uma boa ordenação. Com um milhão de itens, a diferença vira um milhão de vezes mil. É por isso que nos importamos com a ideia, e não só com uma máquina rápida."
+				},
+				{
+					"type": "heading",
+					"text": "As quatro técnicas de projeto"
+				},
+				{
+					"type": "table",
+					"headers": ["Técnica", "Ideia principal", "Exemplos clássicos"],
+					"rows": [
+						["Divisão e conquista", "Dividir o problema em cópias menores dele mesmo, resolver cada uma e combinar as respostas", "Merge sort, quicksort, busca binária"],
+						["Guloso", "A cada passo, escolher o que parece melhor agora e nunca mudar", "Árvore geradora mínima, seleção de atividades, troco com moedas comuns"],
+						["Programação dinâmica", "Resolver cada subproblema pequeno uma só vez e guardar a resposta numa tabela", "Mochila, subsequência comum mais longa, troco com moedas quaisquer"],
+						["Backtracking", "Montar a resposta uma decisão por vez e voltar quando o caminho não tem saída", "N rainhas, sudoku, labirintos"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Palavras que aparecem em todas as seções"
+				},
+				{
+					"type": "table",
+					"headers": ["Palavra", "O que significa"],
+					"rows": [
+						["Ordenação por comparação", "Uma ordenação que só descobre algo sobre os dados perguntando 'este é maior que aquele?'"],
+						["Inversão", "Um par de itens fora de ordem: o maior vem primeiro. Um array ordenado tem 0 inversões"],
+						["In-place", "O algoritmo reorganiza os itens dentro do próprio array e usa pouca ou nenhuma memória extra"],
+						["Estável", "Itens com chaves iguais saem na mesma ordem em que entraram"],
+						["Adaptativo", "Quanto mais ordenada já está a entrada, mais rápido o algoritmo roda"],
+						["Recorrência", "Uma fórmula que dá o custo de um problema usando o custo de cópias menores dele"]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Um bom algoritmo não é um computador mais rápido. É uma ideia melhor. E a melhor ideia depende do formato do problema, por isso cada seção termina dizendo quando usar."
+				}
+			]
+		},
+		{
+			"id": "elementary-sorts",
+			"title": "Ordenações elementares: bolha, seleção, inserção",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "**Ordenar** é colocar itens em ordem. Os três jeitos mais simples são fáceis de explicar e de escrever. Todos levam cerca de n² passos no pior caso, então são usados para entradas pequenas, ou como ajudantes dentro de algoritmos mais espertos."
+				},
+				{
+					"type": "heading",
+					"text": "Insertion sort: arrumando cartas de baralho"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Você segura algumas cartas na mão, já em ordem. Pega uma carta nova da mesa e a encaixa no lugar certo entre as outras. O insertion sort faz exatamente isso."
+				},
+				{
+					"type": "paragraph",
+					"text": "A regra que sempre vale é o **invariante**: antes de tratar a posição i, as posições 0 a i − 1 estão ordenadas. Depois de tratá-la, as posições 0 a i estão ordenadas e o resto do array não foi tocado. Para inserir, o algoritmo desloca os itens maiores uma casa para a direita e coloca o item novo no espaço vazio."
+				},
+				{
+					"type": "paragraph",
+					"text": "O custo depende de quão desordenada está a entrada. Se já está ordenada, o item novo nunca é menor que o vizinho da esquerda, então cada passo custa uma comparação e o total é cerca de n. Se está invertida, cada item viaja até o começo e o total é cerca de n²/2. Mais exatamente, o custo é cerca de n mais o número de inversões. Se cada item está a no máximo k posições do seu lugar final, há no máximo cerca de n·k inversões, então o custo é cerca de n·k. Por isso o insertion sort é a melhor escolha para dados quase ordenados."
+				},
+				{
+					"type": "paragraph",
+					"text": "Dá para usar busca binária para achar o lugar do item novo, o que reduz as comparações para cerca de log n por item. Mas o deslocamento continua necessário, e num array ele é o custo maior. Então esse truque só compensa quando comparar é bem mais caro que mover."
+				},
+				{
+					"type": "heading",
+					"text": "Selection sort: escolher o menor"
+				},
+				{
+					"type": "paragraph",
+					"text": "Olhe todos os itens ainda desordenados, ache o menor e troque-o com o primeiro deles. Repita para a próxima posição. Achar o menor de m itens sempre exige m − 1 comparações, mesmo que o array já esteja ordenado. Então o total é sempre (n − 1) + (n − 2) + ... + 1 = n(n − 1)/2 comparações. Ele **não é adaptativo**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Em compensação, ele move muito pouco: uma troca por rodada, ou seja, **no máximo n − 1 trocas** no total. Se mover um registro grande é caro e comparar é barato, o selection sort é uma boa opção."
+				},
+				{
+					"type": "heading",
+					"text": "Bubble sort: o maior sobe"
+				},
+				{
+					"type": "paragraph",
+					"text": "Percorra o array da esquerda para a direita e troque todo par de vizinhos fora de ordem. No fim da primeira passada, o maior item 'borbulhou' até a última posição. Depois de k passadas, os k maiores estão nos seus lugares finais, então cada passada pode parar uma posição antes."
+				},
+				{
+					"type": "diagram",
+					"content": "Passada 1 em [3, 1, 2]:\n  [3, 1, 2]  3 > 1, troca\n  [1, 3, 2]  3 > 2, troca\n  [1, 2, 3]  o maior está no fim\nPassada 2: nenhuma troca -> para",
+					"caption": "Duas passadas. A segunda só confere."
+				},
+				{
+					"type": "paragraph",
+					"text": "Trocar dois vizinhos fora de ordem remove exatamente uma inversão e não cria nenhuma. Por isso o número de trocas do bubble sort é exatamente o número de inversões da entrada. Se você acrescentar uma flag que lembra se a passada trocou algo, o algoritmo para depois de uma passada sem trocas, porque isso prova que tudo está em ordem. Com a flag, uma entrada ordenada custa só cerca de n passos."
+				},
+				{
+					"type": "table",
+					"headers": ["Algoritmo", "Comparações", "Trocas ou movimentos", "Melhor caso", "Pior caso"],
+					"rows": [
+						["Bolha (com flag)", "até n(n − 1)/2", "igual às inversões", "n", "n²"],
+						["Seleção", "sempre n(n − 1)/2", "no máximo n − 1", "n²", "n²"],
+						["Inserção", "n − 1 a n(n − 1)/2", "igual às inversões", "n", "n²"]
+					]
+				},
+				{
+					"type": "video",
+					"title": "15 Sorting Algorithms in 6 Minutes (Timo Bingmann)",
+					"url": "https://www.youtube.com/watch?v=kPRA0W1kECg"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "O insertion sort é o campeão das entradas pequenas e quase ordenadas. O selection sort move o menor número de itens. O bubble sort serve mais para ensinar, e as trocas que ele faz são iguais às inversões."
+				}
+			]
+		},
+		{
+			"id": "merge-sort",
+			"title": "Merge sort",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Suponha que dois amigos tenham, cada um, uma pilha de folhas de lição de casa já ordenada por nome. Para juntar as pilhas numa só pilha ordenada, basta olhar a folha do topo de cada pilha e pegar a menor. Repita até as duas pilhas acabarem. Esse passo de juntar se chama **merge** (intercalação), e o merge sort é construído em cima dele."
+				},
+				{
+					"type": "paragraph",
+					"text": "O merge sort tem três passos. **Dividir** o array em duas metades, **ordenar** cada metade chamando o merge sort de novo, e **intercalar** as duas metades ordenadas. Um array com um item já está ordenado, então a divisão para aí. Isso é [[divisão e conquista|Resolver um problema grande resolvendo cópias menores do mesmo problema e combinando as respostas]]."
+				},
+				{
+					"type": "diagram",
+					"content": "          [6 2 8 3]\n          /       \\\n      [6 2]       [8 3]\n      /   \\       /   \\\n    [6]   [2]   [8]   [3]\n      \\   /       \\   /\n      [2 6]       [3 8]\n          \\       /\n          [2 3 6 8]",
+					"caption": "Descer divide, subir intercala. Todo o trabalho de verdade acontece na subida."
+				},
+				{
+					"type": "paragraph",
+					"text": "O custo é descrito por uma recorrência: T(n) = 2·T(n/2) + n. Duas metades, mais uma intercalação que toca cada item uma vez. A árvore de recursão tem cerca de log₂ n níveis, e cada nível faz cerca de n de trabalho no total. Então o merge sort custa **n·log₂ n**."
+				},
+				{
+					"type": "paragraph",
+					"text": "A divisão é feita pela posição (o meio), nunca olhando os valores. Então o formato da árvore é sempre o mesmo, seja qual for a ordem dos dados. Um array ordenado, um invertido e um aleatório têm a mesma ordem de crescimento. Só o número exato de comparações muda um pouco."
+				},
+				{
+					"type": "heading",
+					"text": "Quantas comparações uma intercalação precisa?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada comparação manda exatamente um item para a saída. Quando uma pilha acaba, o resto da outra é copiado sem comparar. O pior caso é quando as pilhas estão entrelaçadas de modo que uma delas fique com um único item no final. Intercalar m e n itens leva então no máximo **m + n − 1** comparações."
+				},
+				{
+					"type": "heading",
+					"text": "Memória extra e estabilidade"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Memória.** Intercalar dentro do mesmo array sem espaço extra é difícil e lento. A solução clássica copia os itens para um buffer e os escreve de volta em ordem. Esse buffer tem tamanho n, então o merge sort clássico **não é in-place**.",
+						"**Estabilidade.** Quando o item da metade esquerda e o da metade direita são iguais, pegue o da **esquerda**, porque ele veio primeiro na entrada. Copie o da esquerda quando `left[i] <= right[j]`. Usar `<` estrito pegaria o da direita nos empates e quebraria a estabilidade."
+					]
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "// PT: pega da esquerda nos empates, para chaves iguais manterem a ordem\nif (left[i] <= right[j]) {\n\tout.push(left[i++]);\n} else {\n\tout.push(right[j++]);\n}",
+					"caption": "A comparação que decide se o merge sort é estável."
+				},
+				{
+					"type": "heading",
+					"text": "O teste do dobro"
+				},
+				{
+					"type": "paragraph",
+					"text": "Quando n dobra, um algoritmo n·log n leva um pouco mais que o dobro do tempo (cerca de 2 × (1 + 1/log₂ n)), bem menos que as quatro vezes de um algoritmo quadrático. Num benchmark, uma razão perto de 2 indica crescimento linear ou n log n, e uma razão perto de 4 indica n²."
+				},
+				{
+					"type": "heading",
+					"text": "Bônus: contar inversões"
+				},
+				{
+					"type": "paragraph",
+					"text": "O merge sort consegue contar as inversões de um array em tempo n log n. As inversões dentro de cada metade são contadas pela recursão. As que cruzam as metades são contadas durante a intercalação: quando o próximo item a copiar vem da metade **direita**, ele é menor que todos os itens que ainda esperam na metade esquerda, então somamos ao contador o número de itens que restam na esquerda."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Merge sort: sempre n·log n, estável, mas precisa de um buffer de tamanho n. O trabalho está no passo de combinar. O quicksort será o oposto."
+				}
+			]
+		},
+		{
+			"id": "quicksort",
+			"title": "Quicksort e estratégias de pivô",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine uma professora que pede à turma para se alinhar por altura. Ela escolhe um aluno, o **pivô**, e diz: 'mais baixos que o pivô à esquerda, mais altos à direita'. Agora o pivô está exatamente onde vai ficar no final. Os dois grupos são ordenados pelo mesmo método, e ninguém precisa juntá-los depois."
+				},
+				{
+					"type": "diagram",
+					"content": "antes:    [ 6  2  8  3  5 ]      pivô = 5 (o último)\ndepois:   [ 2  3 |5| 6  8 ]\n            <= 5  pivô  > 5\ndepois ordena a parte esquerda e a direita",
+					"caption": "Depois de particionar, o pivô está no lugar final."
+				},
+				{
+					"type": "paragraph",
+					"text": "Esse passo se chama **particionamento**, e é nele que está o trabalho. O quicksort é o oposto do merge sort: a divisão é difícil e o passo de combinar é vazio. Um jeito popular de particionar (chamado Lomuto) usa o último item como pivô e mantém um marcador `i` no fim da região dos itens pequenos. Cada item menor ou igual ao pivô é trocado para logo depois dessa região. No fim, o pivô é trocado para a posição seguinte à região."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "function partition(a: number[], lo: number, hi: number): number {\n\tconst pivot = a[hi];\n\tlet i = lo - 1; // PT: fim da região dos 'pequenos'\n\tfor (let j = lo; j < hi; j++) {\n\t\tif (a[j] <= pivot) {\n\t\t\ti++;\n\t\t\t[a[i], a[j]] = [a[j], a[i]];\n\t\t}\n\t}\n\t[a[i + 1], a[hi]] = [a[hi], a[i + 1]];\n\treturn i + 1; // PT: lugar final do pivô\n}",
+					"caption": "Em [6, 2, 8, 3, 5] termina com [2, 3, 5, 6, 8] e devolve 2 (aqui as partes já saem ordenadas por coincidência)."
+				},
+				{
+					"type": "heading",
+					"text": "Tudo depende do pivô"
+				},
+				{
+					"type": "paragraph",
+					"text": "O melhor pivô é a **mediana**: ela corta a faixa ao meio, então há cerca de log₂ n níveis de trabalho n cada, e o total é n·log n. O pior pivô é o menor ou o maior item: as partes têm 0 e n − 1 itens, há n níveis, e o custo é (n − 1) + (n − 2) + ... + 1 = n(n − 1)/2, que é **n²**. Nesse pior caso, cada par de itens é comparado exatamente uma vez."
+				},
+				{
+					"type": "table",
+					"headers": ["Estratégia de pivô", "Entrada aleatória", "Entrada já ordenada", "Ponto fraco"],
+					"rows": [
+						["Primeiro (ou último) item", "n log n", "n², o primeiro item é o menor", "Dados reais costumam estar quase ordenados"],
+						["Item aleatório", "n log n esperado", "n log n esperado", "Precisa de um número aleatório, e azar é possível mas muito improvável"],
+						["Mediana de três", "n log n", "n log n, o item do meio é a mediana verdadeira", "Entradas especiais ainda podem derrotá-la"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A **mediana de três** olha o primeiro, o do meio e o último item e usa a mediana desses três como pivô. Com **pivô aleatório**, o pior caso deixa de pertencer a uma certa entrada (como a ordenada). Ele pertence a uma sequência azarada de sorteios, então a média é sobre as escolhas do algoritmo, e um adversário não consegue montar uma entrada ruim de antemão."
+				},
+				{
+					"type": "chart",
+					"title": "Ordenar 16.000 valores já ordenados: escolha do pivô (medido neste repositório)",
+					"unit": "ms",
+					"bars": [
+						{ "label": "C++ primeiro item", "value": 51.4 },
+						{ "label": "C++ mediana de três", "value": 0.17 },
+						{ "label": "Rust primeiro item", "value": 212 },
+						{ "label": "Rust mediana de três", "value": 0.19 }
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Memória: in-place, mas com uma pilha"
+				},
+				{
+					"type": "paragraph",
+					"text": "O quicksort reorganiza os itens dentro do array, então é [[in-place|Trabalha dentro do array de entrada e não o copia para um segundo array do mesmo tamanho]]. Mas cada chamada recursiva usa um pouco de memória na **pilha de chamadas**. Com partes equilibradas, a profundidade é cerca de log n. Com as piores partes, é n. Um truque comum é recursar na parte menor e fazer um laço na maior, o que mantém a profundidade em log n mesmo nos casos ruins."
+				},
+				{
+					"type": "heading",
+					"text": "Muitas chaves iguais"
+				},
+				{
+					"type": "paragraph",
+					"text": "Se o particionamento tem só duas regiões ('menor ou igual' e 'maior') e as n chaves são todas iguais, todos os itens vão para o mesmo lado, as partes têm 0 e n − 1 itens, e o custo é n², seja qual for o pivô. A correção clássica é o **particionamento em três vias** (a bandeira holandesa): colocar as chaves menores, iguais e maiores que o pivô em três grupos, e recursar só no primeiro e no último. Com poucas chaves diferentes, o custo fica perto de linear."
+				},
+				{
+					"type": "heading",
+					"text": "Quicksort híbrido"
+				},
+				{
+					"type": "paragraph",
+					"text": "A maioria das chamadas do quicksort trata faixas minúsculas. Para dez itens, escolher um pivô e fazer duas chamadas custa mais que o trabalho em si. Por isso muitas bibliotecas entregam toda faixa menor que uma constante k (por exemplo 16) ao insertion sort. Isso não muda a ordem de crescimento, que continua n log n, mas baixa a constante, e o melhor k é achado medindo. No benchmark deste repositório, um limiar de algumas dezenas de itens ajudou tanto em C++ quanto em Rust."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "O quicksort é n log n em média, mas n² no pior caso. O primeiro item como pivô é uma armadilha em dados ordenados, e muitas chaves iguais são uma armadilha para o particionamento em duas vias."
+				}
+			]
+		},
+		{
+			"id": "heapsort",
+			"title": "Heapsort",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Um **heap** é uma árvore genealógica com uma regra rígida. Num **max-heap**, todo pai é maior ou igual aos seus filhos. Então o maior item da árvore inteira está sempre no topo, a raiz. A árvore também é **completa**: todo nível está cheio, exceto talvez o último, que é preenchido da esquerda para a direita."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Pense numa empresa em que todo chefe ganha pelo menos o mesmo que as pessoas diretamente abaixo dele. O chefe do topo ganha mais, mas dois funcionários de times diferentes nunca são comparados. Isso é uma ordem parcial, mais fraca que uma ordenação completa, e por isso é barata de manter."
+				},
+				{
+					"type": "heading",
+					"text": "Uma árvore dentro de um array"
+				},
+				{
+					"type": "paragraph",
+					"text": "Como a árvore é completa, ela cabe num array simples, nível por nível, sem ponteiros. As relações viram aritmética sobre o índice."
+				},
+				{
+					"type": "diagram",
+					"content": "        9            índice: 0  1  2  3  4  5\n      /   \\          valor:  9  4  5  1  3  2\n     4     5\n    / \\   /\n   1   3 2",
+					"caption": "Um max-heap e o seu array."
+				},
+				{
+					"type": "table",
+					"headers": ["Base do índice", "Filho esquerdo", "Filho direito", "Pai"],
+					"rows": [
+						["Começa em 0", "2i + 1", "2i + 2", "⌊(i − 1)/2⌋"],
+						["Começa em 1", "2i", "2i + 1", "⌊i/2⌋"]
+					],
+					"caption": "Onde achar a família do nó de índice i. O símbolo ⌊ ⌋ significa 'arredondar para baixo'."
+				},
+				{
+					"type": "heading",
+					"text": "Sift-down e a construção do heap"
+				},
+				{
+					"type": "paragraph",
+					"text": "O **sift-down** (também chamado heapify) conserta um nó: compare-o com o maior filho, troque se o filho for maior, e repita descendo por esse caminho. Para transformar um array qualquer em heap, aplique o sift-down em cada nó interno, do último até a raiz. Em [2, 8, 5, 1], o último nó interno (índice 1) está bom, depois a raiz 2 troca com o 8 e o array vira [8, 2, 5, 1]."
+				},
+				{
+					"type": "paragraph",
+					"text": "Construir um heap assim custa só **n**, e não n log n. A razão é que o custo de um nó é a sua própria altura, e a maioria dos nós é baixa: cerca de n/2 são folhas (altura 0), n/4 têm altura 1, n/8 têm altura 2, e a soma n/4·1 + n/8·2 + n/16·3 + ... fica abaixo de n. Se você construir o heap inserindo os itens um a um e subindo cada um (**sift-up**), o custo de um nó é a sua profundidade, e a maioria dos nós é profunda, então o total é n log n."
+				},
+				{
+					"type": "heading",
+					"text": "A ordenação em si"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Construa um max-heap no array (custo n).",
+						"Troque a raiz (o maior) com o último item do heap. Ela já está no lugar final.",
+						"Encolha o heap em um item e faça o sift-down da nova raiz.",
+						"Repita os passos 2 e 3 até o heap ter um item (n − 1 vezes, cada uma custando cerca de log n)."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "O total é **n log n** em todos os casos, com **memória extra constante**. É a única ordenação clássica com as duas propriedades. O preço é que ela **não é estável**, porque as trocas pulam sobre chaves iguais, e que lê a memória em posições espalhadas, o que a deixa mais lenta na prática que um bom quicksort."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Heapsort: n log n garantido, in-place, não estável. Construir o heap de baixo para cima custa n, e construí-lo por inserções repetidas custa n log n."
+				}
+			]
+		},
+		{
+			"id": "linear-time-sorts",
+			"title": "Ordenações em tempo linear: counting, radix, bucket",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Todas as ordenações das seções anteriores são **ordenações por comparação**. Existe um limite duro para elas: para distinguir as n! ordens possíveis de n itens usando só perguntas de sim ou não, são necessárias pelo menos log₂(n!) perguntas, que é cerca de **n·log n**. Nenhuma ordenação por comparação consegue vencer isso, por mais esperta que seja."
+				},
+				{
+					"type": "paragraph",
+					"text": "A saída é parar de comparar. Se as chaves são inteiros pequenos, podemos usar as próprias chaves como posições. Essas ordenações usam a estrutura das chaves, então o limite não vale para elas."
+				},
+				{
+					"type": "heading",
+					"text": "Counting sort"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Uma professora ordena notas de prova de 0 a 10 montando 11 caixas. Cada prova vai para a caixa da sua nota. No final ela esvazia as caixas em ordem. Ninguém comparou duas provas."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Conte quantas vezes cada valor aparece num array `C`.",
+						"Faça uma soma acumulada em `C`, de modo que `C[v]` passe a ser quantos itens são menores ou iguais a v. Isso diz onde termina o grupo de v na saída.",
+						"Percorra a entrada **de trás para frente**, coloque cada item na posição `C[v] − 1` da saída e decremente `C[v]`."
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "entrada:         [1, 3, 1, 0, 3]      valores 0..3\ncontagens:       [1, 2, 0, 2]\nsoma acumulada:  [1, 3, 3, 5]\nsaída:           [0, 1, 1, 3, 3]",
+					"caption": "Counting sort num array pequeno."
+				},
+				{
+					"type": "paragraph",
+					"text": "O custo é n + k, em que k é o tamanho da faixa de valores (de 0 a k). É ótimo quando k é cerca de n, e péssimo quando k é enorme. Ir de trás para frente no passo 3 mantém itens iguais na ordem original, então a ordenação é **estável**. Isso importa para a próxima."
+				},
+				{
+					"type": "heading",
+					"text": "Radix sort (LSD)"
+				},
+				{
+					"type": "paragraph",
+					"text": "O radix sort ordena números dígito por dígito, começando pelo **dígito menos significativo** (LSD), o da direita. Cada passada usa uma ordenação estável (em geral counting sort) sobre um dígito. A estabilidade é essencial: quando dois números têm o mesmo dígito da passada atual, eles precisam ficar na ordem que as passadas anteriores deram."
+				},
+				{
+					"type": "diagram",
+					"content": "início:        329 457 657 839 436 720 355\npassada unid.: 720 355 436 457 657 329 839\npassada dez.:  720 329 436 839 355 457 657\ncentenas:      329 355 436 457 657 720 839",
+					"caption": "Três passadas ordenam sete números de três dígitos."
+				},
+				{
+					"type": "paragraph",
+					"text": "Com d dígitos na base k, o custo é d·(n + k). O número de passadas é o número de dígitos da chave: um inteiro de 32 bits tratado como 4 bytes (base 256) precisa de **4 passadas**. Uma base maior significa menos passadas, mas um array de contagem maior. Um truque bonito: para n inteiros entre 0 e n³ − 1, escolha a base n. Cada número tem no máximo 3 dígitos, então 3 passadas de custo cerca de n cada uma ordenam tudo em tempo linear. Para uma faixa de n^c, são c passadas."
+				},
+				{
+					"type": "heading",
+					"text": "Bucket sort"
+				},
+				{
+					"type": "paragraph",
+					"text": "Divida o intervalo de valores em baldes (buckets) de largura igual, jogue cada item no seu balde, ordene cada balde (em geral com insertion sort) e junte tudo. É linear em média **se os dados estão bem espalhados** pelo intervalo, porque assim cada balde recebe poucos itens. Se a maioria dos dados cai num balde só, o custo vira o da ordenação interna, que é n² com insertion sort."
+				},
+				{
+					"type": "table",
+					"headers": ["Ordenação", "Custo", "Precisa de"],
+					"rows": [
+						["Counting", "n + k", "Inteiros numa faixa pequena 0..k"],
+						["Radix (LSD)", "d·(n + k)", "Chaves com dígitos e uma ordenação estável por dígito"],
+						["Bucket", "n em média, n² no pior caso", "Valores bem espalhados num intervalo conhecido"]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "As ordenações lineares não quebram o limite n log n. Elas o evitam, porque não dependem só de comparações. Elas pagam com suposições sobre as chaves."
+				}
+			]
+		},
+		{
+			"id": "sorting-properties",
+			"title": "Estabilidade, ordenação in-place e adaptativa",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Velocidade não é a única coisa que importa na hora de escolher uma ordenação. Três propriedades dizem como um algoritmo se comporta com registros reais, com limites de memória e com dados que já estão quase em ordem."
+				},
+				{
+					"type": "heading",
+					"text": "Estável"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma ordenação é **estável** se itens com chaves iguais saem na mesma ordem relativa em que chegaram. Isso importa quando os registros carregam mais que a chave. Suponha uma lista de alunos ordenada por nome. Se você agora ordenar por turma com um algoritmo **estável**, cada turma mantém seus alunos em ordem alfabética. Isso dá uma ordenação por dois critérios: ordene primeiro pela chave menos importante e por último pela mais importante. É também a razão pela qual o radix sort LSD funciona."
+				},
+				{
+					"type": "paragraph",
+					"text": "Como uma ordenação pode quebrar a estabilidade? Movendo um item para longe num único salto. Imagine o selection sort nas cartas 7♥, 7♠, 3♣. Ele troca a primeira carta com a menor, o 3♣. O resultado é 3♣, 7♠, 7♥. Os dois setes trocaram de lugar. Algoritmos que só movem um item para além de vizinhos estritamente maiores, ou que copiam itens na ordem de chegada, são estáveis."
+				},
+				{
+					"type": "heading",
+					"text": "In-place"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma ordenação é **in-place** se trabalha dentro do array de entrada, com no máximo cerca de log n de memória extra (por exemplo, uma pilha de recursão). O merge sort precisa de um buffer de tamanho n, então não é in-place. O quicksort é, porque sua pilha é pequena. O heapsort é, com memória extra constante."
+				},
+				{
+					"type": "heading",
+					"text": "Adaptativa"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma ordenação é **adaptativa** se fica mais rápida quando a entrada está mais perto de ordenada. O insertion sort custa cerca de n mais as inversões, e o bubble sort com a flag também para cedo. Seleção, merge e heapsort fazem quase o mesmo trabalho para qualquer ordem. Ordenações de bibliotecas como o Timsort usam a mesma ideia em escala maior: elas acham trechos que já estão ordenados e intercalam só esses trechos."
+				},
+				{
+					"type": "table",
+					"headers": ["Algoritmo", "Estável", "In-place", "Adaptativo", "Pior caso"],
+					"rows": [
+						["Bolha (com flag)", "sim", "sim", "sim", "n²"],
+						["Seleção", "não", "sim", "não", "n²"],
+						["Inserção", "sim", "sim", "sim", "n²"],
+						["Merge", "sim", "não (buffer de n)", "não", "n log n"],
+						["Quicksort", "não", "sim (pilha de log n)", "não", "n²"],
+						["Heapsort", "não", "sim", "não", "n log n"],
+						["Counting", "sim", "não", "não", "n + k"],
+						["Radix (LSD)", "sim", "não", "não", "d·(n + k)"]
+					],
+					"caption": "Versões clássicas em array. Uma ordenação que não é estável pode ser tornada estável, mas isso exige uma mudança ou memória extra."
+				},
+				{
+					"type": "callout",
+					"tone": "tip",
+					"text": "Truque de memória: os algoritmos que trocam itens distantes (seleção, quick, heap) não são estáveis. Os que movem itens passo a passo ou copiam em ordem (bolha, inserção, merge, counting) são."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Nenhuma ordenação vence em tudo. O merge sort é estável mas precisa de memória. O heapsort é in-place e garantido, mas não estável. O insertion sort é estável e adaptativo, mas quadrático."
+				}
+			]
+		},
+		{
+			"id": "searching",
+			"title": "Busca: sequencial, binária, interpolação",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "**Buscar** é achar um item, chamado de **chave**, numa coleção. O método certo depende de uma pergunta: a coleção está ordenada?"
+				},
+				{
+					"type": "heading",
+					"text": "Busca sequencial"
+				},
+				{
+					"type": "paragraph",
+					"text": "Olhe os itens um por um até achar a chave ou chegar ao fim. Funciona em qualquer coleção. O melhor caso é 1 comparação, o pior é n, e se toda posição é igualmente provável para a chave, uma busca com sucesso faz em média (n + 1)/2 comparações. Tudo isso é linear em n."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma pequena melhoria é a **sentinela**. Normalmente cada rodada testa duas coisas: 'cheguei ao fim?' e 'este é a chave?'. Se você primeiro copiar a chave para uma posição extra no fim do array, o laço tem certeza de parar na chave, e o primeiro teste deixa de ser necessário. O custo continua linear, mas a constante é menor, um detalhe que a notação Big O não mostra."
+				},
+				{
+					"type": "heading",
+					"text": "Busca binária"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Adivinhe um número de 1 a 100 em que um amigo está pensando. Se você sempre chuta o do meio e seu amigo diz 'maior' ou 'menor', você termina em no máximo 7 chutes."
+				},
+				{
+					"type": "paragraph",
+					"text": "A busca binária exige que os dados estejam **ordenados**. Olhe o item do meio. Se for a chave, pare. Se a chave for maior, ela não pode estar na metade esquerda, então faça `low = mid + 1`. Se for menor, faça `high = mid − 1`. Repita até o intervalo ficar vazio. Em dados desordenados, a comparação com o meio não diz nada sobre os outros itens, e o método falha."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "function binarySearch(a: number[], key: number): number {\n\tlet low = 0;\n\tlet high = a.length - 1;\n\twhile (low <= high) {\n\t\t// PT: low + (high - low) / 2 não estoura um int de 32 bits\n\t\tconst mid = low + Math.floor((high - low) / 2);\n\t\tif (a[mid] === key) return mid;\n\t\tif (a[mid] < key) low = mid + 1;\n\t\telse high = mid - 1;\n\t}\n\treturn -1;\n}",
+					"caption": "Em [1, 3, 5, 7, 9, 11, 13] com a chave 11, ela olha o 7 e depois o 11."
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada passo divide o intervalo ao meio, então o número máximo de olhadas é **⌊log₂ n⌋ + 1**. Numa busca sem sucesso o número é o mesmo: um intervalo de 7 vira 3, depois 1, depois 0, ou seja, 3 olhadas. Arrays de tamanho 2ᵏ − 1 formam árvores perfeitas com k níveis."
+				},
+				{
+					"type": "chart",
+					"title": "Comparações para buscar em 1.000.000 de itens ordenados",
+					"unit": "comparações",
+					"bars": [
+						{ "label": "Sequencial, média", "value": 500000 },
+						{ "label": "Sequencial, pior caso", "value": 1000000 },
+						{ "label": "Binária, pior caso", "value": 20 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Dobrar o array acrescenta só um passo: 1 milhão de itens precisam de 20 olhadas e 1 bilhão precisa de 30."
+				},
+				{
+					"type": "heading",
+					"text": "Dois detalhes famosos"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**O bug do overflow.** Escrever `mid = (low + high) / 2` com inteiros de 32 bits quebra quando `low + high` passa de 2³¹ − 1, o que acontece em arrays ordenados com mais de cerca de um bilhão de itens. A soma fica negativa. Um programa correto no papel pode falhar numa máquina real porque os inteiros têm tamanho fixo. Escreva `mid = low + (high − low) / 2`.",
+						"**Chaves repetidas.** Para achar a **primeira** ocorrência de uma chave em O(log n), não pare quando a achar. Procure o primeiro índice cujo valor é **maior ou igual** à chave (um lower bound): quando `a[mid] >= key`, mantenha a metade esquerda incluindo `mid`. Ela nunca para cedo, e sempre leva cerca de log₂ n passos."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Busca por interpolação"
+				},
+				{
+					"type": "paragraph",
+					"text": "Quando você procura 'Zebra' num dicionário, não o abre no meio: abre perto do fim. A **busca por interpolação** faz isso. Se os valores crescem mais ou menos em linha reta entre `v[lo]` e `v[hi]`, ela estima a posição da chave nessa reta."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "// PT: a chave está a uma fração do caminho entre as duas pontas\npos = lo + (hi - lo) * (key - v[lo]) / (v[hi] - v[lo]);",
+					"caption": "Com lo = 0, hi = 10, v[0] = 0, v[10] = 100 e chave = 30, a primeira posição olhada é a 3."
+				},
+				{
+					"type": "paragraph",
+					"text": "Se os valores estão bem espalhados, o intervalo encolhe muito rápido (cerca de log log n passos em média). Se não estão, por exemplo quando crescem exponencialmente, a estimativa gruda numa das pontas e o intervalo encolhe um item por vez, então o custo pode chegar a n. A velocidade da busca por interpolação depende da **distribuição** das chaves."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Dados ordenados permitem a busca binária, com log₂ n passos. Dados bem espalhados permitem a busca por interpolação, ainda mais rápida em média. Dados desordenados obrigam a busca sequencial."
+				}
+			]
+		},
+		{
+			"id": "divide-and-conquer",
+			"title": "Divisão e conquista",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Como se come uma pizza gigante? Uma fatia por vez. A **divisão e conquista** resolve um problema grande cortando-o em cópias menores do mesmo problema. Ela sempre tem três passos: **dividir** o problema, **conquistar** cada parte resolvendo-a recursivamente, e **combinar** as respostas. A recursão para no **caso base**, um problema tão pequeno que a resposta é imediata."
+				},
+				{
+					"type": "paragraph",
+					"text": "Merge sort, quicksort e busca binária são divisão e conquista. Nesses algoritmos as partes são frações do problema (a metade, um terço), então a profundidade da recursão é logarítmica. Insertion e selection sort são diferentes: são **incrementais**, porque encolhem o problema em um item por passo. Isso leva a n etapas e, em geral, a um custo quadrático."
+				},
+				{
+					"type": "heading",
+					"text": "O custo como recorrência"
+				},
+				{
+					"type": "paragraph",
+					"text": "Se um algoritmo faz a subproblemas de tamanho n/b e gasta f(n) para dividir e combinar, então T(n) = a·T(n/b) + f(n). Para resolver, compare f(n) com n^(log_b a), que é o número de folhas da árvore de recursão. Esse é o **teorema mestre**."
+				},
+				{
+					"type": "table",
+					"headers": ["Caso", "Quem ganha", "Resultado"],
+					"rows": [
+						["f(n) é polinomialmente menor que n^(log_b a)", "As folhas (a base da árvore)", "T(n) = Θ(n^(log_b a))"],
+						["f(n) é cerca do mesmo tamanho que n^(log_b a)", "Todo nível custa o mesmo", "T(n) = Θ(n^(log_b a) · log n)"],
+						["f(n) é polinomialmente maior que n^(log_b a)", "O topo (o passo de combinar)", "T(n) = Θ(f(n))"]
+					],
+					"caption": "'Polinomialmente' quer dizer por um fator n^ε, para algum ε > 0. Um simples fator log n não basta."
+				},
+				{
+					"type": "table",
+					"headers": ["Algoritmo", "Recorrência", "n^(log_b a)", "Resultado"],
+					"rows": [
+						["Busca binária", "T(n) = T(n/2) + 1", "n⁰ = 1", "Θ(log n)"],
+						["Merge sort", "T(n) = 2T(n/2) + n", "n¹ = n", "Θ(n log n)"],
+						["Quatro metades, combinação linear", "T(n) = 4T(n/2) + n", "n²", "Θ(n²)"],
+						["Karatsuba", "T(n) = 3T(n/2) + n", "n^1,585", "Θ(n^1,585)"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Para a busca binária também dá para expandir à mão: T(n) = T(n/2) + c = T(n/4) + 2c = ... = c·log₂ n, porque log₂ n conta quantas vezes n pode ser dividido por 2 até chegar a 1. Na recorrência T(n) = 4T(n/2) + n com n = 8, os níveis custam 8, 16, 32 e 64: a base domina, como diz o teorema."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "O teorema mestre básico não cobre T(n) = 2T(n/2) + n·log n. Aqui f(n) é maior que n só por um fator log n, e não por uma potência de n, então nenhum caso se aplica. A árvore de recursão resolve: cada nível custa n·log n (um pouco menos a cada vez), e a soma dá mais um log, então T(n) = Θ(n·log² n)."
+				},
+				{
+					"type": "heading",
+					"text": "Dois truques clássicos"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Exponenciação por quadrados sucessivos.** Para calcular xⁿ, use xⁿ = (xⁿ/²)² quando n é par e xⁿ = x · xⁿ⁻¹ quando n é ímpar. O expoente cai pela metade a cada vez, então o número de multiplicações é cerca de log n em vez de n − 1. Para x¹⁰: x², x⁴, x⁵, x¹⁰ são só 4 multiplicações.",
+						"**Karatsuba.** Multiplicar dois números de n dígitos do jeito da escola divide cada um em duas metades e precisa de 4 produtos de n/2 dígitos, o que custa Θ(n²). O Karatsuba acha um jeito com só 3 produtos e algumas somas a mais. Como o número de subproblemas a aparece no expoente log_b a, ir de 4 para 3 baixa o custo de n² para cerca de n^1,585. O Strassen faz o mesmo para matrizes, com 7 produtos em vez de 8."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Quando não funciona bem"
+				},
+				{
+					"type": "paragraph",
+					"text": "A divisão e conquista é ótima quando os subproblemas são **independentes**, como as duas metades de um array. A função Fibonacci ingênua, `fib(n) = fib(n − 1) + fib(n − 2)`, também se divide em problemas menores, mas eles se **sobrepõem**: `fib(n − 2)` é calculado de novo dentro de `fib(n − 1)`. As chamadas se multiplicam e o tempo é exponencial. A cura é lembrar as respostas, que é a programação dinâmica."
+				},
+				{
+					"type": "video",
+					"title": "Playlist Algorithms: divisão e conquista, guloso, programação dinâmica (Abdul Bari, em inglês)",
+					"url": "https://www.youtube.com/playlist?list=PLDN4rrl48XKpZkf03iYFl-O29szjTrs_O"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Dividir, conquistar, combinar. A recorrência T(n) = a·T(n/b) + f(n) dá o custo, e o número de subproblemas a é o botão que mais importa."
+				}
+			]
+		},
+		{
+			"id": "greedy",
+			"title": "Algoritmos gulosos",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma criança que come primeiro a coisa mais gostosa do prato, depois a segunda mais gostosa, está sendo **gulosa**. Um algoritmo guloso monta a resposta um passo por vez e, a cada passo, escolhe o que parece melhor **agora**. Ele nunca olha para o futuro e **nunca muda de ideia**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Isso deixa os algoritmos gulosos rápidos e simples. Mas ele só está correto se o problema tem a **propriedade da escolha gulosa**: sempre existe uma solução ótima que contém a escolha localmente melhor. Sem uma prova disso, um algoritmo guloso é só uma [[heurística|Uma regra prática rápida e muitas vezes boa, mas sem promessa da melhor resposta]]."
+				},
+				{
+					"type": "heading",
+					"text": "Dar troco"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um caixa com moedas de 1, 5, 10, 25 e 50 centavos dá troco usando sempre a maior moeda que ainda cabe. Para 68 centavos: 50, 10, 5, 1, 1, 1, ou seja, 6 moedas. Com essas moedas a regra sempre dá o menor número de moedas. Mas com outras moedas ela pode falhar."
+				},
+				{
+					"type": "table",
+					"headers": ["Moedas", "Valor", "Resposta gulosa", "Melhor resposta"],
+					"rows": [
+						["1, 5, 10, 25, 50", "68", "6 moedas", "6 moedas"],
+						["1, 5, 6", "10", "6 + 1 + 1 + 1 + 1 = 5 moedas", "5 + 5 = 2 moedas"]
+					],
+					"caption": "Uma boa escolha local (o 6) fechou o caminho para a melhor resposta global."
+				},
+				{
+					"type": "heading",
+					"text": "Seleção de atividades"
+				},
+				{
+					"type": "paragraph",
+					"text": "Muitas atividades querem a mesma sala. Cada uma tem hora de início e de fim. Qual escolha dá o maior número de atividades sem sobreposição? Pegue a atividade que **termina mais cedo**, descarte as que se sobrepõem a ela e repita. A prova usa um **argumento de troca**: pegue qualquer solução ótima e troque a primeira atividade dela pela que termina mais cedo. A solução continua válida e com o mesmo tamanho. Então alguma solução ótima começa com a escolha gulosa, e o mesmo raciocínio vale para o tempo que sobra."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Outros critérios parecem razoáveis mas falham. 'Atividade mais curta primeiro' e 'início mais cedo primeiro' têm contraexemplos. Só 'término mais cedo' está provado correto."
+				},
+				{
+					"type": "heading",
+					"text": "Mochila fracionária e mochila 0-1"
+				},
+				{
+					"type": "paragraph",
+					"text": "Você tem uma mochila com limite de peso e itens com valor e peso. Na mochila **fracionária** você pode levar parte de um item (como areia ou farinha). Ordene os itens por valor por quilo e leve primeiro a melhor razão. Cada quilo é usado com o material mais valioso ainda disponível, então isso é ótimo."
+				},
+				{
+					"type": "paragraph",
+					"text": "Exemplo com capacidade 10: o item X vale 20 e pesa 5 (razão 4), e o item Y vale 18 e pesa 6 (razão 3). O guloso leva todo o X e 5/6 do Y, ou seja, 20 + 15 = 35. Na mochila **0-1** você precisa levar o item inteiro ou deixá-lo, e a mesma regra pode falhar. Com capacidade 10 e os itens A (valor 36, peso 6, razão 6), B (valor 25, peso 5, razão 5) e C (valor 25, peso 5, razão 5), a regra da razão leva o A e nada mais cabe, ou seja, 36. Mas B e C juntos pesam 10 e valem 50. A prova do caso fracionário precisa da opção de preencher o espaço restante com uma fração. A versão 0-1 precisa de uma tabela que compara 'levar' e 'não levar' para cada item e capacidade, e isso é **programação dinâmica**."
+				},
+				{
+					"type": "heading",
+					"text": "Onde o guloso está provado correto"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Árvore geradora mínima (Prim e Kruskal, na seção de grafos).",
+						"Caminhos mínimos com pesos não negativos (Dijkstra).",
+						"Seleção de atividades e mochila fracionária.",
+						"Códigos de Huffman, que comprimem texto dando códigos curtos às letras comuns.",
+						"Troco com sistemas de moedas 'bem comportados'."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "O guloso como heurística"
+				},
+				{
+					"type": "paragraph",
+					"text": "O problema do caixeiro viajante é NP-difícil: não se conhece algoritmo que ache o melhor percurso em tempo polinomial. A heurística do **vizinho mais próximo** começa numa cidade e vai sempre para a cidade mais próxima ainda não visitada. É rápida, mas não garante nada sobre o tamanho do percurso: trechos baratos no começo podem forçar trechos muito longos no fim. Em geral ela é melhorada pelo **2-opt**, uma busca local que remove cruzamentos do percurso. Nos experimentos deste repositório com 5 a 12 cidades, o vizinho mais próximo ficou em média 8% acima do melhor percurso, e o 2-opt só 0,6%. Mas esses números descrevem aquelas instâncias, não são uma promessa."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "O guloso só está correto quando a escolha localmente melhor sempre faz parte de alguma resposta ótima. Na dúvida, procure um contraexemplo, como as moedas 1, 5 e 6, antes de confiar nele."
+				}
+			]
+		},
+		{
+			"id": "dynamic-programming",
+			"title": "Programação dinâmica",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Se alguém perguntar '1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 é quanto?' e você disser 8, e depois a pessoa acrescentar mais um '+ 1' e perguntar de novo, você não conta do zero. Você lembra do 8 e diz 9. A **programação dinâmica** (PD) é isso: resolver cada problema pequeno **uma só vez**, anotar a resposta e reaproveitá-la sempre que o mesmo problema pequeno voltar."
+				},
+				{
+					"type": "paragraph",
+					"text": "A PD funciona quando o problema tem duas propriedades."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Subestrutura ótima.** A melhor resposta é montada a partir das melhores respostas de subproblemas menores. É isso que torna a PD correta.",
+						"**Subproblemas sobrepostos.** O mesmo subproblema aparece muitas vezes. É isso que faz a PD valer a pena. Sem sobreposição, a PD não está errada, só não ganha nada da recursão simples."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Duas formas de escrever"
+				},
+				{
+					"type": "table",
+					"headers": ["Aspecto", "Memoização (top-down)", "Tabulação (bottom-up)"],
+					"rows": [
+						["Como", "Manter o código recursivo e acrescentar um cache indexado pelos argumentos", "Preencher uma tabela com laços, dos menores subproblemas para os maiores"],
+						["Resolve", "Só os subproblemas que são alcançados", "Todos os subproblemas, até os desnecessários"],
+						["Risco", "Recursão profunda usa a pilha de chamadas", "Escolher uma ordem de preenchimento errada"],
+						["Truque de memória", "Nenhum", "Guardar só as linhas ainda necessárias"]
+					],
+					"caption": "A recorrência é a mesma nas duas."
+				},
+				{
+					"type": "paragraph",
+					"text": "O custo da PD é sempre: **o número de subproblemas distintos vezes o trabalho de cada um**, supondo que os menores já estão prontos. Para o Fibonacci com memoização, são n + 1 subproblemas de custo constante, então o tempo é linear. A recursão ingênua faz 2·fib(n + 1) − 1 chamadas, que cresce cerca de 1,618 vez a cada +1 em n."
+				},
+				{
+					"type": "chart",
+					"title": "Chamadas de função: recursão simples contra memoização (medido neste repositório)",
+					"unit": "chamadas",
+					"bars": [
+						{ "label": "Mochila, 20 itens, ingênua", "value": 734544 },
+						{ "label": "Mochila, 20 itens, memoizada", "value": 2380 },
+						{ "label": "LCS, 12 letras, ingênua", "value": 117808 },
+						{ "label": "LCS, 12 letras, memoizada", "value": 198 },
+						{ "label": "Troco, valor 30, ingênua", "value": 2550408 },
+						{ "label": "Troco, valor 30, memoizada", "value": 86 }
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Problema 1: troco com moedas quaisquer"
+				},
+				{
+					"type": "paragraph",
+					"text": "Seja `dp[v]` o menor número de moedas que formam o valor v. Então `dp[0] = 0` e `dp[v] = 1 + min(dp[v − c])` sobre as moedas c que cabem em v. A tabela tenta toda moeda para todo valor, então não cai na armadilha do guloso. Com moedas 1, 5 e 6:"
+				},
+				{
+					"type": "table",
+					"headers": ["v", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+					"rows": [["dp[v]", "0", "1", "2", "3", "4", "1", "1", "2", "3", "4", "2"]],
+					"caption": "dp[10] = 1 + min(dp[9], dp[5], dp[4]) = 1 + min(4, 1, 4) = 2, que é 5 + 5."
+				},
+				{
+					"type": "heading",
+					"text": "Problema 2: a mochila 0-1"
+				},
+				{
+					"type": "paragraph",
+					"text": "A célula (i, w) guarda o melhor valor usando os i primeiros itens com capacidade w. É o maior de duas opções: não levar o item i, que é a célula (i − 1, w), ou levá-lo, que é o seu valor mais a célula (i − 1, w − peso), se ele couber. Com capacidade 4 e os itens P (valor 5, peso 2), Q (valor 4, peso 3) e R (valor 3, peso 1), as linhas são:"
+				},
+				{
+					"type": "table",
+					"headers": ["Depois do item", "w = 0", "w = 1", "w = 2", "w = 3", "w = 4"],
+					"rows": [
+						["nenhum", "0", "0", "0", "0", "0"],
+						["P", "0", "0", "5", "5", "5"],
+						["Q", "0", "0", "5", "5", "5"],
+						["R", "0", "3", "5", "8", "8"]
+					],
+					"caption": "A resposta é 8 (itens P e R). A tabela tem n × W células, então o tempo é O(n·W)."
+				},
+				{
+					"type": "paragraph",
+					"text": "A mochila é NP-difícil, mas O(n·W) parece polinomial. O truque: isso é **pseudopolinomial**. O tempo é polinomial no valor numérico de W, e não no número de bits necessários para escrevê-lo. Se W = 2⁶⁴, a entrada tem só 64 bits para a capacidade, mas a tabela teria 2⁶⁴ colunas. Para capacidades pequenas é excelente na prática."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Economizar memória com um único array `dp[w]` é possível, mas é preciso percorrer w da DIREITA para a ESQUERDA. Indo da esquerda para a direita, você leria uma célula já atualizada na mesma rodada e usaria o mesmo item duas vezes, o que a transforma na mochila ilimitada."
+				},
+				{
+					"type": "heading",
+					"text": "Problema 3: subsequência comum mais longa (LCS)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **subsequência** mantém a ordem das letras, mas elas não precisam estar coladas. A célula (i, j) guarda o tamanho da LCS das i primeiras letras de uma palavra e das j primeiras da outra. Se as últimas letras são iguais, a célula é 1 mais a célula da diagonal. Senão, é a maior entre a célula de cima e a da esquerda. O custo é m·n. Para CAT e ACT:"
+				},
+				{
+					"type": "table",
+					"headers": ["Letras", "(vazio)", "A", "C", "T"],
+					"rows": [
+						["(vazio)", "0", "0", "0", "0"],
+						["C", "0", "0", "1", "1"],
+						["A", "0", "1", "1", "1"],
+						["T", "0", "1", "1", "2"]
+					],
+					"caption": "A LCS tem tamanho 2 (por exemplo 'AT')."
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada célula da LCS depende só da linha atual e da anterior, então dá para guardar apenas duas linhas. Você ganha memória, mas **perde as decisões** que levam à resposta: ainda sabe o tamanho, mas não consegue reconstruir a subsequência. Essa troca entre memória e reconstruir a solução aparece em quase todo problema de PD."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "PD = subestrutura ótima + subproblemas sobrepostos. Custo = número de subproblemas vezes o trabalho de cada um. O guloso não compara nada, a PD compara todas as escolhas."
+				}
+			]
+		},
+		{
+			"id": "backtracking",
+			"title": "Backtracking e força bruta",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Você está num labirinto. A cada cruzamento escolhe um caminho. Se chega a um beco sem saída, volta ao último cruzamento e tenta outro caminho. Isso é **backtracking**: uma busca em profundidade por respostas parciais que monta a solução uma decisão por vez e volta atrás quando um caminho não pode dar certo."
+				},
+				{
+					"type": "paragraph",
+					"text": "Seu poder está na **poda**. Quando uma solução parcial já é impossível, o algoritmo a descarta, e com ela todas as soluções completas que cresceriam a partir dela. Resolvedores de sudoku, labirintos e o problema das n rainhas funcionam assim."
+				},
+				{
+					"type": "heading",
+					"text": "Força bruta: tentar tudo"
+				},
+				{
+					"type": "paragraph",
+					"text": "O método mais simples é a **força bruta**: gerar todo candidato e testar cada um. É fácil de acertar e funciona para entradas pequenas. Mas os candidatos se multiplicam muito rápido. No problema do caixeiro viajante, um percurso é uma ordem das cidades. Fixar a cidade de partida remove as rotações equivalentes e deixa **(n − 1)!** ordens para testar. Com 5 cidades são 24."
+				},
+				{
+					"type": "chart",
+					"title": "Ordens que um caixeiro viajante de força bruta precisa testar, cidade inicial fixa",
+					"unit": "ordens",
+					"bars": [
+						{ "label": "8 cidades", "value": 5040 },
+						{ "label": "10 cidades", "value": 362880 },
+						{ "label": "12 cidades", "value": 39916800 },
+						{ "label": "13 cidades", "value": 479001600 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "O fatorial cresce mais rápido que qualquer exponencial: cada cidade a mais multiplica o trabalho pelo número de cidades, um multiplicador que não para de crescer. Ir de 13 para 14 cidades deixa 13 vezes mais lento, e de 13 para 16 cidades deixa 13 × 14 × 15 = 2.730 vezes mais lento. No benchmark deste repositório, a força bruta levou cerca de 0,2 segundo com 11 cidades e 1,7 segundo com 12 em TypeScript, e passou de 10 segundos com 13 cidades. Uma linguagem 2 ou 3 vezes mais rápida compra cerca de uma cidade a mais."
+				},
+				{
+					"type": "heading",
+					"text": "Escolher uma boa representação"
+				},
+				{
+					"type": "paragraph",
+					"text": "O jeito de descrever um candidato pode remover candidatos antes de qualquer busca. Pegue o problema das 8 rainhas (colocar 8 rainhas num tabuleiro de xadrez sem que uma ataque outra). Escolher 8 casas livremente entre 64 dá mais de 4 bilhões de possibilidades. Permitir só uma rainha por linha dá 8⁸ = 16 milhões. Permitir uma rainha por linha **e** por coluna, que são permutações, dá 8! = 40.320. O backtracking corta ainda mais, porque descarta uma colocação parcial assim que duas rainhas dividem uma diagonal."
+				},
+				{
+					"type": "heading",
+					"text": "A poda precisa ser segura"
+				},
+				{
+					"type": "paragraph",
+					"text": "Toda regra de poda se apoia numa **propriedade monótona**: algo que, uma vez quebrado, continua quebrado em toda extensão. Exemplo: achar um subconjunto de números cuja soma seja exatamente T, descartando um ramo sempre que a soma parcial passa de T. Isso só está correto se todos os números forem **não negativos**, porque então a soma só pode crescer. Se números negativos são permitidos, um número posterior poderia trazer a soma de volta para baixo, e a poda jogaria fora respostas válidas. Antes de podar, pergunte qual suposição sobre a entrada sustenta a poda."
+				},
+				{
+					"type": "heading",
+					"text": "Branch and bound"
+				},
+				{
+					"type": "paragraph",
+					"text": "No caixeiro viajante dá para guardar o melhor percurso completo achado até agora, como um limite. Se um caminho parcial já é tão longo quanto esse limite ou mais, nenhuma forma de completá-lo vence o melhor percurso, então você descarta o ramo. Isso se chama **branch and bound** (ramificar e limitar). O corte é seguro porque as distâncias não são negativas, então um caminho nunca encurta ao ser estendido. Um bom primeiro limite, por exemplo vindo da heurística do vizinho mais próximo, faz a poda começar mais cedo."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Held-Karp** é uma resposta de programação dinâmica que lembra, para cada conjunto de cidades visitadas e última cidade, o melhor caminho. Custa n²·2ⁿ, que ainda é exponencial mas muito menor que n!.",
+						"**Heurísticas** como o vizinho mais próximo e o 2-opt trocam a garantia do melhor percurso por velocidade."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A força bruta tenta todos os candidatos, o backtracking descarta cedo os sem esperança, e o branch and bound usa a melhor resposta até agora para descartar mais. Nenhum deles escapa dos piores casos exponenciais, e é por isso que existem a PD e as heurísticas."
+				}
+			]
+		},
+		{
+			"id": "graph-algorithms",
+			"title": "Algoritmos em grafos: caminho mínimo, árvore geradora, ordenação topológica",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Um **grafo** é um conjunto de pontos, chamados **vértices**, ligados por linhas, chamadas **arestas**. Cidades e estradas, amigos e amizades, tarefas e suas dependências são grafos. As arestas podem ter um **peso**, como uma distância ou um custo, e podem ter direção. Seja V o número de vértices e E o número de arestas."
+				},
+				{
+					"type": "heading",
+					"text": "Árvore geradora mínima"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **árvore geradora** de um grafo conexo e não direcionado é um conjunto de arestas que liga todos os vértices **sem ciclos**. Começando com V vértices separados, cada aresta que não forma ciclo junta dois grupos, e são necessárias V − 1 junções para sobrar um grupo só. Então toda árvore geradora tem exatamente **V − 1 arestas**. A **árvore geradora mínima** (AGM) é a de menor peso total. Pense no conjunto mais barato de cabos para ligar todas as casas de uma cidade."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Kruskal.** Ordene as arestas por peso. Percorra-as e aceite toda aresta que junta dois grupos diferentes (conferido com uma estrutura chamada conjuntos disjuntos, ou union-find). Pare quando V − 1 arestas forem aceitas.",
+						"**Prim.** Comece de um vértice e faça crescer uma única árvore. A cada passo, acrescente a aresta mais barata que liga a árvore a um vértice de fora. Os dois são gulosos, e os dois dão o mesmo peso total."
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "arestas: R-S 1, P-Q 2, Q-R 3, P-R 4, Q-S 6\n\nKruskal, em ordem de peso:\n  R-S 1  aceita\n  P-Q 2  aceita\n  Q-R 3  aceita (junta {P,Q} e {R,S})\n  P-R 4  rejeita (fecharia um ciclo)\n  Q-S 6  rejeita\n4 vértices -> 3 arestas, peso total 1 + 2 + 3 = 6",
+					"caption": "O algoritmo de Kruskal num grafo pequeno."
+				},
+				{
+					"type": "heading",
+					"text": "Caminho mínimo: Dijkstra"
+				},
+				{
+					"type": "paragraph",
+					"text": "O Dijkstra acha o caminho mais curto de uma origem para todos os outros vértices. Ele guarda a melhor distância conhecida de cada vértice. A cada passo escolhe o vértice ainda não finalizado de menor distância, finaliza-o e **relaxa** suas arestas: se `dist[u] + peso(u, v) < dist[v]`, então `dist[v]` é atualizado. A ideia é gulosa e correta porque estender um caminho nunca o deixa mais barato."
+				},
+				{
+					"type": "diagram",
+					"content": "arestas: S-A 7, S-B 2, B-A 3, A-T 1, B-T 8\n\ninício:       S=0\nfinaliza S:   A=7, B=2\nfinaliza B:   A=min(7, 2+3)=5, T=2+8=10\nfinaliza A:   T=min(10, 5+1)=6\nmenor caminho de S a T: S-B-A-T = 6",
+					"caption": "O melhor caminho tem 3 arestas, enquanto o S-A, de aparência direta, tem só 1."
+				},
+				{
+					"type": "paragraph",
+					"text": "Com um heap, o Dijkstra roda em cerca de (V + E)·log V. Ele exige **pesos não negativos**. Uma aresta negativa quebra a prova. Exemplo: arestas S → A com peso 3, S → B com peso 4 e B → A com peso −2. O Dijkstra finaliza o A com distância 3 (é a menor) e nunca o reabre, mas o caminho mínimo real até A é S → B → A, com custo 2. O **Bellman-Ford** resolve o problema: relaxa todas as arestas V − 1 vezes, em O(V·E), e também detecta ciclos negativos."
+				},
+				{
+					"type": "heading",
+					"text": "Ordenação topológica"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um grafo direcionado pode modelar dependências: 'meias antes dos sapatos'. Uma **ordenação topológica** lista os vértices de modo que, para toda aresta u → v, u venha antes de v. Ela só existe se o grafo **não tem ciclo**. Um ciclo é uma dependência circular (A precisa de B, B precisa de A), que nenhuma ordem consegue satisfazer. Pode haver várias ordenações válidas."
+				},
+				{
+					"type": "paragraph",
+					"text": "O **algoritmo de Kahn** repete isto: remover um vértice de **grau de entrada zero** (sem dependência pendente), colocá-lo na saída e diminuir em um o grau de entrada dos seus sucessores. Pegue Meias → Sapatos, Calça → Sapatos e Calça → Cinto. Meias e Calça começam com 0, então remova Meias (Sapatos vai a 1), remova Calça (Sapatos e Cinto vão a 0), e depois Sapatos e Cinto. O resultado: Meias, Calça, Sapatos, Cinto."
+				},
+				{
+					"type": "paragraph",
+					"text": "Se o algoritmo termina tendo removido **menos de V vértices**, o resto do grafo tem um ciclo: esses vértices sempre esperam por outro do mesmo ciclo. É assim que gerenciadores de pacotes e ferramentas de build avisam de uma dependência circular. O algoritmo de Kahn custa V + E. Para conferir uma ordem dada, percorra as arestas e confirme que a origem de cada uma aparece antes do destino."
+				},
+				{
+					"type": "table",
+					"headers": ["Problema", "Algoritmo", "Custo", "Condição"],
+					"rows": [
+						["Rede mais barata", "Kruskal ou Prim", "cerca de E·log E, ou E·log V com heap", "Grafo conexo e não direcionado"],
+						["Caminho mínimo", "Dijkstra", "cerca de (V + E)·log V", "Sem pesos negativos"],
+						["Caminho mínimo com arestas negativas", "Bellman-Ford", "V·E", "Sem ciclo negativo"],
+						["Ordem de tarefas", "Kahn (ordenação topológica)", "V + E", "Grafo direcionado sem ciclo"]
+					]
+				},
+				{
+					"type": "video",
+					"title": "Playlist Graph Theory (William Fiset, em inglês)",
+					"url": "https://www.youtube.com/playlist?list=PLDV1Zeh2NRsDGO4--qE8yH72HFL1Km93P"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Uma árvore geradora tem V − 1 arestas. O Dijkstra precisa de pesos não negativos. Uma ordem topológica existe exatamente quando não há ciclo."
+				}
+			]
+		},
+		{
+			"id": "choosing-the-right-tool",
+			"title": "Escolhendo a ferramenta certa",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Agora você tem uma caixa de ferramentas. A habilidade é olhar um problema e escolher a ferramenta certa. Estas perguntas ajudam."
+				},
+				{
+					"type": "table",
+					"headers": ["Se o problema...", "Tente", "Cuidado com"],
+					"rows": [
+						["Se divide em partes independentes do mesmo tipo", "Divisão e conquista", "Partes que se sobrepõem levam a trabalho repetido"],
+						["Tem uma escolha local que comprovadamente faz parte de uma resposta ótima", "Guloso", "Precisa de prova ou de uma busca por contraexemplo, como as moedas 1, 5, 6"],
+						["Tem subproblemas sobrepostos e subestrutura ótima", "Programação dinâmica", "Tamanho da tabela e ordem de preenchimento"],
+						["Tem restrições que matam respostas parciais cedo", "Backtracking com poda", "A poda precisa se apoiar numa propriedade monótona"],
+						["Está numa rede de conexões", "Algoritmos em grafos", "Pesos negativos, ciclos"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Escolhendo uma ordenação"
+				},
+				{
+					"type": "table",
+					"headers": ["Situação", "Boa escolha", "Por quê"],
+					"rows": [
+						["Poucos itens, ou quase ordenados", "Insertion sort", "Cerca de n + inversões passos, estável, in-place"],
+						["Mover um registro é muito caro", "Selection sort", "No máximo n − 1 trocas"],
+						["Precisa de garantia e estabilidade", "Merge sort", "Sempre n log n e estável, com um buffer de n"],
+						["Precisa de garantia e pouca memória", "Heapsort", "n log n e in-place, mas não estável"],
+						["Rápido em média, memória pequena", "Quicksort com mediana de três (e insertion sort nas faixas pequenas)", "Melhores constantes na prática"],
+						["Inteiros numa faixa pequena, ou chaves de largura fixa", "Counting ou radix sort", "Tempo linear, usando a estrutura das chaves"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Erros comuns"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Usar busca binária em dados que não estão ordenados.",
+						"Confiar numa regra gulosa sem prova. Procure um contraexemplo primeiro.",
+						"Usar Dijkstra com arestas negativas.",
+						"Esquecer a memória de um algoritmo: o merge sort precisa de um buffer, o quicksort precisa de uma pilha.",
+						"Culpar a linguagem quando o problema é o algoritmo. Na corrida de ordenação deste repositório, o merge sort em Python com 10.000 valores (32,7 ms) venceu o bubble sort em C++ (69,0 ms)."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Um algoritmo correto no papel ainda pode falhar numa máquina real: inteiros estouram (o ponto médio da busca binária), a profundidade da recursão pode estourar a pilha, e uma tabela de 2⁶⁴ colunas não cabe em lugar nenhum."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Pergunte três coisas antes de escolher: qual é o formato dos meus dados? O que preciso garantir (tempo, memória, ordem das chaves iguais)? E como fica o custo quando n é um milhão?"
+				}
+			]
+		}
+	]
+}

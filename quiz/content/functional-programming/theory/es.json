@@ -1,0 +1,1109 @@
+{
+	"area": "functional-programming",
+	"intro": [
+		"Imagina una máquina expendedora. Metes una moneda, aprietas un botón y cae una golosina. Aprieta el mismo botón con la misma moneda y cae la misma golosina. La máquina no recuerda lo de ayer, no cambia las otras máquinas y no le importa qué hora es. La **programación funcional** es una forma de escribir programas en la que las piezas se comportan así: pequeñas máquinas que reciben algo y devuelven algo.",
+		"Un programa se arma conectando esas máquinas, como los tubos de un parque acuático. Como cada máquina depende solo de lo que le metes, puedes probarla sola, llevarla a otro lugar, ejecutar muchas a la vez y aun así saber qué va a pasar. Por eso las ideas que nacieron en lenguajes como Haskell y Elixir hoy viven dentro de TypeScript, Rust y Java, y las vas a encontrar en casi todo el código moderno.",
+		"En este resumen aprenderás: qué es una función pura, por qué los datos que nunca cambian son un regalo, cómo funcionan `map`, `filter` y `reduce`, qué recuerda una closure, cómo una función puede llamarse a sí misma (recursión) sin romper la computadora, cómo unir funciones (composición y currying), cómo describir datos con tipos que no mienten (tipos de datos algebraicos y pattern matching), cómo hacer el trabajo solo cuando hace falta (evaluación perezosa), cómo tratar los valores ausentes y los errores como datos comunes (Option y Result), dónde deben vivir los efectos secundarios inevitables y cómo se ve todo esto en Elixir y TypeScript. Al final estarás listo para el quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "El panorama: programas hechos de funciones",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una [[función|un trozo de código con nombre que recibe entradas y devuelve un resultado]] es como una máquina con una ranura para los ingredientes y una bandeja para el resultado. Las cosas que metes son los **argumentos** (o parámetros). Lo que sale es el **valor de retorno**. En programación funcional queremos tanto a las funciones que las tratamos como a cualquier otra cosa, como un número o una palabra: podemos guardar una función en una variable, dársela a otra función o recibir una de vuelta como resultado. Un lenguaje que permite esto tiene **funciones de primera clase**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Piensa en una cocina. Una ficha de receta es una función. Puedes guardar la ficha en un cajón (una variable), dársela a un amigo (pasarla como argumento) o tener un libro que escribe fichas nuevas para ti (una función que devuelve una función)."
+				},
+				{
+					"type": "table",
+					"caption": "Palabras que usaremos todo el tiempo",
+					"headers": [
+						"Palabra",
+						"Qué significa",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"Argumento",
+							"Un valor que le das a una función",
+							"En `double(4)`, el 4"
+						],
+						[
+							"Valor de retorno",
+							"Lo que la función devuelve",
+							"`double(4)` devuelve 8"
+						],
+						[
+							"Efecto secundario",
+							"Cualquier cosa que la función hace al mundo exterior además de devolver un valor",
+							"Imprimir, escribir un archivo, cambiar una variable global"
+						],
+						[
+							"Expresión",
+							"Un trozo de código que produce un valor",
+							"`2 + 3` o `double(4)`"
+						],
+						[
+							"Inmutable",
+							"No puede cambiar después de creado",
+							"Una foto impresa: para cambiarla imprimes otra"
+						],
+						[
+							"Perezoso / ansioso",
+							"Perezoso (lazy) espera hasta que se necesita el resultado. Ansioso (eager) calcula de inmediato",
+							"Una receta que cocinas solo cuando llegan los invitados, frente a comida hecha de antemano"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "La programación funcional se apoya en dos grandes hábitos. El primero es escribir **funciones puras**, cuyo resultado depende solo de sus argumentos. El segundo es usar **datos inmutables**, que nunca cambian: para hacer un cambio creas un valor nuevo. Los efectos secundarios inevitables, como hablar con la red, se empujan a los bordes del programa."
+				},
+				{
+					"type": "diagram",
+					"caption": "Los datos fluyen por pequeñas máquinas",
+					"content": "  entrada --> [ limpiar ] --> [ filtrar ] --> [ sumar ] --> salida\n\n  Cada caja es una función.\n  Cada flecha lleva un valor, no una variable modificada."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Programación funcional = funciones pequeñas que dependen solo de sus entradas + datos que no cambian + efectos en los bordes."
+				}
+			]
+		},
+		{
+			"id": "pure-functions",
+			"title": "Funciones puras y transparencia referencial",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una **función pura** es una función que se comporta como las de las matemáticas. Dos reglas: (1) los mismos argumentos siempre dan el mismo resultado, y (2) llamarla no cambia nada que alguien pueda notar fuera de ella. El botón de una calculadora es puro: 7 por 6 es 42 hoy, mañana y en Marte."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Una calculadora es pura. Una máquina de ventas con un contador de monedas que nadie ve no lo es: su respuesta puede depender de cuántas monedas entraron antes, y cada venta cambia el contador."
+				},
+				{
+					"type": "paragraph",
+					"text": "Todo lo que una función hace además de calcular su resultado es un **efecto secundario**: escribir en la pantalla, en un archivo, en la red o en una base de datos; cambiar una variable global; o cambiar el argumento que recibió. Leer algo que puede cambiar también es un problema: el reloj, lo que escribe el usuario, un número aleatorio o una variable global mutable. Son **entradas ocultas**, porque no aparecen en la lista de parámetros. Los efectos secundarios son **salidas ocultas**."
+				},
+				{
+					"type": "table",
+					"caption": "¿Pura o no?",
+					"headers": [
+						"Función",
+						"¿Pura?",
+						"Por qué"
+					],
+					"rows": [
+						[
+							"`(xs) => xs.length * 2`",
+							"Sí",
+							"Solo lee su argumento y devuelve un número nuevo"
+						],
+						[
+							"`(x) => x + Math.random()`",
+							"No",
+							"Entrada oculta: un número aleatorio"
+						],
+						[
+							"`() => Date.now()`",
+							"No",
+							"Entrada oculta: el reloj"
+						],
+						[
+							"`(x) => { total += x; return total; }`",
+							"No",
+							"Cambia una variable de afuera (salida oculta) y la lee (entrada oculta)"
+						],
+						[
+							"`(xs) => { xs.push(0); return xs; }`",
+							"No",
+							"Cambia su propio argumento"
+						],
+						[
+							"`(price) => price * taxRate`, con `taxRate` un `let` global",
+							"No",
+							"Entrada oculta: el global puede cambiar"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Reemplazar una llamada por su valor"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una expresión es **referencialmente transparente** cuando puedes cambiarla por su valor y el programa no cambia. Así razonamos en álgebra: si `y = 3 * 4`, puedes escribir 12 donde veas `y`. Las funciones puras siempre lo permiten. Una función que cambia estado rompe la regla:"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "let calls = 0;\nconst next = (): number => {\n\tcalls += 1;\n\treturn calls;\n};\n\nconst a = next() + next(); // 1 + 2 = 3\ncalls = 0;\nconst x = next(); // 1\nconst b = x + x; // 1 + 1 = 2, no 3",
+					"caption": "La prueba de sustitución: llamar dos veces no es lo mismo que ponerle nombre al resultado una vez"
+				},
+				{
+					"type": "paragraph",
+					"text": "La transparencia referencial permite buenos trucos. La **memoización** guarda el resultado de una llamada y lo devuelve cuando vuelven los mismos argumentos. Solo es correcta para funciones puras: si la función leyera el reloj, la caché devolvería una hora vieja; si escribiera en un archivo, la segunda llamada se saltaría la escritura sin avisar."
+				},
+				{
+					"type": "heading",
+					"text": "Cómo volver pura una función"
+				},
+				{
+					"type": "paragraph",
+					"text": "Convierte la entrada oculta en un parámetro. Una función `isExpired(coupon)` que le pregunta al reloj qué hora es pasa a ser `isExpired(coupon, now)`. Ahora la prueba pasa el instante que quiera y no necesita un reloj falso. El reloj real se lee en un solo lugar, en el borde del programa. La misma solución sirve para `withTax(price)`: escribe `withTax(price, taxRate)`."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Pruebas sin mocks.** Un mock es un sustituto de algo que la prueba no controla, como el reloj o la base de datos. Una función pura no tiene nada de eso: arma valores, llámala y compara el resultado.",
+						"**Determinista no es lo mismo que pura.** Una función `sum(xs)` que además imprime su resultado siempre devuelve el mismo número, pero imprimir es un efecto, así que no es pura y una caché no puede saltarse su llamada.",
+						"**La mutación local está bien.** Si una función crea un array nuevo por dentro, lo llena con `push` en un bucle y lo devuelve, nadie de afuera lo nota. Sigue siendo pura, porque lo que cambió nunca escapó antes del final.",
+						"**Pruebas basadas en propiedades.** Generan cientos de entradas aleatorias y comprueban una regla como `decode(encode(x)) == x`. Cuando una falla, ejecutan la función muchas veces con entradas cada vez más pequeñas para hallar la más pequeña que falla. Esto solo funciona si cada ejecución depende únicamente de la entrada, así que las funciones puras son el blanco perfecto."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Dos preguntas encuentran una función impura. ¿Lee algo que no entró por sus parámetros y que puede cambiar? ¿Cambia algo que vive fuera de ella? Si las dos respuestas son no, es pura."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Mismos argumentos, mismo resultado, nada cambiado afuera. Una función pura se puede reemplazar por su valor."
+				}
+			]
+		},
+		{
+			"id": "immutability",
+			"title": "Inmutabilidad: datos que nunca cambian",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un valor es **inmutable** cuando nunca cambia después de creado. Las operaciones que parecen modificarlo devuelven un valor **nuevo** y dejan el antiguo como estaba. Piensa en una foto impresa: para ponerle un sombrero a la persona, imprimes una foto nueva. La del álbum sigue igual, así que nadie que la esté mirando se lleva una sorpresa."
+				},
+				{
+					"type": "paragraph",
+					"text": "Eso elimina una familia entera de errores, los de una parte del programa que cambia datos a espaldas de otra parte que los estaba usando. También ayuda a la concurrencia ([[muchas tareas ejecutándose a la vez|varios trabajos avanzando durante el mismo periodo]]): el peligro clásico es el **estado mutable compartido**, dos tareas tocando los mismos datos mientras al menos una escribe. Si los datos no pueden cambiar, se pueden compartir con libertad. Esta es una de las grandes razones por las que Elixir y Erlang escalan bien en muchos núcleos del procesador."
+				},
+				{
+					"type": "heading",
+					"text": "Inmutabilidad en TypeScript"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Herramienta",
+						"Qué protege",
+						"Qué no protege"
+					],
+					"rows": [
+						[
+							"`const`",
+							"El nombre no puede apuntar a otro valor",
+							"El interior de un objeto o array: `xs.push(3)` sigue funcionando"
+						],
+						[
+							"`Object.freeze`",
+							"Las propiedades del primer nivel del objeto, en tiempo de ejecución",
+							"Objetos y arrays anidados, salvo que congeles cada uno (deep freeze)"
+						],
+						[
+							"`readonly number[]` / `Readonly<T>`",
+							"En tiempo de compilación, el verificador de tipos rechaza los métodos que cambian el array",
+							"El código que esquiva los tipos. No cuesta nada en tiempo de ejecución"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Copiar con la sintaxis spread (`{ ...a }`) es **superficial**: crea un objeto externo nuevo, pero los campos que guardan objetos o arrays siguen apuntando a los mismos valores internos. Para actualizar datos anidados de forma inmutable, copia cada nivel del camino:"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "const a = { name: 'Ana', tags: ['x'] };\nconst bad = { ...a, name: 'Bia' };\nbad.tags.push('y'); // ¡a.tags también cambió! mismo array\n\nconst good = { ...a, tags: [...a.tags, 'y'] }; // también un array nuevo",
+					"caption": "Copia superficial frente a copia de cada nivel"
+				},
+				{
+					"type": "heading",
+					"text": "Inmutabilidad en Elixir"
+				},
+				{
+					"type": "paragraph",
+					"text": "En Elixir todos los datos son inmutables. `List.delete(list, 2)` devuelve una lista nueva y no toca `list`; para conservar el resultado debes ligarlo a un nombre. Un nombre **sí** se puede religar (`x = 2` después de `x = 1`), pero eso no es mutación: el valor antiguo sigue existiendo para quien ya lo tenía. Una función creada cuando `x` valía 1 sigue viendo 1, porque una función anónima captura valores, no nombres."
+				},
+				{
+					"type": "heading",
+					"text": "Por qué no es lento: compartición estructural"
+				},
+				{
+					"type": "paragraph",
+					"text": "Copiar una lista grande en cada cambio sería terrible. El truco es que el valor nuevo **reutiliza** las partes del antiguo que no cambiaron. Una lista de Elixir es una cadena de celdas, cada una apuntando a la siguiente. Agregar al principio crea una sola celda nueva que apunta a la lista antigua. Agregar al final necesita una copia nueva de todas las celdas anteriores, porque cada una debe apuntar a una celda siguiente nueva."
+				},
+				{
+					"type": "diagram",
+					"caption": "Agregar al principio comparte la lista antigua: [0 | list]",
+					"content": "  nueva: [0] --+\n               v\n  list:  [1] -> [2] -> [3] -> []\n\n  1 celda nueva. La lista antigua queda intacta y compartida."
+				},
+				{
+					"type": "chart",
+					"title": "Celdas nuevas para agregar un elemento a una lista de 1.000 elementos",
+					"unit": "celdas",
+					"bars": [
+						{
+							"label": "Agregar al principio: [x | list]",
+							"value": 1
+						},
+						{
+							"label": "Agregar al final: list ++ [x]",
+							"value": 1000
+						}
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "En una lista enlazada inmutable, agregar al principio cuesta O(1) y agregar al final cuesta O(n). Por eso el código Elixir arma las listas por el principio con `[x | acc]` y las invierte al final."
+				}
+			]
+		},
+		{
+			"id": "higher-order-functions",
+			"title": "Funciones de orden superior: map, filter, reduce",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una **función de orden superior** es una función que recibe otra función como argumento, devuelve una función, o ambas cosas. Separa 'cómo recorrer los datos' de 'qué hacer con cada elemento'. La función de orden superior sabe recorrer. La función que le entregas dice qué hacer."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "El conductor del bus escolar conoce la ruta (cómo pasar por las paradas). La lista de instrucciones que le das, 'saluda a cada niño' o 'cuenta a cada niño', es la función que pasas."
+				},
+				{
+					"type": "table",
+					"caption": "Los tres grandes",
+					"headers": [
+						"Función",
+						"Qué hace",
+						"Tamaño del resultado",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"`map`",
+							"Aplica una función a cada elemento y junta los resultados en el mismo orden",
+							"Igual que la entrada: entran n, salen n",
+							"`[1, 2, 3].map(x => x * 2)` da `[2, 4, 6]`"
+						],
+						[
+							"`filter`",
+							"Conserva solo los elementos para los que una prueba dice sí. No los modifica",
+							"Igual o menor",
+							"`[1, 2, 3, 4].filter(x => x % 2 === 0)` da `[2, 4]`"
+						],
+						[
+							"`reduce` (también llamada fold)",
+							"Recorre los elementos llevando un **acumulador**, un resultado parcial",
+							"Cualquiera: un número, una lista, un objeto",
+							"`[1, 2, 3].reduce((acc, x) => acc + x, 0)` da `6`"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "En una cadena como `xs.filter(...).map(...)`, cada paso recibe la colección que produjo el paso anterior. `[1, 2, 3, 4]` pasa por el `filter` de los pares y queda `[2, 4]`, luego por el `map` por diez y queda `[20, 40]`."
+				},
+				{
+					"type": "heading",
+					"text": "Cómo funciona reduce"
+				},
+				{
+					"type": "paragraph",
+					"text": "`reduce` recibe un **valor inicial** para el acumulador y una función. Para cada elemento, la función recibe el acumulador y el elemento, y lo que devuelve se convierte en el siguiente acumulador. Seguir los acumuladores en papel es la forma más segura de calcular una reducción:"
+				},
+				{
+					"type": "diagram",
+					"caption": "[1, 2, 3].reduce((acc, n) => acc + n * 2, 10)",
+					"content": "  inicio acc = 10\n  elemento 1:  10 + 2 = 12\n  elemento 2:  12 + 4 = 16\n  elemento 3:  16 + 6 = 22   <- resultado"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Da siempre un valor inicial.** Es la respuesta para la colección vacía: 0 para una suma, 1 para un producto, una lista vacía para unir listas. En JavaScript, `[].reduce((a, b) => a + b)` sin valor inicial lanza un `TypeError`.",
+						"**El acumulador puede ser una estructura.** Con un par como `{count, sum}` calculas varias cosas en una sola pasada por los datos, sin listas temporales.",
+						"**Reduce es el general.** `map` y `filter` son casos particulares en que el acumulador es una lista. Los seguimos usando porque le dicen al lector la intención: `map` significa que entran n y salen n.",
+						"**El orden de los argumentos cambia según el lenguaje.** En Elixir, `Enum.reduce(list, initial, fn x, acc -> ... end)` da primero el elemento y después el acumulador. Armar una lista con `[x | acc]` produce los elementos invertidos, porque agregar al principio es la operación barata."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Una trampa clásica"
+				},
+				{
+					"type": "paragraph",
+					"text": "`map` llama a tu función con **tres** argumentos: el elemento, el índice y el array completo. `parseInt(text, base)` recibe la base como segundo argumento, así que `['1', '2', '3'].map(parseInt)` da `[1, NaN, NaN]`. La forma segura es escribir la función completa: `xs.map(s => parseInt(s, 10))`, o usar `Number`."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Al pasar una función a una función de orden superior, ten claro exactamente con qué argumentos se la llamará y en qué orden."
+				},
+				{
+					"type": "heading",
+					"text": "Reducir en paralelo"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina dividir una lista larga en trozos, reducir cada trozo en un trabajador distinto y después combinar los resultados parciales en orden. La respuesta es igual a la de un solo trabajador únicamente si la función de combinación es **asociativa**: la forma de agrupar no importa. La suma, el producto, el máximo y la unión de listas son asociativos. La resta no: (10 - 3) - 2 = 5, pero 10 - (3 - 2) = 9. La función también debe ser pura, o el orden de ejecución se notaría en el resultado."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "map mantiene el tamaño, filter lo reduce, reduce puede construir cualquier cosa. Dale a reduce un valor inicial y usa una función asociativa si quieres repartir el trabajo."
+				}
+			]
+		},
+		{
+			"id": "closures",
+			"title": "Closures: funciones con memoria",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Cuando creas una función **dentro** de otra, y la interna usa variables de la externa, se lleva consigo el acceso a esas variables. Aunque la función externa ya haya terminado, las variables siguen vivas mientras exista la función interna. Ese par, el código más las variables que recuerda, es una **closure**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Una closure es como la lonchera que un niño lleva a la escuela. El almuerzo se preparó en casa (la función externa), pero el niño todavía lo tiene en el salón, mucho después de haber salido de casa."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "function makeAdder(n: number): (x: number) => number {\n\treturn (x) => x + n; // recuerda n\n}\nconst add5 = makeAdder(5);\nconsole.log(add5(10)); // 15",
+					"caption": "Una fábrica de funciones: cada llamada crea una función nueva con su propio n"
+				},
+				{
+					"type": "paragraph",
+					"text": "Qué variables puede ver una función lo decide el [[alcance léxico|la regla de que un nombre es visible donde se escribió en el código]], es decir, el lugar donde la función está escrita en el código fuente. Esa es la base de la aplicación parcial y del currying, que veremos más adelante."
+				},
+				{
+					"type": "heading",
+					"text": "Cada llamada tiene su propia memoria"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada vez que se ejecuta la función externa, se crea un conjunto nuevo de variables. Dos closures nacidas de dos ejecuciones distintas tienen estados separados. Solo las closures nacidas en la misma ejecución comparten sus variables."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "function counter(): () => number {\n\tlet c = 0;\n\treturn () => {\n\t\tc += 1;\n\t\treturn c;\n\t};\n}\nconst a = counter();\nconst b = counter();\na(); a();\nconsole.log(b()); // 1: b tiene su propio c",
+					"caption": "Dos contadores, dos memorias independientes"
+				},
+				{
+					"type": "heading",
+					"text": "Recuerda la variable, no una copia"
+				},
+				{
+					"type": "paragraph",
+					"text": "En JavaScript y TypeScript una closure guarda una **referencia a la variable**. Si la variable cambia después, la función ve el valor nuevo. Así, un `let rate` capturado y reasignado es una entrada oculta de la función. Declararlo con `const` elimina la sorpresa."
+				},
+				{
+					"type": "paragraph",
+					"text": "La vieja trampa del bucle viene de aquí. Con `var`, la variable tiene **alcance de función**, así que todas las closures creadas en un bucle comparten una sola `i`, que vale 3 después del bucle. Con `let`, la variable tiene **alcance de bloque**, y el `for` crea un enlace nuevo en cada vuelta, así que cada closure recibe el suyo."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "const fs: Array<() => number> = [];\nfor (var i = 0; i < 3; i++) fs.push(() => i);\nconsole.log(fs.map((f) => f())); // [3, 3, 3]\n// con `let i`, imprimiría [0, 1, 2]",
+					"caption": "Una variable compartida frente a una variable por vuelta"
+				},
+				{
+					"type": "heading",
+					"text": "Útil, con dos avisos"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Estado privado sin clases (el patrón módulo).** Una función declara una variable local y devuelve un objeto cuyos métodos la usan. Lo que no se devuelve queda fuera de alcance. Pero recuerda que ese estado mutable privado vuelve impuros los métodos.",
+						"**Elixir captura valores.** Una función anónima toma los valores de las variables de afuera cuando se crea, y religar un nombre dentro de ella no cambia nada afuera. Así, `Enum.each(list, fn _ -> count = count + 1 end)` deja `count` en 0, y el compilador avisa de que el nuevo `count` nunca se usa. Para acumular, usa `Enum.reduce`, donde el acumulador se pasa y se devuelve.",
+						"**Fugas de memoria.** Las variables capturadas viven mientras viva la closure. Una closure de larga vida, como un manejador de eventos, un temporizador o una entrada de caché, que captura un array enorme mantiene todo el array en memoria. Captura solo lo que necesitas (por ejemplo, guarda la longitud en una constante) o quita el manejador."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Una closure = una función + el entorno donde nació. Cada ejecución de la función externa crea un entorno nuevo."
+				}
+			]
+		},
+		{
+			"id": "recursion-tail-calls",
+			"title": "Recursión y llamadas de cola",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "**Recursión** significa que una función resuelve un problema llamándose a sí misma sobre una versión más pequeña del mismo problema. Imagina un juego de muñecas rusas: para contar las muñecas, abres la más grande, cuentas 1 y luego cuentas las muñecas de adentro, que es el mismo trabajo con un conjunto más pequeño. Una función recursiva correcta siempre tiene dos partes."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Caso base:** la versión tan pequeña que respondes directo (la lista vacía tiene 0 elementos; la muñeca más pequeña no tiene nada adentro).",
+						"**Paso recursivo:** una llamada sobre una entrada más pequeña, de modo que cada llamada se acerque al caso base."
+					],
+					"ordered": true
+				},
+				{
+					"type": "paragraph",
+					"text": "Sin caso base, o sin acercarse a él, la función nunca se detiene. ¿Por qué? Cada llamada necesita un **marco** (frame) en la **pila de llamadas**, una pila de notas que guarda los parámetros, las variables locales y el lugar al que volver. El marco solo se tira cuando la llamada retorna. Una recursión sin fin apila marcos hasta llenar la pila; en JavaScript ves `RangeError: Maximum call stack size exceeded`."
+				},
+				{
+					"type": "code",
+					"language": "elixir",
+					"content": "def sum([]), do: 0\ndef sum([head | tail]), do: head + sum(tail)\n\n# sum([4, 5, 6]) = 4 + (5 + (6 + 0))",
+					"caption": "Dos cláusulas: el caso base y el paso"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para una lista de n elementos esto hace **n + 1 llamadas**: una por elemento y una para la lista vacía. Las sumas esperan en la ida y se hacen en la vuelta. Como todavía hay trabajo por hacer después de que cada llamada retorna, esta función no tiene recursión de cola."
+				},
+				{
+					"type": "heading",
+					"text": "Llamadas de cola"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una llamada está en **posición de cola** cuando es lo último que hace la función: lo que devuelve la llamada es exactamente lo que devuelve la función, sin suma, unión ni otro trabajo pendiente. Una función cuyas llamadas recursivas están todas en posición de cola tiene **recursión de cola**. Para llegar ahí, usa un **acumulador**: haz antes el trabajo pendiente y lleva el resultado parcial como argumento."
+				},
+				{
+					"type": "code",
+					"language": "elixir",
+					"content": "def len(list, acc \\\\ 0)\ndef len([], acc), do: acc\ndef len([_ | tail], acc), do: len(tail, acc + 1)\n\ndef fact(0, acc), do: acc\ndef fact(n, acc), do: fact(n - 1, acc * n)",
+					"caption": "Versiones con recursión de cola. Llama a fact(5, 1)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con la **optimización de llamadas de cola**, el entorno de ejecución reemplaza el marco actual por el nuevo en lugar de apilar otro, así que una recursión de un millón de pasos usa una cantidad constante de pila, como un bucle. La máquina virtual de Erlang, donde corre Elixir, siempre lo hace. Entre los motores de JavaScript solo JavaScriptCore lo hace, y solo en modo estricto, así que en TypeScript portable (Node.js usa V8) una recursión de un millón de niveles todavía desborda. Ahí, escribe un bucle o usa `reduce`."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Recursión común",
+						"Recursión de cola"
+					],
+					"rows": [
+						[
+							"Trabajo después de la llamada",
+							"Sí (`1 + len(tail)`)",
+							"Ninguno"
+						],
+						[
+							"Pila con optimización",
+							"Crece con n",
+							"Constante, O(1)"
+						],
+						[
+							"Argumento auxiliar",
+							"No hace falta",
+							"Un acumulador"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Elixir no tiene `while` ni `for` con un contador que cambia, porque eso exige una variable mutable. La repetición es una función que se llama a sí misma con los valores nuevos como argumentos. En el código de todos los días rara vez la escribes a mano: `Enum.map`, `Enum.reduce` y las comprensiones `for` están construidos sobre ella."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Una función con recursión de cola y un acumulador de lista arma el resultado invertido, porque cada elemento se pone al principio. El modismo completo termina con `Enum.reverse(acc)` en el caso base. El costo sigue siendo O(n)."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Caso base + un paso hacia él. Posición de cola significa que no queda nada por hacer después de la llamada, y el acumulador es la forma de llegar ahí."
+				}
+			]
+		},
+		{
+			"id": "composition-currying",
+			"title": "Composición y currying",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La **composición** une dos funciones en una nueva: la salida de la primera se convierte en la entrada de la segunda. Es como conectar tubos: la abertura por donde sale el agua de uno debe encajar en la abertura por donde entra al siguiente. En matemáticas, `compose(f, g)(x)` significa `f(g(x))`: la función escrita al final se aplica **primero**."
+				},
+				{
+					"type": "paragraph",
+					"text": "A mucha gente le confunde esa lectura de derecha a izquierda, así que las bibliotecas también ofrecen **pipe**, que aplica las funciones en el orden en que las escribes: `pipe(f, g)(x)` es `g(f(x))`, como una línea de montaje. `pipe(f, g, h)(x)` es `h(g(f(x)))`."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "const pipe =\n\t(...fns: Array<(n: number) => number>) =>\n\t(x: number): number =>\n\t\tfns.reduce((acc, f) => f(acc), x);\n\npipe((n) => n + 1, (n) => n * 2, (n) => n - 3)(4); // 7",
+					"caption": "pipe es un reduce sobre una lista de funciones: (4+1)=5, 5*2=10, 10-3=7"
+				},
+				{
+					"type": "paragraph",
+					"text": "Esto muestra que las funciones son valores comunes: pueden estar en un array y recorrerse como cualquier otro dato. Usar `reduceRight` en lugar de `reduce` da `compose`."
+				},
+				{
+					"type": "heading",
+					"text": "Reglas de la composición"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Los tipos deben encajar.** Para `f: A => B` y `g: B => C`, la función compuesta tiene tipo `A => C`. El tipo intermedio `B` desaparece de la firma final, y el verificador de tipos se queja si los tubos no encajan.",
+						"**Asociativa.** `(f ∘ g) ∘ h` es igual a `f ∘ (g ∘ h)`. Así puedes quitar los paréntesis y sacar un tramo del medio de un pipeline a una función con nombre sin cambiar el resultado.",
+						"**Identidad.** La función identidad `x => x` no hace nada, y componer con ella no cambia nada. Es el elemento neutro, como el 0 en la suma.",
+						"**No es conmutativa.** El orden importa. Con `inc = n + 1` y `dbl = n * 2`, `compose(inc, dbl)(5)` es 11 y `compose(dbl, inc)(5)` es 12."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Currying y aplicación parcial"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **currying** (nombre del lógico Haskell Curry) cambia la forma de una función: `(a, b) => ...` pasa a ser `a => b => ...`. Una función curried recibe un argumento a la vez, y cada paso devuelve una función que recuerda los argumentos anteriores mediante una closure."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "const multiply = (a: number) => (b: number): number => a * b;\n\n[1, 2, 3].map(multiply(3)); // [3, 6, 9]\n\nconst add = (a: number, b: number) => a + b;\nconst add10 = add.bind(null, 10); // aplicación parcial",
+					"caption": "Dar solo el primer argumento crea una función lista para usar"
+				},
+				{
+					"type": "paragraph",
+					"text": "La **aplicación parcial** es dar solo algunos de los argumentos y conservar una función que espera el resto. Las dos ideas son primas: el currying cambia la forma de la función, la aplicación parcial es el acto de fijar argumentos. Una función curried facilita la aplicación parcial, pero también se puede hacer sin currying, con `bind` o con una pequeña lambda como `n => multiply(3, n)`."
+				},
+				{
+					"type": "heading",
+					"text": "El pipe de Elixir"
+				},
+				{
+					"type": "paragraph",
+					"text": "Elixir tiene el operador incorporado `|>`. En tiempo de compilación reescribe `a |> f(b)` como `f(a, b)`: el lado izquierdo pasa a ser el **primer argumento**. La biblioteca estándar fue diseñada para esto: el dato principal es siempre el primer parámetro. Un pipeline se lee entonces en el orden en que ocurren las cosas, sin llamadas anidadas."
+				},
+				{
+					"type": "diagram",
+					"content": "  anidado (se lee de adentro hacia afuera):   c(b(a(x)))\n\n  pipe (se lee de arriba hacia abajo):        x\n                                              |> a()\n                                              |> b()\n                                              |> c()"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "compose aplica de derecha a izquierda, pipe aplica de izquierda a derecha, y el `|>` de Elixir pone el dato como primer argumento. El currying permite dar los argumentos de uno en uno."
+				}
+			]
+		},
+		{
+			"id": "adts-pattern-matching",
+			"title": "Tipos de datos algebraicos y pattern matching",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Los **tipos de datos algebraicos** (ADTs) se hacen con solo dos operaciones. Un **tipo suma** significa 'o': el valor es exactamente una entre varias variantes, cada una marcada con una etiqueta. Un **tipo producto** significa 'y': el valor tiene todos sus campos al mismo tiempo. Una `Shape` que es un círculo o un rectángulo, nunca los dos, es una suma. Un punto con `x` e `y` es un producto."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Una caja de juguetes que guarda o un carrito o una muñeca, nunca los dos, es una suma. Un kit que siempre trae un carrito, una muñeca y una pelota juntos es un producto."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "type Shape =\n\t| { kind: 'circle'; r: number }\n\t| { kind: 'rect'; w: number; h: number };\n\nfunction area(s: Shape): number {\n\tswitch (s.kind) {\n\t\tcase 'circle': return Math.PI * s.r ** 2;\n\t\tcase 'rect': return s.w * s.h;\n\t\tdefault: {\n\t\t\tconst unreachable: never = s;\n\t\t\treturn unreachable;\n\t\t}\n\t}\n}",
+					"caption": "Una unión discriminada: el campo kind es el discriminante"
+				},
+				{
+					"type": "paragraph",
+					"text": "En TypeScript el tipo suma es la **unión discriminada**: todas las variantes tienen un campo en común (aquí `kind`) con un literal distinto en cada una. Cuando pruebas ese campo con `if` o `switch`, el compilador **restringe** el tipo (narrowing) dentro de cada rama, y así `s.r` solo se permite en el caso del círculo. En Elixir la misma idea es una tupla marcada con un átomo, como `{:circle, r}`."
+				},
+				{
+					"type": "heading",
+					"text": "Exhaustividad: el compilador como ayudante"
+				},
+				{
+					"type": "paragraph",
+					"text": "`never` es el tipo sin valores. Cuando todas las variantes están tratadas, lo que queda en el `default` es `never`, y la asignación compila. Si alguien agrega una variante `triangle`, lo que queda deja de ser `never`, y el compilador señala cada `switch` que hay que actualizar. Esta es la [[comprobación de exhaustividad|el compilador confirma que cada variante tiene un caso]]."
+				},
+				{
+					"type": "heading",
+					"text": "¿Por qué 'algebraico'? Contando valores"
+				},
+				{
+					"type": "paragraph",
+					"text": "Porque podemos contar los valores posibles como en la aritmética. En un producto las posibilidades se **multiplican**; en una suma se **suman**."
+				},
+				{
+					"type": "chart",
+					"title": "¿Cuántos valores distintos tiene cada tipo?",
+					"unit": "valores",
+					"bars": [
+						{
+							"label": "boolean",
+							"value": 2
+						},
+						{
+							"label": "boolean | null (2 + 1)",
+							"value": 3
+						},
+						{
+							"label": "[boolean, boolean] (2 x 2)",
+							"value": 4
+						},
+						{
+							"label": "{ a: boolean; b: 'x'|'y'|'z' } | null ((2 x 3) + 1)",
+							"value": 7
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Comparar ese número con el número de estados **reales** de tu problema es una forma objetiva de juzgar un modelo. Una petición está cargando, o terminó con éxito y datos, o falló con un mensaje: 3 estados. Si la modelas como un registro con `loading`, `data` y `error`, todos opcionales, permites muchas combinaciones sin sentido, como 'cargando y con error'. Listar exactamente los estados válidos como un tipo suma hace que los **estados ilegales sean irrepresentables**: el compilador rechaza el inválido, y no hace falta ninguna prueba para él."
+				},
+				{
+					"type": "heading",
+					"text": "Pattern matching en Elixir"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**`=` es el operador de coincidencia, no de asignación.** El lado izquierdo es un patrón: los literales deben ser iguales y las variables se ligan a las partes correspondientes. `{:ok, value} = {:error, :timeout}` falla con un `MatchError`. Escribir `{:ok, value} = ...` es una forma de afirmar que salió bien.",
+						"**Las cláusulas se prueban en orden.** Una función con varias cláusulas hace coincidencia en sus argumentos, y se ejecuta la primera cláusula que sirve. Pon los casos específicos primero y el `_` que atrapa todo al final. El compilador avisa de una cláusula que nunca puede alcanzarse, pero no reordena nada.",
+						"**Las listas son un tipo suma recursivo.** Una lista es `[]` o `[head | tail]`, un primer elemento enlazado al resto. Después de `[head | tail] = [1]`, `head` es 1 y `tail` es `[]`.",
+						"**El operador pin `^`.** Una variable en un patrón normalmente coincide con cualquier cosa y se religa. `^x` no liga nada y exige un valor igual al que `x` ya guarda."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Suma = o (los valores se suman). Producto = y (los valores se multiplican). Modela con exactamente los estados que existen y deja que el compilador compruebe que los trataste todos."
+				}
+			]
+		},
+		{
+			"id": "lazy-evaluation",
+			"title": "Evaluación perezosa",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Normalmente un programa es **ansioso** (eager): calcula una expresión en el momento en que la ve. En la **evaluación perezosa** (lazy), el programa guarda solo la receta y la cocina cuando alguien pide el resultado. Eso evita trabajo inútil y permite describir secuencias sin fin, siempre que tomes solo una parte de ellas."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un restaurante ansioso hace 100 pizzas a la hora de abrir. Uno perezoso hace una pizza cuando el cliente la pide. Si vienen solo 3 personas, la cocina perezosa trabajó 3 pizzas."
+				},
+				{
+					"type": "heading",
+					"text": "Pereza en los tres lenguajes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Elixir:** el módulo `Enum` es ansioso, cada función recorre toda la colección y devuelve una lista terminada. El módulo `Stream` es perezoso: `Stream.map(list, f)` devuelve un stream, que solo describe el trabajo. El trabajo empieza cuando el stream se entrega a una función de `Enum`, como `Enum.to_list` o `Enum.take`.",
+						"**JavaScript y TypeScript:** un **generator** (`function*`) es una secuencia perezosa. Llamarlo no ejecuta nada y devuelve un iterador. Cada `next()` ejecuta el cuerpo hasta el siguiente `yield`, entrega el valor y se pausa. Por eso `while (true)` no es un problema: solo se calcula lo que se pide.",
+						"**Java:** un pipeline de stream tiene una fuente, cero o más operaciones intermedias (`filter`, `map`, `sorted`) y una operación terminal (`collect`, `sum`, `forEach`, `reduce`). Las intermedias son perezosas. Solo la terminal inicia el recorrido. Sin operación terminal, se procesan **cero** elementos."
+					]
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "function* naturals(): Generator<number> {\n\tlet n = 1;\n\twhile (true) {\n\t\tyield n;\n\t\tn += 1;\n\t}\n}\nconst it = naturals();\nit.next();\nit.next();\nconsole.log(it.next().value); // 3",
+					"caption": "Una secuencia infinita que no cuesta nada hasta que la pides"
+				},
+				{
+					"type": "heading",
+					"text": "Vertical frente a horizontal"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un pipeline ansioso trabaja **en horizontal**: termina el paso uno para todos los elementos y luego el paso dos para todos. Un pipeline perezoso trabaja **en vertical**: jala un elemento por todos los pasos y luego el siguiente. Cuando el consumidor se detiene pronto, el perezoso hace solo el trabajo necesario y no crea listas intermedias."
+				},
+				{
+					"type": "diagram",
+					"caption": "[1,2,3,4] |> Stream.map(imprime m) |> Stream.filter(imprime f; x > 2) |> Enum.take(1)",
+					"content": "  ansioso (todo el map, luego todo el filter):\n      m1 m2 m3 m4  f1 f2 f3 f4\n\n  perezoso (un elemento a la vez, se detiene al primer acierto):\n      m1 f1 | m2 f2 | m3 f3 -> lo encontró, se detiene\n      (el elemento 4 nunca se toca)"
+				},
+				{
+					"type": "paragraph",
+					"text": "De la misma manera, `1..1_000_000 |> Stream.map(...) |> Enum.take(2)` ejecuta la función solo con los dos primeros números. El consumidor define la cantidad de trabajo: `Enum.take(2)` jala un elemento a la vez y detiene el recorrido después del segundo."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Un stream perezoso no hace nada hasta que un consumidor jala de él. Si olvidas el paso terminal, tus efectos secundarios (imprimir, guardar) nunca ocurrirán."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Perezoso = describir ahora, calcular después, solo lo necesario. El consumidor manda en cuánto trabajo se hace."
+				}
+			]
+		},
+		{
+			"id": "option-result-monads",
+			"title": "Tipos Option y Result, functors y monads por intuición",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "¿Cómo debe decir una función 'no encontré nada' o 'algo salió mal'? Usar `null` o lanzar una excepción esconde ese hecho de la firma. Los lenguajes funcionales convierten la ausencia y el fallo en **valores comunes** del tipo, y así el compilador te obliga a tratarlos."
+				},
+				{
+					"type": "heading",
+					"text": "Option"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Option** (también llamado Maybe u Optional) es un tipo suma con dos variantes: `Some(value)` y `None`. Una función que devuelve `Option<User>` avisa, en su firma, de que el usuario puede no existir. TypeScript lo trae incorporado: con `strictNullChecks` activado, una función que devuelve `string | undefined` hace que `n.length` sea un error de compilación hasta que compruebes `n`. Sin la opción, `undefined` cabe en cualquier tipo y el error solo aparece en tiempo de ejecución."
+				},
+				{
+					"type": "heading",
+					"text": "Result"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Result** es la misma idea para los errores: `Ok(value)` o `Error(reason)`. El fallo forma parte del contrato. En Elixir la convención es `{:ok, value}` o `{:error, reason}`, y quien llama decide con `case` o `with`. Las funciones que terminan en `!`, como `File.read!`, lanzan una excepción, para cuando el fallo es inesperado."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Imagina un tren con dos vías. La vía feliz lleva los valores de paso en paso. Si un paso falla, el tren cambia a la vía del error y sigue hasta el final, saltándose todos los demás pasos. Puedes leer más en [Railway Oriented Programming](https://fsharpforfunandprofit.com/rop/)."
+				},
+				{
+					"type": "heading",
+					"text": "Functors: contenedores con un buen map"
+				},
+				{
+					"type": "paragraph",
+					"text": "`map(f)` en un Option aplica `f` al valor de adentro, si lo hay, y no hace nada si el Option está vacío. Tu función solo conoce el caso feliz; el Option se ocupa del otro. Puedes pensar en un Option como una lista con cero o un elemento. Los arrays, Option, Result y las promises tienen un `map` así, y los llamamos **functors**: contenedores cuyo `map` transforma el contenido y conserva la forma. 'Bien portado' significa dos leyes: aplicar `map` con la función identidad no cambia nada, y aplicar `map` con `f` y luego con `g` es igual a aplicar `map` con la composición de `f` y `g`."
+				},
+				{
+					"type": "heading",
+					"text": "Monads: encadenar pasos que pueden fallar"
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Y si la función que le das a `map` también devuelve un Option, como `parse: string => Option<number>`? Entonces `map(parse)` produce `Option<Option<number>>`, una caja dentro de otra. `flatMap` (también llamado `chain`, `bind` o `andThen`) aplica la función y **aplana** el resultado. Los arrays se comportan igual: `map` con una función que devuelve arrays da un array de arrays, y `flatMap` da un array plano."
+				},
+				{
+					"type": "paragraph",
+					"text": "Por intuición, una **monad** es un contenedor con `flatMap`. Con `map` la forma es fija: solo cambia el contenido. Con `flatMap` la función devuelve un contenedor nuevo, así que un paso puede cambiar el rumbo de los siguientes: un Option puede quedar vacío, un Result puede volverse un error, un array puede crecer o encogerse."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "type Result<T> = { ok: true; value: T } | { ok: false; error: string };\nconst chain = <A, B>(r: Result<A>, f: (a: A) => Result<B>): Result<B> =>\n\tr.ok ? f(r.value) : r;\nconst half = (n: number): Result<number> =>\n\tn % 2 === 0 ? { ok: true, value: n / 2 } : { ok: false, error: 'odd ' + n };\n\n// 12 -> 6 -> 3 -> half(3) falla\nchain(chain(chain({ ok: true, value: 12 }, half), half), half);\n// { ok: false, error: 'odd 3' }",
+					"caption": "chain es el flatMap de Result: el primer error viaja hasta el final"
+				},
+				{
+					"type": "paragraph",
+					"text": "En Elixir, `with` hace este trabajo. Mientras cada patrón coincide, la ejecución sigue y las variables anteriores quedan disponibles. En el primer paso que no coincide, el `with` devuelve ese valor y se salta el resto. El `then` de una promise cumple los dos papeles: si tu función devuelve un valor simple, actúa como `map`, y si devuelve otra promise, actúa como `flatMap`, esperándola, así que `Promise.resolve(1).then(n => Promise.resolve(n + 1))` es una `Promise<number>`, no una promise de promise."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Herramienta",
+						"Función que recibe",
+						"Resultado"
+					],
+					"rows": [
+						[
+							"`map`",
+							"`A => B` (una función común)",
+							"Mismo contenedor, contenido nuevo"
+						],
+						[
+							"`flatMap`",
+							"`A => Container<B>` (puede fallar o cambiar la forma)",
+							"Un contenedor plano"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Option dice 'quizá nada', Result dice 'quizá un error'. Usa map para funciones comunes y flatMap para encadenar pasos que pueden fallar."
+				}
+			]
+		},
+		{
+			"id": "side-effects",
+			"title": "Gestión de los efectos secundarios",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un programa sin efectos secundarios sería inútil: no leería un archivo, no respondería a una petición web ni mostraría nada en pantalla. Por eso quienes programan en estilo funcional no intentan eliminar los efectos. Los **empujan al borde**. La idea central se llama **núcleo funcional, cáscara imperativa** (functional core, imperative shell)."
+				},
+				{
+					"type": "diagram",
+					"caption": "Efectos en el borde, decisiones en el medio",
+					"content": "  +--------- cáscara imperativa (fina) --------+\n  |  reloj, aleatorio, archivos, red, base     |\n  |        +--------------------------+        |\n  | entra->|   núcleo funcional       |->sale  |\n  |        |   puro: decide, calcula, |        |\n  |        |   valida, formatea       |        |\n  |        +--------------------------+        |\n  +---------------------------------------------+"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **núcleo** recibe datos simples y devuelve datos simples. La **cáscara** toca el mundo: reloj, generador aleatorio, archivos, red, base de datos y pantalla. Una prueba práctica para clasificar una operación: ¿daría el mismo resultado si se repitiera con los mismos valores? Si no, pertenece a la cáscara."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "El chef decide la receta en una oficina tranquila (núcleo) y el mesero camina por el salón ruidoso cargando platos (cáscara). El mesero no tiene recetas. El chef nunca sale de la oficina."
+				},
+				{
+					"type": "heading",
+					"text": "La ganancia: pruebas fáciles"
+				},
+				{
+					"type": "paragraph",
+					"text": "Las pruebas con efectos son lentas, frágiles y requieren preparación: levantar una base de datos, falsear el reloj, limpiar archivos. Cuando la lógica está en funciones puras, cada prueba es una llamada con valores y una comparación. Obtienes una base ancha de pruebas rápidas del núcleo y solo unas pocas pruebas de integración para la cáscara, que es tan fina y sin decisiones que bastan pocas."
+				},
+				{
+					"type": "heading",
+					"text": "Dos técnicas"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Estado aleatorio explícito.** Un generador de números pseudoaleatorios es una función determinista de su estado interno. La impureza viene de esconder ese estado en una variable global. Si lo haces explícito, `next(state)` devuelve `{value, newState}` y es pura. Guardar la **semilla** (el estado inicial) basta para reproducir una ejecución que falló. Erlang y Elixir siguen este modelo en `:rand.uniform_s` y funciones parecidas."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Efectos como datos.** El núcleo no envía el correo. Devuelve una descripción de lo que hay que hacer, y la cáscara la ejecuta:"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "type Effect = { type: 'sendEmail'; to: string };\n\nfunction decide(state: State, cmd: Command): Effect[] {\n\treturn [{ type: 'sendEmail', to: 'ana@example.test' }];\n}\n// cáscara: for (const e of decide(s, c)) perform(e);",
+					"caption": "La decisión es un dato simple, así que las pruebas pueden compararla, registrarla o reproducirla"
+				},
+				{
+					"type": "paragraph",
+					"text": "La descripción se puede comparar, registrar en un log, filtrar o reproducir. Es la idea detrás de Elm, Redux y los 'comandos' de los sistemas dirigidos por eventos."
+				},
+				{
+					"type": "heading",
+					"text": "¿Dónde vive el estado que cambia en Elixir?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los datos son inmutables, pero un proceso servidor, como un `GenServer`, sí guarda un estado que cambia con el tiempo. Un proceso es un bucle: espera un mensaje, calcula la respuesta y el **siguiente estado**, y se llama a sí mismo de nuevo con ese estado, mediante una llamada de cola. El 'estado mutable' es solo la secuencia de argumentos de esas llamadas. El efecto queda confinado al proceso, el acceso se serializa con su buzón de mensajes, y los callbacks que calculan el siguiente estado pueden ser puros y probarse directamente."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Decide en el núcleo puro, actúa en la cáscara fina. Convierte las entradas ocultas (tiempo, aleatoriedad) en parámetros y describe los efectos como datos."
+				}
+			]
+		},
+		{
+			"id": "elixir-typescript-style",
+			"title": "Estilo funcional en Elixir y TypeScript",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Elixir fue hecho para el estilo funcional, así que los buenos hábitos vienen gratis. TypeScript te deja escribir de las dos maneras, así que hay que elegir bien. Aquí están los detalles que más sorprenden."
+				},
+				{
+					"type": "heading",
+					"text": "Métodos que copian y métodos que modifican en el lugar en JavaScript"
+				},
+				{
+					"type": "table",
+					"caption": "Conoce a qué grupo pertenece cada método de array",
+					"headers": [
+						"Devuelve un array nuevo (seguro)",
+						"Modifica el array en el lugar (cuidado)"
+					],
+					"rows": [
+						[
+							"`map`, `filter`, `slice`, `concat`",
+							"`push`, `pop`, `splice`"
+						],
+						[
+							"`toSorted`, `toReversed` (ES2023)",
+							"`sort`, `reverse`"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "`xs.sort(...)` modifica `xs` y además lo devuelve. Así, `const ys = xs.sort(...)` te da un solo array con dos nombres, y `xs === ys` es verdadero. Usa `xs.toSorted(...)` u ordena una copia con `[...xs].sort(cmp)`. Tipar los parámetros como `readonly T[]` hace que el compilador te impida mutar."
+				},
+				{
+					"type": "paragraph",
+					"text": "Otra trampa: `sort` sin función de comparación compara la forma de **texto** de los elementos. Así, `[10, 9, 1].sort()` da `[1, 10, 9]`. Una prueba con ejemplos de un dígito no lo notaría. Una propiedad como 'cada elemento es menor o igual que el siguiente', probada con entradas generadas, lo encuentra rápido."
+				},
+				{
+					"type": "heading",
+					"text": "Detalles de Elixir"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Pipe.** `c(b(a(x)))` se escribe `x |> a() |> b() |> c()`. El dato va primero y cada línea es un paso.",
+						"**Operador de captura `&`.** `&(&1 * 2)` crea una función anónima en la que `&1` es el primer argumento. Con nombre y aridad, `&String.upcase/1` convierte una función con nombre en un valor. Los dos sirven para pasar funciones a `Enum.map` y compañía: `Enum.map([1, 2, 3], &(&1 * 2))` da `[2, 4, 6]`.",
+						"**`Enum` sobre mapas devuelve listas.** `Enum` funciona con cualquier cosa que implemente el protocolo `Enumerable` (listas, mapas, rangos, streams), pero devuelve listas. `Enum.map(%{a: 1}, fn {k, v} -> {k, v * 2} end)` da `[a: 2]`, una lista de pares. Para recibir un mapa de vuelta, usa `Map.new(map, fn {k, v} -> {k, v * 2} end)`. Con más de una clave, no cuentes con el orden en que se recorre un mapa.",
+						"**El `map` de TypeScript existe solo en arrays** y siempre devuelve un array."
+					]
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Idea",
+						"Elixir",
+						"TypeScript"
+					],
+					"rows": [
+						[
+							"Encadenar pasos",
+							"`x |> f() |> g()`",
+							"`pipe(f, g)(x)` (escribe el tuyo) o cadenas de métodos"
+						],
+						[
+							"Datos inmutables",
+							"Siempre",
+							"`readonly`, `toSorted`, copias con spread"
+						],
+						[
+							"Repetición",
+							"Recursión, `Enum`, `for`",
+							"`map`, `reduce`, bucles"
+						],
+						[
+							"Valor ausente o error",
+							"`{:ok, v}` / `{:error, e}`, `with`",
+							"`T | undefined`, un tipo Result"
+						],
+						[
+							"Tipo suma",
+							"Tuplas marcadas con átomos",
+							"Uniones discriminadas"
+						],
+						[
+							"Secuencia perezosa",
+							"`Stream`",
+							"Generators"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "En TypeScript, aprende qué métodos de array modifican en el lugar. En Elixir, `Enum` devuelve listas y el pipe pone el dato primero."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando todo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Todas las ideas se apoyan unas en otras. Los datos inmutables vuelven puras las funciones. Las funciones puras se pueden memoizar, probar sin mocks y ejecutar en paralelo. Como las funciones son valores, podemos pasarlas (orden superior), recordar variables (closures), fijar argumentos (currying) y conectarlas (composición). Sin contadores mutables, la repetición es recursión. Los tipos suma vuelven irrepresentables los estados ilegales, y Option y Result hacen visible el fallo. La pereza ahorra trabajo, y el núcleo funcional mantiene en la cáscara los efectos inevitables."
+				},
+				{
+					"type": "diagram",
+					"caption": "Cómo se conectan las ideas",
+					"content": "  datos inmutables --> funciones puras --> pruebas fáciles, paralelo, memoizar\n          |                  |\n          v                  v\n   recursión, reduce    composición, currying, map/filter\n          |                  |\n          +----> ADTs, Option/Result <---+\n                         |\n                         v\n          núcleo funcional + cáscara imperativa"
+				},
+				{
+					"type": "table",
+					"caption": "Referencia rápida",
+					"headers": [
+						"Concepto",
+						"Regla en una línea",
+						"Trampa típica"
+					],
+					"rows": [
+						[
+							"Función pura",
+							"Mismos argumentos, mismo resultado, sin efectos",
+							"Entradas ocultas: el reloj, números aleatorios, globales"
+						],
+						[
+							"Inmutabilidad",
+							"Crea un valor nuevo, conserva el antiguo",
+							"`const` y el spread superficial no protegen datos anidados"
+						],
+						[
+							"reduce",
+							"Valor inicial + función de paso; el paso debe ser asociativo para repartir el trabajo",
+							"Olvidar el valor inicial en una lista vacía"
+						],
+						[
+							"Closure",
+							"Función + las variables donde nació",
+							"Bucles con `var`; fugas por objetos grandes capturados"
+						],
+						[
+							"Llamada de cola",
+							"Última acción de la función, así que nada queda pendiente",
+							"Suponer que Node.js elimina las llamadas de cola"
+						],
+						[
+							"Composición",
+							"La salida de una es la entrada de la siguiente; asociativa, no conmutativa",
+							"Confundir el orden de compose y pipe"
+						],
+						[
+							"Suma / producto",
+							"Suma = o, los valores se suman; producto = y, los valores se multiplican",
+							"Campos opcionales que permiten estados imposibles"
+						],
+						[
+							"Pereza",
+							"Calcula solo lo que el consumidor jala",
+							"Olvidar la operación terminal"
+						],
+						[
+							"Result / flatMap",
+							"Encadena pasos; el primer error se salta el resto",
+							"Usar map donde hace falta flatMap"
+						],
+						[
+							"Núcleo y cáscara",
+							"Decide en código puro, actúa en el borde",
+							"Meter el reloj en el fondo de la lógica"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Errores comunes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Creer que `const` vuelve inmutable un objeto. Solo impide reasignar el nombre.",
+						"Creer que una función determinista es automáticamente pura. Imprimir es un efecto.",
+						"Usar `Enum.each` con una variable para acumular en Elixir. Usa `Enum.reduce`.",
+						"Usar `list ++ [x]` en un bucle. Copia la lista entera cada vez.",
+						"Esperar que una función con recursión de cola sea segura en Node.js para un millón de pasos.",
+						"Olvidar que `xs.sort()` modifica `xs`."
+					]
+				},
+				{
+					"type": "video",
+					"title": "Learning Functional Programming with JavaScript, Anjana Vakil (JSUnconf)",
+					"url": "https://www.youtube.com/watch?v=e-5obm1G_FY"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Mantén las funciones puras, los datos inmutables y los efectos en el borde. Casi todo lo demás en la programación funcional es una herramienta que te ayuda a lograrlo."
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,1158 @@
+{
+	"area": "information-theory",
+	"intro": [
+		"La teoría de la información es la ciencia de los **mensajes**: cuánto cuenta realmente un mensaje, qué tan pequeño se puede hacer y cómo enviarlo por un lugar donde las cosas se dañan. La inventó Claude Shannon en 1948, y la unidad que usa es el [[bit|La pieza más pequeña de información: una respuesta de sí o no, escrita 0 o 1.]].",
+		"La encuentras todos los días. Una foto que se encoge en un `.zip` pequeño, un video que se reproduce con una conexión débil, un mensaje con emoji que llega bien, una descarga que se verifica para que no llegue rota, una contraseña que se guarda sin guardarse: todo eso es teoría de la información en acción.",
+		"Piénsala como tres preguntas. Primera: ¿cuánta información hay en este mensaje? Segunda: ¿se puede escribir el mismo mensaje con menos bits (compresión)? Tercera: si el camino tiene baches y algunos bits se invierten, ¿puede el receptor darse cuenta y arreglarlo (detección y corrección de errores)? Al final de esta página sabrás responder las tres, y conocerás la diferencia entre codificación, hash y cifrado, tres cosas que la gente suele confundir."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "El panorama: bits, redundancia y ruido",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagina un juego de adivinanza: yo pienso en un número del 1 al 8 y tú haces preguntas de sí o no. Siempre necesitas exactamente 3 preguntas: \"¿es mayor que 4?\", \"¿está en la mitad de arriba de lo que queda?\", y así sucesivamente. Cada respuesta sí/no vale **1 bit**. Así que elegir una cosa entre 8 posibilidades iguales lleva 3 bits."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un bit es un interruptor de luz: encendido o apagado. Ocho interruptores en fila muestran 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 = 256 patrones distintos."
+				},
+				{
+					"type": "paragraph",
+					"text": "Dos ideas explican todo el tema. La primera es la [[redundancia|Parte de un mensaje que podrías haber adivinado, así que no aporta nada nuevo.]]. Si escribo \"Graaaacias\", las a de sobra no cuentan nada. La redundancia se puede **quitar** para que el mensaje sea más pequeño (compresión), o **añadir a propósito** para proteger el mensaje (corrección de errores)."
+				},
+				{
+					"type": "paragraph",
+					"text": "La segunda idea es el [[ruido|Todo lo que en el camino cambia bits por accidente: interferencia eléctrica, un rayón en el disco, un rayo cósmico.]]. Un camino ruidoso invierte algunos bits. No podemos evitarlo, pero sí armar el mensaje de modo que el daño se note."
+				},
+				{
+					"type": "diagram",
+					"caption": "El viaje de un mensaje",
+					"content": "origen --> comprimir --> proteger --> CAMINO RUIDOSO\n(foto,     (quitar lo    (bits extra   (los bits\n texto)     que sobra)    inteligentes)         pueden invertir)\n                                                |\nusuario <-- descomprimir <-- verificar <---+\n"
+				},
+				{
+					"type": "table",
+					"caption": "Dos trabajos opuestos",
+					"headers": [
+						"Trabajo",
+						"Qué hace con la redundancia",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"Compresión",
+							"La quita, para que el mensaje sea más pequeño",
+							"zip, gzip, PNG"
+						],
+						[
+							"Control de errores",
+							"Añade un poco, de forma astuta, para encontrar o arreglar el daño",
+							"CRC en Ethernet, memoria ECC"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Comprimir es quitar el desperdicio que se puede adivinar. Controlar errores es devolver una cantidad pequeña y planeada de bits extra. Son dos caras de la misma moneda."
+				}
+			]
+		},
+		{
+			"id": "shannon-entropy",
+			"title": "Información y entropía de Shannon",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Si te digo \"el sol salió hoy\", no aprendes nada: ya lo sabías. Si te digo \"nevó en el desierto hoy\", aprendes mucho, porque era muy improbable. **Cuanto más rara la noticia, más información lleva.**"
+				},
+				{
+					"type": "paragraph",
+					"text": "Shannon convirtió esto en un número. Un evento con probabilidad `p` lleva `I = −log2(p)` bits, llamada [[autoinformación|Qué tanto sorprende un evento concreto, medido en bits.]]. El `log2` solo pregunta: \"¿cuántas veces tengo que partir las posibilidades por la mitad para llegar a este evento?\""
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Probabilidad del evento",
+						"Cuántas mitades",
+						"Información"
+					],
+					"rows": [
+						[
+							"1 (es seguro)",
+							"0",
+							"0 bits"
+						],
+						[
+							"1/2",
+							"1",
+							"1 bit"
+						],
+						[
+							"1/4",
+							"2",
+							"2 bits"
+						],
+						[
+							"1/8",
+							"3",
+							"3 bits"
+						],
+						[
+							"1/1024",
+							"10",
+							"10 bits"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Entropía: la sorpresa promedio"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una fuente (una moneda, un texto, un archivo) produce muchos símbolos. La [[entropía|La información promedio por símbolo de una fuente, en bits. Se escribe H.]] es la autoinformación promedio, ponderada por cuánto aparece cada símbolo:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "H = suma de  p * log2(1 / p)   sobre todos los símbolos\n\nmoneda justa:   1/2*1 + 1/2*1             = 1 bit\n1/2, 1/4, 1/4:  0,5*1 + 0,25*2 + 0,25*2   = 1,5 bits\n1/2,1/4,1/8,1/8: 0,5 + 0,5 + 0,375 + 0,375 = 1,75 bits"
+				},
+				{
+					"type": "paragraph",
+					"text": "La entropía se mide en **bits por símbolo**. Es un límite inferior: ningún código sin pérdidas que mire un símbolo a la vez puede usar, en promedio, menos bits por símbolo. Usar el logaritmo natural (base e) solo cambia la unidad a **nats**; la base 10 da hartleys. El resultado es la misma cantidad multiplicada por una constante."
+				},
+				{
+					"type": "heading",
+					"text": "¿Cuándo es grande o pequeña la entropía?"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Una fuente con un solo símbolo posible tiene H = 0. No hay sorpresa, así que un archivo de 5.000 bytes iguales se puede describir en pocas palabras.",
+						"Con n símbolos igualmente probables, H = log2(n). Este es el **máximo**: una moneda justa tiene 1 bit, un dado justo de 4 caras tiene 2 bits, 256 valores de byte igual de frecuentes tienen 8 bits.",
+						"Cualquier desequilibrio baja H. Una moneda que cae cara el 90% de las veces tiene solo unos 0,47 bits por lanzamiento."
+					]
+				},
+				{
+					"type": "chart",
+					"title": "Entropía de un lanzamiento de moneda según la probabilidad de cara",
+					"unit": "bits",
+					"bars": [
+						{
+							"label": "p = 0,5",
+							"value": 1
+						},
+						{
+							"label": "p = 0,9",
+							"value": 0.469
+						},
+						{
+							"label": "p = 0,99",
+							"value": 0.081
+						},
+						{
+							"label": "p = 1",
+							"value": 0
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "La fórmula para dos resultados es la **entropía binaria**: `H(p) = −p·log2(p) − (1−p)·log2(1−p)`. Es simétrica: H(0,1) = H(0,9)."
+				},
+				{
+					"type": "heading",
+					"text": "Dos variables juntas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"La **entropía conjunta** H(X, Y) es la incertidumbre del par. Es como máximo H(X) + H(Y), e igual exactamente cuando X e Y son independientes. Una moneda justa y una elección entre 4 opciones, independientes, dan 1 + 2 = 3 bits (8 pares iguales).",
+						"La **información mutua** I(X; Y) dice cuánto reduce tu duda sobre X el saber Y. Es 0 para variables independientes. Si Y siempre determina a X, llega a H(X). No importa si Y es \"igual\" o \"lo opuesto\" de X: un cable que invierte cada bit sigue contando todo."
+					]
+				},
+				{
+					"type": "callout",
+					"text": "La **entropía de orden 0** mira cada símbolo solo, ignorando a sus vecinos. Un archivo ABABAB... tiene 1 bit por símbolo en orden 0, pero es totalmente predecible: el límite real (la tasa de entropía) usa lo que vino antes. La entropía de orden 0 limita los códigos símbolo a símbolo, no a todo compresor. Otro ejemplo: un archivo con cada uno de los 256 valores de byte exactamente 4 veces tiene entropía de orden 0 de 8 bits por byte, aunque los bytes estén en un ordenado orden ascendente.",
+					"tone": "warning"
+				},
+				{
+					"type": "video",
+					"title": "Solving Wordle using information theory (3Blue1Brown)",
+					"url": "https://www.youtube.com/watch?v=v68zYyaEmEA"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Información = sorpresa = −log2(p). Entropía = información promedio por símbolo. Máxima cuando todo es igual de probable, cero cuando el resultado es seguro."
+				}
+			]
+		},
+		{
+			"id": "source-coding-prefix-codes",
+			"title": "Codificación de fuente y códigos prefijo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un [[código|Una regla que da a cada símbolo una cadena de bits, su palabra código.]] es una tabla: el símbolo a un lado, los bits al otro. Elegir bien la tabla se llama **codificación de fuente**. La tabla más simple da a todos los símbolos el mismo número de bits (un código de **longitud fija**). Para guardar 26 letras necesitas ⌈log2(26)⌉ = 5 bits por letra, porque con 4 bits solo hay 16 patrones. Eso desperdicia 6 de los 32 patrones."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Piensa en una agenda de apodos. Tu mejor amigo recibe un apodo de una letra, porque lo dices todo el día. Alguien a quien ves una vez al año recibe el nombre completo y largo. Corto para lo común, largo para lo raro: eso es un código de **longitud variable**, y hace más corto el mensaje promedio siempre que unos símbolos sean más comunes que otros. Con todos los símbolos igual de probables no hay ganancia."
+				},
+				{
+					"type": "paragraph",
+					"text": "La longitud promedio de un código es `L = suma de p × longitud`. Ejemplo: A, B, C, D con probabilidades 0,5, 0,25, 0,125, 0,125 y códigos 0, 10, 110, 111. Entonces L = 0,5 + 0,5 + 0,375 + 0,375 = 1,75 bits, frente a 2 bits de un código fijo, un ahorro del 12,5%."
+				},
+				{
+					"type": "heading",
+					"text": "El problema de saber dónde termina la palabra"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con longitudes variables, ¿cómo sabe el lector dónde termina una palabra código? Un [[código prefijo|Un código en el que ninguna palabra código es el comienzo de otra palabra código.]] lo resuelve. Compara los códigos `0, 10, 110, 111` (código prefijo) y `0, 01, 10` (no lo es: 0 es el comienzo de 01)."
+				},
+				{
+					"type": "diagram",
+					"caption": "Un código prefijo es un árbol con símbolos solo en las hojas",
+					"content": "          (raíz)\n         0/    \\1\n         A     (*)\n             0/   \\1\n             B    (*)\n                0/   \\1\n                C     D\n\nA = 0   B = 10   C = 110   D = 111"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para decodificar `0101100111`, lee bit a bit y detente en la primera palabra código que reconozcas: 0 = A, 10 = B, 110 = C, 0 = A, 111 = D. Como ninguna palabra empieza otra, la primera coincidencia siempre es correcta. Esto se llama **decodificación instantánea**."
+				},
+				{
+					"type": "heading",
+					"text": "Tres familias de códigos"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Códigos prefijo (instantáneos)**: se decodifican mientras lees, sin esperar.",
+						"**Códigos de decodificación única**: solo hay una manera de dividir cualquier mensaje, pero quizá haya que esperar. El código `0, 01, 011, 0111` no es prefijo, pero cada 0 empieza una palabra nueva, así que es de decodificación única. Tras leer `01` debes ver el siguiente bit para saber si es B o el comienzo de C.",
+						"**Códigos no singulares**: símbolos distintos tienen palabras distintas, nada más. Los códigos prefijo están dentro de los de decodificación única, que están dentro de los no singulares."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "La desigualdad de Kraft"
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Qué longitudes son posibles? Una palabra código de longitud `l` gasta una fracción 2^(−l) del árbol. Un código prefijo binario con longitudes l1, ..., ln existe **si y solo si** `suma de 2^(−li) ≤ 1`. Para longitudes 1, 2, 3, 3: 1/2 + 1/4 + 1/8 + 1/8 = 1 (árbol lleno). Para longitudes 1, 1, 2, 2: 1/2 + 1/2 + 1/4 + 1/4 = 1,5 > 1, así que es imposible."
+				},
+				{
+					"type": "callout",
+					"text": "Kraft habla solo de **longitudes**. El código `0, 01, 10` tiene longitudes 1, 2, 2 y suma exactamente 1, pero no es prefijo, porque 0 empieza 01 y el mensaje `010` se puede dividir de dos maneras. Cambiar B por `11` mantiene las longitudes y lo arregla.",
+					"tone": "warning"
+				},
+				{
+					"type": "heading",
+					"text": "El teorema de codificación de fuente"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para una fuente con entropía H, el mejor código prefijo que codifica un símbolo a la vez tiene longitud promedio L con `H ≤ L < H + 1`. El límite inferior nunca se puede superar. El superior se alcanza dando a cada símbolo la longitud ⌈log2(1/p)⌉; la parte extra (menos de 1 bit) viene de redondear a bits enteros. Codificar grupos de símbolos diluye ese desperdicio."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Código prefijo = ninguna palabra empieza otra = símbolos en las hojas de un árbol = se decodifica sin esperar. Kraft dice qué longitudes caben. La longitud promedio nunca baja de la entropía."
+				}
+			]
+		},
+		{
+			"id": "huffman-coding",
+			"title": "Codificación de Huffman",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "David Huffman encontró una receta simple para construir el mejor código prefijo posible, símbolo a símbolo. Es un algoritmo **voraz**: en cada paso hace lo mejor a nivel local, y eso resulta ser lo mejor a nivel global."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Imagina un torneo jugado al revés. Los dos equipos más débiles (los dos símbolos más raros) siempre juegan entre sí primero y se fusionan en un solo equipo cuya fuerza es la suma. Los equipos que se fusionan temprano quedan hondo en el cuadro, así que reciben códigos largos. El equipo fuerte entra al final y recibe un código corto."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Crea una hoja por cada símbolo, con su frecuencia.",
+						"Toma los dos nodos de **menor** frecuencia y dales un padre nuevo cuya frecuencia es la suma.",
+						"Repite hasta que quede un solo nodo: la raíz.",
+						"Marca las aristas izquierdas con 0 y las derechas con 1. El código de un símbolo es el camino desde la raíz."
+					]
+				},
+				{
+					"type": "diagram",
+					"caption": "Texto con A=5, B=2, C=1, D=1 (9 caracteres)",
+					"content": "1. C(1) + D(1)    -> nodo 2\n2. B(2) + nodo 2   -> nodo 4\n3. A(5) + nodo 4   -> raíz 9\n\n        (9)\n       /   \\\n      A    (4)        A = 0    (1 bit)\n          /   \\       B = 10   (2 bits)\n         B    (2)     C = 110  (3 bits)\n             /   \\    D = 111  (3 bits)\n            C     D\n\n5*1 + 2*2 + 1*3 + 1*3 = 15 bits (bytes normales: 9*8 = 72)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una comprobación rápida: el costo total también es igual a la suma de los pesos de todos los nodos internos, 2 + 4 + 9 = 15. Con probabilidades 0,40, 0,30, 0,15, 0,10 y 0,05 el mismo método da longitudes 1, 2, 3, 4, 4 y un promedio de **2,05 bits**, mientras que la entropía es de unos 2,01 bits."
+				},
+				{
+					"type": "heading",
+					"text": "Datos sobre el árbol y su costo"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Cada nodo interno tiene exactamente dos hijos (un árbol binario lleno). Con n símbolos distintos hay **n hojas**, **n − 1 nodos internos** y 2n − 1 nodos en total. Seis símbolos dan 5 nodos internos.",
+						"El paso \"los dos menores, una y otra vez\" se hace con un [[min-heap|Una lista con forma de árbol que siempre deja tomar rápido el elemento más pequeño.]]. El heap entrega el mínimo en O(log n). Hay n − 1 uniones, así que construir el árbol cuesta **O(n log n)**.",
+						"En la práctica n es pequeño (como máximo 256 valores de byte), así que el tiempo lo domina la lectura del archivo."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Qué va en el archivo comprimido"
+				},
+				{
+					"type": "paragraph",
+					"text": "El lector necesita el mismo árbol. Por eso el archivo guarda un **encabezado** con la tabla de frecuencias, el árbol, o solo las longitudes de los códigos (el truco del Huffman canónico). El encabezado es un costo fijo, así que los archivos muy pequeños pueden quedar **más grandes** tras comprimirse."
+				},
+				{
+					"type": "heading",
+					"text": "¿Qué tan cerca de la entropía?"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Siempre `H ≤ L < H + 1`.",
+						"L es igual a H exactamente cuando todas las probabilidades son potencias de 1/2 (1/2, 1/4, 1/8, ...). Entonces las longitudes ideales son enteras. El ejemplo de 800 bytes con probabilidades 1/4, 1/4, 1/4, 1/8, 1/8 tiene H = 2,25 bits y Huffman llega exactamente a 1.800 bits = 225 bytes.",
+						"Huffman nunca usa menos de **1 bit por símbolo**. Para una moneda con 99% de caras la entropía es 0,08 bits, pero Huffman sigue pagando 1 bit, es decir, es 12 veces peor que el límite. Las curas son codificar bloques de símbolos o usar la codificación aritmética."
+					]
+				},
+				{
+					"type": "callout",
+					"text": "Huffman solo es óptimo entre los códigos que dan a cada símbolo un número entero de bits. Existe mejor compresión cuando se rompe esa regla.",
+					"tone": "warning"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Huffman: une los dos nodos más livianos una y otra vez con un min-heap, O(n log n). Los símbolos raros reciben códigos largos. Longitud promedio entre H y H + 1, y exactamente H cuando las probabilidades son potencias de 1/2."
+				}
+			]
+		},
+		{
+			"id": "arithmetic-coding-lz-family",
+			"title": "Codificación aritmética y la familia LZ",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Huffman solo mira qué tan común es cada símbolo. Otras dos ideas van más lejos. La **codificación aritmética** arregla el problema del \"número entero de bits\". La **familia LZ** aprovecha las partes del mensaje que vuelven a aparecer."
+				},
+				{
+					"type": "heading",
+					"text": "Codificación aritmética: un número en una regla"
+				},
+				{
+					"type": "paragraph",
+					"text": "Toma la regla de 0 a 1. Para cada símbolo, quédate solo con el trozo de la regla que corresponde a su probabilidad y haz zoom en él para el siguiente símbolo. Al final, todo el mensaje es un intervalo pequeño, y anotas cualquier número dentro de él."
+				},
+				{
+					"type": "diagram",
+					"caption": "P(A) = 0,6 (primera parte), P(B) = 0,4 (última parte); mensaje AB",
+					"content": "0                                1\n|--------A--------|-----B------|   paso 1: A = [0, 0,6)\n0                0,6\n|----A----|----B----|             paso 2, dentro de A:\n0        0,36     0,6            B = [0,36, 0,60)"
+				},
+				{
+					"type": "paragraph",
+					"text": "La regla para cada símbolo: `nuevo low = low + ancho × (probabilidad antes del símbolo)` y `nuevo ancho = ancho × P(símbolo)`. Para AB: ancho 0,6 × 0,4 = 0,24, intervalo [0,36, 0,60). El ancho final es la probabilidad del mensaje completo. Un intervalo ancho necesita pocos bits para señalar dentro de él, uno estrecho necesita más, así que el costo es cerca de `−log2(probabilidad del mensaje)`, muy cerca de la entropía."
+				},
+				{
+					"type": "paragraph",
+					"text": "La gran diferencia con Huffman: el costo de cada símbolo es una **fracción** de bit. Con un símbolo de probabilidad 0,95, Huffman desperdicia mucho (al menos 1 bit cada vez), mientras que la codificación aritmética queda a unos 2 bits de la entropía del mensaje **completo**."
+				},
+				{
+					"type": "heading",
+					"text": "LZ77: señala lo que ya escribiste"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Cuando copias a mano un poema largo y ves \"la misma línea de tres líneas arriba\", escribes \"mira la línea 3 de arriba\" en vez de la línea entera. LZ77 hace exactamente eso, con una **ventana** del pasado reciente."
+				},
+				{
+					"type": "paragraph",
+					"text": "LZ77 mantiene una ventana deslizante de los últimos bytes que vio. Cuando el texto que sigue ya apareció en la ventana, escribe una referencia corta: **(distancia, longitud)**, que significa \"retrocede `distancia`, copia `longitud` símbolos\". El LZ77 clásico escribe tríos `(offset, longitud, símbolo)`: copia `longitud` símbolos desde `offset` atrás y luego añade un símbolo literal. Cuando nada se repite, escribe `(0, 0, símbolo)`. Así el trío `(5, 3, 'x')` añade 4 símbolos: tres copiados más la x."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "salida hasta ahora:  a b\ntrío (2, 4, 'c'):  copia un símbolo a la vez, 2 atrás\n  a b -> a b a -> a b a b -> a b a b a -> a b a b a b\n  luego el literal c   => ababab c"
+				},
+				{
+					"type": "paragraph",
+					"text": "Fíjate en que la copia puede ser **más larga que el offset**, porque el decodificador lee símbolos que acaba de escribir. Así una racha de la misma letra se vuelve un token diminuto (offset 1). El decodificador no necesita un archivo de diccionario: reconstruye la ventana mientras escribe."
+				},
+				{
+					"type": "paragraph",
+					"text": "El tamaño de la ventana es un compromiso. Una ventana de 2^k bytes necesita k bits por offset. Una ventana más grande encuentra más repeticiones, pero cada referencia cuesta más y la búsqueda es más lenta. DEFLATE usa 32 KiB."
+				},
+				{
+					"type": "heading",
+					"text": "LZ78 y LZW: un diccionario explícito"
+				},
+				{
+					"type": "paragraph",
+					"text": "LZ78 y LZW mantienen una **tabla numerada de frases** que crece mientras leen. LZ77 tiene un diccionario implícito (la ventana) y olvida los datos viejos. La tabla de LZW recuerda frases de cualquier punto del pasado. Ejemplo con A = 1, B = 2 y entrada ABABAB:"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Frase A, lee B: AB es nuevo. Salida 1, añade AB = 3.",
+						"Frase B, lee A: BA es nuevo. Salida 2, añade BA = 4.",
+						"Frase A, lee B: AB existe, la frase pasa a ser AB. Lee A: ABA es nuevo. Salida 3, añade ABA = 5.",
+						"Frase A, lee B: AB existe. La entrada termina: salida 3.",
+						"Resultado: `1 2 3 3`."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "DEFLATE: dos pasos en orden fijo"
+				},
+				{
+					"type": "paragraph",
+					"text": "gzip, zip y PNG usan **DEFLATE**: primero LZ77, luego Huffman. LZ77 quita los tramos repetidos, que un código de símbolos no ve. Lo que produce (literales, longitudes, distancias) todavía tiene frecuencias desiguales, así que Huffman lo aprieta. El orden importa: la salida de Huffman parece aleatoria, así que nada se podría hacer después."
+				},
+				{
+					"type": "chart",
+					"title": "Tamaño comprimido de un texto generado de 16.384 bytes (medido en este repositorio)",
+					"unit": "bytes",
+					"bars": [
+						{
+							"label": "Límite de entropía (orden 0)",
+							"value": 8513
+						},
+						{
+							"label": "Huffman",
+							"value": 8842
+						},
+						{
+							"label": "LZ77",
+							"value": 8920
+						},
+						{
+							"label": "LZ77 + Huffman",
+							"value": 6971
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "LZ77 más Huffman queda **por debajo** del límite de orden 0, porque las palabras repetidas son una redundancia que el orden 0 no mide."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Codificación aritmética = un intervalo, bits fraccionarios. LZ77 = referencias (distancia, longitud) en una ventana. LZ78/LZW = tabla explícita de frases. DEFLATE = LZ77, luego Huffman."
+				}
+			]
+		},
+		{
+			"id": "limits-of-compression",
+			"title": "Límites de la compresión",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Hay dos grandes tipos de compresión. La **sin pérdidas** devuelve exactamente los mismos bytes (Huffman, LZ77, DEFLATE). Es obligatoria para texto, programas y datos. La **con pérdidas** tira detalles que la gente apenas nota (JPEG, MP3, video), así que lo que sale solo se parece a lo que entró. El límite de la entropía habla de la sin pérdidas."
+				},
+				{
+					"type": "heading",
+					"text": "Comprimir dos veces no ayuda"
+				},
+				{
+					"type": "paragraph",
+					"text": "Apretar un archivo de 1 MB hasta 300 kB y comprimir el resultado otra vez casi no cambia nada. Comprimir es quitar redundancia. Tras un buen trabajo, los bytes parecen casi aleatorios: cerca de 8 bits de entropía por byte, sin repeticiones que encontrar. La segunda pasada no tiene nada que quitar, y los encabezados incluso pueden dejar el archivo un poco más grande. Si repetir siempre encogiera un archivo, todo archivo acabaría en 1 bit, lo cual es absurdo."
+				},
+				{
+					"type": "heading",
+					"text": "Ningún compresor encoge todo"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Tienes 8 palomas pero solo 7 agujeros: al menos dos palomas tienen que compartir un agujero. Este es el **principio del palomar**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un compresor sin pérdidas debe dar salidas distintas para entradas distintas, o la decodificación sería ambigua. Hay 2^n archivos de n bits, pero solo 2^0 + 2^1 + ... + 2^(n−1) = 2^n − 1 cadenas de bits más cortas. No hay salidas cortas para todos. Así que **si un compresor acorta algunos archivos, necesariamente alarga otros**."
+				},
+				{
+					"type": "table",
+					"caption": "Los compresores son apuestas sobre la forma de los datos",
+					"headers": [
+						"Datos",
+						"Huffman",
+						"LZ77",
+						"Por qué"
+					],
+					"rows": [
+						[
+							"El mismo byte repetido",
+							"Necesita al menos 1 bit por byte",
+							"Diminuto, pocos tokens",
+							"La repetición es fácil para el diccionario"
+						],
+						[
+							"Bytes de 0 a 255 repetidos",
+							"Solo el encabezado, sin ganancia (H = 8)",
+							"Cerca del 8% del tamaño",
+							"El orden 0 no ve patrón, el contexto sí"
+						],
+						[
+							"Bytes aleatorios",
+							"Más grande (encabezados)",
+							"Mucho más grande en el formato didáctico",
+							"No existe redundancia"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Otro ejemplo: la codificación por tramos (RLE) escribe cada tramo como un par (cuenta, valor), 1 byte cada uno. Es excelente para 50 bytes iguales (2 bytes), pero para 100 bytes donde ningún byte es igual a su vecino la salida tiene **200 bytes**. Los formatos reales se protegen guardando un bloque \"sin comprimir\" cuando la compresión no compensa."
+				},
+				{
+					"type": "heading",
+					"text": "La entropía no es el límite final"
+				},
+				{
+					"type": "paragraph",
+					"text": "El primer millón de dígitos de π parece aleatorio para la estadística: los dígitos están casi uniformemente distribuidos, y los compresores comunes casi no hacen nada. Pero existe un programa diminuto que los imprime. El tamaño del programa más corto que produce una secuencia es su **complejidad de Kolmogorov**, el límite absoluto de la compresión. No se puede calcular, así que ningún compresor la alcanza en general. La mayoría de las secuencias son casi incompresibles; los archivos que le importan a la gente son un rincón diminuto y muy regular de todos los posibles."
+				},
+				{
+					"type": "callout",
+					"text": "Aleatoriedad estadística no es lo mismo que ser incompresible. Y \"lo voy a comprimir otra vez\" nunca funciona como plan.",
+					"tone": "warning"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "La compresión sin pérdidas no puede encoger todos los archivos (palomar). Los datos bien comprimidos parecen aleatorios, así que recomprimir falla. La entropía limita lo que un modelo ve; la complejidad de Kolmogorov es el límite verdadero, pero incalculable."
+				}
+			]
+		},
+		{
+			"id": "channel-capacity-noise",
+			"title": "Capacidad de canal y ruido",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un **canal** es el camino que recorre el mensaje: un cable de cobre, ondas de radio, una fibra, un disco. Dos cosas limitan qué tan rápido puedes enviar bits: qué tan ancho es el camino (el [[ancho de banda|El rango de frecuencias que el canal puede llevar, en hercios (Hz).]]) y qué tan ruidoso es."
+				},
+				{
+					"type": "heading",
+					"text": "Nyquist: el límite de velocidad de un canal limpio"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una señal limitada a B hercios queda descrita por completo con 2B muestras por segundo. Muestrear más rápido no añade nada. Si cada muestra puede tener V niveles distintos, lleva log2(V) bits. Así que la tasa máxima de un canal **sin ruido** es `2B · log2(V)` bits por segundo."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "B = 4.000 Hz, V = 8 niveles\n2B = 8.000 muestras por segundo\nlog2(8) = 3 bits por muestra\ntasa = 8.000 * 3 = 24.000 bps"
+				},
+				{
+					"type": "paragraph",
+					"text": "En un canal real el ruido impide usar muchos niveles, porque no podrías distinguirlos. Ahí entra Shannon."
+				},
+				{
+					"type": "heading",
+					"text": "Shannon-Hartley: el límite de un canal ruidoso"
+				},
+				{
+					"type": "paragraph",
+					"text": "La capacidad es `C = B · log2(1 + S/N)` bits por segundo, donde S/N es la [[relación señal-ruido|Qué tan más fuerte es la señal que el ruido, como una razón simple de potencias.]]. Ninguna técnica envía más rápido que C con una tasa de error diminuta. La capacidad crece **linealmente** con el ancho de banda, pero solo **logarítmicamente** con S/N: duplicar la potencia no duplica la velocidad."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "B = 4.000 Hz, S/N = 255 (razón simple)\n1 + 255 = 256 = 2^8  ->  log2 = 8\nC = 4.000 * 8 = 32.000 bps"
+				},
+				{
+					"type": "paragraph",
+					"text": "La S/N suele darse en decibelios (dB), una escala logarítmica: `dB = 10 · log10(S/N)`. Así 10 dB es una razón de 10, 20 dB es 100 y **30 dB es 1.000**. La fórmula pide la razón simple, así que convierte primero."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"dB",
+						"Razón simple S/N"
+					],
+					"rows": [
+						[
+							"0 dB",
+							"1"
+						],
+						[
+							"10 dB",
+							"10"
+						],
+						[
+							"20 dB",
+							"100"
+						],
+						[
+							"30 dB",
+							"1.000"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "El canal binario simétrico"
+				},
+				{
+					"type": "paragraph",
+					"text": "El modelo de ruido más simple es el **canal binario simétrico (BSC)**: cada bit se invierte con probabilidad `p`, independientemente de todos los demás. El número p es la tasa de error de bit (BER). Su capacidad es `C = 1 − H(p)` bits por uso."
+				},
+				{
+					"type": "chart",
+					"title": "Capacidad de un BSC (bits por uso)",
+					"unit": "bits",
+					"bars": [
+						{
+							"label": "p = 0",
+							"value": 1
+						},
+						{
+							"label": "p = 0,1",
+							"value": 0.531
+						},
+						{
+							"label": "p = 0,5",
+							"value": 0
+						},
+						{
+							"label": "p = 0,9",
+							"value": 0.531
+						},
+						{
+							"label": "p = 1",
+							"value": 1
+						}
+					]
+				},
+				{
+					"type": "list",
+					"items": [
+						"Con p = 0,5 el bit que llega es un volado, así que no sobrevive nada: capacidad **0**.",
+						"La curva es simétrica: p = 0,1 y p = 0,9 tienen la misma capacidad (0,531). Lo que destruye la información es la **impredecibilidad** del ruido. Un canal que siempre invierte (p = 1) es tan bueno como uno perfecto: basta con invertir de vuelta."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Un error pequeño por bit daña tramas grandes"
+				},
+				{
+					"type": "paragraph",
+					"text": "Si los bits se dañan de forma independiente, una trama de n bits llega perfecta con probabilidad `(1 − p)^n`. Para n = 1.000 y p = 0,001 eso es cerca de 0,368: casi dos tercios de las tramas llegan dañadas, aunque solo 1 bit de cada 1.000 esté mal. Lo que importa a un protocolo es la tasa de error de trama, no la de error de bit."
+				},
+				{
+					"type": "heading",
+					"text": "El segundo teorema de Shannon"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **teorema de codificación de canal ruidoso** dice: si envías a una tasa R **por debajo** de la capacidad C, existen códigos (con bloques lo bastante largos) que dejan la probabilidad de error tan pequeña como quieras, sin que la tasa caiga a cero. **Por encima** de C es imposible. El teorema solo dice que esos códigos existen; encontrarlos tomó décadas (los códigos turbo, LDPC y polares se acercan al límite)."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Nyquist: 2B·log2(V) para un canal limpio. Shannon: B·log2(1 + S/N) para uno ruidoso. Convierte los dB antes. La capacidad del BSC es 1 − H(p), cero en p = 0,5."
+				}
+			]
+		},
+		{
+			"id": "error-detection",
+			"title": "Detección de errores: paridad, checksum, CRC",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "El ruido invierte bits y no podemos evitarlo. Para notar el daño, el emisor añade unos pocos **bits de verificación** calculados a partir de los datos. El receptor los recalcula: si no coinciden, algo cambió. Cuando el daño solo se detecta, la reacción habitual es **pedir los datos otra vez** (retransmisión). En enlaces confiables como la fibra esto es más barato que corregir."
+				},
+				{
+					"type": "heading",
+					"text": "El bit de paridad"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un bit extra elegido para que el total de bits 1 sea par (**paridad par**). Es igual al XOR de todos los bits de datos. Para `1011001` hay cuatro bits 1, así que el bit de paridad es 0. El receptor cuenta los bits 1 en los 8 bits y se queja si la cuenta es impar."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "La paridad detecta cualquier cantidad **impar** de bits invertidos y deja pasar cualquier cantidad **par**. Dos inversiones se cancelan. Por eso es débil contra ráfagas, cuando varios bits vecinos cambian juntos."
+				},
+				{
+					"type": "paragraph",
+					"text": "La **paridad bidimensional** organiza los datos en una matriz con un bit de paridad por fila y por columna. Un solo bit errado hace fallar exactamente una fila y una columna, y su cruce es el culpable: permite **corregir** un error."
+				},
+				{
+					"type": "heading",
+					"text": "El checksum"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un checksum suma los bytes. Ejemplo con suma módulo 256: los bytes 0xA0, 0x70, 0x15 son 160 + 112 + 21 = 293, y 293 mod 256 = 37 = 0x25. Es barato, pero solo ve el **total**. Intercambiar dos bytes, o subir un byte en k y bajar otro en k, mantiene la suma, así que el error **no se detecta**."
+				},
+				{
+					"type": "heading",
+					"text": "CRC: división sin acarreos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un [[CRC|Verificación de redundancia cíclica: un valor corto de verificación calculado con una división de polinomios.]] trata el mensaje como un polinomio cuyos coeficientes son 0 y 1. En la aritmética módulo 2, sumar y restar son lo mismo: XOR. Los pasos: añade r ceros (r es el grado del generador G), divide por G y añade el resto (r bits) al mensaje. La trama completa ahora es divisible por G, y eso es lo que el receptor verifica."
+				},
+				{
+					"type": "diagram",
+					"caption": "Mensaje 1101, generador 1011 (grado 3), así que añade 3 ceros",
+					"content": "1101000\n1011\n----\n 1100\n 1011\n ----\n  1110\n  1011\n  ----\n   1010\n   1011\n   ----\n    001   <- resto\n\ntrama enviada: 1101 001"
+				},
+				{
+					"type": "list",
+					"items": [
+						"El largo del CRC es el grado del generador: **el CRC-16 añade 16 bits, el CRC-32 añade 32 bits**, sea cual sea el tamaño de la trama. En una trama de 12.000 bits, 32 bits son menos del 0,3%.",
+						"Prueba estándar: el CRC-32 del texto `123456789` es `0xCBF43926`.",
+						"Si la trama T(x) es múltiplo de G(x) y la trama recibida es T(x) + E(x) (E es el patrón de error), el error **pasa sin detectarse exactamente cuando E(x) es un múltiplo no nulo de G(x)**.",
+						"Una ráfaga de longitud k se detecta con seguridad cuando k ≤ r, si G tiene término constante 1. Así el CRC-16 atrapa toda ráfaga de hasta 16 bits.",
+						"Para daño aleatorio largo, un CRC de r bits deja pasar una trama mala con probabilidad cercana a 2^(−r): en CRC-32, 1 entre 4.300 millones."
+					]
+				},
+				{
+					"type": "table",
+					"caption": "Comparando los tres",
+					"headers": [
+						"Método",
+						"Bits de verificación",
+						"Deja pasar"
+					],
+					"rows": [
+						[
+							"Bit de paridad",
+							"1",
+							"Cualquier número par de inversiones"
+						],
+						[
+							"Checksum de suma",
+							"8 o 16",
+							"Bytes intercambiados, cambios que mantienen la suma"
+						],
+						[
+							"CRC-32",
+							"32",
+							"Casi nada accidental (cerca de 1 en 2^32)"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"text": "Un CRC protege contra **accidentes**, no contra un enemigo. El CRC es público y lineal, así que quien cambia el archivo a propósito puede arreglar también el CRC. Contra atacantes usa un hash criptográfico obtenido de una fuente confiable, un MAC o una firma digital.",
+					"tone": "warning"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Paridad: solo inversiones impares. Checksum: ciego a todo lo que mantiene la suma. CRC: resto de polinomios módulo 2, fuerte contra ráfagas de hasta r bits, no contra atacantes."
+				}
+			]
+		},
+		{
+			"id": "error-correction",
+			"title": "Corrección de errores: códigos de repetición y de Hamming",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Detectar un error es bueno. **Corregirlo** sin volver a pedir es mejor cuando no hay vuelta atrás (una sonda espacial, un disco, la memoria). Cuesta más bits extra. La idea clave es la **distancia**."
+				},
+				{
+					"type": "heading",
+					"text": "Distancia de Hamming"
+				},
+				{
+					"type": "paragraph",
+					"text": "La [[distancia de Hamming|El número de posiciones en las que dos palabras de la misma longitud difieren.]] entre `10110` y `11100` es 2 (las posiciones 2 y 4 difieren), el número de bits 1 de su XOR. Un código solo usa algunas palabras como válidas. La menor distancia entre dos palabras válidas es la **distancia mínima** d."
+				},
+				{
+					"type": "table",
+					"caption": "Lo que garantiza una distancia mínima",
+					"headers": [
+						"Distancia mínima",
+						"Qué puede hacer"
+					],
+					"rows": [
+						[
+							"2",
+							"Detectar 1 error (un bit de paridad)"
+						],
+						[
+							"3",
+							"Detectar 2 errores, O corregir 1 error"
+						],
+						[
+							"4",
+							"Corregir 1 error Y detectar 2 (SECDED)"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Las reglas: para **detectar** d errores se necesita d_min ≥ d + 1. Para **corregir** d errores se necesita d_min ≥ 2d + 1, para que la palabra dañada siga más cerca de la palabra correcta que de cualquier otra. Detección y corrección compiten: si la distancia 3 se usa para corregir 1 error, renuncias a detectar dos."
+				},
+				{
+					"type": "heading",
+					"text": "El código de repetición"
+				},
+				{
+					"type": "paragraph",
+					"text": "La idea más simple: enviar cada bit tres veces y votar por mayoría. Es el código (3,1): las palabras válidas son 000 y 111, a distancia 3. Los bloques `011`, `110`, `010` dan los bits 1, 1, 0. Un error por bloque se corrige. Dos errores en un bloque lo engañan."
+				},
+				{
+					"type": "paragraph",
+					"text": "Con una tasa de error de bit p = 0,1, un bit se entrega mal cuando 2 o 3 de las copias están invertidas: 3 × 0,01 × 0,9 + 0,001 = 0,028. El error baja de 10% a 2,8%, pero envías **3 veces** más bits. La **tasa** de un código (n, k) es k/n; aquí, 1/3."
+				},
+				{
+					"type": "heading",
+					"text": "Hamming(7,4)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Hamming(7,4) toma 4 bits de datos y añade 3 bits de paridad: 7 bits en una palabra, tasa 4/7 ≈ 0,57, y aun así corrige un error. De las 128 palabras posibles de 7 bits, solo 16 son válidas, y cualesquiera dos difieren en al menos 3 posiciones. Los bits de paridad quedan en las posiciones 1, 2 y 4 (potencias de dos)."
+				},
+				{
+					"type": "diagram",
+					"caption": "Disposición y grupos (paridad par en cada grupo)",
+					"content": "posición    1   2   3   4   5   6   7\ncontenido   p1  p2  d1  p4  d2  d3  d4\n\np1 revisa las posiciones 1, 3, 5, 7\np2 revisa las posiciones 2, 3, 6, 7\np4 revisa las posiciones 4, 5, 6, 7"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Codificar** los datos 1011 (d1=1, d2=0, d3=1, d4=1): p1 cubre d1, d2, d4 = 1, 0, 1, así que p1 = 0. p2 cubre d1, d3, d4 = 1, 1, 1, así que p2 = 1. p4 cubre d2, d3, d4 = 0, 1, 1, así que p4 = 0. Palabra: `0110011`."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Decodificar**: recalcula cada grupo. Un grupo con cantidad impar de bits 1 da 1. Lee los tres resultados como un número binario p4 p2 p1: el [[síndrome|El patrón de las verificaciones que fallaron. En los códigos de Hamming, leído como número, es la posición del bit errado.]]. Ejemplo: se recibe `0110001`: el grupo de p1 es par (0), el de p2 es impar (1), el de p4 es impar (1). El síndrome es 110 = 6, así que invierte la posición 6 y obtén `0110011`."
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Por qué funciona? La posición 6 pertenece exactamente a los grupos de p2 y p4, y la posición de cada bit es la suma de los bits de paridad que lo cubren."
+				},
+				{
+					"type": "heading",
+					"text": "¿Cuántos bits de paridad?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con m bits de datos y r bits de paridad, el síndrome tiene 2^r valores. Debe decir \"sin error\" o nombrar una de las m + r posiciones, así que `m + r + 1 ≤ 2^r`. Para m = 8: r = 3 da 12 > 8, no; r = 4 da 13 ≤ 16, sí: el código (12, 8). Para m = 4, r = 3 cabe exacto (8 ≤ 8), por eso Hamming(7,4) se llama **código perfecto**."
+				},
+				{
+					"type": "heading",
+					"text": "Dos errores son demasiados"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con dos bits invertidos, el síndrome es el XOR de dos posiciones, que señala un **tercer** bit. El decodificador lo invierte y ahora tiene tres bits errados, creyendo que todo está bien. Ejemplo: errores en las posiciones 1 y 2 dan síndrome 3 y una inversión en la posición 3."
+				},
+				{
+					"type": "paragraph",
+					"text": "El **Hamming extendido (8,4)** añade un bit de paridad global y sube la distancia a 4 (**SECDED**: corrección de error simple, detección de error doble). Síndrome cero y paridad correcta: sin error. Síndrome distinto de cero y paridad incorrecta: un error, corrígelo. Síndrome distinto de cero y paridad correcta: dos errores, solo detectados. Es el esquema de la memoria ECC."
+				},
+				{
+					"type": "heading",
+					"text": "Ráfagas e intercalado"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los errores reales suelen venir en ráfagas. El **intercalado** escribe k palabras como filas de una matriz y la envía columna por columna. Los vecinos en el canal se vuelven palabras distintas, así que una ráfaga de hasta k bits deja como máximo un error por palabra, que Hamming arregla. Sin redundancia extra, pero con retraso: toda la matriz debe llegar primero."
+				},
+				{
+					"type": "video",
+					"title": "But what are Hamming codes? (3Blue1Brown)",
+					"url": "https://www.youtube.com/watch?v=X8jsijhllIA"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Corregir d errores: d_min ≥ 2d + 1. Detectar d: d_min ≥ d + 1. Hamming(7,4): tasa 4/7, síndrome = posición del error, falla en silencio con dos errores. Añade un bit de paridad global para detectarlos."
+				}
+			]
+		},
+		{
+			"id": "text-binary-encodings",
+			"title": "Codificaciones de texto y binarias: ASCII, UTF-8, base64",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un computador solo guarda números. Para guardar texto, todos acuerdan una tabla: letra a número, y número a bytes. Esa tabla es una **codificación**."
+				},
+				{
+					"type": "heading",
+					"text": "ASCII"
+				},
+				{
+					"type": "paragraph",
+					"text": "El [[ASCII|El código de texto antiguo con 128 caracteres, usando 7 bits cada uno.]] tiene 128 posiciones (7 bits): 33 caracteres de control y 95 imprimibles. Un byte tiene 8 bits, así que sobraba un bit, y muchos países lo usaron de formas incompatibles. ASCII no tiene letras con acento, y por eso se crearon Unicode y UTF-8."
+				},
+				{
+					"type": "heading",
+					"text": "UTF-8"
+				},
+				{
+					"type": "paragraph",
+					"text": "Unicode da un número (un **punto de código**) a cada carácter del mundo. UTF-8 es una manera de escribir esos números como **1 a 4 bytes**. Los primeros 128 caracteres ocupan 1 byte idéntico al ASCII, así que los programas viejos siguen funcionando."
+				},
+				{
+					"type": "table",
+					"caption": "Cómo UTF-8 arma un carácter (los bits x llevan el código)",
+					"headers": [
+						"Bytes",
+						"Punto de código hasta",
+						"Disposición de los bytes",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"1",
+							"U+007F",
+							"0xxxxxxx",
+							"A"
+						],
+						[
+							"2",
+							"U+07FF",
+							"110xxxxx 10xxxxxx",
+							"ç, ã"
+						],
+						[
+							"3",
+							"U+FFFF",
+							"1110xxxx 10xxxxxx 10xxxxxx",
+							"€"
+						],
+						[
+							"4",
+							"encima",
+							"11110xxx 10xxxxxx 10xxxxxx 10xxxxxx",
+							"emojis"
+						]
+					]
+				},
+				{
+					"type": "list",
+					"items": [
+						"Un byte que empieza con `0` es un carácter completo. `110`, `1110`, `11110` empiezan un carácter de 2, 3, 4 bytes. `10` marca un byte de **continuación**.",
+						"Así, la palabra `ação` tiene 4 caracteres pero **6 bytes**: a, ç (2), ã (2), o. Bytes y caracteres son conteos distintos.",
+						"Para contar caracteres, cuenta los bytes que **no** son de continuación. En `48 C3 A9 E2 82 AC 21` los bytes iniciales son 48, C3, E2 y 21, así que hay 4 caracteres (H, é, €, !).",
+						"Como los bytes iniciales y los de continuación usan rangos separados, UTF-8 es **autosincronizante**: si empiezas en el medio, encuentras el siguiente carácter en máximo 3 bytes, y un carácter nunca aparece dentro de otro."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "base64"
+				},
+				{
+					"type": "paragraph",
+					"text": "Algunos canales antiguos, como el correo electrónico, solo llevan texto seguro. **base64** reescribe cualquier byte usando 64 caracteres seguros: A-Z, a-z, 0-9, `+` y `/`. Toma 3 bytes (24 bits), los divide en cuatro grupos de 6 bits y escribe un carácter por cada uno. Si el final queda incompleto, `=` completa el bloque de 4."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "'Hi' = 0x48 0x69 = 01001000 01101001\ngrupos de 6: 010010 | 000110 | 100100 (completado)\nvalores:     18       6        36\nletras:      S        G        k      luego '='\nresultado: SGk="
+				},
+				{
+					"type": "list",
+					"items": [
+						"Cada carácter de salida lleva 6 bits pero ocupa un byte: eficiencia de 75%, así que la salida es **4/3 (cerca de 33% más grande)** que la entrada.",
+						"Largo con relleno: `4 × techo(n / 3)`. Para 10 bytes: 4 × 4 = 16 caracteres (el último grupo tiene 1 byte, escrito como 2 caracteres y `==`)."
+					]
+				},
+				{
+					"type": "callout",
+					"text": "base64 **no** es compresión y **no** es secreto. Es solo un cambio de ropa que cualquiera puede deshacer.",
+					"tone": "warning"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "ASCII: 7 bits, 128 caracteres. UTF-8: 1 a 4 bytes, la parte de 1 byte es igual a ASCII, autosincronizante. base64: 3 bytes se vuelven 4 caracteres, 33% más grande, relleno con =."
+				}
+			]
+		},
+		{
+			"id": "encoding-hashing-encryption",
+			"title": "Codificación, hash y cifrado comparados",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Tres palabras que la gente confunde todo el tiempo. Todas transforman datos en algo que parece distinto, pero sus objetivos son muy diferentes."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "**Codificar** es traducir un libro a otro idioma: cualquiera con el diccionario lo traduce de vuelta. **Cifrar** es meter el libro en una caja con llave: solo quien tiene la llave la abre. **Hacer un hash** es tomar la huella digital del libro: identifica al libro, pero no puedes reconstruir el libro a partir de ella."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Característica",
+						"Codificación",
+						"Cifrado",
+						"Hash"
+					],
+					"rows": [
+						[
+							"Objetivo",
+							"Ajustar los datos a un medio",
+							"Ocultar el contenido",
+							"Crear una huella de tamaño fijo"
+						],
+						[
+							"¿Reversible?",
+							"Sí, por cualquiera",
+							"Sí, solo con la llave",
+							"No"
+						],
+						[
+							"¿Necesita un secreto?",
+							"No",
+							"Sí (la llave)",
+							"No (opcionalmente una sal)"
+						],
+						[
+							"Ejemplos",
+							"base64, UTF-8, hex",
+							"AES",
+							"SHA-256"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Hashes criptográficos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un hash como SHA-256 convierte cualquier entrada en una salida de **tamaño fijo**. Es determinista (misma entrada, misma salida), unidireccional (encontrar una entrada para una salida dada es inviable, la llamada resistencia a la preimagen) y resistente a colisiones (encontrar dos entradas con la misma salida es inviable). Infinitas entradas comparten cada salida, así que no hay nada que \"deshacer\"."
+				},
+				{
+					"type": "heading",
+					"text": "Guardar contraseñas"
+				},
+				{
+					"type": "paragraph",
+					"text": "El sistema no necesita saber tu contraseña, solo comprobar que escribiste la misma. Así que guarda el **hash** y compara con el hash de lo que escribes. Dos refuerzos: una [[sal|Un valor aleatorio, distinto para cada usuario, mezclado con la contraseña antes del hash.]] hace que contraseñas iguales tengan hashes distintos y acaba con las tablas ya preparadas; y un hash deliberadamente **lento** limita los intentos por segundo."
+				},
+				{
+					"type": "callout",
+					"text": "\"Un hash no se puede revertir\" no basta. Un PIN de 4 dígitos tiene solo 10.000 posibilidades (unos 13,3 bits). Un atacante simplemente calcula el hash de los 10.000 y compara. Sin sal, una sola tabla rompe a todos los usuarios. La sal y la lentitud ayudan, pero no crean entropía: los secretos de baja entropía también necesitan un límite de intentos en el servidor.",
+					"tone": "warning"
+				},
+				{
+					"type": "heading",
+					"text": "CRC frente a hash criptográfico"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un archivo se entrega con su CRC-32. ¿Prueba que nadie lo cambió a propósito? No. Un accidente no elige qué bits cambiar, y el CRC lo detecta. Un atacante sí elige: el CRC es público y lineal, así que cambia el archivo y arregla el CRC. Para resistir a un adversario usa un hash criptográfico obtenido por un canal confiable, un MAC (un hash con llave secreta) o una firma digital."
+				},
+				{
+					"type": "heading",
+					"text": "Comprimir primero, cifrar después"
+				},
+				{
+					"type": "paragraph",
+					"text": "La compresión necesita redundancia que quitar. Un buen cifrado produce bytes que parecen aleatorios, sin redundancia. Así que comprime **antes** de cifrar; el otro orden casi no encoge nada. Una nota de seguridad: si un atacante controla parte del texto y puede ver el tamaño de la salida, comprimir antes de cifrar puede filtrar información por la longitud (los ataques CRIME y BREACH a HTTPS)."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Codificación es pública y reversible. Cifrado es reversible con una llave. Hash es unidireccional. CRC es para accidentes, hash criptográfico para adversarios. Contraseñas: hash con sal y lento. Comprime, luego cifra."
+				}
+			]
+		},
+		{
+			"id": "how-it-all-connects",
+			"title": "Cómo se conecta todo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Mira un archivo viajando de tu computador a un amigo. Cada idea de esta página tiene un lugar en el camino."
+				},
+				{
+					"type": "diagram",
+					"content": "texto --UTF-8--> bytes --LZ77+Huffman--> menos bits\n  --cifrar--> bytes aleatorios --CRC/Hamming--> trama\n  --CANAL RUIDOSO (límite: Shannon)--> trama dañada\n  --verificar/reparar--> bytes --descifrar--> descomprimir"
+				},
+				{
+					"type": "table",
+					"caption": "Mapa rápido de la página",
+					"headers": [
+						"Pregunta",
+						"Herramienta",
+						"Límite"
+					],
+					"rows": [
+						[
+							"¿Cuánta información?",
+							"Entropía H",
+							"H bits por símbolo"
+						],
+						[
+							"¿Código de símbolos más corto?",
+							"Huffman",
+							"H ≤ L < H + 1"
+						],
+						[
+							"¿Bits fraccionarios, repeticiones?",
+							"Aritmético, LZ77",
+							"Cerca de la entropía del mensaje completo / del contexto"
+						],
+						[
+							"¿Más rápido en un camino ruidoso?",
+							"Buenos códigos de error",
+							"Capacidad de Shannon C"
+						],
+						[
+							"¿Notar el daño?",
+							"Paridad, checksum, CRC",
+							"Distancia d + 1"
+						],
+						[
+							"¿Arreglar el daño?",
+							"Repetición, Hamming",
+							"Distancia 2d + 1"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Errores comunes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Pensar que base64 o UTF-8 ocultan datos (solo codifican).",
+						"Creer que un CRC o un hash simple protege contra un enemigo.",
+						"Usar el valor en dB directo en la fórmula de Shannon.",
+						"Olvidar que Huffman paga al menos 1 bit por símbolo.",
+						"Comprimir datos ya comprimidos o cifrados y esperar ganancias.",
+						"Confiar en un decodificador Hamming cuando dos bits pueden estar mal.",
+						"Mezclar la entropía de orden 0 con el límite real de un compresor que usa contexto."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Comprimir quita la redundancia que se puede adivinar, el control de errores devuelve una cantidad planeada, y la entropía y la capacidad del canal son los dos límites que dicen hasta dónde llega cada uno."
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,1328 @@
+{
+	"area": "testing",
+	"intro": [
+		"Imagine you build a toy robot. Before you give it to a friend, you press every button to check that it walks, talks and turns its head. You are **testing** your robot. A [[test|a small check that runs the program and compares what it did with what it should have done]] in software is the same idea: a little piece of code that uses your program and says 'yes, this is right' or 'no, this is wrong'.",
+		"Why does this matter? Programs change all the time. Each change can fix one thing and break another thing far away. If a computer can re-check everything in a few seconds, the programmers are not afraid to change the code. Apps, banks, games and the software inside cars are only safe to improve because many tests watch over them every day.",
+		"In this summary you will learn: the different sizes of tests and why we want many small ones and few big ones, how to keep a test alone and clean, how to use pretend helpers called test doubles, the red-green-refactor rhythm of test-driven development, how to test pieces working together and a whole app in a browser, quick health checks and checks against old bugs, how to measure how good your tests are, how a computer can invent test cases for you, why some tests fail by luck, how to choose good test values, and how tests run automatically every time someone shares code. At the end you will be ready for the quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: what is a test for?",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A test has three parts. First you **prepare** a situation. Then you **do** the thing you want to check. Finally you **compare** the result with what you expected. If the result is different, the test fails and a human is told."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A test is like a teacher's answer sheet. The teacher knows the right answer to each question. The computer does the exercise and the answer sheet says 'correct' or 'wrong'. The nice part is that the computer can do thousands of exercises in a few seconds and never gets tired."
+				},
+				{
+					"type": "heading",
+					"text": "Words you will meet"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Defect (bug)**: a mistake in the code that makes the program behave wrongly.",
+						"**Test suite**: a group of tests that run together, like a whole exam made of many questions.",
+						"**Pass and fail**: a test passes when the result is what we expected, and fails when it is not. Many tools show passing as green and failing as red.",
+						"**Verification**: checking that the software does what its written description (the specification) says. The question is: did we build the thing right?",
+						"**Validation**: checking that the software is what the customer really needs. The question is: did we build the right thing? A program can pass the first check and fail the second, for example when the written description itself was wrong.",
+						"**Functional test**: checks what the system does, for example 'for this input, this output'.",
+						"**Non-functional test**: checks how the system behaves while doing it, for example how fast it is, how many users it can serve, how safe or easy to use it is."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Tests can show that bugs exist, but they can never show that there are no bugs at all. A test only looks at the cases we thought of. That is why we choose our tests carefully, as you will see in this summary."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A good test suite is a safety net: it lets people change the code without fear, because a mistake turns something red."
+				}
+			]
+		},
+		{
+			"id": "test-pyramid-levels",
+			"title": "Test levels and the test pyramid",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Think about checking a toy car. You can look at just one wheel. You can look at the wheel and the axle together. Or you can put the whole car on the floor and push it. Each check looks at a bigger piece. Tests are the same, and we call each size a **test level**."
+				},
+				{
+					"type": "table",
+					"caption": "The levels, from small to big",
+					"headers": [
+						"Level",
+						"What runs",
+						"Speed",
+						"If it fails, where is the bug?"
+					],
+					"rows": [
+						[
+							"Unit",
+							"One small piece (a function or a class), alone",
+							"Very fast",
+							"Easy to find: only a few lines ran"
+						],
+						[
+							"Integration",
+							"Two or more pieces working together, such as code plus a real database",
+							"Medium",
+							"In the connection between the pieces"
+						],
+						[
+							"System or end-to-end",
+							"The whole application, used like a person would use it",
+							"Slow",
+							"Anywhere: the test only says that something broke"
+						],
+						[
+							"Acceptance",
+							"The customer decides if the product is good enough",
+							"Slowest",
+							"Not about bugs: about the customer's need"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The **test pyramid** is advice about how many tests of each level to write: many unit tests at the wide base, fewer integration tests in the middle, and very few end-to-end tests at the top. The reason is cost. The higher the level, the slower, the more fragile and the more expensive each test is."
+				},
+				{
+					"type": "diagram",
+					"caption": "The pyramid and its upside-down version",
+					"content": "      the pyramid                 the ice-cream cone\n         /\\                      ___________________\n        /e2e\\   few              \\   many e2e + manual /\n       /------\\                   \\   few integration/\n      / integ. \\  some             \\   very few unit /\n     /----------\\                   \\______________/\n    /   unit     \\  many\n   /--------------\\         slow, shaky, hard to debug"
+				},
+				{
+					"type": "paragraph",
+					"text": "The upside-down version is a known mistake, called the **ice-cream cone** or inverted pyramid. Almost all checking is done by slow end-to-end and manual tests. The suite takes a long time, fails for reasons that have nothing to do with the code, and does not say where the bug is. The cure is to push each check **down** to the lowest level that can see the behaviour."
+				},
+				{
+					"type": "chart",
+					"title": "Typical cost of one test (milliseconds, measured in this repository's test-pyramid mini-project)",
+					"unit": "ms",
+					"bars": [
+						{
+							"label": "unit",
+							"value": 3.6
+						},
+						{
+							"label": "integration",
+							"value": 7.6
+						},
+						{
+							"label": "end-to-end",
+							"value": 690
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The arithmetic of the pyramid"
+				},
+				{
+					"type": "paragraph",
+					"text": "Suppose a suite has 400 unit tests of 5 ms, 50 integration tests of 200 ms and 10 end-to-end tests of 6 seconds, run one after the other. The time of each level is the number of tests times the duration of one test."
+				},
+				{
+					"type": "chart",
+					"title": "Seconds taken by each level of that suite",
+					"unit": "s",
+					"bars": [
+						{
+							"label": "400 unit tests",
+							"value": 2
+						},
+						{
+							"label": "50 integration tests",
+							"value": 10
+						},
+						{
+							"label": "10 end-to-end tests",
+							"value": 60
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The whole suite takes 72 seconds, and the 10 slow tests (a small share of all tests) use 60 of them, about 83% of the time. This is why we do not want a wide top."
+				},
+				{
+					"type": "heading",
+					"text": "Which level sees which bug?"
+				},
+				{
+					"type": "paragraph",
+					"text": "A test only finds bugs that are on the path it runs. A mistake in a price rule written as a plain function is seen by a unit test. A wrong column name between the code and the database is seen only when code and database run together. A button whose click is connected to the wrong element of the page is seen only by a test that opens the page, because the server code is perfectly fine."
+				},
+				{
+					"type": "heading",
+					"text": "The three stages of Sommerville"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Development testing**: made by the people who build the system, to look for defects (unit, component and system tests).",
+						"**Release testing**: a separate team tests a complete version to show that it meets the requirements and is good enough to be used.",
+						"**User testing**: real users or customers try the system. In **alpha testing** they test together with the team. In **beta testing** an early version goes to volunteers who use it in their real environment. In **acceptance testing** the customer decides whether to accept the system."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Test each behaviour at the lowest level that can see it. Many cheap tests at the bottom, a few expensive ones at the top."
+				}
+			]
+		},
+		{
+			"id": "unit-tests-isolation",
+			"title": "Unit tests and isolation",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **unit test** checks one small piece of the program, such as one function, alone. 'Alone' is the key word. If you want to know whether a single light bulb works, you test it by itself, not inside the whole house."
+				},
+				{
+					"type": "paragraph",
+					"text": "A good unit test is **fast** (milliseconds), **isolated** (it does not depend on other tests), **repeatable** (same result every time) and **self-checking** (the test itself says pass or fail with assertions, so no person has to read the output and compare). A self-checking suite can run thousands of tests, and you only look at the ones that failed."
+				},
+				{
+					"type": "heading",
+					"text": "Arrange, Act, Assert"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "One test, three visible parts",
+					"content": "test(\"a 10% coupon lowers 200 to 180\", () => {\n\t// Arrange: prepare the situation\n\tconst cart = new Cart([{ price: 200 }]);\n\t// Act: do the one thing being tested\n\tconst total = cart.totalWith(\"TEN\");\n\t// Assert: compare with what we expect\n\texpect(total).toBe(180);\n});"
+				},
+				{
+					"type": "paragraph",
+					"text": "Keep **one Act per test**. Then, when the test fails, you know exactly which behaviour is wrong."
+				},
+				{
+					"type": "heading",
+					"text": "The fixture and the xUnit family"
+				},
+				{
+					"type": "paragraph",
+					"text": "The [[fixture|the objects and data a test needs before it can run]] is the stage where the test plays. In the xUnit family of tools (JUnit, pytest, Bun test and many more), `setUp` builds the fixture **before each test** and `tearDown` cleans it **after each test**. Because every test starts from a fresh stage and leaves nothing behind, the tests can run in any order, or one alone."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Imagine a board game that you put back in the box after every game. Each new game starts with the pieces in the right place. If you left the pieces where the last game ended, the next game would depend on the previous one."
+				},
+				{
+					"type": "paragraph",
+					"text": "A test runner must also treat a failed test as a normal result. It catches the error of each test, writes it down, and goes on with the next test, so a single run shows all the failures at once. A runner that stops at the first error would hide the others."
+				},
+				{
+					"type": "heading",
+					"text": "Shared state breaks isolation"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "A hidden order dependence",
+					"content": "const cart: string[] = [];          // shared by every test\n\ntest(\"adds an item\", () => {\n\tcart.push(\"book\");\n\texpect(cart.length).toBe(1);\n});\ntest(\"adds a second item\", () => {\n\tcart.push(\"pen\");\n\texpect(cart.length).toBe(2);   // passes only if the first test ran before\n});"
+				},
+				{
+					"type": "paragraph",
+					"text": "Run the whole file and it is green. Run only the second test in a new process and it fails, because the list starts empty, so after one push it has 1 item and not 2. The classic sign of shared state is a test that passes in the full suite but fails alone or in another order."
+				},
+				{
+					"type": "heading",
+					"text": "Things that make a unit easy to test"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Pure function**: for the same arguments it always returns the same value and changes nothing outside itself. It needs no clock, no random numbers, no files and no network, so you only give arguments and check the returned value. Put the logic in pure functions and keep the side effects in a thin layer around them.",
+						"**[[Dependency injection|giving a piece of code the things it needs from the outside, instead of letting it create them]]**: if `registerUser` does `new SmtpMailer()` inside, a test cannot stop it from sending real e-mail. If it receives a `mailer` as a parameter or in its constructor, the test hands it a pretend mailer.",
+						"**Test through the public interface**: check what the class promises (returned values, visible state). A test that reads a private field breaks when the code is rewritten inside, even though nothing changed for the users.",
+						"**Objects with state**: the effect of a method depends on the methods called before it. Testing a `Connection` class with one test per method is not enough: also try the sequences, including the invalid ones, such as `send` after `close`. All lines can be covered and the dangerous sequence still never run."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Unit tests are fast, alone, repeatable and self-checking. What they cannot see is how the pieces work together."
+				}
+			]
+		},
+		{
+			"id": "test-doubles",
+			"title": "Test doubles: pretend helpers",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A film uses a stunt double for the dangerous scenes. In software, a **test double** is an object that takes the place of a real helper (a database, an e-mail server, a clock) during a test. We do this because the real helper may be slow, may cost money, or may be impossible to control."
+				},
+				{
+					"type": "paragraph",
+					"text": "The words below come from Gerard Meszaros and are used by Martin Fowler. There are five kinds."
+				},
+				{
+					"type": "table",
+					"caption": "The five kinds of test double",
+					"headers": [
+						"Kind",
+						"What it does",
+						"Example"
+					],
+					"rows": [
+						[
+							"Dummy",
+							"Only fills a parameter that the signature demands. It is never really used.",
+							"A `logger` passed to a constructor in a test that logs nothing"
+						],
+						[
+							"Stub",
+							"Gives ready-made answers to the calls it receives. It controls the **indirect inputs** of the code under test.",
+							"A rate service that always answers 5.2"
+						],
+						[
+							"Spy",
+							"A stub that also writes down how it was called. The test looks at the notes **after** acting.",
+							"A hand-written mailer that keeps a `sent` list"
+						],
+						[
+							"Mock",
+							"Is told what calls to expect **before** the test acts, and checks them by itself.",
+							"A library object with 'send must be called once with this address'"
+						],
+						[
+							"Fake",
+							"A real, working version with a shortcut that makes it unfit for production.",
+							"A repository that keeps records in a `Map` in memory"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A dummy is a chair-shaped cardboard in a photo. A stub is a parrot that always repeats the same sentence. A spy is a friend who writes down everything that happened. A mock is a teacher who says in advance what you must do and checks it. A fake is a toy kitchen that really cooks, but only with plastic food."
+				},
+				{
+					"type": "heading",
+					"text": "State verification and behaviour verification"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**State verification**: the test uses the unit and then looks at the result, either the returned value or the final state of the objects.",
+						"**Behaviour verification**: the test looks at the **calls** made to the helpers. It is needed when the effect is the call itself, such as sending an e-mail.",
+						"The second style ties the test to how the code is written. A test that only counts calls can pass when the answer is wrong, and fail after a harmless refactoring. When there is a returned value or a final state, the main assertion should be about it."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A fake often gives shorter and stronger tests than a mock when the helper has memory. If a sign-up service saves a user and later finds and updates it, a fake repository lets the test just look at the stored user at the end. A mock would need one expectation for each call, which describes the conversation, not the result."
+				},
+				{
+					"type": "heading",
+					"text": "Uses worth knowing"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Hard-to-cause situations**: a full disk, a service that answers 503, a timeout. A double set to fail causes the error whenever you ask, so you can check how the code reacts. The double replaces the helper (the HTTP client), never the unit being tested.",
+						"**Time as a dependency**: code that reads the system clock has a hidden input. Inject a `FakeClock` that starts at a fixed moment and moves only when the test calls `advance`. Then 'the token expires after 15 minutes' is tested in milliseconds, exactly at the edge, and never fails by luck.",
+						"**Self Shunt**: Kent Beck's name for the case where the test class itself plays the role of the double."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A double freezes what the team believed about the real helper on the day it was written. If the real service changes its answer, the tests with doubles stay green and production breaks. A suite built on doubles needs a few integration or contract tests that compare the belief with reality."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Dummy fills, stub answers, spy records, mock expects, fake works in a simple way. Prefer checking results over counting calls."
+				}
+			]
+		},
+		{
+			"id": "tdd-cycle",
+			"title": "Test-driven development: red, green, refactor",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Most people write the code first and the test afterwards. **Test-driven development** (TDD), created by Kent Beck, turns this around: you write the test first. It sounds odd, but it is like drawing the finish line before running the race."
+				},
+				{
+					"type": "diagram",
+					"caption": "The TDD cycle",
+					"content": "    +--------+   make it pass, quickly   +--------+\n    |  RED   | ------------------------> | GREEN  |\n    | a new  |                           | all    |\n    | test   |                           | tests  |\n    | fails  | <------------------------ | pass   |\n    +--------+      next small test      +---+----+\n         ^                                   |\n         |      clean up, same behaviour     v\n         +------------------------------ REFACTOR"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"**Red**: write one small test that fails.",
+						"**Green**: make it pass in the quickest way you can.",
+						"**Refactor**: improve the structure and remove duplication **without changing behaviour**, with every test still passing."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "TDD has two rules: write new code only when an automated test has failed, and remove duplication. If you have an idea in the middle of the work (for example 'this method should reject negative numbers'), it first becomes a test, or a line on your **to-do list**. The to-do list is the short-term memory of TDD: you write the cases you know, add the ones that appear on the way, and cross them out when they pass."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "It is like climbing with a rope and a hook. You hammer one hook (a test), climb to it (code), and only then place the next hook. If you fall, you fall only a short way."
+				},
+				{
+					"type": "heading",
+					"text": "Why watch the test fail first?"
+				},
+				{
+					"type": "paragraph",
+					"text": "The red step tests the test itself. If a new test already passes before the code exists, or fails for a silly reason such as a typo or a wrong import, it is not checking what you meant. Only after you see it fail for the **right reason** does the green bar count as proof."
+				},
+				{
+					"type": "heading",
+					"text": "Three ways to get to green"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Strategy",
+						"What you do",
+						"When it fits"
+					],
+					"rows": [
+						[
+							"Fake it",
+							"Return a constant that makes the test pass, then replace the constant with variables until the real code appears",
+							"You are unsure and want a green bar right now"
+						],
+						[
+							"Triangulation",
+							"Wait for a second example before generalising the code",
+							"You do not yet know the right abstraction. It is the most careful"
+						],
+						[
+							"Obvious implementation",
+							"Type the real code straight away",
+							"The solution is clear. It is the fastest"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The steps can be big or small. When things go well, use large steps with obvious implementation. If an unexpected red appears, take smaller steps (fake it, triangulation), because a small step limits the place of the error to a few lines."
+				},
+				{
+					"type": "heading",
+					"text": "Reading the history of a session"
+				},
+				{
+					"type": "paragraph",
+					"text": "Each step leaves a signature on the suite. **Red**: a new test is added and the suite goes from green to red. **Green**: production code changes and the suite goes from red to green. **Refactor**: production code changes, the suite is green before and after, and no new test appears. Never mix a refactoring with a change of behaviour in the same step: the unchanged tests are the proof that behaviour was kept, and if you also edit the expected values, you lose that proof."
+				},
+				{
+					"type": "heading",
+					"text": "The money example"
+				},
+				{
+					"type": "paragraph",
+					"text": "In Beck's book, `Dollar` and `Franc` are merged into one `Money` class. `Money` is a **value object**: it is defined by its data, not by its identity, so two objects with the same values are equal. When the classes are merged, the currency becomes a field, and `equals` must compare it too."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "A defect that a new test would reveal",
+					"content": "equals(other: Money): boolean {\n\treturn this.amount === other.amount;   // forgets the currency\n}\n// 5 USD equals 5 CHF? A test asking this fails, and forces the fix:\n// return this.amount === other.amount && this.currency === other.currency;"
+				},
+				{
+					"type": "heading",
+					"text": "Benefits and limits"
+				},
+				{
+					"type": "paragraph",
+					"text": "Benefits claimed for TDD: coverage as a by-product, a regression suite that grows with the program, easier debugging (the bug is in the few lines just written), and tests that work as executable documentation. The limit: TDD gives mostly unit tests written by the developer, who checks the code against what the developer understood. Mismatched formats between services, slowness under load, and the question 'does the user need this?' need other kinds of testing."
+				},
+				{
+					"type": "video",
+					"title": "TDD, Where Did It All Go Wrong (Ian Cooper)",
+					"url": "https://www.youtube.com/watch?v=EZ05e7EMOLM"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Red, green, refactor. Watch the test fail for the right reason. Never refactor and change behaviour at the same time."
+				}
+			]
+		},
+		{
+			"id": "integration-tests",
+			"title": "Integration tests: pieces working together",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Two puzzle pieces can each be perfect and still not fit together. An **integration test** runs two or more modules together, through their real connection. Its target is the bugs that live only at the border: swapped parameters, different formats, wrong beliefs about the other side, wrong settings. Unit tests replace the neighbours with doubles, so they never cross that border."
+				},
+				{
+					"type": "heading",
+					"text": "Interface errors"
+				},
+				{
+					"type": "paragraph",
+					"text": "Sommerville sorts the errors at an interface into three classes."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Class",
+						"Meaning",
+						"Example"
+					],
+					"rows": [
+						[
+							"Misuse",
+							"The call is made wrongly: parameters swapped, missing or of the wrong type",
+							"`transfer(to, from, amount)` instead of `transfer(from, to, amount)`"
+						],
+						[
+							"Misunderstanding",
+							"The caller assumes a behaviour the called part does not offer",
+							"Assuming the list comes back sorted"
+						],
+						[
+							"Timing",
+							"The two sides work at different speeds and one reads old data",
+							"A reader sees shared data before the writer finishes"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "How to join the pieces"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Big-bang**: put all the modules together at once and test the whole at the end. A failure can come from any interface, so it is very hard to find.",
+						"**Incremental**: add one module at a time and re-run the tests, so a new failure points at what just came in."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "While some pieces do not exist yet, we write support code. A **driver** calls the module under test in the place of whatever would be above it. A **stub** answers in the place of whatever would be below it. **Bottom-up** integration starts with the lower layers real and uses drivers. **Top-down** starts with the upper layers real and uses stubs. Imagine three layers, UI on top of Service on top of Repository. If the team builds from the bottom and the UI does not exist yet, it writes a driver that calls the Service."
+				},
+				{
+					"type": "diagram",
+					"caption": "Bottom-up with a driver",
+					"content": "  [ driver ]  -->  [ Service ]  -->  [ Repository ]\n   test code          real              real\n   (stands in for the UI that is not written yet)"
+				},
+				{
+					"type": "heading",
+					"text": "Real database or fake?"
+				},
+				{
+					"type": "paragraph",
+					"text": "An in-memory fake is fast, but it only knows what we programmed into it. A database has its own rules: unique keys, foreign keys, types, transactions, the real SQL. A repository that passes with a `Map` can break in production with PostgreSQL when two users have the same e-mail. So a healthy suite has some integration tests against the real database, or at least the same engine."
+				},
+				{
+					"type": "paragraph",
+					"text": "A real database is shared, so each test must start from the same point. A common trick: open a transaction before each test and roll it back afterwards. Everything the test wrote disappears, without the cost of rebuilding the database, and tests do not depend on the order."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Each test starts with an empty table",
+					"content": "beforeEach(() => db.run(\"BEGIN\"));\nafterEach(() => db.run(\"ROLLBACK\"));  // forgets what the test wrote\n\n// test 1 inserts an order and sees 1 row\n// test 2 runs later and sees 0 rows again"
+				},
+				{
+					"type": "paragraph",
+					"text": "An integration test may also send a request to the HTTP handler inside the same process and then read the row in a real SQLite file. It checks the whole seam: the body is read, converted, passed on, turned into SQL and accepted by the table. Each layer can pass its unit tests and the whole can still fail because of one different column name."
+				},
+				{
+					"type": "heading",
+					"text": "Contract tests"
+				},
+				{
+					"type": "paragraph",
+					"text": "Suppose the orders service is tested against a stub of the payments service that answers `{ \"total\": 30 }`, and the payments team renames the field to `amount`. Both teams' tests pass and production breaks. A **contract test** fixes this: what the consumer expects becomes a file, and that file is run against the real provider in the provider's own pipeline. You get the interface check without starting every service together."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Integration tests find the bugs between pieces. Use a real database for rules that live in the database, and a contract test when you cannot start the other service."
+				}
+			]
+		},
+		{
+			"id": "e2e-playwright",
+			"title": "End-to-end tests with Playwright",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "An **end-to-end test** (e2e) uses the system the way a person does: through the screen, with every real layer connected. It gives the most confidence that everything works together. In return it is the slowest, the most expensive to keep and the least exact about where the bug is. So it sits at the top of the pyramid, in small numbers."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Playwright** is a tool that controls a real browser from a test: it opens pages, clicks buttons, types text and reads what is on the screen."
+				},
+				{
+					"type": "heading",
+					"text": "Auto-waiting"
+				},
+				{
+					"type": "paragraph",
+					"text": "Web pages are not instant. A button may be disabled while data loads. Playwright **waits by itself** until an element is ready before it acts, so the test needs no fixed pauses such as `waitForTimeout(2000)` (a pause is either too long and wastes time, or too short on a slow computer). If the element never gets ready, the action fails with a timeout error."
+				},
+				{
+					"type": "heading",
+					"text": "Locators: find things as the user sees them"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Locator",
+						"Style",
+						"Resists a redesign?"
+					],
+					"rows": [
+						[
+							"`getByRole(\"button\", { name: \"Checkout\" })`",
+							"What the element is to the user",
+							"Yes"
+						],
+						[
+							"`getByLabel`, `getByText`",
+							"What the user reads",
+							"Yes"
+						],
+						[
+							"Long CSS or XPath such as `div > div:nth-child(3) .btn-x`",
+							"How the HTML happens to be built today",
+							"No, it breaks in refactorings that change nothing for the user"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Web-first assertions and the missing await"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **web-first assertion** such as `await expect(locator).toBeVisible()` receives the locator and repeats the check until it passes or the time runs out. Compare it with `expect(await locator.isVisible()).toBe(true)`: it gets a finished true or false, a photo of one instant. If the screen has not updated yet, the photo says false and the test fails by luck."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Two traps in one test",
+					"content": "await page.getByRole(\"button\", { name: \"Add to cart\" }).click();\n// WRONG: no await, the promise is dangling and the test ends before the check\nexpect(page.getByTestId(\"cart-count\")).toHaveText(\"1\");\n// RIGHT:\nawait expect(page.getByTestId(\"cart-count\")).toHaveText(\"1\");"
+				},
+				{
+					"type": "paragraph",
+					"text": "Playwright assertions are asynchronous and return a promise. Without `await`, the test runs to the end without waiting for the result, so it can be green even when the counter shows 0. A test that cannot fail is worse than no test. A lint rule for floating promises catches this."
+				},
+				{
+					"type": "heading",
+					"text": "Isolation by browser context"
+				},
+				{
+					"type": "paragraph",
+					"text": "Each test gets its own **browser context**, which works like a new, empty profile: its own cookies, `localStorage` and cache. Creating a context is cheap. So if the first test logs in, the second test, which uses the `page` fixture, opens the site as a stranger who is not logged in. Tests do not depend on each other or on the order."
+				},
+				{
+					"type": "heading",
+					"text": "Controlling the network"
+				},
+				{
+					"type": "paragraph",
+					"text": "`page.route` catches the requests made by the page and lets the test decide: answer with made-up data, abort, or let it go. Replacing a third-party service with a fixed answer makes the test steady and independent of the internet. What is no longer checked is the real integration with that service, which needs another kind of test."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Do not test every rule of a discount coupon (about 40 special cases) with 8-second browser tests. Put the rule's cases in fast unit tests, and keep a few e2e tests for the critical journeys, such as buy, pay and sign in, where the risk is in the wiring between layers."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "e2e tests: few, for the critical journeys, with user-facing locators, web-first assertions and always an await."
+				}
+			]
+		},
+		{
+			"id": "smoke-regression",
+			"title": "Smoke and regression tests",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "When you plug in a new machine, you first check that no smoke comes out. You do not test every function yet. A **smoke test** is the same: a small set of fast, shallow checks of the critical paths. Does the application start? Does it answer? Do the essential functions work? It runs right after a build or a deploy and works like a gatekeeper: if it fails, the version is rejected at once, and nobody wastes time on the long suites."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **regression** is a loss of behaviour that used to be correct, caused by a change somewhere in the code. **Regression testing** means running the existing tests again after each change to see that nothing that worked has stopped working. With automated tests it is cheap and can run on every commit."
+				},
+				{
+					"type": "table",
+					"caption": "Smoke against regression",
+					"headers": [
+						"Aspect",
+						"Smoke suite",
+						"Full regression suite"
+					],
+					"rows": [
+						[
+							"Depth",
+							"Shallow, many areas lightly",
+							"Deep, in detail"
+						],
+						[
+							"Time",
+							"Seconds (for example 30 s)",
+							"Long (for example 40 min)"
+						],
+						[
+							"Question",
+							"Is this version worth testing more?",
+							"Does everything that worked still work?"
+						],
+						[
+							"When",
+							"Right after build or deploy, first",
+							"After the smoke test passes, and before a release"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Suites are ordered from the cheapest to the most expensive so that failing happens as early as possible. The **sanity test** is a word that teams use in different ways, but it usually means a narrow check of the area that has just been changed."
+				},
+				{
+					"type": "paragraph",
+					"text": "What goes in the smoke suite is chosen by **criticality**, not depth: the paths without which the system is useless (open the site, sign in, the main operation). Rule details, edge cases and old bugs belong to the unit and regression suites. If the smoke suite grows too big, it loses the speed that justifies it."
+				},
+				{
+					"type": "heading",
+					"text": "Every bug becomes a test"
+				},
+				{
+					"type": "paragraph",
+					"text": "A user reports that an order with a 100% coupon shows a negative total. What should the developer do first? **Write a test that reproduces the bug and fails.** Only then fix the code, and see the test turn green. The first red proves the test really sees the problem, and the test stays forever to protect against the return of that bug."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A fix without a test is not protected. Imagine version 1 accepts quantity 0 (a bug), version 2 fixes it with `quantity <= 0` but writes no test, and later a refactoring changes it to `quantity < 0`. The old bug is back and a suite that only tries -1 stays green. The test that reproduces the reported bug uses exactly the value that tells `<` from `<=`."
+				},
+				{
+					"type": "heading",
+					"text": "When the regression suite is too slow"
+				},
+				{
+					"type": "paragraph",
+					"text": "If the full suite takes 3 hours, a team may run on each commit only the tests of the files that import the changed modules. This gives fast feedback, but it is a bet: **indirect dependencies** can let a change break something that looks far away. The usual protection is to keep running the full suite at regular times and before each release."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Smoke first, to decide if it is worth going on. Regression after, to protect everything old. Each bug found becomes a test that fails first."
+				}
+			]
+		},
+		{
+			"id": "coverage-mutation",
+			"title": "Coverage and mutation testing",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "How do you know if your tests are good? A first idea is to count how much of the code they run. This is called **coverage**."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Kind of coverage",
+						"What it counts"
+					],
+					"rows": [
+						[
+							"Line (or statement)",
+							"How many lines were executed by at least one test"
+						],
+						[
+							"Branch",
+							"Whether each decision (`if`) was taken **both ways**: true and false"
+						]
+					]
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "All lines run, but only half of the branches",
+					"content": "export function shippingFee(total: number, isMember: boolean): number {\n\tlet fee = 10;\n\tif (isMember) fee = 5;\n\tif (total >= 100) fee = 0;\n\treturn fee;\n}\n\ntest(\"big member order is free\", () => {\n\texpect(shippingFee(150, true)).toBe(0);\n});"
+				},
+				{
+					"type": "paragraph",
+					"text": "This one test goes through every line, so line coverage is 100%. But both `if` conditions are only ever true. Each `if` has two branches, so there are 4 branches and the test took 2 of them: branch coverage is 50%. 100% of lines does not mean 100% of branches."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Coverage is a necessary condition, not a sufficient one. Code that never ran was certainly not tested. But code that ran may not have been checked at all: a test with no assertion runs lines as well as the best test in the world. When a coverage number becomes a target for managers, people start to chase the number, and it stops telling the quality of the tests."
+				},
+				{
+					"type": "heading",
+					"text": "Mutation testing: testing the tests"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Mutation testing** asks the better question: would the tests notice if this line were wrong? A tool makes copies of the program, each with one small planted defect, called a **mutant**. The tool changes things like `+` into `-`, `<` into `<=`, one constant into another, or removes a statement. Then it runs the suite on each mutant."
+				},
+				{
+					"type": "diagram",
+					"caption": "What happens to each mutant",
+					"content": "original program --- change one small thing ---> mutant\n                                                   |\n                                          run the test suite\n                                                   |\n                  +--------------------------------+---------------+\n                  |                                                |\n       some test fails: KILLED                 all tests pass: SURVIVED\n       the suite noticed the bug               the suite accepts the bug"
+				},
+				{
+					"type": "paragraph",
+					"text": "A mutant that **survived** is a question the tests did not ask: it shows where an assertion or a test is missing."
+				},
+				{
+					"type": "heading",
+					"text": "The mutation score"
+				},
+				{
+					"type": "paragraph",
+					"text": "The mutation score is the killed mutants divided by the mutants that could be killed. An **equivalent mutant** has different text but behaves exactly like the original for every input, so no test can ever kill it. Under the usual convention, equivalent mutants leave the bottom of the fraction. Example: a tool makes 30 mutants and the suite kills 24. Of the 6 survivors, a person decides that 2 are equivalent. The score is 24 / (30 - 2) = 24 / 28, about 85.7%. Many tools cannot spot equivalent mutants and just report killed over total, so always say which convention is used. Deciding if a mutant is equivalent is impossible in the general case, so a person usually reviews the survivors."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "An equivalent mutant",
+					"content": "if (weightKg > 2) {                    // mutant: weightKg >= 2\n\tcents += (weightKg - 2) * 150;     // at exactly 2 kg this adds (2 - 2) * 150 = 0\n}"
+				},
+				{
+					"type": "heading",
+					"text": "Killing a boundary mutant"
+				},
+				{
+					"type": "paragraph",
+					"text": "Take `return age >= 18` and the mutant `return age > 18`. They differ only for the input 18. A test kills the mutant only if it uses that exact value and checks the result: `isAdult(18)` must be true. Tests with ages 10 and 30 let it live. This is the practical reason to test the boundary values."
+				},
+				{
+					"type": "chart",
+					"title": "Same line coverage, very different mutation score (mutation-testing mini-project)",
+					"unit": "%",
+					"bars": [
+						{
+							"label": "weak suite: line coverage",
+							"value": 100
+						},
+						{
+							"label": "strong suite: line coverage",
+							"value": 100
+						},
+						{
+							"label": "weak suite: mutation score",
+							"value": 21.1
+						},
+						{
+							"label": "strong suite: mutation score",
+							"value": 94.7
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The cost of mutation testing grows with the number of mutants times the time of the suite. Tools make it smaller by running for each mutant only the tests that cover the changed line, stopping at the first test that fails, mutating only the code changed since the last run, and sampling the mutants."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Coverage tells what ran. Mutation score tells what would be noticed. A high coverage with a low mutation score means the tests run the code but do not check it."
+				}
+			]
+		},
+		{
+			"id": "property-based-testing",
+			"title": "Property-based testing",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "An ordinary test is an example: 'sort [3,1,2] and get [1,2,3]'. A **property-based test** states a general rule, like 'sorting never changes the length of the list', and a **generator** invents hundreds of random inputs to try to break the rule. It finds cases you did not think of. But it only checks the inputs that were generated, so it is not a proof."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "An example test is checking one coin to see if it is real. A property test is a machine that tosses hundreds of coins and complains if any of them breaks the rule 'heads or tails, never both'."
+				},
+				{
+					"type": "heading",
+					"text": "Shapes of properties"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Shape",
+						"Rule",
+						"Example"
+					],
+					"rows": [
+						[
+							"Round trip",
+							"Going and coming back gives the start",
+							"`decode(encode(x))` equals `x`"
+						],
+						[
+							"Invariant",
+							"Something the operation keeps",
+							"Sorting keeps the same length and the same items"
+						],
+						[
+							"Idempotence",
+							"Doing it twice is the same as once",
+							"`normalize(normalize(s))` equals `normalize(s)`"
+						],
+						[
+							"Commutativity",
+							"The order does not matter",
+							"`add(a, b)` equals `add(b, a)`"
+						],
+						[
+							"Oracle",
+							"Compare with a simple, trusted version",
+							"A fast sort against a slow but obviously right sort"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Shrinking"
+				},
+				{
+					"type": "paragraph",
+					"text": "A random input that fails is often big and full of useless detail, like a list of 37 numbers. **Shrinking** searches by itself for a minimal failing input, for example `[0, -1]`. A small example makes the cause of the bug easy to see."
+				},
+				{
+					"type": "heading",
+					"text": "The seed"
+				},
+				{
+					"type": "paragraph",
+					"text": "The randomness comes from a pseudo-random generator, whose whole sequence is decided by one number, the **seed**. When a property test fails in CI, the tool prints something like `seed: 48213`. Run the test again with the same seed and you get exactly the same inputs. Without this, a random test would be a flaky test."
+				},
+				{
+					"type": "heading",
+					"text": "A property that proves nothing"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "A tautology",
+					"content": "function average(a: number, b: number) { return Math.floor((a + b) / 2); }\n\nfor (let i = 0; i < 1000; i++) {\n\tconst a = randomInt(-100, 100), b = randomInt(-100, 100);\n\texpect(average(a, b)).toBe(Math.floor((a + b) / 2));  // the same formula\n}"
+				},
+				{
+					"type": "paragraph",
+					"text": "The expected side repeats the formula of the code, so the test passes by construction and detects nothing. A good property states a relation required by the specification and independent of the code, such as 'the average lies between the smaller and the larger of the two numbers'."
+				},
+				{
+					"type": "paragraph",
+					"text": "Should properties replace examples? No. Properties explore many inputs, but good ones are hard to find and are general rules, weaker than an exact value. Examples document the behaviour with real numbers and guarantee that known edge cases always run. They work well together."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A property is a rule that must hold for all inputs. The tool searches for a counter-example, shrinks it, and prints the seed so you can repeat it."
+				}
+			]
+		},
+		{
+			"id": "flaky-tests",
+			"title": "Flaky tests",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **flaky test** passes and fails on the very same code. Nothing changed between the green run and the red one. This happens when the result depends on something the test does not control: the clock, the order of the tests, shared state, the network, concurrency or random numbers. The typical sign is a failure that disappears when you run it again."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Imagine a smoke alarm that rings by itself sometimes, with no fire. After a few false alarms the family stops running outside. One day there is a real fire, and nobody moves."
+				},
+				{
+					"type": "paragraph",
+					"text": "That is the real harm. The value of a suite is trust: red means a bug, green means it is safe to go on. Flaky tests break this in both directions, raise false alarms and teach the team to just re-run instead of investigating. After that a real bug can slip by."
+				},
+				{
+					"type": "heading",
+					"text": "Small chances add up"
+				},
+				{
+					"type": "paragraph",
+					"text": "If each of `n` independent tests fails by luck with probability `p`, the suite passes completely with probability (1 - p) to the power of n. So it shows at least one failure with probability 1 - (1 - p)^n."
+				},
+				{
+					"type": "chart",
+					"title": "Runs that are red with no real bug, when each flaky test fails 2% of the time",
+					"unit": "%",
+					"bars": [
+						{
+							"label": "1 flaky test",
+							"value": 2
+						},
+						{
+							"label": "10 flaky tests",
+							"value": 18
+						},
+						{
+							"label": "50 flaky tests",
+							"value": 64
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "With 50 tests at 2% each, 0.98^50 is about 0.364, so 1 - 0.364 is about 0.636. The suite is red almost two runs out of three. The same happens to a suite of 300 end-to-end tests that fail by luck 0.5% of the time each: 0.995^300 is about 0.22, so around 78% of the runs show a failure with correct code."
+				},
+				{
+					"type": "heading",
+					"text": "The usual causes and their fixes"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Cause",
+						"Example",
+						"Fix"
+					],
+					"rows": [
+						[
+							"Time",
+							"The test reads the clock twice and expects the same millisecond",
+							"Inject a fake clock with a fixed moment"
+						],
+						[
+							"Time zone",
+							"The code dates in local time, the test in UTC, so they disagree near midnight",
+							"Fake clock, and compare dates in the same zone. Test an instant inside the risky window on purpose"
+						],
+						[
+							"Fixed `sleep`",
+							"The test sleeps 200 ms, then checks. On a slow machine the job is not done",
+							"Wait for the condition: await the promise, or poll with a timeout"
+						],
+						[
+							"Order of results",
+							"Concurrent jobs finish in a different order each time",
+							"Guarantee the order in the code, or compare sorted results"
+						],
+						[
+							"Shared state",
+							"One test uses a cache that only another test fills",
+							"Each test builds and restores its own fixture"
+						],
+						[
+							"Real network",
+							"The service has a bad moment",
+							"Use a stub, and test the real service in a separate contract test"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Shuffling the order of the tests and printing the seed is a way to **find and repeat** an order dependence, not to cure it. If B only passes when it runs after A, the cure is isolation: B creates its own data and cleans up after itself, so it passes alone and in any position."
+				},
+				{
+					"type": "heading",
+					"text": "What is not a fix"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Retry until green**: it hides the symptom and keeps the cause.",
+						"**A longer sleep**: it makes the race less likely and the suite slower.",
+						"**Deleting or skipping the test** without understanding it: sometimes the product has a real race.",
+						"**Fixing the order of the tests** so shared state keeps working: the dependence is still there and blocks running in parallel."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Flaky means a hidden input. Find the thing that changes (time, order, state, network) and put it under the test's control."
+				}
+			]
+		},
+		{
+			"id": "equivalence-boundaries",
+			"title": "Test design: equivalence classes and boundaries",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "You cannot test every possible input. A number field alone has billions. Test design is the art of choosing a few inputs that tell you a lot."
+				},
+				{
+					"type": "heading",
+					"text": "Equivalence partitioning"
+				},
+				{
+					"type": "paragraph",
+					"text": "Split the possible inputs into groups, called **equivalence classes**, where the program should treat every member in the same way. Then pick at least one representative of each class. The classes come from the **specification**, not from the code, and they include classes of invalid inputs."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "At school, a grade between 0 and 4.9 is 'fail', from 5 to 10 is 'pass'. You do not need to test every possible grade. One failing grade and one passing grade represent their groups."
+				},
+				{
+					"type": "paragraph",
+					"text": "Counting classes: one class for each range that the specification handles differently. For a numeric input with separate bands, that is one class per valid band, plus one invalid class below the smallest valid value and one above the largest. If a price table has 3 bands for weights, plus errors for too light and too heavy, there are 3 + 2 = 5 classes and at least 5 test cases."
+				},
+				{
+					"type": "heading",
+					"text": "Boundary value analysis"
+				},
+				{
+					"type": "paragraph",
+					"text": "Programmers make mistakes right at the edges: `<` instead of `<=`, a loop that stops one step early. A value from the middle of a class goes through the faulty code and never notices. So besides the typical value, test the **edge** and its neighbour on the other side."
+				},
+				{
+					"type": "diagram",
+					"caption": "Two-value boundary analysis for the closed range [1, 20]",
+					"content": "  rejected |      accepted range       | rejected\n  ... -1  0 | 1  2  3 ... 18 19  20 | 21  22 ...\n           ^  ^                  ^   ^\n          a-1 a                  b  b+1\n  test values: 0, 1, 20, 21"
+				},
+				{
+					"type": "paragraph",
+					"text": "The convention in this quiz: for a closed range of whole numbers [a, b], the two-value method tests **a-1, a, b and b+1**. Imagine the code says `grade >= 0 && grade < 10` when the specification says grades 0 to 10 are valid. Only the value 10 gives a different answer from the specification (false instead of true). Every other test value stays on the right side, so only the value on the boundary shows the bug."
+				},
+				{
+					"type": "heading",
+					"text": "Several inputs: one invalid at a time"
+				},
+				{
+					"type": "paragraph",
+					"text": "When a function has several inputs, valid classes can be combined in one test. But each **invalid class must be alone**, with the other inputs valid. A program usually stops at the first check that fails. If a test gives an invalid age and an invalid income together, the income check is never reached, and you never learn that it exists and works."
+				},
+				{
+					"type": "heading",
+					"text": "Guidelines for sequences"
+				},
+				{
+					"type": "paragraph",
+					"text": "Experience says where programs tend to break. For lists and other sequences: test the empty sequence, a sequence with one element, and different sizes in different tests. Also make the interesting element appear first, in the middle and last. For a function that returns the largest number, good inputs include `[]`, `[7]`, `[9, 2, 3]`, `[2, 9, 3]` and `[2, 3, 9]`."
+				},
+				{
+					"type": "heading",
+					"text": "Decision tables"
+				},
+				{
+					"type": "paragraph",
+					"text": "When the result depends on several yes/no conditions, a **decision table** lists the combinations and the expected action for each one. With n independent yes/no conditions, the full table has 2^n columns, and each column becomes at least one test. If one condition decides alone, the columns that differ only in the other conditions can be merged, writing 'don't care' for them."
+				},
+				{
+					"type": "table",
+					"caption": "Four conditions, 16 columns. When the first condition is false the answer is always 'refuse'",
+					"headers": [
+						"Columns",
+						"How many"
+					],
+					"rows": [
+						[
+							"First condition false: merged into one column with 'don't care'",
+							"1"
+						],
+						[
+							"First condition true: the other 3 conditions give 2 x 2 x 2 combinations",
+							"8"
+						],
+						[
+							"Total after merging",
+							"9"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Classes from the specification, one representative each, then the edges. Invalid inputs go one at a time. A decision table has 2^n columns before merging."
+				}
+			]
+		},
+		{
+			"id": "ci-test-strategy",
+			"title": "Tests in CI and test strategy",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "**Continuous integration** (CI) means that everybody shares their work with the main line often, and each share is checked by an automatic build and tests. The tests run **after every push**, so the feedback arrives fast and points at the change that was just made. When the build breaks, fixing it comes before new work, because everyone depends on the main line."
+				},
+				{
+					"type": "heading",
+					"text": "Order the stages by cost"
+				},
+				{
+					"type": "paragraph",
+					"text": "A pipeline arranges its checks from the cheapest to the most expensive. With **fail-fast**, the run stops at the first stage that fails, so a mistake that a 50 ms check finds does not wait behind a stage of minutes."
+				},
+				{
+					"type": "diagram",
+					"caption": "A fail-fast pipeline",
+					"content": "  push --> [ lint + types + unit ] --> [ integration ] --> [ e2e ] --> merge\n               seconds                    tens of seconds    minutes\n               |                          |                  |\n               fail: stop here            fail: stop here    fail: stop"
+				},
+				{
+					"type": "heading",
+					"text": "A flaky test blocks everyone: quarantine it"
+				},
+				{
+					"type": "paragraph",
+					"text": "A pipeline is useful only if red means a defect. Suppose a test fails in 1 of 10 runs and blocks merges, and the team cannot fix it today. Bad ways out hide the problem (silent retries, deleting the test, weakening its assertions) or keep the noise (re-running by hand). The good way is an explicit **quarantine**: the test leaves the blocking path, the debt is written down with an owner and a date, and it still runs somewhere so it is not forgotten."
+				},
+				{
+					"type": "heading",
+					"text": "Risk-based strategy"
+				},
+				{
+					"type": "paragraph",
+					"text": "You cannot test everything, so spread the effort by risk: **probability that a defect is there times its impact**. Probability is higher in new or heavily changed code, complex logic and parts with a history of failures. Impact is bigger when it involves money, safety or many users. Coverage is only one input."
+				},
+				{
+					"type": "table",
+					"caption": "Two days left before delivery of an online shop",
+					"headers": [
+						"Module",
+						"Changed a lot?",
+						"Impact of a defect",
+						"Line coverage"
+					],
+					"rows": [
+						[
+							"About us page",
+							"No",
+							"Wrong text on a static page",
+							"0%"
+						],
+						[
+							"Report export",
+							"No",
+							"2 internal users, once a month",
+							"40%"
+						],
+						[
+							"Price and tax calculation",
+							"Yes, a lot",
+							"Customer charged the wrong amount",
+							"85%"
+						],
+						[
+							"Dashboard theme colours",
+							"A little",
+							"Looks of an internal page",
+							"10%"
+						],
+						[
+							"Newsletter sign-up",
+							"No",
+							"A marketing e-mail is not sent",
+							"60%"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The price and tax module has the highest risk: it changed a lot and a mistake costs real money. It should get the effort even though its coverage is already the highest, because high coverage does not make a module safe."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "CI runs the tests on every push. Cheap stages first and stop early. Quarantine flaky tests openly. Spend the time where change and impact are biggest."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Each technique answers a different question. A healthy project uses several of them, because each one is blind to something that another sees."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Question",
+						"Tool"
+					],
+					"rows": [
+						[
+							"Does this small piece work alone?",
+							"Unit test, with test doubles for slow or uncontrollable helpers"
+						],
+						[
+							"Do the pieces fit together?",
+							"Integration test, contract test"
+						],
+						[
+							"Can a user really do the main journeys?",
+							"A few end-to-end tests with Playwright"
+						],
+						[
+							"Is the new version worth testing at all?",
+							"Smoke test"
+						],
+						[
+							"Did an old bug come back?",
+							"Regression test, one for every bug found"
+						],
+						[
+							"Do my tests run the code?",
+							"Line and branch coverage"
+						],
+						[
+							"Would my tests notice a bug?",
+							"Mutation testing"
+						],
+						[
+							"Did I forget a strange input?",
+							"Property-based testing, equivalence classes and boundaries"
+						],
+						[
+							"Do my tests tell the truth?",
+							"Remove flakiness: fake clocks, isolation, stubs"
+						],
+						[
+							"Is anybody breaking the shared code?",
+							"CI with ordered stages"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Common mistakes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Putting every check in end-to-end tests (the ice-cream cone).",
+						"Counting calls to doubles instead of checking the result.",
+						"Trusting a coverage number without asking if the tests check anything.",
+						"Fixing a bug without writing the test that reproduces it.",
+						"Letting tests share state or depend on the clock, the order or the network.",
+						"Refactoring and changing behaviour in the same step.",
+						"Forgetting `await` in an asynchronous assertion."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Many fast tests at the bottom, a few journeys at the top, tests that fail only when the code is wrong, and a pipeline that tells the truth on every push."
+				}
+			]
+		}
+	]
+}

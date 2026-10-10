@@ -1,0 +1,297 @@
+{
+	"area": "design-patterns",
+	"intro": [
+		"Imagine que você constrói coisas com LEGO. Depois de um tempo, percebe que resolve sempre os mesmos pequenos problemas: como fazer uma parede forte, como montar uma porta que abre, como juntar dois conjuntos que não encaixam. Construtores espertos deram nome às boas respostas, e assim dizem \"use o truque da dobradiça\" sem explicar peça por peça. Um **padrão de projeto** (design pattern) é exatamente isso: um nome para uma boa resposta a um problema que volta toda hora quando escrevemos programas.",
+		"Antes dos padrões existem cinco regras de bolso chamadas **SOLID**. Elas não são leis. São conselhos de como escrever classes (uma [[classe|uma planta que diz quais dados um objeto guarda e o que ele sabe fazer]] é como uma forma de biscoito, e cada biscoito é um objeto) para que o programa seja fácil de mudar depois. Programas sempre mudam: uma regra nova do chefe, uma nova empresa de pagamento, um novo tipo de cliente. Código fácil de mudar economiza dias de trabalho e evita bugs novos.",
+		"Você vai encontrar tudo isso na vida real: nos aplicativos que usa, nos frameworks que as pessoas programadoras baixam e em toda entrevista de emprego sobre software. No fim desta página você vai conhecer os cinco princípios SOLID, dez padrões famosos (Factory, Builder, Singleton, Adapter, Decorator, Facade, Strategy, Observer, Command e State), o Repository e a injeção de dependência usados em sistemas back-end, e os sinais de alerta de um projeto ruim. Vai saber também quando **não** usar um padrão, o que é tão importante quanto."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "O quadro geral e o vocabulário",
+			"blocks": [
+				{ "type": "paragraph", "text": "Software nunca está terminado. Sempre alguém pede mais uma coisa. Por isso, um bom projeto não é sobre deixar o código bonito. É sobre fazer a **próxima mudança custar pouco**: a mudança deve tocar poucos lugares e não pode quebrar o que já funciona." },
+				{ "type": "paragraph", "text": "Para falar de projeto (design) precisamos de algumas palavras. Aprenda agora, porque todas as seções as usam." },
+				{ "type": "table", "headers": ["Palavra", "O que significa", "Imagem do dia a dia"], "rows": [
+					["**Coesão**", "Quanto as partes dentro de uma classe combinam entre si. Coesão alta é bom.", "Um estojo que guarda só lápis e canetas"],
+					["**Acoplamento**", "Quanto uma classe depende de outras classes. Acoplamento baixo é bom.", "Brinquedos ligados por um barbante fino, não soldados"],
+					["**Interface**", "A lista do que uma classe promete fazer, sem dizer como.", "Os botões de um controle remoto"],
+					["**Contrato**", "A promessa completa de um método: o que quem chama deve dar, o que o método devolve e quais erros pode lançar.", "Um pedido de pizza: você dá o endereço, recebe a pizza"],
+					["**Abstração**", "Uma visão simples que esconde os detalhes.", "Você dirige um carro sem conhecer o motor"],
+					["**Padrão**", "Uma resposta com nome e reutilizável para um problema que aparece sempre.", "Uma receita com nome"]
+				], "caption": "As sete palavras do projeto de software" },
+				{ "type": "callout", "tone": "analogy", "text": "Um padrão é como uma receita, não como um bolo pronto. A receita de \"panqueca\" dá a ideia. Você ainda escolhe a farinha e o tamanho. O mesmo padrão fica diferente em cada programa." },
+				{ "type": "paragraph", "text": "Existem três famílias de padrões. Os **criacionais** tratam da criação de objetos. Os **estruturais** tratam de como os objetos se encaixam. Os **comportamentais** tratam de como os objetos conversam e dividem o trabalho. O livro famoso que listou 23 deles foi escrito por quatro autores, apelidados de \"Gang of Four\" (a gangue dos quatro)." },
+				{ "type": "video", "title": "Design Patterns in Object Oriented Programming (playlist de Christopher Okhravi, em inglês)", "url": "https://www.youtube.com/playlist?list=PLrhzvIcii6GNjpARdnO4ueTUAVR9eMBpc" },
+				{ "type": "callout", "tone": "remember", "text": "Os princípios dizem como é um bom projeto. Os padrões são respostas prontas. Os dois existem para a próxima mudança custar pouco." }
+			]
+		},
+		{
+			"id": "single-responsibility",
+			"title": "Princípio da responsabilidade única (SRP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Pense numa mochila que também é lancheira, travesseiro e capacete de bicicleta. Quando uma parte quebra, você não consegue consertar sem mexer nas outras. O **princípio da responsabilidade única** diz que uma classe deve ter **só um motivo para mudar**." },
+				{ "type": "paragraph", "text": "\"Motivo para mudar\" é uma pessoa ou um grupo que pode pedir uma alteração. Veja a classe abaixo. O financeiro pode mudar a regra do imposto, o design pode mudar o texto do recibo e o time de banco de dados pode mudar como os dados são salvos. São três motivos para mudar num só lugar." },
+				{ "type": "code", "language": "ts", "content": "class Invoice {\n\tcalculateTax(): number { /* regras de imposto */ }\n\tsaveToDatabase(): void { /* SQL */ }\n\tsendByEmail(): void { /* SMTP */ }\n}", "caption": "Três assuntos numa classe só: viola o SRP" },
+				{ "type": "paragraph", "text": "A cura é separar: uma classe para o cálculo do imposto, uma para salvar, uma para o e-mail. Agora cada mudança toca uma classe pequena, e os testes da regra de imposto não precisam de banco de dados." },
+				{ "type": "callout", "tone": "analogy", "text": "Uma cozinha tem cozinheiro, garçom e caixa. Se uma pessoa fizesse tudo, mudar o cardápio também mudaria a forma de contar o dinheiro. Dividir as tarefas mantém cada mudança pequena." },
+				{ "type": "heading", "text": "Coesão e dois cheiros que se espelham" },
+				{ "type": "paragraph", "text": "Uma classe [[coesa|todas as suas partes pertencem a uma só ideia]] tem métodos e campos que tratam de um único conceito. Uma dica para achar uma divisão que falta: se alguns métodos usam só alguns campos e outros métodos usam só os outros campos, provavelmente há duas classes escondidas numa só. Uma classe que ganha um bloco novo a cada caso novo (um cargo novo, um tipo de cliente novo) também é um sinal." },
+				{ "type": "table", "headers": ["Cheiro (smell)", "O que você vê", "O que ele diz"], "rows": [
+					["**Divergent Change**", "Uma classe é editada por muitos motivos diferentes (regra de imposto e layout de relatório)", "Falta de coesão: a classe tem várias responsabilidades"],
+					["**Shotgun Surgery**", "Uma mudança obriga a fazer pequenas edições em muitas classes", "Uma responsabilidade foi quebrada em pedaços demais"]
+				], "caption": "Os dois cheiros que são espelho um do outro" },
+				{ "type": "callout", "tone": "warning", "text": "O SRP **não** quer dizer \"um método por classe\". Se um time divide o total de um pedido em seis classes e toda mudança de imposto passa a editar as seis, a divisão foi feita por métodos e não por motivos de mudança. O que muda junto deve ficar junto." },
+				{ "type": "callout", "tone": "remember", "text": "Um motivo para mudar, um lugar para mudar. Separe o que muda por motivos diferentes e mantenha junto o que muda junto." }
+			]
+		},
+		{
+			"id": "open-closed",
+			"title": "Princípio aberto-fechado (OCP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um console de videogame tem entradas para novos controles. Você não abre o aparelho e solda fios para ligar mais um. O console é **fechado para modificação** (ninguém mexe por dentro) e **aberto para extensão** (controles novos só se encaixam). O **princípio aberto-fechado** pede o mesmo do código: um comportamento novo deve entrar como **código novo**, sem editar o código que já existe e já foi testado." },
+				{ "type": "paragraph", "text": "O jeito mais comum é uma [[abstração|uma interface que esconde os detalhes]]. A classe conversa com uma interface, e cada comportamento novo é uma classe nova que a implementa. Isso se chama [[polimorfismo|uma chamada, vários comportamentos possíveis, dependendo do objeto real]]. O lugar onde a classe chama algo que não conhece em detalhe é o seu **ponto de extensão**." },
+				{ "type": "code", "language": "ts", "content": "interface DiscountRule {\n\tapply(total: number): number;\n}\n\nclass PriceCalculator {\n\tconstructor(private readonly rules: DiscountRule[]) {}\n\n\ttotal(base: number): number {\n\t\treturn this.rules.reduce((value, rule) => rule.apply(value), base);\n\t}\n}", "caption": "Um desconto novo é uma classe nova que implementa DiscountRule, colocada na lista onde o programa é montado" },
+				{ "type": "diagram", "content": "ANTES: area() tem um if por forma\n  area(forma) --> if circulo ... if quadrado ... (edite aqui!)\n\nDEPOIS: cada forma sabe a própria área\n  area(forma) --> forma.area()\n                   |-- Circulo.area()\n                   |-- Quadrado.area()\n                   '-- (novo) Triangulo.area()", "caption": "Uma cadeia de ifs sobre um tipo é fechada para extensão" },
+				{ "type": "callout", "tone": "analogy", "text": "Uma régua de tomadas. Para ligar uma lâmpada nova você não refaz a fiação da parede. Só pluga." },
+				{ "type": "heading", "text": "Onde a mudança acontece" },
+				{ "type": "paragraph", "text": "Nenhum programa é fechado contra toda mudança. Em algum lugar a classe nova precisa ser criada. Uma **factory** (uma função que decide qual classe criar) pode ter um `switch` para isso. Isso é aceitável: a variação fica confinada a um ponto, e o resto do código só conhece a abstração. O princípio não elimina a mudança. Ele escolhe **onde** ela acontece." },
+				{ "type": "paragraph", "text": "A mesma cadeia `if (x instanceof ...)` copiada num auxiliar, num relatório e numa tela é o verdadeiro sinal de alerta. Quando um tipo novo aparece, cada cópia precisa ser encontrada e editada, e uma cópia esquecida falha em silêncio." },
+				{ "type": "callout", "tone": "warning", "text": "Duas armadilhas. Primeira: nem todo `if` deve virar uma hierarquia de classes. Abstraia onde a variação já apareceu e deixe um `if` estável em paz. Segunda: abrir um projeto para um tipo de mudança o fecha para outro. Se as formas nunca mudam mas toda semana chega uma operação nova (desenhar, exportar, imprimir), colocar um método por operação em cada classe de forma significa editar todas elas todo mês. Descubra qual eixo realmente varia." },
+				{ "type": "callout", "tone": "remember", "text": "Aberto para extensão, fechado para modificação. Acrescente código novo, não edite o antigo, e abstraia apenas onde a mudança realmente acontece." }
+			]
+		},
+		{
+			"id": "liskov-substitution",
+			"title": "Princípio da substituição de Liskov (LSP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Suponha que você peça \"um bichinho de estimação\" e receba um peixe dourado. Aí tenta levá-lo para passear. Não dá. Um peixe dourado é um bichinho, mas não um bichinho que anda. O **princípio da substituição de Liskov** diz que um subtipo (uma classe filha, ou qualquer classe que implementa uma interface) deve **funcionar em qualquer lugar onde o tipo base é esperado**. Se o código funciona com o pai, deve funcionar com o filho, sem saber qual filho recebeu." },
+				{ "type": "code", "language": "ts", "content": "class Bird {\n\tfly(): string { return 'flying'; }\n}\nclass Penguin extends Bird {\n\tfly(): string { throw new Error('penguins cannot fly'); }\n}\nfunction release(birds: Bird[]): string[] {\n\treturn birds.map((bird) => bird.fly());\n}", "caption": "Penguin não pode substituir Bird: release() estoura" },
+				{ "type": "paragraph", "text": "Na biologia, o pinguim é uma ave. No código, o que decide a herança é o **contrato dos métodos**, não a frase \"é um\". A solução é mudar a hierarquia, por exemplo deixando `fly` só num tipo para aves que voam." },
+				{ "type": "heading", "text": "O contrato tem dois lados" },
+				{ "type": "paragraph", "text": "Um método tem uma [[pré-condição|o que quem chama deve garantir antes da chamada]] e uma [[pós-condição|o que o método garante depois da chamada]]. Tem também um jeito de avisar uma falha, como devolver `null` ou lançar um erro. O compilador só confere os tipos da assinatura. Ele não confere essas promessas, então os testes de contrato é que precisam conferir." },
+				{ "type": "table", "headers": ["Parte do contrato", "O que um subtipo pode fazer"], "rows": [
+					["Pré-condição (o que ele exige)", "Manter ou **enfraquecer** (exigir menos). Nunca deixar mais rígida"],
+					["Pós-condição (o que ele entrega)", "Manter ou **fortalecer** (entregar mais). Nunca enfraquecer"],
+					["Como a falha é avisada", "Usar o mesmo jeito. Se a base devolve `null` para um usuário que não existe, o subtipo não deve lançar erro"]
+				], "caption": "Exija menos, entregue mais" },
+				{ "type": "paragraph", "text": "O exemplo clássico é `Square extends Rectangle`. Um Rectangle promete que mudar a largura não muda a altura. Um Square não consegue cumprir essa promessa, porque mudar um lado muda o outro. Outro caso: uma `Account` base promete que depois de um saque o saldo nunca fica negativo, e uma `OverdraftAccount` permite saldo negativo. Ela enfraqueceu uma pós-condição." },
+				{ "type": "paragraph", "text": "O sintoma mais forte de uma substituição quebrada é o `instanceof` no código cliente (`if (account instanceof StudentAccount) ...`). O cliente teve de aprender os subtipos, então cada subtipo novo exige mais um ramo. Aí uma violação de Liskov vira também uma violação do aberto-fechado." },
+				{ "type": "callout", "tone": "tip", "text": "A herança traz a interface inteira do pai. Uma `Stack` que estende `Array` também aceita `splice` no meio, o que uma pilha nunca deveria permitir. A **composição** é a cura: guarde o array num campo privado e exponha só `push`, `pop` e `peek`. Você reaproveita o código sem herdar o contrato." },
+				{ "type": "callout", "tone": "remember", "text": "Um subtipo deve cumprir as promessas do tipo base: exigir não mais, entregar não menos, falhar do mesmo jeito." }
+			]
+		},
+		{
+			"id": "interface-segregation",
+			"title": "Princípio da segregação de interfaces (ISP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Você pega emprestado um canivete suíço só para abrir uma carta. Ganha 30 ferramentas que não precisa, e se uma delas estiver quebrada você ainda se preocupa com ela. O **princípio da segregação de interfaces** diz que **clientes não devem ser forçados a depender de métodos que não usam**. Uma interface é um contrato visto do lado de quem usa. Se ela mistura métodos para usuários diferentes, todo mundo fica preso a tudo." },
+				{ "type": "code", "language": "ts", "content": "interface Machine {\n\tprint(doc: string): void;\n\tscan(): string;\n\tfax(number: string): void;\n}\n\nclass SimplePrinter implements Machine {\n\tprint(doc: string): void { /* imprime */ }\n\tscan(): string { throw new Error('not supported'); }\n\tfax(number: string): void { throw new Error('not supported'); }\n}", "caption": "Uma interface gorda: a impressora precisa escrever métodos que não consegue cumprir" },
+				{ "type": "paragraph", "text": "Um método escrito como \"não suportado\" é um sinal alto: a interface pede mais do que a classe tem. A solução é dividir por capacidade: `Printer`, `Scanner`, `Fax`. Agora o código que precisa escanear pede um `Scanner`, e uma impressora simples nunca chega lá. O sistema de tipos trabalha a seu favor." },
+				{ "type": "callout", "tone": "analogy", "text": "Um controle remoto com os botões da TV, do ar-condicionado e do portão da garagem misturados. Três controles pequenos são mais fáceis, e uma criança que só quer a TV não consegue abrir o portão." },
+				{ "type": "heading", "text": "O que uma interface gorda custa" },
+				{ "type": "list", "items": [
+					"Quem **implementa** precisa escrever métodos que não consegue cumprir, e eles lançam erros.",
+					"Os **clientes** dependem de métodos que nunca chamam, então uma mudança num método que não usam ainda pode obrigá-los a mudar.",
+					"Quando um décimo terceiro método, usado por um só cliente, entra numa interface com doze métodos e oito implementações, as oito classes precisam mudar, mesmo aquelas cujos clientes nunca o chamam.",
+					"Os **test doubles** (objetos falsos usados em testes) precisam ter todos os métodos. Um relatório que só lê precisa de um falso com um método, não quatro."
+				] },
+				{ "type": "paragraph", "text": "Um bom exemplo é um repositório de usuários. Um relatório só precisa ler. Dê a ele um `UserReader` com `findAll` e deixe `save` e `delete` em outra interface. A classe concreta implementa as duas, então continua igual. O relatório não consegue gravar nem apagar por engano, e o seu falso precisa de um único método." },
+				{ "type": "paragraph", "text": "ISP e SRP são duas visões da coesão. O SRP pergunta por que o **próprio tipo** muda. O ISP pergunta o que cada **cliente** precisa de um tipo. Um repositório pode ter uma responsabilidade (guardar usuários) e ainda assim precisar de interfaces separadas de leitura e de escrita." },
+				{ "type": "callout", "tone": "warning", "text": "Não divida contando métodos. Se todo cliente de um `Cursor` chama `hasNext` e `next` juntos num laço, a interface já é coesa. Dividi-la criaria mais tipos, espalharia uma ideia só e não protegeria ninguém. A pergunta é sempre: quem usa o quê?" },
+				{ "type": "callout", "tone": "remember", "text": "Dê a cada cliente a menor interface que faça o trabalho dele. O tamanho se mede pelos clientes, não pelo número de métodos." }
+			]
+		},
+		{
+			"id": "dependency-inversion",
+			"title": "Princípio da inversão de dependência (DIP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Uma luminária tem um plugue. Ela não tem um fio fixo na parede de uma casa só. A luminária (a coisa importante) define o formato do plugue, e qualquer tomada que encaixe serve. O **princípio da inversão de dependência** diz: **módulos de alto nível e de baixo nível devem depender de abstrações**. O código de [[alto nível|as regras de negócio: para que o programa serve]] não deve importar os detalhes de [[baixo nível|os detalhes: banco de dados, e-mail, empresa de pagamento]]. Em vez disso, a regra diz o que precisa por meio de uma interface, e o detalhe a implementa." },
+				{ "type": "code", "language": "ts", "content": "class OrderService {\n\tprivate readonly database = new MySqlDatabase();\n\n\tplace(order: Order): void {\n\t\tif (order.total() <= 0) throw new Error('empty order');\n\t\tthis.database.insert('orders', order);\n\t}\n}", "caption": "A regra de negócio cria o próprio detalhe com new: ela muda quando o banco muda" },
+				{ "type": "paragraph", "text": "O `new` dentro da classe é uma decisão dupla: a classe escolhe o que precisa **e** qual implementação recebe. A solução é declarar uma interface na linguagem do negócio (`OrderStore`) e recebê-la no construtor. Assim a regra pode ser testada com um falso em memória." },
+				{ "type": "diagram", "content": "NORMAL                         INVERTIDO\n\nOrderService                   OrderService --> OrderStore\n     |                                              ^\n     v                                              |\nMySqlDatabase                  MySqlOrderStore -----'\n\nseta: regra -> detalhe     detalhe -> interface", "caption": "As setas do código-fonte apontam para a regra" },
+				{ "type": "paragraph", "text": "Note a diferença entre o **fluxo das chamadas** e a **dependência no código-fonte**. Em tempo de execução, `OrderService` ainda chama o banco. No código, os dois conhecem só a interface. Note também quem é **dono** da interface: ela fica com o módulo de alto nível, e o adaptador do banco a implementa. Essa posse é o que \"inversão\" quer dizer. Colocar a interface ao lado do banco não inverteria nada." },
+				{ "type": "heading", "text": "DIP não é o mesmo que DI" },
+				{ "type": "table", "headers": ["Tópico", "DIP (inversão de dependência)", "DI (injeção de dependência)"], "rows": [
+					["O que é", "Uma regra de projeto: depender de abstrações", "Uma técnica: alguém de fora entrega a dependência"],
+					["Pergunta que responde", "Do que devo depender?", "Quem a cria e entrega para mim?"],
+					["Pode existir sozinho?", "Sim", "Sim"]
+				], "caption": "Andam juntos, mas são coisas diferentes" },
+				{ "type": "paragraph", "text": "Interfaces são menos arriscadas que classes concretas porque mudam menos: não carregam detalhes e muitas classes dependem delas. Mas a regra não é \"ponha uma interface em tudo\". O critério é a **estabilidade**. A classe de texto da biblioteca padrão (`String`) quase nunca muda, não faz entrada nem saída e se comporta igual toda vez, então pode ser usada direto. O que muda, conversa com o mundo de fora ou dá uma resposta diferente a cada chamada (banco, relógio, rede, números aleatórios) vai atrás de uma interface." },
+				{ "type": "callout", "tone": "warning", "text": "Uma abstração que vaza é só uma casquinha fina. Se a interface tem um método `executeSql(query)` que devolve linhas do banco, ela fala a língua do detalhe, e trocar o armazenamento ainda muda o serviço. Uma boa interface diz o que o negócio precisa, como `countPending()`." },
+				{ "type": "callout", "tone": "remember", "text": "A regra é dona da interface e o detalhe obedece. A seta do código-fonte aponta para a regra." }
+			]
+		},
+		{
+			"id": "creational-patterns",
+			"title": "Criacionais: Factory, Builder, Singleton",
+			"blocks": [
+				{ "type": "paragraph", "text": "Criar um objeto envolve escolhas: qual classe, com quais partes, em que estado inicial. Se cada usuário do objeto repete essas escolhas, uma mudança precisa ser repetida em todo lugar. Os **padrões criacionais** tiram as escolhas de criação do código que usa o objeto, para que quem usa dependa só do tipo abstrato." },
+				{ "type": "table", "headers": ["Padrão", "O problema", "A ideia"], "rows": [
+					["**Factory**", "Há várias classes para o mesmo papel, e quem decide qual é usada está copiado por aí", "Uma função ou classe decide qual classe criar"],
+					["**Builder**", "Uma classe com muitos dados, alguns opcionais, numa lista longa de parâmetros", "Passos com nome e um `build` final que confere tudo"],
+					["**Singleton**", "Queremos exatamente uma instância de uma classe", "Uma instância mais um jeito global de alcançá-la"]
+				], "caption": "A Factory escolhe qual classe. O Builder monta um objeto em passos." },
+				{ "type": "heading", "text": "Factory" },
+				{ "type": "code", "language": "ts", "content": "function createNotifier(channel: string): Notifier {\n\tif (channel === 'email') return new EmailNotifier();\n\tif (channel === 'sms') return new SmsNotifier();\n\tthrow new Error(`unknown channel: ${channel}`);\n}", "caption": "O código que usa um Notifier nunca escreve new EmailNotifier" },
+				{ "type": "paragraph", "text": "O valor de uma factory está no que ela esconde. O cliente deve depender da **interface do produto**, não da classe concreta. Se o cliente faz um cast do resultado para a classe concreta, o benefício se perde." },
+				{ "type": "heading", "text": "Builder" },
+				{ "type": "code", "language": "ts", "content": "// difícil de ler: o que significam null, 30, true e false?\nnew HttpRequest('POST', '/orders', null, null, 30, true, false, body);\n\n// com um builder, cada valor tem nome\nnew RequestBuilder().method('POST').path('/orders').timeout(30).body(body).build();", "caption": "Muitos parâmetros posicionais contra passos com nome" },
+				{ "type": "paragraph", "text": "O método `build` é o lugar natural para regras que cruzam campos, como \"um POST precisa ter corpo\". O objeto só nasce se o conjunto todo fizer sentido. É também por isso que um **construtor rico** é melhor que um construtor vazio seguido de setters: com setters, entre o `new` e o último `set` o objeto existe num estado inválido. Outro cuidado: o `build` deve entregar ao produto uma **cópia** dos dados mutáveis, como uma lista de cabeçalhos. Se ele entrega o array do próprio builder, uma chamada posterior ao builder altera um produto que já foi entregue." },
+				{ "type": "heading", "text": "Singleton" },
+				{ "type": "paragraph", "text": "O Singleton junta duas decisões: existe **só uma instância** e ela é **alcançável de qualquer lugar**. A primeira pode ser uma necessidade legítima. A segunda é uma variável global disfarçada, e é por isso que hoje se olha o padrão com desconfiança." },
+				{ "type": "code", "language": "ts", "content": "class InvoiceService {\n\tissue(order: Order): Invoice {\n\t\tconst now = Clock.getInstance().now();\n\t\tconst rate = TaxTable.getInstance().rateFor(order.state);\n\t\treturn new Invoice(order, rate, now);\n\t}\n}", "caption": "A assinatura new InvoiceService() diz que não precisa de nada. Ela mente." },
+				{ "type": "paragraph", "text": "A assinatura de um construtor é a documentação mais honesta do que uma classe precisa. Um acesso global escondido faz essa documentação mentir. Pior: um Singleton com estado mutável liga todo o código que o usa. Nos testes isso aparece como **dependência de ordem**: o primeiro teste incrementa um contador, o segundo começa com o valor que sobrou e falha, embora cada um passe sozinho. Uma constante exportada de um módulo (`export const config = loadConfig()`) é a mesma coisa em JavaScript: quem importa fica preso àquela instância." },
+				{ "type": "callout", "tone": "tip", "text": "Separe as duas decisões. Se você realmente precisa de uma instância, crie-a **uma vez** quando o programa inicia e passe-a pelos construtores. Em produção você continua com um só objeto, e toda dependência fica visível na assinatura." },
+				{ "type": "callout", "tone": "remember", "text": "Esconda a criação atrás de um nome. Prefira uma instância única injetada a um Singleton global." }
+			]
+		},
+		{
+			"id": "structural-patterns",
+			"title": "Estruturais: Adapter, Decorator, Facade",
+			"blocks": [
+				{ "type": "paragraph", "text": "Os padrões estruturais tratam de como juntar classes. Três deles se parecem, porque cada um põe uma classe na frente de outro código. O que muda é a **intenção**." },
+				{ "type": "table", "headers": ["Padrão", "Interface que mostra", "Intenção"], "rows": [
+					["**Adapter**", "Uma diferente: converte uma classe para a interface que o cliente já espera", "Fazer um desencontro encaixar"],
+					["**Decorator**", "A **mesma** interface do objeto que ele envolve", "Acrescentar comportamento (log, cache, retry)"],
+					["**Facade**", "Uma **nova e mais simples**, para várias classes", "Uma porta de entrada fácil para um subsistema complexo"]
+				], "caption": "Um teste simples: o objeto envolvido poderia ser usado no lugar do que o envolve? No Decorator, sim. No Adapter, não." },
+				{ "type": "heading", "text": "Adapter" },
+				{ "type": "callout", "tone": "analogy", "text": "Um adaptador de tomada de viagem. Seu carregador tem um formato, a parede de outro país tem outro. Você não muda o carregador nem a parede. Põe uma pecinha no meio." },
+				{ "type": "code", "language": "ts", "content": "interface PaymentGateway {\n\tcharge(cents: number): Receipt;\n}\n\nclass AcmePayGateway implements PaymentGateway {\n\tconstructor(private readonly sdk: AcmePaySdk) {}\n\n\tcharge(cents: number): Receipt {\n\t\tconst result = this.sdk.createTransaction({ amount: cents / 100, currency: 'BRL' });\n\t\treturn { id: result.transactionId, approved: result.status === 'OK' };\n\t}\n}", "caption": "O adaptador traduz nomes, unidades (centavos contra moeda inteira) e respostas" },
+				{ "type": "paragraph", "text": "O sistema é dono do contrato estável (`PaymentGateway`). Os tipos do fornecedor nunca saem do adaptador. Quando o fornecedor é trocado, só o adaptador muda e as regras de negócio ficam como estão. O custo de trocar de fornecedor vira o custo de uma classe." },
+				{ "type": "heading", "text": "Decorator" },
+				{ "type": "paragraph", "text": "Um decorator implementa uma interface e recebe, no construtor, outro objeto da mesma interface. Como o formato é o mesmo, os decorators podem ser empilhados em qualquer combinação, como camadas de roupa numa boneca." },
+				{ "type": "code", "language": "ts", "content": "// Logged escreve cada chamada, Cached lembra as respostas\nconst a: Users = new Logged(new Cached(new SqlUsers()));\nconst b: Users = new Cached(new Logged(new SqlUsers()));", "caption": "As mesmas peças, ordem diferente, comportamento diferente" },
+				{ "type": "paragraph", "text": "A **ordem faz parte do comportamento**. Em `a`, o `Logged` está por fora, então toda chamada é registrada, até as respondidas pelo cache. Em `b`, o `Cached` está por fora, então o segundo `find('42')` é respondido pelo cache e nunca chega ao `Logged`: não é escrito no log. As duas são válidas e respondem perguntas diferentes." },
+				{ "type": "paragraph", "text": "Por que não herança? Com herança, cada combinação de recursos é uma subclasse. Com n recursos independentes são 2ⁿ − 1 classes (contando cada combinação com pelo menos um recurso, ignorando a ordem). Com decorators você escreve n classes e as combina quando o programa é montado." },
+				{ "type": "chart", "title": "Classes necessárias para os recursos de log, cache e retry", "unit": "classes", "bars": [
+					{ "label": "Herança, 3 recursos", "value": 7 },
+					{ "label": "Decorators, 3 recursos", "value": 3 },
+					{ "label": "Herança, 6 recursos", "value": 63 },
+					{ "label": "Decorators, 6 recursos", "value": 6 }
+				] },
+				{ "type": "paragraph", "text": "Um decorator é um subtipo do que ele envolve, então o **princípio de Liskov se aplica**. Um decorator de cache cujo `save` não limpa o produto guardado faz o `find` devolver dados velhos depois de uma escrita. Ele quebrou o contrato da interface. Um teste de contrato, executado contra o repositório simples e contra o decorado, pega o problema." },
+				{ "type": "heading", "text": "Facade" },
+				{ "type": "paragraph", "text": "Um subsistema costuma ter muitas classes que precisam ser chamadas numa certa ordem. A facade guarda esse conhecimento num só lugar, e os clientes dependem de uma classe e não de dez. O subsistema pode mudar por dentro sem machucá-los. O limite é claro: a facade conhece a **ordem das chamadas**, não as **regras**." },
+				{ "type": "callout", "tone": "warning", "text": "Uma facade cômoda atrai código. Se uma facade de pedidos cresce de três operações para sessenta métodos e as regras de desconto, estoque e frete passam a morar nela, ela deixou de delegar e virou uma God Class. Devolva as regras às suas classes." },
+				{ "type": "callout", "tone": "remember", "text": "O Adapter muda a interface. O Decorator a mantém e acrescenta comportamento. A Facade cria uma mais simples para muitas classes." }
+			]
+		},
+		{
+			"id": "behavioural-patterns",
+			"title": "Comportamentais: Strategy, Observer, Command, State",
+			"blocks": [
+				{ "type": "paragraph", "text": "Os padrões comportamentais tratam de como os objetos dividem o trabalho e conversam. Em cada um deles, uma classe deixa de decidir algo sozinha e passa a decisão para outro objeto que pode ser trocado." },
+				{ "type": "table", "headers": ["Padrão", "Intenção", "Sinal no código"], "rows": [
+					["**Strategy**", "Pôr algoritmos intercambiáveis atrás de uma interface", "Um `if` por tipo, cada ramo um cálculo independente"],
+					["**Observer**", "Um objeto avisa vários outros quando algo acontece", "Um par de chamadas: subscribe e publish"],
+					["**Command**", "Guardar um pedido como objeto, com seus dados", "Fila, histórico, desfazer e refazer"],
+					["**State**", "Mudar o comportamento quando o estado interno muda", "O mesmo campo `status` testado em todo método"]
+				], "caption": "Quatro jeitos de tirar uma decisão de dentro de uma classe" },
+				{ "type": "heading", "text": "Strategy" },
+				{ "type": "paragraph", "text": "Imagine ir à escola: de ônibus, de bicicleta ou a pé. O objetivo é o mesmo e o caminho muda. O Strategy separa **o que varia** (como calcular) **do que fica** (quem precisa do resultado). Cada tipo de frete ganha uma classe que pode ser testada sozinha, e um tipo novo não edita os outros." },
+				{ "type": "code", "language": "ts", "content": "type Pricing = (base: number) => number;\n\nconst regular: Pricing = (base) => base;\nconst blackFriday: Pricing = (base) => base * 0.7;\n\nfunction checkout(base: number, pricing: Pricing): number {\n\treturn pricing(base);\n}", "caption": "Nenhuma classe, e ainda assim é um Strategy" },
+				{ "type": "paragraph", "text": "Os padrões descrevem **papéis e relações**, não sintaxe. Quando a estratégia tem um método e nenhum estado, um tipo função faz o papel da interface. Use uma classe quando ela precisar de dados ou de mais de uma operação." },
+				{ "type": "heading", "text": "Observer" },
+				{ "type": "paragraph", "text": "Um canal do YouTube não sabe quem são seus inscritos. Ele só publica, e todos que se inscreveram são avisados. No Observer, quem publica não sabe quem escuta, então uma reação nova (somar pontos de fidelidade quando um pedido é pago) é só mais um `subscribe` na inicialização, e a classe do pedido não é editada. É o princípio aberto-fechado aplicado a eventos." },
+				{ "type": "code", "language": "ts", "content": "publish(event: string): void {\n\tfor (const listener of [...this.listeners]) {\n\t\ttry { listener(event); } catch (error) { this.errors.push(error); }\n\t}\n}", "caption": "Entrega segura: uma cópia da lista e cada ouvinte isolado" },
+				{ "type": "list", "items": [
+					"**Percorra uma cópia.** Se o ouvinte A se cancela durante a entrega, um laço comum move o B para o lugar dele e o pula. Publicar sobre um instantâneo (snapshot) significa: quem estava inscrito quando o evento começou o recebe.",
+					"**Isole cada ouvinte.** Se o B lança um erro e ninguém o captura, o C nunca é chamado e o erro chega a quem publicou, justamente o que o padrão queria desacoplar. Capture e registre o erro.",
+					"**Cancele ao sair.** O assunto (subject) guarda uma referência a cada observador. Uma tela que fecha sem cancelar continua na memória e continua sendo chamada. Esse vazamento é o \"lapsed listener\" (ouvinte esquecido). Um bom `subscribe` devolve a função que cancela."
+				] },
+				{ "type": "heading", "text": "Command" },
+				{ "type": "paragraph", "text": "Uma chamada de método comum acontece e some. Um comando é a mesma intenção **guardada como dado**: qual ação, sobre quem, com quais argumentos. Isso permite colocá-lo numa fila, repeti-lo e desfazê-lo. Se cada comando sabe se reverter, um histórico com duas pilhas dá desfazer e refazer." },
+				{ "type": "diagram", "content": "run(a) run(b) run(c)   histórico = [a, b, c]\nundo()                 tira c  -> histórico = [a, b]\nundo()                 tira b  -> histórico = [a]\n\nEfeitos ainda aplicados: só o a\nExecutar um comando novo limpa a pilha de refazer", "caption": "Desfazer vai na ordem inversa: o último a entrar é o primeiro a sair" },
+				{ "type": "callout", "tone": "warning", "text": "Nem todo comando tem inverso. Um comando que envia um e-mail ou cobra um cartão tem um efeito fora do programa. O envio não pode ser revertido: dá para compensar (mandar um cancelamento, reembolsar) ou declarar que o comando não é desfazível. Separe comandos reversíveis, compensáveis e irreversíveis." },
+				{ "type": "heading", "text": "State" },
+				{ "type": "paragraph", "text": "Um pedido vai de pendente para pago e para enviado. Cada fase responde de um jeito à mesma operação: não se envia um pedido pendente. Com condicionais, todo método começa com um teste sobre `status`. Com o padrão State, cada fase é uma classe, e as transições permitidas ficam explícitas. A regra que recusa `ship` para um pedido pendente mora na **classe do estado pendente**." },
+				{ "type": "paragraph", "text": "Conte o que cresce. Com 4 estados e 5 operações escritas como métodos com condicionais, um quinto estado obriga a revisar os **5** métodos. Com State, é uma classe nova mais as transições que levam a ela. O contrário também vale: se as operações crescem mais que os estados, as condicionais podem ser a melhor escolha." },
+				{ "type": "table", "headers": ["Tópico", "Strategy", "State"], "rows": [
+					["O que são as alternativas", "Jeitos independentes de fazer a mesma tarefa", "Fases de um ciclo de vida"],
+					["Quem as troca", "Escolhidas **de fora**", "Trocadas **pelas próprias operações**, como consequência"]
+				], "caption": "Mesma estrutura, intenção diferente" },
+				{ "type": "callout", "tone": "remember", "text": "O Strategy escolhe como, o Observer avisa muitos, o Command guarda um pedido, o State segue um ciclo de vida." }
+			]
+		},
+		{
+			"id": "repository-dependency-injection",
+			"title": "Repository e injeção de dependência",
+			"blocks": [
+				{ "type": "paragraph", "text": "Quando você pede um livro à bibliotecária, não entra no depósito para procurar nas prateleiras. Você diz o título e ela traz. Um **Repository** é essa bibliotecária para os seus dados. Ele dá às regras de negócio uma interface parecida com uma **coleção** (`add`, `find`, `save`) e esconde como os dados são guardados: SQL, arquivos ou memória." },
+				{ "type": "code", "language": "ts", "content": "interface OrderRepository {\n\tfind(id: string): Order | null;\n\tsave(order: Order): void;\n}\n\nclass InMemoryOrders implements OrderRepository {\n\tprivate readonly items = new Map<string, Order>();\n\tfind(id: string) { return this.items.get(id) ?? null; }\n\tsave(order: Order) { this.items.set(order.id, order); }\n}", "caption": "A regra fala de pedidos. Só o repositório real conhece SQL." },
+				{ "type": "paragraph", "text": "Como a regra só conhece a interface, ela pode ser testada com um repositório em memória: rápido e igual toda vez. Um segundo grupo de testes, mais lento, confere o repositório real do banco. Um **teste de contrato** executado contra as duas implementações garante que elas se comportam do mesmo jeito." },
+				{ "type": "heading", "text": "Injeção de dependência" },
+				{ "type": "paragraph", "text": "**Injeção de dependência** quer dizer que a classe deixa de criar ou buscar o que precisa e **recebe** de fora. A forma mais comum é a **injeção pelo construtor**: as dependências ficam visíveis na assinatura, são obrigatórias e podem ser somente leitura. Olhar o construtor mostra tudo o que a classe precisa." },
+				{ "type": "code", "language": "ts", "content": "class RegisterUser {\n\tconstructor(\n\t\tprivate readonly users: UserRepository,\n\t\tprivate readonly mailer: Mailer,\n\t) {}\n\n\texecute(email: string): void {\n\t\tthis.users.add(new User(email));\n\t\tthis.mailer.send(email, 'Welcome');\n\t}\n}", "caption": "Injeção pelo construtor" },
+				{ "type": "diagram", "content": "main()  <-- raiz de composição: o único lugar com 'new'\n  |  cria a conexão\n  |  cria SqlOrderRepository(conexão)\n  |  cria RegisterUser(repo, mailer)\n  v\no resto do programa só conhece interfaces", "caption": "Onde o grafo de objetos é montado" },
+				{ "type": "paragraph", "text": "O lugar onde tudo é criado e ligado se chama **raiz de composição** (composition root), perto do ponto de entrada do programa. Escrever `new SqlOrderRepository(connection)` ali mantém o resto do sistema dependente só de abstrações." },
+				{ "type": "callout", "tone": "warning", "text": "Um Service Locator (`Container.get('InvoiceRepository')` dentro dos métodos) respeita a inversão de dependência, porque a classe usa interfaces, mas mantém o problema do Singleton: o acesso global. As dependências ficam escondidas e não aparecem na assinatura da classe. A injeção pelo construtor declara a mesma informação, o compilador confere e um teste a substitui com facilidade." },
+				{ "type": "heading", "text": "Duas armadilhas" },
+				{ "type": "list", "items": [
+					"**Limite da transação.** Para salvar um pedido e baixar o estoque de forma atômica (tudo ou nada), a transação pertence ao **caso de uso**, que abre uma unidade de trabalho (unit of work) cobrindo os dois repositórios. Um repositório cuida de um tipo de objeto e não sabe de qual operação maior faz parte.",
+					"**Dependência cativa (captive dependency).** Um serviço criado uma vez na inicialização que recebe no construtor um objeto que deveria ser criado a cada requisição fica com o objeto da **primeira** requisição para sempre. Um objeto só pode depender de objetos que vivem tanto quanto ele ou mais. Dados por requisição chegam como argumento do método, ou por um provedor consultado a cada uso."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "O Repository esconde o armazenamento atrás de uma coleção. Injete as dependências pelo construtor e monte tudo na raiz de composição." }
+			]
+		},
+		{
+			"id": "anti-patterns",
+			"title": "Antipadrões e quando não usar um padrão",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um **code smell** (cheiro de código) é uma pista de que o projeto pode ter um problema, como um cheiro estranho na geladeira. Um **antipadrão** é uma resposta ruim que ficou popular. Os padrões também têm um preço: mais tipos, mais arquivos e mais um salto para entender o fluxo. Só compensam se o problema que resolvem realmente existe." },
+				{ "type": "table", "headers": ["Cheiro", "Como reconhecer", "Por que machuca"], "rows": [
+					["**God Class**", "Uma classe enorme que concentra boa parte da lógica e conhece quase todas as outras", "Baixa coesão, difícil de testar, todo mundo edita e gera conflito"],
+					["**Shotgun Surgery**", "Uma mudança obriga a fazer pequenas edições em muitas classes", "O que muda junto não está junto"],
+					["**Feature Envy**", "Um método lê vários getters de outro objeto para calcular algo sobre esse objeto", "O cálculo pertence ao outro objeto"],
+					["**Refused Bequest**", "Uma subclasse sobrescreve métodos herdados para que não façam nada ou lancem erro", "Quebra o Liskov: ela queria o código, não o contrato"],
+					["**Modelo anêmico**", "Classes só com campos, getters e setters, e todas as regras nos serviços", "Código procedural disfarçado: qualquer serviço pode deixar um objeto inválido"],
+					["**Generalidade especulativa**", "Interface, factory e builder, cada um com uma implementação, \"só por garantia\"", "Todos pagam por uma flexibilidade que ninguém usou"]
+				], "caption": "Seis cheiros e o seu custo" },
+				{ "type": "heading", "text": "Tell, Don't Ask e a Lei de Demeter" },
+				{ "type": "code", "language": "ts", "content": "// pede tudo, depois decide\nconst city = order.getCustomer().getAddress().getCity().getName();\n\n// diz ao pedido o que se quer\nconst city = order.shippingCity();", "caption": "Uma cadeia de getters acopla quem chama a quatro classes" },
+				{ "type": "paragraph", "text": "A **Lei de Demeter** diz que um método deve falar só com os vizinhos imediatos. Uma cadeia de getters atravessa vários objetos, então se o endereço muda de forma, toda cadeia espalhada pelo sistema quebra. Pedir o resultado ao primeiro objeto mantém o conhecimento da estrutura num só lugar. A mesma ideia, **Tell, Don't Ask** (diga, não pergunte), cura a Feature Envy: leve o comportamento para perto dos dados que ele usa." },
+				{ "type": "paragraph", "text": "Sobre o modelo anêmico: um projeto orientado a objetos mantém cada regra perto do dado que ela protege (encapsulamento). Se as classes de domínio são só sacos de campos, qualquer serviço pode deixar um pedido num estado inválido, e a mesma regra é reescrita em vários lugares." },
+				{ "type": "heading", "text": "Quando não aplicar um padrão" },
+				{ "type": "list", "items": [
+					"Com **um** só algoritmo e nenhum sinal de um segundo, o Strategy não se justifica.",
+					"Uma tela de cadastro com dois campos feita com uma interface, uma abstract factory e um Builder, cada um com uma implementação, é generalidade especulativa. Espere o **segundo caso real**: refatorar para um padrão quando a necessidade surge custa menos do que carregar a estrutura por anos.",
+					"Aplicar um padrão por precaução costuma produzir a **abstração errada**, e a flexibilidade errada atrapalha a mudança que realmente chega."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "O erro oposto também existe. Dividir demais é tão errado quanto dividir de menos. Os dois fazem a mudança perder o seu endereço único." },
+				{ "type": "callout", "tone": "remember", "text": "Um padrão é um remédio, não uma vitamina. Use quando a dor é real." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando tudo",
+			"blocks": [
+				{ "type": "paragraph", "text": "Os princípios e os padrões estão ligados. Os padrões costumam ser o caminho para seguir um princípio. Quando vir um problema, pergunte qual dor você sente e escolha o princípio ou o padrão que a remove." },
+				{ "type": "table", "headers": ["Dor que você sente", "Princípio que a explica", "Padrão ou técnica que ajuda"], "rows": [
+					["Uma classe muda por muitos motivos", "SRP", "Extrair cada assunto para sua própria classe"],
+					["Todo caso novo edita uma cadeia de `if` antiga", "OCP", "Strategy, Factory, polimorfismo"],
+					["Um subtipo lança erro ou surpreende seus clientes", "LSP", "Mudar a hierarquia ou usar composição"],
+					["Quem implementa escreve métodos \"não suportado\"", "ISP", "Dividir a interface por papel"],
+					["Regras de negócio importam banco ou e-mail", "DIP", "Interface que pertence à regra, DI, Adapter, Repository"],
+					["Um construtor com muitos parâmetros", "(criação)", "Builder, construtor rico"],
+					["Um global escondido que quebra testes", "DIP", "Injetar a instância única em vez de um Singleton"],
+					["Comportamentos que se empilham em qualquer ordem", "OCP, composição", "Decorator"],
+					["Muitas classes para chamar em ordem", "(simplicidade)", "Facade"],
+					["Reações a um evento", "OCP", "Observer"],
+					["Desfazer, fila, repetir", "(pedido como dado)", "Command"],
+					["Status testado em todo método", "OCP", "State"]
+				], "caption": "Da dor à cura" },
+				{ "type": "paragraph", "text": "Uma nota justa sobre custo: o código refatorado tem **mais tipos e mais linhas** que a primeira versão. Esse é o preço. Ele compensa onde mudanças assim realmente chegam, e é desperdício onde nunca chegam. A mudança não desaparece. Os projetos só escolhem onde ela cai." },
+				{ "type": "list", "ordered": true, "items": [
+					"Escreva um código simples que funciona, com testes.",
+					"Observe a dor: uma classe que muda por muitos motivos, uma cadeia de `if` que cresce, um teste que precisa de banco de dados.",
+					"Dê nome à dor com um princípio ou um cheiro.",
+					"Aplique o menor padrão que a remove, e nada além disso.",
+					"Mantenha os testes verdes durante a refatoração."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Bom projeto é fazer a próxima mudança custar pouco. Use os princípios para julgar, os padrões para consertar e o bom senso para decidir quando parar." }
+			]
+		}
+	]
+}

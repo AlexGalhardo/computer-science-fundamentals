@@ -1,0 +1,1166 @@
+{
+	"area": "rate-limiting",
+	"intro": [
+		"Imagina el comedor de una escuela con un solo cocinero. Si todos los niños intentan pedir en el mismo segundo, el cocinero no puede cocinar nada, y los niños del fondo de la fila nunca comen. Entonces la escuela crea una regla: cada niño pide un plato a la vez, y la fila avanza a la velocidad del cocinero. El **rate limiting** (limitación de tasa) es esa regla para las computadoras: decide cuántas solicitudes puede enviar un cliente a un servicio en cierto tiempo.",
+		"Una [[solicitud|un mensaje de un programa que le pide algo a un servidor, como 'dame esta página']] le da trabajo al servidor. Un [[cliente|el programa, la persona o la empresa que envía solicitudes a un servicio]] que manda demasiadas solicitudes puede volver lento el servicio para todos, o incluso tumbarlo. El rate limiting es como los servicios reales (APIs de pago, páginas de inicio de sesión, aplicaciones de chat, proveedores de nube) se mantienen en pie y tratan con justicia a todos sus clientes. Lo encuentras cuando un sitio dice 'demasiados intentos, vuelve a intentar más tarde'.",
+		"En este resumen aprenderás: por qué limitamos y dónde debe vivir el limitador, cinco maneras de contar (ventana fija, log deslizante, contador deslizante, token bucket y leaky bucket), cómo hacer que un limitador funcione cuando varios servidores lo comparten (con Redis), cómo dice 'no' el servidor (la respuesta HTTP 429) y cómo espera un buen cliente antes de intentarlo de nuevo, y los vecinos del rate limiting: cuotas, throttling y descarte de carga. Al final estarás listo para el quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "El panorama: palabras que vas a encontrar",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un **limitador de tasa** (rate limiter) es un pequeño portero colocado frente a un servicio. Para cada solicitud hace una pregunta: '¿este cliente ya usó su parte?'. Si no, la solicitud entra. Si sí, se rechaza. Todo este resumen trata de cómo cuenta el portero y de lo que pasa con los que rechaza."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Piensa en un guardia de una fiesta que deja entrar como máximo a 10 invitados por minuto. No revisa quién es buena persona. Solo cuenta. Quien revisa quién eres es otra persona, en el mostrador de identificaciones. Contar y comprobar la identidad son dos trabajos distintos."
+				},
+				{
+					"type": "heading",
+					"text": "Palabras que vas a encontrar"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Clave (key)**: el nombre bajo el cual cuenta el limitador. Puede ser una dirección IP, un usuario, una clave de API o una empresa cliente. Cada clave tiene su propia cuenta.",
+						"**Límite**: el mayor número de solicitudes permitidas, por ejemplo 100.",
+						"**Ventana**: el trozo de tiempo al que se refiere el límite, por ejemplo 'por minuto'. Así que '100 por minuto' significa límite 100 y ventana de 60 segundos.",
+						"**Tasa**: cuántas solicitudes por unidad de tiempo, por ejemplo 5 por segundo.",
+						"**[[Ráfaga (burst)|muchas solicitudes que llegan casi en el mismo instante]]**: muchas solicitudes juntas. Algunos limitadores permiten una ráfaga pequeña, otros no.",
+						"**Admitir y rechazar**: admitir una solicitud es dejarla pasar. Rechazarla es negarla (por ejemplo, con la respuesta 429).",
+						"**Rendimiento (throughput)**: cuántas solicitudes por segundo se completan de verdad."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Las dos preguntas que responde todo limitador"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Pregunta",
+						"Por qué importa",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"¿Cómo se guarda la cuenta?",
+							"Define cuánta memoria usa y qué tan exacto es",
+							"Un número por cliente, o una marca de tiempo por solicitud"
+						],
+						[
+							"¿Qué pasa con una ráfaga?",
+							"Define si un cliente puede mandar muchas solicitudes de golpe",
+							"Bloquearla, permitir un poco, o retenerla en una fila"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Una regla como '10 solicitudes por segundo' no dice qué pasa cuando llegan 20 solicitudes en 200 milisegundos. Cada algoritmo responde eso a su manera, y esa respuesta es lo que de verdad eliges al elegir un algoritmo."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un limitador de tasa cuenta y decide. No sabe quién eres, no esconde tus datos y no hace nada más rápido."
+				}
+			]
+		},
+		{
+			"id": "why-and-where",
+			"title": "Por qué y dónde limitar",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "¿Por qué un servicio rechazaría solicitudes a propósito? Porque un servidor tiene una cantidad fija de trabajo que puede hacer por segundo. Si un cliente toma demasiado, los demás esperan o reciben errores. Un limitador da cuatro cosas: mantiene el servicio **disponible**, mantiene a los clientes **justos** entre sí, mantiene el **costo** bajo control (algunas solicitudes cuestan dinero de verdad) y frena la **fuerza bruta** (probar miles de contraseñas) y el **scraping** (copiar un sitio entero con una máquina)."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "El rate limiting no es lo mismo que otras protecciones. La autenticación dice quién eres. El cifrado esconde los datos en el camino. La caché hace las respuestas más rápidas. El balanceador de carga reparte el trabajo entre servidores. El limitador no hace nada de eso: solo limita cuánto puede usar cada clave."
+				},
+				{
+					"type": "heading",
+					"text": "¿Qué clave contamos?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Clave",
+						"Bueno",
+						"Malo"
+					],
+					"rows": [
+						[
+							"Dirección IP",
+							"Existe antes de que alguien inicie sesión, así que es fácil",
+							"Mucha gente puede compartir una dirección (una escuela, una empresa o un operador móvil usan [[NAT|un truco en el que una red entera llega a Internet por una sola dirección pública]]), así que todos son castigados juntos. Un atacante cambia de dirección con facilidad."
+						],
+						[
+							"Usuario o clave de API",
+							"Identifica a quien llama de verdad",
+							"Solo funciona después de identificar al que llama"
+						],
+						[
+							"Tenant (empresa cliente)",
+							"Limita a un cliente entero",
+							"Exige conocer el tenant en cada solicitud"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Ten cuidado con el encabezado `X-Forwarded-For`. Es una línea común de la solicitud, y quien envía la solicitud escribe en ella lo que quiera. Solo es confiable cuando lo rellenó un proxy que tú controlas. Si un servicio está abierto a Internet sin proxy delante, debe usar la dirección de la conexión real. Si usa el encabezado, el atacante solo cambia el encabezado cada vez y consigue claves nuevas sin fin."
+				},
+				{
+					"type": "heading",
+					"text": "Apilando límites"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un limitador solo controla el total de la clave que cuenta. Si cada usuario puede mandar 100 por minuto y una empresa cliente tiene 400 usuarios, esa empresa puede mandar hasta 40.000 por minuto. Por eso los sistemas grandes **apilan** claves: un límite por usuario, uno por tenant, a veces uno global. Una solicitud debe pasar por todos. También ayuda tener un límite distinto para cada endpoint: `POST /login` y el envío de SMS deben tener límites muy bajos, porque cada intento es un riesgo o cuesta dinero, mientras que una lectura barata puede tener uno alto. Un solo límite holgado para todo termina siendo demasiado holgado para los endpoints sensibles."
+				},
+				{
+					"type": "heading",
+					"text": "¿Dónde vive el limitador?"
+				},
+				{
+					"type": "diagram",
+					"caption": "Varios lugares para un limitador, del cliente a una dependencia",
+					"content": "cliente --> CDN/borde --> gateway --> aplicación --> dependencia\n  (1)         (2)          (3)           (4)            (5)\n\n(1) en el propio cliente (educado, pero no obligatorio)\n(2) en el borde: barato para rechazar, poco contexto\n(3) en el gateway de API o proxy inverso\n(4) en la aplicación: conoce usuario y operación\n(5) justo antes de una dependencia cara (SMS, base de datos)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuanto más cerca del origen del tráfico, más barato es decir que no, pero menos sabe el limitador de la solicitud. Por eso se combinan capas: un límite grueso y barato en el borde, y límites finos por usuario y por operación en la aplicación. Para proteger una **dependencia** de capacidad o costo limitados (por ejemplo un proveedor de SMS que cobra por mensaje), pon el limitador justo antes de ella, cuenta en la unidad que ella cobra (mensajes, no solicitudes) y compártelo entre todos los caminos de código, porque un job nocturno puede llegar al proveedor sin pasar por el gateway."
+				},
+				{
+					"type": "heading",
+					"text": "Justo no es lo mismo que seguro"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina un servicio que aguanta 400 solicitudes por segundo y 10 clientes que pueden mandar 100 por segundo cada uno. Los límites son justos, pero juntos permiten 1.000 por segundo, más que 400. Los límites por cliente normalmente se venden por encima de la capacidad, con la esperanza de que no todos usen el máximo a la vez. Para proteger el servicio también necesitas un **límite global** o descarte de carga. Y una avalancha de 200.000 direcciones distintas, cada una por debajo de su límite, igual tumba el servicio, porque el daño viene de la suma. Un limitador dentro de la aplicación además decide tarde: la solicitud ya usó una conexión y algo de trabajo."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El limitador va donde protege lo que importa, cuenta una clave que quien llama no puede falsificar, y un límite por cliente por sí solo no protege contra la suma de todos los clientes."
+				}
+			]
+		},
+		{
+			"id": "fixed-window",
+			"title": "Ventana fija",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La manera más simple de contar es cortar el tiempo en rebanadas iguales, como las hojas de un calendario, y guardar un marcador por rebanada. Cada rebanada es una **ventana** de tamaño W. La ventana número k cubre desde el instante k veces W hasta (sin incluir) k+1 veces W. Para W = 10 segundos las ventanas son [0,10), [10,20), [20,30) y así sucesivamente. El paréntesis significa 'no incluido'. Así que un instante exactamente en 10 pertenece a la ventana que está **empezando**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Una maestra da a cada niño 3 calcomanías por hora, y cada vez que suena la hora en punto borra el pizarrón y todos empiezan de cero."
+				},
+				{
+					"type": "paragraph",
+					"text": "La regla: cuando llega una solicitud, busca su ventana, mira el contador de esa ventana y admite la solicitud si el contador está por debajo del límite. Luego suma uno. En cada frontera el contador vuelve a cero. El estado es mínimo: **un contador y el número de ventana por cliente**. Esa es la gran cualidad del algoritmo. La memoria no depende del límite ni del tamaño de la ventana, así que pasar de un límite de 500 a 5.000 no cuesta nada extra."
+				},
+				{
+					"type": "heading",
+					"text": "El punto débil: la frontera"
+				},
+				{
+					"type": "diagram",
+					"caption": "Límite 3 por ventana de 10 s. Seis solicitudes se admiten en unos 4 segundos",
+					"content": "  ventana [0,10)           ventana [10,20)\n|------------------------|------------------------|\n                   8 9 9 | 10 11 12\n                   ^^^^^   ^^^^^^^^\n                   3 admitidas  3 admitidas\n\ncontador: 0 .. 1 2 3     | 0 -> 1 2 3  (vuelve a cero)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un cliente puede gastar todo el límite al final de una ventana y otra vez al comienzo de la siguiente. En un intervalo mucho menor que W consigue pasar hasta **2 veces el límite**. La regla parece prometer L por ventana, pero permite el doble cerca de una frontera. Ese es el defecto clásico de la ventana fija."
+				},
+				{
+					"type": "heading",
+					"text": "¿Dónde empiezan las ventanas?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Hay dos maneras comunes de armarlo en Redis. En la primera, el número de ventana va en el nombre de la clave (por ejemplo `rl:client42:7`), así que las ventanas están alineadas con el reloj y son iguales para todos. En la segunda hay una clave por cliente, la clave recibe un tiempo de vida con `EXPIRE` solo cuando `INCR` devuelve 1, y la ventana empieza en la **primera** solicitud del cliente:"
+				},
+				{
+					"type": "code",
+					"language": "lua",
+					"caption": "Ventana abierta por la primera solicitud",
+					"content": "local n = redis.call('INCR', KEYS[1])\nif n == 1 then\n\tredis.call('EXPIRE', KEYS[1], ARGV[1])\nend\nreturn n"
+				},
+				{
+					"type": "paragraph",
+					"text": "Las dos formas siguen permitiendo una ráfaga doble, solo que en lugares distintos. En la segunda forma la primera ráfaga queda limitada al límite, pero aún hay una frontera cuando la clave expira. Las dos líneas van juntas en un script para que la clave nunca quede sin expiración."
+				},
+				{
+					"type": "heading",
+					"text": "Pequeños detalles que cambian los números"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Mismo promedio, otra ventana.** '600 por minuto' como una ventana de 60 s permite hasta 1.200 cerca de una frontera. '10 por segundo' como ventanas de 1 segundo mantiene la ráfaga pequeña, pero rechaza a un buen cliente que manda un lote pequeño de golpe. El tamaño de la ventana elige el tamaño de la ráfaga que toleras.",
+						"**Contar solicitudes rechazadas.** En la ventana fija no cambia quién es admitido, porque el contador se pone en cero en la frontera de todos modos. Solo cambia el número guardado, que puede ser una buena medida del exceso.",
+						"**Clientes sincronizados.** Con ventanas alineadas al reloj, todos recuperan su límite en el mismo instante. Los clientes que esperan la renovación vuelven a intentar todos juntos, una estampida en la frontera. Un retraso aleatorio en el cliente (jitter) o un algoritmo sin frontera ayuda."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Ventana fija: un contador por cliente, muy barata, pero puede pasar hasta 2 veces el límite cerca de una frontera."
+				}
+			]
+		},
+		{
+			"id": "sliding-window",
+			"title": "Log deslizante y contador deslizante",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La ventana fija lo olvida todo en la frontera. ¿Y si la ventana **se moviera con cada solicitud**? En vez de 'esta hora del calendario', pregunta: 'en los últimos W segundos antes de ahora, ¿cuántas solicitudes se admitieron?'. Esa ventana se desliza hacia adelante todo el tiempo, así que no hay frontera que explotar. Hay dos maneras de hacerlo."
+				},
+				{
+					"type": "heading",
+					"text": "Log deslizante: exacto, pero pesado"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **log deslizante** (sliding log) guarda la marca de tiempo de cada solicitud admitida, como un cuaderno donde el portero anota la hora a la que entró cada invitado. Cuando llega una solicitud en el instante t, borra las anotaciones demasiado viejas, cuenta lo que queda y admite a la recién llegada si la cuenta está por debajo del límite L. La convención usada aquí: una anotación de exactamente W segundos ya expiró, así que la ventana es (t - W, t]. Solo se anotan las solicitudes **admitidas**."
+				},
+				{
+					"type": "table",
+					"caption": "Límite 3, W = 10 s",
+					"headers": [
+						"Llega en t",
+						"Anotaciones aún en la ventana",
+						"Decisión"
+					],
+					"rows": [
+						[
+							"0",
+							"ninguna",
+							"admitida"
+						],
+						[
+							"2",
+							"0",
+							"admitida"
+						],
+						[
+							"5",
+							"0, 2",
+							"admitida"
+						],
+						[
+							"9",
+							"0, 2, 5 (ya son tres)",
+							"rechazada"
+						],
+						[
+							"10",
+							"2, 5 (la anotación 0 tiene exactamente 10, así que expiró)",
+							"admitida"
+						],
+						[
+							"11",
+							"2, 5, 10",
+							"rechazada"
+						],
+						[
+							"12",
+							"5, 10 (la anotación 2 expiró)",
+							"admitida"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El log olvida cada solicitud por separado, exactamente W segundos después de admitirla, así que en **cualquier** intervalo de W segundos nunca hay más de L solicitudes admitidas. El precio es la memoria: hasta **L marcas de tiempo por cliente**. Un límite de 10.000 por hora puede significar 10.000 entradas para un solo cliente. En Redis suele ser un sorted set por cliente, con la marca de tiempo como score."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Lo que anotas importa. Si las solicitudes rechazadas también entran al log, cada intento negado renueva el bloqueo, y un cliente que insiste nunca se recupera. Eso puede ser un castigo deseado, pero hazlo una decisión, no un accidente."
+				},
+				{
+					"type": "heading",
+					"text": "Contador deslizante: barato y casi exacto"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **contador deslizante** (sliding counter) guarda solo dos números por cliente: la cuenta de la ventana fija anterior (prev) y la de la actual (cur). Para estimar los últimos W segundos usa una parte de la ventana anterior más toda la actual:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"caption": "elapsed = tiempo desde que empezó la ventana actual",
+					"content": "estimación = prev * (1 - elapsed / W) + cur\nadmite cuando estimación < límite   (la estimación se calcula antes de contar la nueva solicitud)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo: límite 100, W = 60 s, prev = 80, cur = 30, y la solicitud llega 15 s después de que empezó la ventana. Tres cuartos de la ventana anterior aún cuentan (1 - 15/60 = 0,75), así que la estimación es 80 x 0,75 + 30 = 90, por debajo de 100: admitida. El peso de la ventana anterior baja de forma continua de 1 a 0, así que un cliente que gastó su límite recupera los cupos poco a poco, no todos de golpe."
+				},
+				{
+					"type": "paragraph",
+					"text": "La estimación depende de una suposición: que las solicitudes de la ventana anterior estaban **repartidas por igual** en ella, porque el contador solo sabe cuántas fueron, no cuándo. Cuando la suposición falla, la respuesta falla, de manera acotada:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Solicitudes anteriores concentradas al **final** de la ventana: todas siguen dentro de los últimos W segundos, pero solo se cuenta una fracción. El contador **subestima** y puede admitir más que el límite.",
+						"Solicitudes anteriores concentradas al **comienzo**: ninguna sigue dentro de los últimos W segundos, pero aún se cuenta una fracción. El contador **sobrestima** y rechaza solicitudes que el log exacto admitiría."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Los tres algoritmos de ventana lado a lado"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Ventana fija",
+						"Log deslizante",
+						"Contador deslizante"
+					],
+					"rows": [
+						[
+							"Estado por cliente",
+							"1 contador + número de ventana",
+							"hasta L marcas de tiempo",
+							"2 contadores"
+						],
+						[
+							"Límite 1.000 por hora, todo usado",
+							"1 contador",
+							"1.000 marcas de tiempo",
+							"2 contadores"
+						],
+						[
+							"Ráfaga en la frontera",
+							"hasta 2 x L",
+							"nunca más que L",
+							"error pequeño"
+						],
+						[
+							"¿Exacto?",
+							"no",
+							"sí",
+							"aproximado"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Log: exacto, la memoria crece con el límite. Contador: dos números, error pequeño. Fija: un número, pero ráfaga doble en la frontera. Admitir más en total no significa proteger mejor."
+				}
+			]
+		},
+		{
+			"id": "token-bucket",
+			"title": "Token bucket (cubeta de tokens)",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagina una cubeta de fichas de juguete. Para hacer una solicitud pagas una ficha. Un grifo suelta fichas nuevas en la cubeta a una velocidad constante, pero la cubeta solo guarda cierta cantidad, y las fichas de más se derraman. Si la cubeta está vacía, esperas la siguiente ficha. Este es el **token bucket**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un salón de videojuegos: recibes una moneda cada 10 segundos, y tu bolsillo guarda como máximo 5 monedas. Si pasas mucho tiempo sin jugar, sigues teniendo solo 5 monedas. Si juegas 5 partidas seguidas, te quedas sin ninguna y debes esperar monedas nuevas."
+				},
+				{
+					"type": "heading",
+					"text": "Las dos perillas"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Parámetro",
+						"Nombre",
+						"Qué limita"
+					],
+					"rows": [
+						[
+							"B",
+							"capacidad (tamaño de la cubeta)",
+							"La mayor ráfaga que pasa de una vez"
+						],
+						[
+							"r",
+							"tasa de reposición (fichas por segundo)",
+							"La velocidad media cuando el cliente sigue insistiendo"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Tener dos perillas es la fuerza del algoritmo: la ráfaga que toleras y el promedio que sostienes dejan de ser el mismo número. Una cubeta vacía significa que el cliente gastó su ráfaga: la solicitud se rechaza (en un limitador de API) o se retrasa (en un modelador de tráfico) hasta que aparezca una ficha. Mientras la cubeta sigue vacía, el rendimiento es exactamente r."
+				},
+				{
+					"type": "heading",
+					"text": "El saldo y el tope"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Reposición perezosa: no hace falta un temporizador",
+					"content": "// saldo = min(B, saldo + r * transcurrido)\nfunction allow(b: { tokens: number; last: number }, now: number): boolean {\n\tconst elapsed = now - b.last;\n\tb.tokens = Math.min(B, b.tokens + elapsed * r);\n\tb.last = now;\n\tif (b.tokens >= 1) { b.tokens -= 1; return true; }\n\treturn false;\n}"
+				},
+				{
+					"type": "paragraph",
+					"text": "Nadie necesita un temporizador que suelte una ficha en cada instante. Como las fichas llegan a velocidad constante, **el saldo anterior y el instante de la última actualización** bastan para calcular el saldo ahora. Esto se llama **reposición perezosa** (lazy refill), y el estado por cliente son solo dos campos. Las fracciones de ficha cuentan: con r = 0,5 por segundo, dos segundos dan una ficha entera."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "El `Math.min(B, ...)` es el tope, y olvidarlo es un bug clásico. Sin él, un cliente inactivo durante una hora acumula una hora de fichas y luego las gasta todas de golpe. El bug no aparece en pruebas con tráfico constante, solo después de un periodo tranquilo."
+				},
+				{
+					"type": "table",
+					"caption": "B = 4, r = 1 ficha/s, cubeta llena en t = 0. Una solicitud rechazada no gasta ficha",
+					"headers": [
+						"Instante",
+						"Saldo antes",
+						"Solicitudes",
+						"Admitidas",
+						"Saldo después"
+					],
+					"rows": [
+						[
+							"0 s",
+							"4",
+							"4",
+							"4",
+							"0"
+						],
+						[
+							"1 s",
+							"0 + 1 = 1",
+							"2",
+							"1",
+							"0"
+						],
+						[
+							"3 s",
+							"0 + 2 = 2",
+							"1",
+							"1",
+							"1"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "¿Cuántas pueden pasar?"
+				},
+				{
+					"type": "paragraph",
+					"text": "En cualquier intervalo de T segundos un token bucket admite **como máximo B + r x T** solicitudes: la ráfaga guardada más lo que produjo el grifo mientras tanto. Cuanto más largo el intervalo, menos pesa el término B, y el promedio se acerca a r."
+				},
+				{
+					"type": "chart",
+					"title": "Máximo de solicitudes que admite una cubeta con B = 10 y r = 2 por segundo en T segundos",
+					"unit": "solicitudes",
+					"bars": [
+						{
+							"label": "T = 1 s",
+							"value": 12
+						},
+						{
+							"label": "T = 5 s",
+							"value": 20
+						},
+						{
+							"label": "T = 10 s",
+							"value": 30
+						},
+						{
+							"label": "T = 60 s",
+							"value": 130
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Por eso no se puede elegir r solo por el techo. Si una API tolera como máximo N solicitudes en cualesquiera T segundos, necesitas B + r x T <= N, no solo r x T <= N. Ejemplo: como máximo 100 cada 10 segundos y una ráfaga de 40 significa r x 10 <= 60, así que r = 6 por segundo. Cada ficha dada a la ráfaga es una menos para la tasa sostenida."
+				},
+				{
+					"type": "heading",
+					"text": "Más ideas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Tiempo de espera.** Si el saldo es s (menor que 1), la próxima solicitud se admitirá después de (1 - s) / r segundos. Es el número que un servidor puede enviar en `Retry-After`.",
+						"**Costo ponderado.** Una solicitud puede costar más de una ficha. Una exportación puede costar 25 fichas y una lectura 1. La regla es: admite cuando saldo >= costo, sin pago parcial. Con saldo bajo, las llamadas baratas siguen pasando mientras las caras esperan.",
+						"**Modelado de tráfico con bytes.** Las fichas pueden ser bytes. Con cubeta B = 16 MB, tasa de fichas R = 2 MB/s y un enlace que envía como máximo M = 10 MB/s, una cubeta llena deja al host enviar a velocidad máxima durante B / (M - R) = 16 / 8 = 2 segundos, y luego cae a R."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Token bucket: la capacidad B es la mayor ráfaga, la tasa r es el promedio a largo plazo, y como máximo B + r x T pasan en T segundos."
+				}
+			]
+		},
+		{
+			"id": "leaky-bucket",
+			"title": "Leaky bucket (cubeta con fugas)",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Ahora da vuelta la imagen. Imagina una cubeta con un agujerito en el fondo. Puedes echar agua tan rápido como quieras, pero sale por el agujero a una velocidad constante. Si echas demasiada, la cubeta se desborda. Este es el **leaky bucket**, y tiene dos lecturas que usan la misma imagen."
+				},
+				{
+					"type": "heading",
+					"text": "Lectura 1: una fila (un modelador)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Las solicitudes entran en una fila de espera de tamaño limitado. **Salen de la fila a una tasa constante**, una cada intervalo fijo. Una ráfaga no se rechaza: espera en la fila y sale de forma pareja. Si la fila está llena, la solicitud que llega se descarta, como el agua por encima del borde."
+				},
+				{
+					"type": "diagram",
+					"caption": "Fila de capacidad 6, una salida cada 0,5 s. Nueve solicitudes llegan juntas en t = 0",
+					"content": "llegadas (9 de golpe)\n       |\n       v\n  +---------+\n  | 6 cupos |  3 solicitudes no caben: descartadas\n  +----+----+\n       | una cada 0,5 s\n       v\n  salida: 0,5  1,0  1,5  2,0  2,5  3,0 s"
+				},
+				{
+					"type": "paragraph",
+					"text": "El sistema detrás de la cubeta nunca recibe más que la tasa de salida, por muy llena de ráfagas que esté la entrada. El precio es el **retraso**: si la fila drena r solicitudes por segundo, la solicitud con k - 1 delante espera k / r segundos (la primera salida ocurre un intervalo después de la llegada a una fila vacía). La peor espera posible es capacidad / r, así que el tamaño de la fila también es una elección de latencia máxima."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "La puerta de una escuela donde los niños salen uno por uno, aunque cien corran hacia ella. Nadie queda bloqueado para siempre, pero el último espera."
+				},
+				{
+					"type": "heading",
+					"text": "Lectura 2: un medidor (un fiscalizador)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Como **medidor** (meter), la cubeta no guarda ninguna solicitud. Guarda solo un número, el **nivel**. Cada solicitud admitida suma 1 al nivel, y el nivel se drena a una tasa constante. Una solicitud se admite cuando nivel + 1 <= capacidad, y la decisión es inmediata: nada espera."
+				},
+				{
+					"type": "table",
+					"caption": "Medidor: capacidad 3, drena 1 por segundo, nivel 0 en t = 0. Las solicitudes rechazadas no cambian el nivel",
+					"headers": [
+						"Instante",
+						"Nivel tras drenar",
+						"Solicitud",
+						"Decisión",
+						"Nivel después"
+					],
+					"rows": [
+						[
+							"0 s",
+							"0",
+							"1.ª",
+							"admitida",
+							"1"
+						],
+						[
+							"0 s",
+							"1",
+							"2.ª",
+							"admitida",
+							"2"
+						],
+						[
+							"0 s",
+							"2",
+							"3.ª",
+							"admitida",
+							"3"
+						],
+						[
+							"0 s",
+							"3",
+							"4.ª",
+							"rechazada (3 + 1 > 3)",
+							"3"
+						],
+						[
+							"2 s",
+							"3 - 2 = 1",
+							"5.ª",
+							"admitida",
+							"2"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El medidor es la imagen en el espejo del token bucket. Con fichas = capacidad - nivel, las reglas de uno se vuelven las reglas del otro. Los dos admiten exactamente las mismas solicitudes y los dos permiten una ráfaga de hasta la capacidad con tasa media r. Solo la lectura como **fila** se comporta distinto, porque retiene y retrasa solicitudes."
+				},
+				{
+					"type": "heading",
+					"text": "Modelar y fiscalizar"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Modelar (shaping)",
+						"Fiscalizar (policing)"
+					],
+					"rows": [
+						[
+							"Qué pasa con el exceso",
+							"Se retrasa en una fila",
+							"Se descarta o se marca de inmediato"
+						],
+						[
+							"Costo",
+							"Latencia y memoria",
+							"Nada que retener, pero quien llama pierde la solicitud"
+						],
+						[
+							"Ejemplo",
+							"Leaky bucket como fila",
+							"Un limitador que responde 429"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "En palabras de Tanenbaum, modelar regula la tasa media y el tamaño de la ráfaga de un flujo **antes** de que entre a la red, normalmente retrasando paquetes. Fiscalizar es la red comprobando que el flujo respete el patrón acordado, y descartando o marcando el exceso."
+				},
+				{
+					"type": "heading",
+					"text": "¿Token bucket o leaky bucket?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Después de mucho tiempo tranquilo, un cliente manda 10 solicitudes de golpe. Un token bucket de capacidad 10 juntó fichas mientras estaba inactivo, así que deja pasar las 10 de inmediato. Un leaky bucket como fila no junta ningún crédito: mantiene las 10 en la fila y las suelta a su tasa constante, digamos una por segundo. El tiempo inactivo rinde fichas en uno y no rinde nada en el otro."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Usa el token bucket cuando las ráfagas son aceptables y quieres limitar el promedio. Usa el leaky bucket como fila cuando el sistema de atrás tiene una capacidad rígida y constante (falla por encima de 5 por segundo, aunque sea un instante), y acepta retraso y descartes como precio. Define la tasa de salida según la capacidad del siguiente sistema y el tamaño de la fila según la mayor espera que aceptas."
+				}
+			]
+		},
+		{
+			"id": "redis-distributed",
+			"title": "Limitación distribuida con Redis y atomicidad",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Hasta aquí había un programa con un contador. Los servicios reales corren en varias copias, llamadas **instancias**, detrás de un [[balanceador de carga|una máquina que envía cada solicitud a uno de varios servidores idénticos]]. Si cada instancia cuenta en su propia memoria, un cliente puede pasar N veces el límite por N instancias: con 3 instancias y un límite de 100 por minuto, hasta 300 por minuto."
+				},
+				{
+					"type": "paragraph",
+					"text": "La solución es sacar el contador de las instancias y llevarlo a un **almacén compartido** que todas leen y escriben. [[Redis|una base de datos muy rápida que guarda los datos en memoria y se usa mucho para contadores]] es la elección habitual. Redis pasa a ser la única fuente de verdad, y las instancias quedan simples y se pueden agregar o quitar sin cambiar el límite."
+				},
+				{
+					"type": "heading",
+					"text": "Por qué INCR no pierde cuentas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis ejecuta los comandos de uno en uno y nunca mezcla dos comandos sobre los datos. Así `INCR` (suma uno a un número) es una lectura, suma y escritura atómicas. Si dos instancias envían `INCR` para la misma clave en el mismo instante, ninguna suma se pierde. **Atómico** quiere decir 'todo de una pieza, nada se mete en medio'."
+				},
+				{
+					"type": "heading",
+					"text": "La trampa: comprobar y después actuar"
+				},
+				{
+					"type": "diagram",
+					"caption": "Cada comando es atómico, pero la secuencia no lo es",
+					"content": "contador = 9, límite = 10\n\ninstancia A: GET   -> 9\ninstancia B: GET   -> 9   (A todavía no escribió)\ninstancia A: 9 < 10, INCR, admite  -> 10\ninstancia B: 9 < 10, INCR, admite  -> 11   <- por encima del límite"
+				},
+				{
+					"type": "paragraph",
+					"text": "Leer, decidir en la aplicación y luego escribir es una **condición de carrera** (race condition, un bug que depende de quién es más rápido). En la prueba de este repositorio, dos instancias recibieron 400 solicitudes concurrentes para un límite de 50 por minuto. La versión con un script Lua admitió exactamente 50 en cada una de cinco rondas. La versión ingenua admitió hasta 192 en las rondas medidas, y exactamente 50 en algunas, y por eso estos bugs son difíciles de atrapar."
+				},
+				{
+					"type": "heading",
+					"text": "La cura: un script Lua"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis puede ejecutar un pequeño programa escrito en [[Lua|un lenguaje de programación diminuto que Redis entiende]] con `EVAL`. Un script corre de principio a fin y no se atiende ningún otro comando en medio, así que la lectura, la decisión y la escritura se vuelven un solo paso atómico. También puede fijar la expiración en el mismo paso del primer incremento, y así un cliente que se cae no deja un contador que nunca expira."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Si `INCR` y `EXPIRE` son dos comandos enviados por el cliente y el proceso muere entre ellos, la clave cuenta para siempre y nunca expira. La ventana nunca se reinicia, y el cliente queda bloqueado. Pon los dos en un solo script."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Detalle",
+						"Qué saber"
+					],
+					"rows": [
+						[
+							"Scripts cortos",
+							"Mientras un script corre, todos los demás clientes esperan. Un script de limitador hace unos pocos comandos O(1) sobre una o dos claves."
+						],
+						[
+							"`KEYS` y `ARGV`",
+							"Los nombres de las claves van en `KEYS`, los demás valores (límite, ventana) van en `ARGV`. Declarar las claves permite a Redis Cluster encontrar el nodo correcto. Un script solo puede tocar claves de un mismo slot, y una hash tag entre llaves mantiene juntas las claves relacionadas."
+						],
+						[
+							"`EVALSHA` y `NOSCRIPT`",
+							"El cliente carga el script una vez y lo llama por su código SHA1. La caché de scripts no es permanente: tras un reinicio Redis responde `NOSCRIPT`, y el cliente debe cargar el script de nuevo y reintentar."
+						],
+						[
+							"`MULTI` / `EXEC`",
+							"Ejecuta un grupo de comandos sin mezclarlos, pero un comando no puede usar el resultado de otro para decidir. `WATCH` agrega bloqueo optimista (EXEC falla si la clave cambió y reintentas). Un script Lua no necesita reintento."
+						],
+						[
+							"Viajes de ida y vuelta",
+							"Cada viaje a Redis suma latencia (digamos 0,4 ms). Tres comandos separados cuestan tres viajes, un script cuesta uno. Un script o un pipeline reduce los viajes."
+						],
+						[
+							"Log deslizante en Redis",
+							"Un sorted set por cliente con la marca de tiempo como score: `ZREMRANGEBYSCORE` quita entradas viejas, `ZCARD` cuenta, `ZADD` registra. El miembro debe ser único por solicitud, porque un conjunto guarda cada miembro una sola vez."
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Relojes y fallas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Las ventanas solo coinciden si todas las instancias coinciden en la hora. Los relojes de máquinas distintas se desfasan (**clock skew**). Si la instancia B está 20 segundos adelantada, arma una clave de ventana distinta a la de la instancia A para el mismo instante, y el contador compartido se parte en dos. La solución es leer la hora dentro del script con el comando `TIME` de Redis, para que todas las instancias usen un solo reloj."
+				},
+				{
+					"type": "paragraph",
+					"text": "Pueden salir mal dos cosas más. Primero, Redis copia los datos a una réplica de forma **asíncrona**: el primario confirma al cliente y envía a la réplica después. Si el primario se cae y la réplica toma el mando, los últimos incrementos pueden perderse y el límite se excede por un momento. Esta desviación pequeña y rara suele aceptarse. Segundo, Redis puede quedar inalcanzable, y el limitador debe decidir de antemano qué hacer:"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Política",
+						"Qué hace",
+						"Bueno para"
+					],
+					"rows": [
+						[
+							"Fail-open",
+							"Admite todo mientras Redis está caído",
+							"Lecturas baratas, donde importa más seguir en pie"
+						],
+						[
+							"Fail-closed",
+							"Rechaza todo mientras Redis está caído",
+							"Operaciones sensibles o caras, protegiendo el backend"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Un punto medio común es un límite local aproximado en la memoria de cada instancia mientras Redis está ausente."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Contador compartido en Redis, decisión en un solo script Lua, expiración fijada en el mismo paso, hora leída de Redis, y un plan escrito para cuando Redis se caiga."
+				}
+			]
+		},
+		{
+			"id": "http-429-and-backoff",
+			"title": "HTTP 429, headers y backoff del cliente",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Cuando un limitador dice que no, debe decirlo de una forma que el cliente entienda. En la web esto se hace con un **código de estado** HTTP, un número al comienzo de la respuesta (200 es OK, 404 es no encontrado). Para 'mandaste demasiado', el código es **429 Too Many Requests**, agregado por la RFC 6585. La RFC no dice cómo el servidor averigua quién eres ni cómo cuenta. La respuesta debe explicar la situación y puede decir cuándo volver a intentar."
+				},
+				{
+					"type": "heading",
+					"text": "¿429 o 503?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Código",
+						"Tipo",
+						"Significado",
+						"De quién es la culpa"
+					],
+					"rows": [
+						[
+							"429 Too Many Requests",
+							"error del cliente (4xx)",
+							"Este cliente pasó su propio límite mientras a los demás se les sigue atendiendo",
+							"del cliente"
+						],
+						[
+							"503 Service Unavailable",
+							"error del servidor (5xx)",
+							"El servidor está sobrecargado o en mantenimiento",
+							"no de quien pidió"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Un limitador por cliente responde 429. Un servidor que descarta carga porque está sobrecargado responde 503. Una respuesta 429 nunca debe guardarse en una caché, porque describe a un cliente en un instante: si una caché compartida (como una CDN) la guardara, otros clientes, o el mismo cliente tras esperar, serían rechazados sin motivo. La RFC 6585 dice que las respuestas 429 no deben almacenarse."
+				},
+				{
+					"type": "heading",
+					"text": "Decirle al cliente cuándo volver"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"caption": "Un rechazo que ayuda al cliente",
+					"content": "HTTP/1.1 429 Too Many Requests\nRetry-After: 30\nContent-Type: application/json\n\n{\"error\":\"rate limit exceeded\"}"
+				},
+				{
+					"type": "paragraph",
+					"text": "El encabezado `Retry-After` le dice al cliente cuánto esperar. La RFC 9110 permite dos formas: un número entero de **segundos** contados desde que se recibe la respuesta, o una **HTTP-date** absoluta. La forma en segundos no depende de que los relojes del cliente y del servidor coincidan. El limitador de este repositorio envía segundos enteros, redondeados hacia arriba."
+				},
+				{
+					"type": "paragraph",
+					"text": "Muchas APIs también envían encabezados sobre el propio límite, como `X-RateLimit-Limit`, `X-RateLimit-Remaining` y `X-RateLimit-Reset`. Se extendieron por imitación y no tienen estándar. El peor caso es `Reset`: algunos servicios quieren decir 'segundos a partir de ahora' y otros un timestamp Unix como 1791374400. Un cliente que lea un timestamp como segundos dormiría por décadas. El IETF trabaja en un Internet-Draft (todavía no era una RFC cuando se escribió esto) con los campos `RateLimit-Policy` y `RateLimit`. Un cliente genérico debe preferir `Retry-After`, que es estándar, y leer la documentación antes de confiar en los campos `X-`."
+				},
+				{
+					"type": "heading",
+					"text": "Qué hace un cliente educado"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un 429 pide al cliente que afloje, no que insista ni que se rinda para siempre. Si hay `Retry-After`, espera al menos ese tiempo. Viene de quien controla el límite, así que vale más que la suposición del propio cliente. Si no hay `Retry-After`, usa **backoff exponencial**: la espera se duplica con cada fallo. Con la convención de que el primer reintento es n = 1:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "espera(n) = min(tope, base * 2^(n-1))\nbase = 0,5 s, tope = 10 s"
+				},
+				{
+					"type": "chart",
+					"title": "Espera antes de cada reintento (base 0,5 s, tope 10 s)",
+					"unit": "segundos",
+					"bars": [
+						{
+							"label": "reintento 1",
+							"value": 0.5
+						},
+						{
+							"label": "reintento 2",
+							"value": 1
+						},
+						{
+							"label": "reintento 3",
+							"value": 2
+						},
+						{
+							"label": "reintento 4",
+							"value": 4
+						},
+						{
+							"label": "reintento 5",
+							"value": 8
+						},
+						{
+							"label": "reintento 6",
+							"value": 10
+						},
+						{
+							"label": "reintento 7",
+							"value": 10
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El 6.º reintento sería 0,5 x 32 = 16 s, pero el **tope** lo corta en 10 s. Di siempre si cuentas los intentos desde 0 o desde 1, porque los números se desplazan. Fija también un número máximo de intentos, para que un cliente nunca quede atascado reintentando para siempre."
+				},
+				{
+					"type": "heading",
+					"text": "Jitter: un poco de aleatoriedad"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina 200 clientes rechazados en el mismo instante, todos con las mismas esperas que se duplican. Reintentan juntos en 1 s, 3 s, 7 s, en oleadas, y el servidor recibe golpe tras golpe (una **estampida**, thundering herd). El **jitter** hace aleatoria cada espera. Con **full jitter** la espera se sortea entre 0 y min(tope, base x 2^intento). Los reintentos se reparten y el servidor puede atender una parte de ellos en cada momento."
+				},
+				{
+					"type": "diagram",
+					"caption": "Sin y con jitter, 200 clientes",
+					"content": "sin jitter:  |200|    |200|        |200|\n             1s      3s           7s      (oleadas)\n\ncon jitter:  |12|31|18|25|9|41|22|...      (repartidos)"
+				},
+				{
+					"type": "heading",
+					"text": "Reintentar puede dañar"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los reintentos inmediatos multiplican la carga en el peor momento. Si un servicio recibe 100 solicitudes por segundo y cada cliente repite una solicitud rechazada hasta 3 veces de inmediato, el servicio ve hasta 400 por segundo mientras ya está fallando. Esto es una **tormenta de reintentos** (retry storm). El backoff, el jitter, un límite de intentos y el respeto a `Retry-After` rompen el ciclo."
+				},
+				{
+					"type": "paragraph",
+					"text": "Hay una regla de seguridad más. Reintentar solo es seguro cuando ejecutar una solicitud dos veces tiene el mismo efecto que ejecutarla una vez, lo que se llama ser **idempotente**. Un 429 dice que no se procesó nada, pero tras un timeout el cliente no lo sabe. Para algo como `POST /charges`, que crea un cobro, el cliente envía una **clave de idempotencia**, un código único que permite al servidor reconocer la repetición y no cobrar dos veces."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "429 significa 'tú, afloja'; 503 significa 'yo estoy sobrecargado'. Obedece primero el Retry-After; si no hay, haz backoff exponencial con tope, jitter y número limitado de intentos, y reintenta solo lo que es seguro repetir."
+				}
+			]
+		},
+		{
+			"id": "quotas-throttling-load-shedding",
+			"title": "Cuotas, throttling y descarte de carga",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "El rate limiting tiene vecinos que protegen un sistema de otras maneras. Saber cuál hace qué es la mitad del trabajo."
+				},
+				{
+					"type": "heading",
+					"text": "Tres límites distintos"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Límite",
+						"Mide",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"Límite de tasa",
+							"Una tasa en un tiempo corto",
+							"100 solicitudes por segundo"
+						],
+						[
+							"Cuota (quota)",
+							"Un total en un periodo largo",
+							"1.000.000 de solicitudes por mes"
+						],
+						[
+							"Límite de concurrencia",
+							"Cuántas solicitudes están en curso ahora",
+							"como máximo 30 al mismo tiempo"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Una API suele tener los tres, y una solicitud debe pasar por cada uno. Se comprueban por separado. Un cliente que obedece el límite de tasa todo el tiempo aún puede gastar su cuota mensual temprano: con una cuota de 500.000 por día y 10 solicitudes por segundo constantes, la cuota se acaba después de 50.000 segundos, unas 13,9 horas. Por eso las APIs le dicen a los clientes cuánto queda de la cuota."
+				},
+				{
+					"type": "heading",
+					"text": "Por qué el límite de concurrencia es especial"
+				},
+				{
+					"type": "paragraph",
+					"text": "El número medio de solicitudes en curso es igual a la tasa de llegada por el tiempo que cada una pasa en el sistema. Esta es la [[ley de Little|una regla simple: personas en la tienda = personas que llegan por minuto x minutos que se queda cada persona]]. Si llegan 120 solicitudes por segundo y cada una tarda 0,5 s, unas 60 están en curso a la vez. Si el servicio se vuelve dos veces más lento, son 120 en curso con la misma tasa de llegada, y un límite de tasa no nota nada."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un límite de concurrencia C con tiempo de servicio S deja pasar como máximo C / S solicitudes por segundo. Con C = 30 y S = 0,25 s son 120 por segundo. Si el servicio se vuelve lento y S crece, el rendimiento admitido cae en la misma proporción, lo que protege a un servidor que ya está sufriendo. Un límite de tasa fijo seguiría admitiendo la misma tasa y las solicitudes se acumularían."
+				},
+				{
+					"type": "heading",
+					"text": "Control de congestión, de lo lento a lo rápido"
+				},
+				{
+					"type": "paragraph",
+					"text": "Tanenbaum ordena las respuestas a la congestión de la más lenta a la más rápida: aumentar la capacidad, elegir rutas que eviten los puntos saturados, **control de admisión**, **estrangulamiento de tráfico** (traffic throttling) y **descarte de carga** (load shedding). El control de admisión rechaza trabajo nuevo antes de que empiece, lo que es más barato que aceptarlo y tirarlo a mitad de camino. La palabra **throttling** se usa de forma laxa en la documentación de las APIs tanto para retrasar (modelar) como para rechazar (fiscalizar)."
+				},
+				{
+					"type": "heading",
+					"text": "Contrapresión (backpressure)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina un productor escribiendo en una fila de 1.000 cupos que un consumidor más lento vacía. Cuando la fila se llena, la llamada de escritura del productor simplemente espera hasta que haya lugar, y nada se tira. Esto es **backpressure**: la parte llena le dice al emisor que afloje, con una señal o con una llamada que bloquea. El retraso viaja de vuelta hasta el origen. Cuando el origen no puede esperar, como los usuarios de Internet, el backpressure termina como un rechazo en la entrada, que es rate limiting o descarte de carga."
+				},
+				{
+					"type": "heading",
+					"text": "Descarte de carga"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **descarte de carga** es la última defensa: el servidor rechaza trabajo a propósito, normalmente con 503, para que el trabajo que aceptó termine a tiempo. Se diferencia del rate limiting porque mira la salud del **servidor**, no el comportamiento de un cliente. Un buen descarte se hace **temprano** y **por prioridad**, con el trabajo menos importante primero."
+				},
+				{
+					"type": "diagram",
+					"caption": "Rechazar también cuesta CPU, y cuesta más cuanto más hondo llega la solicitud",
+					"content": "solicitud --> [rechaza aquí: 1 ms] --> parse --> auth --> base de datos\n                                               [rechaza aquí: 40 ms]"
+				},
+				{
+					"type": "chart",
+					"title": "Tiempo de CPU gastado en rechazos, 200 rechazos por segundo",
+					"unit": "segundos de CPU por segundo",
+					"bars": [
+						{
+							"label": "rechazar en la entrada (1 ms cada una)",
+							"value": 0.2
+						},
+						{
+							"label": "rechazar tarde (40 ms cada una)",
+							"value": 8
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Un servidor que rechaza tarde puede gastar toda su capacidad diciendo que no y seguir sobrecargado. Por eso descarta antes de leer el cuerpo, antes de autenticar, antes de tocar una dependencia."
+				},
+				{
+					"type": "heading",
+					"text": "Cuando la sobrecarga no se maneja"
+				},
+				{
+					"type": "paragraph",
+					"text": "Supón un servidor que atiende 100 solicitudes por segundo pero recibe 150, con una fila primero-en-llegar-primero-en-salir sin límite, y clientes que se rinden tras 2 segundos. La fila crece, toda respuesta llega tarde, y el servidor sigue atendiendo solicitudes cuyos clientes ya se fueron. Su rendimiento está al máximo, pero el **goodput** (respuestas que llegan a tiempo) cae casi a cero. La cura: una fila acotada, un plazo para cada solicitud (descartar lo que ya pasó su timeout) y rechazar el exceso en la entrada."
+				},
+				{
+					"type": "heading",
+					"text": "¿A quién descartar? El vecino ruidoso"
+				},
+				{
+					"type": "paragraph",
+					"text": "Tanenbaum describe dos políticas para elegir qué paquetes descartar. La política del **vino** (wine) prefiere conservar los paquetes **viejos**, porque el vino añejo es mejor. Sirve para la transferencia de archivos, donde perder un paquete viejo obliga a reenviar todo lo que sigue. La política de la **leche** (milk) prefiere conservar los **nuevos**, porque la leche vieja se echa a perder. Sirve para medios en tiempo real, donde un dato tardío es inútil. Los servidores tienen la misma idea: para descartar por prioridad debes saber cuánto vale cada solicitud."
+				},
+				{
+					"type": "paragraph",
+					"text": "En un servicio compartido, un tenant grande puede perjudicar a todos los pequeños, el **vecino ruidoso** (noisy neighbour). Con descarte aleatorio todos pierden en la misma proporción, así que 30 tenants pequeños pierden la mitad de sus solicitudes por culpa de uno grande. El **descarte justo** atiende por completo a los tenants pequeños y le quita el exceso a quien se pasó de su parte. Eso exige contar por tenant, y por eso las cuotas y los límites por plan van de la mano con el descarte de carga."
+				},
+				{
+					"type": "heading",
+					"text": "Circuit breaker"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **circuit breaker** (cortacircuitos) es el otro lado de la misma idea. El servicio A llama al servicio B. Tras 5 llamadas seguidas fallidas, A deja de llamar a B durante 30 segundos y responde con un valor alternativo (fallback), y luego deja pasar una llamada de prueba. Está del lado de **quien llama** y observa resultados, para proteger de una dependencia enferma. Un limitador de tasa está del lado de **quien es llamado** y observa el volumen, para proteger de un cliente que pide demasiado."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Límite de tasa = velocidad por cliente. Cuota = total en un tiempo largo. Límite de concurrencia = cuántas a la vez. Descarte de carga = el servidor rechazando trabajo para seguir vivo, temprano y por prioridad."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando todo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "En el experimento de ráfaga de este repositorio, los cinco algoritmos recibieron las mismas 80 solicitudes con la misma configuración (límite 10, ventana de 1 s, así que capacidad 10 y tasa de 10 por segundo para las cubetas). El gráfico muestra el mayor número de solicitudes admitidas encontrado en cualquier intervalo de 1 segundo."
+				},
+				{
+					"type": "chart",
+					"title": "Peor intervalo de 1 segundo en el experimento de ráfaga (límite 10 por segundo)",
+					"unit": "solicitudes admitidas",
+					"bars": [
+						{
+							"label": "Ventana fija",
+							"value": 20
+						},
+						{
+							"label": "Log deslizante",
+							"value": 10
+						},
+						{
+							"label": "Contador deslizante",
+							"value": 11
+						},
+						{
+							"label": "Token bucket",
+							"value": 19
+						},
+						{
+							"label": "Leaky bucket (salida)",
+							"value": 10
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "La ventana fija dejó pasar 20 cerca de una frontera. El log deslizante nunca pasó de 10. El contador deslizante llegó a 11, un error pequeño. El token bucket llegó a 19 porque gasta primero las fichas guardadas y luego gana más mientras la ráfaga continúa. La salida del leaky bucket se quedó en 10 porque suelta las solicitudes a un ritmo constante."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Algoritmo",
+						"Estado por cliente",
+						"Comportamiento en la ráfaga",
+						"Bueno para"
+					],
+					"rows": [
+						[
+							"Ventana fija",
+							"1 contador + número de ventana",
+							"Hasta 2 x límite en una frontera",
+							"Protecciones gruesas; la más barata en Redis (un `INCR`)"
+						],
+						[
+							"Log deslizante",
+							"1 marca de tiempo por solicitud admitida",
+							"Nunca más que el límite en cualquier ventana",
+							"Límites pequeños que deben ser exactos (login, restablecer contraseña)"
+						],
+						[
+							"Contador deslizante",
+							"2 contadores",
+							"Cerca del límite, error pequeño",
+							"Límites grandes, el punto medio habitual"
+						],
+						[
+							"Token bucket",
+							"Un saldo y un instante",
+							"Pasa una ráfaga de B, luego la tasa r",
+							"APIs, donde los clientes son irregulares"
+						],
+						[
+							"Leaky bucket (fila)",
+							"Un nivel y un instante",
+							"Absorbe la ráfaga, entrega un flujo parejo",
+							"Un sistema detrás con capacidad rígida y constante"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Errores comunes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Creer que un limitador es autenticación, cifrado, caché o balanceador de carga. Solo cuenta.",
+						"Contar por dirección IP detrás de NAT, o por `X-Forwarded-For` sin un proxy confiable.",
+						"Usar un solo límite para todos los endpoints, o solo límites por cliente y ninguna protección global.",
+						"Olvidar el tope en un token bucket, de modo que un cliente inactivo junta fichas sin fin.",
+						"Hacer leer, decidir y escribir como comandos separados en Redis (una carrera), o `INCR` y `EXPIRE` como dos comandos (una clave que nunca expira).",
+						"Leer la hora en cada instancia en vez de en Redis, y que las ventanas no coincidan.",
+						"Reintentar de inmediato, sin jitter, sin límite de intentos y sin respetar `Retry-After`.",
+						"Rechazar tarde, después de que la solicitud ya usó las partes caras del servidor."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Cómo se conectan las ideas"
+				},
+				{
+					"type": "paragraph",
+					"text": "El algoritmo decide quién es admitido. Redis y un script atómico hacen que esa decisión valga entre muchos servidores. El estado 429 con `Retry-After` le cuenta al cliente lo que pasó. El backoff del cliente con jitter evita que sus reintentos se vuelvan un nuevo problema. Las cuotas, los límites de concurrencia y el descarte de carga protegen el largo plazo y el servicio entero cuando los límites por cliente no bastan."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Elegir un limitador es elegir qué hacer con una ráfaga: dejarla pasar (ventana fija, token bucket), cortarla con exactitud (log deslizante), aproximarla (contador deslizante) o suavizarla en una fila (leaky bucket)."
+				}
+			]
+		}
+	]
+}

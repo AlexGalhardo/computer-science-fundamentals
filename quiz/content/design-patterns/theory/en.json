@@ -1,0 +1,297 @@
+{
+	"area": "design-patterns",
+	"intro": [
+		"Imagine you build things with LEGO. After a while you notice that you keep solving the same small problems: how to make a wall strong, how to build a door that opens, how to join two sets that do not fit together. Smart builders gave names to the good answers, so they can say \"use the hinge trick\" instead of explaining every brick. A **design pattern** is exactly that: a name for a good answer to a problem that keeps coming back when we write programs.",
+		"Before the patterns there are five rules of thumb called **SOLID**. They are not laws. They are advice about how to write classes (a [[class|a blueprint that says what data an object keeps and what it can do]] is like a cookie cutter, and each cookie is an object) so that the program is easy to change later. Programs always change: a new rule from the boss, a new payment company, a new kind of customer. Code that is easy to change saves days of work and avoids new bugs.",
+		"You will meet all of this in real life: in the apps you use, in the frameworks that programmers download, and in every job interview about software. At the end of this page you will know the five SOLID principles, ten well-known patterns (Factory, Builder, Singleton, Adapter, Decorator, Facade, Strategy, Observer, Command and State), the Repository and dependency injection used in back-end systems, and the warning signs of bad design. You will also know when **not** to use a pattern, which is just as important."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture and the vocabulary",
+			"blocks": [
+				{ "type": "paragraph", "text": "Software is never finished. Somebody always asks for one more thing. So good design is not about making the code pretty. It is about making the **next change cheap**: the change should touch few places, and it should not break things that already work." },
+				{ "type": "paragraph", "text": "To talk about design we need a few words. Learn them now, because every section uses them." },
+				{ "type": "table", "headers": ["Word", "What it means", "Everyday picture"], "rows": [
+					["**Cohesion**", "How well the parts inside one class belong together. High cohesion is good.", "A pencil case that holds only pencils and pens"],
+					["**Coupling**", "How much one class depends on other classes. Low coupling is good.", "Toys joined by one thin string, not welded together"],
+					["**Interface**", "The list of things a class promises to do, without saying how.", "The buttons of a remote control"],
+					["**Contract**", "The full promise of a method: what the caller must give, what the method gives back, and which errors it may raise.", "A pizza order: you give an address, you get a pizza"],
+					["**Abstraction**", "A simple view that hides the details.", "You drive a car without knowing the engine"],
+					["**Pattern**", "A named, reusable answer to a problem that keeps appearing.", "A recipe with a name"]
+				], "caption": "The seven words of design" },
+				{ "type": "callout", "tone": "analogy", "text": "A pattern is like a recipe, not like a finished cake. The recipe for \"pancake\" tells you the idea. You still choose the flour and the size. The same pattern looks different in every program." },
+				{ "type": "paragraph", "text": "There are three families of patterns. **Creational** patterns are about creating objects. **Structural** patterns are about how objects fit together. **Behavioural** patterns are about how objects talk to each other and share work. The famous book that listed 23 of them was written by four authors, nicknamed the \"Gang of Four\"." },
+				{ "type": "video", "title": "Design Patterns in Object Oriented Programming (playlist by Christopher Okhravi)", "url": "https://www.youtube.com/playlist?list=PLrhzvIcii6GNjpARdnO4ueTUAVR9eMBpc" },
+				{ "type": "callout", "tone": "remember", "text": "Principles tell you what good design looks like. Patterns are ready-made answers. Both exist to make the next change cheap." }
+			]
+		},
+		{
+			"id": "single-responsibility",
+			"title": "Single responsibility principle (SRP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Think of a school bag that is also a lunch box, a pillow and a bicycle helmet. When one part breaks, you cannot fix it without touching the others. The **single responsibility principle** says that a class should have **only one reason to change**." },
+				{ "type": "paragraph", "text": "A \"reason to change\" is a person or a group who may ask for a change. Look at the class below. The finance team may change the tax rule, the design team may change the receipt text, and the database team may change how data is saved. That is three reasons to change in one place." },
+				{ "type": "code", "language": "ts", "content": "class Invoice {\n\tcalculateTax(): number { /* tax rules */ }\n\tsaveToDatabase(): void { /* SQL */ }\n\tsendByEmail(): void { /* SMTP */ }\n}", "caption": "Three subjects in one class: it breaks the SRP" },
+				{ "type": "paragraph", "text": "The cure is to split it: one class for the tax calculation, one for saving, one for e-mail. Now each change touches one small class, and the tests of the tax rule do not need a database." },
+				{ "type": "callout", "tone": "analogy", "text": "A kitchen has a cook, a waiter and a cashier. If one person did everything, a change in the menu would also change how money is counted. Splitting the jobs keeps each change small." },
+				{ "type": "heading", "text": "Cohesion and two mirror smells" },
+				{ "type": "paragraph", "text": "A [[cohesive|all its parts belong to one idea]] class has methods and fields that all deal with a single concept. A hint to find a missing split: if some methods use only some fields and other methods use only the other fields, there are probably two classes hiding inside one. A class that keeps growing a new block for every new case (a new job role, a new customer kind) is also a sign." },
+				{ "type": "table", "headers": ["Smell", "What you see", "What it says"], "rows": [
+					["**Divergent Change**", "One class is edited for many different reasons (tax rule and report layout)", "Lack of cohesion: the class has several responsibilities"],
+					["**Shotgun Surgery**", "One change forces small edits in many classes", "A responsibility was broken into too many pieces"]
+				], "caption": "The two smells that mirror each other" },
+				{ "type": "callout", "tone": "warning", "text": "The SRP does **not** mean \"one method per class\". If a team splits an order total into six classes and every tax change now edits all six, they split by methods and not by reasons to change. What changes together must stay together." },
+				{ "type": "callout", "tone": "remember", "text": "One reason to change, one place to change it. Split what changes for different reasons, and keep together what changes together." }
+			]
+		},
+		{
+			"id": "open-closed",
+			"title": "Open-closed principle (OCP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "A game console has slots for new controllers. You do not open the console and solder wires to add one more. The console is **closed for modification** (nobody edits its insides) and **open for extension** (new controllers just plug in). The **open-closed principle** asks the same of code: new behaviour should be added as **new code**, without editing the code that already exists and is already tested." },
+				{ "type": "paragraph", "text": "The usual way is an [[abstraction|an interface that hides the details]]. The class talks to an interface, and each new behaviour is a new class that implements it. This is called [[polymorphism|one call, many possible behaviours, depending on the real object]]. The place where the class calls something it does not know in detail is its **extension point**." },
+				{ "type": "code", "language": "ts", "content": "interface DiscountRule {\n\tapply(total: number): number;\n}\n\nclass PriceCalculator {\n\tconstructor(private readonly rules: DiscountRule[]) {}\n\n\ttotal(base: number): number {\n\t\treturn this.rules.reduce((value, rule) => rule.apply(value), base);\n\t}\n}", "caption": "A new discount is a new class that implements DiscountRule, added to the list where the program is assembled" },
+				{ "type": "diagram", "content": "BEFORE: area() has an if per shape\n  area(shape) --> if circle ... if square ... (edit me!)\n\nAFTER: each shape knows its own area\n  area(shape) --> shape.area()\n                   |-- Circle.area()\n                   |-- Square.area()\n                   '-- (new) Triangle.area()", "caption": "A chain of ifs on a type is closed for extension" },
+				{ "type": "callout", "tone": "analogy", "text": "A power strip. To plug in a new lamp you do not rewire the wall. You just plug it in." },
+				{ "type": "heading", "text": "Where the change goes" },
+				{ "type": "paragraph", "text": "No program is closed against every change. Somewhere, the new class must be created. A **factory** (a function that decides which class to create) can hold one `switch` for that. This is acceptable: the variation is confined to one point, and the rest of the code only knows the abstraction. The principle does not remove change. It chooses **where** change happens." },
+				{ "type": "paragraph", "text": "The same `if (x instanceof ...)` chain copied in a helper, in a report and in a screen is the real warning sign. When a new type appears, every copy must be found and edited, and a forgotten copy fails silently." },
+				{ "type": "callout", "tone": "warning", "text": "Two traps. First, not every `if` must become a class hierarchy: abstract where variation has already shown up, and let a stable `if` stay. Second, opening a design for one kind of change closes it for another. If the shapes never change but a new operation (draw, export, print) arrives every month, putting one method per operation in every shape class means editing all of them each month. Find out which axis really varies." },
+				{ "type": "callout", "tone": "remember", "text": "Open for extension, closed for modification. Add new code, do not edit old code, and abstract only where change really happens." }
+			]
+		},
+		{
+			"id": "liskov-substitution",
+			"title": "Liskov substitution principle (LSP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Suppose you ask for \"a pet\" and you get a goldfish. Then you try to take it for a walk. It fails. A goldfish is a pet, but not a pet that can walk. The **Liskov substitution principle** says that a subtype (a child class, or any class that implements an interface) must **work wherever its base type is expected**. If code works with the parent, it must work with the child, and without knowing which child it got." },
+				{ "type": "code", "language": "ts", "content": "class Bird {\n\tfly(): string { return 'flying'; }\n}\nclass Penguin extends Bird {\n\tfly(): string { throw new Error('penguins cannot fly'); }\n}\nfunction release(birds: Bird[]): string[] {\n\treturn birds.map((bird) => bird.fly());\n}", "caption": "Penguin cannot replace Bird: release() blows up" },
+				{ "type": "paragraph", "text": "In biology a penguin is a bird. In code, what decides inheritance is the **contract of the methods**, not the phrase \"is a\". The fix is to change the hierarchy, for example keeping `fly` only in a type for birds that fly." },
+				{ "type": "heading", "text": "The contract has two sides" },
+				{ "type": "paragraph", "text": "A method has a [[precondition|what the caller must guarantee before the call]] and a [[postcondition|what the method guarantees after the call]]. It also has a way of reporting failure, such as returning `null` or throwing an error. The compiler checks only the types of the signature. It does not check these promises, so tests of the contract must do it." },
+				{ "type": "table", "headers": ["Part of the contract", "What a subtype may do"], "rows": [
+					["Precondition (what it asks for)", "Keep it or **weaken** it (ask for less). Never make it stricter"],
+					["Postcondition (what it delivers)", "Keep it or **strengthen** it (deliver more). Never weaken it"],
+					["How failure is reported", "Use the same way. If the base returns `null` for a missing user, the subtype must not throw"]
+				], "caption": "Ask for less, deliver more" },
+				{ "type": "paragraph", "text": "The classic example is `Square extends Rectangle`. A Rectangle promises that changing the width does not change the height. A Square cannot keep that promise, because changing one side changes the other. Another case: a base `Account` promises that after a withdrawal the balance is never negative, and an `OverdraftAccount` allows a negative balance. It weakened a postcondition." },
+				{ "type": "paragraph", "text": "The strongest symptom of a broken substitution is `instanceof` in the client code (`if (account instanceof StudentAccount) ...`). The client had to learn the subtypes, so every new subtype needs another branch. Then a Liskov violation becomes an open-closed violation too." },
+				{ "type": "callout", "tone": "tip", "text": "Inheritance brings the whole interface of the parent. A `Stack` that extends `Array` also accepts `splice` in the middle, which a stack should never allow. **Composition** is the cure: keep the array in a private field and expose only `push`, `pop` and `peek`. You reuse the code without inheriting the contract." },
+				{ "type": "callout", "tone": "remember", "text": "A subtype must keep the promises of its base type: ask for no more, deliver no less, fail in the same way." }
+			]
+		},
+		{
+			"id": "interface-segregation",
+			"title": "Interface segregation principle (ISP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "You borrow a Swiss army knife just to open a letter. You are given 30 tools you do not need, and if one of them is broken you worry about it too. The **interface segregation principle** says that **clients should not be forced to depend on methods they do not use**. An interface is a contract seen from the side of the one who uses it. If it mixes methods for different users, everybody is tied to everything." },
+				{ "type": "code", "language": "ts", "content": "interface Machine {\n\tprint(doc: string): void;\n\tscan(): string;\n\tfax(number: string): void;\n}\n\nclass SimplePrinter implements Machine {\n\tprint(doc: string): void { /* prints */ }\n\tscan(): string { throw new Error('not supported'); }\n\tfax(number: string): void { throw new Error('not supported'); }\n}", "caption": "A fat interface: the printer must write methods it cannot honour" },
+				{ "type": "paragraph", "text": "A method written as \"not supported\" is a loud sign: the interface asks for more than the class has. The fix is to split by capability: `Printer`, `Scanner`, `Fax`. Now code that needs to scan asks for a `Scanner`, and a simple printer never gets there. The type system works for you." },
+				{ "type": "callout", "tone": "analogy", "text": "A TV remote with the buttons of the TV, the air conditioner and the garage door all mixed. Three small remotes are easier, and a child who only wants the TV cannot open the garage." },
+				{ "type": "heading", "text": "What a fat interface costs" },
+				{ "type": "list", "items": [
+					"**Implementers** must write methods they cannot honour, and they throw errors.",
+					"**Clients** depend on methods they never call, so a change in an unused method can still force them to change.",
+					"When a thirteenth method, used by one client, is added to an interface with twelve methods and eight implementers, all eight classes must change, even those whose clients never call it.",
+					"**Test doubles** (fake objects used in tests) must have all the methods. A report that only reads needs a fake with one method, not four."
+				] },
+				{ "type": "paragraph", "text": "A good example is a user repository. A report only needs to read. Give it a `UserReader` with `findAll`, and keep `save` and `delete` in another interface. The concrete class implements both, so it stays the same. The report cannot write or delete by mistake, and its fake needs a single method." },
+				{ "type": "paragraph", "text": "ISP and SRP are two views of cohesion. The SRP asks why the **type itself** changes. The ISP asks what each **client** needs from a type. A repository can have one responsibility (storing users) and still need separate reader and writer interfaces." },
+				{ "type": "callout", "tone": "warning", "text": "Do not split by counting methods. If every client of a `Cursor` calls `hasNext` and `next` together in a loop, the interface is already cohesive. Splitting it would add types, scatter one idea and protect nobody. The question is always: who uses what?" },
+				{ "type": "callout", "tone": "remember", "text": "Give each client the smallest interface that does its job. Size is measured against the clients, not by the number of methods." }
+			]
+		},
+		{
+			"id": "dependency-inversion",
+			"title": "Dependency inversion principle (DIP)",
+			"blocks": [
+				{ "type": "paragraph", "text": "A lamp has a plug. It does not have a wire fixed into one wall of one house. The lamp (the important thing) defines the shape of the plug, and any socket that fits can be used. The **dependency inversion principle** says: **high-level modules and low-level modules should both depend on abstractions**. The [[high-level|the business rules: what the program is for]] code must not import the [[low-level|the details: database, e-mail, payment company]] details. Instead, the rule says what it needs through an interface, and the detail implements it." },
+				{ "type": "code", "language": "ts", "content": "class OrderService {\n\tprivate readonly database = new MySqlDatabase();\n\n\tplace(order: Order): void {\n\t\tif (order.total() <= 0) throw new Error('empty order');\n\t\tthis.database.insert('orders', order);\n\t}\n}", "caption": "The business rule creates its own detail with new: it changes when the database changes" },
+				{ "type": "paragraph", "text": "The `new` inside the class is a double decision: the class chooses what it needs **and** which implementation it gets. The fix is to declare an interface in the language of the business (`OrderStore`) and receive it in the constructor. Then the rule can be tested with a fake in memory." },
+				{ "type": "diagram", "content": "NORMAL                         INVERTED\n\nOrderService                   OrderService --> OrderStore\n     |                                              ^\n     v                                              |\nMySqlDatabase                  MySqlOrderStore -----'\n\nsource code arrow: rule -> detail   detail -> rule's interface", "caption": "The arrows of the source code point towards the rule" },
+				{ "type": "paragraph", "text": "Notice the difference between the **flow of calls** and the **source code dependency**. At run time `OrderService` still calls the database. In the code, both know only the interface. Also notice who **owns** the interface: it lives with the high-level module, and the database adapter implements it. That ownership is what \"inversion\" means. Putting the interface beside the database would not invert anything." },
+				{ "type": "heading", "text": "DIP is not the same as DI" },
+				{ "type": "table", "headers": ["Topic", "DIP (dependency inversion)", "DI (dependency injection)"], "rows": [
+					["What it is", "A design rule: depend on abstractions", "A technique: someone from outside hands the dependency in"],
+					["Question it answers", "What should I depend on?", "Who creates it and gives it to me?"],
+					["Can exist alone?", "Yes", "Yes"]
+				], "caption": "They travel together, but they are different things" },
+				{ "type": "paragraph", "text": "Interfaces are less risky than concrete classes because they change less often: they carry no detail and many classes depend on them. But the rule is not \"put an interface on everything\". The criterion is **stability**. The text class of the standard library (`String`) changes almost never, does no input or output and behaves the same every time, so you can use it directly. Things that change, talk to the outside world or give a different answer on each call (database, clock, network, random numbers) go behind an interface." },
+				{ "type": "callout", "tone": "warning", "text": "A leaky abstraction is only a thin wrapper. If the interface has a method `executeSql(query)` that returns database rows, it speaks the language of the detail, and changing the storage still changes the service. A good interface says what the business needs, like `countPending()`." },
+				{ "type": "callout", "tone": "remember", "text": "The rule owns the interface and the detail obeys it. The source code arrow points towards the rule." }
+			]
+		},
+		{
+			"id": "creational-patterns",
+			"title": "Creational patterns: Factory, Builder, Singleton",
+			"blocks": [
+				{ "type": "paragraph", "text": "Making an object involves choices: which class, with which parts, in what starting state. If every user of the object repeats those choices, a change must be repeated everywhere. **Creational patterns** take the choices of creation out of the code that uses the object, so the user depends only on the abstract type." },
+				{ "type": "table", "headers": ["Pattern", "The problem", "The idea"], "rows": [
+					["**Factory**", "There are several classes for the same role, and who decides which one is copied around", "One function or class decides which class to create"],
+					["**Builder**", "One class with many data, some optional, in a long list of parameters", "Named steps, then a final `build` that checks everything"],
+					["**Singleton**", "We want exactly one instance of a class", "One instance plus a global way to reach it"]
+				], "caption": "Factory chooses which class. Builder assembles one object in steps." },
+				{ "type": "heading", "text": "Factory" },
+				{ "type": "code", "language": "ts", "content": "function createNotifier(channel: string): Notifier {\n\tif (channel === 'email') return new EmailNotifier();\n\tif (channel === 'sms') return new SmsNotifier();\n\tthrow new Error(`unknown channel: ${channel}`);\n}", "caption": "The code that uses a Notifier never writes new EmailNotifier" },
+				{ "type": "paragraph", "text": "The value of a factory is what it hides. The client should depend on the **interface of the product**, not on its concrete class. If the client casts the result to the concrete class, the benefit is lost." },
+				{ "type": "heading", "text": "Builder" },
+				{ "type": "code", "language": "ts", "content": "// hard to read: what do null, 30, true and false mean?\nnew HttpRequest('POST', '/orders', null, null, 30, true, false, body);\n\n// with a builder, every value has a name\nnew RequestBuilder().method('POST').path('/orders').timeout(30).body(body).build();", "caption": "Many positional parameters against named steps" },
+				{ "type": "paragraph", "text": "The `build` method is the natural place for rules that cross fields, such as \"a POST must have a body\". The object is only born if the whole set makes sense. This is also why a **rich constructor** is better than an empty constructor followed by setters: with setters, between `new` and the last `set` the object exists in an invalid state. Another care: `build` must give the product a **copy** of mutable data, such as a list of headers. If it hands out the builder's own array, a later call on the builder changes a product that was already delivered." },
+				{ "type": "heading", "text": "Singleton" },
+				{ "type": "paragraph", "text": "Singleton joins two decisions: there is **only one instance**, and it is **reachable from anywhere**. The first can be a fair need. The second is a global variable in disguise, and it is why people look at the pattern with suspicion today." },
+				{ "type": "code", "language": "ts", "content": "class InvoiceService {\n\tissue(order: Order): Invoice {\n\t\tconst now = Clock.getInstance().now();\n\t\tconst rate = TaxTable.getInstance().rateFor(order.state);\n\t\treturn new Invoice(order, rate, now);\n\t}\n}", "caption": "The signature new InvoiceService() says it needs nothing. It lies." },
+				{ "type": "paragraph", "text": "A constructor signature is the most honest documentation of what a class needs. A hidden global access makes it lie. Worse, a Singleton with changeable state links all the code that uses it. In tests this shows up as **order dependence**: the first test increments a counter, the second test starts with the leftover value and fails, although each one passes alone. A constant exported from a module (`export const config = loadConfig()`) is the same thing in JavaScript: importers are tied to that instance." },
+				{ "type": "callout", "tone": "tip", "text": "Separate the two decisions. If you really need one instance, create it **once** when the program starts and pass it through constructors. In production you still have one object, and every dependency is visible in the signature." },
+				{ "type": "callout", "tone": "remember", "text": "Hide creation behind a name. Prefer an injected single instance to a global Singleton." }
+			]
+		},
+		{
+			"id": "structural-patterns",
+			"title": "Structural patterns: Adapter, Decorator, Facade",
+			"blocks": [
+				{ "type": "paragraph", "text": "Structural patterns are about how to put classes together. Three of them look alike, because each one puts a class in front of other code. What differs is the **intent**." },
+				{ "type": "table", "headers": ["Pattern", "Interface it shows", "Intent"], "rows": [
+					["**Adapter**", "A different one: it converts a class to the interface the client already expects", "Make a mismatch fit"],
+					["**Decorator**", "The **same** interface as the object it wraps", "Add behaviour (log, cache, retry)"],
+					["**Facade**", "A **new, simpler** one, for several classes", "One easy entry point to a complex subsystem"]
+				], "caption": "A simple test: could the wrapped object be used in place of the wrapper? Decorator, yes. Adapter, no." },
+				{ "type": "heading", "text": "Adapter" },
+				{ "type": "callout", "tone": "analogy", "text": "A travel plug adapter. Your charger has one shape, the wall in another country has another. You do not change the charger or the wall. You add a small piece in between." },
+				{ "type": "code", "language": "ts", "content": "interface PaymentGateway {\n\tcharge(cents: number): Receipt;\n}\n\nclass AcmePayGateway implements PaymentGateway {\n\tconstructor(private readonly sdk: AcmePaySdk) {}\n\n\tcharge(cents: number): Receipt {\n\t\tconst result = this.sdk.createTransaction({ amount: cents / 100, currency: 'BRL' });\n\t\treturn { id: result.transactionId, approved: result.status === 'OK' };\n\t}\n}", "caption": "The adapter translates names, units (cents against whole currency) and answers" },
+				{ "type": "paragraph", "text": "The system owns the stable contract (`PaymentGateway`). The vendor's types never leave the adapter. When the vendor is replaced, only the adapter changes and the business rules stay as they are. The cost of changing vendor becomes the cost of one class." },
+				{ "type": "heading", "text": "Decorator" },
+				{ "type": "paragraph", "text": "A decorator implements an interface and receives, in its constructor, another object of the same interface. Because the shape is the same, decorators can be stacked in any combination, like putting layers of clothes on a doll." },
+				{ "type": "code", "language": "ts", "content": "// Logged writes every call, Cached remembers answers\nconst a: Users = new Logged(new Cached(new SqlUsers()));\nconst b: Users = new Cached(new Logged(new SqlUsers()));", "caption": "Same pieces, different order, different behaviour" },
+				{ "type": "paragraph", "text": "The **order is part of the behaviour**. In `a`, `Logged` is outside, so every call is recorded, even those answered by the cache. In `b`, `Cached` is outside, so the second `find('42')` is answered by the cache and never reaches `Logged`: it is not written to the log. Both are valid and they answer different questions." },
+				{ "type": "paragraph", "text": "Why not inheritance? With inheritance, every combination of features is a subclass. With n independent features that is 2ⁿ − 1 classes (counting each combination with at least one feature, ignoring order). With decorators you write n classes and combine them when the program is assembled." },
+				{ "type": "chart", "title": "Classes needed for logging, cache and retry features", "unit": "classes", "bars": [
+					{ "label": "Inheritance, 3 features", "value": 7 },
+					{ "label": "Decorators, 3 features", "value": 3 },
+					{ "label": "Inheritance, 6 features", "value": 63 },
+					{ "label": "Decorators, 6 features", "value": 6 }
+				] },
+				{ "type": "paragraph", "text": "A decorator is a subtype of what it wraps, so the **Liskov principle applies**. A cache decorator whose `save` does not clear the stored product makes `find` return old data after a write. It broke the contract of the interface. A contract test, run against the plain repository and against the decorated one, catches it." },
+				{ "type": "heading", "text": "Facade" },
+				{ "type": "paragraph", "text": "A subsystem often has many classes that must be called in a certain order. The facade keeps that knowledge in one place, so clients depend on one class and not on ten. The subsystem can change inside without hurting them. The limit is clear: the facade knows the **order of the calls**, not the **rules**." },
+				{ "type": "callout", "tone": "warning", "text": "A convenient facade attracts code. If an order facade grows from three operations to sixty methods and the discount, stock and shipping rules start living inside it, it stopped delegating and became a God Class. Return the rules to their classes." },
+				{ "type": "callout", "tone": "remember", "text": "Adapter changes the interface. Decorator keeps it and adds behaviour. Facade creates a simpler one for many classes." }
+			]
+		},
+		{
+			"id": "behavioural-patterns",
+			"title": "Behavioural patterns: Strategy, Observer, Command, State",
+			"blocks": [
+				{ "type": "paragraph", "text": "Behavioural patterns are about how objects share work and talk to each other. In each of them a class stops deciding something itself, and hands the decision to another object that can be swapped." },
+				{ "type": "table", "headers": ["Pattern", "Intent", "Sign in the code"], "rows": [
+					["**Strategy**", "Put interchangeable algorithms behind one interface", "An `if` per kind, each branch an independent calculation"],
+					["**Observer**", "One object tells many others when something happens", "A pair of calls: subscribe and publish"],
+					["**Command**", "Keep a request as an object, with its data", "Queue, history, undo and redo"],
+					["**State**", "Change behaviour when the internal state changes", "The same `status` field tested in every method"]
+				], "caption": "Four ways to move a decision out of a class" },
+				{ "type": "heading", "text": "Strategy" },
+				{ "type": "paragraph", "text": "Imagine going to school: by bus, by bike or on foot. The goal is the same, and the way changes. Strategy separates **what varies** (how to calculate) from **what stays** (who needs the result). Each shipping kind gets a class that can be tested alone, and a new kind does not edit the others." },
+				{ "type": "code", "language": "ts", "content": "type Pricing = (base: number) => number;\n\nconst regular: Pricing = (base) => base;\nconst blackFriday: Pricing = (base) => base * 0.7;\n\nfunction checkout(base: number, pricing: Pricing): number {\n\treturn pricing(base);\n}", "caption": "No class, still a Strategy" },
+				{ "type": "paragraph", "text": "Patterns describe **roles and relations**, not syntax. When the strategy has one method and no state, a function type plays the role of the interface. Use a class when it needs data or more than one operation." },
+				{ "type": "heading", "text": "Observer" },
+				{ "type": "paragraph", "text": "A YouTube channel does not know who its subscribers are. It just publishes, and everyone who subscribed is told. In the Observer pattern the publisher does not know who listens, so a new reaction (add loyalty points when an order is paid) is one more `subscribe` at start-up, and the order class is not edited. It is the open-closed principle applied to events." },
+				{ "type": "code", "language": "ts", "content": "publish(event: string): void {\n\tfor (const listener of [...this.listeners]) {\n\t\ttry { listener(event); } catch (error) { this.errors.push(error); }\n\t}\n}", "caption": "Safe delivery: a copy of the list, and each listener isolated" },
+				{ "type": "list", "items": [
+					"**Iterate over a copy.** If listener A cancels itself during delivery, a plain loop moves B to its place and skips it. Publishing over a snapshot means: who was subscribed when the event started receives it.",
+					"**Isolate each listener.** If B throws and nobody catches, C is never called and the error reaches the publisher, exactly what the pattern meant to decouple. Catch and record the error.",
+					"**Cancel when you leave.** The subject keeps a reference to each observer. A screen that closes without cancelling stays in memory and keeps being called. This leak is the \"lapsed listener\". A good `subscribe` returns the function that cancels."
+				] },
+				{ "type": "heading", "text": "Command" },
+				{ "type": "paragraph", "text": "A normal method call happens and vanishes. A command is the same intention **kept as data**: which action, on whom, with which arguments. That lets you put it in a queue, repeat it, and undo it. If each command knows how to reverse itself, a history with two stacks gives undo and redo." },
+				{ "type": "diagram", "content": "run(a) run(b) run(c)   history = [a, b, c]\nundo()                 pops c  -> history = [a, b]\nundo()                 pops b  -> history = [a]\n\nEffects still applied: only a\nRunning a new command clears the redo stack", "caption": "Undo goes in reverse order: the last one in is the first one out" },
+				{ "type": "callout", "tone": "warning", "text": "Not every command has an inverse. A command that sends an e-mail or charges a card has an effect outside the program. Sending cannot be reversed: you can compensate (send a cancellation, refund) or declare the command not undoable. Separate reversible, compensable and irreversible commands." },
+				{ "type": "heading", "text": "State" },
+				{ "type": "paragraph", "text": "An order goes from pending to paid to shipped. Each phase answers the same operation differently: you cannot ship a pending order. With conditionals, every method begins with a test on `status`. With the State pattern each phase is a class, and the allowed transitions are explicit. The rule that refuses `ship` for a pending order lives in the **pending state class**." },
+				{ "type": "paragraph", "text": "Count what grows. With 4 states and 5 operations written as methods with conditionals, a fifth state forces you to review all **5** methods. With State, it is one new class plus the transitions that lead to it. The reverse also holds: if operations grow more than states, conditionals can be the better choice." },
+				{ "type": "table", "headers": ["Topic", "Strategy", "State"], "rows": [
+					["What the alternatives are", "Independent ways to do the same task", "Phases of a life cycle"],
+					["Who swaps them", "Chosen **from outside**", "Swapped **by the operations themselves**, as a consequence"]
+				], "caption": "Same structure, different intent" },
+				{ "type": "callout", "tone": "remember", "text": "Strategy chooses how, Observer tells many, Command keeps a request, State follows a life cycle." }
+			]
+		},
+		{
+			"id": "repository-dependency-injection",
+			"title": "Repository and dependency injection",
+			"blocks": [
+				{ "type": "paragraph", "text": "When you ask a librarian for a book, you do not walk into the storage room and search the shelves. You say the title, and the librarian brings it. A **Repository** is that librarian for your data. It gives the business rules an interface that looks like a **collection** (`add`, `find`, `save`) and hides how the data is stored: SQL, files or memory." },
+				{ "type": "code", "language": "ts", "content": "interface OrderRepository {\n\tfind(id: string): Order | null;\n\tsave(order: Order): void;\n}\n\nclass InMemoryOrders implements OrderRepository {\n\tprivate readonly items = new Map<string, Order>();\n\tfind(id: string) { return this.items.get(id) ?? null; }\n\tsave(order: Order) { this.items.set(order.id, order); }\n}", "caption": "The rule speaks of orders. Only the real repository knows SQL." },
+				{ "type": "paragraph", "text": "Because the rule only knows the interface, it can be tested with an in-memory repository: fast and the same every time. A second, slower group of tests checks the real database repository. A **contract test** that runs against both implementations makes sure they behave the same way." },
+				{ "type": "heading", "text": "Dependency injection" },
+				{ "type": "paragraph", "text": "**Dependency injection** means a class stops creating or fetching what it needs and **receives** it from outside. The most common form is **constructor injection**: dependencies are visible in the signature, mandatory and can be read-only. Looking at the constructor tells you everything the class needs." },
+				{ "type": "code", "language": "ts", "content": "class RegisterUser {\n\tconstructor(\n\t\tprivate readonly users: UserRepository,\n\t\tprivate readonly mailer: Mailer,\n\t) {}\n\n\texecute(email: string): void {\n\t\tthis.users.add(new User(email));\n\t\tthis.mailer.send(email, 'Welcome');\n\t}\n}", "caption": "Constructor injection" },
+				{ "type": "diagram", "content": "main()  <-- composition root: the only place with 'new'\n  |  creates connection\n  |  creates SqlOrderRepository(connection)\n  |  creates RegisterUser(repo, mailer)\n  v\nthe rest of the program only knows interfaces", "caption": "Where the object graph is assembled" },
+				{ "type": "paragraph", "text": "The place where everything is created and joined is called the **composition root**, near the entry point of the program. Writing `new SqlOrderRepository(connection)` there keeps the rest of the system dependent only on abstractions." },
+				{ "type": "callout", "tone": "warning", "text": "A Service Locator (`Container.get('InvoiceRepository')` inside the methods) respects dependency inversion, because the class uses interfaces, but it keeps the Singleton's problem: global access. The dependencies are hidden and do not appear in the class signature. Constructor injection declares the same information, the compiler checks it, and a test can replace it easily." },
+				{ "type": "heading", "text": "Two traps" },
+				{ "type": "list", "items": [
+					"**Transaction boundary.** To save an order and reduce the stock atomically (all or nothing), the transaction belongs to the **use case**, which opens a unit of work that covers both repositories. A repository takes care of one kind of object and does not know which larger operation it is part of.",
+					"**Captive dependency.** A service created once at start-up that receives, in its constructor, an object that should be created per request keeps the object of the **first** request forever. An object may depend only on objects that live as long as it does or longer. Per-request data comes as a method argument, or through a provider asked at each use."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Repository hides storage behind a collection. Inject dependencies through the constructor and build everything in the composition root." }
+			]
+		},
+		{
+			"id": "anti-patterns",
+			"title": "Anti-patterns and when not to use a pattern",
+			"blocks": [
+				{ "type": "paragraph", "text": "A **code smell** is a hint that the design may have a problem, like a strange smell in the fridge. An **anti-pattern** is a popular bad answer. Patterns also have a price: more types, more files and one more jump to understand the flow. They pay off only if the problem they solve really exists." },
+				{ "type": "table", "headers": ["Smell", "How to recognise it", "Why it hurts"], "rows": [
+					["**God Class**", "A huge class that holds much of the logic and knows almost all others", "Low cohesion, hard to test, everybody edits it and conflicts"],
+					["**Shotgun Surgery**", "One change forces small edits in many classes", "Something that changes together is not together"],
+					["**Feature Envy**", "A method reads many getters of another object to calculate something about that object", "The calculation belongs to the other object"],
+					["**Refused Bequest**", "A subclass overrides inherited methods so they do nothing or throw", "Breaks Liskov: it wanted the code, not the contract"],
+					["**Anaemic model**", "Classes with only fields, getters and setters, and all rules in services", "Procedural code in disguise: any service can leave an object invalid"],
+					["**Speculative generality**", "Interface, factory and builder, each with one implementation, \"in case\"", "Everybody pays for flexibility nobody used"]
+				], "caption": "Six smells and their cost" },
+				{ "type": "heading", "text": "Tell, Don't Ask and the Law of Demeter" },
+				{ "type": "code", "language": "ts", "content": "// asks for everything, then decides\nconst city = order.getCustomer().getAddress().getCity().getName();\n\n// tells the order what is needed\nconst city = order.shippingCity();", "caption": "A chain of getters couples the caller to four classes" },
+				{ "type": "paragraph", "text": "The **Law of Demeter** says a method should talk only to its immediate neighbours. A chain of getters crosses several objects, so if the address changes shape, every chain scattered through the system breaks. Asking the first object for the result keeps the knowledge of the structure in one place. The same idea, **Tell, Don't Ask**, cures Feature Envy: move the behaviour next to the data it uses." },
+				{ "type": "paragraph", "text": "About the anaemic model: an object-oriented design keeps each rule next to the data it protects (encapsulation). If the domain classes are just bags of fields, any service can put an order in an invalid state, and the same rule gets rewritten in many places." },
+				{ "type": "heading", "text": "When not to apply a pattern" },
+				{ "type": "list", "items": [
+					"With **one** algorithm and no sign of a second, Strategy is not justified.",
+					"A record screen with two fields built with an interface, an abstract factory and a Builder, each with one implementation, is speculative generality. Wait for the **second real case**: refactoring to a pattern when the need appears costs less than carrying the structure for years.",
+					"Applying a pattern as a precaution usually produces the **wrong abstraction**, and the wrong flexibility gets in the way of the change that really arrives."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "The opposite mistake exists too. Splitting too much is as wrong as splitting too little. Both make the change lose its single address." },
+				{ "type": "callout", "tone": "remember", "text": "A pattern is a medicine, not a vitamin. Use it when the pain is real." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{ "type": "paragraph", "text": "The principles and the patterns are connected. The patterns are often the way to follow a principle. When you see a problem, ask which pain you feel, then pick the principle or the pattern that removes it." },
+				{ "type": "table", "headers": ["Pain you feel", "Principle that explains it", "Pattern or technique that helps"], "rows": [
+					["A class changes for many reasons", "SRP", "Extract each subject into its own class"],
+					["Every new case edits an old `if` chain", "OCP", "Strategy, Factory, polymorphism"],
+					["A subtype throws or surprises its clients", "LSP", "Change the hierarchy, or use composition"],
+					["Implementers write \"not supported\" methods", "ISP", "Split the interface by role"],
+					["Business rules import database or e-mail", "DIP", "Interface owned by the rule, DI, Adapter, Repository"],
+					["A constructor with many parameters", "(creation)", "Builder, rich constructor"],
+					["A hidden global that breaks tests", "DIP", "Inject the single instance instead of a Singleton"],
+					["Behaviours that stack in any order", "OCP, composition", "Decorator"],
+					["Many classes to call in order", "(simplicity)", "Facade"],
+					["Reactions to an event", "OCP", "Observer"],
+					["Undo, queue, repeat", "(request as data)", "Command"],
+					["Status tested in every method", "OCP", "State"]
+				], "caption": "From the pain to the cure" },
+				{ "type": "paragraph", "text": "A fair note on cost: the refactored code has **more types and more lines** than the first version. That is the price. It pays off where changes like these really arrive, and it is waste where they never do. Change does not disappear. The designs only choose where it lands." },
+				{ "type": "list", "ordered": true, "items": [
+					"Write simple code that works, with tests.",
+					"Watch for pain: a class that changes for many reasons, an `if` chain that grows, a test that needs a database.",
+					"Name the pain with a principle or a smell.",
+					"Apply the smallest pattern that removes it, and no more.",
+					"Keep the tests green during the refactoring."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Good design is making the next change cheap. Use principles to judge, patterns to fix, and common sense to decide when to stop." }
+			]
+		}
+	]
+}

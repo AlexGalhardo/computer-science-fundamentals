@@ -1,0 +1,1296 @@
+{
+	"area": "cache",
+	"intro": [
+		"Imagina que estás haciendo la tarea y necesitas un lápiz. Los mejores lápices están en una caja grande en el depósito, al final del pasillo. Ir hasta allá cada vez es lento. Entonces guardas algunos lápices en tu estuche, justo sobre el escritorio. Ese estuche es un **cache**: un lugar pequeño y rápido que guarda copias de cosas que son lentas de conseguir.",
+		"Las computadoras hacen esto todo el tiempo. El navegador guarda imágenes para no descargarlas otra vez. Un sitio guarda la respuesta de una pregunta pesada para no preguntarle de nuevo a la base de datos. Hasta el procesador de tu computadora tiene caches. Un buen cache hace que un sitio lento parezca instantáneo y protege a una base de datos pequeña de una multitud de visitantes.",
+		"Pero el cache tiene un problema. Una copia puede quedar vieja. Si la caja de lápices de verdad cambia y tu estuche no, empiezas a usar cosas desactualizadas. Casi todo lo difícil de los caches viene de una pregunta: ¿cómo mantenemos la copia lo bastante cerca de la verdad?",
+		"En este resumen aprenderás por qué y dónde usar cache, las principales formas de escribir datos, cómo tirar copias viejas, qué pasa cuando el cache se llena y quién sale, los famosos problemas de multitud (estampida, penetración y avalancha), los encabezados HTTP que controlan el cache del navegador, qué ofrece Redis y qué puede salir mal con la consistencia. Al final podrás leer un diseño de cache y decir qué hace bien y dónde puede romperse."
+	],
+	"sections": [
+		{
+			"id": "why-and-where-to-cache",
+			"title": "Por qué y dónde usar cache",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Piensa en la biblioteca de la escuela. El **origen** es la gran biblioteca de la ciudad, con todos los libros que se han impreso. Ir hasta allá toma una hora. En tu salón hay un estante pequeño con los libros que todos piden. Ese estante es el cache. La biblioteca de la ciudad sigue siendo la **fuente de la verdad**: si las dos no coinciden, la biblioteca tiene razón y el estante es solo una copia."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un cache funciona gracias a la [[localidad|la costumbre de programas y personas de pedir las mismas pocas cosas una y otra vez]]. Pocos elementos populares reciben la mayoría de los pedidos. Si el cache guarda esos pocos elementos, la mayoría de los pedidos se responden rápido."
+				},
+				{
+					"type": "heading",
+					"text": "Las palabras que necesitas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Hit (acierto)**: lo que pediste está en el cache. ¡Rápido!",
+						"**Miss (fallo)**: no está, así que hay que ir al origen. Lento.",
+						"**Tasa de aciertos (hit rate)**: cuántas consultas fueron aciertos, respecto de todas las consultas. Es aciertos dividido entre (aciertos más fallos).",
+						"**Cache frío**: un cache vacío, por ejemplo justo después de reiniciar. Casi todo es fallo.",
+						"**Calentamiento (warm-up)**: el tiempo en que los fallos van llenando el cache y la tasa de aciertos sube.",
+						"**Stale (desactualizada)**: una copia más vieja que el dato real."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Tasa de aciertos = aciertos / (aciertos + fallos). Si un contador muestra 18.400 aciertos y 4.600 fallos, el total es 23.000 consultas y la tasa de aciertos es 18.400 / 23.000 = 80%."
+				},
+				{
+					"type": "heading",
+					"text": "¿De verdad el cache lo hace todo más rápido?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada solicitud paga primero la consulta al cache. Solo los aciertos evitan el viaje al origen. Por eso el tiempo promedio es un promedio ponderado: tasa de aciertos por el tiempo de un acierto, más tasa de fallos por el tiempo de un fallo. Un fallo cuesta más que no tener cache, porque pagamos la consulta fallida y además el origen."
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo: un acierto cuesta 2 ms y un fallo cuesta 2 ms más 100 ms en el origen. Con 90% de aciertos el promedio es 0,9 x 2 + 0,1 x 102 = 12 ms. El gráfico muestra cuánto importa la tasa de aciertos."
+				},
+				{
+					"type": "chart",
+					"title": "Latencia promedio según la tasa de aciertos (acierto = 2 ms, fallo = 102 ms)",
+					"unit": "ms",
+					"bars": [
+						{
+							"label": "0% de aciertos",
+							"value": 102
+						},
+						{
+							"label": "50% de aciertos",
+							"value": 52
+						},
+						{
+							"label": "90% de aciertos",
+							"value": 12
+						},
+						{
+							"label": "99% de aciertos",
+							"value": 3
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Un cache incluso puede empeorar las cosas. Supón que el origen responde en 20 ms y consultar un cache remoto cuesta 5 ms. El promedio es 5 + (1 - h) x 20, donde h es la tasa de aciertos. Solo supera a 20 ms cuando h es mayor que 25%. Con 10% de aciertos el promedio pasa a 23 ms: más lento que no tener cache."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Antes de añadir un cache, mide si realmente se vuelven a pedir las mismas cosas. Un cache con tasa de aciertos baja solo agrega un viaje."
+				},
+				{
+					"type": "heading",
+					"text": "Las capas de cache"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una solicitud puede ser respondida por varios caches, uno tras otro. Cuanto más cerca del usuario se encuentra la respuesta, menos trabajo y menos red se gastan."
+				},
+				{
+					"type": "diagram",
+					"content": "usuario -> cache del navegador -> CDN / proxy -> cache de la app -> base\n            (privado)               (compartido)    (en el proceso   (buffer pool,\n                                                     o Redis)        cache de páginas)\n\nMás cerca del usuario = más rápido y más barato.",
+					"caption": "Dónde puede detenerse una solicitud"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Capa",
+						"Quién puede usar la copia",
+						"Bueno para"
+					],
+					"rows": [
+						[
+							"Navegador",
+							"Solo ese usuario (un cache **privado**)",
+							"Imágenes, scripts y estilos que el usuario ya descargó"
+						],
+						[
+							"CDN o proxy inverso",
+							"Muchos usuarios (un cache **compartido**)",
+							"Archivos estáticos servidos desde servidores repartidos por el mundo, cerca de la gente"
+						],
+						[
+							"Cache de la aplicación",
+							"Una instancia (en el proceso) o todas (Redis)",
+							"Resultados de consultas lentas y de cálculos pesados"
+						],
+						[
+							"Buffer pool de la base",
+							"La propia base de datos",
+							"Páginas de disco de tablas e índices leídas hace poco"
+						]
+					],
+					"caption": "Capas de cache"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una **CDN** (red de entrega de contenido) es un grupo de servidores repartidos por el mundo. Responde el más cercano a ti, así que el dato viaja poco. Su cache es compartido por todos los usuarios."
+				},
+				{
+					"type": "paragraph",
+					"text": "La base de datos también tiene su propio cache, el **buffer pool**, que mantiene en memoria páginas de disco leídas hace poco. Acelera toda consulta, pero la consulta aún se analiza y se ejecuta. Guardar el resultado ya listo en el cache de la aplicación también ahorra ese trabajo, al precio de que el resultado envejezca."
+				},
+				{
+					"type": "heading",
+					"text": "¿En el proceso o distribuido?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Cache en el proceso",
+						"Cache distribuido (por ejemplo Redis)"
+					],
+					"rows": [
+						[
+							"Velocidad",
+							"El más rápido: sin red, sin conversión",
+							"Un viaje de red por cada consulta"
+						],
+						[
+							"Copias",
+							"Una copia por instancia: la memoria se repite y las copias pueden diferir",
+							"Una copia que ven todas las instancias"
+						],
+						[
+							"Después de reiniciar la app",
+							"Todo se pierde",
+							"Los datos siguen ahí"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina una app en 4 instancias, cada una con su cache en el proceso. Una instancia cambia un producto en la base y lo quita de su propio cache. Las otras tres siguen con el producto viejo hasta que sus copias expiren."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Las páginas personales son peligrosas en un cache compartido. Si `/account` muestra tu nombre y tu saldo y una CDN la guarda con esa URL, la siguiente persona que pida `/account` puede recibir tu página. Las respuestas personales solo pueden vivir en un cache privado, a menos que la clave del cache incluya quién es el usuario."
+				},
+				{
+					"type": "heading",
+					"text": "Un cache puede esconder una base débil"
+				},
+				{
+					"type": "paragraph",
+					"text": "Digamos que un servicio recibe 10.000 lecturas por segundo con 95% de aciertos. La base solo ve 500 consultas por segundo y soporta 1.000. Entonces Redis se reinicia y vuelve vacío. Por un momento, las 10.000 lecturas caen sobre la base, diez veces lo que aguanta, hasta que el cache se caliente. Por eso hay que planear el cache frío: calentarlo antes de enviar tráfico, limitar las solicitudes o dejar holgura de capacidad en la base."
+				},
+				{
+					"type": "heading",
+					"text": "¿Qué vale la pena guardar en cache?"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Bueno**: dato que se lee muchas más veces de las que cambia, caro de construir y que puede tener unos instantes de retraso (la página de un catálogo de productos).",
+						"**Malo**: dato que cambia en cada solicitud, dato distinto en cada solicitud y dato que debe ser exacto en el momento de usarlo."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un cache es una copia rápida de algo lento. Solo vale la pena con una buena tasa de aciertos, y el origen sigue siendo la verdad."
+				}
+			]
+		},
+		{
+			"id": "caching-strategies",
+			"title": "Estrategias: cache-aside, read-through, write-through, write-behind",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Ahora tienes un cache y una base. Surgen dos preguntas. En la lectura: ¿quién llena el cache? En la escritura: ¿quién cambia primero y cuándo le decimos \"listo\" al usuario? Cada **estrategia de cache** es una respuesta a esas preguntas."
+				},
+				{
+					"type": "heading",
+					"text": "Lectura: cache-aside y read-through"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina que le pides un libro a un ayudante. En el **cache-aside** (también llamado lazy loading) no hay ayudante: tú mismo miras en el estante y, si el libro no está, vas a la biblioteca, lo traes y pones una copia en el estante. El código de la aplicación hace los tres pasos. Solo entra al cache el dato que de verdad se pidió."
+				},
+				{
+					"type": "code",
+					"language": "python",
+					"content": "def get_user(id):\n    value = cache.get(\"user:\" + id)      # 1. mirar en el cache\n    if value is not None:\n        return value                      # acierto\n    value = db.query(\"SELECT ... WHERE id = ?\", id)  # 2. fallo: preguntar a la base\n    cache.set(\"user:\" + id, value, ttl=300)         # 3. llenar el cache\n    return value",
+					"caption": "Cache-aside: la aplicación hace los tres pasos"
+				},
+				{
+					"type": "paragraph",
+					"text": "En el **read-through** sí tienes un ayudante. Solo le pides la clave al cache. Si no está, la capa de cache (o su biblioteca) llama a una función cargadora para traer el valor de la fuente. Las dos estrategias cargan en el mismo momento, en un fallo. La diferencia es quién es responsable: el código de la aplicación (cache-aside) o la capa de cache (read-through)."
+				},
+				{
+					"type": "paragraph",
+					"text": "El cache-aside es excelente cuando hay muchas más lecturas que escrituras, como un catálogo de productos leído miles de veces por segundo y modificado unas pocas veces al día. También sigue funcionando si el cache se cae: la app simplemente lee la base, más despacio."
+				},
+				{
+					"type": "heading",
+					"text": "Escritura: cuatro formas"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Estrategia",
+						"Qué hace la escritura",
+						"El usuario oye \"listo\" después de",
+						"Ventaja",
+						"Costo"
+					],
+					"rows": [
+						[
+							"Write-through",
+							"Escribe la base y el cache",
+							"Que ambos se actualicen",
+							"La siguiente lectura es un acierto con dato nuevo",
+							"Escritura más lenta; el cache puede guardar datos que nadie lee"
+						],
+						[
+							"Write-behind (write-back)",
+							"Escribe solo el cache; la base después",
+							"Solo el cache",
+							"Muy rápido; muchas escrituras se vuelven pocas",
+							"Un dato confirmado puede perderse si el cache muere antes del flush"
+						],
+						[
+							"Write-around",
+							"Escribe solo la base",
+							"La base",
+							"El cache no se llena de datos que nadie lee",
+							"La primera lectura después de escribir siempre es un fallo"
+						],
+						[
+							"Escritura en cache-aside",
+							"Actualiza la base y luego borra la clave",
+							"Base y borrado",
+							"La siguiente lectura carga el valor nuevo",
+							"La primera lectura después de escribir es un fallo"
+						]
+					],
+					"caption": "Estrategias de escritura"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Piensa en una maestra que califica exámenes. Write-through: califica, anota la nota en el libro de la escuela y en la pizarra antes de avisarle al alumno. Write-behind: le dice \"listo\" al alumno y pasa las notas al libro solo al final del día. Si la maestra pierde los apuntes antes del final del día, las notas se fueron."
+				},
+				{
+					"type": "heading",
+					"text": "Write-behind en detalle"
+				},
+				{
+					"type": "paragraph",
+					"text": "En el write-behind, un worker envía los cambios pendientes a la base cada pocos segundos. Si la misma clave cambió varias veces entre dos flushes, solo se envía el último valor. Esto se llama **coalescencia** (coalescing). Supón que el flush corre cada 10 s y llegan estas escrituras:"
+				},
+				{
+					"type": "diagram",
+					"content": "0-10 s : A=9, B=4, A=8, A=7     flush a los 10 s -> UPDATE A=7, UPDATE B=4\n10-20 s: B=3, A=6, B=2          flush a los 20 s -> UPDATE A=6, UPDATE B=2\n20-30 s: C=5, D=1               flush a los 30 s -> UPDATE C=5, UPDATE D=1\n\n9 escrituras en el cache -> 6 actualizaciones en la base",
+					"caption": "Varias escrituras a una misma clave en un intervalo se vuelven una sola actualización"
+				},
+				{
+					"type": "paragraph",
+					"text": "Esto hace al write-behind perfecto para cosas como contadores de vistas: miles de incrementos por segundo, y perder unos segundos de cuenta no importa. Es incorrecto para dinero o pedidos."
+				},
+				{
+					"type": "paragraph",
+					"text": "Hay dos peligros. Primero, entre flushes el cache está **adelantado** respecto de la base. Un reporte que lee la base directamente ve el valor viejo. Segundo, si el cache pierde su memoria antes del flush, toda escritura que a los clientes se les dijo que se guardó desaparece. Una escritura hecha directo en la base entre dos flushes también es sobrescrita por el siguiente flush, sin error para nadie."
+				},
+				{
+					"type": "heading",
+					"text": "Por qué el cache-aside borra en lugar de guardar"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando el dato cambia, el cache-aside normalmente actualiza la base y luego **borra** la clave. ¿Por qué no guardar el valor nuevo? Porque dos escritores pueden llegar a la base en un orden y al cache en el orden contrario, y el valor más viejo ganaría en el cache. Borrar no lleva valor, así que no puede estar equivocado: quien borre al final, la clave desaparece y la siguiente lectura carga la verdad."
+				},
+				{
+					"type": "paragraph",
+					"text": "El write-through tiene este problema. Con dos escritores y sin lock, la base puede terminar con 3 mientras el cache termina con 4, el valor que se confirmó primero. Sin tiempo de vida, queda mal hasta la siguiente escritura. Otro problema: la base y el cache son dos sistemas sin transacción en común. Si la base confirma y la actualización del cache falla, el cache queda viejo. El orden habitual es escribir primero la fuente de la verdad."
+				},
+				{
+					"type": "heading",
+					"text": "Refresh-ahead"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **refresh-ahead** recarga una entrada popular en segundo plano justo antes de que expire, para que los lectores nunca esperen un fallo. El riesgo es gastar trabajo en entradas que nadie vuelve a pedir, por eso suele aplicarse solo a claves usadas recientemente."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Para reconocer una estrategia, mira dónde está el \"listo\" respecto de la escritura en la base. Primero la base, luego listo: write-through (o write-around si no se escribe el cache). Primero listo, la base después: write-behind."
+				}
+			]
+		},
+		{
+			"id": "invalidation-ttl",
+			"title": "Invalidación y tiempo de vida",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un cartón de leche tiene una fecha impresa. Pasada la fecha, lo tiras, aunque se vea bien. Un cache hace lo mismo con un **TTL**, el tiempo de vida (time to live): cuántos segundos puede quedarse una entrada. Otra forma es tirar el cartón apenas sabes que la tienda tiene leche nueva. Eso es **invalidación**: quitar o reescribir una entrada cuando el origen cambia."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un TTL no vuelve correcto al dato. Solo limita por cuánto tiempo puede estar equivocado. Con un TTL de 60 s, una copia puede ir hasta 60 s atrasada. Por eso el TTL se mantiene como red de seguridad incluso cuando existe invalidación explícita."
+				},
+				{
+					"type": "heading",
+					"text": "La perilla del TTL"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"TTL",
+						"Tasa de aciertos",
+						"Frescura",
+						"Carga en el origen"
+					],
+					"rows": [
+						[
+							"Corto (30 s)",
+							"Menor",
+							"Más fresco",
+							"Mayor"
+						],
+						[
+							"Largo (10 min)",
+							"Mayor",
+							"Más viejo",
+							"Menor"
+						]
+					],
+					"caption": "Subir el TTL cambia frescura por velocidad"
+				},
+				{
+					"type": "heading",
+					"text": "Comandos de Redis para la expiración"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis es un almacén en memoria muy popular, usado como cache. Estos son los comandos y reglas que debes conocer:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"`SET key value EX 300` guarda un valor que expira en 300 segundos.",
+						"`TTL key` devuelve los segundos que quedan. **-1** significa que la clave existe pero no tiene expiración. **-2** significa que la clave no existe.",
+						"`EXPIRE key seconds` fija el plazo contando desde ahora. Si la clave ya tenía uno, el nuevo lo reemplaza. Ejemplo: `SET k v EX 60` en t = 0 y `EXPIRE k 100` en t = 20 dan `TTL` = 70 en t = 50.",
+						"Desde Redis 7.0, `EXPIRE` tiene condiciones: `NX` (solo si no hay expiración), `XX` (solo si hay), `GT` (solo si el nuevo tiempo es mayor) y `LT` (solo si es menor). Una clave sin expiración cuenta como infinita para `GT` y `LT`."
+					]
+				},
+				{
+					"type": "code",
+					"language": "sh",
+					"content": "SET cart:7 \"a\" EX 300\nSET cart:7 \"b\"        # cambia el valor Y borra la expiración\nTTL cart:7             # -> -1  (¡nunca expira!)\n\nSET cart:7 \"b\" KEEPTTL # conserva el plazo anterior",
+					"caption": "Un SET simple borra el TTL"
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Un comando que reemplaza el valor completo (`SET`) borra la expiración. Los comandos que solo modifican el valor existente (`INCR`, `LPUSH`) la conservan. Olvidar esto crea entradas que nunca expiran. Usa `KEEPTTL` o indica `EX` otra vez."
+				},
+				{
+					"type": "heading",
+					"text": "Cómo elimina Redis las claves expiradas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis lo hace de dos maneras. La forma **pasiva**: cuando un cliente pide una clave expirada, Redis la borra en ese momento. La forma **activa**: cada cierto tiempo, Redis prueba algunas claves al azar que tienen TTL y borra las expiradas. Así, una clave expirada nunca se devuelve, pero puede seguir usando memoria un tiempo después de su plazo."
+				},
+				{
+					"type": "heading",
+					"text": "Expiración absoluta y deslizante"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con la expiración **absoluta**, la entrada muere un tiempo fijo después de escribirse. Con la expiración **deslizante** (sliding), cada lectura renueva el plazo (por ejemplo `GETEX key EX 60`). La deslizante sirve bien para sesiones. Pero si una clave se lee cada 10 s con un TTL deslizante de 60 s, nunca expira y se puede servir un valor viejo para siempre. Para datos que cambian en el origen, añade invalidación explícita o una vida máxima absoluta."
+				},
+				{
+					"type": "heading",
+					"text": "Cosas difíciles de la invalidación"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Una fila, muchas claves.** Un producto puede estar en `product:5`, en una lista `category:2:page:1` y en un resultado de búsqueda `search:shoes`. Si el precio cambia y el código borra solo `product:5`, la lista y la búsqueda conservan el precio viejo hasta expirar. El cache no sabe qué entradas vienen de qué datos.",
+						"**Cache negativo.** Guardar la respuesta \"no existe\" evita repetir una consulta inútil. Pero si el usuario 77 se crea dos minutos después de guardar \"no encontrado\" por 24 h, los lectores siguen viendo \"no encontrado\". Dale a estas entradas un TTL corto (segundos o minutos) y bórralas al crear el elemento cuando sea posible.",
+						"**Muchas instancias con caches locales.** Con un TTL fijo de 30 s y sin mensajes, dos instancias pueden discrepar hasta 30 s. Publica un mensaje de invalidación a todas las instancias y mantén el TTL como red de seguridad.",
+						"**Buscar claves.** `KEYS product:*` recorre todas las claves en un solo comando (costo O(N)) y bloquea a los demás clientes. Usa `SCAN`, que avanza con un cursor y devuelve unas pocas claves por llamada, o mantén un conjunto con las claves de cada grupo."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Dos trucos útiles"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Claves versionadas.** Pon una versión en los nombres: `cat:v{N}:...`, donde N está en `cat:version`. Para invalidar todo el catálogo, ejecuta `INCR cat:version`. Nadie vuelve a armar los nombres antiguos, así que todo el grupo queda inválido de una vez. Las claves viejas aún ocupan memoria, por eso necesitan un TTL."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Soft purge.** Un purge duro borra la entrada y la siguiente solicitud espera al origen. Un soft purge solo la marca como vieja: se sigue sirviendo un rato corto mientras una actualización corre en segundo plano. La latencia se mantiene estable y el origen sufre menos presión."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "TTL = red de seguridad que limita qué tan vieja puede ser una copia. Invalidación = arreglar la copia apenas cambia la fuente. Usa las dos."
+				}
+			]
+		},
+		{
+			"id": "eviction-policies",
+			"title": "Políticas de descarte: LRU, LFU, FIFO",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Tu estuche es pequeño. Cuando está lleno y recibes un lápiz nuevo, uno tiene que salir. **Descarte** (eviction) es cuando el cache quita entradas porque la memoria se llenó. No lo confundas con la **expiración**, que quita una entrada porque su tiempo terminó. Una entrada descartada todavía puede estar fresca, y una expirada sale aunque sobre memoria."
+				},
+				{
+					"type": "paragraph",
+					"text": "La regla que elige quién sale es la **política de descarte**. Aquí hay tres clásicas."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Política",
+						"Quién sale",
+						"Apuesta que hace",
+						"Qué registra"
+					],
+					"rows": [
+						[
+							"**LRU** (menos recientemente usado)",
+							"Aquel cuyo último uso es el más antiguo",
+							"Lo que se usó hace poco se volverá a usar pronto",
+							"El orden de uso"
+						],
+						[
+							"**LFU** (menos frecuentemente usado)",
+							"Aquel con menos usos",
+							"Lo que se usó mucho seguirá usándose",
+							"Un contador por entrada"
+						],
+						[
+							"**FIFO** (primero en entrar, primero en salir)",
+							"Aquel que entró primero",
+							"Ninguna: es solo una fila",
+							"El orden de llegada"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Simulando el LRU a mano"
+				},
+				{
+					"type": "paragraph",
+					"text": "Mantén las claves en una fila, de la menos a la más reciente. Un acierto mueve la clave al final. Un fallo con el cache lleno quita la primera clave de la fila. Cache con espacio para 3, accesos A B C A D B A E:"
+				},
+				{
+					"type": "diagram",
+					"content": "A          -> [A]\nB          -> [A B]\nC          -> [A B C]\nA (acierto)-> [B C A]\nD          -> [C A D]    sale B\nB          -> [A D B]    sale C\nA (acierto)-> [D B A]\nE          -> [B A E]    sale D\n\nFinal: A, B, E",
+					"caption": "LRU con 3 lugares (izquierda = menos reciente)"
+				},
+				{
+					"type": "heading",
+					"text": "El FIFO es distinto del LRU"
+				},
+				{
+					"type": "paragraph",
+					"text": "En el FIFO un acierto **no** cambia la posición. Con espacio para 3 y accesos A B C A B D, la fila es [A B C]. Los aciertos en A y B no cambian nada, así que D quita a A, la llegada más antigua. En el LRU la víctima habría sido C. Aunque A acabe de usarse, el FIFO la saca."
+				},
+				{
+					"type": "paragraph",
+					"text": "Compara en la secuencia A B C A D A E con 3 lugares: el LRU tiene 5 fallos y 2 aciertos. El FIFO tiene 6 fallos y 1 acierto, porque sacó a A mientras estaba en uso y tuvo que cargarla de nuevo."
+				},
+				{
+					"type": "heading",
+					"text": "Simulando el LFU a mano"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada acceso suma 1 a un contador (la primera inserción cuenta como uno). En un fallo con el cache lleno, sale el contador más bajo, y los empates se resuelven con el menos recientemente usado. Con 3 lugares y accesos A A B C B D E: A=2, B=2, C=1, luego llega D y sale C (el más bajo); después llega E y sale D (cuenta 1). Las claves finales son A, B, E. Las claves nuevas empiezan con cuenta 1, así que son las primeras en descartarse."
+				},
+				{
+					"type": "heading",
+					"text": "Un barrido y una estrella antigua"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina 20 claves calientes leídas miles de veces y luego un reporte que lee 500 claves frías distintas, una vez cada una. En el **LRU** las claves frías empujan a las calientes fuera, porque la recencia no distingue \"leída una vez\" de \"leída todo el tiempo\". En el **LFU** las calientes sobreviven porque sus contadores son altos. El precio del LFU aparece en el caso contrario: una clave que fue popular hace meses conserva su contador alto y nunca sale. Por eso los LFU reales hacen que los contadores disminuyan con el tiempo."
+				},
+				{
+					"type": "heading",
+					"text": "Cómo construir un LRU rápido"
+				},
+				{
+					"type": "paragraph",
+					"text": "Queremos `get` y `put` en O(1). Usa dos estructuras juntas. Un **mapa hash** encuentra la clave al instante y apunta a su lugar en la lista. Una **lista doblemente enlazada** guarda el orden de recencia; con punteros al nodo anterior y al siguiente, podemos soltar un nodo y ponerlo al final sin recorrer la lista. La víctima siempre es el nodo del otro extremo."
+				},
+				{
+					"type": "heading",
+					"text": "Descarte en Redis"
+				},
+				{
+					"type": "paragraph",
+					"text": "`maxmemory` fija el límite de memoria y `maxmemory-policy` dice qué hacer al alcanzarlo. El nombre de una política tiene dos partes: el **prefijo** dice quién puede ser víctima (`allkeys` para cualquier clave, `volatile` solo para claves que tienen expiración) y el **sufijo** dice el criterio (`lru`, `lfu`, `random` o `ttl`)."
+				},
+				{
+					"type": "list",
+					"items": [
+						"`noeviction`: los comandos que agregarían datos fallan con un error; las lecturas siguen funcionando. Bueno cuando Redis guarda datos que no pueden desaparecer.",
+						"`allkeys-lru` y `allkeys-lfu`: la elección habitual para un cache puro.",
+						"`volatile-lru`: solo las claves con TTL pueden descartarse. Correcto cuando una instancia mezcla claves permanentes (configuración) y entradas de cache. Si ninguna clave tiene TTL, se comporta como `noeviction`. Dos instancias separadas son mejores cuando es posible.",
+						"`maxmemory-samples`: Redis no mantiene un LRU exacto. Examina una muestra aleatoria de claves (5 por defecto) y descarta la más antigua entre ellas. Subirlo a 10 se acerca más al LRU verdadero, con un poco más de CPU."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Descarte = la memoria se llenó. Expiración = el tiempo terminó. El LRU mira la recencia, el LFU la cuenta, el FIFO el orden de llegada, y solo el FIFO ignora los aciertos."
+				}
+			]
+		},
+		{
+			"id": "stampede-penetration-avalanche",
+			"title": "Estampida, penetración y avalancha",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Los caches normalmente protegen a la base de datos. Pero hay tres momentos famosos en que el cache deja de protegerla y una multitud de solicitudes cae sobre el origen de golpe. Los nombres asustan, pero las ideas son simples."
+				},
+				{
+					"type": "heading",
+					"text": "1. Estampida de cache (cache stampede, thundering herd, dogpile)"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un juguete popular está en el escaparate de la tienda de la escuela. Un día lo retiran para limpiarlo. Cientos de niños llegan al mismo tiempo y cada uno va al depósito a pedirlo. El depósito se inunda con la misma pregunta."
+				},
+				{
+					"type": "paragraph",
+					"text": "Una clave muy popular expira. Hasta que alguien escribe una copia nueva, toda solicitud ve un fallo y ejecuta la misma consulta cara. El dato existe y es válido. El problema es la concurrencia en la ventana de recálculo. El tamaño de la manada es la tasa de solicitudes multiplicada por el tiempo de reconstrucción."
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo: la clave `home:feed` expira, 300 solicitudes llegan en los siguientes 200 ms y reconstruir toma 2 s. Sin protección, se ejecutan 300 consultas. Con un lock, solo 1."
+				},
+				{
+					"type": "heading",
+					"text": "Solución A: un lock"
+				},
+				{
+					"type": "paragraph",
+					"text": "En un fallo, la solicitud intenta crear un lock con un comando atómico: `SET lock:home:feed token NX PX 5000`. `NX` significa \"solo si aún no existe\" y `PX 5000` significa \"expira en 5000 ms\". Solo una solicitud recibe `OK`. Esa solicitud consulta la base, guarda el valor y libera el lock. Las demás esperan un poco y leen el cache de nuevo."
+				},
+				{
+					"type": "list",
+					"items": [
+						"El lock tiene **expiración**, así que si quien lo tiene se cae, nadie espera para siempre.",
+						"El lock guarda un **token** único. Para liberarlo comparamos el token y borramos solo si sigue siendo el nuestro, y esa comprobación y el borrado deben ocurrir juntos (un script ejecutado por el servidor). Si no, una solicitud lenta, cuyo lock ya expiró, podría borrar el lock que otra acaba de obtener.",
+						"La expiración es una apuesta sobre cuánto tarda el trabajo. Si la reconstrucción tarda 8 s y el lock dura 5 s, una segunda solicitud empieza a reconstruir hacia los 5 s y parte de la protección se pierde. Elige una expiración con margen de seguridad o renueva el lock mientras trabajas.",
+						"Después de ganar el lock, revisa el cache de nuevo: el ganador anterior puede haber guardado el valor justo antes."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Solución B: actualizar antes de expirar"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **refresh anticipado** (refresh-ahead) reconstruye el valor mientras el viejo aún se está sirviendo, así que nunca hay un momento sin copia. Una versión es la **expiración anticipada probabilística**: cada solicitud puede decidir, al azar, actualizar antes, con una probabilidad que crece a medida que se acerca el plazo, así que casi siempre solo una solicitud lo hace, sin lock."
+				},
+				{
+					"type": "paragraph",
+					"text": "Otra versión divide la expiración en dos. La entrada guarda `{ value, logicalExpiry }`. El plazo **lógico** (digamos 5 minutos después de escribir) dice cuándo actualizar. El TTL **físico** en Redis (digamos 10 minutos) dice cuándo Redis lo borra. En el minuto 6 la entrada está vieja pero sigue ahí: la primera solicitud toma el lock de actualización y la segunda recibe el valor viejo de inmediato mientras la primera actualiza."
+				},
+				{
+					"type": "diagram",
+					"content": "escritura        expiración lógica     TTL físico\n |-----------------|--------------------|\n 0 min            5 min               10 min\n  fresca           vieja pero servida,  borrada\n                   una solicitud actualiza",
+					"caption": "Dos plazos: cuándo actualizar y cuándo borrar"
+				},
+				{
+					"type": "heading",
+					"text": "Lo que NO es una solución"
+				},
+				{
+					"type": "paragraph",
+					"text": "Subir el TTL de 60 s a una hora no detiene la estampida. El tamaño de la manada depende de la tasa de solicitudes y del tiempo de reconstrucción, no del TTL. El evento se vuelve más raro y el dato más viejo, pero cada vez es tan grave como antes. Otra trampa: el **single flight** dentro de cada proceso (las cargas concurrentes de una clave comparten una sola consulta) solo funciona dentro de un proceso. Con 8 instancias aún puede haber hasta 8 consultas por expiración. Para llegar a una sola, hace falta un lock compartido por todas las instancias."
+				},
+				{
+					"type": "chart",
+					"title": "Consultas a la base tras una expiración, 300 lectores (medido en el laboratorio de este repositorio)",
+					"unit": "consultas",
+					"bars": [
+						{
+							"label": "Sin protección",
+							"value": 299
+						},
+						{
+							"label": "Lock",
+							"value": 1
+						},
+						{
+							"label": "Refresh anticipado",
+							"value": 1
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "2. Penetración de cache"
+				},
+				{
+					"type": "paragraph",
+					"text": "Aquí un cliente sigue pidiendo cosas que **no existen** en ningún lugar, como `/users/-1` o `/users/99999999`. El cache nunca tiene nada que guardar, así que toda solicitud llega a la base. Puede ser un bug o un ataque. Tres defensas:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Validar la entrada y rechazar de inmediato los ids imposibles.",
+						"Guardar el resultado vacío con un **TTL corto** (cache negativo).",
+						"Poner un **filtro de Bloom** delante. Es una estructura compacta que responde \"¿esto está en el conjunto?\" con error en un solo sentido. \"Ausente\" siempre es verdad. \"Quizá presente\" a veces puede estar equivocado. Así se detienen los pedidos de ids que ciertamente no existen, y los pocos falsos positivos cuestan solo una consulta."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "3. Avalancha de cache"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una avalancha ocurre cuando **muchas claves** quedan no disponibles a la vez. Causa 1: un job llena el cache a las 03:00 con 200.000 claves, todas con TTL de 1 h, y a las 04:00 todas expiran de golpe. Causa 2: el servidor de cache se cae."
+				},
+				{
+					"type": "paragraph",
+					"text": "Para la causa 1, añade **jitter**: un valor aleatorio en cada TTL. Una base de 600 s con jitter de ±10% da TTL de 540 s a 660 s, así que 200.000 claves escritas juntas expiran repartidas en 120 s en lugar de todas en el mismo segundo. Calienta también el cache poco a poco. Para la causa 2, da alta disponibilidad al cache y protege el origen con un circuit breaker y límite de solicitudes."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Problema",
+						"Qué pasa",
+						"Defensas principales"
+					],
+					"rows": [
+						[
+							"Estampida",
+							"Una clave caliente expira; muchas solicitudes la reconstruyen",
+							"Lock, refresh anticipado, expiración probabilística"
+						],
+						[
+							"Penetración",
+							"Los pedidos de claves que no existen siempre llegan a la base",
+							"Validación de entrada, cache negativo corto, filtro de Bloom"
+						],
+						[
+							"Avalancha",
+							"Muchas claves expiran juntas, o el cache desaparece",
+							"Jitter en el TTL, calentamiento gradual, alta disponibilidad, límite de solicitudes"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Estampida: una clave, muchas reconstrucciones. Penetración: claves que no existen. Avalancha: muchas claves a la vez."
+				}
+			]
+		},
+		{
+			"id": "http-cache-headers",
+			"title": "Encabezados de cache HTTP",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Cuando un servidor envía una página web, puede adjuntar pequeñas notas llamadas **encabezados** (headers). Algunos encabezados les dicen a los navegadores y a las CDN cómo hacer cache. Las reglas están escritas en los estándares RFC 9111 (cache HTTP) y RFC 5861 (contenido viejo)."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un cache usa el método más la URL como clave básica. Una respuesta está **fresca** mientras su tiempo de frescura sea mayor que su edad actual. Una respuesta **vieja** (stale) no se tira: el cache puede **validarla**, es decir, preguntarle al origen \"¿esto cambió?\"."
+				},
+				{
+					"type": "heading",
+					"text": "Directivas de Cache-Control"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Directiva",
+						"Significado"
+					],
+					"rows": [
+						[
+							"`max-age=N`",
+							"Fresca por N segundos, en cualquier cache"
+						],
+						[
+							"`s-maxage=N`",
+							"Como `max-age`, pero solo para caches compartidos (CDN, proxy). Allí gana sobre `max-age` y sobre `Expires`"
+						],
+						[
+							"`no-store`",
+							"No guardes la respuesta en absoluto"
+						],
+						[
+							"`no-cache`",
+							"Puedes guardarla, pero **valida antes de cada reutilización**. Si el origen responde `304`, no se vuelve a descargar el cuerpo"
+						],
+						[
+							"`private`",
+							"Solo un cache privado (el navegador) puede guardarla"
+						],
+						[
+							"`public`",
+							"Cualquier cache puede guardarla, incluso en casos donde normalmente no se permitiría"
+						],
+						[
+							"`immutable`",
+							"No cambiará mientras esté fresca, así que ni siquiera revalides al recargar"
+						],
+						[
+							"`must-revalidate`",
+							"Nunca sirvas una copia vieja sin una validación exitosa"
+						],
+						[
+							"`stale-while-revalidate=N`",
+							"Durante N segundos después de que termina la frescura, sirve la copia vieja de inmediato y revalida en segundo plano"
+						],
+						[
+							"`stale-if-error=N`",
+							"Sirve la copia vieja si el origen falla (errores 500, 502, 503, 504)"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "`no-cache` NO significa \"no hagas cache\". Significa \"guarda, pero pregunta antes\". La directiva que prohíbe guardar es `no-store`. Ninguna de las dos trata de cifrado: `private` y `public` no son sobre la seguridad de la conexión."
+				},
+				{
+					"type": "heading",
+					"text": "Navegador y CDN pueden tener tiempos distintos"
+				},
+				{
+					"type": "code",
+					"language": "http",
+					"content": "HTTP/1.1 200 OK\nContent-Type: text/css\nCache-Control: max-age=60, s-maxage=600",
+					"caption": "La CDN la guarda 600 s, el navegador 60 s"
+				},
+				{
+					"type": "paragraph",
+					"text": "La CDN (cache compartido) usa `s-maxage`, es decir, 600 s. El navegador (cache privado) lo ignora y usa `max-age`, es decir, 60 s. Esto es útil porque el dueño del sitio puede limpiar (purge) una CDN, pero no puede entrar al navegador de cada visitante."
+				},
+				{
+					"type": "heading",
+					"text": "De dónde sale el tiempo de frescura"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un cache toma el primero de estos que exista, en este orden:"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"`s-maxage` (solo caches compartidos)",
+						"`max-age`",
+						"`Expires` menos `Date`",
+						"Una estimación **heurística**, normalmente una fracción del tiempo desde `Last-Modified` (10% es típico, pero no es una regla)"
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Así, con `Cache-Control: max-age=120` y `Expires` una hora después, un cache privado usa 120 s: `max-age` gana sobre `Expires`."
+				},
+				{
+					"type": "heading",
+					"text": "Age: contar la edad de una copia"
+				},
+				{
+					"type": "paragraph",
+					"text": "El encabezado `Age` dice cuánto tiempo ya estuvo la respuesta en caches anteriores. La edad actual es esa edad inicial más el tiempo que la respuesta lleva en este cache. El tiempo pasado en otros caches se descuenta de la frescura."
+				},
+				{
+					"type": "code",
+					"language": "http",
+					"content": "HTTP/1.1 200 OK\nDate: Tue, 06 Oct 2026 12:00:00 GMT\nCache-Control: max-age=300\nAge: 120",
+					"caption": "Llega a las 12:02:00"
+				},
+				{
+					"type": "paragraph",
+					"text": "El navegador la recibe con edad 120 y un tiempo de frescura de 300, así que sigue fresca por 300 - 120 = **180 segundos** más. Otro ejemplo: un cache compartido guarda `max-age=600, s-maxage=120` con `Age: 30`. Después de 100 s en el cache, la edad es 30 + 100 = 130 y el tiempo de frescura es 120 (`s-maxage`), así que ya está **vieja**."
+				},
+				{
+					"type": "heading",
+					"text": "Validación: preguntar \"¿cambió?\""
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **validador** da nombre a una versión del contenido. El `ETag` es una etiqueta opaca. El `Last-Modified` es una fecha. Una copia vieja se valida así:"
+				},
+				{
+					"type": "diagram",
+					"content": "cache  -> origen : GET /logo.png\n                    If-None-Match: \"v7\"\norigen -> cache  : 304 Not Modified   (sin cuerpo)\n                   -> reutiliza mi copia, actualiza sus encabezados\n   o\norigen -> cache  : 200 OK + cuerpo nuevo  -> reemplaza la copia",
+					"caption": "Solicitud condicional"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con `Last-Modified`, la solicitud usa `If-Modified-Since`. Ante un `304`, el cache mezcla los encabezados nuevos en la respuesta guardada (que vuelve a estar fresca) y sirve el cuerpo que ya tenía. Un ETag que empieza con `W/` es **débil**: significa \"equivalente\", no \"idéntico byte a byte\"."
+				},
+				{
+					"type": "heading",
+					"text": "Vary y Authorization"
+				},
+				{
+					"type": "paragraph",
+					"text": "La misma URL puede devolver cosas distintas, por ejemplo comprimida o no. `Vary: Accept-Encoding` le dice al cache: reutiliza esta respuesta solo para solicitudes cuyo `Accept-Encoding` coincida con el original. Sin `Vary`, un cliente que no acepta gzip podría recibir una página comprimida."
+				},
+				{
+					"type": "paragraph",
+					"text": "Una solicitud con el encabezado `Authorization` suele ser sobre un solo usuario. Un cache compartido no debe reutilizar esa respuesta, a menos que el origen lo permita explícitamente con `public`, `s-maxage` o `must-revalidate`. Por ejemplo, `Cache-Control: public, max-age=300` deja que el proxy la reutilice. Usa esto solo cuando la respuesta sea igual para todos los usuarios autorizados."
+				},
+				{
+					"type": "heading",
+					"text": "Vieja a propósito"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con `Cache-Control: max-age=600, stale-while-revalidate=30`, una solicitud que llega cuando la copia tiene 615 s (15 s después de terminar la frescura, dentro de la ventana de 30 s) puede recibir la copia vieja de inmediato, mientras el cache revalida en segundo plano. El usuario no espera."
+				},
+				{
+					"type": "heading",
+					"text": "Una receta para el despliegue"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un sitio tiene `index.html` (siempre la misma URL) y `app.3f9a1c.js` (el nombre incluye un hash del contenido y cambia en cada despliegue). El script nunca cambia con ese nombre, así que puede guardarse un año. El HTML siempre debe verificarse, porque es el que apunta al nuevo nombre del script."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Archivo",
+						"Cache-Control",
+						"Por qué"
+					],
+					"rows": [
+						[
+							"`index.html`",
+							"`no-cache`",
+							"Siempre revalidar; apunta a los nuevos nombres de archivo"
+						],
+						[
+							"`app.3f9a1c.js`",
+							"`max-age=31536000, immutable`",
+							"Nunca cambia con este nombre; un año, sin revalidar ni siquiera al recargar"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Fresca: edad menor que el tiempo de frescura. Vieja: pregunta al origen (el `304` ahorra el cuerpo). `no-cache` = validar primero. `no-store` = nunca guardar."
+				}
+			]
+		},
+		{
+			"id": "redis-data-structures-persistence",
+			"title": "Estructuras de datos y persistencia de Redis",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Redis es una base de datos que vive en memoria (RAM), lo que la hace muy rápida. Es más que una caja de texto: cada clave puede guardar un **tipo de dato** distinto, y cada tipo tiene comandos hechos para él. Usar el tipo correcto hace que trabaje el servidor, en lugar de tu código."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Tipo",
+						"Qué es",
+						"Uso típico",
+						"Comandos de ejemplo"
+					],
+					"rows": [
+						[
+							"String",
+							"Texto o número",
+							"Una página en cache, un contador",
+							"`SET`, `GET`, `INCR`"
+						],
+						[
+							"List",
+							"Elementos en orden, se agrega y quita en ambos extremos",
+							"Colas",
+							"`LPUSH`, `RPOP`"
+						],
+						[
+							"Hash",
+							"Una pequeña tabla de campos",
+							"Un objeto, como escrituras pendientes",
+							"`HSET`, `HGET`"
+						],
+						[
+							"Set",
+							"Elementos únicos, sin orden",
+							"Etiquetas, quién ya votó",
+							"`SADD`, `SISMEMBER`"
+						],
+						[
+							"Sorted set",
+							"Miembros únicos, cada uno con una puntuación; se mantienen en orden",
+							"Rankings",
+							"`ZADD`, `ZRANGE`"
+						],
+						[
+							"HyperLogLog",
+							"Un resumen diminuto que estima cuántos elementos distintos hay",
+							"Visitantes únicos",
+							"`PFADD`, `PFCOUNT`"
+						]
+					],
+					"caption": "Tipos comunes de Redis"
+				},
+				{
+					"type": "heading",
+					"text": "Ejemplos"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Ranking**: mostrar los 10 mejores jugadores. Un sorted set mantiene los miembros ordenados por puntos. `ZADD` inserta o actualiza; `ZRANGE ... REV` devuelve desde la puntuación más alta.",
+						"**Contador**: `INCR visits` sobre una clave que no existe la trata como 0, guarda 1 y devuelve 1.",
+						"**Visitantes distintos**: decenas de millones por día, un error de cerca de 1% es aceptable, la memoria debe seguir pequeña. Un **HyperLogLog** guarda solo un resumen probabilístico de tamaño acotado. El precio: no puedes listar los visitantes ni preguntar si uno fue visto. Para eso necesitas un set."
+					]
+				},
+				{
+					"type": "code",
+					"language": "sh",
+					"content": "LPUSH jobs a   # lista: [a]\nLPUSH jobs b   # lista: [b, a]\nLPUSH jobs c   # lista: [c, b, a]\nRPOP jobs      # saca por la derecha -> a   (lista: [c, b])",
+					"caption": "Una cola: entra por la izquierda, sale por la derecha (primero en entrar, primero en salir)"
+				},
+				{
+					"type": "heading",
+					"text": "Comandos atómicos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Redis ejecuta un comando completo antes del siguiente. Así que cada comando es **atómico**. Pero una secuencia de comandos enviada por un cliente no lo es. Dos clientes haciendo lo siguiente con `counter` = 10:"
+				},
+				{
+					"type": "code",
+					"language": "sh",
+					"content": "v = GET counter     # leer\nv = v + 1           # calcular en la app\nSET counter v       # escribir",
+					"caption": "Leer, calcular, escribir: es posible una actualización perdida"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ambos pueden leer 10 y ambos escriben 11, así que el valor final es 11 o 12. Se perdió un incremento. La solución es hacer toda la operación en el servidor: `INCR`, o `MULTI`/`EXEC` con `WATCH`, o un script Lua cuando hay varios comandos."
+				},
+				{
+					"type": "heading",
+					"text": "Persistencia: ¿qué sobrevive a un reinicio?"
+				},
+				{
+					"type": "paragraph",
+					"text": "La memoria se borra cuando se va la luz. Redis puede escribir a disco de dos maneras, o de ambas, o de ninguna."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"RDB (snapshot)",
+						"AOF (append-only file)"
+					],
+					"rows": [
+						[
+							"Qué guarda",
+							"Una foto compacta de todos los datos en un instante, cada cierto tiempo",
+							"Un registro de cada escritura, que se repite al reiniciar"
+						],
+						[
+							"Archivo",
+							"Pequeño, carga rápido",
+							"Más grande"
+						],
+						[
+							"Pérdida en una falla",
+							"Todo lo posterior al último snapshot",
+							"Mucho menos"
+						],
+						[
+							"Uso",
+							"Respaldos; un cache donde perder minutos no importa",
+							"Datos que importan"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "El RDB es una fotografía de tu cuarto tomada cada 5 minutos. El AOF es un diario donde anotas cada cosa que mueves. Después de un desorden, la foto te devuelve el cuarto como estaba hace unos minutos. El diario te permite reconstruirlo casi exactamente."
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo: solo RDB. El último snapshot es de las 12:00:00, el siguiente sería a las 12:05:00, y a las 12:03:40 el proceso es eliminado. Al reiniciar, Redis vuelve a las 12:00:00 y pierde 3 min 40 s de escrituras."
+				},
+				{
+					"type": "heading",
+					"text": "AOF y fsync"
+				},
+				{
+					"type": "paragraph",
+					"text": "Escribir en un archivo no es lo mismo que estar a salvo: el sistema operativo retiene los datos en memoria hasta un **fsync**. `appendfsync` elige la frecuencia:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"`always`: sincroniza después de cada lote de comandos. El más seguro, el más lento.",
+						"`everysec`: una vez por segundo. El valor por defecto. Si se va la luz, puede perderse cerca del último segundo de escrituras.",
+						"`no`: decide el sistema operativo."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Si RDB y AOF están activados, al reiniciar Redis reconstruye los datos desde el **AOF**, porque es el más completo. Combinar ambos se recomienda cuando los datos importan."
+				},
+				{
+					"type": "heading",
+					"text": "Snapshots y memoria"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para tomar un snapshot sin detenerse, Redis hace un **fork**: un proceso hijo ve la memoria como era en ese instante y la escribe en un archivo temporal, que reemplaza al anterior al final. El sistema comparte páginas de memoria entre padre e hijo y copia una página solo cuando alguien la modifica. En una instancia con muchas escrituras se copian muchas páginas, así que el uso de memoria puede crecer bastante durante el `BGSAVE`, mucho más que el tamaño de los datos."
+				},
+				{
+					"type": "heading",
+					"text": "Persistencia no es replicación"
+				},
+				{
+					"type": "paragraph",
+					"text": "El `fsync` protege cuando un proceso o máquina vuelve con el mismo disco. Una **réplica** en otra máquina protege contra perder la máquina. Pero la replicación de Redis es **asíncrona** por defecto: un cliente puede recibir `OK` mientras la escritura existe solo en el primario. Si la máquina del primario se destruye justo entonces y se promueve la réplica, esa escritura se pierde, incluso con `appendfsync always`."
+				},
+				{
+					"type": "heading",
+					"text": "¿Un cache necesita persistencia?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Si Redis es un cache puro delante de PostgreSQL con cache-aside, toda escritura va primero a PostgreSQL. Un reinicio solo significa un cache frío. Pero con write-behind, Redis guarda brevemente la **única copia** de algunas escrituras. Un reinicio las pierde. Entonces ya no es solo un cache y necesita persistencia y replicación."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "RDB = fotos, AOF = diario. Un comando es atómico, una secuencia no. Persistencia y replicación resuelven fallas distintas."
+				}
+			]
+		},
+		{
+			"id": "consistency-trade-offs",
+			"title": "Compromisos de consistencia",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un cache cambia **frescura** por **velocidad**. Responde con una copia sin preguntarle a la fuente. Una lectura que devuelve un valor en cache más viejo que el valor actual en la base es una **lectura desactualizada** (stale read)."
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Por qué no podemos actualizar la base y el cache en un solo paso? Son dos sistemas separados. Una transacción normal de base de datos cubre solo la base, no Redis. Entre las dos escrituras siempre hay un pequeño tiempo en que discrepan, y una falla en ese tiempo puede hacer que la diferencia dure. Decimos que son **eventualmente consistentes**: coinciden más tarde, tras la invalidación o el TTL, no en el mismo instante."
+				},
+				{
+					"type": "heading",
+					"text": "La carrera en el cache-aside"
+				},
+				{
+					"type": "paragraph",
+					"text": "La entrada del cache acaba de expirar. El precio en la base es 10. Sigue a los dos actores:"
+				},
+				{
+					"type": "diagram",
+					"content": "tiempo Lector R                 Escritor W\nt1     GET price:7 -> fallo\nt2     SELECT price -> 10\nt3                                 UPDATE price = 12 (commit)\nt4                                 DEL price:7\nt5     SET price:7 = 10",
+					"caption": "Un lector con el valor viejo lo guarda después del borrado"
+				},
+				{
+					"type": "paragraph",
+					"text": "Al final la base tiene 12 y el cache tiene 10. El borrado llegó demasiado pronto y no viene otra invalidación en camino. El valor viejo se queda hasta que termine el TTL, y por eso el TTL es la red de seguridad."
+				},
+				{
+					"type": "heading",
+					"text": "Orden de los pasos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una escritura puede ser (A) actualizar la base y luego borrar la clave, o (B) borrar la clave y luego actualizar la base. Se prefiere el orden A. En B, la ventana dura toda la escritura en la base, y cualquier lectura que falle dentro de ella devuelve el valor viejo al cache. En A, el problema requiere un lector lento que leyó la base antes del commit y escribe en el cache después del borrado. Eso es raro, porque las lecturas suelen ser más rápidas que las escrituras."
+				},
+				{
+					"type": "heading",
+					"text": "Técnicas que reducen valores viejos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ninguna hace atómicos al cache y a la base. Reducen la probabilidad o la duración del dato viejo:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Delayed double delete (doble borrado retrasado)**: borra la clave, actualiza la base, espera un poco y borra la clave otra vez, para eliminar lo que lectores lentos escribieron mientras tanto.",
+						"**Versiones**: guarda una versión con cada valor y rechaza escrituras más antiguas.",
+						"**Invalidación desde el log de cambios**: un proceso aparte observa los cambios de la base y borra las claves, así la aplicación no tiene que acordarse.",
+						"**TTL corto**: limita el peor caso."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Réplicas que se atrasan"
+				},
+				{
+					"type": "paragraph",
+					"text": "Supón que las escrituras van al primario y los fallos del cache se llenan desde una réplica atrasada 2 s. El escritor confirma y borra la clave en t = 0. En t = 0,5 s un lector falla, lee la réplica (que aún dice 'Ana') y la guarda con TTL de 600 s. En t = 2 s la réplica por fin recibe la actualización. El cache conserva 'Ana' unos 600 s. Soluciones: llenar el cache desde el primario después de una escritura, retrasar la invalidación más allá del atraso de la réplica, o invalidar desde el log de cambios."
+				},
+				{
+					"type": "heading",
+					"text": "Escritores concurrentes y write-through"
+				},
+				{
+					"type": "paragraph",
+					"text": "Dos escritores usan write-through, sin lock ni versión. A confirma 4 en la base primero, luego B confirma 3. Pero la escritura de B en el cache llega antes que la de A. La base termina con 3 y el cache con 4, la escritura más vieja. Queda mal hasta la siguiente escritura. Borrar la clave, o usar una versión, evita esto."
+				},
+				{
+					"type": "heading",
+					"text": "Write-behind y escrituras directas en la base"
+				},
+				{
+					"type": "paragraph",
+					"text": "En el write-behind el cache guarda la versión más nueva y la base va atrasada. Si un script actualiza la base directamente entre dos flushes, el cache no lo ve, y el siguiente flush sobrescribe el cambio del script: una **actualización perdida** (lost update), sin error. El write-behind solo funciona si toda escritura pasa por el cache."
+				},
+				{
+					"type": "heading",
+					"text": "Read-your-own-writes"
+				},
+				{
+					"type": "paragraph",
+					"text": "La inconsistencia más molesta es cuando guardas un formulario y la pantalla siguiente muestra el valor viejo. **Read-your-own-writes** (leer tus propias escrituras) promete que un usuario que acaba de escribir ve esa escritura en sus siguientes lecturas. Una forma común: durante un tiempo corto después de la escritura, las lecturas de ese usuario se saltan el cache o van a la base primaria. Los demás aún pueden ver datos un poco más viejos."
+				},
+				{
+					"type": "heading",
+					"text": "¿Qué puede estar viejo?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Pregunta: ¿qué pasa si actúo con un valor atrasado? Un contador de vistas o una lista de productos pueden tener unos segundos de retraso sin daño. El saldo de una cuenta usado para autorizar un retiro no puede estar viejo, o se podría pagar dinero que no existe. Esas lecturas deben ir a la fuente, dentro de la misma transacción que toma la decisión."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Dato",
+						"¿Puede estar viejo?",
+						"Dónde leer"
+					],
+					"rows": [
+						[
+							"Contador de vistas, listados, recomendaciones",
+							"Sí, por segundos",
+							"Cache"
+						],
+						[
+							"Saldo antes de un retiro, stock al comprar, permisos",
+							"No",
+							"La base, en la misma transacción"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Cache y base son eventualmente consistentes. Actualiza primero la base, luego borra la clave. Mantén un TTL como red de seguridad. Las decisiones que no se pueden deshacer leen la fuente."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando todo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Ya viste las piezas. Aquí está cómo encajan, como una lista de verificación para cualquier diseño de cache."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Pregunta",
+						"Herramientas que aprendiste"
+					],
+					"rows": [
+						[
+							"¿Vale la pena un cache?",
+							"Medir la tasa de aciertos; calcular la latencia promedio; revisar el punto de equilibrio"
+						],
+						[
+							"¿Dónde vive la copia?",
+							"Navegador, CDN, en el proceso, Redis, buffer pool"
+						],
+						[
+							"¿Quién la llena y quién la escribe?",
+							"Cache-aside, read-through, write-through, write-behind, write-around, refresh-ahead"
+						],
+						[
+							"¿Cómo sale una copia vieja?",
+							"TTL, invalidación, claves versionadas, soft purge"
+						],
+						[
+							"¿Y si la memoria se llena?",
+							"Descarte: LRU, LFU, FIFO, políticas maxmemory de Redis"
+						],
+						[
+							"¿Y si todos fallan a la vez?",
+							"Lock, refresh anticipado, jitter, filtro de Bloom, cache negativo"
+						],
+						[
+							"¿Cómo hacen cache navegadores y CDN?",
+							"Cache-Control, ETag, 304, Vary, stale-while-revalidate"
+						],
+						[
+							"¿Qué sobrevive a un reinicio?",
+							"RDB, AOF, replicación"
+						],
+						[
+							"¿Qué tan equivocado puede estar?",
+							"Consistencia eventual, ventana del TTL, read-your-own-writes"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Errores comunes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Pensar que `no-cache` significa \"nunca guardar\". Significa \"validar primero\".",
+						"Escribir una clave con `SET` y olvidar que borró el TTL.",
+						"Usar solo un TTL más largo para detener una estampida.",
+						"Guardar páginas personales en un cache compartido.",
+						"Usar write-behind para datos que no pueden perderse.",
+						"Invalidar `product:5` y olvidar las listas y búsquedas que lo contienen.",
+						"Ejecutar `KEYS *` en un Redis grande de producción.",
+						"Añadir un cache sin medir la tasa de aciertos."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un cache es como un cuaderno donde copias respuestas del libro grande. Hace la tarea rápida. Pero tienes que decidir cuándo copiar, cuándo borrar, qué hacer cuando el cuaderno se llena y cómo darte cuenta de que el libro grande cambió."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Todo diseño de cache responde las mismas tres preguntas: qué guardar, cuándo tirarlo y qué tan viejo es aceptable."
+				}
+			]
+		}
+	]
+}

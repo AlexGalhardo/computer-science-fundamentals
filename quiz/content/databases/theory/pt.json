@@ -1,0 +1,917 @@
+{
+	"area": "databases",
+	"intro": [
+		"Um **banco de dados** é uma coleção organizada de fatos que muitas pessoas e programas compartilham: os alunos de uma escola, os produtos de uma loja, as mensagens de um chat. Pense num arquivo enorme e muito bem arrumado. Um **SGBD** (sistema gerenciador de banco de dados) é o bibliotecário desse arquivo. Você nunca vai até as prateleiras. Você pede ao bibliotecário, e ele encontra, guarda, muda ou remove os papéis, mantém tudo em ordem e impede que duas pessoas bagunçem o arquivo ao mesmo tempo.",
+		"Quase todo aplicativo que você usa tem um banco de dados por trás: o saldo do banco, a pontuação do jogo, os vídeos que um site recomenda. O tipo mais comum é o banco **relacional**, que guarda os fatos em tabelas e responde a perguntas feitas numa linguagem chamada **SQL**. Por trás do SQL existe uma teoria pequena e bonita: como descrever os dados, como pedi-los, como desenhar tabelas sem repetir fatos, como manter os dados corretos quando a luz acaba ou quando muita gente usa ao mesmo tempo, e como deixar as perguntas rápidas.",
+		"Neste resumo você vai aprender essas ideias passo a passo, com imagens do dia a dia. Vai conhecer chaves, tabelas, junções, SQL, formas normais, índices, transações, bloqueios e permissões. No fim, você será capaz de ler um esquema pequeno, dizer o que uma consulta devolve, achar uma tabela mal desenhada e explicar por que uma transferência bancária não perde dinheiro no meio do caminho. Use o índice para pular para o assunto que quiser."
+	],
+	"sections": [
+		{
+			"id": "overview-and-architecture",
+			"title": "O que é um sistema de banco de dados e como ele é construído",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine uma escola que guarda o endereço de cada aluno em dois lugares: a secretaria anota num caderno e a cantina anota em outro. Um aluno se muda, a secretaria corrige o seu caderno, e a cantina esquece. Agora a escola tem duas respostas diferentes para a mesma pergunta. Guardar o mesmo fato em vários lugares se chama **redundância**. Quando as cópias deixam de concordar, temos **inconsistência**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um sistema de banco de dados resolve isso colocando os dados num único lugar integrado, compartilhado por todos, e colocando um programa no comando: o [[SGBD|Sistema Gerenciador de Banco de Dados: o software que guarda, protege e responde a perguntas sobre os dados]]. Alguma redundância pode ficar por causa da velocidade, mas aí o próprio SGBD cuida de atualizar todas as cópias."
+				},
+				{
+					"type": "heading",
+					"text": "Três níveis de descrição"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **arquitetura ANSI/SPARC** descreve os mesmos dados em três níveis, como três jeitos de olhar um prédio: a planta, a foto da rua e os canos dentro das paredes."
+				},
+				{
+					"type": "diagram",
+					"content": "  visão do usuário A   visão do usuário B   nível EXTERNO\n       |                |            (o que cada usuário vê)\n       +--- mapeamento -+\n                |\n        esquema conceitual            nível CONCEITUAL\n                |               (todos os dados, logicamente)\n          mapeamento\n                |\n         esquema interno              nível INTERNO\n                         (arquivos, índices, ordem física)",
+					"caption": "Três níveis e os mapeamentos entre eles. O nível interno é o que descreve como os dados são armazenados fisicamente."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Nível externo**: a visão de cada usuário ou programa. Podem existir muitas visões diferentes.",
+						"**Nível conceitual**: uma descrição lógica comum de todo o banco de dados.",
+						"**Nível interno**: como os dados são guardados fisicamente: formatos dos registros armazenados, índices, ordem física.",
+						"Os **mapeamentos** traduzem entre os níveis, de modo que uma mudança em um nível pode ser absorvida sem mexer nos outros."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Independência de dados"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Independência de dados** quer dizer que os programas não quebram quando muda a forma de guardar ou de organizar os dados. Sem ela, cada programa conheceria o formato exato do arquivo e pararia de funcionar quando alguém o mudasse. Existem dois tipos:"
+				},
+				{
+					"type": "table",
+					"headers": ["Tipo", "O que muda", "O que fica protegido", "Qual mapeamento faz o trabalho"],
+					"rows": [
+						["Física", "O nível interno, por exemplo um índice novo ou um arquivo reorganizado", "O esquema conceitual e os programas", "conceitual/interno"],
+						["Lógica", "O nível conceitual, por exemplo uma tabela dividida em duas", "As visões dos usuários e os programas", "externo/conceitual"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Exemplo de independência lógica: a tabela `EMP` é dividida em `EMP_PESSOAL` e `EMP_SALARIO`. Uma **visão** (view) chamada `EMP` que junta as duas tabelas deixa os programas antigos funcionando. As consultas ficam totalmente protegidas. As atualizações só funcionam se a visão for atualizável, porque nem toda mudança numa visão pode ser traduzida de um único jeito para as tabelas reais. Criar um índice, por outro lado, é uma mudança física: só mudam o esquema interno e o mapeamento conceitual/interno."
+				},
+				{
+					"type": "heading",
+					"text": "Linguagens, catálogo e pessoas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"A **DDL** (linguagem de definição de dados) descreve os objetos: `CREATE TABLE` é um comando DDL.",
+						"A **DML** (linguagem de manipulação de dados) trabalha sobre o conteúdo: `SELECT`, `INSERT`, `UPDATE`, `DELETE`.",
+						"O **catálogo** guarda os metadados, que são dados sobre os dados: tabelas, colunas, restrições, usuários. Num sistema relacional o próprio catálogo é feito de tabelas, então você o consulta com a mesma linguagem usada para os dados comuns.",
+						"O **administrador de dados (DA)** decide quais dados a organização guarda e as políticas sobre eles. O **administrador do banco de dados (DBA)** é o profissional técnico que implementa essas decisões: esquemas, segurança, recuperação e ajuste de desempenho."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Três níveis (externo, conceitual, interno) mais mapeamentos dão independência de dados. O DA decide o quê e por quê, o DBA faz o como. O catálogo é feito de tabelas comuns."
+				}
+			]
+		},
+		{
+			"id": "relational-model",
+			"title": "O modelo relacional: tabelas, chaves e integridade",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma lista de chamada em papel tem uma linha de título (nome, número, nota) e uma linha para cada aluno. O modelo relacional transforma essa imagem em palavras precisas. Uma **relação** é a tabela. O seu **cabeçalho** é o conjunto dos nomes das colunas, chamadas **atributos**. O seu **corpo** é o conjunto das linhas, chamadas **tuplas**. O **grau** é quantos atributos existem, e a **cardinalidade** é quantas tuplas existem neste momento."
+				},
+				{
+					"type": "table",
+					"headers": ["Palavra no modelo", "Palavra do dia a dia", "Exemplo"],
+					"rows": [
+						["Relação", "Tabela", "`EMP`"],
+						["Atributo", "Coluna", "`salario`"],
+						["Tupla", "Linha", "um empregado"],
+						["Grau", "Número de colunas", "5 atributos, então grau 5"],
+						["Cardinalidade", "Número de linhas", "12 tuplas, então cardinalidade 12"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Como uma relação é feita de **conjuntos**, ela tem quatro propriedades: não há duas tuplas iguais, as tuplas não têm ordem, os atributos não têm ordem, e cada atributo guarda um único valor em cada tupla. Uma tabela no papel é só um desenho de uma relação, e a ordem em que você vê as linhas não significa nada. Cada atributo é declarado sobre um **domínio**, que é o mesmo que um tipo de dado: o conjunto de valores que ele pode assumir."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "As tuplas não ficam na ordem em que foram inseridas. Se você precisa de uma ordem, tem de pedi-la na consulta."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um ponto pequeno mas importante, de Date: um **valor** de relação nunca muda, assim como o número 5 nunca muda. O que muda é a variável que guarda o valor. Essa variável se chama **relvar** (variável de relação). Quando alguém diz 'atualizar uma relação', na verdade está colocando um valor novo numa relvar."
+				},
+				{
+					"type": "heading",
+					"text": "Chaves"
+				},
+				{
+					"type": "paragraph",
+					"text": "Como distinguir dois alunos que têm o mesmo nome? Com uma chave. Uma **superchave** é qualquer conjunto de atributos cujos valores são únicos em cada tupla. Uma **chave candidata** é uma superchave sem nada sobrando: se você tirar qualquer atributo, ela deixa de ser única. Uma relação pode ter várias chaves candidatas. Uma é escolhida como **chave primária**, e as outras são as **chaves alternativas**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Truque de contagem: toda superchave é um conjunto que contém alguma chave candidata. Se `MATRICULA(aluno, disciplina, nota)` tem a única chave candidata `{aluno, disciplina}`, o único atributo livre é `nota`. Você pode acrescentá-lo ou não, então existem exatamente 2 superchaves: `{aluno, disciplina}` e `{aluno, disciplina, nota}`."
+				},
+				{
+					"type": "paragraph",
+					"text": "Toda relação tem pelo menos uma chave candidata. O motivo: não há tuplas duplicadas, então o conjunto de todos os atributos é sempre único, e tirar dele os atributos desnecessários deixa uma chave candidata. Tabelas SQL que aceitam linhas duplicadas perdem essa garantia."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Uma chave é uma regra sobre todos os valores que a relação pode vir a ter, e não algo que se enxerga nas linhas de hoje. Se duas tuplas concordam em `X`, então `X` com certeza não é chave. Mas se ninguém se repete na amostra de hoje, ainda assim você não pode afirmar que `X` é chave. Isso vem do significado dos dados."
+				},
+				{
+					"type": "heading",
+					"text": "Regras de integridade"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Integridade de entidade**: nenhum componente da chave primária de uma relação base pode ser nulo. Senão haveria uma coisa registrada sem identidade conhecida.",
+						"**Integridade referencial**: uma **chave estrangeira** é um conjunto de atributos cujos valores devem casar com uma chave candidata de outra relação, ou da mesma relação. Todo valor não nulo da chave estrangeira precisa existir como valor da chave referenciada. A regra é verificada ao inserir na relação que referencia e ao remover ou alterar a tupla referenciada.",
+						"Uma chave estrangeira pode apontar para a própria relação. Em `EMP(eno, nome, gerente_eno)`, o atributo `gerente_eno` pode referenciar o `eno` da própria `EMP`: o gerente também é um empregado."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Quando uma linha referenciada é removida, uma **ação referencial** diz o que o SGBD faz com as linhas que apontam para ela:"
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "CREATE TABLE emp (\n\teno CHAR(3) PRIMARY KEY,\n\tdno CHAR(2) NOT NULL\n\t\tREFERENCES dept (dno) ON DELETE CASCADE\n);\n-- DELETE FROM dept WHERE dno = 'D1'\n-- também remove todo empregado de D1 (CASCADE).\n-- RESTRICT / NO ACTION recusariam; SET NULL / SET DEFAULT\n-- mudariam a chave estrangeira em vez de remover.",
+					"caption": "ON DELETE CASCADE: remover o departamento leva os seus empregados junto"
+				},
+				{
+					"type": "heading",
+					"text": "Restrições por escopo, e o valor que falta"
+				},
+				{
+					"type": "paragraph",
+					"text": "Date classifica as restrições de integridade pelo quanto é preciso examinar para verificá-las: uma restrição de **tipo** olha um valor, uma restrição de **atributo** olha o tipo de um atributo, uma restrição de **variável de relação** olha uma relvar, e uma restrição de **banco de dados** olha duas ou mais relvars. 'O salário de um empregado não pode ser maior que o orçamento do seu departamento' menciona `EMP` e `DEPT`, então é uma restrição de banco de dados. A integridade referencial é a restrição de banco de dados mais conhecida."
+				},
+				{
+					"type": "paragraph",
+					"text": "Às vezes um valor é desconhecido. O SQL o marca com `NULL` e usa **lógica de três valores**: uma condição pode ser verdadeira, falsa ou **desconhecida**. Qualquer comparação com `NULL` é desconhecida, e o `WHERE` só guarda as linhas em que a condição é verdadeira."
+				},
+				{
+					"type": "table",
+					"headers": ["linha de emp", "salario", "salario > 1000 OR salario <= 1000"],
+					"rows": [
+						["linha 1", "800", "verdadeira"],
+						["linha 2", "1500", "verdadeira"],
+						["linha 3", "2000", "verdadeira"],
+						["linha 4", "3000", "verdadeira"],
+						["linha 5", "NULL", "desconhecida, então a linha é descartada"]
+					],
+					"caption": "Numa tabela de 5 linhas com um salário NULL, COUNT(*) com essa condição devolve 4"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Relação = cabeçalho + corpo de tuplas. Chave candidata = única e irredutível. A integridade de entidade protege a chave primária, a integridade referencial protege as chaves estrangeiras. NULL deixa as condições desconhecidas, e linhas desconhecidas não passam no WHERE."
+				}
+			]
+		},
+		{
+			"id": "semantic-modelling-and-entity-relationship",
+			"title": "Projetar antes de construir: entidades e relacionamentos",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Antes de construir uma casa você desenha uma planta. Antes de construir um banco de dados você também desenha uma planta, e a mais famosa é o **diagrama entidade-relacionamento (E/R)**. Uma **entidade** é uma coisa que queremos lembrar (um aluno, uma disciplina). Um **relacionamento** liga entidades (um aluno cursa uma disciplina). Os dois podem ter **atributos**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Na notação original de Chen, retângulos são entidades, **losangos são relacionamentos** e elipses são atributos. As linhas levam a cardinalidade (1 ou M)."
+				},
+				{
+					"type": "diagram",
+					"content": "+--------------+          /\\          +-----------+\n| DEPARTAMENTO |--1----- <  > ---M--| EMPREGADO |\n+--------------+          \\/          +-----------+\n                         tem\n\nretângulo = entidade    losango = relacionamento",
+					"caption": "Um departamento tem muitos empregados, cada empregado tem um departamento"
+				},
+				{
+					"type": "heading",
+					"text": "Cardinalidade"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **cardinalidade** de um relacionamento diz quantas ocorrências de uma entidade se ligam a uma ocorrência da outra. Para descobrir, leia o relacionamento nos dois sentidos: quantos empregados tem um departamento? Muitos. Quantos departamentos tem um empregado? Um. Então o relacionamento é **um-para-muitos**. Os três tipos são um-para-um, um-para-muitos e muitos-para-muitos."
+				},
+				{
+					"type": "table",
+					"headers": ["Tipo", "Exemplo", "Como vira tabelas"],
+					"rows": [
+						["Um-para-muitos", "departamento e empregados", "colocar uma chave estrangeira com o número do departamento na tabela do lado 'muitos' (`EMPREGADO`)"],
+						["Muitos-para-muitos", "alunos e disciplinas", "criar uma terceira tabela com chaves estrangeiras para as duas entidades, mais os atributos do relacionamento"],
+						["Um-para-um", "pessoa e passaporte", "uma chave estrangeira em qualquer um dos lados, declarada única"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Por que uma terceira tabela no muitos-para-muitos? Uma chave estrangeira guarda um único valor, então só consegue apontar para o lado 'um'. Um aluno cursa muitas disciplinas e uma disciplina tem muitos alunos, então nenhuma das duas tabelas consegue guardar a ligação. A nova tabela se chama relação associativa. No lado 'um' nada é guardado: para achar os empregados de um departamento você consulta `EMPREGADO` pela chave estrangeira."
+				},
+				{
+					"type": "paragraph",
+					"text": "Relacionamentos podem ter atributos próprios, quando um fato só faz sentido para o par. A nota `nota` pertence ao relacionamento `MATRICULA`, e não ao aluno nem à disciplina sozinhos, porque `{aluno, disciplina}` a determina e nenhum dos dois sozinho a determina."
+				},
+				{
+					"type": "heading",
+					"text": "Entidades fracas e subtipos"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Uma **entidade fraca** depende de outra entidade para existir. Se a dona sai, a fraca sai junto. Os dependentes de um empregado, ou as linhas de um pedido, são exemplos. Nas tabelas, a chave da entidade fraca normalmente inclui a chave da dona.",
+						"No modelo E/R estendido, um **supertipo** e os seus **subtipos** expressam 'é um'. Todo `ENGENHEIRO` é um `EMPREGADO` e herda os seus atributos. Um projeto comum é uma tabela para o supertipo e uma para cada subtipo, em que a chave primária do subtipo também é chave estrangeira para o supertipo."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "A armadilha ternária"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um relacionamento **ternário** liga três entidades num só fato: 'o fornecedor F entrega a peça P ao projeto J'. É tentador trocá-lo por três relacionamentos binários (fornecedor-peça, peça-projeto, projeto-fornecedor). Mas três fatos mais fracos não somam o único fato forte: juntá-los pode inventar combinações que nunca aconteceram. Esse erro é a **armadilha de conexão**. A troca só é segura quando a tabela ternária satisfaz uma dependência de junção sobre as suas três projeções, que é o assunto da quinta forma normal."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Saber que Ana gosta de pizza, que a pizza é vendida na pizzaria do Luigi e que Ana já foi à pizzaria do Luigi não diz que Ana comeu pizza lá. Três fatos pequenos não são o fato grande."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Retângulo = entidade, losango = relacionamento. Um-para-muitos: chave estrangeira no lado muitos. Muitos-para-muitos: uma terceira tabela. Atributos do par moram no relacionamento."
+				}
+			]
+		},
+		{
+			"id": "relational-algebra",
+			"title": "Álgebra relacional: fazer contas com tabelas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Na aritmética você pega números e faz números novos com `+` e `×`. Na **álgebra relacional** você pega relações (tabelas) e faz relações novas com operadores. A regra importante é o **fechamento**: o resultado de todo operador é de novo uma relação. Por isso dá para encaixar operadores uns nos outros, como uma projeção de uma seleção de uma junção."
+				},
+				{
+					"type": "table",
+					"headers": ["Operador", "Símbolo", "Parente no SQL", "O que faz"],
+					"rows": [
+						["Seleção (restrição)", "σ", "`WHERE`", "guarda as tuplas que satisfazem uma condição, com todos os atributos"],
+						["Projeção", "π", "a lista do `SELECT`", "guarda alguns atributos de cada tupla"],
+						["União, interseção, diferença", "∪ ∩ −", "`UNION`, `INTERSECT`, `EXCEPT`", "operações de conjuntos sobre tuplas"],
+						["Produto cartesiano", "×", "`CROSS JOIN`", "cada tupla de uma com cada tupla da outra"],
+						["Junção natural", "⋈", "`JOIN`", "emparelha tuplas que concordam nos atributos de mesmo nome"],
+						["Divisão", "÷", "`NOT EXISTS` duplo", "responde perguntas do tipo 'para todos'"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Seleção e projeção"
+				},
+				{
+					"type": "diagram",
+					"content": "FORNECEDOR            pi cidade (FORNECEDOR)\nfno | cidade           cidade\nF1  | Lisboa    --->  Lisboa\nF2  | Porto           Porto\nF3  | Lisboa           Faro\nF4  | Faro\nF5  | Porto         3 tuplas, não 5",
+					"caption": "Depois de tirar fno, tuplas iguais viram uma só: uma relação é um conjunto"
+				},
+				{
+					"type": "paragraph",
+					"text": "A seleção corta linhas, a projeção corta colunas. A projeção pode tornar tuplas diferentes iguais, e como uma relação é um conjunto, as repetidas aparecem uma vez só. O SQL é diferente: ele mantém as linhas repetidas, a menos que você escreva `DISTINCT`."
+				},
+				{
+					"type": "heading",
+					"text": "União, interseção e diferença"
+				},
+				{
+					"type": "paragraph",
+					"text": "Essas vêm da teoria dos conjuntos, mas o resultado ainda precisa ser uma relação. Então as duas entradas precisam ter o mesmo cabeçalho (mesmos atributos e tipos). Isso se chama **compatibilidade de união**. Unir fornecedores com peças daria tuplas de formatos diferentes."
+				},
+				{
+					"type": "paragraph",
+					"text": "A diferença responde 'está em A e não está em B'. Com `A = {1, 2, 3, 4}` e `B = {3, 4, 5}`, `A − B = {1, 2}`. Ao contrário da união e da interseção, ela **não é comutativa**: `B − A = {5}`. A interseção nem é primitiva: `A ∩ B = A − (A − B)`."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Para 'alunos que NÃO estão matriculados em D1', não selecione `dno ≠ 'D1'`. Isso só acha matrículas que não são de D1, então um aluno matriculado em D1 e D2 ainda apareceria. A forma certa é a diferença: todos os alunos menos os alunos que têm matrícula em D1, isto é, `π aid (ALUNO) − π aid (σ dno = 'D1' (MATRICULA))`."
+				},
+				{
+					"type": "heading",
+					"text": "Produto e junção"
+				},
+				{
+					"type": "paragraph",
+					"text": "O **produto cartesiano** `R × S` emparelha cada tupla de R com cada tupla de S. Cada tupla do resultado é as duas coladas, então o **grau é a soma** dos graus e a **cardinalidade é o produto** das cardinalidades. Se R tem grau 3 e 4 tuplas, e S tem grau 2 e 5 tuplas, o produto tem grau 5 e 20 tuplas."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **junção natural** guarda só os pares que concordam nos atributos comuns, e escreve o atributo comum uma vez só. Tuplas sem par desaparecem."
+				},
+				{
+					"type": "diagram",
+					"content": "EMP            DEPT              EMP junção DEPT\neno dno        dno cidade        eno dno cidade\nE1  D1        D1  Lima          E1  D1  Lima\nE2  D1        D2  Quito         E2  D1  Lima\nE3  D2        D4  Bogota        E3  D2  Quito\nE4  D3\n\nE4 procura D3: sem par.   Ninguém procura D4.\nResultado: 3 tuplas.",
+					"caption": "Junção natural em dno"
+				},
+				{
+					"type": "paragraph",
+					"text": "Dois casos extremos mostram que produto e interseção são casos especiais da junção. Com **nenhum** atributo em comum, todo par é aceito, então a junção é o produto cartesiano. Com **todos** os atributos em comum, só tuplas idênticas se emparelham, então a junção é a interseção `R ∩ S`."
+				},
+				{
+					"type": "heading",
+					"text": "Divisão"
+				},
+				{
+					"type": "paragraph",
+					"text": "A divisão responde perguntas do tipo 'para todos': quais fornecedores fornecem todas as peças de `P`? `FP ÷ P` devolve os valores de `fno` que aparecem em `FP` junto com cada `pno` de `P`. Peças a mais não importam. Uma peça faltando elimina o fornecedor."
+				},
+				{
+					"type": "diagram",
+					"content": "FP            P        FP / P\nfno pno       pno      fno\nF1  P1        P1       F1   (tem P1, P2)\nF1  P2        P2       F2   (tem P1, P2)\nF1  P3\nF2  P1        F3 tem P2 e P3 mas não P1: fora\nF2  P2\nF3  P2\nF3  P3",
+					"caption": "Fornecedores que fornecem todas as peças listadas em P"
+				},
+				{
+					"type": "heading",
+					"text": "Leis que o otimizador adora"
+				},
+				{
+					"type": "paragraph",
+					"text": "A seleção decide cada tupla sozinha, então ela se distribui sobre união, interseção e diferença. A projeção se distribui sobre a união, mas **não** sobre a diferença nem sobre a interseção, porque tirar atributos pode fazer tuplas diferentes coincidirem. Por exemplo, `π A (R − S)` nem sempre é `π A (R) − π A (S)`. Regras assim permitem ao SGBD reescrever uma consulta numa igual mais rápida."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Fechamento: entram relações, sai uma relação. União, interseção e diferença exigem o mesmo cabeçalho. Produto: graus somam, cardinalidades multiplicam. Perguntas 'não existe' usam diferença, perguntas 'para todos' usam divisão."
+				}
+			]
+		},
+		{
+			"id": "relational-calculus-and-sql",
+			"title": "Cálculo e SQL: dizer o que você quer",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Há duas maneiras de pedir um sanduíche a um amigo. Você pode dar uma receita: 'pegue duas fatias, passe manteiga, ponha queijo'. Ou pode descrever o resultado: 'quero um sanduíche com queijo'. A álgebra relacional é a receita: operadores aplicados passo a passo. O **cálculo relacional** é a descrição: ele diz uma condição que as tuplas do resultado precisam satisfazer, usando lógica de predicados. Os dois têm o mesmo poder, então um SGBD pode aceitar uma descrição e transformá-la em álgebra por dentro."
+				},
+				{
+					"type": "table",
+					"headers": ["Versão", "Uma variável representa", "Parente próximo"],
+					"rows": [
+						["Cálculo relacional de tuplas", "uma tupla inteira de uma relação, acessada como `F.cidade`", "SQL"],
+						["Cálculo relacional de domínios", "um único valor de um domínio", "QBE (consulta por exemplo)"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Os dois quantificadores se ligam pela negação: `FORALL x (p)` é o mesmo que `NOT EXISTS x (NOT p)`. O SQL tem `EXISTS` e não tem `FORALL`, então uma consulta 'para todos' usa duas negações. 'Alunos matriculados em TODAS as disciplinas' vira: alunos para os quais não existe disciplina em que eles não estejam matriculados."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "SELECT a.nome FROM aluno a\nWHERE NOT EXISTS (\n\tSELECT * FROM disciplina d\n\tWHERE NOT EXISTS (\n\t\tSELECT * FROM matricula m\n\t\tWHERE m.aid = a.aid AND m.did = d.did));",
+					"caption": "O NOT EXISTS de fora procura um contraexemplo, o de dentro verifica que a matrícula falta"
+				},
+				{
+					"type": "heading",
+					"text": "A ordem em que o SQL realmente pensa"
+				},
+				{
+					"type": "paragraph",
+					"text": "Você escreve o `SELECT` primeiro, mas o SGBD pensa em outra ordem: o `FROM` monta as linhas, o `WHERE` joga linhas fora, o `GROUP BY` forma grupos, o `HAVING` joga grupos fora, e só então a lista do `SELECT` é calculada. Assim, o `WHERE` filtra **linhas** e o `HAVING` filtra **grupos**."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "-- pedido(cliente, valor): (A,10) (A,30) (B,50)\n--                       (C,5)  (C,5)  (C,15)\nSELECT cliente\nFROM pedido\nGROUP BY cliente\nHAVING SUM(valor) > 30;\n-- A: 40, B: 50, C: 25  ->  A e B",
+					"caption": "O HAVING olha a soma do grupo inteiro"
+				},
+				{
+					"type": "heading",
+					"text": "Onde o SQL se afasta do modelo"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Multiconjuntos, não conjuntos.** Uma tabela de 5 fornecedores em 3 cidades dá 5 linhas para `SELECT cidade FROM fornecedor`. As repetições só somem com `SELECT DISTINCT`.",
+						"**Agregações ignoram NULL.** `SUM`, `AVG`, `MAX`, `MIN` e `COUNT(coluna)` ignoram nulos. Só `COUNT(*)` conta linhas. Para bônus 10, 20, NULL, 30, `AVG(bonus)` é 20 (três valores), e não 15.",
+						"**NOT IN e NULL.** `x NOT IN (lista)` significa `x <> v1 AND x <> v2 AND ...`. Se a lista contém um `NULL`, um termo é sempre desconhecido, a condição inteira nunca é verdadeira, e a consulta não devolve nenhuma linha. Use `NOT EXISTS`, ou tire os nulos da subconsulta."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Visões"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **visão** é uma tabela virtual: o catálogo guarda só a consulta que a define. Quando você consulta a visão, o SGBD troca o nome dela pela definição. Assim a visão sempre mostra os dados atuais: se um produto novo de preço 500 é inserido, a visão `caros` (produtos acima de 100) o mostra na hora."
+				},
+				{
+					"type": "paragraph",
+					"text": "Atualizar através de uma visão é mais difícil. Uma linha de uma visão que faz a média de salários por departamento resume muitas linhas de `emp`, então `UPDATE media_depto SET media = 5000` não tem uma única tradução para as linhas-base, e o SGBD o rejeita."
+				},
+				{
+					"type": "heading",
+					"text": "Completude relacional"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma linguagem é **relacionalmente completa** quando consegue expressar toda consulta que o cálculo relacional expressa. A álgebra e o cálculo cumprem esse mínimo, e o SQL também. É só um mínimo: perguntas recursivas, como 'todos os componentes de uma peça em qualquer profundidade', ficam de fora."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "O cálculo diz o quê, a álgebra diz como. O SQL mantém duplicatas, ignora NULL nas agregações, e NOT IN com um NULL não devolve nada. O WHERE filtra linhas, o HAVING filtra grupos."
+				}
+			]
+		},
+		{
+			"id": "functional-dependencies-and-normalisation",
+			"title": "Dependências funcionais e formas normais",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Olhe uma tabela que guarda, em cada linha, o pedido, o produto, a quantidade e também o nome do produto. O nome do produto 7 é escrito de novo em toda linha que menciona o produto 7. Isso gasta espaço e, pior, quando o nome muda você precisa consertar muitas linhas. A **normalização** é o remédio: dividir a tabela para que cada fato seja escrito uma vez só."
+				},
+				{
+					"type": "heading",
+					"text": "Dependência funcional"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **dependência funcional** `X → Y` vale quando duas tuplas que concordam em `X` sempre concordam em `Y`. `X` é o **determinante**. Como um CEP que determina a cidade: mesmo CEP, mesma cidade. É uma regra sobre o significado dos dados, então precisa valer em todo valor válido da relação."
+				},
+				{
+					"type": "paragraph",
+					"text": "As inferências válidas vêm das **regras de Armstrong**: reflexividade, aumento e transitividade. Você pode dividir o lado direito à vontade (`A → BC` dá `A → B` e `A → C`). Você **não** pode encolher o lado esquerdo: de `AB → C` não se conclui `A → C`, porque isso é uma afirmação mais forte que pode ser falsa."
+				},
+				{
+					"type": "heading",
+					"text": "Fecho, chaves e coberturas"
+				},
+				{
+					"type": "paragraph",
+					"text": "O **fecho** `X+` é tudo o que `X` determina. Comece com `X` e vá acrescentando o lado direito de toda dependência cujo lado esquerdo já está dentro, até nada mudar. Se `X+` é a relação inteira, `X` é uma superchave."
+				},
+				{
+					"type": "diagram",
+					"content": "F = { A -> B,  B -> C,  CD -> E }\n\n{A}+ :  {A}  --A->B-->  {A,B}  --B->C-->  {A,B,C}\n                                CD -> E precisa de D: pare\n\nresultado: {A}+ = {A, B, C}",
+					"caption": "Calculando um fecho passo a passo"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Um atributo que aparece em **nenhum lado direito** nunca pode ser derivado, então pertence a toda chave candidata. Em `R(A, B, C, D)` com `A → B` e `B → C`, `A` e `D` são esses atributos, e `{A, D}+` é tudo, então `{A, D}` é a única chave candidata.",
+						"Para `R(A, B, C, D)` com `AB → C`, `C → D`, `D → A`, o atributo obrigatório é `B`. Testando os outros, saem três chaves irredutíveis: `{A, B}`, `{B, C}` e `{B, D}`.",
+						"Uma dependência **redundante** pode ser derivada das demais. Em `{A → B, B → C, A → C}`, a dependência `A → C` sai, porque `{A}+` sem ela já contém `C`. O conjunto limpo se chama cobertura irredutível (mínima)."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "A escada das formas normais"
+				},
+				{
+					"type": "table",
+					"headers": ["Forma", "Requisito", "O que a quebra"],
+					"rows": [
+						["1FN", "um único valor por atributo em cada tupla", "um grupo repetido, como telefone1, telefone2, telefone3"],
+						["2FN", "1FN, e nenhum atributo não chave depende de apenas parte de uma chave candidata", "uma dependência parcial: em `ITEM(pedido, produto, qtd, nome_produto)` o nome depende só de `produto`"],
+						["3FN", "2FN, e nenhum atributo não chave depende de outro atributo não chave", "uma cadeia transitiva `eno → dno → cidade_depto`"],
+						["FNBC", "todo determinante é uma chave candidata", "qualquer determinante que não seja chave"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Para achar a maior forma normal, suba de baixo para cima e pare na primeira falha. `ITEM` cumpre a 1FN mas falha na 2FN. Uma relação em 1FN cuja chave tem um único atributo já está automaticamente em 2FN. Para uma cadeia transitiva, decomponha em `EMP(eno, dno)` e `DEPT(dno, cidade_depto)`."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma relação que mistura dois assuntos sofre três **anomalias**. **Inserção**: não dá para registrar a cidade de um fornecedor até que ele forneça uma peça. **Remoção**: apagar o último fornecimento de um fornecedor apaga também a cidade. **Modificação**: o mesmo fato repetido em muitas linhas precisa ser mudado em todas."
+				},
+				{
+					"type": "heading",
+					"text": "3FN contra FNBC"
+				},
+				{
+					"type": "paragraph",
+					"text": "Elas só diferem quando há chaves candidatas compostas que se sobrepõem. Tome `AULA(aluno, disciplina, professor)` com `{aluno, disciplina} → professor` e `professor → disciplina`. As chaves são `{aluno, disciplina}` e `{aluno, professor}`. A dependência `professor → disciplina` tem determinante que não é chave, mas um atributo primo (de chave) no lado direito. A 3FN tolera isso, a FNBC não. Então `AULA` está em 3FN, mas não em FNBC."
+				},
+				{
+					"type": "diagram",
+					"content": "AULA(aluno, disciplina, professor)\n   aluno, disciplina -> professor     professor -> disciplina\n\nFNBC:  R1(professor, disciplina)   R2(aluno, professor)\nsem perda: sim\nperdida:   aluno, disciplina -> professor (fica em duas tabelas)",
+					"caption": "O preço clássico da FNBC: nenhuma tabela guarda a primeira dependência inteira"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma boa decomposição é **sem perda** (juntar as partes devolve exatamente o original, sem tuplas inventadas) e **preserva as dependências** (cada dependência pode ser verificada dentro de uma parte). Uma decomposição em 3FN com as duas qualidades sempre existe. Em FNBC sempre existe uma sem perda, mas uma dependência pode se perder. O **teorema de Heath** dá um caso seguro: se `R(A, B, C)` satisfaz `A → B`, então `R(A, B)` e `R(A, C)` se juntam de volta em `R`."
+				},
+				{
+					"type": "heading",
+					"text": "Formas superiores: 4FN e 5FN"
+				},
+				{
+					"type": "paragraph",
+					"text": "Há redundância que não tem dependência funcional por trás. Em `OFERTA(curso, professor, livro)`, os professores de um curso e os livros de um curso são independentes, então todo professor precisa ser listado com todo livro. Isso é uma **dependência multivalorada** `curso →→ professor`. A relação está em FNBC, porque a única chave são os três atributos, mas **não está em 4FN**. A solução são duas tabelas: `curso, professor` e `curso, livro`."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **dependência de junção** diz que uma relação pode ser reconstruída juntando algumas projeções. Com duas projeções ela é igual a uma dependência multivalorada. Algumas relações só se decompõem sem perda em três ou mais pedaços, e a **5FN** (forma normal de projeção-junção) trata delas. É a última forma quando só se usam projeção e junção."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "O fecho é a ferramenta por trás de chaves e formas normais. Suba 1FN, 2FN, 3FN, FNBC e pare na primeira falha. A 3FN sempre preserva dependências, a FNBC pode perder uma. Dependência multivalorada quebra a 4FN, dependência de junção quebra a 5FN."
+				}
+			]
+		},
+		{
+			"id": "query-optimisation-and-indexes",
+			"title": "Deixar as consultas rápidas: otimizador e índices",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Quando você pede a um táxi para ir ao aeroporto, não escolhe as ruas. Uma consulta SQL é igual: ela diz o que você quer, não como achar. Dentro do SGBD, o **otimizador de consultas** é o motorista que escolhe o caminho. Ele reescreve a consulta em outras iguais, lista os jeitos possíveis de executá-la (ler a tabela inteira, usar um índice, qual método de junção), estima o custo de cada um com as **estatísticas** do catálogo e escolhe um plano barato. Essa escolha automática é o que torna a independência de dados prática."
+				},
+				{
+					"type": "heading",
+					"text": "Corte primeiro"
+				},
+				{
+					"type": "paragraph",
+					"text": "O truque mais conhecido: aplicar as seleções o mais cedo possível, e as projeções também. Se você junta duas tabelas grandes e só depois fica com uma cidade, a junção trabalha com tudo. Se você fica com a cidade primeiro, a junção recebe bem menos linhas. Os dois planos dão a mesma resposta por causa das leis da álgebra, mas não o mesmo custo."
+				},
+				{
+					"type": "diagram",
+					"content": "plano lento                 plano rápido\n\n  seleção cidade = X          junção\n       |                     /    \\\n     junção            seleção     \\\n    /    \\             cidade = X   \\\n  R        S              |          S\n                          R",
+					"caption": "O mesmo resultado, mas o plano certo junta menos linhas"
+				},
+				{
+					"type": "heading",
+					"text": "Índices"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **índice** é a lista no fim de um livro: leva de um valor às páginas onde ele aparece. As buscas ficam mais rápidas, mas toda inserção, atualização ou remoção também precisa consertar o índice, e o índice ocupa espaço. Essa é a troca: **busca mais rápida, atualização mais lenta**. Por isso se indexam colunas muito buscadas e pouco alteradas."
+				},
+				{
+					"type": "table",
+					"headers": ["Índice", "Igualdade `= 15`", "Intervalo `BETWEEN 10 AND 20`", "Ordem, prefixo"],
+					"rows": [
+						["Árvore B", "sim, tempo logarítmico", "sim, as chaves ficam em ordem", "sim"],
+						["Hash", "sim, muito rápido", "não, valores próximos caem longe um do outro", "não"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Três jeitos de juntar"
+				},
+				{
+					"type": "table",
+					"headers": ["Algoritmo", "Ideia", "Quais condições", "Custo"],
+					"rows": [
+						["Laço aninhado", "para cada linha de R, varre todo S", "qualquer condição (`<`, `<>`, uma função)", "n vezes m"],
+						["Junção por hash", "coloca S em baldes pela chave e consulta com cada linha de R", "só igualdade", "cerca de n mais m"],
+						["Junção por ordenação e fusão", "ordena os dois e percorre juntos", "igualdade (e condições ordenadas)", "n log n mais m log m, depois n mais m"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Com 1.000 linhas em R e 10.000 em S, o laço aninhado faz 1.000 × 10.000 = 10.000.000 de comparações. O hash faz cerca de 1.000 + 10.000 = 11.000 passos. Uma junção com `R.a < S.b` não é uma igualdade, então o hash não se aplica, mas o laço aninhado ainda funciona. O otimizador precisa saber quais algoritmos são possíveis antes de comparar custos."
+				},
+				{
+					"type": "chart",
+					"title": "Passos para juntar 1.000 linhas com 10.000 linhas (contados, não medidos)",
+					"unit": "passos",
+					"bars": [
+						{ "label": "Laço aninhado", "value": 10000000 },
+						{ "label": "Junção por hash (cerca de n + m)", "value": 11000 }
+					]
+				},
+				{
+					"type": "chart",
+					"title": "Tempo medido da junção com n = 10.000 linhas em cada tabela (Rust, mini-projeto deste repositório)",
+					"unit": "ms",
+					"bars": [
+						{ "label": "Laço aninhado", "value": 332 },
+						{ "label": "Junção por hash", "value": 3.05 },
+						{ "label": "Junção por ordenação e fusão", "value": 2.63 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "O mini-projeto **Mini relational DBMS** mediu isso: dez vezes mais linhas custam ao laço aninhado cerca de 80 vezes mais tempo (a teoria diz 100), enquanto o hash e a ordenação com fusão crescem quase em linha reta. Os números dependem da máquina registrada nos resultados do projeto."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Quem escolhe o plano é o otimizador, não você. Seleções primeiro. Um índice troca tempo de atualização e espaço por tempo de busca. A árvore B atende intervalos, o hash só igualdade. O laço aninhado serve para qualquer condição, mas custa n vezes m."
+				}
+			]
+		},
+		{
+			"id": "transactions-and-recovery",
+			"title": "Transações e recuperação",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Mandar 100 reais da Ana para a Bia tem dois passos: tirar 100 da Ana, somar 100 à Bia. Se a luz acaba entre os dois passos, 100 reais somem. Uma **transação** é uma caixa em volta dos passos: uma unidade lógica de trabalho que leva o banco de dados de um estado correto a outro estado correto. Ou tudo o que está na caixa acontece, ou nada acontece."
+				},
+				{
+					"type": "heading",
+					"text": "COMMIT e ROLLBACK"
+				},
+				{
+					"type": "list",
+					"items": [
+						"`COMMIT` diz 'sucesso': as atualizações se tornam permanentes.",
+						"`ROLLBACK` diz 'fracasso': o SGBD desfaz todas as atualizações desde o início da transação, usando os valores antigos guardados no log, e a transação termina.",
+						"Depois de qualquer um dos dois, os bloqueios são liberados e uma nova transação pode começar."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "ACID"
+				},
+				{
+					"type": "table",
+					"headers": ["Letra", "Propriedade", "Promessa"],
+					"rows": [
+						["A", "Atomicidade", "tudo ou nada: se a queda vem depois do débito e antes do COMMIT, o SGBD desfaz o débito na reinicialização"],
+						["C", "Consistência", "a transação leva o banco de dados de um estado correto a outro"],
+						["I", "Isolamento", "transações concorrentes não atrapalham umas às outras"],
+						["D", "Durabilidade", "depois do COMMIT, as atualizações sobrevivem a uma queda"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "O log e a regra do write-ahead"
+				},
+				{
+					"type": "paragraph",
+					"text": "O **log** (ou diário) é um arquivo sequencial onde o SGBD escreve o início e o fim de cada transação e, para cada atualização, o valor antes e depois. É a base de toda recuperação. A **regra do log write-ahead** diz que o registro do log sempre vai para o disco antes da página de dados alterada. Antes de uma página ser escrita, o valor antigo já está no log (então dá para desfazer). Antes de o COMMIT terminar, todos os registros já estão no disco (então dá para refazer)."
+				},
+				{
+					"type": "paragraph",
+					"text": "O gerenciador de buffer tem duas liberdades. Ele pode escrever páginas de uma transação que **não** terminou (para liberar memória): o disco pode ter mudanças para **desfazer**. E ele não é obrigado a escrever páginas no COMMIT: o disco pode não ter mudanças confirmadas, que precisam ser **refeitas**. A maioria dos sistemas usa as duas liberdades, então precisa de desfazer e de refazer."
+				},
+				{
+					"type": "heading",
+					"text": "Reinicialização após uma queda"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **checkpoint** (ponto de verificação) é um momento em que todas as páginas alteradas são escritas no disco. Na reinicialização, o SGBD lê o log desde o último checkpoint e monta duas listas: as transações que fizeram COMMIT depois do checkpoint vão para **refazer**, as que não têm COMMIT até a queda vão para **desfazer**. As transações que terminaram antes do checkpoint ficam em paz."
+				},
+				{
+					"type": "diagram",
+					"content": "                 tc (checkpoint)          tf (queda)\nT1  |------|      |                   |   acabou antes de tc: nada\nT2       |--------|--------|          |   COMMIT depois de tc: REFAZER\nT3           |----|-------------------|   sem COMMIT:          DESFAZER\nT4                |   |---------|      |   COMMIT depois de tc: REFAZER\nT5                |          |---------|   sem COMMIT:          DESFAZER",
+					"caption": "Refazer T2 e T4, desfazer T3 e T5"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **falha de sistema** perde a memória, mas o banco de dados no disco continua lá, então a recuperação desfaz e refaz a partir do checkpoint. Uma **falha de mídia** destrói o próprio disco. Aí a recuperação restaura a última **cópia de segurança** (backup) e refaz, a partir do log, as transações confirmadas depois dela. Por isso o log fica num dispositivo diferente do banco de dados."
+				},
+				{
+					"type": "heading",
+					"text": "Confirmação em duas fases"
+				},
+				{
+					"type": "paragraph",
+					"text": "Quando uma transação muda dados em dois sistemas, cada um com o seu log, um COMMIT separado em cada um poderia dar certo num e falhar no outro. Na **confirmação em duas fases** (two-phase commit), um coordenador primeiro pede a todos que se preparem e votem. Se todos dizem sim, ele decide confirmar. Um único não faz a decisão ser desfazer. Depois ele anuncia a decisão."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Um participante que respondeu sim está 'em dúvida'. Se o coordenador cai antes de anunciar, o participante não pode decidir sozinho: ele espera a decisão e mantém os seus bloqueios. Esse bloqueio é a fraqueza conhecida da confirmação em duas fases."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Transação = tudo ou nada. A durabilidade vem de o log chegar ao disco antes de o COMMIT terminar. Depois de uma queda: refazer as confirmadas, desfazer as não confirmadas. A confirmação em duas fases faz vários sistemas concordarem."
+				}
+			]
+		},
+		{
+			"id": "concurrency",
+			"title": "Muitos usuários ao mesmo tempo: bloqueios e isolamento",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Duas crianças tentam escrever na mesma linha de um caderno ao mesmo tempo. Sem uma regra, uma apaga as palavras da outra. Um banco de dados tem milhares de usuários, então precisa de regras para compartilhar. O acidente clássico é a **atualização perdida**."
+				},
+				{
+					"type": "diagram",
+					"content": "saldo = 100\n\nT1 (+10)                T2 (+20)\nREAD saldo  -> 100\n                        READ saldo  -> 100\nWRITE saldo <- 110\n                        WRITE saldo <- 120\nCOMMIT\n                        COMMIT\n\nsaldo = 120   (deveria ser 130: o +10 se perdeu)",
+					"caption": "Os dois leem 100, os dois escrevem: a segunda escrita apaga a primeira"
+				},
+				{
+					"type": "heading",
+					"text": "Bloqueios"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **bloqueio** (lock) é uma placa na porta: 'em uso'. Um **bloqueio compartilhado (S)** é pedido para ler, e vários podem tê-lo ao mesmo tempo. Um **bloqueio exclusivo (X)** é pedido para alterar, e não deixa mais ninguém. Se um pedido é incompatível com um bloqueio que outra transação mantém, quem pediu espera."
+				},
+				{
+					"type": "table",
+					"headers": ["Mantém \\ Pede", "S", "X"],
+					"rows": [
+						["S", "concedido", "espera"],
+						["X", "espera", "espera"]
+					],
+					"caption": "Compatibilidade dos bloqueios S e X sobre o mesmo item"
+				},
+				{
+					"type": "heading",
+					"text": "Impasse"
+				},
+				{
+					"type": "paragraph",
+					"text": "Os bloqueios criam um perigo novo: duas crianças seguram um lápis cada uma e cada uma espera o lápis da outra. Um **impasse** (deadlock) é um ciclo de transações em que cada uma espera por um bloqueio da próxima. O SGBD desenha um **grafo de espera** (uma seta Ti → Tj quer dizer que Ti espera por Tj). Um ciclo significa impasse. Ele escolhe uma transação do ciclo como **vítima** e a desfaz, o que libera os seus bloqueios."
+				},
+				{
+					"type": "diagram",
+					"content": "T4 ---> T1 ---> T2\n        ^        |\n        |        v\n        +------ T3\n\nciclo: T1 -> T2 -> T3 -> T1   (T4 só espera)",
+					"caption": "T4 espera alguém do ciclo, mas não faz parte dele"
+				},
+				{
+					"type": "heading",
+					"text": "Serializabilidade e bloqueio em duas fases"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma execução intercalada é **serializável** quando o seu resultado é igual ao de **alguma** execução serial (uma transação depois da outra). Cada transação é correta sozinha, então qualquer ordem serial é correta. Ordens seriais diferentes podem dar resultados diferentes, e todos são aceitos."
+				},
+				{
+					"type": "paragraph",
+					"text": "Para testar, monte um **grafo de precedência**: uma seta Ti → Tj quando uma operação de Ti vem antes de uma operação conflitante de Tj sobre o mesmo item (pelo menos uma é escrita). A execução é serializável se e somente se o grafo não tem ciclo. Em `r1(A) w1(A) r2(A) w2(A) r2(B) w2(B) r1(B) w1(B)`, `w1(A)` antes de `r2(A)` dá T1 → T2, e `w2(B)` antes de `r1(B)` dá T2 → T1. Um ciclo, então não é serializável."
+				},
+				{
+					"type": "paragraph",
+					"text": "O **bloqueio em duas fases (2PL)** é a regra que garante a serializabilidade. Uma transação tem uma **fase de crescimento**, em que só pega bloqueios, e depois uma **fase de encolhimento**, em que só os solta. Depois da primeira liberação, nunca mais pode bloquear. Assim, `lock(A), unlock(A), lock(B), unlock(B)` quebra o protocolo, enquanto `lock(A), lock(B), unlock(A), unlock(B)` o obedece."
+				},
+				{
+					"type": "heading",
+					"text": "Níveis de isolamento"
+				},
+				{
+					"type": "paragraph",
+					"text": "Isolamento total custa velocidade, então o padrão SQL oferece quatro níveis definidos pelos fenômenos que permitem. Uma **leitura suja** (dirty read) lê dados de uma transação que ainda não fez COMMIT. Uma **leitura não repetível** lê uma linha duas vezes e a acha mudada ou removida por outra transação. Um **fantasma** executa a mesma condição duas vezes e acha uma linha nova que outra transação inseriu."
+				},
+				{
+					"type": "table",
+					"headers": ["Nível", "Leitura suja", "Leitura não repetível", "Fantasma"],
+					"rows": [
+						["READ UNCOMMITTED", "possível", "possível", "possível"],
+						["READ COMMITTED", "evitada", "possível", "possível"],
+						["REPEATABLE READ", "evitada", "evitada", "possível"],
+						["SERIALIZABLE", "evitada", "evitada", "evitado"]
+					],
+					"caption": "Níveis de isolamento do SQL padrão. Níveis mais baixos rodam mais rápido e protegem menos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Proteger as linhas que você leu não protege contra linhas que ainda não existiam. Os fantasmas exigem bloquear a condição ou o intervalo, o que o `SERIALIZABLE` faz."
+				},
+				{
+					"type": "heading",
+					"text": "Bloqueios de intenção"
+				},
+				{
+					"type": "paragraph",
+					"text": "Os bloqueios podem ser numa tabela inteira ou em linhas individuais. Antes de bloquear uma linha, uma transação pega um **bloqueio de intenção** na tabela: IS para ler linhas, IX para alterar linhas. Aí um pedido para bloquear a tabela inteira é decidido olhando só os bloqueios da tabela. IS e IX convivem entre si, S convive com IS, e X não convive com nada. Então, se T1 mantém IX em `emp`, o pedido de T2 por S na tabela inteira espera."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "S com S tudo bem, qualquer coisa com X espera. Impasse é um ciclo no grafo de espera. Serializável quer dizer igual a alguma ordem serial, e um ciclo no grafo de precedência quer dizer que não é. 2PL: nunca bloquear depois do primeiro desbloqueio."
+				}
+			]
+		},
+		{
+			"id": "security-and-integrity",
+			"title": "Segurança e integridade: quem pode o quê, e o que é válido",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma escola tem dois tipos de proteção. O porteiro pergunta 'você tem permissão para entrar?'. A professora que corrige a lição pergunta 'o que você escreveu está correto?'. Um banco de dados tem as mesmas duas. A **segurança** protege contra usuários não autorizados. A **integridade** protege contra erros de usuários autorizados. As duas funcionam do mesmo jeito: as regras são declaradas ao SGBD, guardadas no catálogo e verificadas em cada operação."
+				},
+				{
+					"type": "table",
+					"headers": ["Aspecto", "Segurança", "Integridade"],
+					"rows": [
+						["Pergunta", "Este usuário pode fazer isto?", "O resultado é um estado válido do banco de dados?"],
+						["Protege contra", "usuários não autorizados", "erros de usuários autorizados"],
+						["Exemplo", "`GRANT SELECT ON emp TO ana`", "um salário não pode ser negativo; uma chave estrangeira precisa casar"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "As regras de integridade foram explicadas antes (chaves, chaves estrangeiras e restrições). Um usuário com todas as permissões ainda pode digitar um salário errado, e é a integridade que o rejeita. Falhas de disco e quedas de energia não são nem uma nem outra: pertencem à recuperação."
+				},
+				{
+					"type": "heading",
+					"text": "Controle discricionário: GRANT e REVOKE"
+				},
+				{
+					"type": "paragraph",
+					"text": "No **controle de acesso discricionário**, os usuários têm privilégios (consultar, inserir, alterar, remover) sobre objetos, e os privilégios são dados com `GRANT` e retirados com `REVOKE`. Esse é o esquema do SQL. Com `WITH GRANT OPTION`, quem recebe pode repassar o privilégio, o que forma uma cadeia."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "-- DBA:\nGRANT SELECT ON emp TO ana WITH GRANT OPTION;\n-- ana:\nGRANT SELECT ON emp TO bruno;\n-- DBA:\nREVOKE SELECT ON emp FROM ana CASCADE;\n-- bruno também perde: o privilégio dele veio só da ana",
+					"caption": "CASCADE retira também os privilégios derivados; RESTRICT recusaria o REVOKE"
+				},
+				{
+					"type": "paragraph",
+					"text": "No SQL padrão, `CASCADE` também retira os privilégios derivados do que você remove, e `RESTRICT` recusa a operação se existirem privilégios derivados. Um privilégio só sobrevive se algum outro GRANT ainda o sustenta."
+				},
+				{
+					"type": "heading",
+					"text": "Controle obrigatório"
+				},
+				{
+					"type": "paragraph",
+					"text": "No **controle de acesso obrigatório**, cada item de dado tem um nível de classificação e cada usuário tem um nível de autorização, e regras fixas decidem, não o dono. O modelo de Bell-LaPadula protege o sigilo com duas regras. Com os níveis Público < Confidencial < Secreto < Ultrassecreto, um usuário com autorização Secreto:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"pode **ler** itens classificados como Secreto ou abaixo (a propriedade de segurança simples: não se lê acima da própria autorização);",
+						"pode **escrever** só em Secreto ou acima (a propriedade estrela: não se escreve abaixo da própria autorização), para que um programa não copie um item secreto, nem por acidente, para um lugar que usuários de autorização menor possam ler."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A segurança pergunta quem pode. A integridade pergunta se é válido. GRANT e REVOKE são discricionários, e o CASCADE segue a cadeia. Bell-LaPadula: ler para baixo, escrever para cima."
+				}
+			]
+		},
+		{
+			"id": "summary",
+			"title": "Juntando tudo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Um sistema de banco de dados é uma história com uma ordem clara. Descrevemos os dados (os níveis e o modelo relacional), desenhamos uma planta (E/R), fazemos perguntas (álgebra, cálculo, SQL), limpamos o projeto (dependências funcionais e formas normais), deixamos tudo rápido (otimizador e índices) e mantemos tudo seguro e correto (transações, concorrência, segurança, integridade)."
+				},
+				{
+					"type": "table",
+					"headers": ["Pergunta que você tem", "Ideia a usar"],
+					"rows": [
+						["Como os programas sobrevivem a uma mudança de armazenamento?", "independência de dados, mapeamentos, visões"],
+						["Como distingo as tuplas?", "chaves candidatas, chave primária"],
+						["Como ligo tabelas?", "chaves estrangeiras e integridade referencial"],
+						["Como obtenho 'não matriculados' ou 'todas as disciplinas'?", "diferença e divisão, ou NOT EXISTS (duas vezes para 'todas')"],
+						["Por que a minha tabela repete fatos?", "dependências funcionais, formas normais"],
+						["Por que a minha consulta está lenta?", "estatísticas, índices, algoritmo de junção"],
+						["E se o sistema cair no meio da transferência?", "transação, log, desfazer e refazer"],
+						["E se dois usuários escrevem a mesma linha?", "bloqueios, 2PL, níveis de isolamento"],
+						["Quem pode ler esta tabela?", "GRANT, REVOKE, níveis obrigatórios"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Erros que pegam muitos alunos"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Achar que uma relação guarda as linhas na ordem de inserção. Não guarda: uma relação é um conjunto.",
+						"Chamar algo de chave porque as linhas de hoje não se repetem. Uma chave é uma regra sobre o significado dos dados.",
+						"Esperar que o `SELECT` remova duplicatas. Tabelas SQL são multiconjuntos, então use `DISTINCT`.",
+						"Selecionar com uma condição de diferente quando a pergunta é 'não tem': isso pede diferença ou `NOT EXISTS`.",
+						"Esquecer que `NULL` deixa as comparações desconhecidas, então `NOT IN` com um nulo na lista não devolve nada e `AVG` ignora nulos.",
+						"Achar que a FNBC é sempre melhor. Ela remove mais redundância, mas pode perder uma dependência, que a 3FN sempre mantém.",
+						"Misturar segurança (quem) com integridade (o que é válido), e as duas com recuperação (falhas).",
+						"Achar que um índice é de graça. Ele acelera buscas e atrasa atualizações."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Pense numa biblioteca. O catálogo diz onde os livros estão (independência de dados: as estantes podem mudar de lugar). As carteirinhas são chaves. A bibliotecária planeja o caminho mais rápido até o seu livro (otimizador). O balcão de empréstimo nunca perde um livro no meio do caminho (transação). Dois leitores nunca pegam ao mesmo tempo o último exemplar (bloqueios). E só sócios podem pegar emprestado, e só funcionários entram no arquivo (segurança)."
+				},
+				{
+					"type": "video",
+					"title": "CMU Database Group: aulas gravadas de universidade sobre bancos de dados",
+					"url": "https://www.youtube.com/@CMUDatabaseGroup"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,349 @@
+{
+	"area": "continuous-integration",
+	"intro": [
+		"Imagine uma turma de dez crianças montando juntas um castelo gigante de Lego. Se cada criança trabalha sozinha por um mês inteiro e todo mundo tenta juntar as peças no último dia, nada se encaixa e todo mundo fica triste. Se, em vez disso, cada criança encaixa a sua peça no castelo aos poucos, e um amigo confere na hora se o castelo continua de pé, os problemas são pequenos e resolvidos em minutos. A **integração contínua**, chamada de **CI**, é exatamente essa ideia aplicada ao software: juntar pequenos pedaços de trabalho com frequência e deixar uma máquina conferir cada pedaço automaticamente.",
+		"A máquina segue uma receita escrita chamada [[pipeline|uma corrente de passos automáticos que leva uma mudança do computador do programador até os usuários]]. Ela compila o programa, confere o estilo do código, roda os testes e diz 'verde, tudo certo' ou 'vermelho, algo quebrou'. A mesma receita pode ir mais longe e entregar o programa aos usuários. Isso é o **CD**, sigla de entrega contínua ou implantação contínua. Você encontra CI e CD todos os dias: todo app do seu celular que recebe atualizações várias vezes por ano foi compilado, testado e entregue por um pipeline.",
+		"Neste resumo você vai aprender: o que são CI e CD e as regras que fazem tudo funcionar, como ler um workflow do **GitHub Actions** (a ferramenta de pipeline usada por este próprio repositório), como rodar jobs em vários sistemas ao mesmo tempo, como economizar tempo com caches e passar arquivos com artefatos, como manter senhas seguras, como compartilhar pedaços de pipeline, como construir portões que barram mudanças ruins, como lançar novas versões sem assustar os usuários, como funcionam números de versão e changelogs, e como proteger o pipeline de atacantes. No final você estará pronto para o quiz."
+	],
+	"sections": [
+		{
+			"id": "ci-cd-concepts",
+			"title": "CI e CD: o panorama geral",
+			"blocks": [
+				{ "type": "paragraph", "text": "Voltando ao castelo de Lego. A forma antiga de trabalhar se chama **integração big-bang**: todo mundo constrói sozinho por semanas e junta tudo no final. A [[linha principal|a única linha compartilhada do código sobre a qual todos constroem, muitas vezes chamada de main ou trunk]] (em inglês, mainline) é o lugar onde todo o trabalho se encontra. Na **integração contínua**, cada desenvolvedor junta seu trabalho na linha principal com frequência, pelo menos uma vez por dia, e cada junção dispara um [[build|transformar o código em um programa que roda, e conferir que ele realmente roda]] automático mais uma rodada de testes. Os problemas aparecem minutos depois de criados, enquanto a pessoa ainda lembra o que fez." },
+				{ "type": "callout", "tone": "analogy", "text": "Juntar o trabalho uma vez por mês é como arrumar o quarto uma vez por ano: a bagunça é enorme e ninguém sabe por onde começar. Juntar todo dia é como guardar uma meia na gaveta a cada noite. Se juntar o trabalho dói, o remédio é fazer isso com mais frequência, não com menos." },
+				{ "type": "paragraph", "text": "A CI é um **hábito do time**, não uma máquina. Um servidor que compila todo branch, enquanto os branches ficam separados por duas semanas, não é CI de verdade, porque a junção real continua acontecendo tarde. O servidor só ajuda o hábito." },
+				{ "type": "heading", "text": "As regras que fazem a CI funcionar" },
+				{ "type": "list", "items": [
+					"**Junte pequeno e com frequência**, pelo menos uma vez por dia, para que cada junção seja pequena e os conflitos sejam raros.",
+					"**Mantenha a linha principal verde.** Se o build quebrar, consertá-lo ou desfazer a mudança (um **revert**) vem antes de qualquer trabalho novo, e ninguém acrescenta mais mudanças em cima de um build vermelho.",
+					"**Falhe rápido.** Rode primeiro as verificações baratas e rápidas, e depois as lentas e caras. Uma rodada de testes unitários de dois minutos deve vir antes de uma rodada de testes de ponta a ponta de quarenta minutos, porque a maioria dos erros é pega pela rápida.",
+					"**Mantenha tudo no controle de versão**: código, testes, scripts de build e de deploy, a configuração de cada ambiente e o próprio pipeline. Senhas são a única exceção: o repositório apenas faz referência a elas, não as guarda.",
+					"**Use um único processo de deploy para todos os ambientes.** Staging e produção devem ser implantados pelo mesmo script automático, e só a configuração muda. Um deploy de produção feito à mão a partir de uma página de wiki depende da memória, e um passo esquecido quebra tudo na pior hora."
+				] },
+				{ "type": "heading", "text": "Da CI ao CD" },
+				{ "type": "table", "headers": ["Prática", "O que significa", "Quem aperta o botão"], "rows": [
+					["Integração contínua", "Toda mudança é juntada na linha principal e verificada por um build e testes automáticos", "Ninguém, é automático"],
+					["Entrega contínua (continuous delivery)", "O software está sempre pronto para ser lançado, porque toda mudança passa por todo o pipeline", "Uma pessoa decide quando lançar (uma decisão de negócio)"],
+					["Implantação contínua (continuous deployment)", "Toda mudança que passa no pipeline é lançada aos usuários na hora", "Ninguém, não há portão humano"]
+				], "caption": "Cada degrau precisa do anterior. Implantar sem CI seria só entregar erros mais rápido." },
+				{ "type": "heading", "text": "O pipeline de implantação" },
+				{ "type": "paragraph", "text": "O livro **Continuous Delivery** (Humble e Farley) chama a receita de **deployment pipeline** (pipeline de implantação): um caminho automático que leva uma mudança do controle de versão até os usuários. O caminho tem **estágios** que custam mais e dão mais confiança conforme você avança. Uma mudança ou falha cedo, com feedback, ou vira um **release candidate** (candidata a lançamento)." },
+				{ "type": "diagram", "content": "commit  -->  testes de   -->  outras    -->  lançamento\nstage        aceitação        verificações\n(minutos)    (mais lento)     (opcional)\n\n  falhou aqui = o dev é avisado em minutos\n  passou = o mesmo artefato vai para o próximo estágio", "caption": "Estágios de um pipeline de implantação" },
+				{ "type": "paragraph", "text": "O primeiro estágio é o **commit stage**. Ele compila o código, roda os testes unitários e a análise rápida do código, e produz o **artefato** (o programa empacotado). Precisa ser rápido, alguns minutos, para que os desenvolvedores possam esperar a resposta antes de seguir em frente. Depois vem uma regra de ouro: **construa os binários uma vez só**, guarde o artefato e leve esse mesmo artefato por todos os estágios seguintes. Um programa reconstruído é um programa diferente, porque versões de ferramentas e configurações podem mudar entre builds. As diferenças entre ambientes são resolvidas com configuração, nunca construindo de novo." },
+				{ "type": "paragraph", "text": "E se uma funcionalidade está pela metade, mas você precisa juntar todo dia? No **desenvolvimento baseado em trunk** (trunk-based development) todo mundo trabalha na linha principal, então o trabalho inacabado precisa ser seguro para ir ao ar. Uma **feature flag** (também chamada de feature toggle) é um interruptor no código: o código novo é juntado e até implantado, mas fica desligado para os usuários. Remova a flag quando a funcionalidade for lançada, ou as flags se acumulam como dívida técnica." },
+				{ "type": "callout", "tone": "remember", "text": "CI é um hábito do time: junte pequeno e com frequência, mantenha a linha principal verde, falhe rápido, construa uma vez e promova o mesmo artefato. O CD acrescenta o resto da estrada até os usuários." }
+			]
+		},
+		{
+			"id": "workflows-events-jobs-steps",
+			"title": "GitHub Actions: workflows, eventos, jobs e steps",
+			"blocks": [
+				{ "type": "paragraph", "text": "O **GitHub Actions** é a ferramenta que roda o pipeline deste repositório. Pense numa cozinha. A receita é um **workflow**. A receita começa quando algo acontece, como um cliente fazendo um pedido: isso é um **evento**. A receita é dividida em **jobs**, cada um feito por um cozinheiro diferente numa cozinha diferente, e cada job é uma lista de **steps** (passos) feitos um depois do outro." },
+				{ "type": "paragraph", "text": "Um workflow é um arquivo [[YAML|um formato de texto simples para configurações, em que a indentação mostra o que pertence a quê]] guardado na pasta `.github/workflows/` do repositório. Como ele mora no repositório, qualquer mudança no pipeline é revisada e guardada no histórico como o resto do código." },
+				{ "type": "heading", "text": "Eventos: o que inicia um workflow" },
+				{ "type": "paragraph", "text": "A chave `on` lista os eventos. Os mais comuns são `push` (alguém enviou commits), `pull_request` (um pedido para juntar um branch foi aberto ou atualizado), `workflow_dispatch` (uma pessoa inicia à mão pela aba Actions, e pode preencher um formulário de `inputs` tipados) e `schedule` (um cronômetro). Um filtro como `branches`, `tags` ou `paths` pertence ao evento sob o qual está escrito." },
+				{ "type": "code", "language": "yaml", "content": "on:\n  push:\n    branches: [main]\n  pull_request:\n  workflow_dispatch:\n  schedule:\n    - cron: '30 5 * * 1'", "caption": "Quatro gatilhos. Sem 'types', pull_request usa por padrão opened, synchronize e reopened" },
+				{ "type": "paragraph", "text": "No exemplo, o filtro do push vale só para o `push`, então um pull request em qualquer branch ainda inicia o workflow. Um pull request sem `types` reage a três atividades: `opened`, `synchronize` (novos commits foram enviados para ele) e `reopened`." },
+				{ "type": "paragraph", "text": "O evento `schedule` usa a sintaxe de [[cron|um jeito antigo do Unix de escrever horários com cinco campos]]: minuto, hora, dia do mês, mês, dia da semana. Os horários são em **UTC**, e a execução usa o último commit do branch padrão. Então `30 5 * * 1` significa segunda-feira às 05:30 UTC. Execuções agendadas podem atrasar quando o GitHub está ocupado, então não são exatas ao minuto." },
+				{ "type": "heading", "text": "Jobs e steps" },
+				{ "type": "list", "items": [
+					"Um **job** roda na sua própria máquina nova. Todo job comum precisa de `runs-on` para dizer que tipo de máquina ele quer.",
+					"Jobs rodam **em paralelo** por padrão. `needs` cria uma ordem: um job espera os jobs que lista, e é pulado se algum deles falhar (a menos que o seu `if` diga outra coisa).",
+					"Um **step** é uma tarefa dentro de um job. Os steps do mesmo job rodam em ordem, na mesma máquina, compartilhando os mesmos arquivos.",
+					"Jobs são isolados uns dos outros. Eles trocam dados só de propósito, com **outputs** (saídas) ou **artefatos**."
+				] },
+				{ "type": "code", "language": "yaml", "content": "jobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps: [...]\n  test:\n    runs-on: ubuntu-latest\n    steps: [...]\n  deploy:\n    needs: [lint, test]\n    runs-on: ubuntu-latest\n    steps: [...]", "caption": "lint e test rodam juntos; deploy só começa depois dos dois" },
+				{ "type": "paragraph", "text": "Um step faz uma de duas coisas. Com `uses` ele roda uma **action** pronta, uma peça reutilizável como `actions/checkout`, e você dá configurações a ela com `with`. Com `run` ele roda os seus próprios comandos de shell, como `bun test`. Um runner novo começa com uma pasta vazia, então a maioria dos jobs começa com `actions/checkout`, que baixa o commit que está sendo compilado (por padrão só aquele commit)." },
+				{ "type": "heading", "text": "Contextos, condições e variáveis" },
+				{ "type": "paragraph", "text": "Um texto escrito como `${{ ... }}` é uma **expressão**. Ela pode ler **contextos**, que são sacolas de informação. O contexto `github` descreve o evento. Em um `push`, `github.ref` é algo como `refs/heads/main`. Em um pull request é `refs/pull/<n>/merge`, e `github.head_ref` e `github.base_ref` guardam o branch de origem e o de destino. Assim, `if: github.ref == 'refs/heads/main'` roda um step só depois de uma junção na main, e ele é pulado num pull request." },
+				{ "type": "list", "items": [
+					"`env` define variáveis de ambiente para o workflow inteiro, para um job ou para um step. O nível mais específico vence para um dado nome: o step vence o job, e o job vence o workflow.",
+					"Sem um `if`, um step só roda se todos os steps anteriores tiveram sucesso (o padrão escondido é `success()`). `failure()` roda só depois de uma falha, e `always()` roda aconteça o que acontecer, o que é bom para enviar relatórios ou limpar recursos.",
+					"`concurrency` deixa só uma execução de um grupo andar por vez. Com `cancel-in-progress: true`, uma execução nova cancela a antiga do mesmo grupo. Agrupar por `github.ref` economiza tempo em branches que recebem muitos pushes."
+				] },
+				{ "type": "heading", "text": "Passando valores entre steps e jobs" },
+				{ "type": "code", "language": "yaml", "content": "jobs:\n  build:\n    runs-on: ubuntu-latest\n    outputs:\n      tag: ${{ steps.meta.outputs.tag }}\n    steps:\n      - id: meta\n        run: echo \"tag=v1.2.3\" >> \"$GITHUB_OUTPUT\"\n  deploy:\n    needs: build\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo \"${{ needs.build.outputs.tag }}\"", "caption": "Dois saltos: saída do step, depois saída do job, depois needs" },
+				{ "type": "paragraph", "text": "Um step escreve uma linha `nome=valor` no arquivo cujo caminho está em `$GITHUB_OUTPUT`. Os steps seguintes do mesmo job leem como `steps.<id>.outputs.<nome>`, então o step que produz precisa de um `id`. Para chegar a outro job, o job precisa mapear o valor nas suas próprias `outputs`, e o outro job lê `needs.<job>.outputs.<nome>`. Se esquecer o mapeamento, você recebe uma string vazia." },
+				{ "type": "callout", "tone": "warning", "text": "Uma surpresa muito comum: um workflow com filtro `paths` nem começa quando nenhum arquivo correspondente mudou, então o seu check nunca aparece. Se esse check é obrigatório para juntar, o pull request espera para sempre. A solução é tirar o filtro dos workflows obrigatórios, ou detectar as mudanças dentro do job." },
+				{ "type": "callout", "tone": "remember", "text": "Evento inicia o workflow, o workflow tem jobs em paralelo, um job tem steps em ordem em um só runner. Jobs compartilham dados só por outputs e artefatos." }
+			]
+		},
+		{
+			"id": "runners-matrix",
+			"title": "Runners e builds em matriz",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um **runner** é o computador que faz o trabalho de um job. Os runners hospedados pelo GitHub são [[máquinas virtuais|um computador de faz de conta que roda dentro de um computador de verdade]] feitas a partir de uma imagem mantida (Ubuntu, Windows ou macOS). Eles são **efêmeros**: uma máquina novinha é criada para um job e jogada fora quando o job termina. Isso deixa os builds limpos e repetíveis, mas também significa que todo job precisa instalar suas ferramentas de novo, e é por isso que o cache importa." },
+				{ "type": "callout", "tone": "analogy", "text": "Um runner hospedado é como um quarto de hotel que é limpo por completo depois de cada hóspede. Você sempre recebe um quarto arrumado, mas não pode deixar seus brinquedos lá para amanhã." },
+				{ "type": "paragraph", "text": "Rótulos como `ubuntu-latest` apontam para a imagem mais nova que o GitHub considera estável, e esse alvo muda com o tempo. Um rótulo com versão, como `ubuntu-24.04`, fica fixo até ser aposentado. Fixar troca atualizações automáticas por **reprodutibilidade**, e por isso este repositório escreve `ubuntu-24.04`." },
+				{ "type": "heading", "text": "Runners self-hosted" },
+				{ "type": "paragraph", "text": "Você também pode usar a sua própria máquina como um **runner self-hosted**. Ele tem rótulos padrão (`self-hosted`, o seu sistema operacional e a sua arquitetura) mais rótulos personalizados. `runs-on: [self-hosted, linux, gpu]` é uma lista de rótulos exigidos: só um runner que tenha os três pode pegar o job." },
+				{ "type": "callout", "tone": "warning", "text": "Não use runners self-hosted persistentes em repositórios públicos. Um desconhecido pode mandar um pull request cujo workflow roda código na sua máquina, e uma máquina persistente guarda o estado entre jobs. Prefira runners hospedados, ou self-hosted efêmeros em uma rede isolada." },
+				{ "type": "heading", "text": "A matriz" },
+				{ "type": "paragraph", "text": "E se você quer testar seu programa em três sistemas operacionais e três versões do Node.js? Escrever nove jobs à mão é chato. Uma **matriz** (matrix) sob `strategy` lista variáveis e seus valores, e o GitHub cria um job para **cada combinação** (o produto cartesiano). Cada job lê seus próprios valores com o contexto `matrix`, até no `runs-on`." },
+				{ "type": "code", "language": "yaml", "content": "test:\n  strategy:\n    matrix:\n      os: [ubuntu-latest, macos-latest, windows-latest]\n  runs-on: ${{ matrix.os }}\n  steps:\n    - uses: actions/checkout@v5\n    - run: bun test" },
+				{ "type": "paragraph", "text": "Duas variáveis com 2 e 3 valores dão 2 x 3 = 6 jobs. Uma única execução de workflow pode criar no máximo 256 jobs de matriz. Duas chaves extras mudam a lista:" },
+				{ "type": "list", "items": [
+					"`exclude` remove as combinações que ele casa.",
+					"`include` acrescenta chaves extras a uma combinação que casa. Se ele sobrescrevesse um dos valores originais, vira uma combinação nova própria.",
+					"A ordem é: primeiro o produto, depois as remoções do `exclude`, e por último as entradas do `include`. Contar jobs é seguir essa ordem."
+				] },
+				{ "type": "diagram", "content": "os: [ubuntu, windows]  x  node: [20, 22]  = 4 jobs\n\n ubuntu-20   ubuntu-22   windows-20   windows-22\n\nexclude windows+20  -->  3 jobs\ninclude ubuntu+24   -->  4 jobs (24 não é um valor\n                         original, então é uma nova combinação)", "caption": "Contando uma matriz, passo a passo" },
+				{ "type": "heading", "text": "Quando um job falha" },
+				{ "type": "paragraph", "text": "Por padrão `fail-fast` é `true`: quando um job da matriz falha, os jobs que ainda esperam ou rodam são cancelados. Isso economiza tempo de runner quando a falha provavelmente se repetirá em todo lugar. Defina `fail-fast: false` para deixar cada combinação terminar, assim você vê exatamente quais plataformas falham." },
+				{ "type": "paragraph", "text": "Para uma versão experimental, como a próxima versão do Node.js, use `continue-on-error: ${{ matrix.experimental }}` no job. As falhas dessas combinações continuam visíveis mas não reprovam a execução, enquanto as falhas das combinações estáveis ainda reprovam." },
+				{ "type": "callout", "tone": "warning", "text": "Todos os jobs de uma matriz compartilham o mesmo mapeamento de `outputs`. Se três deles escrevem a mesma saída, um job posterior lê o valor de quem escreveu por último, o que é imprevisível. Envie os resultados de cada combinação como artefatos cujos nomes incluem os valores da matriz." },
+				{ "type": "callout", "tone": "remember", "text": "Runners hospedados são novos e descartáveis. Uma matriz multiplica um job em um job por combinação. Fixe a versão do runner quando quiser builds repetíveis." }
+			]
+		},
+		{
+			"id": "caching-artifacts",
+			"title": "Cache e artefatos",
+			"blocks": [
+				{ "type": "paragraph", "text": "Como todo runner hospedado começa vazio, cada execução baixaria os mesmos pacotes de novo e de novo. Duas ferramentas guardam arquivos fora do runner, por dois motivos diferentes." },
+				{ "type": "table", "headers": ["Característica", "Cache", "Artefato"], "rows": [
+					["Objetivo", "Velocidade: evitar repetir trabalho lento", "Levar resultados: para jobs posteriores, para pessoas, para um lançamento"],
+					["Reutilizado por", "Muitas execuções, achado por uma chave", "Uma execução do workflow"],
+					["Se for perdido", "Só custa tempo, o job recalcula", "O resultado se foi"],
+					["Conteúdo típico", "Pacotes baixados", "Saída do build, relatórios de teste, cobertura"]
+				] },
+				{ "type": "callout", "tone": "analogy", "text": "O cache é a despensa onde você guarda farinha para não ir ao mercado todo dia. O artefato é o bolo que você fez numa cozinha e entrega ao próximo cozinheiro." },
+				{ "type": "heading", "text": "Como o cache funciona" },
+				{ "type": "paragraph", "text": "O `actions/cache` salva uma pasta sob uma **chave** (key) e a restaura numa execução posterior quando a chave casa. A chave deve dizer de que os arquivos dependem. A função `hashFiles()` transforma o conteúdo de um lockfile em texto, então a chave muda exatamente quando as dependências mudam. Incluir `runner.os` mantém separados os caches de sistemas diferentes." },
+				{ "type": "code", "language": "yaml", "content": "- uses: actions/cache@v4\n  with:\n    path: ~/.npm\n    key: deps-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}\n    restore-keys: |\n      deps-${{ runner.os }}-", "caption": "Um acerto exato exige o mesmo SO e o mesmo conteúdo do lockfile" },
+				{ "type": "list", "items": [
+					"**Acerto exato** (exact hit): existe um cache com exatamente essa `key`. Ele é restaurado, e nada novo é salvo.",
+					"**Acerto parcial** (partial hit): a chave exata falhou, então a action tenta os prefixos de `restore-keys` em ordem e restaura um cache mais antigo mas parecido. Isso costuma ser bem mais rápido que começar do zero. Como a chave exata falhou, um cache novo é salvo no final, e a próxima execução tem um acerto exato.",
+					"**Falha** (miss): nada casa. O job faz o trabalho lento e salva um cache novo."
+				] },
+				{ "type": "paragraph", "text": "Uma entrada de cache é **imutável**: depois que uma chave é salva, ela nunca muda. Então uma chave constante como `deps-${{ runner.os }}` é uma armadilha. A primeira execução a salva, todas as seguintes acertam nela, e o cache fica velho em silêncio. A chave precisa mudar sempre que o conteúdo do cache deveria mudar." },
+				{ "type": "paragraph", "text": "O acesso ao cache é limitado por branch. Uma execução pode restaurar caches do seu próprio branch e do branch padrão (para pull requests, também do branch base). Um cache salvo na `main` ajuda todos os branches, enquanto um cache salvo num branch de funcionalidade ajuda só aquele branch. As actions de configuração de linguagem podem fazer tudo isso por você: `cache: npm` no `actions/setup-node` escolhe a pasta e monta a chave a partir do lockfile." },
+				{ "type": "callout", "tone": "warning", "text": "Nunca ponha arquivos com segredos no caminho de um cache, como um arquivo de configuração com um token de acesso. Segredos são mascarados nos logs e escondidos de pull requests não confiáveis, mas um cache pode ser lido por workflows que podem rodar código de pull requests. Faça cache só de dados reproduzíveis e inofensivos." },
+				{ "type": "heading", "text": "Como os artefatos funcionam" },
+				{ "type": "paragraph", "text": "Um job envia arquivos com `actions/upload-artifact` e outro job os baixa com `actions/download-artifact`. Essa é a forma certa de passar uma pasta `dist/` de um job `build` para um job `deploy`, e também guarda saídas que as pessoas podem baixar. É a ideia de construir uma vez em ação: os arquivos implantados são os arquivos que foram construídos e testados." },
+				{ "type": "code", "language": "yaml", "content": "- uses: actions/upload-artifact@v4\n  with:\n    name: coverage-${{ matrix.os }}\n    path: coverage/\n    retention-days: 1", "caption": "Um nome único por job da matriz, e retenção curta" },
+				{ "type": "list", "items": [
+					"Desde a versão 4, os artefatos são **imutáveis** e seus nomes precisam ser **únicos** dentro de uma execução. Jobs de matriz que enviam devem pôr valores da matriz no nome. Um job posterior pode baixá-los por padrão e juntá-los.",
+					"Artefatos e logs são guardados por **90 dias** por padrão. Administradores podem mudar isso, e um envio pode pedir menos dias com `retention-days`. Retenção menor economiza armazenamento, que conta na sua cota."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Cache = velocidade, achado por uma chave que deve mudar quando o conteúdo muda. Artefato = entrega dentro de uma execução, com nome único e 90 dias por padrão." }
+			]
+		},
+		{
+			"id": "secrets-environments-permissions",
+			"title": "Segredos, ambientes e permissões",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um pipeline precisa de senhas e chaves: para publicar um pacote, para entrar num servidor. Isso são **segredos** (secrets). Se vazarem, qualquer um pode se passar por você. Por isso o pipeline segue a ideia do **menor privilégio**: cada job recebe só os poderes de que realmente precisa, e nada além." },
+				{ "type": "heading", "text": "Segredos e variáveis" },
+				{ "type": "paragraph", "text": "Segredos ficam guardados criptografados nas configurações de um repositório, de uma organização ou de um ambiente, e são lidos com `${{ secrets.NOME }}`. O padrão usual é mapear um deles para `env` só no step que precisa. O GitHub esconde o valor exato de um segredo nos logs, trocando-o por `***`. Mas esse esconder compara o texto exato, então uma forma alterada (codificada, quebrada, embrulhada em JSON) ainda pode vazar. Você pode pedir mais mascaramento com `::add-mask::`, mas o melhor plano é nunca imprimir segredos." },
+				{ "type": "paragraph", "text": "Nem tudo é segredo. O nome de uma região da nuvem é só configuração. Coloque-o numa **variável** e leia como `${{ vars.NOME }}`. Segredos e variáveis podem ser definidos por ambiente, então o mesmo workflow pega valores diferentes para staging e produção." },
+				{ "type": "heading", "text": "O GITHUB_TOKEN e as permissões" },
+				{ "type": "paragraph", "text": "Para cada job o GitHub cria uma chave temporária, o `GITHUB_TOKEN`. Ele vale só para o repositório atual e expira quando o job termina, então é mais seguro que um token de acesso pessoal. Seus poderes vêm da chave `permissions`. Assim que você lista um escopo, tudo o que você não listou vira `none`." },
+				{ "type": "code", "language": "yaml", "content": "permissions: {}\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps: [...]\n  release:\n    needs: test\n    runs-on: ubuntu-latest\n    permissions:\n      contents: write\n    steps: [...]", "caption": "Nenhum poder no topo, poder extra só onde é preciso" },
+				{ "type": "paragraph", "text": "Aqui o job `test` não recebe permissão nenhuma, então nem um step sequestrado consegue escrever no repositório. Um bloco `permissions` em um job substitui o do nível do workflow para aquele job. O workflow deste repositório começa com `contents: read`." },
+				{ "type": "paragraph", "text": "Mais um detalhe: coisas feitas com o `GITHUB_TOKEN` (enviar um commit, abrir um pull request, criar uma tag) não iniciam novas execuções de workflow. Isso evita laços infinitos em que workflows disparam uns aos outros. Se você precisa encadear, use `workflow_dispatch`, `workflow_run` ou um token de um GitHub App." },
+				{ "type": "heading", "text": "Ambientes" },
+				{ "type": "paragraph", "text": "Um **ambiente** (environment, como `production`) é um lugar nomeado para implantar, com suas próprias regras, segredos e variáveis. Um job entra nele com `environment: production`. Então:" },
+				{ "type": "list", "items": [
+					"**Revisores obrigatórios** (required reviewers): uma pessoa precisa aprovar antes de o job começar. É a forma usual de acrescentar uma decisão manual de lançamento à entrega contínua.",
+					"**Regras de branch**: só branches ou tags escolhidos podem implantar ali. O GitHub verifica isso por conta própria, então vale mesmo que alguém edite o workflow num branch de funcionalidade.",
+					"**Segredos do ambiente**: liberados só a jobs que citam o ambiente, depois que as regras dele são cumpridas. Um job sem a chave `environment:` lê um valor vazio para eles."
+				] },
+				{ "type": "heading", "text": "Pull requests vindos de forks" },
+				{ "type": "paragraph", "text": "Um [[fork|a sua própria cópia do repositório de outra pessoa]] envia código de fora da fronteira de confiança. Por isso, para o evento `pull_request`, os workflows de forks rodam **sem segredos** e com um token **somente leitura**. Isso é de propósito." },
+				{ "type": "heading", "text": "OIDC: segredos sem segredos" },
+				{ "type": "paragraph", "text": "Para implantar numa nuvem, você não precisa guardar uma chave de longa duração. Com o **OpenID Connect (OIDC)** o job pede ao GitHub um token de identidade curto e o mostra à nuvem, que só confia nele se afirmações (claims) como o repositório e o ambiente baterem com a sua política. O job precisa de `permissions: id-token: write` para pedir esse token. As credenciais são de curta duração, então não há chave para vazar nem para rotacionar." },
+				{ "type": "callout", "tone": "remember", "text": "Menor privilégio em todo lugar: `permissions` restritivas, segredos só no step e no ambiente que precisam, nenhum segredo para forks, e OIDC no lugar de chaves de nuvem guardadas." }
+			]
+		},
+		{
+			"id": "custom-actions-reusable-workflows",
+			"title": "Actions próprias e workflows reutilizáveis",
+			"blocks": [
+				{ "type": "paragraph", "text": "Quando você copia as mesmas dez linhas para vinte workflows, um dia vai esquecer de consertar uma delas. O GitHub oferece duas formas de escrever algo uma vez e usar muitas vezes, e elas funcionam em tamanhos diferentes." },
+				{ "type": "heading", "text": "Actions próprias" },
+				{ "type": "paragraph", "text": "Uma **action** é uma unidade reutilizável de trabalho que um step chama com `uses`. Ela mora numa pasta com um arquivo de metadados chamado `action.yml` (ou `action.yaml`). Esse arquivo declara as **entradas** (inputs) que ela aceita (com descrição, valor padrão e se é obrigatória), as **saídas** (outputs) que ela produz, e a seção `runs` que diz como ela executa. Existem três tipos:" },
+				{ "type": "table", "headers": ["Tipo", "Como roda", "Onde roda", "Bom para"], "rows": [
+					["JavaScript", "Código Node.js", "Linux, Windows e macOS", "Rápida e portátil"],
+					["Contêiner Docker", "Dentro de uma imagem que você constrói", "Só em runners Linux", "Controle total do ambiente, mas demora mais para iniciar"],
+					["Composta (composite)", "Uma lista de steps, que podem chamar outras actions", "Onde seus steps puderem rodar", "Juntar alguns steps num pacote"]
+				] },
+				{ "type": "paragraph", "text": "Uma action composta roda dentro do job de quem a chama, no runner de quem a chama. Ela tem duas regras famosas. Primeiro, cada step `run` precisa declarar o seu `shell` explicitamente, porque steps compostos não têm shell padrão. Segundo, uma action composta não entrega um valor por mágica: os steps de dentro têm saídas privadas, então o `action.yml` precisa mapear uma saída com `value:` apontando para a saída de um step interno." },
+				{ "type": "code", "language": "yaml", "content": "outputs:\n  version:\n    description: Computed version\n    value: ${{ steps.calc.outputs.version }}\nruns:\n  using: composite\n  steps:\n    - id: calc\n      shell: bash\n      run: echo \"version=1.4.0\" >> \"$GITHUB_OUTPUT\"", "caption": "O mapeamento da saída e o shell explícito" },
+				{ "type": "heading", "text": "Workflows reutilizáveis" },
+				{ "type": "paragraph", "text": "Um **workflow reutilizável** (reusable workflow) é um arquivo de workflow normal que tem `workflow_call` no seu `on`. Ele declara `inputs` tipados e os `secrets` de que precisa. Quem chama o executa como um **job** com `uses:` no nível do job, apontando para `dono/repo/.github/workflows/<arquivo>@<ref>` (ou um caminho local). As entradas vão em `with`. Os segredos vão um a um em `secrets`, ou todos de uma vez com `secrets: inherit` dentro da mesma organização. Um job chamador que usa um workflow reutilizável não pode ter steps próprios." },
+				{ "type": "code", "language": "yaml", "content": "jobs:\n  ci:\n    uses: my-org/shared/.github/workflows/ci.yml@v1\n    with:\n      node-version: 22\n    secrets: inherit" },
+				{ "type": "paragraph", "text": "Um workflow reutilizável é **isolado** de quem o chama. Só entram os `inputs` e `secrets` declarados, e suas saídas voltam. O `env` de quem chama não é repassado, então uma variável definida no topo do chamador aparece vazia dentro do workflow chamado." },
+				{ "type": "heading", "text": "Qual escolher?" },
+				{ "type": "table", "headers": ["Característica", "Action composta", "Workflow reutilizável"], "rows": [
+					["O que empacota", "Alguns steps", "Jobs inteiros"],
+					["Onde roda", "Dentro do job e do runner de quem chama", "Em jobs próprios, com runners próprios"],
+					["Pode ter", "Só steps", "Matrizes, ambientes, segredos, vários jobs"],
+					["Melhor para", "Uma receita pequena que se repete", "Um pipeline padrão compartilhado por muitos repositórios"]
+				] },
+				{ "type": "heading", "text": "Versões de actions" },
+				{ "type": "paragraph", "text": "Actions são versionadas com refs do Git. Um hábito comum é publicar tags exatas como `v4.2.1` e também uma **tag de major móvel** `v4` que o autor vai movendo para a frente. Quem usa pode escolher `@v4` (atualizações compatíveis automáticas), `@v4.2.1` (um lançamento exato) ou um SHA de commit completo (imutável). Cada escolha troca conveniência por controle." },
+				{ "type": "callout", "tone": "remember", "text": "Action composta = steps dentro do seu job. Workflow reutilizável = jobs inteiros, chamados com `uses` num job. Steps compostos precisam de `shell`, e suas saídas precisam de um mapeamento `value:`." }
+			]
+		},
+		{
+			"id": "quality-gates",
+			"title": "Portões de qualidade",
+			"blocks": [
+				{ "type": "paragraph", "text": "No aeroporto você passa pela conferência do bilhete, pela segurança e pelo portão de embarque. Se qualquer uma disser não, você para. Um **portão de qualidade** (quality gate) é uma verificação no pipeline que uma mudança precisa passar para seguir. Os portões baratos e rápidos vêm primeiro (formato, lint, checagem de tipos, testes unitários), então a maioria das mudanças ruins é barrada em minutos. Um portão precisa ser **automático e binário**, passa ou falha. Se as pessoas podem negociar com ele, deixou de ser um portão." },
+				{ "type": "heading", "text": "Um portão é só um código de saída" },
+				{ "type": "paragraph", "text": "Como o GitHub Actions sabe que um comando passou? Pelo contrato do Unix: **código de saída 0 significa sucesso, qualquer outro número significa falha**. Linters, verificadores de tipos e executores de testes seguem isso, então um pipeline consegue encadeá-los. Um script que acha um problema, imprime e mesmo assim sai com 0 é um portão que nunca fecha." },
+				{ "type": "code", "language": "yaml", "content": "- name: Documentation index is up to date\n  run: bun run docs:index --check", "caption": "Um modo de verificação: não escreve nada e falha se o arquivo commitado for diferente" },
+				{ "type": "paragraph", "text": "Esse exemplo é usado por este repositório. Alguns arquivos são gerados a partir de outros e também ficam commitados, e podem se afastar da sua origem. Com `--check`, o script refaz o resultado na memória, compara com o arquivo commitado e sai com código diferente de zero em qualquer diferença. A CI nunca altera o repositório: ela avisa, e o desenvolvedor aplica a correção localmente. Formatadores funcionam do mesmo jeito (`biome ci`)." },
+				{ "type": "heading", "text": "Tornando um portão obrigatório no GitHub" },
+				{ "type": "paragraph", "text": "Um workflow que falha é só uma marca vermelha até você proteger o branch. As regras de **proteção de branch** (ou rulesets) transformam checks escolhidos em **required status checks** (checks de status obrigatórios). Então o GitHub se recusa a juntar um pull request enquanto um check obrigatório estiver falhando, **pendente ou ausente**." },
+				{ "type": "list", "items": [
+					"**Atualizado antes de juntar** (checks estritos): o resultado só vale se o branch do pull request contém a base mais recente, então o código testado é igual ao código juntado. Duas mudanças podem passar cada uma sozinha e quebrar juntas. O preço são mais builds, porque cada junção deixa os outros pull requests abertos desatualizados.",
+					"**Merge queue** (fila de merge): paga esse preço automaticamente. Ela monta um branch temporário com a base mais recente mais os pull requests da fila, e roda os checks obrigatórios nessa combinação. O GitHub anuncia isso com o evento `merge_group`, então todo workflow que reporta um check obrigatório precisa de `on: merge_group` ao lado de `pull_request`. Se faltar, o pull request na fila espera um check que nunca chega."
+				] },
+				{ "type": "heading", "text": "Checks pulados: um detalhe delicado" },
+				{ "type": "table", "headers": ["Como o check é pulado", "O que o GitHub reporta", "Efeito no merge"], "rows": [
+					["O workflow não começou (filtro de branch ou de caminho)", "O check fica pendente, nunca é reportado", "O pull request fica bloqueado"],
+					["Um job foi pulado pela condição `if`", "O job conta como sucesso", "O pull request pode ser juntado, embora nada tenha sido testado"]
+				] },
+				{ "type": "paragraph", "text": "Então um portão obrigatório não deve poder ser pulado por algo que o autor controla, como adicionar ou tirar um rótulo." },
+				{ "type": "heading", "text": "Limites, como a cobertura" },
+				{ "type": "paragraph", "text": "Um commit stage pode falhar por limites mensuráveis: avisos do compilador, violações de estilo, duplicação, **cobertura de código** (a fatia das linhas que rodam durante os testes). Um piso de cobertura como 80 por cento é útil, já que código que nunca roda em um teste certamente não foi verificado. Mas é um teto fraco: rodar uma linha não é o mesmo que conferir o comportamento dela, e quando o número vira meta, as pessoas escrevem testes só para subi-lo." },
+				{ "type": "callout", "tone": "warning", "text": "Um check obrigatório pulado com `if` parece verde mas não testou nada, e um check obrigatório de um workflow que nunca começa bloqueia todo mundo. Desenhe os portões obrigatórios para que sempre rodem e sempre reportem." },
+				{ "type": "callout", "tone": "remember", "text": "Portão = passa ou falha automático pelo código de saída. A proteção de branch o torna obrigatório. Checks estritos e filas de merge garantem que o código testado é o código juntado." }
+			]
+		},
+		{
+			"id": "deployment-strategies",
+			"title": "Estratégias de deploy",
+			"blocks": [
+				{ "type": "paragraph", "text": "Sua nova versão passou por todos os portões. Agora você precisa colocá-la na frente dos usuários de verdade sem estragar o dia deles. Primeiro, um par de palavras importante do Continuous Delivery. **Implantação** (deployment) é técnica: colocar uma versão num ambiente e iniciá-la. **Lançamento** (release) é um ato de negócio: deixar os usuários chegarem a essa versão ou funcionalidade. Mantê-los separados reduz o risco dos dois, porque você pode implantar e conferir a nova versão em produção antes de alguém vê-la. Todas as estratégias abaixo são formas de lançar algo que já foi implantado." },
+				{ "type": "heading", "text": "Blue-green" },
+				{ "type": "paragraph", "text": "Mantenha dois ambientes de produção tão parecidos quanto possível, chamados blue (azul) e green (verde). Só um recebe o tráfego dos usuários. Você instala a nova versão no ocioso e a testa lá. Lançar significa mudar o roteador ou o balanceador de carga para apontar para ela, e leva segundos." },
+				{ "type": "diagram", "content": "          +--> blue  (v1)  ativo\nusuários --> roteador\n          +--> green (v2)  ocioso, testado (smoke)\n\ntroca o roteador:\n          +--> blue  (v1)  ocioso, pronto p/ rollback\nusuários --> roteador\n          +--> green (v2)  ativo", "caption": "Blue-green: a versão antiga fica pronta" },
+				{ "type": "paragraph", "text": "O **rollback** (voltar atrás) também é uma troca: mande o tráfego de volta ao ambiente antigo. Leva segundos e não precisa de rebuild." },
+				{ "type": "heading", "text": "Canary" },
+				{ "type": "paragraph", "text": "Os antigos mineiros de carvão levavam um canário para a mina, porque ele adoecia primeiro se o ar estivesse ruim. Um **canary release** roda a nova versão ao lado da antiga, dando a ela uma pequena parte do tráfego real. Se os números dela forem tão bons quanto os da antiga, a parte cresce até 100 por cento. Se forem piores, o tráfego volta e poucos usuários foram afetados." },
+				{ "type": "paragraph", "text": "Um canary é um experimento com um grupo de controle: a mesma métrica, medida ao mesmo tempo, na antiga e na nova. Compare **taxas**, nunca contagens brutas, porque os grupos têm tamanhos muito diferentes. E decida a regra antes do lançamento, para que uma ferramenta, e não uma pessoa esperançosa, decida continuar ou parar." },
+				{ "type": "table", "headers": ["Versão", "Requisições", "Erros", "Taxa de erro"], "rows": [
+					["Estável", "49.000", "98", "98 / 49.000 = 0,2%"],
+					["Canary", "1.000", "31", "31 / 1.000 = 3,1%"]
+				], "caption": "Taxa de erro = erros divididos por requisições. Compare as duas taxas com a regra que você escreveu" },
+				{ "type": "heading", "text": "Atualização gradual (rolling)" },
+				{ "type": "paragraph", "text": "Uma **rolling update** substitui as instâncias de um serviço em lotes, algumas por vez. Precisa de pouco hardware extra e não causa indisponibilidade, mas durante todo o lançamento **duas versões estão vivas juntas**. Então a nova versão precisa ser retrocompatível com a antiga em tudo que elas compartilham: esquema do banco, formatos de mensagem, sessões e a API vista pelos clientes." },
+				{ "type": "paragraph", "text": "Ela também reduz a capacidade enquanto roda. A capacidade que sobra é (instâncias menos o lote) vezes a capacidade de uma instância. Com 5 instâncias de 100 requisições por segundo cada, um lote de 2 deixa 3 x 100 = 300 requisições por segundo. Se o pico de carga é maior que isso, o lote é grande demais. O tamanho do lote é uma troca entre a velocidade do lançamento e a margem de segurança, e acrescentar instâncias temporárias extras (um **surge**) elimina a troca ao preço de hardware." },
+				{ "type": "heading", "text": "Smoke tests" },
+				{ "type": "paragraph", "text": "Uma implantação pode falhar mesmo com o código perfeito: uma string de conexão errada, uma variável de ambiente faltando, uma porta de firewall fechada. Um **smoke test** é uma verificação automática curta feita logo depois da implantação, antes de o tráfego dos usuários chegar. Ele confere que a aplicação em execução inicia e alcança seu banco de dados, suas filas e outros serviços. Se falhar, a implantação sofre rollback ou nunca é lançada, o que não custa nada quando os usuários foram mantidos longe." },
+				{ "type": "heading", "text": "A parte difícil: os dados" },
+				{ "type": "paragraph", "text": "O código pode sofrer rollback girando um roteador. **Os dados não.** Se a versão 2 muda o banco de um jeito que a versão 1 não consegue ler, o caminho de rollback do blue-green, do canary e da atualização gradual desaparece. O mesmo vale para linhas, arquivos, caches e mensagens de fila que a versão 2 escreveu. O plano seguro é dividir a mudança em etapas, chamado **expandir e contrair** (expand and contract):" },
+				{ "type": "list", "ordered": true, "items": [
+					"**Expandir**: mude o esquema de forma compatível, por exemplo adicione a nova coluna `full_name` e mantenha a antiga `name`.",
+					"Implante código que lê as duas, depois lance a nova versão.",
+					"**Contrair**: em uma implantação posterior, quando nenhum rollback para o código antigo é esperado, remova a coluna antiga."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Um plano que diz 'vamos iniciar um canary e puxá-lo de volta se os erros subirem' falha se o canary já escreveu dados que a versão antiga não consegue ler. Primeiro faça os leitores aceitarem os dois formatos, e só em um lançamento posterior deixe a nova versão escrever o novo formato." },
+				{ "type": "callout", "tone": "remember", "text": "Blue-green = dois ambientes e uma troca. Canary = pequena parte do tráfego, comparada por taxa. Rolling = lotes, duas versões ao mesmo tempo. Rollback é fácil para código e difícil para dados, então mude os dados em etapas compatíveis." }
+			]
+		},
+		{
+			"id": "semver-commits-changelog",
+			"title": "SemVer, Conventional Commits e changelog",
+			"blocks": [
+				{ "type": "paragraph", "text": "Quando um amigo diz 'versão 2.4.7', isso te diz alguma coisa? Com o **Semantic Versioning 2.0.0** (SemVer) diz. Uma versão tem a forma `MAJOR.MINOR.PATCH`, e cada parte promete algo às pessoas que usam o software." },
+				{ "type": "table", "headers": ["Parte", "Cresce quando", "Exemplo a partir de 2.4.7"], "rows": [
+					["PATCH", "Uma correção de bug retrocompatível", "2.4.8"],
+					["MINOR", "Nova funcionalidade retrocompatível", "2.5.0"],
+					["MAJOR", "Uma mudança incompatível na API pública", "3.0.0"]
+				], "caption": "Quando um número cresce, todos os números à direita dele voltam a 0" },
+				{ "type": "paragraph", "text": "Atenção: com a versão major acima de zero, qualquer mudança incompatível na API pública exige um novo major. (Versões `0.y.z` são para o desenvolvimento inicial, e este repositório, que está antes da 1.0.0, usa um aumento de minor para um novo mini-projeto e um aumento de patch para correções.)" },
+				{ "type": "heading", "text": "Pré-lançamentos e metadados de build" },
+				{ "type": "paragraph", "text": "Um **pré-lançamento** (pre-release) é escrito com um hífen e identificadores separados por pontos, como `1.0.0-beta.2`. Ele sempre ordena **antes** da versão normal que prepara. Dois pré-lançamentos são comparados identificador por identificador: números como números, palavras em ordem ASCII (do alfabeto), e um número é menor que uma palavra. Comparar versões como texto simples dá respostas erradas (`10` seria menor que `9`), então as ferramentas usam uma biblioteca de SemVer." },
+				{ "type": "diagram", "content": "1.0.0-alpha  <  1.0.0-alpha.1  <  1.0.0-beta\n  <  1.0.0-beta.2  <  1.0.0-beta.11  <  1.0.0-rc.1\n  <  1.0.0\n\n1.0.0+build.5  e  1.0.0+build.9  --> mesma precedência", "caption": "Ordem de precedência, da menor para a maior" },
+				{ "type": "paragraph", "text": "Os **metadados de build** vêm depois de um mais, como `1.0.0+20261010.sha.5114f85`. Eles dão nome a um build e são **ignorados na comparação**: duas versões que diferem só neles têm a mesma precedência. Então nunca ponha nos metadados de build informação que importa para atualizar." },
+				{ "type": "heading", "text": "Conventional Commits" },
+				{ "type": "paragraph", "text": "Uma mensagem de commit é mais fácil para máquinas lerem quando tem um formato fixo. O **Conventional Commits 1.0.0** diz que a primeira linha é `tipo(escopo): descrição`. O tipo diz que espécie de mudança é (`fix`, `feat`, e outros como `docs`, `chore` ou `refactor`), e o escopo opcional diz onde." },
+				{ "type": "table", "headers": ["Commit", "Aumento no SemVer"], "rows": [
+					["`fix(api): return 404 for unknown id`", "PATCH"],
+					["`feat(cli): add --json flag`", "MINOR"],
+					["Qualquer commit com uma mudança que quebra compatibilidade", "MAJOR"],
+					["`docs`, `chore`, `refactor`... sem quebra de compatibilidade", "Nenhum aumento por si só"]
+				] },
+				{ "type": "paragraph", "text": "Uma **mudança que quebra compatibilidade** (breaking change) é marcada de duas formas, que podem ser combinadas: um ponto de exclamação logo antes dos dois-pontos (`refactor(auth)!: ...`), ou um rodapé que começa com `BREAKING CHANGE:` em letras maiúsculas. Ela não depende do tipo: um `refactor`, um `fix` ou um `chore` podem quebrar a API. Um lançamento cobre muitos commits mas recebe **um** aumento, o mais alto que qualquer um deles pede. Se o último lançamento foi 1.3.2 e os commits novos incluem um `fix`, um `feat` e um `docs`, o lançamento é 1.4.0. Se um deles quebra compatibilidade, é 2.0.0." },
+				{ "type": "heading", "text": "Keep a Changelog" },
+				{ "type": "paragraph", "text": "Um **changelog** conta às pessoas que usam o software o que é diferente em cada versão. Não é uma cópia do `git log`: as mensagens de commit documentam passos para quem constrói o código, enquanto um changelog é escrito para quem o usa. O **Keep a Changelog 1.1.0** pede uma entrada por versão, a mais recente primeiro, com a data como AAAA-MM-DD, e uma seção `Unreleased` no topo para o que está por vir. As mudanças são agrupadas sob seis títulos:" },
+				{ "type": "table", "headers": ["Título", "Use para"], "rows": [
+					["Added", "Funcionalidades novas"],
+					["Changed", "Mudanças em comportamento existente"],
+					["Deprecated", "Funcionalidades que serão removidas em breve (o aviso)"],
+					["Removed", "Funcionalidades removidas agora (a remoção que foi avisada)"],
+					["Fixed", "Correções de bugs"],
+					["Security", "Correções de vulnerabilidades"]
+				] },
+				{ "type": "callout", "tone": "remember", "text": "O SemVer diz o tamanho da mudança. O Conventional Commits a escreve de uma forma que as ferramentas conseguem ler. O changelog a explica para humanos. Metadados de build são ignorados na precedência, e um pré-lançamento ordena antes do seu lançamento." }
+			]
+		},
+		{
+			"id": "supply-chain-security",
+			"title": "Segurança da cadeia de suprimentos no CI",
+			"blocks": [
+				{ "type": "paragraph", "text": "Seu pipeline usa código de outras pessoas: actions, pacotes, imagens base. Esse código faz parte da sua **cadeia de suprimentos** (supply chain), a longa estrada que vai do trabalho dos outros até o programa nas mãos dos seus usuários. Se um atacante entra em uma parte da cadeia, seu pipeline e seus segredos correm perigo. Três ideias simples te protegem." },
+				{ "type": "heading", "text": "1. Fixe as actions em um SHA de commit completo" },
+				{ "type": "paragraph", "text": "Uma action roda dentro do seu job, com acesso ao seu código, ao seu `GITHUB_TOKEN` e aos segredos que você dá a ela. Uma tag como `v3`, ou um branch, é um **ponteiro móvel**: `dono/action@v3` significa o que o dono decidir amanhã. Um **SHA de commit** completo é a única referência imutável. O custo é que as atualizações deixam de ser automáticas, então os times combinam a fixação com um bot que abre pull requests com SHAs novos." },
+				{ "type": "table", "headers": ["Referência", "Pode mudar debaixo de você?"], "rows": [
+					["`@main` (um branch)", "Sim, a cada push"],
+					["`@v3` (uma tag)", "Sim, o dono pode movê-la"],
+					["`@<SHA de 40 caracteres>`", "Não, é imutável"]
+				] },
+				{ "type": "heading", "text": "2. Nunca cole texto não confiável num script" },
+				{ "type": "paragraph", "text": "Uma expressão `${{ }}` dentro de um step `run` é trocada pelo seu valor quando o GitHub **escreve o arquivo do script**, antes de qualquer shell começar. Se o valor vem de um usuário (o título de um pull request, o nome de um branch, o corpo de uma issue, uma mensagem de commit), o usuário está escrevendo parte do seu script. Isso é **injeção de script** (script injection)." },
+				{ "type": "code", "language": "yaml", "content": "# Arriscado: o título vira parte do script\n- run: echo \"Checking ${{ github.event.pull_request.title }}\"\n\n# Mais seguro: o texto viaja como dado numa variável\n- run: echo \"Checking $TITLE\"\n  env:\n    TITLE: ${{ github.event.pull_request.title }}", "caption": "Use uma variável de ambiente intermediária" },
+				{ "type": "heading", "text": "3. Cuidado com o pull_request_target" },
+				{ "type": "paragraph", "text": "Como você viu, o `pull_request` vindo de um fork é seguro por desenho: sem segredos e com token somente leitura. O `pull_request_target` é o oposto. Ele roda o workflow do repositório **base** e dá a ele os segredos, supondo que só código confiável vai rodar. Se o workflow faz checkout e executa a **cabeça** (head) do pull request, ele roda o código de um desconhecido com os seus segredos, e a suposição se quebra." },
+				{ "type": "list", "items": [
+					"Compile e teste código não confiável sob `pull_request`, sem privilégios.",
+					"Faça o trabalho privilegiado (como comentar ou rotular) em um workflow separado que nunca executa esse código."
+				] },
+				{ "type": "heading", "text": "SLSA e proveniência" },
+				{ "type": "paragraph", "text": "Quando você baixa um pacote, como sabe que ele foi construído a partir do código-fonte público e não alterado no caminho? O **SLSA** (Supply-chain Levels for Software Artifacts, que se lê 'salsa') responde com a **proveniência de build** (build provenance): uma declaração assinada que liga um artefato (pelo seu digest, uma impressão digital do conteúdo) ao construtor, ao processo de build e ao commit de origem." },
+				{ "type": "table", "headers": ["Nível de build", "O que você tem"], "rows": [
+					["L1", "A proveniência existe"],
+					["L2", "A proveniência é assinada por uma plataforma de build hospedada"],
+					["L3", "A plataforma é endurecida de modo que o próprio build não consegue forjar a proveniência"]
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Fixe actions de terceiros em um SHA de commit completo, nunca confie em texto que um desconhecido pode escrever, mantenha o pull_request_target longe de código não confiável, e use proveniência (SLSA) para provar de onde veio um artefato." }
+			]
+		},
+		{
+			"id": "this-repository-pipeline",
+			"title": "Juntando tudo: o pipeline deste repositório",
+			"blocks": [
+				{ "type": "paragraph", "text": "Tudo o que você leu é usado no arquivo `.github/workflows/ci.yml` deste repositório. Vamos lê-lo como um mapa." },
+				{ "type": "table", "headers": ["Ideia", "Onde aparece no ci.yml"], "rows": [
+					["Eventos", "Roda em `push` na main, em todo `pull_request` e à mão com `workflow_dispatch`"],
+					["Menor privilégio", "Um `permissions: contents: read` no topo"],
+					["Concorrência", "Um grupo feito do nome do evento e da ref, com `cancel-in-progress: true`, para que um push não cancele uma execução completa manual"],
+					["Runner fixado", "`runs-on: ubuntu-24.04`, não `ubuntu-latest`"],
+					["Jobs em paralelo", "`typescript`, `formatters`, `quiz` e `list-projects` rodam ao mesmo tempo"],
+					["Job dependente", "`mini-projects` tem `needs: list-projects`"],
+					["Matriz", "`formatters` tem uma matriz de cinco linguagens com `fail-fast: false`, e `mini-projects` tem um job por projeto"],
+					["Matriz dinâmica", "`list-projects` escreve JSON em `$GITHUB_OUTPUT`, e a matriz o lê com `fromJson`"],
+					["Portões de qualidade", "`biome ci`, checagem de tipos, testes unitários, validação do quiz e `docs:index --check`, todos por código de saída"],
+					["Uso seguro de entrada", "O comando de formatação viaja numa variável de ambiente, não colado no script"]
+				], "caption": "Conceitos deste resumo encontrados no pipeline real" },
+				{ "type": "diagram", "content": "push / pull_request\n        |\n        +--> typescript   (lint, tipos, testes, docs)\n        +--> formatters   (matriz: 5 linguagens)\n        +--> quiz         (unitário + ponta a ponta)\n        +--> list-projects --> mini-projects (matriz, 1 cada)\n\nTodos rodam em paralelo. Qualquer job vermelho bloqueia o\nmerge quando é um required status check.", "caption": "A forma do pipeline" },
+				{ "type": "heading", "text": "Erros comuns para evitar" },
+				{ "type": "list", "items": [
+					"Chamar de CI algo em que os branches vivem por semanas. CI de verdade são junções pequenas na linha principal todo dia.",
+					"Pôr as verificações mais lentas primeiro. Falhe rápido, com as baratas na frente.",
+					"Uma chave de cache constante, que cria um cache velho. A chave do cache precisa mudar com o conteúdo.",
+					"Enviar artefatos com o mesmo nome de todos os jobs da matriz.",
+					"Dar `permissions` amplas por padrão, ou dar segredos a código de forks.",
+					"Tornar um check obrigatório pulável (`if` com um rótulo) ou filtrado por `paths`.",
+					"Fazer rollback do código esquecendo que o banco ou a fila já mudaram.",
+					"Fixar actions em tags móveis, ou colar texto de `${{ github.event... }}` direto no `run`."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Um bom pipeline é pequeno e frequente, rápido para falhar, construído uma vez, de menor privilégio, obrigatório por checks exigidos, cuidadoso com os dados ao lançar, e honesto sobre de onde vem o seu software." }
+			]
+		}
+	]
+}

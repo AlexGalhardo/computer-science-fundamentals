@@ -1,0 +1,390 @@
+{
+	"area": "parallelism",
+	"intro": [
+		"Imagina que tienes que pegar 1.000 cromos en un álbum. Tú solo tardas toda la tarde. Si pides ayuda a 3 amigos, cada uno pega una cuarta parte de los cromos y terminas mucho antes. Eso es **paralelismo**: hacer partes del mismo trabajo **al mismo tiempo**, con varios ayudantes, para que el trabajo acabe antes.",
+		"Los ayudantes dentro de un computador se llaman [[núcleos (cores)|un núcleo es un pequeño cerebro del procesador, capaz de ejecutar una secuencia de instrucciones]]. Tu teléfono tiene 8 o más. Durante muchos años, los chips fueron más rápidos haciendo que un núcleo corriera cada vez más. Eso se acabó, porque el chip se calentaba demasiado. Hoy el camino es repartir el trabajo entre muchos núcleos, entre pequeños \"carriles\" dentro de un núcleo, entre tarjetas gráficas o entre varias máquinas.",
+		"Pero hay una trampa: 4 amigos no siempre terminan 4 veces más rápido. Algunos trabajos no se pueden repartir, los ayudantes se estorban entre sí, y uno puede recibir una parte mucho más difícil que los demás. Esta área enseña las reglas de ese juego: cómo dividir el trabajo, cómo medir la ganancia, por qué la ganancia tiene un límite y qué trampas hacen que los programas paralelos sean lentos o incorrectos.",
+		"Al final conocerás las leyes principales (Amdahl y Gustafson), los patrones principales (fork-join, map-reduce, reducciones), las ideas de hardware (líneas de caché, SIMD, GPU, memoria compartida y distribuida) y cómo mantener un programa paralelo correcto y repetible."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "El panorama general y el vocabulario",
+			"blocks": [
+				{ "type": "paragraph", "text": "Piensa en una cocina. Un cocinero que hace 100 sándwiches los hace de uno en uno. Cuatro cocineros en cuatro mesas los hacen juntos. El sándwich es el **trabajo**, cada cocinero es un **trabajador (worker)**, y trabajan **en paralelo** porque todos cocinan en el mismo instante." },
+				{ "type": "callout", "tone": "analogy", "text": "**Concurrente** es distinto de **paralelo**. Un cocinero puede alternar entre tres recetas: todas están \"en curso\", pero solo una se está tocando en cada instante. Eso es concurrencia (una forma de organizar el trabajo). El paralelismo exige más de un cocinero cocinando de verdad en el mismo instante (una forma de ejecutar el trabajo)." },
+				{ "type": "heading", "text": "Palabras que vas a encontrar" },
+				{ "type": "table", "headers": ["Palabra", "Significado cotidiano"], "rows": [
+					["Worker (trabajador)", "Un ayudante: un hilo (thread), un núcleo, un proceso o una máquina entera"],
+					["Tiempo de reloj (wall-clock)", "El tiempo que lees en un reloj de pared, de principio a fin. El paralelismo intenta reducirlo"],
+					["Parte serial", "La parte del trabajo que solo un trabajador puede hacer"],
+					["Overhead", "El costo extra de organizar a los ayudantes: repartir tareas, esperar, hablar entre ellos"],
+					["Balance de carga", "Qué tan parejo se reparte el trabajo. Si un ayudante tiene mucho más, los demás lo esperan"],
+					["Granularidad", "El tamaño de cada pedazo de trabajo. Los pedazos diminutos cuestan mucha organización, los enormes son difíciles de repartir"]
+				], "caption": "Vocabulario de toda el área" },
+				{ "type": "paragraph", "text": "El **speed-up** es \"cuántas veces más rápido\". Si un trabajo tarda 120 segundos solo y 20 segundos con ayudantes, el speed-up es 6. Buena parte de esta área explica por qué ese número suele ser menor que el número de ayudantes." },
+				{ "type": "callout", "tone": "remember", "text": "Paralelo significa \"en el mismo instante, en trabajadores distintos\". El objetivo es terminar antes, y el precio es organizar a los ayudantes." }
+			]
+		},
+		{
+			"id": "data-vs-task-parallelism",
+			"title": "Paralelismo de datos y paralelismo de tareas",
+			"blocks": [
+				{ "type": "paragraph", "text": "Hay dos grandes formas de cortar un trabajo en pedazos. En el álbum de cromos, puedes darle a cada amigo **una parte de los cromos** (el mismo oficio, cromos distintos). O puedes darle a cada amigo **una tarea distinta**: uno recorta, uno pega, uno escribe las etiquetas." },
+				{ "type": "table", "headers": ["Aspecto", "Paralelismo de datos", "Paralelismo de tareas"], "rows": [
+					["Qué se divide", "Los datos (un arreglo, las filas de una imagen, un rango de números)", "Los tipos de trabajo (códigos distintos al mismo tiempo)"],
+					["Quién hace qué", "Cada trabajador ejecuta la misma operación sobre su porción", "Cada trabajador ejecuta una tarea distinta"],
+					["Qué limita la ganancia", "La cantidad de datos", "El número de tareas independientes y la más larga de ellas"],
+					["Ejemplo", "Pintar cada píxel de una imagen", "Un juego que corre sonido, física y dibujo a la vez"]
+				], "caption": "Dos formas de dividir el trabajo" },
+				{ "type": "heading", "text": "¿Cuándo se puede repartir un bucle?" },
+				{ "type": "paragraph", "text": "Un bucle (loop) puede convertirse en paralelismo de datos cuando sus iteraciones son **independientes**: ninguna lee un valor que otra escribe. Entonces las vueltas pueden correr en cualquier orden, incluso al mismo tiempo. El tamaño y la duración de las vueltas solo afectan el rendimiento, no la corrección." },
+				{ "type": "heading", "text": "El paralelismo de tareas tiene un techo" },
+				{ "type": "paragraph", "text": "Digamos que tres tareas independientes tardan 6 s, 3 s y 3 s. Cada una corre en su núcleo. El tiempo total es el de la tarea más larga, 6 s, incluso en una máquina de 16 núcleos. El speed-up es 12 / 6 = 2. Solo dividir los datos dentro de las tareas usaría los otros núcleos." },
+				{ "type": "paragraph", "text": "Las tareas también pueden depender unas de otras. La cadena más larga de tareas dependientes es el [[camino crítico|la cadena de tareas que deben correr una tras otra, con el mayor tiempo total]]. Ningún número de procesadores hace el programa más rápido que esa cadena. Ejemplo: A (4 s), B (3 s) y D (5 s) son libres, C (2 s) necesita A y B, E (1 s) necesita C y D. La cadena A, C, E tarda 4 + 2 + 1 = 7 s. El trabajo total es 15 s, así que el mejor speed-up es 15 / 7, cerca de 2,1." },
+				{ "type": "diagram", "content": "A(4) --\\\n         +--> C(2) --\\\nB(3) --/             +--> E(1)\nD(5) ---------------/\n\ncadena más larga: A -> C -> E = 7 s", "caption": "Tareas con dependencias: el camino crítico es 7 s" },
+				{ "type": "heading", "text": "Tres trampas" },
+				{ "type": "list", "items": [
+					"**Pedazos desiguales.** Contar primos por división cuesta más para números grandes. Si 4 trabajadores reciben 4 bloques iguales de números, el que tomó el bloque más alto termina último y los demás quedan parados.",
+					"**Pedazos demasiado pequeños.** Crear una tarea para cada una de 10 millones de iteraciones diminutas cuesta más que el trabajo mismo. Agrupa las iteraciones en bloques. Eso es granularidad.",
+					"**Demasiados hilos.** Si 8 peticiones inician 8 hilos cada una en una máquina de 8 núcleos, 64 hilos pelean por 8 núcleos. Esto se llama oversubscription (exceso de hilos). Agrega cambios de contexto y pelea de caché, sin velocidad extra. Usa un solo pool de trabajadores del tamaño del número de núcleos."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "El paralelismo de datos no necesita locks solo cuando cada posición de memoria tiene **un único escritor** y nadie lee lo que otro trabajador escribe. Si dos trabajadores escriben la misma variable, hay una data race. Dale a cada trabajador su variable local y combínalas después del join." },
+				{ "type": "callout", "tone": "remember", "text": "El paralelismo de datos divide los datos y escala con su tamaño. El paralelismo de tareas divide los tipos de trabajo y está limitado por el número de tareas y por el camino crítico." }
+			]
+		},
+		{
+			"id": "speedup-efficiency-scalability",
+			"title": "Speed-up, eficiencia y escalabilidad",
+			"blocks": [
+				{ "type": "paragraph", "text": "¿Cómo decimos que un programa paralelo es \"bueno\"? Midiéndolo. Dos números hacen casi todo el trabajo." },
+				{ "type": "list", "items": [
+					"**Speed-up**: `S(N) = T(1) / T(N)`. Es el tiempo con 1 trabajador dividido por el tiempo con N trabajadores, ambos en tiempo de reloj (wall-clock). El sueño es `S(N) = N`, el **speed-up lineal**.",
+					"**Eficiencia**: `E(N) = S(N) / N`. Dice cuánto de cada trabajador se convirtió en ganancia. Con speed-up lineal, E vale 1, o 100%."
+				] },
+				{ "type": "paragraph", "text": "Ejemplo: un programa tarda 120 s con 1 trabajador y 20 s con 8. El speed-up es 120 / 20 = 6. La eficiencia es 6 / 8 = 75%. Una cuarta parte de la capacidad pagada no se convirtió en ganancia: 120 s de trabajo ocuparon 8 x 20 = 160 s de trabajadores." },
+				{ "type": "heading", "text": "La eficiencia suele caer" },
+				{ "type": "paragraph", "text": "Una tabla de speed-ups engaña, porque el speed-up sigue subiendo mientras cada nuevo trabajador ayuda menos. Mira la eficiencia:" },
+				{ "type": "table", "headers": ["Trabajadores", "Speed-up", "Eficiencia"], "rows": [
+					["2", "1,9", "95%"],
+					["4", "3,4", "85%"],
+					["8", "5,2", "65%"]
+				], "caption": "El speed-up crece, la eficiencia cae" },
+				{ "type": "heading", "text": "Escalabilidad fuerte y débil" },
+				{ "type": "table", "headers": ["Aspecto", "Escalabilidad fuerte (strong scaling)", "Escalabilidad débil (weak scaling)"], "rows": [
+					["Qué cambias", "El mismo problema, más trabajadores", "El problema crece junto con los trabajadores"],
+					["Resultado ideal", "Tiempo dividido por N", "Tiempo constante"],
+					["Ley asociada", "Amdahl", "Gustafson"],
+					["Eficiencia", "`T(1) / (N x T(N))`", "`T(1) / T(N)` con los problemas crecientes"]
+				], "caption": "Dos tipos de prueba de escalabilidad" },
+				{ "type": "paragraph", "text": "Ejemplo de escalabilidad débil: 1 trabajador resuelve un problema de tamaño n en 50 s. 8 trabajadores resuelven un problema de tamaño 8n en 62,5 s. La eficiencia débil es 50 / 62,5 = 80%. El **speed-up escalado** (tiempo que un trabajador tardaría en el problema grande, dividido por el tiempo real) es 8 x 0,8 = 6,4." },
+				{ "type": "heading", "text": "Compara con la base correcta" },
+				{ "type": "paragraph", "text": "El programa paralelo con 1 trabajador ya paga por dividir y esperar. Si divides por ese tiempo, el programa parece mejor de lo que es. Este repositorio usa el **mejor programa secuencial** como base (speed-up absoluto). Ejemplo: el secuencial tarda 10 s, el paralelo tarda 12,5 s con 1 hilo y 3,125 s con 4 hilos. Contra sí mismo, 12,5 / 3,125 = 4 parece perfecto. El speed-up real es 10 / 3,125 = 3,2." },
+				{ "type": "heading", "text": "¿Puede el speed-up superar N?" },
+				{ "type": "paragraph", "text": "A veces sí, y se llama speed-up **superlineal**. Ocurre cuando el trabajo paralelo se vuelve más barato, y no solo repartido. La causa más común es la caché: el arreglo completo no cabe en la caché de un núcleo, pero un octavo sí, así que cada núcleo lee de memoria rápida. Otra causa es una búsqueda en la que un trabajador encuentra la respuesta pronto y detiene a los demás." },
+				{ "type": "callout", "tone": "warning", "text": "Cuenta los trabajadores correctos. Una CPU con 8 núcleos físicos puede mostrar 16 núcleos lógicos (SMT, dos hilos compartiendo un núcleo). Una tarea solo de CPU con 16 hilos gana poco sobre 8, porque los dos hilos de un núcleo comparten sus piezas. Siempre anota los núcleos físicos y lógicos en un benchmark." },
+				{ "type": "callout", "tone": "remember", "text": "S(N) = T(1) / T(N) y E(N) = S(N) / N. Usa el mejor programa secuencial como base y mira la eficiencia, no solo el speed-up." }
+			]
+		},
+		{
+			"id": "amdahl-gustafson",
+			"title": "Leyes de Amdahl y de Gustafson",
+			"blocks": [
+				{ "type": "paragraph", "text": "Estás haciendo una pizza. La masa debe reposar 10 minutos, y solo una persona puede esperarla. Diez cocineros no hacen que la masa repose más rápido. Esa espera es la **parte serial**. El resto (cortar los ingredientes) se puede repartir." },
+				{ "type": "heading", "text": "Ley de Amdahl" },
+				{ "type": "paragraph", "text": "Llama `s` a la porción del tiempo secuencial que no se puede paralelizar (0,1 es 10%). Solo la otra parte, `1 - s`, se reduce cuando añadimos N trabajadores:" },
+				{ "type": "code", "language": "text", "content": "S(N) = 1 / ( s + (1 - s) / N )\n\nN -> muy grande:   S -> 1 / s", "caption": "Ley de Amdahl para un problema de tamaño fijo" },
+				{ "type": "paragraph", "text": "El término `(1 - s) / N` es la parte paralela una vez repartida entre N trabajadores, como fracción del tiempo original. El speed-up nunca pasa de `1 / s`. Con s = 10%, el techo es 10, incluso con mil procesadores, porque el 10% serial sigue corriendo en un solo trabajador." },
+				{ "type": "chart", "title": "Speed-up con s = 10% (ley de Amdahl)", "unit": "x", "bars": [
+					{ "label": "N = 1", "value": 1 },
+					{ "label": "N = 2", "value": 1.82 },
+					{ "label": "N = 4", "value": 3.08 },
+					{ "label": "N = 8", "value": 4.71 },
+					{ "label": "N = 16", "value": 6.4 },
+					{ "label": "N = 1000", "value": 9.91 }
+				] },
+				{ "type": "paragraph", "text": "Practica con números:" },
+				{ "type": "list", "items": [
+					"80% paralelo, 4 procesadores: el tiempo pasa a ser 0,2 + 0,8 / 4 = 0,4, así que el speed-up es 2,5.",
+					"Un programa de 100 s con 10 s de trabajo serial debe terminar en 25 s. Entonces 10 + 90 / N es como máximo 25, luego N es al menos 6 (no los 4 de la estimación lineal).",
+					"Fracción serial del 25%: con 8 procesadores S es 2,91, con 16 es 3,37. El doble de hardware, solo cerca de 16% más de velocidad. Cerca del límite, cada nuevo trabajador devuelve menos."
+				], "ordered": true },
+				{ "type": "heading", "text": "Ley de Gustafson" },
+				{ "type": "paragraph", "text": "Gustafson mira la misma historia desde otro lado. Cuando tenemos más trabajadores, normalmente no corremos el mismo problema pequeño más rápido: corremos un **problema mayor** en el mismo tiempo (una imagen más nítida, un mapa del clima más fino). La parte paralela crece con el problema, la parte serial casi no. El speed-up escalado es:" },
+				{ "type": "code", "language": "text", "content": "S(N) = s' + (1 - s') * N\n\ns' = fracción serial medida en la ejecución PARALELA", "caption": "Ley de Gustafson" },
+				{ "type": "paragraph", "text": "Ejemplo: una ejecución en 16 procesadores gasta 10% del tiempo en código serial. S = 0,1 + 0,9 x 16 = 14,5." },
+				{ "type": "callout", "tone": "analogy", "text": "Amdahl pregunta: \"¿cuánto más rápido termino la misma tarea con más amigos?\" Gustafson pregunta: \"¿cuánta tarea más puedo hacer en la misma hora?\"" },
+				{ "type": "heading", "text": "¿Se contradicen las dos leyes?" },
+				{ "type": "paragraph", "text": "No. Son el mismo cálculo con la fracción serial medida sobre bases distintas. Amdahl mide `s` sobre el tiempo de la ejecución secuencial. Gustafson mide `s'` sobre el tiempo de la ejecución paralela y reconstruye lo que tardaría un procesador. El vínculo es `s = s' / (s' + (1 - s') x N)`. Una fracción que parece grande en tiempo paralelo es pequeña en tiempo secuencial." },
+				{ "type": "heading", "text": "Ajustar la ley a números reales" },
+				{ "type": "paragraph", "text": "La **métrica de Karp-Flatt** da vuelta a Amdahl. A partir de un speed-up medido S en N procesadores, entrega la fracción serial que lo explicaría: `s = (1/S - 1/N) / (1 - 1/N)`. Ejemplo: S = 4 con N = 8 da (0,25 - 0,125) / 0,875, cerca de 14%." },
+				{ "type": "paragraph", "text": "Luego observa cómo se comporta `s` cuando N crece. Si se mantiene constante, la velocidad perdida viene de código realmente serial. Si **crece** (5% con 2 procesadores, 8% con 4, 14% con 8), la causa es overhead: espera, pelea de caché, carga desbalanceada. Acortar el código serial no lo arreglaría." },
+				{ "type": "callout", "tone": "remember", "text": "Amdahl: problema fijo, S(N) = 1 / (s + (1 - s) / N), techo 1 / s. Gustafson: problema creciente, S(N) = s' + (1 - s') N. Un valor de Karp-Flatt creciente indica overhead, no código serial." }
+			]
+		},
+		{
+			"id": "fork-join-work-stealing",
+			"title": "Fork-join y robo de trabajo",
+			"blocks": [
+				{ "type": "paragraph", "text": "La profesora te pide sumar todos los números de una lista larga. Cortas la lista en dos y le pides a un amigo que sume una mitad mientras tú sumas la otra. Luego **esperas** al amigo y sumas las dos respuestas. Acabas de hacer **fork-join**." },
+				{ "type": "list", "items": [
+					"**Fork**: una tarea crea subtareas que pueden correr en paralelo.",
+					"**Join**: la tarea espera a que todas terminen antes de continuar.",
+					"Cada fork tiene su join, así que el programa vuelve a ser secuencial en puntos claros, y el resultado es fácil de razonar."
+				] },
+				{ "type": "paragraph", "text": "El join también es una regla de seguridad. Cuando retorna, todo lo que hizo el otro trabajador ya ocurrió y es visible. Si lees la cuenta parcial del amigo **antes** del join, puedes obtener un valor a medias o una data race." },
+				{ "type": "diagram", "content": "suma(0..800)\n  fork -> suma(0..400)    suma(400..800)\n            fork            fork\n          200  200        200  200\n          (hojas: se suman con un bucle simple)\n  join <- suma las dos mitades", "caption": "Suma recursiva con fork-join" },
+				{ "type": "heading", "text": "El cutoff (tamaño del grano)" },
+				{ "type": "paragraph", "text": "Seguimos dividiendo hasta que un pedazo es menor que un límite llamado **cutoff**, y entonces lo sumamos con un bucle simple. Cutoff demasiado pequeño: se gasta más tiempo creando y planificando tareas que sumando. Cutoff demasiado grande: pocas tareas, y algunos núcleos se quedan sin nada. Un buen grano cuesta mucho más que el overhead de una tarea y aun así produce muchas más tareas que núcleos." },
+				{ "type": "heading", "text": "División estática y dinámica" },
+				{ "type": "paragraph", "text": "Imagina una imagen de 8 filas. Las filas 0 a 3 cuestan 2 ms cada una, las filas 4 a 7 cuestan 10 ms cada una. Dos trabajadores:" },
+				{ "type": "table", "headers": ["División", "Cómo", "Tiempo hasta que termina el último"], "rows": [
+					["Estática", "El trabajador A toma las filas 0 a 3, el B toma las filas 4 a 7", "B: 40 ms (A espera después de 8 ms)"],
+					["Dinámica", "Un trabajador libre toma la siguiente fila de un contador compartido", "Cerca de 24 ms (la carga se equilibra sola)"]
+				], "caption": "El trabajo total es 48 ms. La ejecución dura lo que dura el último trabajador" },
+				{ "type": "paragraph", "text": "La forma dinámica cuesta un acceso al contador compartido por pedazo, un precio pequeño por el equilibrio." },
+				{ "type": "heading", "text": "Robo de trabajo (work stealing)" },
+				{ "type": "paragraph", "text": "Los pools modernos (fork-join de Java, Rayon en Rust, Go, Cilk) usan **work stealing**. Cada trabajador tiene su propia lista de tareas, una [[deque|una lista en la que se puede añadir y quitar por los dos extremos]]. Trabaja desde su extremo, de la tarea más nueva a la más vieja (LIFO). Cuando su lista se vacía, **roba** una tarea de otro trabajador, por el **extremo opuesto**, la tarea más antigua." },
+				{ "type": "callout", "tone": "analogy", "text": "Cada alumno tiene una pila de hojas de tarea. Cuando uno termina su pila, va donde un compañero y toma hojas del fondo de la pila, mientras el compañero sigue con las de arriba. Casi nunca tocan la misma hoja." },
+				{ "type": "paragraph", "text": "¿Por qué la tarea más antigua? En una recursión de divide y vencerás, la tarea más antigua suele ser la mayor, así que un robo trae mucho trabajo. La tarea más nueva es pequeña y sus datos aún están calientes en la caché del dueño. Otra ventaja: con una única cola central, todos los trabajadores pelean por la misma puerta. Con robo, el camino normal es local, y los trabajadores hablan entre sí solo cuando alguien queda ocioso." },
+				{ "type": "heading", "text": "Trabajo y span" },
+				{ "type": "list", "items": [
+					"**Trabajo (work)** `T1`: el tiempo con 1 procesador (la suma de todas las operaciones).",
+					"**Span** `Tinf`: el tiempo con procesadores ilimitados (el camino crítico).",
+					"Un planificador voraz (greedy) garantiza `Tp <= T1 / P + Tinf`. Ningún planificador supera `max(T1 / P, Tinf)`.",
+					"**Paralelismo** es `T1 / Tinf`. Limita el speed-up para cualquier número de procesadores."
+				] },
+				{ "type": "paragraph", "text": "Ejemplos: T1 = 240 s y Tinf = 6 s con P = 8 da como máximo 240 / 8 + 6 = 36 s. T1 = 1.000 s y Tinf = 10 s tiene paralelismo 100, así que 100 procesadores bastan para acercarse al límite y los otros 900 de una máquina de 1.000 procesadores se desperdician." },
+				{ "type": "callout", "tone": "warning", "text": "Un pool fork-join tiene cerca de un hilo por núcleo porque supone que las tareas usan CPU y nunca duermen. Una tarea que se bloquea (lectura de red, lock, sleep) retiene su hilo sin hacer nada, y el pool pierde capacidad. Lleva el trabajo bloqueante a otro pool, usa E/S asíncrona o deja que el pool cree un hilo de compensación." },
+				{ "type": "callout", "tone": "remember", "text": "Fork crea subtareas, join espera por ellas. El robo de trabajo equilibra la carga bajo demanda, por el extremo opuesto de la deque. El speed-up está limitado por T1 / Tinf." },
+				{ "type": "video", "title": "MIT 6.172 Performance Engineering: clases sobre Cilk, races y algoritmos multihilo (en inglés)", "url": "https://www.youtube.com/playlist?list=PLUl4u3cNGP63VIBQVWguXxZZi0566y7Wf" }
+			]
+		},
+		{
+			"id": "parallel-sorting-reductions",
+			"title": "Reducciones y ordenamiento paralelos",
+			"blocks": [
+				{ "type": "paragraph", "text": "Una **reducción (reduction)** exprime muchos valores en uno solo: la suma de una lista, el número mayor, la cuenta de primos. De forma secuencial recorres la lista con un total corriente. En paralelo, le das a cada trabajador un **bloque (chunk)**, cada uno reduce su bloque en una variable local, y al final se combinan los resultados parciales." },
+				{ "type": "paragraph", "text": "Como cada trabajador escribe solo en su parcial, nadie pelea durante el trabajo." },
+				{ "type": "heading", "text": "¿Qué operadores son seguros?" },
+				{ "type": "paragraph", "text": "Una reducción por bloques calcula `(a op b) op (c op d)` en lugar de `((a op b) op c) op d`. Ambas coinciden para cualquier entrada solo si el operador es **asociativo**: la agrupación no importa." },
+				{ "type": "table", "headers": ["Operador", "Asociativo", "Conmutativo", "Reducción paralela"], "rows": [
+					["Suma de enteros, conteo", "sí", "sí", "cualquier orden de combinación"],
+					["Máximo, mínimo, xor", "sí", "sí", "cualquier orden de combinación"],
+					["Concatenación de cadenas", "sí", "no", "combina los parciales en el orden de los bloques"],
+					["Resta", "no", "no", "da una respuesta distinta"]
+				], "caption": "Comprobando un operador" },
+				{ "type": "paragraph", "text": "Prueba con la resta en [8, 4, 2, 1]: secuencial ((8 - 4) - 2) - 1 = 1. En dos bloques, (8 - 4) - (2 - 1) = 3. Distinto, así que la resta no se puede reducir en paralelo." },
+				{ "type": "callout", "tone": "warning", "text": "Asociativo basta cuando combinas los parciales **en el orden de los bloques**. Si los combinas en el orden en que terminan los trabajadores, el operador también debe ser **conmutativo** (el orden no importa). La concatenación no lo es, así que unir \"ab\" y \"cd\" en el orden de llegada puede imprimir \"cdab\"." },
+				{ "type": "heading", "text": "La reducción en árbol" },
+				{ "type": "paragraph", "text": "Con procesadores ilimitados, combina los valores en pares, luego los pares de pares, y así sucesivamente. El número de valores se reduce a la mitad en cada paso." },
+				{ "type": "diagram", "content": "8 valores:  a b c d e f g h\npaso 1:     ab  cd  ef  gh\npaso 2:      abcd    efgh\npaso 3:        abcdefgh", "caption": "Reducción en árbol: 3 pasos para 8 valores" },
+				{ "type": "paragraph", "text": "El número de pasos (la profundidad) es `ceil(log2 n)`. El total de operaciones sigue siendo `n - 1`, igual que en la forma secuencial. Para 1.000 valores: 10 pasos y 999 operaciones." },
+				{ "type": "heading", "text": "Suma de prefijos (scan)" },
+				{ "type": "paragraph", "text": "La suma de prefijos da en cada posición i la combinación de los elementos de 0 a i. El bucle usual usa el resultado anterior, así que parece imposible de paralelizar. Con un operador asociativo se resuelve en dos pasadas sobre un árbol: el **up-sweep** guarda la suma de cada bloque, y el **down-sweep** entrega a cada posición la suma de todo lo que está a su izquierda. El trabajo es O(n) y la profundidad O(log n): para n = 8, 3 niveles en cada pasada." },
+				{ "type": "heading", "text": "Merge sort en paralelo" },
+				{ "type": "paragraph", "text": "El merge sort es natural para el paralelismo. El arreglo se corta por la mitad, y las dos mitades se ordenan sin tocarse, así que pueden ser dos tareas paralelas. La dependencia aparece solo en la mezcla (merge), que necesita ambas mitades listas." },
+				{ "type": "paragraph", "text": "Pero si cada merge es **secuencial**, el camino crítico tiene un merge completo por nivel: n + n/2 + n/4 + ..., menos que 2n. Para n = 1.024 el trabajo es cerca de 1.024 x 10 = 10.240 y el span cerca de 2.047, así que el mejor speed-up queda cerca de 5, sin importar cuántos procesadores tengas. Para ir más allá, hay que paralelizar el propio merge." },
+				{ "type": "heading", "text": "Sample sort" },
+				{ "type": "paragraph", "text": "Con p trabajadores, el **sample sort** usa p - 1 valores llamados **separadores (splitters)** para dividir la entrada en p cubetas, una por trabajador. Cada uno ordena su cubeta, y las cubetas unidas en orden ya están ordenadas. El tiempo paralelo es el de la cubeta mayor, así que unos separadores malos lo arruinan todo. La solución: tomar una **muestra** aleatoria de los datos, ordenarla y usar sus cuantiles como separadores. Así las cubetas quedan con tamaños casi iguales." },
+				{ "type": "callout", "tone": "remember", "text": "Una reducción paralela necesita un operador asociativo (y conmutativo si el orden de combinación es libre). El árbol tiene profundidad log2 n con n - 1 operaciones. El ordenamiento paralelo vive o muere por tener pedazos equilibrados y un merge paralelo." }
+			]
+		},
+		{
+			"id": "map-reduce-patterns",
+			"title": "Map-reduce y otros patrones paralelos",
+			"blocks": [
+				{ "type": "paragraph", "text": "Un **patrón** es una receta que la gente reutiliza. Imagina una escuela que cuenta los votos por la mejor fruta. Varios ayudantes leen unas cuantas papeletas cada uno y anotan \"banana: 1\" por cada una (eso es **map**). Luego todas las notas de \"banana\" van a la misma caja (eso es **shuffle**), y un ayudante por caja las suma (eso es **reduce**)." },
+				{ "type": "heading", "text": "MapReduce paso a paso" },
+				{ "type": "diagram", "content": "entrada map (muchas máquinas)    shuffle        reduce\n\nlibro 1 -> (el,1)(gato,1)(el,1) -+\nlibro 2 -> (gato,1)(se sentó,1) -+--> el: [1,1]    -> el: 2\nlibro 3 -> (el,1)(tapete,1)     -+    gato: [1,1]  -> gato: 2\n                                      se sentó: [1] -> se sentó: 1", "caption": "Conteo de palabras con map-reduce" },
+				{ "type": "list", "items": [
+					"**Map** aplica la misma función a cada registro y emite cero o más pares clave-valor. Los registros no dependen unos de otros, así que corren en cualquier orden en tantas máquinas como tengas.",
+					"**Shuffle** mueve y agrupa los pares para que todos los valores de una clave lleguen al mismo lugar. Una **función de partición** (a menudo un hash de la clave) elige el reducer. Suele ser el paso que más usa la red.",
+					"**Reduce** se llama una vez por clave, con todos los valores de esa clave. Claves distintas se pueden reducir en paralelo."
+				] },
+				{ "type": "heading", "text": "El combiner" },
+				{ "type": "paragraph", "text": "Mandar un millón de pares (el, 1) por la red es una tontería. Un **combiner** es un pequeño reduce que corre dentro de cada tarea map, antes del shuffle. Con 3 tareas map que emiten 1.000 pares cada una, con 50 palabras distintas, el combiner deja solo 50 registros por tarea, así que 150 registros van al shuffle en lugar de 3.000. Solo es válido cuando la operación es asociativa y conmutativa, como la suma. Un promedio no se puede combinar así, a menos que lleves también la cuenta." },
+				{ "type": "heading", "text": "Fallos y claves calientes" },
+				{ "type": "list", "items": [
+					"**Reejecución.** Si un trabajador muere en medio de una tarea map, el master corre la misma tarea en otro nodo. Es seguro porque la entrada no cambia y la función map es **pura** (misma entrada, misma salida, sin efectos secundarios). Se llama tarea **idempotente**. Un map que escribe en una base de datos o lee el reloj podría duplicar o alterar resultados.",
+					"**Clave caliente (hot key).** Si una clave concentra el 55% de todos los pares, un reducer recibe esa parte y la fase termina cuando él termina. Duplicar el número de reducers solo redistribuye las otras claves. Soluciones: un combiner, o dividir la clave caliente en subclaves y sumar en dos etapas."
+				] },
+				{ "type": "heading", "text": "Otros patrones" },
+				{ "type": "table", "headers": ["Patrón", "Idea", "Qué lo limita"], "rows": [
+					["Pipeline", "Las etapas corren en hilos distintos, conectadas por colas, y cada ítem pasa por todas las etapas", "El rendimiento es el de la etapa más lenta (el cuello de botella). Acelera o replica esa etapa"],
+					["Scatter-gather", "Un coordinador envía la misma petición a varios ejecutores independientes y junta las respuestas", "La latencia es la del ejecutor más lento (tail latency)"],
+					["Stencil", "El nuevo valor de una celda depende de los valores antiguos de sus vecinas", "Lee del arreglo antiguo, escribe en uno nuevo, intercambia al final (double buffering)"],
+					["Reducción", "Combinar muchos valores en uno", "Exige un operador asociativo"]
+				], "caption": "Algunos patrones comunes" },
+				{ "type": "paragraph", "text": "Ejemplo de scatter-gather: una búsqueda envía una consulta a 20 particiones del índice y espera a todas. Diecinueve responden en 20 ms y una en 200 ms. La unión tarda 5 ms. La respuesta llega después de 205 ms, porque un ayudante lento decide." },
+				{ "type": "paragraph", "text": "Ejemplo de stencil: `a[i] = (a[i-1] + a[i+1]) / 2` escrito en el mismo arreglo falla cuando los hilos dividen el rango de índices, porque una celda puede tener ya el valor nuevo cuando su vecina la lee. El double buffering hace que el resultado no dependa del orden." },
+				{ "type": "callout", "tone": "remember", "text": "Map-reduce: convierte registros independientes en pares con map, mezcla por clave, reduce cada clave. El rendimiento del pipeline es el de la etapa más lenta, la latencia del scatter-gather es la del ejecutor más lento." }
+			]
+		},
+		{
+			"id": "determinism-reproducibility",
+			"title": "Determinismo y reproducibilidad",
+			"blocks": [
+				{ "type": "paragraph", "text": "Si le pides \"2 + 2\" a una calculadora diez veces, siempre da 4. Un programa paralelo **determinista** es así: su salida depende solo de la entrada. El planificador puede intercalar los hilos de forma distinta en cada ejecución, pero todos los caminos llevan a la misma respuesta. Eso permite probar la versión paralela comparándola con la secuencial." },
+				{ "type": "heading", "text": "Data race y condición de carrera" },
+				{ "type": "paragraph", "text": "Una **data race** ocurre cuando dos hilos tocan la misma posición de memoria, al menos uno escribe, y nada ordena los accesos (ni lock, ni operación atómica, ni join). El valor final depende de la suerte. En C y C++ el comportamiento queda indefinido. Rust seguro rechaza ese código al compilar." },
+				{ "type": "paragraph", "text": "Una **condición de carrera (race condition)** es más amplia: un resultado que depende de cómo se intercalan los hilos. Puedes tener una race condition **sin** data race. Mira este código de comprobar-y-actuar, donde cada método bloquea la cuenta por dentro:" },
+				{ "type": "code", "language": "go", "content": "// dos hilos ejecutan esto a la vez, el saldo empieza en 100\nif acct.Balance() >= 100 { // bloquea, lee, desbloquea\n\tacct.Withdraw(100) // bloquea, resta, desbloquea\n}", "caption": "Cada llamada está protegida y el resultado sigue siendo incorrecto" },
+				{ "type": "paragraph", "text": "Los dos hilos ven 100, los dos retiran, y el saldo termina en -100. La decisión tomada en la comprobación ya no era verdadera cuando se ejecutó la acción. La solución es hacer que la comprobación y la acción sean **un único** paso atómico (una sola sección crítica, o un método que comprueba y retira)." },
+				{ "type": "heading", "text": "Por qué las sumas paralelas son exactamente iguales, o no" },
+				{ "type": "paragraph", "text": "Contar primos con contadores locales y sumarlos después del join da exactamente la respuesta secuencial con cualquier número de hilos. La suma de enteros es asociativa y conmutativa, así que la agrupación no importa. Comparar por igualdad exacta es válido." },
+				{ "type": "paragraph", "text": "Los números decimales (coma flotante, como `double`) son distintos. Cada suma redondea su resultado al valor más cercano que el computador puede guardar, así que `(a + b) + c` puede diferir de `a + (b + c)`. Toma [1e16, -1e16, 1.0], donde los vecinos de 1e16 están a 2 de distancia. De izquierda a derecha: (1e16 - 1e16) + 1 = 1. Dividiendo en [1e16] y [-1e16, 1.0]: el segundo parcial es -1e16 + 1, que se redondea de vuelta a -1e16, y el total es 0. Otra respuesta, y muy distinta." },
+				{ "type": "callout", "tone": "tip", "text": "Para sumas de coma flotante reproducibles, fija la **agrupación** (bloques de tamaño fijo combinados en un orden fijo), no el número de hilos." },
+				{ "type": "heading", "text": "Números aleatorios y orden de la salida" },
+				{ "type": "list", "items": [
+					"**Números aleatorios.** En una simulación Monte Carlo con tareas repartidas dinámicamente, ata la aleatoriedad al **índice de la tarea**, no al hilo. Cada tarea crea su generador con una semilla calculada a partir de la semilla base y de su índice, de preferencia con un generador hecho para flujos independientes.",
+					"**Orden de la salida.** Los trabajadores terminan en un orden impredecible. Haz que cada resultado lleve su posición lógica: escribe el resultado i en la posición i, o devuelve parciales con su índice y combínalos en orden de índice después del join. El orden de ejecución queda libre, y el orden de la salida queda fijo."
+				] },
+				{ "type": "heading", "text": "El tiempo no es determinista" },
+				{ "type": "paragraph", "text": "Aun cuando el resultado sea idéntico, el tiempo varía: 410 ms en una ejecución, 470 ms en la siguiente. Cambian el planificador, la carga de la máquina, el estado de la caché y la frecuencia de la CPU. Un benchmark reproducible usa la misma entrada y la misma máquina, deja fuera el calentamiento (warm-up), repite la ejecución varias veces, informa la **dispersión** junto con el valor central y registra la máquina, las versiones y el comando exacto." },
+				{ "type": "callout", "tone": "remember", "text": "Un buen programa paralelo tiene resultado determinista y tiempo no determinista. Data race: acceso sin orden con una escritura. Race condition: el resultado depende de la intercalación. La coma flotante y el orden de llegada son las causas habituales de respuestas distintas." }
+			]
+		},
+		{
+			"id": "false-sharing-cache-effects",
+			"title": "Falso compartir (false sharing) y efectos de cache",
+			"blocks": [
+				{ "type": "paragraph", "text": "La memoria es lenta, así que cada núcleo guarda una pequeña copia rápida de lo que usa, llamada **caché**. Pero la caché no guarda variables sueltas. Guarda bloques llamados **líneas de caché**, normalmente de 64 bytes. Toca un byte y entra el bloque entero de 64 bytes." },
+				{ "type": "callout", "tone": "analogy", "text": "La biblioteca presta libros, no páginas sueltas. Si dos niños quieren páginas distintas del mismo libro, igual tienen que pasarse el libro entero de uno a otro." },
+				{ "type": "heading", "text": "Falso compartir (false sharing)" },
+				{ "type": "paragraph", "text": "Cuando un núcleo escribe en una línea, las copias de esa línea en los otros núcleos se invalidan (se tiran) para que todos sigan coherentes. Si variables de hilos **distintos** están en la misma línea, los núcleos se la quitan unos a otros, aunque no compartan ningún dato real. Esto es el **falso compartir**." },
+				{ "type": "table", "headers": ["Aspecto", "Compartir verdadero", "Falso compartir"], "rows": [
+					["Datos", "Dos hilos usan el mismo dato", "Los datos son independientes, solo la línea es común"],
+					["Necesita sincronización para ser correcto", "Sí", "No"],
+					["Aparece en las pruebas de corrección", "Puede", "Nunca: es solo un problema de rendimiento"]
+				], "caption": "Dos tipos de compartir" },
+				{ "type": "diagram", "content": "una línea de caché de 64 bytes (8 contadores de 8 bytes)\n[c0][c1][c2][c3][c4][c5][c6][c7]\n  ^   ^   ^   ^   ^   ^   ^   ^\n  8 hilos en 8 núcleos, cada uno suma en su ci\n  -> la línea rebota entre los núcleos", "caption": "Falso compartir: ocho contadores en una línea" },
+				{ "type": "paragraph", "text": "Contando quién estorba a quién: el desplazamiento en bytes dividido por 64 da la línea. 16 contadores de 8 bytes que empiezan en el límite de una línea: los contadores 0 a 7 están en la línea 0 y 8 a 15 en la línea 1. El hilo 3 pelea con los **otros 7** hilos de su grupo, y los dos grupos no se molestan entre sí." },
+				{ "type": "heading", "text": "Cómo detectarlo" },
+				{ "type": "paragraph", "text": "La firma: sin locks, todos los núcleos al 100%, tiempo paralelo igual o peor que el secuencial (por ejemplo 2,0 s con 1 hilo y 3,1 s con 4), y una mejora drástica (a 0,52 s) cuando solo separas los contadores 64 bytes. Los núcleos están ocupados, pero esperando que la línea vuelva." },
+				{ "type": "heading", "text": "Cómo arreglarlo" },
+				{ "type": "list", "items": [
+					"**Acumula en una variable local** dentro del bucle caliente y entrega el total una vez, al terminar el bucle. La línea que modifica el trabajador pasa a ser solo suya, y la unión ocurre una vez por trabajador.",
+					"**Rellena o alinea** cada contador en su propia línea, por ejemplo con `alignas(64)` en C++. El precio es memoria: 8 bytes pasan a ser 64, así que un arreglo de 8 de esas structs crece de 64 a 512 bytes."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Un contador **atómico** compartido (fetch_add por cada primo) es correcto, pero todas las escrituras pelean por una sola línea, así que ocurren una a la vez y el programa escala mal. Misma cura: cuenta localmente, une una vez." },
+				{ "type": "heading", "text": "Localidad espacial" },
+				{ "type": "paragraph", "text": "Como un fallo (miss) carga una línea entera, usar datos vecinos es barato. Una matriz de 1024 x 1024 enteros de 4 bytes guardada por filas: un fallo trae 16 enteros, así que recorrer fila por fila falla 1 vez de cada 16, cerca de 65.536 fallos en total (1.048.576 / 16). Recorrer por columnas salta 4.096 bytes en cada paso. Si la caché no aguanta las 1.024 líneas de una columna, cada acceso falla: 16 veces más." },
+				{ "type": "heading", "text": "Limitado por CPU frente a limitado por memoria" },
+				{ "type": "paragraph", "text": "Un bucle que cuenta primos casi no usa memoria, y cada núcleo trae su propio poder de cálculo, así que escala casi linealmente (7,6 veces con 8 hilos). Un bucle que suma un arreglo de 16 GiB depende del rendimiento de los canales de memoria, un recurso compartido por todos los núcleos. Cuando se satura, más hilos solo se reparten el mismo ancho de banda: 2,9 veces con 4 hilos y ninguna mejora con 8." },
+				{ "type": "callout", "tone": "remember", "text": "La caché mueve líneas de 64 bytes. El falso compartir es un bug de rendimiento sin locks. Se arregla con acumuladores locales o relleno. Los bucles limitados por memoria dejan de escalar cuando se llena el ancho de banda." }
+			]
+		},
+		{
+			"id": "simd-vectorisation",
+			"title": "SIMD y vectorización",
+			"blocks": [
+				{ "type": "paragraph", "text": "El paralelismo también vive dentro de un núcleo. Imagina un sello que imprime 8 puntos a la vez en lugar de 1. Eso es **SIMD**, de **S**ingle **I**nstruction, **M**ultiple **D**ata (una instrucción, varios datos). Un registro vectorial guarda varios números del mismo tipo, y una instrucción suma, multiplica o compara todos juntos." },
+				{ "type": "paragraph", "text": "Es independiente de los hilos, y los dos se pueden combinar. En la [[taxonomía de Flynn|una forma de clasificar los computadores según cuántos flujos de instrucciones y de datos corren a la vez]]:" },
+				{ "type": "table", "headers": ["Clase", "Significado", "Ejemplo"], "rows": [
+					["SISD", "Una instrucción, un dato", "Un procesador escalar común"],
+					["SIMD", "Una instrucción, muchos datos", "Una instrucción vectorial que suma 8 pares"],
+					["MIMD", "Muchos flujos de instrucciones independientes", "Los núcleos de un procesador moderno"]
+				], "caption": "Taxonomía de Flynn. Una CPU moderna es MIMD, con unidades SIMD dentro de cada núcleo" },
+				{ "type": "heading", "text": "Carriles (lanes)" },
+				{ "type": "paragraph", "text": "El número de elementos por instrucción (los **lanes**) es el ancho del registro dividido por el ancho del elemento. Un registro de 256 bits y floats de 32 bits dan 256 / 32 = 8 lanes. Ese también es el techo de la ganancia del cuerpo del bucle. En la práctica se gana menos por el bucle de resto, el acceso a memoria y la menor frecuencia en algunas CPU." },
+				{ "type": "paragraph", "text": "Cuando n no es múltiplo del ancho, el compilador hace dos bucles: el bucle vectorial corre `floor(n / 8)` veces y el bucle de resto atiende los últimos `n mod 8` elementos uno a uno. Para 1.003 floats: 125 iteraciones vectoriales (1.000 elementos) y 3 escalares. En arreglos cortos el resto puede ocultar la ganancia del SIMD." },
+				{ "type": "heading", "text": "Auto-vectorización" },
+				{ "type": "paragraph", "text": "El compilador puede hacerlo solo. Analiza un bucle escalar y, si puede probar que el resultado no cambia, emite instrucciones vectoriales. Tú ayudas manteniendo el bucle simple: iteraciones independientes, sin llamadas a funciones opacas, sin duda sobre el solapamiento de arreglos." },
+				{ "type": "heading", "text": "Qué bloquea la vectorización" },
+				{ "type": "list", "items": [
+					"**Dependencia entre iteraciones (loop-carried).** En `a[i] = a[i-1] + b[i]` cada elemento necesita el que se acaba de escribir (una suma de prefijos), así que 8 elementos no se pueden calcular juntos. En cambio `a[i] = a[i+1] + b[i]` está bien: el valor leído es siempre el original.",
+					"**Aliasing de punteros.** Con `float *dst, const float *src`, el compilador debe admitir que los dos pueden solaparse, lo que crearía una dependencia. Añade una comprobación en tiempo de ejecución, o quitas la duda con el calificador `restrict` en C. Las porciones `&mut` y `&` de Rust ya garantizan que no hay solapamiento.",
+					"**Ramas por elemento.** Un vector tiene un solo flujo de control, así que `if (a[i] > 0) b[i] = a[i] * 2` se convierte en dato: la comparación construye una **máscara**, el trabajo se hace en todos los lanes, y la máscara decide qué se guarda (if-conversion). El costo es hacer trabajo que se descarta, así que la ganancia baja cuando la rama es cara y rara vez se toma."
+				] },
+				{ "type": "code", "language": "c", "content": "// vectoriza: las iteraciones son independientes\nfor (int i = 0; i < n; i++) c[i] = a[i] + b[i];\n\n// no vectoriza: cada paso necesita el resultado anterior\nfor (int i = 1; i < n; i++) a[i] = a[i - 1] + b[i];", "caption": "Iteraciones independientes frente a dependientes" },
+				{ "type": "callout", "tone": "remember", "text": "SIMD es paralelismo de datos dentro de un núcleo. Lanes = bits del registro / bits del elemento. Exige iteraciones independientes, sin duda de aliasing, y trata las ramas con máscaras." }
+			]
+		},
+		{
+			"id": "gpu-computing",
+			"title": "Fundamentos de computación en GPU",
+			"blocks": [
+				{ "type": "paragraph", "text": "Una CPU es como 8 profesores muy inteligentes: cada uno resuelve rápido problemas difíciles y distintos. Una **GPU** (unidad de procesamiento gráfico) es como un estadio lleno de miles de alumnos, cada uno simple, a quienes se les manda hacer el mismo cálculo pequeño al mismo tiempo sobre números distintos." },
+				{ "type": "table", "headers": ["Aspecto", "CPU", "GPU"], "rows": [
+					["Núcleos", "Pocos, sofisticados (ejecución fuera de orden, predicción de saltos, cachés grandes)", "Miles, simples"],
+					["Objetivo", "Baja latencia para un flujo secuencial", "Alto rendimiento (throughput) en trabajo regular"],
+					["Buena en", "Código irregular, con muchos saltos, secuencial", "La misma operación sobre millones de elementos independientes"],
+					["Mala en", "Cargas enormes y uniformes", "Trabajos irregulares, secuenciales o diminutos"]
+				], "caption": "CPU y GPU" },
+				{ "type": "heading", "text": "El kernel" },
+				{ "type": "paragraph", "text": "En la CPU escribes `for (i = 0; i < n; i++) out[i] = f(in[i])`. En la GPU escribes solo el **cuerpo**, como una función llamada **kernel**, y la lanzas sobre un espacio de índices de n posiciones. Cada hilo recibe su **índice de hilo**, que hace el papel de `i`, y atiende un elemento. Esto solo es correcto cuando las iteraciones son independientes, la misma condición del paralelismo de datos en la CPU." },
+				{ "type": "heading", "text": "Por qué duelen las ramas y los punteros encadenados" },
+				{ "type": "paragraph", "text": "Una GPU agrupa hilos que ejecutan la misma instrucción juntos, como los lanes de un vector. Si una rama manda la mitad del grupo por un lado y la otra mitad por el otro, el hardware recorre los dos caminos uno tras otro, y el rendimiento cae. Los núcleos simples tampoco tienen la predicción de saltos ni las cachés grandes con que una CPU absorbe código irregular." },
+				{ "type": "heading", "text": "¿Vale la pena el viaje?" },
+				{ "type": "paragraph", "text": "La GPU tiene su propia memoria. Los datos deben copiarse allí y de vuelta, e iniciar un kernel tiene un costo fijo. Así que el tiempo en la GPU tiene tres partes: cálculo, transferencia, lanzamiento." },
+				{ "type": "paragraph", "text": "Ejemplo: la CPU cuesta 40 ns por elemento. La GPU calcula en 4 ns por elemento, copiar cuesta 6 ns por elemento, y el lanzamiento cuesta 30 ms fijos. La ganancia por elemento es 40 - (4 + 6) = 30 ns. El punto de equilibrio es 30 ms / 30 ns = 1.000.000 de elementos. Por debajo, gana la CPU. Si la copia costara más que el ahorro en cálculo, la GPU nunca valdría la pena." },
+				{ "type": "paragraph", "text": "Amdahl sigue valiendo para cualquier acelerador. Un programa tarda 100 s: 80 s en un kernel y 20 s que deben quedarse en la CPU. El kernel se vuelve 20 veces más rápido (4 s), y las transferencias suman 6 s. Nuevo tiempo: 20 + 4 + 6 = 30 s, speed-up 3,33. Sin las transferencias serían 24 s y 4,17. El límite con un kernel infinitamente rápido es 100 / 20 = 5. La transferencia es un nuevo término serial que no existía en la versión secuencial." },
+				{ "type": "callout", "tone": "remember", "text": "Una GPU gana en trabajo grande, regular e independiente. Cuenta la copia y el lanzamiento. Las ramas divergentes y el acceso irregular la vuelven lenta, y la parte de la CPU limita el total, por Amdahl." }
+			]
+		},
+		{
+			"id": "shared-vs-distributed-memory",
+			"title": "Memoria compartida y distribuida",
+			"blocks": [
+				{ "type": "paragraph", "text": "Dos formas de organizar ayudantes. En un **salón de clases con una pizarra grande**, todos leen y escriben en la misma pizarra. Eso es **memoria compartida**. En un **grupo de amigos en casas distintas**, cada uno tiene su cuaderno, y se llaman por teléfono para intercambiar información. Eso es **memoria distribuida**." },
+				{ "type": "table", "headers": ["Aspecto", "Memoria compartida (multiprocesador)", "Memoria distribuida (multicomputador)"], "rows": [
+					["Espacio de direcciones", "Uno solo, visto por todas las CPU", "Uno por nodo (CPU y memoria propias)"],
+					["Cómo cooperan", "Leen y escriben las mismas variables", "Mensajes explícitos por la red"],
+					["Peligro principal", "Data races: exigen mutex o atómicos", "Deadlock y el costo de copiar datos"],
+					["Escala", "Limitada por un bus y su ancho de banda", "Añadir nodos añade recursos"],
+					["Ejemplo", "Hilos de un proceso", "Un clúster que corre MPI"]
+				], "caption": "Dos modelos de memoria" },
+				{ "type": "heading", "text": "Los hilos comparten, los procesos en otros nodos envían" },
+				{ "type": "paragraph", "text": "Los hilos de un proceso comparten el heap y las variables globales; cada uno tiene solo su pila y sus registros. La comunicación es directa, y las escrituras concurrentes exigen sincronización. En memoria distribuida cada proceso ve solo su memoria. Quien tiene el dato lo **envía** y quien lo necesita lo **recibe**. Tú decides qué, a quién y cuándo, y pagas el costo de copiarlo por la red." },
+				{ "type": "paragraph", "text": "Ejemplo: sumar 1.000.000 de enteros de 8 bytes con 4 trabajadores. Con hilos, cada uno recibe un puntero y una longitud: no se copia ni un byte. Con paso de mensajes, un master envía un cuarto a cada trabajador: 4 mensajes de 2.000.000 de bytes cada uno, 8.000.000 de bytes de ida, más 4 respuestas de 8 bytes, 32 bytes de vuelta, en 8 mensajes." },
+				{ "type": "heading", "text": "UMA y NUMA" },
+				{ "type": "paragraph", "text": "La memoria compartida tiene dos formas. En **UMA** (acceso uniforme a memoria) toda CPU tarda lo mismo en alcanzar cualquier dirección. En **NUMA** (no uniforme) cada nodo tiene CPU y un banco de memoria cercanos. El acceso local es rápido, y leer una página que vive en otro nodo es más lento. El programa sigue siendo correcto, pero el rendimiento depende de mantener los datos cerca de quien los usa." },
+				{ "type": "heading", "text": "Por qué las máquinas distribuidas llegan a más procesadores" },
+				{ "type": "paragraph", "text": "En memoria compartida, cada nueva CPU compite por el mismo bus, el mismo ancho de banda de memoria y el mismo tráfico de coherencia de caché. En memoria distribuida cada nodo es un computador completo, así que no hay un único punto de contención. El precio: toda cooperación cuesta mensajes, así que el algoritmo debe comunicarse poco." },
+				{ "type": "heading", "text": "Memoria compartida distribuida (DSM)" },
+				{ "type": "paragraph", "text": "Una DSM basada en páginas crea la ilusión de memoria compartida sobre mensajes. Tocar una página ausente provoca un fallo (page fault), y el manejador busca la página en otro nodo. La unidad es la página entera, así que dos variables x e y sin relación en la misma página, escritas por los nodos A y B, hacen que la página rebote por la red. Es falso compartir otra vez, a mayor escala, y se llama **thrashing**." },
+				{ "type": "heading", "text": "Programas híbridos" },
+				{ "type": "paragraph", "text": "Muchos programas mezclan ambos: procesos con paso de mensajes entre nodos (por ejemplo MPI) e hilos dentro de cada nodo. Cada capa trae sus propios bugs. Una data race solo puede ocurrir donde la memoria es común, es decir, entre hilos del mismo proceso. Un **deadlock** no necesita memoria común: dos procesos que hacen cada uno un receive bloqueante del otro antes de enviar esperarán para siempre." },
+				{ "type": "callout", "tone": "remember", "text": "Memoria compartida: fácil de conversar, exige locks, escala limitada. Memoria distribuida: mensajes, gran escala, copias explícitas. Las data races exigen memoria compartida, los deadlocks no." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando todo",
+			"blocks": [
+				{ "type": "paragraph", "text": "Este repositorio midió estas ideas en el mini-proyecto **scaling-by-cores**: cuenta primos y renderiza una imagen de Mandelbrot en Rust, Go y C++ con 1, 2, 4 y 8 trabajadores, con división estática y dinámica. Las 72 ejecuciones imprimieron exactamente los mismos resultados que los programas secuenciales (una reducción determinista y un escritor por píxel)." },
+				{ "type": "chart", "title": "Speed-up de Mandelbrot con 8 trabajadores (medido, AMD Ryzen 7 5700X3D, 8 núcleos)", "unit": "x", "bars": [
+					{ "label": "C++ estática", "value": 2.59 },
+					{ "label": "C++ dinámica", "value": 6.24 },
+					{ "label": "Go estática", "value": 2.65 },
+					{ "label": "Go dinámica", "value": 5.37 },
+					{ "label": "Rust estática", "value": 2.82 },
+					{ "label": "Rust dinámica", "value": 5.44 }
+				] },
+				{ "type": "paragraph", "text": "El mismo código, solo cambió la división, y el speed-up se duplicó. La división estática dio las filas caras del medio a pocos trabajadores y los demás esperaron. La ley de Amdahl leyó esa espera como código serial: una fracción serial ajustada cercana al 30%, en un programa que casi no tiene ninguna. Con la división dinámica cayó por debajo del 7%. La lección: antes de culpar a Amdahl, comprueba que cada trabajador esté ocupado hasta el final." },
+				{ "type": "callout", "tone": "warning", "text": "Estos números se midieron en una máquina compartida y varían entre ejecuciones, por eso cada celda compara las ejecuciones más rápidas. No los tomes como exactos. Muestran la forma del efecto." },
+				{ "type": "heading", "text": "Una lista de revisión para un programa paralelo lento" },
+				{ "type": "table", "headers": ["Síntoma", "Causa probable", "Solución"], "rows": [
+					["El speed-up se estanca en un valor bajo", "Parte serial (Amdahl) o carga desbalanceada", "Acorta el código serial, divide dinámicamente"],
+					["El valor de Karp-Flatt crece con N", "Overhead: espera, pelea de caché, desequilibrio", "Encuentra el recurso disputado"],
+					["Sin locks, núcleos al 100%, sin speed-up", "Falso compartir", "Acumuladores locales, relleno"],
+					["Más lento con tareas diminutas", "Granularidad demasiado fina", "Agrupa en bloques, define un cutoff"],
+					["Más lento con más hilos que núcleos", "Oversubscription", "Un pool del tamaño de los núcleos"],
+					["Resultado distinto en cada ejecución", "Data race, agrupación de coma flotante, orden de llegada", "Sincroniza, fija la agrupación, indexa los resultados"],
+					["La suma de un arreglo grande deja de escalar", "Ancho de banda de memoria", "Reduce el movimiento de datos, mejora la localidad"],
+					["La reducción da otra respuesta", "El operador no es asociativo", "Comprueba primero el operador"]
+				], "caption": "Del síntoma a la causa" },
+				{ "type": "heading", "text": "Qué herramienta para qué problema" },
+				{ "type": "table", "headers": ["Necesidad", "Herramienta"], "rows": [
+					["El mismo trabajo sobre muchos ítems, en pocos núcleos", "Paralelismo de datos, un pool de trabajadores, reducciones"],
+					["División recursiva", "Fork-join con robo de trabajo"],
+					["Datos enormes en muchas máquinas", "Map-reduce, memoria distribuida"],
+					["Aritmética sobre arreglos grandes", "SIMD, luego GPU si es grande y regular"],
+					["Trabajos distintos al mismo tiempo", "Paralelismo de tareas, pipeline, scatter-gather"]
+				], "caption": "Elegir un enfoque" },
+				{ "type": "callout", "tone": "remember", "text": "Reparte el trabajo por igual, mantén los pedazos lo bastante grandes, evita que los trabajadores toquen la misma memoria, haz que el resultado no dependa del orden y mide contra el mejor programa secuencial. La velocidad tiene un límite (Amdahl), y el límite suele ser un poco de espera que todavía se puede quitar." }
+			]
+		}
+	]
+}

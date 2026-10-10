@@ -1,0 +1,916 @@
+{
+	"area": "blockchain",
+	"intro": [
+		"Imagine your class keeps a notebook where everybody writes who gave a sticker to whom. If one child owns the notebook, that child can cheat: erase a line, add a line, or say 'I never wrote that'. Now imagine that every child has an exact copy of the notebook, and a new line counts only when almost everybody agrees on it. Cheating becomes very hard. A **blockchain** is this idea for computers: a shared notebook (a [[ledger|a book where every payment is written down, in order]]) that strangers can trust without trusting any single person.",
+		"Digital money has a special problem. A file can be copied, so how do you stop someone from paying with the same digital coin twice? Banks solve it by being the one boss who sees everything. In 2008 a paper signed Satoshi Nakamoto showed how a network of strangers can agree, with no boss, on which payment came first. That paper, about nine pages long, is the book this quiz follows.",
+		"In this summary you will learn the building blocks one by one: hash functions (digital fingerprints), digital signatures (unforgeable names), transactions and unspent outputs (how coins move), blocks and Merkle trees (how history is packed), proof of work (a puzzle that makes cheating expensive), double spending and confirmations, how the network agrees on one history, why miners are paid, and what blockchains cannot do. At the end you will be ready for the quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: agreeing without a boss",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Think of the classroom notebook again. Three things must be true for it to work. Nobody can write a line in somebody else's name. Nobody can use the same sticker twice. And everybody must end up with the same notebook, even if two children write at the same time. A blockchain gives a computer answer to each one."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Problem",
+						"Classroom idea",
+						"Blockchain tool"
+					],
+					"rows": [
+						[
+							"Writing in somebody else's name",
+							"Everyone has a secret signature",
+							"Digital signatures"
+						],
+						[
+							"Changing an old line without being seen",
+							"Every page quotes the one before it",
+							"Hashes that link blocks"
+						],
+						[
+							"Using the same sticker twice",
+							"Check that the sticker is still unspent",
+							"Unspent outputs"
+						],
+						[
+							"Cheating by making fake copies of yourself",
+							"Writing a page costs real effort",
+							"Proof of work"
+						],
+						[
+							"Two pages written at once",
+							"Everybody keeps the longest notebook",
+							"Longest-chain rule"
+						],
+						[
+							"Why would anyone do the work?",
+							"A prize for each finished page",
+							"Block reward and fees"
+						]
+					],
+					"caption": "Each problem of a shared ledger and the tool that answers it."
+				},
+				{
+					"type": "heading",
+					"text": "The words you will meet"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Node**: a computer that runs the software, keeps a copy of the ledger and checks every rule.",
+						"**Transaction**: one message saying 'these coins now belong to that person'.",
+						"**Block**: a box that holds many transactions plus a small label called the [[header|the small label of a block: previous block hash, Merkle root, time, nonce and a few more fields]].",
+						"**Chain**: the blocks in order, each one pointing to the one before it.",
+						"**Miner**: a node that tries to build the next block and gets a prize if it succeeds."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A blockchain is like a very public diary that is photocopied to thousands of houses. To change a page you would have to change it in most houses at the same moment, and the other houses would notice."
+				},
+				{
+					"type": "paragraph",
+					"text": "The system works because **the rules are checked by everybody**. Nobody has to trust a miner or a friend: each node repeats the checks alone. That is the key idea to carry through the whole summary."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A blockchain is a ledger that strangers can agree on without a boss, built from hashes, signatures, proof of work and a rule for choosing one history."
+				}
+			]
+		},
+		{
+			"id": "hash-functions",
+			"title": "Hash functions: digital fingerprints",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Every person has a fingerprint: small, different for each person, and impossible to rebuild into the person. A **hash function** gives data a fingerprint. You feed it anything (a word, a photo, a whole movie) and it prints a short code called the **digest** (or simply the hash)."
+				},
+				{
+					"type": "paragraph",
+					"text": "The hash function used in Bitcoin is **SHA-256**. Its digest is always 256 bits long, whether the input has 3 bytes or 3 gigabytes. Digests are usually written in [[hexadecimal|counting with 16 symbols, 0 to 9 and a to f, so one digit holds 4 bits]]: 256 bits are 32 bytes, which are 64 hexadecimal digits."
+				},
+				{
+					"type": "diagram",
+					"content": "  'hello'        --> [ SHA-256 ] --> 2cf24dba5fb0a30e...b9824\n  'Hello'        --> [ SHA-256 ] --> 185f8db32271fe25...81969\n  a 3 GB movie   --> [ SHA-256 ] --> 64 hexadecimal digits again",
+					"caption": "Any size in, always the same size out. One changed letter gives a completely different result."
+				},
+				{
+					"type": "heading",
+					"text": "What a good hash function promises"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Deterministic**: the same bytes always give the same digest, on any computer, on any day. That is how every node can check the same thing.",
+						"**Avalanche effect**: flipping a single input bit changes about half of the output bits, so neighbouring inputs have digests with no visible relation. The only way to find a digest with a wanted pattern is to try many inputs. This is the root of proof of work.",
+						"**Preimage resistance** (one-way): given a digest, nobody can find an input that makes it, except by guessing. For an n-bit output that costs about 2^n tries.",
+						"**Second-preimage resistance**: given one input, nobody can find a different input with the same digest. This protects data that is already published, such as a transaction inside a block.",
+						"**Collision resistance**: nobody can find any two different inputs with the same digest."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Collisions do exist: there are infinitely many inputs and only 2^256 digests, so some inputs must share one. 'Collision resistant' means nobody can find a pair in practice. Finding any pair is easier than hitting one chosen digest. It costs only about 2^(n/2) tries (the **birthday bound**, named after the surprise that in a class of 23 children two probably share a birthday). For SHA-256 that is 2^128, impossible. For a digest cut to 32 bits it is 2^16 = 65,536 tries, trivial."
+				},
+				{
+					"type": "chart",
+					"title": "Tries needed to find a collision, by digest size",
+					"unit": "tries",
+					"bars": [
+						{
+							"label": "16 bits",
+							"value": 256
+						},
+						{
+							"label": "32 bits",
+							"value": 65536
+						},
+						{
+							"label": "64 bits",
+							"value": 4294967296
+						}
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A hash gives **integrity** (the data is the same one that made the digest). It does not give **authenticity** (who made it) or **secrecy** (it hides nothing). If the secret has few possible values, such as a vote 'yes' or 'no', anyone can hash every option and compare. To hide a small secret, hash it together with a long random number, and reveal that number later."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **checksum** such as CRC-32 also makes a short code and catches accidents on a cable. But it was never built to resist an attacker, and collisions can be computed directly. A blockchain needs a cryptographic hash because the one changing the data is an enemy, not noise. Old functions such as MD5 and SHA-1 were retired when attacks on them appeared."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A hash is a fixed-size, deterministic fingerprint. Change one bit and everything changes. Preimage costs 2^n tries, collision costs 2^(n/2) tries."
+				}
+			]
+		},
+		{
+			"id": "digital-signatures-and-keys",
+			"title": "Digital signatures and keys: names nobody can forge",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "On paper you sign a cheque and the bank compares your signature. A computer cannot trust a picture of a signature, because pictures are copied. A **digital signature** is a number computed from your secret and from the exact message, so it works only for that message."
+				},
+				{
+					"type": "paragraph",
+					"text": "It uses a pair of keys. The **private key** is a secret number that only you know. The **public key** is made from it and can be shown to everybody. It is [[asymmetric cryptography|a system with two different keys: one signs and one checks]]."
+				},
+				{
+					"type": "diagram",
+					"content": "  message ---> hash ---> [ sign with PRIVATE key ] ---> signature\n\n  message ---> hash ---+\n                       +--> [ check with PUBLIC key ] ---> valid / invalid\n  signature -----------+",
+					"caption": "Only the owner of the private key can sign. Anyone with the public key can check."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "The public key is like the slot of your mailbox: everyone can drop a letter in. The private key is the little key that opens the box. Here it works the other way round: the private key makes the stamp, and the public key checks the stamp."
+				},
+				{
+					"type": "heading",
+					"text": "What a valid signature tells you"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Authenticity**: whoever signed had the private key that matches the public key.",
+						"**Integrity**: the signed data did not change. If a node on the road changes 5 coins into 50, the hash of the transaction changes and the old signature no longer fits. Making a new one needs the private key.",
+						"It does **not** hide the data (everything is public) and it does **not** prove the coin was not spent before."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A signature is not a password to reuse. It is computed over one specific message, so copying it onto another transaction authorises nothing. Also, the validator must check the signature against the key that the spent output is **locked to**. If it accepts any valid key, then 'someone signed' passes instead of 'the owner signed'."
+				},
+				{
+					"type": "paragraph",
+					"text": "In the paper an **electronic coin is a chain of digital signatures**. To pay the next owner, the current owner signs the hash of the previous transaction together with the next owner's public key, and adds this to the coin. The receiver checks the signatures to follow who owned the coin. What the chain cannot show is whether some owner signed the same coin to two people. That is the double-spending problem, and signatures alone cannot fix it."
+				},
+				{
+					"type": "heading",
+					"text": "Losing keys and privacy"
+				},
+				{
+					"type": "paragraph",
+					"text": "Owning a coin means being able to sign for it. With no bank there is no 'forgot my password' button. Lose the private key with no copy and the coins are lost for ever. Let someone copy it and they own the coins. That is the price of having no middleman."
+				},
+				{
+					"type": "paragraph",
+					"text": "Every transaction is public, but public keys are not names. People see that some key sent an amount to another key, not who is behind them. This is **pseudonymity**. The paper advises a new key pair for each transaction, so payments are not tied to one owner. Some linking is unavoidable: a transaction with several inputs shows that those inputs belonged to the same owner. So this is not guaranteed anonymity."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Private key signs, public key checks. A valid signature proves who authorised and that nothing changed, not that the coin is still unspent."
+				}
+			]
+		},
+		{
+			"id": "transactions-and-unspent-outputs",
+			"title": "Transactions and unspent outputs: how coins move",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Your piggy bank does not hold a number: it holds notes and coins. A 10 note cannot be torn to pay 3. You hand over the whole note and get 7 back as change. Bitcoin works the same way. There are no accounts with balances. There are **outputs**, like notes, and a transaction spends whole outputs."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **transaction** has **inputs** and **outputs**. Each input points to an output of an earlier transaction and proves the right to spend it (with a signature). Each output has an amount and the key of the person who may spend it next. An output that has not been spent yet is an **unspent transaction output**, or **UTXO**. The set of all UTXOs is the current state of the system. What a wallet calls your balance is the sum of the UTXOs you can spend."
+				},
+				{
+					"type": "diagram",
+					"content": "  tx1 (coin creation)  -> out 0: 50 to Alice\n  tx2  in: tx1:0       -> out 0: 20 to Bob\n                          out 1: 30 to Alice\n  tx3  in: tx2:0       -> out 0:  5 to Carol\n                          out 1: 15 to Bob\n\n  Unspent now: tx2:1 (30 Alice), tx3:0 (5 Carol), tx3:1 (15 Bob)",
+					"caption": "Spent outputs leave the set, new outputs enter it. tx2:0 is gone."
+				},
+				{
+					"type": "heading",
+					"text": "The rules of a valid transaction"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Each input points to an output that is **in the UTXO set** (it exists and is unspent).",
+						"Each input is signed by the key that the spent output is locked to.",
+						"The outputs add up to **at most** the inputs.",
+						"The difference, inputs minus outputs, is the **fee** for the miner. No field stores it."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Example: inputs of 50 and 30, outputs of 60 and 18. The fee is 80 - 78 = 2. A transaction usually has one output for the payment and one for the **change** that goes back to the payer. If a buggy wallet forgets the change, everything not sent is a fee, and the mistake cannot be undone."
+				},
+				{
+					"type": "paragraph",
+					"text": "The first transaction of a block is special: the **coin-creation** (coinbase) transaction has no inputs. It makes new coins for the miner. It is the only place where coins are created, and its limit is a rule checked by every node."
+				},
+				{
+					"type": "heading",
+					"text": "UTXO model against account model"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"Account model (a bank)",
+						"UTXO model (this paper)"
+					],
+					"rows": [
+						[
+							"State",
+							"A table of balances",
+							"A set of unspent outputs"
+						],
+						[
+							"A payment",
+							"Subtract from one balance, add to another",
+							"Remove some outputs, create new ones"
+						],
+						[
+							"Checking a spend",
+							"Is the balance big enough?",
+							"Does each input point to an output still in the set?"
+						],
+						[
+							"Replay of a signed message",
+							"Needs a sequence number per account",
+							"Protected by the model: an output can be spent once"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A node does not have to walk the whole history to check a new transaction. It keeps the UTXO set, built while it validated every block, and checks the new transaction against it. The history only served to reach the state."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A correct signature is not enough. If an input points to an output that already left the UTXO set, the transaction is rejected, even when the owner really signed. Money you received and then spent cannot be counted twice."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Inputs consume whole outputs, outputs create new ones, change is an explicit output, and fee = inputs - outputs."
+				}
+			]
+		},
+		{
+			"id": "blocks-chain-and-merkle-trees",
+			"title": "Blocks, the chain and Merkle trees",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Writing every payment on its own page would be messy, so payments are put in groups. A **block** is a group of transactions plus a small, fixed-size label, the **header**. The header holds the hash of the previous block, the Merkle root of the transactions, a timestamp, the nonce (explained in the next section) and a few more fields. A header takes about 80 bytes."
+				},
+				{
+					"type": "diagram",
+					"content": "  Block 7                 Block 8                 Block 9\n +----------------+      +----------------+      +----------------+\n | prev: hash(6)  |<-----| prev: hash(7)  |<-----| prev: hash(8)  |\n | merkle root    |      | merkle root    |      | merkle root    |\n | time, nonce    |      | time, nonce    |      | time, nonce    |\n +----------------+      +----------------+      +----------------+\n | transactions   |      | transactions   |      | transactions   |\n +----------------+      +----------------+      +----------------+",
+					"caption": "Each header stores the hash of the block before it. This link makes the chain."
+				},
+				{
+					"type": "paragraph",
+					"text": "Because block 8 holds the hash of block 7, changing anything in block 7 changes its hash, and then block 8 points to a hash that no longer exists. To hide it you must change block 8, which changes block 9, and so on. The paper first describes this as a **timestamp server**: it publishes the hash of a group of items, which proves the data existed at that time, and each timestamp includes the previous one."
+				},
+				{
+					"type": "heading",
+					"text": "The Merkle tree"
+				},
+				{
+					"type": "paragraph",
+					"text": "How does a header, which is tiny, stand for thousands of transactions? With a **Merkle tree**. Hash each transaction (these are the leaves). Join them in pairs and hash each pair. Repeat on each level until one hash is left: the **Merkle root**. It sums up all the transactions in 32 bytes, and changing any transaction changes the whole path up to the root."
+				},
+				{
+					"type": "diagram",
+					"content": "              root = H(H_AB + H_CD)\n              /                  \\\n   H_AB = H(H_A + H_B)     H_CD = H(H_C + H_D)\n      /        \\              /        \\\n    H_A        H_B          H_C        H_D\n     |          |            |          |\n   tx A       tx B         tx C       tx D",
+					"caption": "To prove that tx C is inside, you need only H_D and H_AB."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Odd levels**: when a level has an odd number of nodes, this summary uses the same convention as Bitcoin and duplicates the last node to make a pair. With 5 leaves the levels have 5, 3, 2 and 1 nodes, so 3 + 2 + 1 = 6 pair hashes are computed, and the tree height is 3. A side effect: the list [A, B, C] and the list [A, B, C, C] give the same root, so a validator must reject repeated transactions in a block."
+				},
+				{
+					"type": "heading",
+					"text": "Light clients and compact storage"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **Merkle branch** (inclusion proof) has one sibling hash per level, about log2(n) hashes for n transactions. For 1,024 transactions that is 10 hashes of 32 bytes, 320 bytes, not the whole block. So a phone can check a payment with **simplified payment verification (SPV)**: it keeps only the headers of the best chain and asks for the branch that links the transaction to a header. The headers are small: 80 bytes x 6 blocks per hour x 24 x 365 is about 4.2 MB per year."
+				},
+				{
+					"type": "paragraph",
+					"text": "The light client does not check the transaction itself. It sees that the network accepted it and kept building on it. That is reliable while honest nodes control the network, and it can be fooled by fake transactions if an attacker overpowers the network. Also, since the header holds only the root, old blocks can be compacted by cutting branches of spent transactions without changing the block hash."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Header = previous hash + Merkle root + time + nonce. Changing an old transaction breaks the root, then the block hash, then every later link."
+				}
+			]
+		},
+		{
+			"id": "proof-of-work-and-difficulty",
+			"title": "Proof of work and difficulty: a puzzle that costs effort",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Hashes show that something was changed, but an attacker could just recompute all the hashes after the change. So we make every block **expensive** to create. The rule is: a block is valid only if its hash, read as a number, is very small, which means it starts with many zeros. Nobody can predict a hash, so the only way is to try again and again, changing a free number in the header called the **nonce**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Imagine rolling a die until you get six. You cannot plan the throw, you can only keep rolling. A harder rule, such as 'ten sixes in a row', needs many more rolls. Anyone who watches you can check the result at once by looking at the dice."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "// EN: try nonces until the hash starts with d zero hex digits.\nlet nonce = 0;\nwhile (!sha256(header + nonce).startsWith(\"0\".repeat(d))) {\n\tnonce++;\n}\n// EN: checking needs only ONE hash.",
+					"caption": "Mining is a loop of guesses. Verifying is a single hash."
+				},
+				{
+					"type": "paragraph",
+					"text": "This is **asymmetric**: finding the nonce takes huge work, checking it takes one hash. That lets thousands of nodes verify a block in a fraction of a second while forging one is costly. The work is exponential in the number of zero bits. One more zero **bit** doubles it. One more zero **hexadecimal digit** (4 bits) multiplies it by 16."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Zero hex digits (d)",
+						"Chance per try",
+						"Average tries (16^d)"
+					],
+					"rows": [
+						[
+							"1",
+							"1 in 16",
+							"16"
+						],
+						[
+							"2",
+							"1 in 256",
+							"256"
+						],
+						[
+							"3",
+							"1 in 4,096",
+							"4,096"
+						],
+						[
+							"4",
+							"1 in 65,536",
+							"65,536"
+						],
+						[
+							"5",
+							"1 in 1,048,576",
+							"1,048,576"
+						],
+						[
+							"6",
+							"1 in 16,777,216",
+							"16,777,216"
+						]
+					],
+					"caption": "From difficulty 4 to 6 the work is multiplied by 16 x 16 = 256."
+				},
+				{
+					"type": "chart",
+					"title": "Average tries to mine one block",
+					"unit": "tries",
+					"bars": [
+						{
+							"label": "d = 1",
+							"value": 16
+						},
+						{
+							"label": "d = 2",
+							"value": 256
+						},
+						{
+							"label": "d = 3",
+							"value": 4096
+						},
+						{
+							"label": "d = 4",
+							"value": 65536
+						},
+						{
+							"label": "d = 5",
+							"value": 1048576
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "To turn tries into time, divide by the hash rate. At 1,000,000 hashes per second and d = 6, the average is 16,777,216 / 1,000,000, about 16.8 seconds. It is only an average. Each try is an independent draw, so the number of tries is **geometric** and the waiting time is close to **exponential**. It has **no memory**: if nine minutes have passed with no block, the expected wait is still ten minutes. The chance of finishing within the average number of tries is only about 63%, so some blocks take several times the average."
+				},
+				{
+					"type": "paragraph",
+					"text": "The paper calls proof of work 'one CPU, one vote'. Counting 'one IP address, one vote' would fail, because anyone can invent unlimited identities (a **Sybil attack**). Work cannot be faked: a vote weighs as much as the computing power that supports it."
+				},
+				{
+					"type": "heading",
+					"text": "Difficulty adjustment"
+				},
+				{
+					"type": "paragraph",
+					"text": "Computers get faster and miners come and go. To keep blocks coming at a steady pace, the network **adjusts the difficulty**. Bitcoin aims at one block every 10 minutes and adjusts every 2,016 blocks (14 days) with: new difficulty = old difficulty x (expected time / actual time). If the last 2,016 blocks took 7 days instead of 14, the new difficulty is 14 / 7 = 2 times the old one."
+				},
+				{
+					"type": "paragraph",
+					"text": "A toy chain that counts zero hexadecimal digits can only move in steps of 16. If blocks come 3 times too fast, no step fits. Real networks store a 256-bit **target** in the header and require hash <= target, so the target can change by any factor. Two valid branches are compared by **accumulated work** (the sum of 16^d, or its real equivalent), not by the number of blocks."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Only the start of the hash counts. A hash with zeros in the middle or at the end is not a proof. With a target, a hash with even more leading zeros is also valid, since it is an even smaller number."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Mining costs about 16^d tries (2^k for k zero bits), checking costs one hash, and difficulty is adjusted to keep the block pace steady."
+				}
+			]
+		},
+		{
+			"id": "double-spending-and-confirmations",
+			"title": "Double spending and confirmations",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "You give your friend a sticker, and then you give the same sticker to another friend. With real stickers that is impossible. With digital ones, a copy is free. **Double spending** is using the same coin more than once. A signature proves that you authorised a payment, not that it was the only one."
+				},
+				{
+					"type": "paragraph",
+					"text": "The usual cure was a **mint**, a central authority that checks every transaction and reissues the coins. It works, but the whole system depends on whoever runs it. The paper keeps the result (knowing which payment came first) and removes the boss: transactions are announced publicly, and the network agrees on a single history."
+				},
+				{
+					"type": "heading",
+					"text": "First seen wins, then the block decides"
+				},
+				{
+					"type": "paragraph",
+					"text": "A node that gets two conflicting transactions, T1 then T2, keeps the first and ignores the second. But nodes may see them in different orders. The final word comes from the blocks: whichever transaction enters the longest chain is the valid one, and the other now spends an output that no longer exists. A block that carries two conflicting transactions is invalid."
+				},
+				{
+					"type": "heading",
+					"text": "Confirmations"
+				},
+				{
+					"type": "paragraph",
+					"text": "A transaction has **n confirmations** when it is in a block that has n - 1 blocks on top of it, so the block with the payment counts as the first. The deeper it is, the more work an attacker must redo to remove it. A careful shop waits for several."
+				},
+				{
+					"type": "diagram",
+					"content": "  ... - [B10] - [B11 has the payment] - [B12] - [B13] - tip\n                      1 conf            2       3\n\n  An attacker's secret chain must catch up from 3 blocks behind.",
+					"caption": "Counting: the block that holds the payment is confirmation number 1."
+				},
+				{
+					"type": "paragraph",
+					"text": "The paper models the race as a **gambler's ruin**: each new block is found by the attacker with probability q or by the honest nodes with probability p = 1 - q. The gap changes by one at each block. If p > q, the chance that the attacker ever catches up from z blocks behind is (q/p)^z. It shrinks **exponentially** with z. With q = 0.25 and p = 0.75, z = 3 gives (1/3)^3 = 1/27, about 3.7%."
+				},
+				{
+					"type": "chart",
+					"title": "Chance of catching up with q = 25% (simple formula)",
+					"unit": "%",
+					"bars": [
+						{
+							"label": "z = 1",
+							"value": 33.33
+						},
+						{
+							"label": "z = 2",
+							"value": 11.11
+						},
+						{
+							"label": "z = 3",
+							"value": 3.7
+						},
+						{
+							"label": "z = 4",
+							"value": 1.23
+						},
+						{
+							"label": "z = 5",
+							"value": 0.41
+						},
+						{
+							"label": "z = 6",
+							"value": 0.14
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The full calculation in the paper is a bit larger than (q/p)^z. The receiver does not know how far the attacker already got, and that progress follows a **Poisson distribution** with mean z x q/p. For q = 0.1 and z = 5, the simple formula gives about 0.0017%, and the full one gives about 0.09%, still below 0.1%. The paper also tells the receiver to create a **fresh key pair** just before the payment, so the attacker cannot prepare a secret chain in advance."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "If the attacker has at least half of the power (q >= p), the probability is 1, whatever z is. This is the **51% attack**. The security rests on the assumption that honest nodes hold most of the computing power."
+				},
+				{
+					"type": "paragraph",
+					"text": "Even with a majority, the attacker cannot do anything they like. Nodes refuse invalid transactions and blocks, so they cannot make coins from nothing or take other people's coins. The attacker can only try to take back their own recent spending, and that is double spending, nothing beyond."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "More confirmations make a reversal exponentially less likely, never impossible. With honest majority, waiting longer is the fix. With attacker majority, nothing is safe."
+				}
+			]
+		},
+		{
+			"id": "network-and-consensus",
+			"title": "Network and consensus: the longest chain and forks",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "There is no boss, so how do thousands of computers end up with the same chain? They follow the same six steps."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"New transactions are broadcast to all nodes.",
+						"Each node collects them into a block.",
+						"Each node works on the proof of work for its block.",
+						"When a node finds it, it broadcasts the block.",
+						"Nodes accept the block only if all its transactions are valid and not already spent.",
+						"Nodes show that they accepted it by working on the next block on top of it."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Messages travel by **gossip**: a node passes on what it accepted to its neighbours. Delivery is not perfect. A transaction only has to reach many nodes to get into a block soon. If a node misses a block, it asks for it when it sees the next block and notices a gap. A node that was off for two days simply takes the chain with the most proof of work as the truth about what happened while it was away."
+				},
+				{
+					"type": "heading",
+					"text": "Forks"
+				},
+				{
+					"type": "paragraph",
+					"text": "Blocks take time to cross the world. Two miners can find a valid block at almost the same moment, and some nodes hear about one first and some about the other. The chain has two branches of the same length: a **fork**. It is normal."
+				},
+				{
+					"type": "diagram",
+					"content": "  ... - B4 - B5a            (B5a arrived first: the node mines on it)\n            \\\n             B5b - B6b      (B5b arrived later, then B6b)\n\n  B6b makes branch b longer: everybody switches to b.",
+					"caption": "A tie is kept until the next block breaks it."
+				},
+				{
+					"type": "list",
+					"items": [
+						"In a tie, a node keeps working on the **first block it saw** and stores the other branch.",
+						"When one branch becomes longer, every node **switches** to it (a **reorganisation**).",
+						"Transactions that were only in the abandoned branch go back to the pool of pending transactions, if they are still valid.",
+						"Accidental forks usually last one block."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A single confirmation is fragile, because its block can be replaced by a competitor. A **network partition** makes it clearer. If a failure splits the nodes in two groups and both keep mining, a shop in the smaller group may see 3 confirmations. When the groups reconnect, everyone adopts the branch with more work, and the smaller side's blocks are discarded. Those confirmations were only provisional."
+				},
+				{
+					"type": "heading",
+					"text": "Two layers: valid first, then longest"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Think of a contest with a rulebook. A runner who cuts across the field is out, even if they were the fastest. Only the runners who followed the rules are compared, and the one who went furthest wins."
+				},
+				{
+					"type": "paragraph",
+					"text": "First, the **validity rules** (signatures, unspent outputs, proof of work, the limit on new coins) decide which chains are candidates. Each node checks them alone. Then the **most-work rule** picks among the candidates. So a node that gets a chain of 12 blocks against its own chain of 10 will still refuse it if block 11 pays the miner twice the allowed reward. The majority of computing power can reorder transactions, but it cannot make nodes accept invalid coins."
+				},
+				{
+					"type": "paragraph",
+					"text": "The paper says 'longest', but what it really means is the chain with the most proof-of-work effort. If difficulty varies, counting blocks is wrong: 10 blocks of 3 zero digits (10 x 16^3) are less work than 8 blocks of 4 zero digits (8 x 16^4). Real implementations compare accumulated work. Otherwise an attacker could forge a long chain of easy blocks."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Nodes validate alone, follow the chain with the most work, keep the first block in a tie, and switch when another branch gets ahead."
+				}
+			]
+		},
+		{
+			"id": "incentives-and-mining",
+			"title": "Incentives and mining: why anyone does the work",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Solving the puzzle costs electricity and computer time. Why would anyone do it? Because there is a **prize**, like a game that gives a trophy to the first child who finishes. In the paper the prize has two parts."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Block reward**: the first transaction of a block creates new coins owned by the block's creator. This also solves how coins enter the world with no central bank.",
+						"**Transaction fees**: if a transaction's outputs are less than its inputs, the difference is added to the miner's prize."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The miner's coin-creation transaction can pay at most the block reward plus the sum of the fees of the transactions in the block. Every other node recomputes the sum and rejects the block if it is bigger. For example, with a reward of 50 and fees of 2, 1 and 3, the most a miner can claim is 50 + 6 = 56. When block space is limited, miners prefer transactions that pay more."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "The paper compares it with gold mining: miners spend resources to add gold to the world. Here, what is spent is CPU time and electricity, and the 'gold' is new coins."
+				},
+				{
+					"type": "heading",
+					"text": "A fixed supply: halving"
+				},
+				{
+					"type": "paragraph",
+					"text": "The paper says that once a predetermined number of coins is in circulation, the prize can be only fees, with no inflation. Bitcoin makes the reward **halve every 210,000 blocks**: 50, then 25, then 12.5 and so on. Each period issues half of the one before: 210,000 x 50 = 10,500,000, then 5,250,000, and so on. The sum 1 + 1/2 + 1/4 + ... is 2, so the total converges to 2 x 10,500,000 = **21,000,000 coins**. This is a rule that every node enforces, and no single person can change it."
+				},
+				{
+					"type": "chart",
+					"title": "Coins issued in each 210,000-block period (millions)",
+					"unit": "million coins",
+					"bars": [
+						{
+							"label": "Period 1 (50)",
+							"value": 10.5
+						},
+						{
+							"label": "Period 2 (25)",
+							"value": 5.25
+						},
+						{
+							"label": "Period 3 (12.5)",
+							"value": 2.625
+						},
+						{
+							"label": "Period 4 (6.25)",
+							"value": 1.3125
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Chance of winning"
+				},
+				{
+					"type": "paragraph",
+					"text": "A miner finds each block with probability equal to their share of the total computing power. If blocks come every 10 minutes there are 144 per day. A miner with 10% of the power expects 14.4 blocks per day on average. It is an average, because every block is a draw."
+				},
+				{
+					"type": "paragraph",
+					"text": "If many new miners join and total power doubles, difficulty rises to keep 144 blocks a day. The coins issued per day stay the same, because the rules fix them. The old miner, with the same machine, now has half the share. More power does not make more coins. It splits the same prize among more people, and the electricity spent per block goes up."
+				},
+				{
+					"type": "paragraph",
+					"text": "The paper also argues that a greedy attacker with a majority would earn more by playing by the rules than by breaking them. Attacking would destroy trust in the coins that the attacker owns. It is a good incentive argument, but not a guarantee."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Miner prize = block reward + fees. Reward halves every 210,000 blocks, the total tends to 21 million, and difficulty keeps the pace of new coins constant."
+				}
+			]
+		},
+		{
+			"id": "limits-and-alternatives",
+			"title": "Limits and alternatives",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A blockchain is a clever tool, not magic. Knowing what it cannot do is as important as knowing what it can."
+				},
+				{
+					"type": "heading",
+					"text": "Speed: throughput"
+				},
+				{
+					"type": "paragraph",
+					"text": "Every full node must receive, check and store every block. So block size and block interval are kept modest. Throughput = (block size / average transaction size) / block interval. With blocks of 1,000,000 bytes, transactions of 250 bytes and one block every 600 seconds: (1,000,000 / 250) / 600 = 4,000 / 600, about 6.7 transactions per second. Card payment networks do thousands. The difference is the price of replicating everything and trusting nobody."
+				},
+				{
+					"type": "paragraph",
+					"text": "Why not make blocks come every 5 seconds? The interval must be much longer than the time a block takes to cross the network (a few seconds). Otherwise miners often work on old blocks, many competing branches appear, and the work spent on losers does not protect the main chain. Honest power is wasted, and well-connected miners gain an advantage. So scalability is not a parameter to turn."
+				},
+				{
+					"type": "heading",
+					"text": "Energy"
+				},
+				{
+					"type": "paragraph",
+					"text": "In proof of work, security is bought with energy. Rewriting history costs as much as the work already done. That spending is permanent and grows with the power of the network. This is the main engineering criticism of proof of work."
+				},
+				{
+					"type": "heading",
+					"text": "Proof of stake"
+				},
+				{
+					"type": "paragraph",
+					"text": "Open systems need something scarce to weigh votes, or fake identities would win. Proof of work uses energy and hardware, which live outside the system. **Proof of stake** uses the coins of the system itself: validators lock coins as a deposit, and their weight is proportional to what they could lose."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"Proof of work",
+						"Proof of stake"
+					],
+					"rows": [
+						[
+							"Scarce resource",
+							"Computing power and energy",
+							"Locked coins"
+						],
+						[
+							"Cost of backing two branches",
+							"Real: the power is split",
+							"Almost free, so punishments are needed"
+						],
+						[
+							"Protection of old history",
+							"Accumulated work must be redone",
+							"Signatures, so checkpoints are needed"
+						],
+						[
+							"Main extra problems",
+							"Energy use",
+							"Nothing-at-stake and long-range attacks"
+						]
+					]
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Nothing at stake**: signing is free, so a rational validator would back every branch and forks would never settle. The cure is **slashing**: a validator that signs two conflicting blocks at the same position loses part of its locked coins.",
+						"**Long-range attack**: an attacker buys old keys of validators who already withdrew their coins and signs a different history from years ago. In proof of work, history is protected by accumulated work. In proof of stake the protection is signatures from people with nothing left to lose. So these chains use checkpoints, and new nodes must start from a recent trusted state."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Garbage in, garbage out"
+				},
+				{
+					"type": "paragraph",
+					"text": "A blockchain is a record that shows tampering. It proves some data existed at some time and has not changed. It does not check whether the data is true. If a company records 'this batch of coffee is organic', the chain only guarantees that this sentence was written and kept. If it was false, it stays false, now fixed in place. This is the **oracle problem**: facts from the outside world need someone to be trusted. With coins it does not show, because coins exist only inside the chain."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Do not say 'it is on the blockchain, so it is true'. A blockchain guarantees the history of records, not the honesty of what was recorded."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Throughput is limited by block size and interval, proof of work spends energy, proof of stake replaces energy with locked coins and needs slashing and checkpoints, and a chain cannot check the real world."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it all together",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Follow one payment from start to finish. Alice wants to pay Bob 3 coins and has a 10-coin output."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Alice builds a transaction: input = her 10-coin output, outputs = 3 to Bob and 7 back to herself as change.",
+						"She signs the hash of the transaction with her **private key**.",
+						"She broadcasts it. Every node checks the **signature**, that the input is in the **UTXO set**, and that outputs do not exceed inputs. The first one seen wins.",
+						"A miner puts it in a block with other transactions, computes the **Merkle root**, and tries **nonces** until the block hash is below the target.",
+						"The block is broadcast. Nodes check one hash, accept it, and mine on top of it. Alice's payment has 1 confirmation, then 2, then 3.",
+						"If a fork appears, the branch with the most work wins, and a transaction left only on the loser goes back to the pool."
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "  hash        -> fingerprints (ids, Merkle root, block hash)\n  signature   -> who may spend\n  UTXO        -> what can still be spent\n  block+chain -> history in order, tamper-evident\n  proof of work -> making history costly to rewrite\n  longest chain -> one agreed history\n  reward+fees -> a reason to do the work",
+					"caption": "Each piece solves one problem."
+				},
+				{
+					"type": "heading",
+					"text": "Which tool stops which attack?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Attack",
+						"What stops it"
+					],
+					"rows": [
+						[
+							"Changing the amount of a transaction in transit",
+							"The signature no longer matches the changed hash"
+						],
+						[
+							"Copying someone's signature onto another transaction",
+							"A signature is valid only for the message it signed"
+						],
+						[
+							"Spending the same output twice",
+							"The UTXO check: the output is already gone"
+						],
+						[
+							"Editing an old block",
+							"Merkle root, block hash and every later link break, and the work must be redone"
+						],
+						[
+							"Inventing many identities to win votes",
+							"Proof of work weighs votes by computing power"
+						],
+						[
+							"Forcing an invalid block on the network",
+							"Every node validates the rules by itself"
+						],
+						[
+							"Reversing a payment",
+							"Exponentially unlikely with enough confirmations and an honest majority"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Mistakes to avoid"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Thinking a hash hides data or proves who made it. It only shows integrity.",
+						"Thinking a valid signature proves a coin was not spent before.",
+						"Forgetting the change output. What is not sent as an output is a fee.",
+						"Counting confirmations wrong. The block with the payment is number 1.",
+						"Believing that 'longest' means the most blocks. It means the most work.",
+						"Believing that more miners create more coins. They only share the same prize.",
+						"Believing a blockchain makes the data true. It only makes it hard to change."
+					]
+				},
+				{
+					"type": "video",
+					"title": "But how does bitcoin actually work? (3Blue1Brown)",
+					"url": "https://www.youtube.com/watch?v=bBC-nXj3Ng4"
+				},
+				{
+					"type": "paragraph",
+					"text": "To play with the ideas, try the [Blockchain Demo](https://andersbrownworth.com/blockchain/) by Anders Brownworth: change a block and watch the hashes of the whole chain break. The original paper is [Bitcoin: A Peer-to-Peer Electronic Cash System](https://bitcoin.org/bitcoin.pdf), only nine pages."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "No single idea makes a blockchain. Hashes make changes visible, signatures say who may spend, UTXOs stop double spending, proof of work makes rewriting expensive, and the longest-chain rule gets strangers to agree."
+				}
+			]
+		}
+	]
+}

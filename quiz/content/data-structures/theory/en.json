@@ -1,0 +1,1513 @@
+{
+	"area": "data-structures",
+	"intro": [
+		"Imagine your room. If you throw every toy into one big pile, finding the red car takes forever. If you keep the cars in a box, the books on a shelf and the cards in a folder, you find things in seconds. A **data structure** is exactly this: a way of organising information inside the computer so that the things a program does most often (add, remove, find) are quick.",
+		"There is no best structure for everything. A line at the school canteen, a pile of plates, a family tree, a dictionary and a road map are all different shapes, and each one is good at different jobs. Choosing the right shape is often the decision that makes a program fast or slow. Phone contacts, the undo button, the back button of your browser, route finding in maps, the 'friends' list of a social network and the index of a database all use the structures in this summary.",
+		"You will learn, step by step: how to hide the details of a structure behind a clean set of operations (abstract data types), arrays and linked lists, stacks and queues, recursion, trees (plain, search trees, AVL and red-black), heaps and priority queues, hash tables, and graphs with their two famous walks, BFS and DFS. At the end you will know what each structure costs, so you will be ready for the quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture: shapes for information",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A data structure has two parts: a **way of storing** the items and a small set of **operations** to use them: `insert`, `remove`, `search`, and sometimes `access by position`. Every choice has a price. A shelf lets you grab the 5th book instantly, but adding a book in the middle means pushing all the others. A chain of paper clips lets you add a clip anywhere, but to reach the 5th one you must count from the start."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Think of a toy store. Aisles with numbered boxes (an array), a treasure hunt where each clue tells you where the next one is hidden (a linked list), a pile of plates (a stack), a queue at the cashier (a queue), a family tree (a tree) and a map of friendships (a graph). Same toys, different organisation, different speed."
+				},
+				{
+					"type": "heading",
+					"text": "Words you will meet"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Node**: one piece of a structure that holds a value and, usually, the addresses of other nodes.",
+						"**[[Pointer|a number that says where something is in memory, like the address of a house]]**: how a node points to another node. A pointer that points to nothing is called **null**.",
+						"**Key**: the part of an item we use to find it, like the name in a contact list.",
+						"**Sequential** organisation: neighbours in memory are neighbours in the structure. **Linked** organisation: the order is given by pointers.",
+						"**Cost**: how many steps an operation takes as the number of items `n` grows. `O(1)` means 'always about the same', `O(log n)` means 'grows very slowly' and `O(n)` means 'grows in step with n'."
+					]
+				},
+				{
+					"type": "table",
+					"caption": "Growth for n = 1,000 items (approximate steps)",
+					"headers": [
+						"Cost",
+						"Meaning",
+						"Steps for n = 1,000"
+					],
+					"rows": [
+						[
+							"O(1)",
+							"constant: one step, whatever n is",
+							"1"
+						],
+						[
+							"O(log n)",
+							"halve the problem each step",
+							"about 10"
+						],
+						[
+							"O(n)",
+							"look at every item once",
+							"1,000"
+						],
+						[
+							"O(n²)",
+							"compare every item with every item",
+							"1,000,000"
+						]
+					]
+				},
+				{
+					"type": "chart",
+					"title": "Steps needed for n = 1,000",
+					"unit": "steps",
+					"bars": [
+						{
+							"label": "O(1)",
+							"value": 1
+						},
+						{
+							"label": "O(log n)",
+							"value": 10
+						},
+						{
+							"label": "O(n)",
+							"value": 1000
+						},
+						{
+							"label": "O(n²)",
+							"value": 1000000
+						}
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A data structure is a way of storing items plus the operations on them. Every structure is fast at some jobs and slow at others, so we choose by asking: which operation will my program do the most?"
+				}
+			]
+		},
+		{
+			"id": "abstract-data-types",
+			"title": "Abstract data types and encapsulation",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "When you press the button of a TV remote, you do not need to know the electronics inside. You only know what each button does. An **abstract data type** (ADT) is the same idea for programs: it says **what** you can do with the data (a set of values and the operations on them), but not **how** the data is stored. The hidden part is the **representation**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A vending machine is an ADT. The buttons and the coin slot are the interface. The motors and the shelves inside are the implementation. The shop can change the inside without teaching you a new way to buy a snack."
+				},
+				{
+					"type": "heading",
+					"text": "Interface and implementation"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **interface** is the list of operations (their names, their parameters and what they mean). The **implementation** is the code and the memory layout behind them. The big gain is **representation independence**: while the interface stays the same, you can change the representation freely. If a date was stored in an array of three integers and you switch to a struct with three fields, the programs that only call the ADT functions do not need to change. Only code that reached inside from the outside would break."
+				},
+				{
+					"type": "paragraph",
+					"text": "This also lets you make a structure faster without bothering anyone. If a list searched for the first free slot on every `add`, and now keeps a private counter of how many elements it has, the users call the same methods and only notice that it got faster."
+				},
+				{
+					"type": "heading",
+					"text": "Encapsulation in C"
+				},
+				{
+					"type": "paragraph",
+					"text": "In C, an ADT becomes a **module** of two files. The header (`.h`) publishes an **opaque type** (a name with no visible fields) and the function prototypes. The `.c` file keeps the real `struct`. The user only holds pointers and cannot read the fields, because the compiler refuses. So the encapsulation is enforced by the compiler, not by good manners."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"caption": "stack.h (what the client sees) and stack.c (what is hidden)",
+					"content": "/* stack.h */\ntypedef struct Stack Stack;   /* opaque: no fields shown */\nStack *stack_new(void);\nint    stack_push(Stack *s, int x);\nint    stack_pop(Stack *s, int *out);\n\n/* stack.c */\nstruct Stack { int data[100]; int top; };  /* hidden */"
+				},
+				{
+					"type": "heading",
+					"text": "Errors and invariants"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Errors**: what should `pop` do on an empty stack? A reusable ADT only **detects** the problem and returns a success or failure indicator. The program that uses it **decides** the reaction: print a message, ask again, or fail a test. This way the same module serves a terminal program, a window or an automated test. Printing and quitting inside the ADT would make it useless in the other cases.",
+						"**Invariants**: a rule that must always be true, for example 'a Set has no repeated elements'. It stays true because every change goes through the operations of the ADT.",
+						"**Representation exposure**: if a function hands out a pointer to the internal array to 'avoid copying', the user can write there and break the invariant. The cure is to return a **copy**, a read-only view or an **iterator** (a helper that gives the elements one at a time)."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "An ADT is not a specific way of storing. 'Stack' is an ADT. 'Stack on an array' and 'stack on a linked list' are two implementations of the same ADT."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "ADT = a set of values + operations, with the representation hidden. Hidden representation means it can be replaced without breaking the users."
+				}
+			]
+		},
+		{
+			"id": "arrays-and-lists",
+			"title": "Arrays and lists: sequential, linked, doubly linked, circular",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **list** is a sequence of items where the order matters. There are two main ways to build one. In a **sequential list** (an array) the items sit side by side in memory, like seats in a cinema row. In a **linked list** each item lives in a node together with the address of the next node, like a treasure hunt where each clue tells you where the next clue is."
+				},
+				{
+					"type": "diagram",
+					"caption": "Array (neighbours) and linked list (arrows)",
+					"content": "array:   [ 7 ][ 3 ][ 9 ][ 4 ]      index 0 1 2 3\n\nlinked:  first -> [7|*]-> [3|*]-> [9|*]-> [4|null]"
+				},
+				{
+					"type": "heading",
+					"text": "Access and insertion"
+				},
+				{
+					"type": "paragraph",
+					"text": "In an array, the address of element `i` is the start plus `i` times the size of one element, so reading position `i` is `O(1)`. In a linked list each node only knows the next one, so to reach position `i` you must walk `i` steps: `O(n)`. On the other side, inserting at the start of an array needs every element to shift one place to make room (`O(n)`), while inserting right after a node you already hold in a linked list only changes pointers (`O(1)`)."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Operation",
+						"Array (sequential)",
+						"Singly linked list"
+					],
+					"rows": [
+						[
+							"Read position i",
+							"O(1)",
+							"O(i), linear"
+						],
+						[
+							"Insert at the start",
+							"O(n), shifts everything",
+							"O(1)"
+						],
+						[
+							"Insert at the end",
+							"O(1) if there is room",
+							"O(n) unless you keep a pointer to the last node"
+						],
+						[
+							"Search by key",
+							"O(n)",
+							"O(n)"
+						],
+						[
+							"Extra memory per item",
+							"none",
+							"one pointer"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Kinds of linked lists"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Singly linked**: each node has the data and `next`. The `next` of the last node is **null**, and a loop walks while the current pointer is not null.",
+						"**Doubly linked**: each node also has `prev`. It costs one more pointer per node, but from any node both neighbours are reachable in `O(1)`, so you can remove a known node and walk backwards.",
+						"**Circular**: the last node points to the first, so there is no null. To walk it, remember the start node and stop when you meet it again. It is good for things served in turns, like players in a game.",
+						"**Sentinel**: an extra node with no user data that removes special cases. In a search, you copy the key you want into the sentinel at the end, so the loop always ends and needs only one comparison per step instead of two. It is still linear.",
+						"**Header node**: a fake first node. Removing a node means making its predecessor point to its successor. The real first node has no predecessor, so without a header it is a special case. With a header, every data node has a predecessor."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Order of the pointer lines"
+				},
+				{
+					"type": "paragraph",
+					"text": "To insert `node` after `p`, the address of the old next node lives only in `p->next`. If you overwrite it first, you lose the rest of the list. So you must first link the new node to the rest, and then make `p` point to the new node."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"caption": "Correct order",
+					"content": "node->next = p->next;  /* 1: new node keeps the rest of the list */\np->next    = node;     /* 2: only now p points to the new node */"
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Writing `p->next = node;` first and `node->next = p->next;` second makes the node point to itself, and the rest of the list is lost."
+				},
+				{
+					"type": "heading",
+					"text": "Organisation versus allocation"
+				},
+				{
+					"type": "paragraph",
+					"text": "Two different questions. **Organisation** is how the order is represented: by neighbouring positions (sequential) or by links (linked). **Allocation** is when memory is reserved: all at once (**static**) or on demand (**dynamic**). A list kept in a fixed-size array in which every cell stores the index of its successor is therefore **linked** (organisation) and **static** (allocation)."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **node pool** simulates `malloc` and `free` inside an array: the free nodes form a linked list of indexes (the free list). `getnode` takes the node at the front of the free list and `freenode(i)` puts node `i` at the front. Both are `O(1)` and the pool behaves like a stack: the node freed last is the first to be reused."
+				},
+				{
+					"type": "heading",
+					"text": "Dynamic arrays and amortised cost"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **dynamic array** grows when it is full: it allocates a block twice as big and copies everything. One append may cost `O(n)`, but doubling makes it rare, so the [[amortised|averaged over a long series of operations, not the worst single one]] cost of append is `O(1)`."
+				},
+				{
+					"type": "table",
+					"caption": "Appending 5 elements, starting with capacity 1 and doubling",
+					"headers": [
+						"Append number",
+						"State before",
+						"Copies made"
+					],
+					"rows": [
+						[
+							"1",
+							"capacity 1, empty",
+							"0"
+						],
+						[
+							"2",
+							"capacity 1, full",
+							"1"
+						],
+						[
+							"3",
+							"capacity 2, full",
+							"2"
+						],
+						[
+							"4",
+							"capacity 4, has room",
+							"0"
+						],
+						[
+							"5",
+							"capacity 4, full",
+							"4"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The copies are 1 + 2 + 4 = 7. Each reallocation copies twice as much as the one before but happens half as often, so the total is a sum of powers of 2, always less than twice the number of elements. That is why the average cost per append stays constant."
+				},
+				{
+					"type": "heading",
+					"text": "Ordered lists and two classic traps"
+				},
+				{
+					"type": "list",
+					"items": [
+						"A linked list kept **sorted** by key makes failed searches stop earlier (as soon as you pass the place where the key would be). But you still walk node by node, so it does not become logarithmic. Binary search needs direct access by position, which only the array has.",
+						"**Deleting while looping over an array list**: after `remove(i)`, the next element shifts into index `i`. If the loop then does `i++`, it skips that element. For the list `[1, 5, 5, 2]` and the task 'remove every 5', the loop would remove the first 5 and then skip the second one. Fix it by not incrementing after a removal, or by walking from the end to the start.",
+						"An **LRU cache** ('remove the least recently used') needs a hash map from key to node and a list ordered by use. Each access takes a node out of the middle and puts it at the front, and eviction removes the last node. Both are `O(1)` only if the list is **doubly linked**, because the node must know both neighbours to leave its place."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Array: fast by position, slow to insert in the middle. Linked list: fast to insert where you already are, slow to reach a position. Link pointers in the right order, and watch special cases (first node, empty list)."
+				}
+			]
+		},
+		{
+			"id": "stacks",
+			"title": "Stacks",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A stack is a pile of plates. You put a new plate on top and you also take one from the top. You never pull a plate from the middle. In computer science: **push** puts an element on top, **pop** takes the top one out. The element removed is always the most recent one. This rule is called **LIFO**: last in, first out."
+				},
+				{
+					"type": "diagram",
+					"caption": "push 1, push 2, push 3, then pop gives 3",
+					"content": "   | 3 |  <- top\n   | 2 |\n   | 1 |\n   +---+"
+				},
+				{
+					"type": "heading",
+					"text": "Implementing a stack"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**On an array** (static): keep an integer `top` with the index of the last pushed element. Convention: `top == -1` means empty and `top == N - 1` means full, where `N` is the size of the array. Test 'full' before pushing, to avoid writing outside the array (**overflow**), and test 'empty' before popping (**underflow**).",
+						"**On a singly linked list**: the top is the **first node**. `push` creates a node that points to the old first and moves the start pointer to it. `pop` just advances the start pointer. Nothing is walked, so both are `O(1)`. It is full only when memory runs out."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "tip",
+					"text": "Do not push at the end of a singly linked list: to remove the last node you would need to walk the whole list to find the one before it."
+				},
+				{
+					"type": "heading",
+					"text": "Where stacks appear"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Function calls**: each call pushes its return address and local variables, and the return pops them. That is the **call stack**.",
+						"**Undo** buttons and the **back** button of a browser.",
+						"**Matching parentheses**: push each opening one, and each closing one must match the top.",
+						"**Reversing a sequence**: converting 13 to binary by dividing by 2 gives the bits from the last to the first (1, 0, 1, 1 for 13: remainders 1, 0, 1, 1 pushed in this order). Popping them writes the number 1101 in the right order.",
+						"**Evaluating expressions** written in postfix notation."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Postfix (reverse Polish) notation"
+				},
+				{
+					"type": "paragraph",
+					"text": "In postfix the operator comes **after** its operands, so you need neither parentheses nor precedence rules. Read from left to right: if you see a number, push it. If you see an operator, pop two numbers, compute, and push the result. The first number popped is the **right** operand, which matters for subtraction and division."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"caption": "Evaluating  2 3 + 4 *  (that is, (2 + 3) * 4)",
+					"content": "read 2  -> stack: 2\nread 3  -> stack: 2 3\nread +  -> pop 3, pop 2, push 2+3 -> stack: 5\nread 4  -> stack: 5 4\nread *  -> pop 4, pop 5, push 5*4 -> stack: 20"
+				},
+				{
+					"type": "heading",
+					"text": "Which output orders are possible?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Suppose 1, 2, 3, 4 are pushed in this order, and pops can happen at any moment. When a value leaves, everything pushed after it that is still inside must leave first, in reverse order. So after printing a value `x`, the smaller values not yet printed must come out in decreasing order. For example 2, 1, 3, 4 is possible, but 2, 4, 1, 3 is not: after 4 leaves, 3 is above 1 and has to come out first."
+				},
+				{
+					"type": "heading",
+					"text": "A stack that knows its minimum"
+				},
+				{
+					"type": "paragraph",
+					"text": "To get the minimum in `O(1)`, keep a second stack of minimums. Push `x` on it when it is empty or when `x` is **less than or equal to** its top. When popping, if the removed value equals the top of the second stack, pop that one too. The comparison must be 'less than or equal': if the minimum 3 is pushed twice and only the first copy is recorded, removing one 3 erases the record of the other and the answer becomes wrong."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Stack = LIFO, access only at the top, push and pop in O(1). Whenever the last thing started must be the first thing finished, think of a stack."
+				}
+			]
+		},
+		{
+			"id": "queues-and-deques",
+			"title": "Queues and deques",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A queue is the line at the cashier: people enter at the back and leave from the front, so the first to arrive is the first to be served. This is **FIFO**: first in, first out. The operations are **enqueue** (insert at the **rear**) and **dequeue** (remove from the **front**). Nobody enters or leaves the middle."
+				},
+				{
+					"type": "diagram",
+					"caption": "A, B, C enter; one removal; D enters",
+					"content": "front -> [ A ][ B ][ C ] <- rear\ndequeue gives A:  [ B ][ C ]\nenqueue D:        [ B ][ C ][ D ]"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **deque** (double-ended queue, said 'deck') allows insert and remove at **both ends**, but still not in the middle. It generalises the stack and the queue. On a doubly linked list or a circular array, all four operations are `O(1)`."
+				},
+				{
+					"type": "heading",
+					"text": "Queue on a linked list"
+				},
+				{
+					"type": "paragraph",
+					"text": "Elements leave at the front and enter at the rear, so keep **two pointers**, one to each end. Then neither operation walks any node. The classic special case: when you remove the only element, both pointers must go back to null, otherwise the rear pointer would point to a node that no longer exists."
+				},
+				{
+					"type": "heading",
+					"text": "Queue on an array: the circular trick"
+				},
+				{
+					"type": "paragraph",
+					"text": "With `front` and `rear` indexes that only move forward, the cells to the left of `front` are wasted after each removal, and soon the queue says 'full' with the array almost empty. One fix is to shift all elements back, but then removal costs `O(n)`. The better fix is a **circular queue**: treat the array as a ring, where after the last index comes index 0."
+				},
+				{
+					"type": "diagram",
+					"caption": "A ring of N = 6 cells",
+					"content": "index:   0     1     2     3     4     5\n       [ C ] [ D ] [   ] [   ] [ A ] [ B ]\n                                  ^front = 4\nN = 6, front = 4, count = 4: A at 4, B at 5, C at 0, D at 1"
+				},
+				{
+					"type": "paragraph",
+					"text": "The next insertion goes at index `(front + count) mod N`, where `mod` is the remainder of a division. The front moves the same way, `front = (front + 1) mod N`, on each removal. In the ring above, `N = 6`, `front = 4` and 4 elements are stored, so the next insertion is at `(4 + 4) mod 6 = 2`."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "If you keep only `front` and `rear` and say 'empty when front == rear', a full queue looks identical to an empty one. There are N possible gaps between the two indexes but N + 1 possible counts (0 to N). Fix it by wasting one cell (at most N - 1 elements) or by keeping a separate counter. So a ring of 8 cells with no counter holds at most 7 items."
+				},
+				{
+					"type": "heading",
+					"text": "Queues and stacks together"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Reversing a queue**: a queue keeps the arrival order, a stack reverses it. If you move elements from a queue through a stack and back, their order is reversed. Example: the queue 3, 6, 9 goes into the stack as 3, 6, 9 (9 on top) and comes out as 9, 6, 3.",
+						"**A queue made of two stacks**, `In` and `Out`: `enqueue` pushes on `In`. `dequeue` pops from `Out`, and only when `Out` is empty does it first move **all** the elements of `In` to `Out`, one pop and one push at a time. Moving reverses the order, and two reversals give back the arrival order. Each element is pushed and popped at most twice, so n operations cost `O(n)` in total, which is **amortised** `O(1)` per operation, even if one single dequeue costs `O(n)`."
+					]
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Structure",
+						"Insert",
+						"Remove",
+						"Rule"
+					],
+					"rows": [
+						[
+							"Stack",
+							"top",
+							"top",
+							"LIFO"
+						],
+						[
+							"Queue",
+							"rear",
+							"front",
+							"FIFO"
+						],
+						[
+							"Deque",
+							"both ends",
+							"both ends",
+							"no middle access"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Queue = FIFO. On a ring, the next free cell is (front + count) mod N. Without a counter, a ring of N cells holds at most N - 1 items."
+				}
+			]
+		},
+		{
+			"id": "recursion-and-generalised-lists",
+			"title": "Recursion and generalised lists",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Have you seen two mirrors facing each other, with a picture inside a picture inside a picture? **Recursion** is when a function solves a problem by calling **itself** on a smaller version of the problem. To work, every recursive function needs two parts: a **base case** that is answered directly with no more calls, and a **recursive step** that moves the problem towards the base case. If one of them is missing, the calls pile up in the call stack until memory ends (a **stack overflow**)."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Sum of 1..n",
+					"content": "function sum(n: number): number {\n\tif (n === 0) return 0;      // base case: nothing left to add\n\treturn n + sum(n - 1);      // step: a smaller problem\n}"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Russian nesting dolls: to count all the dolls, open the first one and count the rest the same way, until you reach a doll with nothing inside. That doll is the base case."
+				},
+				{
+					"type": "heading",
+					"text": "Towers of Hanoi"
+				},
+				{
+					"type": "paragraph",
+					"text": "There are 3 pegs and `n` discs of different sizes, and a big disc can never sit on a smaller one. To move `n` discs from peg A to peg C: move the top `n - 1` discs to the spare peg B, move the biggest disc to C, then move the `n - 1` discs from B onto C. The number of moves follows `T(n) = 2 T(n - 1) + 1`, whose solution is **2ⁿ - 1**."
+				},
+				{
+					"type": "chart",
+					"title": "Minimum moves in the Towers of Hanoi",
+					"unit": "moves",
+					"bars": [
+						{
+							"label": "n = 1",
+							"value": 1
+						},
+						{
+							"label": "n = 2",
+							"value": 3
+						},
+						{
+							"label": "n = 4",
+							"value": 15
+						},
+						{
+							"label": "n = 10",
+							"value": 1023
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Fibonacci: when recursion repeats work"
+				},
+				{
+					"type": "paragraph",
+					"text": "`fib(n) = fib(n-1) + fib(n-2)`, with `fib(0) = 0` and `fib(1) = 1`. The direct recursive version solves the same small problems again and again: in the picture below, `fib(2)` is computed twice. The calls in total are 9 for `fib(4)`, and the number grows exponentially as `n` grows. Remembering the results already computed, or using a simple loop, makes it `O(n)`."
+				},
+				{
+					"type": "diagram",
+					"caption": "Calls made by fib(4): fib(2) appears twice",
+					"content": "              fib(4)\n             /      \\\n        fib(3)      fib(2)\n        /    \\      /    \\\n    fib(2) fib(1) fib(1) fib(0)\n    /    \\\nfib(1) fib(0)"
+				},
+				{
+					"type": "heading",
+					"text": "Generalised lists"
+				},
+				{
+					"type": "paragraph",
+					"text": "A normal list holds only simple things. In a **generalised list** each element is either an **atom** (a simple value, like `a`) or **another generalised list**. Parentheses show the nesting: `(a, (b, c))` has an atom `a` and a sublist `(b, c)`. Because the definition refers to itself, the algorithms that walk it are naturally recursive."
+				},
+				{
+					"type": "paragraph",
+					"text": "The **depth** is defined recursively too: 1 plus the largest depth among its sublists, and atoms add nothing. A list made only of atoms has depth 1. So `(a, (b, (c, d)))` has depth 3: the innermost list `(c, d)` has depth 1, `(b, (c, d))` has 2 and the whole list has 3. It is the same reasoning used for the height of a tree."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Recursion = base case + a step that gets closer to it. It can be elegant, but check how many times the same work is repeated."
+				}
+			]
+		},
+		{
+			"id": "binary-trees-and-traversals",
+			"title": "Binary trees and traversals",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A family tree starts with a grandparent, who has children, who have their own children. A **tree** in computer science is like this, drawn upside down: one **root** at the top and branches going down. A **binary tree** is a tree where every node has **at most two children**, called left and right."
+				},
+				{
+					"type": "heading",
+					"text": "Words about trees"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Root**: the only node without a parent. **Leaf**: a node with no children. The others are **internal** nodes.",
+						"**Degree** of a node: its number of children. Leaves have degree 0. In a tree with a single node, the root is also a leaf.",
+						"**Level**: the distance from the root, in steps. **Height** of the tree: the number of edges (links) on the longest path from the root to a leaf. In this summary, a tree with a single node has height 0.",
+						"**Subtree**: any node together with everything below it."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Each level can hold twice as many nodes as the one above: 1, 2, 4, 8... So a tree of height `h` has `h + 1` levels and at most **2^(h+1) - 1** nodes (height 3 gives 15). Read backwards: n nodes fit in a height near log₂ n, which is why a good tree is so fast."
+				},
+				{
+					"type": "chart",
+					"title": "Largest number of nodes of a binary tree, by height",
+					"unit": "nodes",
+					"bars": [
+						{
+							"label": "h = 0",
+							"value": 1
+						},
+						{
+							"label": "h = 1",
+							"value": 3
+						},
+						{
+							"label": "h = 2",
+							"value": 7
+						},
+						{
+							"label": "h = 3",
+							"value": 15
+						},
+						{
+							"label": "h = 4",
+							"value": 31
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Walking through the tree"
+				},
+				{
+					"type": "paragraph",
+					"text": "The three **depth-first traversals** differ only in when they visit the root of each subtree: before the two subtrees (**pre-order**), between them (**in-order**) or after them (**post-order**). In all of them the left subtree is walked before the right one, and the rule is applied recursively to each subtree."
+				},
+				{
+					"type": "diagram",
+					"caption": "A small tree",
+					"content": "        1\n       / \\\n      2   3\n     / \\\n    4   5"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Traversal",
+						"Rule",
+						"Result for the tree above"
+					],
+					"rows": [
+						[
+							"Pre-order",
+							"node, left, right",
+							"1 2 4 5 3"
+						],
+						[
+							"In-order",
+							"left, node, right",
+							"4 2 5 1 3"
+						],
+						[
+							"Post-order",
+							"left, right, node",
+							"4 5 2 3 1"
+						],
+						[
+							"Level-order (breadth-first)",
+							"level by level, left to right",
+							"1 2 3 4 5"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Post-order fits when a node needs the answers of its children first, like freeing the memory of a tree or computing its height. The root is always last, and the first node visited is always a leaf. **Level-order** uses a **queue**: visit a node, then put its children at the back of the queue. The queue holds the nodes discovered but not yet visited. If you swap the queue for a stack, the same algorithm becomes depth-first."
+				},
+				{
+					"type": "heading",
+					"text": "Rebuilding a tree"
+				},
+				{
+					"type": "paragraph",
+					"text": "Pre-order tells you the root: it is the first item. In-order tells you which keys are on the left and which on the right of that root. Repeat the split on each part, and a single tree appears (provided all keys are different). Example: pre-order `D B A C E` and in-order `A B C D E`. The root is `D`. In the in-order, `A B C` is on the left and `E` on the right. In the left part, the pre-order `B A C` says the root is `B`, with `A` on its left and `C` on its right. So the post-order is `A C B E D`."
+				},
+				{
+					"type": "heading",
+					"text": "Expression trees"
+				},
+				{
+					"type": "paragraph",
+					"text": "The expression `a * (b + c) - d` can be stored with operators in the internal nodes and operands in the leaves. The shape of the tree already says the order of operations, so no parentheses are needed. Post-order writes each operator after its operands (`a b c + * d -`, the postfix notation, which a stack can evaluate). Pre-order gives the prefix notation."
+				},
+				{
+					"type": "heading",
+					"text": "Counting facts"
+				},
+				{
+					"type": "list",
+					"items": [
+						"A binary tree with `n` nodes has `n - 1` links (every node except the root has one parent). With 2 child pointers per node there are `2n` pointers, so exactly **n + 1 of them are null**, whatever the shape.",
+						"Every non-empty binary tree has **one more leaf than nodes with two children**. So a tree with 5 nodes of two children has 6 leaves, no matter how many nodes have one child."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Trees in an array"
+				},
+				{
+					"type": "paragraph",
+					"text": "A tree can be stored level by level in an array, with no pointers. With the root at index 0, the children of the node at index `i` are at `2i + 1` and `2i + 2`, and its parent is at `(i - 1) div 2` (integer division). So the children of index 3 are at 7 and 8. It wastes no space only for **complete** trees, because every missing node leaves a hole."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Pre-order: node first. In-order: node in the middle. Post-order: node last. Level-order: a queue. n nodes have n + 1 null pointers."
+				}
+			]
+		},
+		{
+			"id": "binary-search-trees",
+			"title": "Binary search trees",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Think of a guessing game: 'I am thinking of a number from 1 to 100'. You say 50 and I answer 'higher'. In one question you throw away half of the numbers. A **binary search tree** (BST) is a binary tree built to play this game. At **every node**, all the keys in the **left subtree are smaller** and all the keys in the **right subtree are larger** (here the keys are all different)."
+				},
+				{
+					"type": "diagram",
+					"caption": "Inserting 8, 3, 10, 1, 6",
+					"content": "        8\n       / \\\n      3   10\n     / \\\n    1   6"
+				},
+				{
+					"type": "paragraph",
+					"text": "To **search**, compare with the node, then follow only one side, throwing the other away. To **insert**, search for the key and place it as a new leaf where the search ends. The cost of search, insertion and removal is the length of the path, at most the **height** of the tree."
+				},
+				{
+					"type": "heading",
+					"text": "Useful facts"
+				},
+				{
+					"type": "list",
+					"items": [
+						"The **in-order** traversal visits the keys in **ascending order**, in `O(n)`. This is how a BST lists sorted data.",
+						"The **minimum** is found by following left pointers from the root until there is no left child. The **maximum** is symmetric, to the right.",
+						"The property is about **whole subtrees**, not only parent and child. A validator that only checks 'left child smaller, right child larger' accepts a wrong tree, for example a node 5 with left child 3, where 3 has a right child 7: 7 is in the left subtree of 5 but is bigger than 5. A correct validator carries an **interval** of allowed values down the tree (going left lowers the upper bound, going right raises the lower bound), or checks that the in-order is ascending."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The shape depends on the insertion order"
+				},
+				{
+					"type": "paragraph",
+					"text": "A plain BST does no balancing: a new key just becomes a leaf where its search ends. So the same keys give different trees depending on the order they arrive. If the keys come already sorted (1, 2, 3, ..., 1000), each new key is larger than all the others and goes to the right of the last one. The tree becomes a **linked list** of height `n - 1`, and a search costs `O(n)`."
+				},
+				{
+					"type": "diagram",
+					"caption": "Sorted insertion: a chain",
+					"content": "1\n \\\n  2\n   \\\n    3\n     \\\n      4"
+				},
+				{
+					"type": "paragraph",
+					"text": "To get the smallest height with the keys 1 to 7, insert the **median** first (4), then the medians of each half (2 and 6), then the rest. The tree has height 2. When you cannot choose the order, only automatic balancing guarantees a good height. That is what AVL and red-black trees do."
+				},
+				{
+					"type": "chart",
+					"title": "Height after inserting 100,000 keys in sorted order (this repository's balanced-trees project)",
+					"unit": "levels",
+					"bars": [
+						{
+							"label": "Plain BST",
+							"value": 100000
+						},
+						{
+							"label": "Red-black",
+							"value": 31
+						},
+						{
+							"label": "AVL",
+							"value": 17
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Removal"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**A leaf**: just cut it.",
+						"**One child**: the child takes the place of the removed node.",
+						"**Two children**: you cannot leave a hole. Replace the key by its neighbour in the order: the **in-order successor** (smallest key of the right subtree) or the **predecessor** (largest key of the left subtree). That neighbour has at most one child, so removing it from its old place is one of the easy cases."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Example: a tree with 40 at the root, 20 and 60 below, 10 and 30 under 20, 50 and 70 under 60, and 55 under 50. Removing 40 with the successor rule: the smallest key of the right subtree is 50 (the leftmost one under 60). 50 takes the place of the root, and its old place is filled by its only child 55, which becomes the left child of 60."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "BST: smaller on the left, larger on the right, at every node. Operations cost the height: about log n if balanced, n if it is a chain. In-order = sorted."
+				}
+			]
+		},
+		{
+			"id": "avl-trees",
+			"title": "AVL trees",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A tree that leans too much is like a stack of books that is about to fall. The **AVL tree** (named after its inventors Adelson-Velsky and Landis) is a binary search tree that fixes itself. Its rule: at **every node**, the heights of the left and right subtrees differ by **at most 1**. This simple local rule keeps the whole tree's height at `O(log n)`."
+				},
+				{
+					"type": "paragraph",
+					"text": "Each node stores a small number, the **balance factor**: here, the height of the right subtree minus the height of the left subtree. In a valid AVL tree it is always **-1, 0 or +1**. After an insertion or removal, the factors are updated on the way back up to the root. If some node reaches **±2**, it is repaired with a rotation."
+				},
+				{
+					"type": "heading",
+					"text": "The rotation"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **rotation** swaps the roles of a node and one of its children by changing a few pointers, in constant time. It changes the heights but keeps the left-to-right order of all keys, so the tree is still a search tree."
+				},
+				{
+					"type": "diagram",
+					"caption": "Left rotation at x (A, B and C are subtrees)",
+					"content": "    x                  y\n   / \\                / \\\n  A   y     ---->    x   C\n     / \\            / \\\n    B   C          A   B\n\nBoth read:  A x B y C"
+				},
+				{
+					"type": "heading",
+					"text": "The four cases"
+				},
+				{
+					"type": "paragraph",
+					"text": "Find the first unbalanced node when climbing from the new key. Look at the path to the new key, below that node:"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Case",
+						"Where the new node went",
+						"Signs of the factors",
+						"Fix"
+					],
+					"rows": [
+						[
+							"Right-right",
+							"right of the right child (outer)",
+							"same sign (+2 and +1)",
+							"one left rotation"
+						],
+						[
+							"Left-left",
+							"left of the left child (outer)",
+							"same sign (-2 and -1)",
+							"one right rotation"
+						],
+						[
+							"Right-left",
+							"left of the right child (inner)",
+							"opposite signs (+2 and -1)",
+							"double rotation: right at the child, then left at the node"
+						],
+						[
+							"Left-right",
+							"right of the left child (inner)",
+							"opposite signs (-2 and +1)",
+							"double rotation: left at the child, then right at the node"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "In the inner case a single rotation would only mirror the problem. The double rotation first straightens the path and then rotates the unbalanced node. The grandchild rises two levels and its two subtrees are split between the old parent and the old grandparent."
+				},
+				{
+					"type": "diagram",
+					"caption": "Inserting 3, 1, 2 (left-right case): rotate 1 left, then 3 right",
+					"content": "  3          3           2\n /          /           / \\\n1    ->    2     ->    1   3\n \\        /\n  2      1"
+				},
+				{
+					"type": "paragraph",
+					"text": "For an outer case, take the keys 1, 2, 3 in this order: they form a chain to the right, the root 1 reaches +2, and one left rotation at 1 makes 2 the root with 1 and 3 as children. The fix is local: the nodes above the repaired spot do not change."
+				},
+				{
+					"type": "heading",
+					"text": "How tall can it be?"
+				},
+				{
+					"type": "paragraph",
+					"text": "The thinnest AVL tree of height `h` has one subtree of height `h - 1`, another of height `h - 2`, both thin too, plus the root. The recurrence is `N(h) = N(h-1) + N(h-2) + 1`, which grows like the Fibonacci numbers. Therefore the height of an AVL tree with `n` nodes is at most about **1.44 log₂ n**."
+				},
+				{
+					"type": "chart",
+					"title": "Smallest number of nodes of an AVL tree of height h",
+					"unit": "nodes",
+					"bars": [
+						{
+							"label": "h = 0",
+							"value": 1
+						},
+						{
+							"label": "h = 1",
+							"value": 2
+						},
+						{
+							"label": "h = 2",
+							"value": 4
+						},
+						{
+							"label": "h = 3",
+							"value": 7
+						},
+						{
+							"label": "h = 4",
+							"value": 12
+						},
+						{
+							"label": "h = 5",
+							"value": 20
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Insertion versus removal"
+				},
+				{
+					"type": "paragraph",
+					"text": "After an insertion, the tree got taller somewhere, and one rotation step (single or double) brings that subtree back to its previous height, so the repair **ends there**: at most one rotation step. After a removal, a subtree got shorter, and the rotation that fixes a node may shorten the subtree even more, which can upset its parent. So removal may need to check **every ancestor up to the root**, with up to `O(log n)` rotation steps. The total cost is still `O(log n)`."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "AVL: heights of siblings differ by at most 1; balance factor -1, 0, +1; ±2 triggers a rotation (single for outer cases, double for inner ones). Insertion needs at most one rotation step, removal may need many."
+				}
+			]
+		},
+		{
+			"id": "red-black-trees",
+			"title": "Red-black trees",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A red-black tree balances itself with colours instead of heights. Each node is painted **red** or **black**, and a few rules keep the tree from leaning too far. It is a looser rule than AVL: the tree may be a little taller, but updates need less rearranging."
+				},
+				{
+					"type": "heading",
+					"text": "The rules"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Every node is red or black.",
+						"The **root is black** (the convention of this summary).",
+						"The empty leaves, called **NIL**, are black.",
+						"A **red node has only black children** (no two reds in a row).",
+						"All paths from a node down to the NIL leaves below it have the **same number of black nodes**."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Why does this give a short tree? All root-to-leaf paths have the same number of blacks, and between two blacks at most one red fits. So the longest path has at most **twice** as many nodes as the shortest. This bounds the height by **2 log₂(n + 1)**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Example: if every path from the root to a NIL has exactly 2 black nodes (the NIL not counted), the shortest path has 2 nodes (both black) and the longest alternates black and red, ending in a red one: black, red, black, red, which makes at most **4** nodes."
+				},
+				{
+					"type": "heading",
+					"text": "Insertion"
+				},
+				{
+					"type": "paragraph",
+					"text": "The new key goes in as a leaf and is painted **red**. A red node never changes the count of blacks on any path, which is the most delicate rule. At most one rule can break: a red node with a red parent. The repair (the **fix-up**) looks at the **uncle**, the sibling of the parent."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Uncle",
+						"What the fix-up does",
+						"Does it continue?"
+					],
+					"rows": [
+						[
+							"Red",
+							"Recolour only: parent and uncle become black, grandparent becomes red",
+							"Yes: the grandparent may now have a red parent, so the check moves two levels up"
+						],
+						[
+							"Black (or NIL)",
+							"One or two rotations plus a colour swap",
+							"No: solved for good"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "With a red uncle no path changes its black count, because the blackness of the grandparent just moves down to its two children. This is the only case that repeats. If it reaches the root and the root became red, it is painted black again, which raises the black count of all paths by one at the same time, so the rules still hold."
+				},
+				{
+					"type": "diagram",
+					"caption": "Inserting 5, 8, 9, 12 gives this tree (R = red, B = black)",
+					"content": "      8B\n     /  \\\n   5B    9B\n           \\\n           12R"
+				},
+				{
+					"type": "paragraph",
+					"text": "Follow it: 5 is the root (black). 8 goes to the right, red. Inserting 9 puts a red child under a red parent with a black (NIL) uncle: a left rotation at 5 and a colour swap make 8 black with red children 5 and 9. Inserting 12 as a child of the red 9 finds a red uncle (5): recolour, so 5 and 9 become black and 8 red, then 8 is the root and is painted black again. 12 stays red."
+				},
+				{
+					"type": "heading",
+					"text": "AVL or red-black?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"AVL",
+						"Red-black"
+					],
+					"rows": [
+						[
+							"Balance rule",
+							"Strict: sibling heights differ by at most 1",
+							"Loose: longest path at most twice the shortest"
+						],
+						[
+							"Maximum height",
+							"about 1.44 log₂ n",
+							"up to 2 log₂(n + 1)"
+						],
+						[
+							"Searches",
+							"slightly faster (shorter tree)",
+							"slightly slower"
+						],
+						[
+							"Updates",
+							"may rotate more",
+							"fewer rotations and restructuring"
+						],
+						[
+							"Where you meet it",
+							"workloads with many searches",
+							"libraries of ordered maps and sets"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Both guarantee `O(log n)` search, insertion and removal. In this repository's measurements, with 100,000 random keys a plain tree is only about twice as tall as the balanced ones (41 against 20), but with sorted keys it is a chain. Balancing is insurance against an order of arrival you do not choose."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Red-black: root black, NIL black, no red node with a red child, same black count on all paths. New nodes are red. Red uncle: recolour and go up. Black uncle: rotate and stop."
+				}
+			]
+		},
+		{
+			"id": "heaps-and-priority-queues",
+			"title": "Heaps and priority queues",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "In a hospital emergency room, the person who arrived first is not always the first to be seen: the most urgent case goes first. A **priority queue** works like this: you insert items with a priority, and it always gives you the one with the **highest priority** (not the oldest). The usual way to build it is a **heap**."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **binary max-heap** has two independent properties. **Order**: every node is greater than or equal to its children, so the largest element is always at the root. **Shape**: the tree is **complete**, meaning all levels are full except possibly the last, which is filled from left to right. Brothers and cousins are not compared, so keeping this partial order is much cheaper than keeping everything sorted."
+				},
+				{
+					"type": "heading",
+					"text": "A tree inside an array"
+				},
+				{
+					"type": "paragraph",
+					"text": "Because of the complete shape, there are no holes, and the heap fits in an array with no pointers. With the root at index 0, the children of index `i` are at `2i + 1` and `2i + 2`, and the parent is at `(i - 1) div 2`."
+				},
+				{
+					"type": "diagram",
+					"caption": "The max-heap [9, 5, 6, 1, 2]",
+					"content": "tree:         9            array: [9][5][6][1][2]\n            /   \\                  0  1  2  3  4\n           5     6\n          / \\\n         1   2"
+				},
+				{
+					"type": "heading",
+					"text": "Insert and remove the maximum"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Insert**: put the element in the first free position of the array (this keeps the complete shape), then **sift up**: swap with the parent while it is larger. Insert 8 into the heap above: it goes to index 5, its parent is 6 (index 2), 8 is larger, swap. The next parent is 9, stop. Result: `[9, 5, 8, 1, 2, 6]`. At most about log₂ n swaps.",
+						"**Remove the maximum**: take the root. To avoid a hole, move the **last element** of the array to the root, then **sift down**: swap with the **larger** of its two children while it is smaller than that child. Remove the maximum of `[9, 5, 8, 1, 2, 6]`: 6 goes to the root, the larger child is 8, swap. Result: `[8, 5, 6, 1, 2]`. Swapping with the larger child is essential: otherwise the new parent could be smaller than its sibling."
+					]
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Operation",
+						"Cost with a binary heap"
+					],
+					"rows": [
+						[
+							"Look at the maximum",
+							"O(1)"
+						],
+						[
+							"Insert",
+							"O(log n)"
+						],
+						[
+							"Remove the maximum",
+							"O(log n), worst case"
+						],
+						[
+							"Find the minimum in a max-heap",
+							"O(n): it can be in any leaf"
+						],
+						[
+							"Build a heap from n items",
+							"O(n)"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Two surprising facts"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Building a heap is linear.** Applying sift-down to each internal node, from the last one up to the root, costs each node its **height**, not the height of the tree. Most nodes are near the bottom, where the height is small, so the sum is `O(n)`, cheaper than inserting n items one by one (`O(n log n)`). It is the first step of **heapsort**.",
+						"**The smallest key of a max-heap** is not at a fixed place. It may be in any leaf. In a heap with n nodes the leaves take the indexes from `n div 2` onwards, about half of the array. Searching for the minimum means checking all of them: `O(n)`."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Heap = complete tree + parent at least as big as children, stored in an array. Insert: put at the end and sift up. Remove max: move the last to the root and sift down, always with the larger child. Both O(log n)."
+				}
+			]
+		},
+		{
+			"id": "hash-tables",
+			"title": "Hash tables: collisions, load factor, rehashing",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine a school with a locker for every class number. To find the notebook of student 17, you do not search all the lockers: you go straight to locker 17. A **hash table** does this for any kind of key, even names. A **hash function** turns the key into a number, which becomes an index in an array. Then a search goes straight to one place, on average in `O(1)`."
+				},
+				{
+					"type": "paragraph",
+					"text": "A good hash function is **deterministic** (the same key always gives the same code), fast, and spreads the keys evenly. A bad function is still correct, but puts many keys in the same places and slows everything down."
+				},
+				{
+					"type": "heading",
+					"text": "Collisions"
+				},
+				{
+					"type": "paragraph",
+					"text": "There are far more possible keys than positions, so two different keys will sometimes land on the same index. This is a **collision**. Every table needs a plan for it. The two classics:"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"Separate chaining",
+						"Open addressing (linear probing)"
+					],
+					"rows": [
+						[
+							"Where the entries live",
+							"In lists hanging from each position, outside the main array",
+							"In the array itself"
+						],
+						[
+							"On a collision",
+							"Add one more node to the list of that position",
+							"Try the next position, and the next, wrapping around at the end"
+						],
+						[
+							"Cost of an operation",
+							"Length of the list, on average the load factor",
+							"Number of positions probed"
+						]
+					]
+				},
+				{
+					"type": "diagram",
+					"caption": "Table of 5 positions, h(k) = k mod 5, linear probing, insert 7, 12, 2",
+					"content": "7  -> index 2: free, store.\n12 -> index 2 taken, try 3: free, store.\n2  -> indexes 2 and 3 taken, try 4: free, store.\n\nindex:  0    1    2    3    4\n      [   ][   ][ 7 ][ 12][ 2 ]"
+				},
+				{
+					"type": "paragraph",
+					"text": "A search follows the same path of positions: it asks index 2, then 3, then 4, and stops when it finds the key or an empty position."
+				},
+				{
+					"type": "heading",
+					"text": "Deleting with open addressing: tombstones"
+				},
+				{
+					"type": "paragraph",
+					"text": "In open addressing, a search ends when it meets an **empty** position. If you remove key A (which sits before B in the same probe sequence) by simply emptying its position, a later search for B stops at the empty cell and wrongly says 'not found'. The solution is a **tombstone**, a special mark: the search walks over it, and an insertion may reuse it. Tombstones still lengthen probes, so a rebuild (rehash) throws them away."
+				},
+				{
+					"type": "heading",
+					"text": "Load factor"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **load factor** α is the number of stored elements divided by the number of positions. With 40 positions and 30 elements, α = 0.75. It measures how full the table is, and so how likely a collision is. With chaining, α is the average length of a list: a failed search examines about α entries and a successful one about 1 + α/2. With 300 elements in 100 positions, α = 3, so a search for an absent key looks at about 3 entries."
+				},
+				{
+					"type": "paragraph",
+					"text": "With linear probing, occupied cells join into long runs (**primary clustering**), and a key that lands in a run must walk to its end, making the run longer. The expected number of positions examined in a failed search is about `(1 + 1/(1 - α)²) / 2`, which explodes as α gets close to 1."
+				},
+				{
+					"type": "chart",
+					"title": "Positions examined in a failed search with linear probing",
+					"unit": "positions",
+					"bars": [
+						{
+							"label": "α = 0.25",
+							"value": 1.4
+						},
+						{
+							"label": "α = 0.5",
+							"value": 2.5
+						},
+						{
+							"label": "α = 0.75",
+							"value": 8.5
+						},
+						{
+							"label": "α = 0.9",
+							"value": 50.5
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "With chaining, the same loads cost 0.25, 0.5, 0.75 and 0.9 entries: a straight line. That is why open addressing tables are resized at lower loads (this repository's mini-project uses 0.5 for probing and 0.75 for chaining)."
+				},
+				{
+					"type": "heading",
+					"text": "Rehashing"
+				},
+				{
+					"type": "paragraph",
+					"text": "When α passes a limit, the table grows (usually doubling). But the index is `hash mod capacity`, so it depends on the size: **every entry must be inserted again**. This is **rehashing**. It costs `O(n)`, but doubling makes it rare, so insertion stays `O(1)` amortised. It also shortens lists by separating keys that used to collide: keys 3, 11 and 27 all land on index 3 with 8 positions; with 16 positions, 3 stays at 3 and 11 and 27 both go to 11."
+				},
+				{
+					"type": "heading",
+					"text": "equals and hashCode"
+				},
+				{
+					"type": "paragraph",
+					"text": "A table finds an object in two steps: the hash code chooses the position, and equality decides inside it. So **objects that are equal must have the same hash code**. In Java, if the class `Point` overrides `equals` but not `hashCode`, then `set.contains(new Point(1, 2))` after adding another `new Point(1, 2)` will most likely return `false`: the default hash code differs, the search looks in the wrong place, and the object seems to vanish although it is stored."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Hash table: average O(1) if the load factor is kept low. Collisions: chaining or probing. Delete with probing needs tombstones. Resizing means rehashing every key. Equal objects must have equal hash codes."
+				}
+			]
+		},
+		{
+			"id": "graphs",
+			"title": "Graphs: representations, BFS and DFS",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A map of cities and roads, a network of friends, the links between web pages: all are **graphs**. A graph has **vertices** (the dots, such as cities) and **edges** (the lines between them, such as roads). If edges have a direction (one-way streets), the graph is **directed**, and the edge is also called an **arc**. The **degree** of a vertex is its number of neighbours."
+				},
+				{
+					"type": "heading",
+					"text": "Two ways to store a graph"
+				},
+				{
+					"type": "paragraph",
+					"text": "Let `V` be the number of vertices and `E` the number of edges."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"Adjacency matrix",
+						"Adjacency lists"
+					],
+					"rows": [
+						[
+							"Idea",
+							"A V × V table: cell (i, j) says if there is an edge from i to j",
+							"For each vertex, a list of its neighbours"
+						],
+						[
+							"Memory",
+							"Θ(V²), even with few edges",
+							"Θ(V + E)"
+						],
+						[
+							"Is there an edge between u and v?",
+							"O(1)",
+							"O(degree of u)"
+						],
+						[
+							"List the neighbours of a vertex",
+							"O(V)",
+							"O(its degree)"
+						],
+						[
+							"Good for",
+							"dense graphs, or when the edge test dominates",
+							"sparse graphs"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A graph is **sparse** when `E` is much smaller than `V²`. With 10,000 vertices and 30,000 edges, a matrix would need 100 million cells, while lists need only tens of thousands of entries. Use lists."
+				},
+				{
+					"type": "paragraph",
+					"text": "In an **undirected** graph, an edge v–w must be found from either end, so it is stored twice, once in each list. The total size of the lists, which is the sum of the degrees, is always **2E**. A graph with 5 edges and no self-loops has 10 entries."
+				},
+				{
+					"type": "heading",
+					"text": "Two ways to walk a graph"
+				},
+				{
+					"type": "diagram",
+					"caption": "Graph with edges A-B, A-C, B-D, C-D, D-E",
+					"content": "    A\n   / \\\n  B   C\n   \\ /\n    D --- E"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Depth-first search (DFS)** follows one path as far as it can, then goes back and tries another, like exploring a maze with a ball of string. It uses recursion or an explicit **stack**, and the vertices on the stack are exactly the current path. From A (neighbours in alphabetical order) the order is **A B D C E**.",
+						"**Breadth-first search (BFS)** visits the source, then all its neighbours, then their neighbours: layer by layer, like ripples in water. It uses a **queue**, and each vertex is marked when it **enters** the queue, so it is not inserted twice. From A the order is **A B C D E**."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "In an **unweighted** graph, BFS guarantees that the layer where a vertex is first found is its **minimum distance in edges** from the source. Storing the predecessor of each vertex lets you rebuild the shortest path backwards."
+				},
+				{
+					"type": "paragraph",
+					"text": "The cost of a walk depends on the representation, because the main step is listing the neighbours of each vertex. With lists, total **Θ(V + E)**. With a matrix, listing costs V for each vertex, so **Θ(V²)** even for a graph with few edges."
+				},
+				{
+					"type": "heading",
+					"text": "Cycles and topological order"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **cycle** is a path that returns to where it started. In a **directed** graph, meeting an already visited vertex during DFS is a cycle **only if that vertex is still on the current path** (an ancestor). A vertex that was already finished and is reached by another path closes no cycle. That is why detection uses three states: **not visited**, **in progress** and **finished**. A detector that says 'cycle' whenever it sees a visited vertex is wrong: in A→B, A→C, B→D, C→D it would report a cycle when it reaches D the second time, but there is none."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **topological ordering** lists the vertices so that for every edge v→w, v comes before w, like the order for getting dressed (socks before shoes). It exists only for directed graphs **without cycles** (DAGs) and is usually **not unique**: vertices with no path between them can appear in any relative order. For the edges A→B, A→C, B→D and C→D, A must be first and D last, but B and C can swap: A B C D and A C B D are both valid, so there are 2 orderings."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Lists for sparse graphs, matrix when the edge test is the main job. DFS = stack or recursion, BFS = queue and shortest paths in edges. Walks cost Θ(V + E) with lists and Θ(V²) with a matrix. Cycles in directed graphs need three states."
+				}
+			]
+		},
+		{
+			"id": "choosing-a-structure",
+			"title": "Putting it all together: choosing a structure",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Now you know many shapes. The skill is to look at what the program does most, and pick the shape that is cheap for that. Here is the whole picture side by side (averages unless said otherwise; `n` is the number of items)."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Structure",
+						"Find",
+						"Insert",
+						"Remove",
+						"Good for"
+					],
+					"rows": [
+						[
+							"Array (sequential list)",
+							"O(1) by position, O(n) by key",
+							"O(1) amortised at the end, O(n) in the middle",
+							"O(n)",
+							"reading by position"
+						],
+						[
+							"Linked list",
+							"O(n)",
+							"O(1) at a known place",
+							"O(1) if you hold the node (doubly linked)",
+							"frequent changes in the middle"
+						],
+						[
+							"Stack",
+							"top only",
+							"O(1)",
+							"O(1)",
+							"undo, calls, expressions"
+						],
+						[
+							"Queue / deque",
+							"ends only",
+							"O(1)",
+							"O(1)",
+							"serving in order, BFS"
+						],
+						[
+							"Binary search tree",
+							"O(log n) balanced, O(n) in the worst case",
+							"same",
+							"same",
+							"ordered data"
+						],
+						[
+							"AVL / red-black tree",
+							"O(log n) always",
+							"O(log n)",
+							"O(log n)",
+							"ordered data with a guarantee"
+						],
+						[
+							"Heap",
+							"max in O(1)",
+							"O(log n)",
+							"O(log n) for the max",
+							"priority queues"
+						],
+						[
+							"Hash table",
+							"O(1) average",
+							"O(1) amortised",
+							"O(1) average",
+							"lookup by exact key"
+						],
+						[
+							"Graph (lists)",
+							"neighbours in O(degree)",
+							"O(1) per edge",
+							"depends",
+							"relationships and routes"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Questions to ask"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Do I need the items **in order** (sorted, or the next bigger key)? Use a balanced search tree, not a hash table.",
+						"Do I only need **exact lookup** by key? Use a hash table.",
+						"Do I only need the **largest or smallest** item again and again? Use a heap.",
+						"Does the last or the first item matter (**LIFO or FIFO**)? Use a stack or a queue.",
+						"Are the items **related to each other** in a network? Use a graph, with lists if it is sparse.",
+						"Is access **by position** important? Use an array."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Common mistakes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Thinking that a linked list is always faster than an array because 'inserting is O(1)'. Reaching the place costs `O(n)`.",
+						"Forgetting that a plain BST fed with sorted data becomes a chain.",
+						"Forgetting the empty and the full cases (stack underflow, queue with one element, empty list, first node).",
+						"Using a hash table with a bad hash function or a high load factor, or changing an object's key fields after inserting it.",
+						"Confusing the ADT (what) with its implementation (how)."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "To see these ideas move, try the visualisations of [VisuAlgo](https://visualgo.net/en), where you can insert and remove keys and watch lists, heaps, hash tables, AVL and red-black trees and graph walks step by step. For lectures, the MIT course below covers sequences, hashing, binary trees, AVL, heaps and graph search."
+				},
+				{
+					"type": "video",
+					"title": "MIT 6.006 Introduction to Algorithms, Spring 2020 (lecture videos)",
+					"url": "https://www.youtube.com/playlist?list=PLUl4u3cNGP63EdVPNLG3ToM6LaEUuStEY"
+				},
+				{
+					"type": "video",
+					"title": "Data Structures (mycodeschool), whiteboard videos on lists, stacks, queues, trees and graphs",
+					"url": "https://www.youtube.com/playlist?list=PL2_aWCzGMAwI3W_JlcBbtYTwiQSsOTa6P"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "There is no best data structure, only the best one for the operations you do most. Know the cost of each operation, and the choice becomes easy."
+				}
+			]
+		}
+	]
+}

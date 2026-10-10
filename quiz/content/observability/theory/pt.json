@@ -1,0 +1,429 @@
+{
+	"area": "observability",
+	"intro": [
+		"Imagine que você construiu um robô de brinquedo e, um dia, ele para de andar. Se ele não tem janela nem luzinhas, você precisa adivinhar o que está errado lá dentro. Se ele tem luzinhas, um contador de passos e um diário do que fez, você consegue olhar e **entender**. **Observabilidade** é isso: construir software de modo que, quando algo estranho acontece, você possa olhar os dados que ele já emite e explicar o que houve, sem adivinhar e sem mudar o programa antes.",
+		"Isso importa porque hoje um clique em um site pode passar por vários programinhas, chamados [[serviços|programas pequenos que fazem cada um uma tarefa e conversam entre si pela rede]], em vários computadores. Quando o clique fica lento, ninguém sabe qual serviço culpar. Lojas online, bancos, apps de vídeo e jogos usam observabilidade para achar problemas rápido e para prometer aos usuários que o serviço vai funcionar (e saber quando essa promessa está em perigo).",
+		"Neste resumo você vai aprender: a diferença entre monitoramento e observabilidade, os três tipos de dado (logs, métricas e traces), como escrever logs que um computador consegue pesquisar, como as métricas funcionam e por que labels demais dão problema, como uma requisição é seguida por vários serviços, o que é o OpenTelemetry, como prometer confiabilidade com SLIs, SLOs e orçamentos de erro, como alertar pessoas sem acordá-las à toa, os checklists RED, USE e sinais de ouro, como o profiling acha código lento e como Prometheus, Grafana, Loki e Tempo se encaixam."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "O panorama: telemetria e vocabulário",
+			"blocks": [
+				{ "type": "paragraph", "text": "Pense em uma médica. Ela não pode abrir você para ver por dentro, então usa um termômetro, um monitor de batimentos e o seu relato de como você se sente. Software é igual: não dá para olhar dentro de um programa em execução, então ele envia sinais. Todos esses sinais juntos se chamam [[telemetria|dados que um sistema em execução envia sobre si mesmo, para que pessoas o entendam de longe]]." },
+				{ "type": "table", "headers": ["Palavra", "Significado simples", "Exemplo"], "rows": [
+					["Telemetria", "Tudo que o sistema envia sobre si mesmo", "Uma linha de log, um número, um trace"],
+					["Instrumentação", "O código (seu ou de uma biblioteca) que produz a telemetria", "Uma linha que conta cada requisição"],
+					["Backend", "O lugar que guarda e mostra a telemetria", "Prometheus, Loki, Tempo, Grafana"],
+					["Serviço", "Um programa pequeno que faz uma tarefa", "`orders`, `inventory`, `gateway`"],
+					["Incidente", "Um momento em que uma falha prejudica os usuários", "O checkout falha por 10 minutos"]
+				], "caption": "As palavras usadas no resto do resumo" },
+				{ "type": "diagram", "content": "seu código --> instrumentação --> telemetria\n                                       |\n                                       v\n                         guarda (backend) --> telas\n                                              e alertas\n                                       |\n                                       v\n                                uma pessoa entende", "caption": "Do código ao entendimento" },
+				{ "type": "callout", "tone": "remember", "text": "Observabilidade não é uma ferramenta que se compra. É a capacidade de explicar o que o seu software está fazendo a partir dos dados que ele emite." }
+			]
+		},
+		{
+			"id": "monitoring-vs-observability",
+			"title": "Monitoramento contra observabilidade",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine uma escola com um alarme em cada porta. O alarme toca se uma porta abrir à noite. Isso é **monitoramento**: você decide antes o que pode dar errado e coloca um vigia ali. Mas e se acontecer algo esquisito que ninguém imaginou, como uma janela abrir por causa do vento? Nenhum alarme foi feito para isso." },
+				{ "type": "paragraph", "text": "A palavra **observabilidade** vem da teoria de controle, um ramo da engenharia. Lá, um sistema é observável se você consegue descobrir o que acontece dentro dele olhando só o que ele emite. Para software, significa: você consegue entender e explicar qualquer estado em que o sistema entre, até um que nunca viu, usando a telemetria que ele já emite. Se você precisa publicar código novo só para investigar, faltava observabilidade." },
+				{ "type": "heading", "text": "Known-unknowns e unknown-unknowns" },
+				{ "type": "table", "headers": ["Tipo", "O que é", "Exemplo", "Quem resolve"], "rows": [
+					["Known-unknown", "Uma pergunta que você sabia que faria", "A CPU passou de 90%?", "Monitoramento: um painel ou um alerta"],
+					["Unknown-unknown", "Uma falha que ninguém imaginou, então não tem painel nem alerta", "Só um cliente em uma versão do app falha", "Observabilidade: você investiga mesmo assim"]
+				] },
+				{ "type": "heading", "text": "Cardinalidade e dimensionalidade" },
+				{ "type": "paragraph", "text": "[[Cardinalidade|quantos valores diferentes um campo pode ter]] é sobre um campo. O campo `http_method` tem poucos valores (GET, POST e mais alguns): baixa cardinalidade. O campo `user_id` em um serviço com milhões de usuários tem milhões de valores: alta cardinalidade. Os campos de alta cardinalidade são os mais úteis para depurar, porque apontam um único caso entre milhões." },
+				{ "type": "paragraph", "text": "[[Dimensionalidade|quantos campos diferentes cada evento carrega]] é sobre quantos campos existem. Um **evento largo** (wide event) é um registro com centenas de campos (cliente, versão, região, rota, duração e assim por diante). Observabilidade precisa dos dois: alta cardinalidade e alta dimensionalidade." },
+				{ "type": "callout", "tone": "analogy", "text": "Uma foto da turma com só o total de crianças diz 'temos 30 crianças'. Uma lista com nome, idade, fileira e o que cada criança comeu deixa você fazer qualquer pergunta nova depois, como 'quem comeu bolo e senta perto da janela?'." },
+				{ "type": "heading", "text": "Por que agregados escondem problemas" },
+				{ "type": "paragraph", "text": "Um agregado responde 'como está o sistema em geral?'. Se um cliente, em uma versão do app, falha em toda requisição, a taxa global de erro ainda pode ser 0,1% e o painel parece bem. O problema se esconde dentro da média. Para achá-lo você precisa guardar os dados com seus campos e poder fatiar por qualquer combinação deles." },
+				{ "type": "paragraph", "text": "A pré-agregação tem o mesmo problema no tempo. Se você guarda só um contador de requisições por endpoint e status, decidiu antes do incidente quais perguntas são permitidas. Um campo que não virou label na hora de gravar não pode ser recuperado depois. Guardar o evento bruto, com todos os campos, e agregar na hora da consulta deixa você inventar a pergunta durante a investigação." },
+				{ "type": "heading", "text": "O laço central de análise" },
+				{ "type": "list", "ordered": true, "items": [
+					"Comece pela visão geral do que parece errado (por exemplo, requisições lentas).",
+					"Confira o que você já sabe.",
+					"Procure os campos cujos valores diferem entre o grupo ruim e o resto.",
+					"Filtre por esses campos, e agora você olha um grupo menor.",
+					"Repita até a causa ficar clara."
+				] },
+				{ "type": "paragraph", "text": "Esse laço é guiado por dados, não por palpites da experiência. Ele não exige que você conheça o sistema de antemão, por isso funciona até para falhas totalmente novas." },
+				{ "type": "heading", "text": "Por que um repositório de eventos aceita um id de cliente" },
+				{ "type": "paragraph", "text": "Um banco de séries temporais guarda dados por [[série|um fluxo de números ao longo do tempo, identificado pelo nome da métrica mais um conjunto de labels]]. Todo valor novo de label cria uma série nova, então o índice cresce com a cardinalidade. Um repositório de eventos (geralmente colunar, ou seja, guarda cada campo em sua própria coluna) grava uma linha por evento. A cardinalidade de um campo não muda o custo de gravar, e o agrupamento acontece na hora da consulta." },
+				{ "type": "callout", "tone": "warning", "text": "'Temos logs, métricas e traces' não significa 'somos observáveis'. Três ferramentas sem identificadores compartilhados obrigam uma pessoa a juntar as pistas de cabeça, e é aí que a investigação trava. O teste é funcional: você consegue fazer qualquer pergunta e chegar à causa de um problema novo?" },
+				{ "type": "callout", "tone": "tip", "text": "Observabilidade não substitui monitoramento. Use limites clássicos para a infraestrutura, onde os problemas são previsíveis (disco cheio, host fora do ar). Use observabilidade para o código da aplicação, onde os problemas são novos e dependem de combinações de campos." }
+			]
+		},
+		{
+			"id": "three-signals",
+			"title": "Os três sinais: logs, métricas e traces",
+			"blocks": [
+				{ "type": "paragraph", "text": "A telemetria vem em três tipos principais, chamados **sinais**. Pense em uma viagem de carro. O painel do carro mostra velocidade e combustível: números ao longo do tempo. O diário de viagem diz 'às 15h paramos para almoçar': coisas que aconteceram. O mapa com o seu trajeto mostra cada passo de uma viagem. Eles respondem perguntas diferentes." },
+				{ "type": "table", "headers": ["Sinal", "O que é", "Bom para", "Ruim para"], "rows": [
+					["Métrica", "Um número medido ao longo do tempo, com nome e labels", "Quanto? Qual a tendência? Alertas", "O detalhe de uma requisição"],
+					["Log", "Um registro de um evento, com hora e campos", "O que aconteceu, com qual mensagem?", "Tendências baratas de longo prazo"],
+					["Trace", "A história de UMA requisição entre serviços, feita de spans", "Para onde foi o tempo? Qual serviço?", "Tendências de meses"]
+				], "caption": "Três sinais, três tarefas" },
+				{ "type": "heading", "text": "Métricas" },
+				{ "type": "paragraph", "text": "Uma métrica é um número ao longo do tempo: quantas requisições, quanta memória, quanto tempo levou. Cada [[série|um fluxo de números ao longo do tempo, identificado pelo nome da métrica mais um conjunto de labels]] é identificada por um nome e um conjunto de labels. Como as métricas guardam agregados e não cada evento, elas são pequenas e rápidas, o que as torna ideais para tendências e alertas." },
+				{ "type": "paragraph", "text": "O custo de uma métrica depende do número de séries e da frequência de leitura (a frequência de scrape), **não do tráfego**. Se o tráfego cresce dez vezes, um contador de requisições custa quase o mesmo. Logs e traces produzem dados para cada requisição, então o custo deles acompanha o volume de tráfego." },
+				{ "type": "heading", "text": "Traces" },
+				{ "type": "paragraph", "text": "Um trace conta a história de uma requisição. Cada operação vira um **span**, com início, duração e um ponteiro para o span pai. Todos os spans da mesma requisição compartilham um trace id. Um trace mostra a ordem das chamadas e para onde o tempo foi, o que nenhum agregado mostra." },
+				{ "type": "chart", "title": "Tempo de cada span de uma requisição (milissegundos, 'tempo próprio')", "unit": "ms", "bars": [
+					{ "label": "gateway (trabalho próprio)", "value": 40 },
+					{ "label": "orders (trabalho próprio)", "value": 40 },
+					{ "label": "db.insert", "value": 60 },
+					{ "label": "inventory GET /stock (trabalho próprio)", "value": 40 },
+					{ "label": "inventory stock.read", "value": 720 }
+				] },
+				{ "type": "paragraph", "text": "O gráfico usa os números de um trace que levou 900 ms. Um span pai inclui o tempo dos filhos, então a raiz é sempre a mais longa. O **tempo próprio** (self time) é a duração de um span menos a duração dos filhos diretos. O span com maior tempo próprio, em geral uma folha da árvore, é onde o tempo foi gasto de verdade. Aqui é `stock.read`, com 720 ms." },
+				{ "type": "heading", "text": "Logs" },
+				{ "type": "paragraph", "text": "Um log é o registro de algo que aconteceu. Logs dizem 'por quê' e 'com qual mensagem'. São o sinal mais detalhado e também o mais caro de guardar, já que há uma linha para cada evento." },
+				{ "type": "heading", "text": "Fazendo os sinais trabalharem juntos" },
+				{ "type": "paragraph", "text": "Os sinais ficam muito mais fortes quando compartilham identificadores. Se o logger escreve o trace id e o span id do contexto ativo em cada linha, o log deixa de ser texto solto: ele pertence a uma requisição, e as ferramentas conseguem abrir os logs a partir de um span e o trace a partir de uma linha de log." },
+				{ "type": "paragraph", "text": "Uma métrica diz 'algo está lento', mas não qual requisição. Um [[exemplar|um trace id guardado junto de uma amostra de uma métrica, para você pular do número para uma requisição de exemplo real]] resolve: o sistema de métricas guarda o trace id de uma requisição ao lado de uma amostra. No gráfico, você clica no ponto e abre o trace." },
+				{ "type": "callout", "tone": "warning", "text": "Não adicione `trace_id` como label de uma métrica. Um label que muda a cada requisição cria uma série por requisição. A agregação se perde e a memória explode. Use exemplares para ligar uma métrica a um trace." },
+				{ "type": "heading", "text": "O que um histograma pode e não pode dizer" },
+				{ "type": "paragraph", "text": "Um histograma cumulativo conta quantas requisições levaram até 0,5 s, até 2,5 s e assim por diante. Dele você sabe **quantas** e **que fatia**, o que basta para painéis e alertas. Você não sabe **quais** requisições, **onde dentro** da requisição nem **com qual mensagem**. Para isso você precisa de traces e logs." },
+				{ "type": "heading", "text": "Amostragem e estimativa de totais" },
+				{ "type": "paragraph", "text": "Guardar todos os traces é caro, então muitos sistemas guardam só uma fração: isso é **amostragem** (sampling). Suponha que guardamos 1 trace em 100 e uma consulta acha 480 traces armazenados de `/pay`. Cada trace guardado representa cerca de 100 requisições reais, então a estimativa é 480 × 100 = 48.000. Para isso, a **taxa de amostragem** precisa ser registrada em cada evento guardado. Métricas não têm esse problema, porque contam toda requisição antes de qualquer amostragem." },
+				{ "type": "callout", "tone": "remember", "text": "Métricas dizem QUE algo está errado e quanto. Traces dizem ONDE. Logs dizem POR QUÊ. Os alertas costumam vir de métricas porque são baratas e rápidas." }
+			]
+		},
+		{
+			"id": "structured-logs",
+			"title": "Logs estruturados",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um log de texto livre é como uma carta: 'Requisição de checkout de alice para 2 canetas'. Uma pessoa lê fácil, mas um computador não consegue perguntar facilmente 'quantas requisições levaram mais de 500 ms?'. Você teria que escrever uma [[expressão regular|um padrão de busca escrito em uma mini-linguagem especial]] que quebra assim que alguém muda a redação da frase." },
+				{ "type": "paragraph", "text": "Um **log estruturado** é como um formulário com caixinhas. Cada registro é uma lista de pares nome e valor, normalmente em JSON ou logfmt. Uma ferramenta consegue filtrar por `status`, somar `duration_ms` ou agrupar por `route` sem se importar com nenhuma frase." },
+				{ "type": "code", "language": "json", "content": "{\"ts\":\"2026-10-07T17:03:22.418Z\",\"level\":\"info\",\n \"route\":\"/orders\",\"status\":200,\n \"duration_ms\":1240,\"correlation_id\":\"7f3a\"}", "caption": "Uma requisição, uma linha estruturada" },
+				{ "type": "heading", "text": "O correlation id" },
+				{ "type": "paragraph", "text": "Quando muitas requisições acontecem ao mesmo tempo, as linhas delas se misturam no log. Um **correlation id** (ou request id) é um valor criado quando a requisição entra no sistema e repetido em toda linha de log sobre essa requisição, em todo serviço por onde ela passa. Aí uma busca por esse valor devolve a história inteira." },
+				{ "type": "callout", "tone": "analogy", "text": "É como escrever seu nome em todas as folhas da lição de casa. Se a professora derruba todas as folhas no chão, ela ainda consegue juntar as suas de volta." },
+				{ "type": "paragraph", "text": "O id só funciona se **atravessar cada fronteira** entre processos. Por HTTP ele vai em um header, por exemplo `X-Correlation-Id`. Por uma fila ele vai em um header ou propriedade da mensagem: o produtor preenche e o consumidor lê antes de processar. Nada faz isso por mágica. Seu código ou uma biblioteca de instrumentação precisa copiar o valor." },
+				{ "type": "paragraph", "text": "Os dois lados precisam funcionar: quem chama **injeta** o id na chamada, e quem recebe **extrai** e passa a usá-lo. Um serviço cria um id novo só quando é o ponto de entrada, ou seja, quando a requisição chegou sem um. Se todo serviço cria o seu, os logs ficam corretos dentro de cada serviço mas cortados entre eles." },
+				{ "type": "heading", "text": "Bons hábitos com os campos" },
+				{ "type": "list", "items": [
+					"**Hora em UTC e ISO 8601 (RFC 3339)**, como `2026-10-07T17:03:22.418Z`, com milissegundos ou melhor. Todas as máquinas significam o mesmo instante, e a ordem alfabética coincide com a ordem do tempo.",
+					"**Nunca escreva segredos**: senhas, tokens, números de cartão e dados pessoais ficam de fora, mesmo como exemplo. Logs costumam ter controle de acesso mais fraco que o banco de dados.",
+					"**Escreva o que ajuda uma investigação**: identificadores, rota, status, duração."
+				] },
+				{ "type": "heading", "text": "Pesquisando com LogQL" },
+				{ "type": "paragraph", "text": "O [[Loki|um sistema que guarda logs e indexa apenas os labels deles]] usa uma linguagem de consulta chamada LogQL. Uma consulta é um **seletor de streams** entre chaves seguido de um **pipeline**, e cada etapa recebe só o que a anterior deixou passar." },
+				{ "type": "code", "language": "logql", "content": "{service=\"orders\"} |= \"timeout\" | json | status >= 500", "caption": "Escolhe o stream, mantém linhas com 'timeout', lê o JSON, mantém status 500 ou mais" },
+				{ "type": "list", "items": [
+					"`{service=\"orders\"}` escolhe os streams pelos labels indexados.",
+					"`|= \"timeout\"` mantém só as linhas que contêm o texto.",
+					"`| json` transforma os campos do JSON em labels que podem ser comparados. Campos aninhados são achatados com `_`, então `http.status` vira `http_status`.",
+					"`| status >= 500` é uma comparação de números, não uma expressão regular frágil. O mesmo vale para durações, por exemplo `| duration_ms > 500`."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Não faça de um campo com valores ilimitados, como `correlation_id`, um label do Loki. Cada combinação de labels é um stream separado, e você ganha um índice enorme de pedacinhos minúsculos. Mantenha poucos labels e de baixa cardinalidade (`service`, `env`) e deixe o id na linha, filtrando na hora da consulta." },
+				{ "type": "callout", "tone": "remember", "text": "Um log estruturado é dado com nomes. Um correlation id deve ser criado uma vez na entrada e repassado a cada salto." }
+			]
+		},
+		{
+			"id": "metric-types-cardinality",
+			"title": "Tipos de métrica e cardinalidade",
+			"blocks": [
+				{ "type": "paragraph", "text": "O Prometheus tem alguns tipos de métrica, como instrumentos de medir diferentes em uma cozinha: um counter é um contador de cliques na porta, um gauge é um termômetro, um histograma é um conjunto de potes separados por tamanho." },
+				{ "type": "table", "headers": ["Tipo", "O que é", "Exemplo", "Como ler"], "rows": [
+					["Counter", "Um total que só sobe (volta a zero quando o processo reinicia)", "`http_requests_total`", "Use `rate()` ou `increase()`, não o valor bruto"],
+					["Gauge", "Um valor que sobe e desce", "Tamanho de fila, memória em uso, conexões abertas", "Leia o valor atual, a média ou o máximo"],
+					["Histogram", "Contagens de observações dentro de faixas (buckets)", "`http_request_duration_seconds`", "`histogram_quantile()` estima percentis"],
+					["Summary", "Percentis calculados dentro do app", "Quantil 0,99 pronto de uma instância", "Não pode ser combinado entre instâncias"]
+				] },
+				{ "type": "heading", "text": "Counters e taxa" },
+				{ "type": "paragraph", "text": "O valor bruto de um counter diz pouco. O que importa é a velocidade com que ele cresce. A taxa é a mudança dividida pelo tempo. Se um counter era 1200 em t = 0 s e 1500 em t = 60 s, o aumento é 300, e 300 / 60 = 5 requisições por segundo. A função `rate()` faz isso sobre uma janela, com ajustes para resets e para as bordas. `increase()` é o mesmo sem dividir pelo tempo." },
+				{ "type": "paragraph", "text": "Quando o valor de um counter **diminui**, o Prometheus entende que o processo reiniciou e conta a amostra seguinte inteira como aumento. Para as amostras 980, 1000, 15, 40: os passos são 20, depois 15 (após o reset), depois 25, então o total é 60. Por isso você aplica `rate()` primeiro e soma depois. Se somar antes os counters de várias instâncias, os resets ficam escondidos." },
+				{ "type": "callout", "tone": "warning", "text": "Não use `rate()` em um gauge. Um gauge desce de propósito, e `rate()` leria cada queda como um reset de counter." },
+				{ "type": "heading", "text": "Histogramas em detalhe" },
+				{ "type": "paragraph", "text": "Um histograma clássico tem buckets cujos limites você escolhe no código. Cada bucket é uma série `_bucket{le=\"limite\"}` e é **cumulativo**: conta toda observação menor ou igual ao limite (`le` quer dizer 'less than or equal', menor ou igual). O último bucket é `le=\"+Inf\"`. Há ainda `_sum` (o total dos valores observados) e `_count` (o número de observações), e todos são counters." },
+				{ "type": "code", "language": "text", "content": "..._bucket{le=\"0.1\"}    40\n..._bucket{le=\"0.25\"}   70\n..._bucket{le=\"0.5\"}    90\n..._bucket{le=\"1\"}     100\n..._bucket{le=\"+Inf\"}  100", "caption": "Buckets cumulativos: 100 observações no total" },
+				{ "type": "paragraph", "text": "Para achar o percentil 80 (quantil 0,8) dessa tabela: o total é 100, então procuramos a posição 80. Até 0,25 há 70 e até 0,5 há 90, então a posição 80 está dentro do bucket de 0,25 a 0,5, que tem 90 - 70 = 20 observações. Supomos que as observações se espalham de modo uniforme no bucket: (80 - 70) / 20 = 0,5 do caminho. A estimativa é 0,25 + 0,5 × (0,5 - 0,25) = **0,375 s**. É só uma estimativa: o erro depende da largura do bucket." },
+				{ "type": "heading", "text": "Histogram contra summary" },
+				{ "type": "paragraph", "text": "Um summary calcula quantis na aplicação e os expõe prontos, por instância. Um histogram expõe contagens por bucket, e o quantil é estimado depois, no servidor. Percentis **não são aditivos**: a média, soma ou máximo do p99 de cada instância não é o p99 do serviço todo. As contagens dos buckets são aditivas. Então, para obter o percentil de um serviço inteiro, use um histogram, com esta receita:" },
+				{ "type": "code", "language": "promql", "content": "histogram_quantile(0.99,\n  sum by (le) (\n    rate(http_request_duration_seconds_bucket[5m])\n  )\n)", "caption": "rate em cada bucket, soma por le, quantil por último" },
+				{ "type": "heading", "text": "Cardinalidade: contando séries" },
+				{ "type": "paragraph", "text": "Cada combinação diferente de valores de labels é uma série temporal própria, com seu custo de memória e de índice. O máximo é o **produto** das quantidades de valores. Um counter com `method` (4 valores), `status` (5 valores) e `instance` (3 instâncias) pode gerar 4 × 5 × 3 = 60 séries. Some um label `user_id` com 10.000 valores e vira 600.000." },
+				{ "type": "chart", "title": "Número máximo de séries de um counter", "unit": "séries", "bars": [
+					{ "label": "method × status × instance", "value": 60 },
+					{ "label": "o mesmo + user_id (10.000 valores)", "value": 600000 }
+				] },
+				{ "type": "paragraph", "text": "Um histogram clássico multiplica isso ainda mais, porque cada combinação de labels carrega uma série por bucket (os limites finitos mais `+Inf`) mais `_sum` e `_count`. Com 10 limites finitos, `route` (20 valores) e `method` (3 valores) você tem (10 + 1 + 2) = 13 séries por combinação, 20 × 3 = 60 combinações, então 13 × 60 = 780 séries por instância." },
+				{ "type": "callout", "tone": "tip", "text": "Labels com um conjunto pequeno e fechado de valores são seguros (método, classe de status, região). Identificadores de usuários, requisições ou pedidos têm valores ilimitados: coloque-os em logs e traces, não em labels de métricas." },
+				{ "type": "heading", "text": "Instrumentos de métrica no OpenTelemetry" },
+				{ "type": "table", "headers": ["Instrumento", "Como os valores são registrados", "Exemplo"], "rows": [
+					["Counter", "Só soma", "Requisições atendidas"],
+					["UpDownCounter", "Soma e subtrai; saldos de instâncias podem ser somados", "Requisições em andamento"],
+					["Histogram", "Registra uma distribuição de valores", "Duração da requisição"],
+					["Gauge", "O valor absoluto atual, não aditivo", "Temperatura"]
+				], "caption": "Exportado para o Prometheus, um UpDownCounter aparece como gauge" },
+				{ "type": "callout", "tone": "remember", "text": "Counter: só sobe, leia a taxa. Gauge: um valor atual. Histogram: buckets que você pode somar entre instâncias. Mais valores de label multiplicam as séries." }
+			]
+		},
+		{
+			"id": "distributed-tracing",
+			"title": "Tracing distribuído: spans e propagação de contexto",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine passar um bilhetinho na sala, da primeira carteira até a última. Cada criança que encosta nele escreve a hora e o nome. No fim você vê o caminho todo e quem segurou o bilhete por muito tempo. Um **trace distribuído** faz isso para uma requisição que atravessa vários serviços." },
+				{ "type": "heading", "text": "Trace, span e a árvore" },
+				{ "type": "paragraph", "text": "Um **trace** é o registro de uma requisição enquanto ela atravessa o sistema. Ele é feito de **spans**. Um span é uma unidade de trabalho com início e duração. Cada span tem três identificadores: o **trace id** (igual para a requisição toda), o seu próprio **span id** e o span id do seu **pai**. O backend agrupa os spans por trace id e monta uma árvore seguindo os ids dos pais. Sem um trace id compartilhado, spans de serviços diferentes seriam eventos soltos." },
+				{ "type": "paragraph", "text": "O único span sem pai é o **span raiz** (root span). Ele representa a requisição inteira, vista de onde ela entrou no sistema. Todos os outros são seus filhos, netos e assim por diante." },
+				{ "type": "diagram", "content": "span                      início   fim\ngateway   GET /checkout        0    900 ms\n  orders    POST /orders       20    880\n    orders    db.insert        30     90\n    inventory GET /stock      100    860\n      inventory stock.read    120    840", "caption": "Um trace como árvore. A indentação significa 'filho de'" },
+				{ "type": "paragraph", "text": "Lendo: `gateway` é a raiz. A duração dele é 900 ms, mas o **tempo próprio** é só 900 - 860 = 40 ms. O tempo próprio de `POST /orders` é 860 - (60 + 760) = 40 ms, o de `db.insert` é 60 ms, o de `GET /stock` é 760 - 720 = 40 ms e o de `stock.read` é 720 ms. A parte lenta é `stock.read`, mesmo que seis linhas pareçam lentas." },
+				{ "type": "heading", "text": "Propagação de contexto" },
+				{ "type": "paragraph", "text": "Como três programas diferentes concordam sobre o mesmo trace id? Quem chama **injeta** o trace id e o próprio span id nos headers da chamada. Quem recebe **extrai** esses valores e os usa como pai dos seus spans. Dentro de um processo, o contexto passa de função em função. Entre processos, ele viaja nos headers do protocolo. Isso se chama **propagação de contexto**." },
+				{ "type": "paragraph", "text": "O padrão é o [[W3C Trace Context|uma regra pública de como escrever os headers de trace, para que qualquer ferramenta consiga lê-los]]. O header se chama `traceparent`:" },
+				{ "type": "code", "language": "text", "content": "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\n             |  |                                |                |\n             |  trace id (32 dígitos hex)        |                flags (2)\n             versão (2)                          parent id (16 dígitos hex)", "caption": "A versão 00 tem quatro campos separados por hífens" },
+				{ "type": "paragraph", "text": "O parent id é o span id de quem chamou, que vira o pai do span criado por quem recebe. Um id feito só de zeros é inválido. O último campo guarda flags, e uma delas é a flag **sampled**, que diz se o trace está sendo gravado." },
+				{ "type": "callout", "tone": "warning", "text": "A propagação é uma corrente. Se `orders` recebe `traceparent` mas não o repassa ao chamar `inventory`, o `inventory` começa um trace novinho com raiz própria. O sintoma: um trace que termina cedo demais e outro trace curto que começa no meio do caminho." },
+				{ "type": "heading", "text": "Span kind" },
+				{ "type": "table", "headers": ["Span kind", "Papel", "Exemplo"], "rows": [
+					["`CLIENT`", "Faz uma chamada síncrona", "`orders` chamando `inventory`"],
+					["`SERVER`", "Recebe e trata uma chamada síncrona", "`inventory` tratando a requisição HTTP"],
+					["`PRODUCER`", "Envia um job ou mensagem assíncrona", "Publicar em uma fila"],
+					["`CONSUMER`", "Recebe um job ou mensagem assíncrona", "Um worker lendo a fila"],
+					["`INTERNAL`", "Trabalho que fica dentro do processo", "Um cálculo"]
+				], "caption": "Com o kind, um backend consegue separar tempo de rede de tempo de processamento" },
+				{ "type": "heading", "text": "Atributos, baggage e links" },
+				{ "type": "list", "items": [
+					"**Atributos** descrevem um span e são exportados com ele. Não vão para lugar nenhum além disso.",
+					"**Baggage** é um conjunto de pares chave e valor que acompanha o contexto de serviço em serviço, para que quem está adiante possa lê-lo. Como ele vai em headers para qualquer destino da chamada, nunca coloque dados sensíveis no baggage.",
+					"**Span links** apontam para outros contextos de span, no mesmo trace ou em outros. Servem para trabalho assíncrono com várias causas. Um worker que processa 50 mensagens em um span de lote liga esse span às 50 requisições que as publicaram, porque um pai normal só tem um."
+				] },
+				{ "type": "heading", "text": "Relógios mentem um pouco" },
+				{ "type": "paragraph", "text": "A árvore vem dos ids, que são exatos. Mas a posição de cada span na linha do tempo vem do relógio da máquina que o criou. Relógios de máquinas diferentes se desalinham, então um span filho pode parecer começar antes do pai. A duração de cada span continua confiável, porque é medida em um único relógio." },
+				{ "type": "heading", "text": "Amostragem" },
+				{ "type": "paragraph", "text": "Gravar todo trace custa muito, então guardamos alguns. Se guardamos 1 em 20 e escrevemos a taxa 20 em cada trace guardado, então 350 traces de erro armazenados representam 350 × 20 = 7.000 requisições reais com erro. Somar as taxas dá a estimativa do total." },
+				{ "type": "table", "headers": ["Tipo", "Quando decide", "Bom", "Custo"], "rows": [
+					["Head sampling", "No início da requisição, sem saber como ela termina", "Barato e simples", "Pode descartar os traces interessantes"],
+					["Tail sampling", "Depois que o trace está completo, olhando tudo", "Pode guardar 'todo trace com erro'", "Segura spans na memória; todos os spans de um trace precisam chegar ao mesmo lugar"]
+				] },
+				{ "type": "paragraph", "text": "Com tail sampling e várias instâncias de collector, uma camada antes delas precisa rotear pelo **trace id**, não em round-robin. Se os spans de um trace vão para instâncias diferentes, cada instância vê só parte do trace e decide errado." },
+				{ "type": "paragraph", "text": "Um sampler **parent-based** usa a regra própria só para spans raiz. Quando existe um pai, ele repete a decisão do pai, lida da flag sampled do `traceparent`. Com o gateway em razão 0,1 e o `orders` em 0,5, o `orders` ainda grava só os traces que o gateway escolheu, ou seja, 100 de cada 1.000 requisições, completos nos dois serviços. A decisão tomada na entrada vale para o trace inteiro." },
+				{ "type": "callout", "tone": "remember", "text": "Trace = árvore de spans com um trace id. O tempo próprio acha o culpado. A propagação precisa passar por todo serviço, e um pai descartado pela amostragem descarta os filhos." }
+			]
+		},
+		{
+			"id": "opentelemetry",
+			"title": "OpenTelemetry",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagine que cada país tivesse um plugue de energia diferente. Você precisaria de um carregador novo a cada viagem. Antes do OpenTelemetry, cada fornecedor de monitoramento tinha seu jeito de coletar dados. O **OpenTelemetry** (muitas vezes escrito OTel) é o plugue universal: um conjunto aberto e neutro de especificações e ferramentas para produzir e transportar telemetria. Ele **não** guarda nem desenha nada. Guardar, consultar e mostrar é trabalho de um backend que você escolhe." },
+				{ "type": "table", "headers": ["Peça", "O que faz"], "rows": [
+					["API", "Um conjunto pequeno e estável de chamadas que o código usa para dizer o que poderia ser medido"],
+					["SDK", "A implementação: amostragem, processadores, exportadores; a aplicação o configura"],
+					["OTLP", "O protocolo que transporta traces, métricas e logs"],
+					["Collector", "Um programa que recebe, processa e exporta telemetria"],
+					["Convenções semânticas", "Nomes combinados para atributos"]
+				] },
+				{ "type": "heading", "text": "API contra SDK" },
+				{ "type": "paragraph", "text": "As bibliotecas dependem só da **API**, que é leve e estável. A aplicação decide se e como medir ao configurar o **SDK**. Se uma biblioteca de banco de dados cria spans pela API e a aplicação nunca instala o SDK, as chamadas não fazem nada. Esse é o ponto: uma biblioteca pode ser instrumentada sem impor custo a ninguém." },
+				{ "type": "heading", "text": "Resource e convenções semânticas" },
+				{ "type": "paragraph", "text": "Um **resource** é o conjunto de atributos que descreve quem produz a telemetria, e vale para todos os spans, métricas e logs daquele programa. O mais importante é `service.name`. Sem ele o SDK usa `unknown_service`, e os dados de serviços diferentes se misturam no backend. Você pode defini-lo com a variável `OTEL_SERVICE_NAME`." },
+				{ "type": "paragraph", "text": "Se cada time escolhe seus próprios nomes (`status`, `statusCode`, `http_status`), uma consulta que cruza serviços precisa conhecer todos. As **convenções semânticas** fixam um vocabulário comum, como `http.request.method`, `http.response.status_code` e `service.name`. A mesma consulta e o mesmo painel passam a servir para qualquer serviço." },
+				{ "type": "heading", "text": "OTLP e portas" },
+				{ "type": "paragraph", "text": "O OTLP tem duas variantes de transporte. O **gRPC** usa a porta **4317**. O **HTTP** usa a porta **4318**, e cada sinal tem seu próprio caminho, como `/v1/traces`. Apontar um exportador HTTP para a porta do gRPC, ou o contrário, é um motivo muito comum de a telemetria nunca chegar." },
+				{ "type": "heading", "text": "O Collector" },
+				{ "type": "paragraph", "text": "O Collector fica entre as aplicações e os backends. As aplicações falam só OTLP com um endereço. Tudo que é específico de um fornecedor mora na configuração do Collector. Para trocar ou adicionar um backend você edita o Collector e não precisa publicar os serviços de novo." },
+				{ "type": "code", "language": "yaml", "content": "receivers:\n  otlp:\n    protocols:\n      http:\nprocessors:\n  batch:\nexporters:\n  otlp/tempo:\n    endpoint: tempo:4317\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [batch]\n      exporters: [otlp/tempo]", "caption": "Os componentes são definidos primeiro, depois ligados na seção service" },
+				{ "type": "callout", "tone": "warning", "text": "Definir um exporter não o liga. Um componente só funciona se aparece em um pipeline dentro de `service`. Se o exporter para o Tempo está definido mas o pipeline lista só `debug`, os spans aparecem no log do Collector e nunca chegam ao Tempo. Um pipeline pode listar vários exporters, e os dados vão para todos." },
+				{ "type": "heading", "text": "Instrumentação automática e manual" },
+				{ "type": "paragraph", "text": "A instrumentação **automática** (zero-code) intercepta bibliotecas conhecidas, como servidores HTTP, clientes de banco de dados e filas, e entrega o esqueleto do trace sem mudar código. Ela não conhece o seu negócio: o total de um pedido, o plano de um cliente, uma etapa de cálculo. Esses dados entram pela instrumentação **manual** com a API. As duas convivem no mesmo trace." },
+				{ "type": "heading", "text": "Programas curtos: descarregue antes de sair" },
+				{ "type": "paragraph", "text": "O batch span processor guarda os spans terminados em uma fila e os envia em grupos de tempos em tempos, para a aplicação não ficar lenta a cada span. O preço: spans recentes ainda estão na memória quando o processo termina. Em um script de vida curta, desligue o provider (shutdown) antes de sair (isso esvazia a fila), ou use o simple processor, que exporta cada span assim que ele termina." },
+				{ "type": "heading", "text": "Logs no OpenTelemetry" },
+				{ "type": "paragraph", "text": "Para logs, o OpenTelemetry não pede que você reescreva suas chamadas de log. A Logs API existe para que as bibliotecas de log já existentes se conectem ao SDK por uma **ponte** (bridge). Todo registro de log escrito enquanto um span está ativo recebe o trace id e o span id daquele contexto. Com esses dois campos o backend pula de uma linha de log para o seu trace e volta." },
+				{ "type": "callout", "tone": "remember", "text": "O OpenTelemetry produz e transporta telemetria. Ele nunca a guarda. As bibliotecas usam a API, as aplicações configuram o SDK, e o Collector dá liberdade para trocar de backend." }
+			]
+		},
+		{
+			"id": "sli-slo-error-budgets",
+			"title": "SLI, SLO e orçamentos de erro",
+			"blocks": [
+				{ "type": "paragraph", "text": "Digamos que uma barraquinha de limonada promete 'pelo menos 99 de cada 100 copos serão gelados'. Para cumprir a promessa você precisa contar os copos, precisa de uma meta e precisa saber quantos copos mornos ainda pode servir. A confiabilidade funciona do mesmo jeito, com três palavras que parecem iguais e são diferentes." },
+				{ "type": "table", "headers": ["Palavra", "Significa", "O que é", "Exemplo"], "rows": [
+					["SLI", "Service level indicator", "A medição: eventos bons divididos por eventos válidos", "Requisições sem erro / todas as requisições"],
+					["SLO", "Service level objective", "A meta interna para o SLI em uma janela de tempo", "99,9% em 30 dias"],
+					["SLA", "Service level agreement", "O contrato com o cliente, com consequências", "Abaixo de 99,5%, devolve 10% da fatura"]
+				] },
+				{ "type": "paragraph", "text": "O SLO costuma ser mais rígido que o SLA. Assim o time percebe o problema e age antes de o contrato ser quebrado." },
+				{ "type": "heading", "text": "Orçamento de erro" },
+				{ "type": "paragraph", "text": "O **orçamento de erro** (error budget) é o que o SLO permite falhar: 1 menos o SLO. Com 99,9%, o orçamento é 0,1%. Pense nele como um cofrinho de falhas que você pode gastar com lançamentos, experimentos e surpresas." },
+				{ "type": "list", "items": [
+					"**SLO por requisições**: com 1.000.000 de requisições válidas e meta de 99,9%, 0,001 × 1.000.000 = **1.000** requisições podem falhar.",
+					"**SLO por tempo**: 99,9% de minutos bons em 30 dias (43.200 minutos) permite 0,001 × 43.200 = **43,2 minutos ruins**."
+				] },
+				{ "type": "chart", "title": "Minutos ruins permitidos em 30 dias (43.200 minutos)", "unit": "minutos", "bars": [
+					{ "label": "SLO 99%", "value": 432 },
+					{ "label": "SLO 99,9%", "value": 43.2 },
+					{ "label": "SLO 99,99%", "value": 4.32 },
+					{ "label": "SLO 99,999%", "value": 0.432 }
+				] },
+				{ "type": "paragraph", "text": "Cada nove a mais divide o orçamento por dez. Um time **não** deve escolher 100%. O orçamento seria zero, então nenhum deploy, experimento ou manutenção poderia dar errado, e o time pararia de mudar o sistema. Além disso, o usuário não distingue 100% de 99,99%, porque a rede e o próprio celular dele falham com mais frequência que isso." },
+				{ "type": "paragraph", "text": "Quando o orçamento acaba antes do fim da janela, o time põe esforço em estabilidade em vez de funcionalidades novas. Enquanto sobra orçamento, o time pode publicar e experimentar. O orçamento transforma a briga entre velocidade e confiabilidade em uma decisão tomada com um número." },
+				{ "type": "heading", "text": "Orçamento consumido" },
+				{ "type": "paragraph", "text": "Um exemplo: SLO de 99,5%, com 2.000.000 de requisições válidas e 6.000 falhas na janela. As falhas permitidas são 0,005 × 2.000.000 = 10.000. Então 6.000 / 10.000 = **60%** do orçamento já foi. A mesma resposta sai da taxa de erro (0,3%) dividida pela fração do orçamento (0,5%)." },
+				{ "type": "heading", "text": "Burn rate" },
+				{ "type": "paragraph", "text": "O **burn rate** (taxa de queima) diz quantas vezes mais rápido que o permitido o orçamento está sendo gasto: taxa de erro observada dividida por (1 - SLO). Com burn rate 1, o orçamento dura exatamente a janela do SLO. Para um SLO de 99,9% e 0,5% de erros na última hora: 0,005 / 0,001 = 5. Nesse ritmo o orçamento de 30 dias acaba em 30 / 5 = 6 dias." },
+				{ "type": "paragraph", "text": "Com burn rate B, um orçamento inteiro dura janela / B. Se 40% já foi usado e o burn rate fica fixo em 6, os 60% restantes duram 0,6 × 720 horas / 6 = **72 horas**. Esse cálculo diz se um problema pode esperar o horário comercial ou precisa acordar alguém." },
+				{ "type": "heading", "text": "Escolhendo a unidade do SLI" },
+				{ "type": "paragraph", "text": "Imagine um dia com 1.440 minutos e 1.000.000 de requisições. Durante a noite o serviço ficou fora por 36 minutos, e só chegaram 2.000 requisições (todas falharam). Por tempo: (1.440 - 36) / 1.440 = 97,5% bom. Por requisições: (1.000.000 - 2.000) / 1.000.000 = 99,8% bom. O mesmo incidente dá dois números. Medido por tempo, todo minuto pesa igual. Medido por requisições, cada minuto pesa o tráfego que teve, o que acompanha melhor o impacto nos usuários." },
+				{ "type": "heading", "text": "SLI de latência e percentis" },
+				{ "type": "paragraph", "text": "Um SLI de latência também é uma razão: requisições abaixo do limite divididas pelo total. Com um histograma cumulativo, o numerador é o bucket do limite e o denominador é o bucket `+Inf`. Se 9.700 de 10.000 requisições levaram até 0,3 s, o SLI é 97%. Contra uma meta de '95% em até 300 ms', passa." },
+				{ "type": "paragraph", "text": "Um **percentil** diz 'abaixo de qual valor ficam p% das medições'. Com a convenção do **nearest-rank** (posto mais próximo), o percentil p é o valor na posição ⌈p × n⌉ contando a partir de 1. Para 10 valores ordenados (20, 22, 25, 27, 30, 31, 35, 40, 48, 900 ms), o p90 está na posição 9: **48 ms**. A média é 117,8 ms, um número que nenhuma requisição teve. Por isso SLIs de latência usam percentis ou a fatia abaixo de um limite, não a média." },
+				{ "type": "callout", "tone": "remember", "text": "SLI = medição. SLO = meta interna. SLA = contrato. Orçamento de erro = 1 - SLO. Burn rate = taxa de erro / (1 - SLO)." }
+			]
+		},
+		{
+			"id": "alerting",
+			"title": "Alertas",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um detector de fumaça que toca toda vez que você faz torrada logo é ignorado. Um alerta é uma mensagem que pede a uma pessoa para agir. Se a maioria dos alertas não pede ação, as pessoas param de lê-los, e aí o único alerta de verdade se perde no ruído. Isso é a **fadiga de alertas**. Por isso um alerta que acorda uma pessoa deve ser **raro, urgente e acionável**." },
+				{ "type": "heading", "text": "Sintomas contra causas" },
+				{ "type": "table", "headers": ["Tipo", "Dispara quando", "Exemplo"], "rows": [
+					["Baseado em sintoma", "O usuário está sofrendo: erros, lentidão, dados errados", "Taxa de erro do checkout acima do objetivo"],
+					["Baseado em causa", "Um estado interno que pode levar a problemas", "CPU acima de 90%"]
+				] },
+				{ "type": "paragraph", "text": "Alertar sobre sintomas, com SLOs, gera menos alertas e cada um corresponde a um problema real. As causas ficam para a investigação." },
+				{ "type": "heading", "text": "Regras de alerta do Prometheus e a cláusula for" },
+				{ "type": "code", "language": "yaml", "content": "- alert: HighErrorRatio\n  expr: job:http_errors:ratio_rate5m > 0.05\n  for: 5m\n  labels:\n    severity: page", "caption": "Dispara só se a expressão ficar verdadeira por 5 minutos" },
+				{ "type": "paragraph", "text": "Um alerta passa por três estados. **Inactive**: a expressão não retorna nada. **Pending**: ela retorna algo, mas por menos tempo que `for`. **Firing**: ela retornou algo por pelo menos `for`. Se a expressão ficou verdadeira há 2 minutos e `for` é 5 minutos, o alerta está **pending**. A cláusula `for` evita acordar alguém por um pico que passa sozinho, ao preço de atrasar todo alerta por esse tempo." },
+				{ "type": "paragraph", "text": "O `for` exige que a expressão seja verdadeira em toda avaliação consecutiva. Uma única avaliação falsa zera a espera. Veja um serviço em que a cada 5 minutos há uma rajada de 60 segundos com metade das requisições falhando. No total 10% das requisições falham, mas com janela de 1 minuto e `for: 10m` o alerta nunca dispara, porque fica falso entre as rajadas. São 12 minutos de rajadas por hora queimando o orçamento sem alerta." },
+				{ "type": "heading", "text": "Alertas de burn rate" },
+				{ "type": "paragraph", "text": "Um alerta de burn rate pergunta: 'o orçamento está sendo gasto rápido demais?'. Escolha uma fatia do orçamento e um tempo, e calcule o burn rate correspondente. Para abrir um ticket quando **5%** do orçamento de um SLO de 99,9% (30 dias = 720 horas) for gasto em **6 horas**: o serviço precisa estar 0,05 × 720 / 6 = **6** vezes mais rápido que o permitido. Em taxa de erro, isso é 6 × 0,1% = 0,6%. Outro caso conhecido: gastar 2% do orçamento em 1 hora significa burn rate 14,4." },
+				{ "type": "code", "language": "yaml", "content": "- alert: ErrorBudgetBurn\n  expr: |\n    ratio_rate1h > (14.4 * 0.001)\n    and\n    ratio_rate5m > (14.4 * 0.001)\n  labels:\n    severity: page", "caption": "Multi-janela: janela longa e curta com o mesmo limite" },
+				{ "type": "paragraph", "text": "Por que duas janelas? A **janela longa** (1 hora) mostra que uma parte relevante do orçamento foi gasta e protege contra picos breves. Sozinha, ela continuaria acima do limite por até uma hora depois que o problema acabou. A **janela curta** (5 minutos) confirma que a queima está acontecendo **agora**, então o alerta se apaga em minutos depois da recuperação." },
+				{ "type": "paragraph", "text": "Um alerta **preditivo** mede o ritmo de queima em uma janela de base e pergunta se, nesse ritmo, o orçamento acaba dentro de uma janela de antecipação (lookahead). Exemplo: sobram 2.000 falhas e houve 150 na última hora. 2.000 / 150 = 13,3 horas, ou seja, 13 h 20 min. Uma antecipação de 4 horas não dispararia. Uma de 24 horas dispararia." },
+				{ "type": "heading", "text": "Alertmanager" },
+				{ "type": "paragraph", "text": "O Prometheus decide quais alertas estão disparando. O **Alertmanager** decide o que notificar. Três recursos reduzem o ruído:" },
+				{ "type": "table", "headers": ["Recurso", "O que faz", "Exemplo"], "rows": [
+					["Grouping (agrupamento)", "Junta alertas parecidos em uma notificação", "300 alertas `InstanceDown` viram uma mensagem listando 300 instâncias"],
+					["Inhibition (inibição)", "Silencia alertas enquanto um mais amplo já está disparando", "Esconder 'serviço lento' enquanto 'datacenter fora' dispara"],
+					["Silences (silenciamentos)", "Muta alertas por um tempo escolhido por uma pessoa", "Durante uma manutenção planejada"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Um alerta com janela curta e `for` longo deixa passar falhas intermitentes, mesmo quando elas somam muitos erros. Um alerta de burn rate sobre uma janela longa enxerga o total acumulado." },
+				{ "type": "callout", "tone": "remember", "text": "Acorde pessoas só por sintomas urgentes que pedem ação. Use `for` e burn rates multi-janela para evitar ruído, e o Alertmanager para agrupar, inibir e silenciar." }
+			]
+		},
+		{
+			"id": "red-use-golden-signals",
+			"title": "RED, USE e sinais de ouro",
+			"blocks": [
+				{ "type": "paragraph", "text": "Quando você abre um painel, o que deveria estar nele? Checklists ajudam. Existem três famosos, e cada um olha o sistema de um lugar diferente. Pense em um restaurante: RED é como os clientes se sentem (quantos pedidos, quantos errados, quanto esperam). USE é como estão os equipamentos da cozinha (fogão ocupado, pedidos esperando, pratos queimados)." },
+				{ "type": "table", "headers": ["Método", "Autor", "Letras", "Olha para"], "rows": [
+					["RED", "Tom Wilkie", "Rate, Errors, Duration", "Serviços movidos a requisições, do lado de quem chama"],
+					["USE", "Brendan Gregg", "Utilization, Saturation, Errors", "Recursos (CPU, memória, disco, rede), por dentro"],
+					["Quatro sinais de ouro", "Livro SRE do Google", "Latency, Traffic, Errors, Saturation", "Sistemas voltados ao usuário"]
+				] },
+				{ "type": "paragraph", "text": "O **RED** diz o que medir em todo serviço movido a requisições: a taxa de requisições, o número de erros e a duração (melhor como histograma). Esses três são a base de painéis padrão e de SLOs." },
+				{ "type": "paragraph", "text": "O **USE** é um checklist para achar gargalos: para cada recurso, olhe a **utilização** (quanto dele está ocupado), a **saturação** (quanto trabalho está na fila porque não coube) e os **erros**." },
+				{ "type": "paragraph", "text": "Os **sinais de ouro** são quase o RED com outros nomes: latency é a duração, traffic é a taxa, errors são os erros. O sinal a mais é a **saturação**, o quanto o serviço está perto do seu limite. O RED deixa a saturação para o USE, aplicado aos recursos." },
+				{ "type": "heading", "text": "Utilização não é saturação" },
+				{ "type": "paragraph", "text": "Imagine um host com 4 núcleos de CPU, todos ocupados 100% do tempo, e uma média de 12 threads prontas esperando por um núcleo. A utilização é 100%. O **12** é a saturação: trabalho que não coube e espera em uma fila. Um recurso a 100% sem fila está no limite. Um recurso a 100% com uma fila longa já está atrasando todo mundo que depende dele." },
+				{ "type": "heading", "text": "Qual método para quê" },
+				{ "type": "list", "items": [
+					"Uma API HTTP de checkout é um serviço movido a requisições: use **RED** ou os sinais de ouro.",
+					"Os discos do host do banco de dados por baixo são recursos: use **USE**.",
+					"Em um sistema real, use os dois, cada um na sua camada."
+				] },
+				{ "type": "heading", "text": "Latência e erros se contaminam" },
+				{ "type": "paragraph", "text": "Suponha que uma dependência caia. 40% das requisições passam a devolver HTTP 500 em 5 ms, e o resto ainda leva 300 ms. A latência média vira 0,4 × 5 + 0,6 × 300 = 182 ms. O gráfico da média mostra uma 'melhora' de 300 ms para 182 ms, enquanto 40% dos usuários estão falhando. O conselho é medir a latência **separada por resultado** (sucesso contra erro) e ler os sinais juntos: a taxa de erro de 40% explica a falsa melhora." },
+				{ "type": "chart", "title": "Latência média no exemplo", "unit": "ms", "bars": [
+					{ "label": "Antes da falha", "value": 300 },
+					{ "label": "Durante a falha (tudo misturado)", "value": 182 },
+					{ "label": "Só requisições com sucesso", "value": 300 },
+					{ "label": "Só requisições com falha", "value": 5 }
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Uma falha rápida puxa a média para baixo e esconde o incidente. Uma falha lenta (um timeout) a empurra para cima. Sempre olhe os erros ao lado da latência." },
+				{ "type": "callout", "tone": "remember", "text": "RED para serviços, USE para recursos, os sinais de ouro acrescentam a saturação ao RED. Saturação é a fila, utilização é o quanto está ocupado." }
+			]
+		},
+		{
+			"id": "profiling",
+			"title": "Profiling",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um trace diz qual serviço estava lento. Mas dentro desse serviço, qual linha de código é a lenta? Pense em uma fotógrafa que tira 100 fotos por segundo da sua sala de aula cheia e anota quem está fazendo o quê em cada foto. Depois de um tempo ela sabe onde a turma gasta o tempo. Isso é um **profiler**." },
+				{ "type": "paragraph", "text": "Um **profiler de CPU por amostragem** (sampling) interrompe o programa muitas vezes por segundo e anota a pilha de chamadas naquele momento (a lista de funções em execução, uma chamando a próxima). Somar as amostras mostra onde o tempo de CPU se concentra. É barato o bastante para rodar em produção. Um trace diz onde uma requisição foi lenta entre serviços. Um profile diz qual código gastou a CPU dentro de um processo." },
+				{ "type": "heading", "text": "Flame graphs" },
+				{ "type": "paragraph", "text": "Um flame graph desenha as amostras. Cada retângulo é uma função em uma pilha. O eixo vertical é a profundidade da pilha. A **largura** é a fatia das amostras que contêm aquela função. O eixo horizontal **não** é tempo: pilhas iguais são fundidas e ordenadas para facilitar a leitura. Então procure o que é **largo**, não o que está à esquerda." },
+				{ "type": "diagram", "content": "root                      1000\n+- handleSearch            520\n|  +- parseQuery            60\n|  +- compileRegex         230\n|  +- rankResults          230\n+- handleExport            400\n|  +- compileRegex         210\n|  +- writeCsv             190\n+- gc                       80", "caption": "Amostras de 1.000 em que cada frame estava na pilha" },
+				{ "type": "paragraph", "text": "O **tempo próprio** (self time) de um frame é a largura dele menos a largura dos filhos: o topo exposto da chama. Um flame graph separa a mesma função quando ela é chamada por caminhos diferentes. Aqui `compileRegex` aparece duas vezes, com 230 + 210 = 440 amostras, ou seja, 44% da CPU. Somar por função é o que o `pprof top` faz." },
+				{ "type": "chart", "title": "Amostras de tempo próprio por função (de 1.000)", "unit": "amostras", "bars": [
+					{ "label": "compileRegex", "value": 440 },
+					{ "label": "rankResults", "value": 230 },
+					{ "label": "writeCsv", "value": 190 },
+					{ "label": "gc", "value": 80 },
+					{ "label": "parseQuery", "value": 60 }
+				] },
+				{ "type": "heading", "text": "Lendo o pprof: flat e cum" },
+				{ "type": "code", "language": "text", "content": "  flat   flat%     cum   cum%\n 0.05s   0.50%   9.80s 98.00%  net/http.(*conn).serve\n 0.30s   3.00%   9.40s 94.00%  main.buildRows\n 6.50s  65.00%   6.50s 65.00%  main.normalizeKey\n 1.20s  12.00%   1.20s 12.00%  runtime.mallocgc", "caption": "Parte da saída do go tool pprof" },
+				{ "type": "list", "items": [
+					"`flat` é o tempo gasto no código da própria função.",
+					"`cum` (cumulativo) inclui também tudo que a função chama.",
+					"Funções perto da raiz, como o laço do servidor HTTP, têm `cum` enorme e `flat` perto de zero. O ponto quente é a função com `flat` alto. Aqui é `main.normalizeKey`, com 6,50 s."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Um profile de CPU conta só o tempo na CPU. Uma requisição que espera 800 ms por um banco de dados é longa em um trace e quase invisível em um profile de CPU." },
+				{ "type": "callout", "tone": "remember", "text": "Profiler por amostragem: pilhas muitas vezes por segundo. Em um flame graph, a largura é a fatia das amostras, não tempo. Olhe o flat para achar a função quente e some o tempo próprio por função." }
+			]
+		},
+		{
+			"id": "prometheus-grafana-loki-tempo",
+			"title": "Noções de Prometheus, Grafana, Loki e Tempo",
+			"blocks": [
+				{ "type": "paragraph", "text": "Uma biblioteca de escola tem prateleiras diferentes para livros, revistas e mapas, mas um só balcão onde você pede qualquer coisa. Em uma stack de observabilidade cada sinal tem seu próprio repositório, e uma ferramenta junta tudo em uma tela." },
+				{ "type": "table", "headers": ["Ferramenta", "Sinal", "Linguagem de consulta", "Papel"], "rows": [
+					["Prometheus", "Métricas", "PromQL", "Coleta e guarda números ao longo do tempo"],
+					["Loki", "Logs", "LogQL", "Guarda linhas de log, indexa labels"],
+					["Tempo", "Traces", "TraceQL", "Guarda traces"],
+					["Grafana", "Nenhum", "Consulta as outras", "Interface: dashboards; não guarda telemetria"]
+				] },
+				{ "type": "diagram", "content": "serviços --métricas--> Prometheus --+\n         --logs-----> Loki       ----+--> Grafana\n         --traces---> Tempo      ----+  (uma tela)", "caption": "Cada sinal tem seu repositório; o Grafana lê todos" },
+				{ "type": "paragraph", "text": "Como o Grafana consulta os três, você pode pular de uma métrica para um trace e para os logs dele na mesma tela." },
+				{ "type": "heading", "text": "Prometheus: pull e scrape" },
+				{ "type": "paragraph", "text": "Por padrão o Prometheus funciona no modelo **pull** (puxar). A cada intervalo configurado ele faz um **scrape**: uma requisição HTTP ao endpoint de métricas de cada alvo. Ele guarda as amostras com a hora da coleta. O serviço só precisa expor seus valores atuais. Um efeito útil: o próprio scrape mostra se um alvo está vivo, por meio da métrica `up`." },
+				{ "type": "heading", "text": "Loki: indexa labels, varre o conteúdo" },
+				{ "type": "paragraph", "text": "O Loki indexa só os **labels** dos streams, não o conteúdo das linhas. O índice responde uma pergunta: quais streams existem em um intervalo de tempo. Todo o resto, incluindo `|=` e os parsers, é feito lendo e varrendo o conteúdo dos streams selecionados. Veja a consulta:" },
+				{ "type": "code", "language": "logql", "content": "{env=\"prod\"} |= \"4bf92f3577b34da6a3ce929d0e0e4736\"" },
+				{ "type": "paragraph", "text": "Ir de 15 minutos para 7 dias a deixa muito mais lenta, porque ela precisa varrer 7 dias de linhas de todos os streams `prod`. O custo depende de quantos dados o seletor e o intervalo deixam passar. Seletores mais específicos (acrescente `service`) e intervalos curtos deixam as consultas rápidas." },
+				{ "type": "heading", "text": "Tempo e TraceQL" },
+				{ "type": "paragraph", "text": "No TraceQL, um par de chaves é um **seletor de spans**, e as condições dentro dele valem para um mesmo span. Os atributos têm escopo: `resource.` para quem emite, `span.` para a operação. Intrínsecos como `duration`, `name` e `status` vêm do próprio span." },
+				{ "type": "code", "language": "traceql", "content": "{ resource.service.name = \"inventory\" && duration > 500ms }", "caption": "Spans do serviço inventory que levaram mais de 500 ms. O resultado são os traces que os contêm" },
+				{ "type": "callout", "tone": "remember", "text": "O Prometheus puxa métricas (PromQL). O Loki guarda logs e indexa só labels (LogQL). O Tempo guarda traces (TraceQL). O Grafana só desenha." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando tudo",
+			"blocks": [
+				{ "type": "paragraph", "text": "Agora vamos acompanhar um problema real desde o começo. Usuários dizem que o checkout está lento, mas só às vezes. Veja como as peças trabalham em equipe." },
+				{ "type": "list", "ordered": true, "items": [
+					"**Um alerta de SLO dispara.** Um alerta de burn rate com duas janelas diz que o orçamento de latência está sendo gasto rápido demais (alertas, SLO).",
+					"**Um dashboard mostra RED e USE.** Taxa e erros parecem normais, mas o histograma de duração tem uma cauda gorda (métricas, RED).",
+					"**Um exemplar abre um trace.** O trace mostra que `inventory stock.read` tem o maior tempo próprio (traces, tempo próprio).",
+					"**Os logs desse span explicam.** Pesquisar o trace id ou o correlation id no Loki devolve as linhas estruturadas dessa requisição exata (logs, correlação).",
+					"**Um profile aponta o código.** Um flame graph mostra uma função com um frame largo (profiling)."
+				] },
+				{ "type": "table", "headers": ["Pergunta", "Melhor sinal ou ferramenta"], "rows": [
+					["Algo está errado, e quanto?", "Métricas e SLOs"],
+					["Alguém deve ser acordado?", "Alerta de burn rate sobre um sintoma"],
+					["Qual serviço e qual etapa foi lenta?", "Trace, pelo tempo próprio"],
+					["Por que aquela requisição falhou?", "Log estruturado com o correlation id ou trace id"],
+					["Qual função queima a CPU?", "Profile de CPU e flame graph"],
+					["Como tiro tudo isso do código?", "OpenTelemetry (API, SDK, OTLP, Collector)"]
+				], "caption": "Qual ferramenta responde a qual pergunta" },
+				{ "type": "heading", "text": "Erros comuns" },
+				{ "type": "list", "items": [
+					"Colocar um id com valores ilimitados (id de usuário, de requisição, trace id) em um label de métrica ou de Loki.",
+					"Tirar a média ou somar percentis entre instâncias em vez de somar os buckets do histograma.",
+					"Chamar de culpado o span mais longo em vez do span com mais tempo próprio.",
+					"Esquecer de repassar os headers de trace, o que corta um trace em dois.",
+					"Alertar sobre causas como CPU, o que acorda pessoas sem dor para o usuário.",
+					"Escolher um SLO de 100%, que não deixa orçamento de erro.",
+					"Definir um exporter do Collector mas não listá-lo em um pipeline."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Observabilidade é a capacidade de fazer perguntas novas sobre um sistema em execução. Compartilhe identificadores entre os sinais, guarde dados de alta cardinalidade em logs e traces, prometa confiabilidade com SLOs e alerte sobre os sintomas que os usuários sentem." }
+			]
+		}
+	]
+}

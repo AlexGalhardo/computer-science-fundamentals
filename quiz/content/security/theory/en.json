@@ -1,0 +1,1440 @@
+{
+	"area": "security",
+	"intro": [
+		"Imagine your house. It has a front door, windows, a lock, a key under the mat and a neighbour who sometimes borrows sugar. **Security** is the job of thinking about all of those things: who can come in, what they can take, and what we do so that the wrong person cannot. Software has doors and keys too. A website has a login (the front door), cookies (little tickets that say \"this person already came in\") and a database (the cupboard where everything valuable is kept).",
+		"Most break-ins on the internet are not movie hackers typing fast. They happen because a programmer **trusted something they should have checked**: a name typed in a box, a number in an address, a file someone uploaded. This subject, called **application security**, teaches how programs fail when someone uses them in a way nobody expected, so we can build them so they do not fail.",
+		"Everything here is **defensive**. For each flaw we explain why it happens and, always, how to prevent it. Any code you see is the smallest example needed to recognise the problem, and it always comes next to its fix. The ideas follow the [[OWASP|Open Worldwide Application Security Project, a non-profit group that writes free guides about security]] guides, the standard reference of the field.",
+		"At the end you will know the main families of web flaws (injection, scripts planted in pages, forged requests, weak passwords, stolen sessions, broken tokens, missing permission checks, tricked servers, unsafe uploads), the habits that stop each one, and the basics of cryptography and secrets that hold everything together."
+	],
+	"sections": [
+		{
+			"id": "web-basics",
+			"title": "How the web works: the pieces an attacker plays with",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Before we study how things break, we need to know how a website normally works. Think of a restaurant. You (the **browser**) sit at a table and write an order on paper. A waiter carries it to the kitchen (the **server**). The kitchen cooks and the waiter brings back the dish. The paper order is called an [[HTTP request|a small message a browser sends to a server asking for something, like a page or an action]], and the dish is the **response**."
+				},
+				{
+					"type": "diagram",
+					"caption": "One round trip between browser and server",
+					"content": "  Browser                            Server\n     |                                  |\n     |  GET /invoices/1001  + cookie    |\n     | -------------------------------> |  looks up data,\n     |                                  |  builds a page\n     |  200 OK  + page (HTML)           |\n     | <------------------------------- |\n     |                                  |"
+				},
+				{
+					"type": "paragraph",
+					"text": "A few words will come back all the time. A **cookie** is a small note the server asks the browser to keep and to show again on every later visit, like a wristband at a water park: the staff do not remember your face, they just check the band. An **origin** is the exact address of a website: the protocol (`https`), the name (`shop.test`) and the port. Two pages with different origins are strangers to each other, and the browser enforces this with the [[same-origin policy|a browser rule: a script from one origin may not read data that belongs to another origin]]."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Word",
+						"Everyday picture",
+						"What it is"
+					],
+					"rows": [
+						[
+							"Client",
+							"The customer at the table",
+							"The browser or app of the user. The user controls it completely"
+						],
+						[
+							"Server",
+							"The kitchen",
+							"The program we write and protect"
+						],
+						[
+							"Cookie",
+							"A wristband",
+							"A note the browser sends back automatically on each request"
+						],
+						[
+							"Origin",
+							"A full street address",
+							"Protocol + name + port, for example `https://shop.test:443`"
+						],
+						[
+							"Untrusted input",
+							"A stranger's note",
+							"Anything that comes from outside: forms, URLs, headers, files, even data read back from the database"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "The golden rule of web security: **everything that comes from the client can be changed by the client**. The server must check, never just believe."
+				}
+			]
+		},
+		{
+			"id": "owasp-threat-modelling",
+			"title": "OWASP Top 10, threats and good habits",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Where do we start? Doctors keep a list of the most common illnesses. Security people keep one too. The **OWASP Top 10** is an awareness document, not a law and not a certificate. It groups flaws into ten risk categories, ordered by how often they appear in real data and by a survey of professionals. It is a good place to begin studying and reviewing, but it is **not a complete list** of every flaw, and passing a review against it does not prove an application is safe."
+				},
+				{
+					"type": "paragraph",
+					"text": "In this summary we use the **2021 edition**. Its number one category is **Broken Access Control**: a logged-in person reaches things that are not theirs. Injection, which led the 2017 edition, moved to third place."
+				},
+				{
+					"type": "table",
+					"caption": "OWASP Top 10, 2021 edition",
+					"headers": [
+						"Position",
+						"Category",
+						"In one sentence"
+					],
+					"rows": [
+						[
+							"A01",
+							"Broken Access Control",
+							"A user reads or changes what they should not"
+						],
+						[
+							"A02",
+							"Cryptographic Failures",
+							"Sensitive data is not protected, or is protected badly"
+						],
+						[
+							"A03",
+							"Injection",
+							"Data is mixed into code (SQL, shell) and runs as code"
+						],
+						[
+							"A04",
+							"Insecure Design",
+							"The plan itself lacks a needed control"
+						],
+						[
+							"A05",
+							"Security Misconfiguration",
+							"Defaults, open features and noisy errors left in production"
+						],
+						[
+							"A06",
+							"Vulnerable and Outdated Components",
+							"Old libraries with known holes"
+						],
+						[
+							"A07",
+							"Identification and Authentication Failures",
+							"Weak passwords, weak sessions, weak login"
+						],
+						[
+							"A08",
+							"Software and Data Integrity Failures",
+							"Updates and data trusted without checking where they came from"
+						],
+						[
+							"A09",
+							"Security Logging and Monitoring Failures",
+							"Nobody notices the break-in"
+						],
+						[
+							"A10",
+							"Server-Side Request Forgery (SSRF)",
+							"The server is tricked into calling places it should not"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Thinking like a defender: threat modelling"
+				},
+				{
+					"type": "paragraph",
+					"text": "[[Threat modelling|drawing the system and asking what can go wrong, before building it]] means answering four questions early: **What are we building? What can go wrong? What will we do about it? Did we do a good job?** It pays the most at design time, before any code exists, because changing a drawing is cheap and changing a finished system is expensive. When the architecture changes, you do it again."
+				},
+				{
+					"type": "paragraph",
+					"text": "A handy checklist for \"what can go wrong\" is **STRIDE**. Each letter is a kind of threat, and each one breaks a property we want to keep. Knowing the broken property tells you which kind of control to use."
+				},
+				{
+					"type": "table",
+					"caption": "STRIDE",
+					"headers": [
+						"Letter",
+						"Threat",
+						"Property broken",
+						"Typical control"
+					],
+					"rows": [
+						[
+							"S",
+							"Spoofing: pretending to be someone else",
+							"Authenticity",
+							"Strong authentication"
+						],
+						[
+							"T",
+							"Tampering: changing data",
+							"Integrity",
+							"Signatures, checks on the server"
+						],
+						[
+							"R",
+							"Repudiation: denying you did it",
+							"Non-repudiation",
+							"Logs and audit trails"
+						],
+						[
+							"I",
+							"Information disclosure: leaking secrets",
+							"Confidentiality",
+							"Encryption, access control"
+						],
+						[
+							"D",
+							"Denial of service: making it stop working",
+							"Availability",
+							"Limits, capacity, filtering"
+						],
+						[
+							"E",
+							"Elevation of privilege: gaining more rights",
+							"Authorisation",
+							"Permission checks, least privilege"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Principles that appear everywhere"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Least privilege**: each person, program or database account gets only the permissions its job needs. A class pet-sitter needs the key to the classroom, not to the whole school. If the app only reads products, its database account must not be allowed to delete tables.",
+						"**Defence in depth**: stack several independent protections, because any one can fail. A castle has a moat, a wall and guards.",
+						"**Secure by default and deny by default**: the safe choice is the one you get when you do nothing.",
+						"**Insecure design versus insecure implementation**: a bug is code that does not do what the plan said. Insecure design is code that does exactly what the plan said, when the plan forgot a control. Example: a shop lets anyone reserve unlimited stock for 24 hours without paying. Bots reserve everything. The code has no bug; the rule is missing a limit. The fix is to redesign the rule, and the prevention is to write abuse cases next to use cases.",
+						"**Security misconfiguration**: the code is fine but the deployment is not. Default `admin/admin` accounts, directory listings turned on and error pages showing a full stack trace are classic examples. The cure is one repeatable hardening process for every environment."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A parameterised query is a good lock on the front door. Giving the database account only SELECT permission is a second lock on the cupboard. If a thief ever finds a way past the first lock, the second one still limits the damage. That is defence in depth."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "No single protection is enough. Pick controls by the property that is threatened, stack them, and give everything the least power it needs."
+				}
+			]
+		},
+		{
+			"id": "cryptography-tls",
+			"title": "Cryptography and TLS: secret codes that protect the road",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "[[Cryptography|the science of turning information into a form that only the right people can use or check]] is the toolbox behind passwords, tokens and the padlock in your browser. You do not need the maths. You need to know **which tool answers which question**."
+				},
+				{
+					"type": "heading",
+					"text": "Two ways to lock a message"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Symmetric** cryptography uses the **same key** to lock and unlock, like a diary with one key that both friends own. It is very fast, but there is a problem: how do the two friends agree on the key without anyone else hearing? **Asymmetric** cryptography uses a **pair of keys**. The **public key** can be shown to the whole world, like a mailbox slot anyone can drop letters into. The **private key** stays secret, like the key that opens the mailbox. It solves the sharing problem, but it is much slower."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"Symmetric",
+						"Asymmetric"
+					],
+					"rows": [
+						[
+							"Keys",
+							"One shared secret key",
+							"A public key and a private key"
+						],
+						[
+							"Speed",
+							"Very fast",
+							"Much slower"
+						],
+						[
+							"Main problem",
+							"How to share the key safely",
+							"Cost, so it is used only briefly"
+						],
+						[
+							"Used in TLS for",
+							"Encrypting all the data of the connection",
+							"The handshake: proving who the server is and agreeing on keys"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Real systems use both, called **hybrid cryptography**. TLS uses the slow asymmetric tool once, at the start, to agree on a secret without any earlier secret. After that, everything is protected with the fast symmetric tool."
+				},
+				{
+					"type": "heading",
+					"text": "Hash is not encryption"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **hash function** is like a meat grinder: any input goes in, a fixed-size \"fingerprint\" comes out, and you cannot turn the meat back. It is **one-way**. A **cipher** is a reversible lock: with the key you get the original back. They answer different needs, and using one in place of the other is a classic mistake."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Tool",
+						"Reversible?",
+						"Output size",
+						"Use it for"
+					],
+					"rows": [
+						[
+							"Hash (for example SHA-256)",
+							"No",
+							"Always the same",
+							"Checking that a file did not change"
+						],
+						[
+							"Cipher (for example AES)",
+							"Yes, with the key",
+							"About the size of the input",
+							"Keeping data secret"
+						],
+						[
+							"MAC / HMAC",
+							"No",
+							"Fixed",
+							"Checking that a message was not changed by someone without the key"
+						],
+						[
+							"Digital signature",
+							"No",
+							"Fixed",
+							"Proving who wrote a message when nobody shares a key"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Why is a plain hash not enough to protect a message on the road? Because if someone on the path changes the message, they can simply **compute a new hash** for the new message. The hash has no secret in it. A [[MAC|message authentication code: a fingerprint that is mixed with a secret key, so only people who know the key can produce a valid one]] such as **HMAC** mixes a secret key into the hash. Without the key, nobody can produce a valid value for a changed message. When the two sides share no key, a **digital signature** plays the same role."
+				},
+				{
+					"type": "heading",
+					"text": "TLS: what the padlock really means"
+				},
+				{
+					"type": "paragraph",
+					"text": "**TLS** is the protocol behind `https`. Locking the conversation is not enough, because you could be locking it for the wrong person. So the server shows a **certificate**, a document signed by a trusted authority saying \"this public key belongs to this domain\". The browser validates it. What does that prove? That the public key really belongs to the domain you are visiting, and that the server holds the matching private key. It does **not** prove that the site is honest. A scam site can have a perfectly valid padlock."
+				},
+				{
+					"type": "diagram",
+					"caption": "TLS in three steps",
+					"content": "1. Browser: \"hello, I want shop.test\"\n2. Server : certificate (public key + signature)\n          browser checks: is it for shop.test?\n3. Both   : agree on fresh session keys\n          (asymmetric, ephemeral Diffie-Hellman)\n4. From now on: fast symmetric encryption\n          + integrity check on every message"
+				},
+				{
+					"type": "paragraph",
+					"text": "There is one more nice property. Suppose someone records all your encrypted traffic today, and in five years steals the server's private key. Can they read the old recordings? With **TLS 1.3**, no. This is called **forward secrecy**. Each connection creates its keys with an [[ephemeral|short-lived: used once and then thrown away]] Diffie-Hellman exchange, with random numbers discarded at the end. The certificate key is used only to prove identity, not to protect the traffic, so stealing it later opens nothing from the past."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Common mistakes: using a hash where you need a secret (use HMAC), using encryption where you need a one-way fingerprint (passwords are hashed, not encrypted), and thinking the padlock means a site is trustworthy."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Symmetric is fast, asymmetric solves key sharing, TLS uses both. A hash alone proves nothing against an attacker; a MAC or a signature does. Forward secrecy means a stolen key cannot open old recordings."
+				}
+			]
+		},
+		{
+			"id": "injection",
+			"title": "Injection: when data turns into commands",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine you tell a robot waiter: \"Bring the soup\". Now a mischievous child writes on the order slip: \"soup, and also open the cash register\". If the robot reads the slip as one long list of instructions, it obeys both. That is **injection**: the program is supposed to treat what the user wrote as plain **data**, but it lets that data be read as **code**. The two got mixed in one piece of text."
+				},
+				{
+					"type": "paragraph",
+					"text": "In **SQL injection** the \"robot\" is the database. The program builds a query by gluing text together, so a value with a quote in it can change the shape of the command. The problem is the glue, not the user."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Vulnerable: the value becomes part of the SQL text",
+					"content": "const email = body.email; // comes from the user\nconst sql = \"SELECT id, name FROM users WHERE email = '\" + email + \"'\";\nconst result = await db.query(sql);\n// an email such as  x' OR '1'='1  changes what the query means"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Fixed: a parameterised query keeps text and values apart",
+					"content": "const sql = \"SELECT id, name FROM users WHERE email = $1\";\nconst result = await db.query(sql, [email]);\n// the database fixes the shape of the command first,\n// then receives email only as a value"
+				},
+				{
+					"type": "paragraph",
+					"text": "Why does the second version work? The database first reads the text with its placeholders (`$1`, or `?` in other databases) and decides what the command is. Only afterwards does it receive the values, and a value can only fill a data position. So `x' OR '1'='1` is just an odd email to compare against, not a condition. This is called a [[parameterised query|also called a prepared statement: SQL text and values travel separately]], and it is the **main defence** because it removes the cause."
+				},
+				{
+					"type": "heading",
+					"text": "Other defences and things that do not work"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Validation** (is the value the right length, type and format?) is a good extra layer. It decides whether a value makes sense. It does not replace parameters. A surname field must still accept `O'Brien`, so you accept the apostrophe and send the value as a parameter.",
+						"**Least privilege**: a database account that can only read what it needs limits the damage if something slips.",
+						"**Blocklists and manual escaping** (removing quotes, banning words) treat symptoms and are easy to get around. Do not rely on them.",
+						"**ORMs** (libraries that write SQL for you) parameterise their normal methods, so they greatly reduce the risk. But raw SQL built with string interpolation inside an ORM is as injectable as any other.",
+						"**Data from your own database is untrusted too.** If a name was stored safely and later glued into another query, that second query is vulnerable. Parameterising is a rule for every query, not only for what just arrived.",
+						"**Stored procedures are not magic.** If a procedure builds dynamic SQL by gluing its argument into a string, it is injectable. Inside the database, dynamic SQL needs its own parameters (in PostgreSQL, `EXECUTE ... USING`)."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "When the structure must change"
+				},
+				{
+					"type": "paragraph",
+					"text": "Placeholders can stand for values, not for column names, table names or `ASC`/`DESC`. Suppose a list can be sorted by `price` or `name`. Do not paste the received word into the query. Use the word only as a **key into a fixed list** and take the real column name from that list."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Allow-list for a structural part",
+					"content": "const columns: Record<string, string> = { price: \"price\", name: \"name\" };\nconst column = columns[query.sort];\nif (!column) return status(400);\nconst sql = `SELECT id, name FROM products ORDER BY ${column}`;\n// the text comes from our list, never from the user"
+				},
+				{
+					"type": "paragraph",
+					"text": "Parameters also do not change what a value **means** inside a small language of its own. In `LIKE '%' || $1 || '%'`, if the user sends `%`, there is no injection, but `%` still works as the wildcard \"anything\" and matches every row. If the search must be literal, escape `%` and `_` in the value."
+				},
+				{
+					"type": "heading",
+					"text": "The same idea with the operating system"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Command injection** is the same mistake with another interpreter: the shell. A server that builds the text `ping -c 1 ` plus a host typed by the user and hands it to a shell is in trouble, because characters like `;`, `|` and `&&` mean \"run another command\" to a shell. The cure: do not use the shell. Start the program directly, giving the executable and a **list of arguments**, so each argument is delivered as data, and validate the host against a strict format."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Vulnerable and fixed",
+					"content": "// Vulnerable: a shell reads the whole string\nexec(\"ping -c 1 \" + host);\n\n// Fixed: no shell, arguments in a list, host validated first\nif (!/^[a-zA-Z0-9.-]{1,253}$/.test(host)) return status(400);\nspawn(\"ping\", [\"-c\", \"1\", host]);"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A parameterised query is like handing the robot waiter a printed menu card with blank spaces: \"Bring ____\". Whatever the child writes in the blank is just the name of a dish, it can never become a new instruction."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Injection is the loss of the boundary between code and data. Send values apart from the command text (parameters, argument lists), allow-list the parts that must change shape, and treat every source of data as untrusted."
+				}
+			]
+		},
+		{
+			"id": "xss",
+			"title": "Cross-site scripting (XSS): a stranger's script on your page",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Injection has a cousin where the \"robot\" is the **browser**. A browser reads HTML text and builds the page from it. Some pieces of HTML are code, such as a `<script>` block or an attribute like `onerror=\"...\"`. In **cross-site scripting (XSS)** a script written by someone else ends up inside your page, and the browser cannot tell it was not written by you. It runs with the **origin of the vulnerable site**, so it can see the page, read what the page can read and act in the name of whoever has the page open."
+				},
+				{
+					"type": "paragraph",
+					"text": "The root cause is always the same: data was written into a place that is parsed as code without being **encoded** for that place. There are three classic types, and the difference is only how the data reaches the page."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Type",
+						"How the data arrives",
+						"Example"
+					],
+					"rows": [
+						[
+							"**Stored**",
+							"The server saves it and serves it to everyone who opens the page",
+							"A comment with a script tag, shown to every reader of the article"
+						],
+						[
+							"**Reflected**",
+							"The server echoes something from the request right back",
+							"A search page that prints your search text unchanged"
+						],
+						[
+							"**DOM-based**",
+							"The page's own JavaScript reads the data and inserts it into the page. The server may never see it",
+							"A script that puts the part after `#` in the address into the page"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Defence 1: encode at output"
+				},
+				{
+					"type": "paragraph",
+					"text": "When you write user data into HTML, turn the characters that have special meaning into harmless look-alikes: `<` becomes `&lt;`, `>` becomes `&gt;`, `&` becomes `&amp;`, and quotes also get replaced. The browser then shows the characters as text instead of reading them as tags. Nothing is deleted; the visitor sees exactly what was typed."
+				},
+				{
+					"type": "diagram",
+					"caption": "Why encoding stops the script",
+					"content": "Without encoding:\n  server writes : <span> <script>bad()</script> </span>\n  browser sees  : a script tag  -> RUNS\n\nWith encoding:\n  server writes : <span> &lt;script&gt;bad()&lt;/script&gt; </span>\n  browser sees  : plain text    -> shown, never runs"
+				},
+				{
+					"type": "paragraph",
+					"text": "Encode **at output time**, not when saving to the database. The right encoding depends on where the data lands (HTML text, an attribute, a URL, JavaScript, CSS), and you only know that at the moment you write the page. Data stored already encoded for HTML would look wrong in a JSON API and would still be unsafe inside JavaScript. The context matters: something harmless in one place can be code in another. In an `href` or `src`, for instance, the URL scheme must also be checked, because a `javascript:` link runs code when clicked. Accept only `http:` and `https:` from an allow-list."
+				},
+				{
+					"type": "heading",
+					"text": "Defence 2: safe browser APIs"
+				},
+				{
+					"type": "paragraph",
+					"text": "For DOM-based XSS the server has nothing to encode, because the dangerous part never travels to it. The fix is inside the script: use APIs that treat the value as text."
+				},
+				{
+					"type": "code",
+					"language": "js",
+					"caption": "A DOM-based XSS and its fix",
+					"content": "const name = decodeURIComponent(location.hash.slice(1));\n\n// Vulnerable: innerHTML parses the text as HTML\n// document.querySelector('#greeting').innerHTML = 'Hello, ' + name;\n\n// Fixed: textContent always inserts plain text\ndocument.querySelector('#greeting').textContent = 'Hello, ' + name;"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Safe: treats the value as text",
+						"Dangerous: parses the value as markup"
+					],
+					"rows": [
+						[
+							"`textContent`, `createTextNode`",
+							"`innerHTML`, `outerHTML`"
+						],
+						[
+							"`setAttribute` for attributes that do not run code",
+							"`document.write`, `insertAdjacentHTML`"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Frameworks, sanitisers and what is left"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Modern UI frameworks **encode automatically** the values you interpolate in templates. XSS comes back when you use their \"raw HTML\" escape hatch with user data, put a user URL in `href`, or touch the DOM directly.",
+						"If users must be allowed to send formatting (bold, lists, links), encoding would ruin it. Pass the HTML through a **maintained sanitiser** that keeps only an **allow-list** of tags, attributes and URL schemes. Allow-lists fail safe: anything unknown is removed. Do not write a sanitiser yourself; they are very hard to get right.",
+						"`HttpOnly` cookies are a mitigation, not a fix. The script cannot read that cookie, but it can still send requests as the victim, because the browser attaches the cookie by itself. The fix is still encoding and safe sinks, with a Content Security Policy as an extra layer (next section)."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "\"The cookie is HttpOnly, so XSS is harmless\" is wrong. The script runs inside the logged-in page. It does not need to steal the cookie to act as the user."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Treat data as text where it is written: encode for the context at output, use `textContent` instead of `innerHTML`, check URL schemes, sanitise with an allow-list when HTML is required, and add CSP as a second layer."
+				}
+			]
+		},
+		{
+			"id": "csp-security-headers",
+			"title": "Content Security Policy and security headers",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Encoding is the main defence against XSS, but programmers forget things. So we add a **safety net**: we tell the browser, in advance, what the page is allowed to do. Think of a school trip: the teacher gives the bus driver a written list of the places the class may visit. If a stranger tries to add a stop, the driver refuses. That list is a **Content Security Policy (CSP)**."
+				},
+				{
+					"type": "paragraph",
+					"text": "CSP is an HTTP header from the server. It is an **allow-list enforced by the browser**: it says from which origins the page may load and run content. It reduces the damage when output encoding fails somewhere, but it does not replace encoding."
+				},
+				{
+					"type": "code",
+					"language": "http",
+					"caption": "A strict policy",
+					"content": "Content-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Directive",
+						"Meaning"
+					],
+					"rows": [
+						[
+							"`script-src 'self'`",
+							"Only script files from the same origin run. Inline `<script>` blocks and inline handlers such as `onclick` are refused"
+						],
+						[
+							"`default-src 'self'`",
+							"Everything not listed (images, styles, connections) only from the same origin"
+						],
+						[
+							"`object-src 'none'`",
+							"No plugins such as `<object>` or `<embed>`"
+						],
+						[
+							"`base-uri 'none'`",
+							"No `<base>` element that could change where relative addresses point"
+						],
+						[
+							"`form-action 'self'`",
+							"Forms may only be sent to the same origin"
+						],
+						[
+							"`frame-ancestors 'none'`",
+							"Nobody may put this page inside an `<iframe>`"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "With `script-src 'self'`, if a badly encoded comment sneaks an inline script into the page, the browser runs `/app.js` (a file from the same origin) and **blocks the inline script**. That is the main gain: most injections look like markup inside the page. To benefit, your own JavaScript must live in files, not in event attributes."
+				},
+				{
+					"type": "heading",
+					"text": "Do not break the net"
+				},
+				{
+					"type": "paragraph",
+					"text": "When old code needs inline scripts, someone may be tempted to write `script-src 'self' 'unsafe-inline'`. The keyword is called that for a reason: it gives the attacker back the easiest path, and the policy becomes worth little against XSS. The right ways to keep a needed inline script are to move it into a file, or to authorise it individually with a **nonce** or a **hash**."
+				},
+				{
+					"type": "paragraph",
+					"text": "A [[nonce|\"number used once\": an unpredictable value made fresh for every response]] is put both in the header (`script-src 'nonce-R4nd0m'`) and in the `nonce` attribute of your own script tags. An injected script does not know this response's value and is blocked. If the value is **fixed** in a config file, it is the same on every page, anyone can read it once and put it on their own tag, and the protection is gone."
+				},
+				{
+					"type": "heading",
+					"text": "Rolling it out safely"
+				},
+				{
+					"type": "paragraph",
+					"text": "On a big old site, switching on a strict policy can break pages that use something you forgot. The safe path is `Content-Security-Policy-Report-Only`. The browser **judges** the policy without enforcing it and sends violation reports. Fix what the reports show, and when they are clean, move the same policy to the real `Content-Security-Policy` header."
+				},
+				{
+					"type": "heading",
+					"text": "Other security headers"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Header",
+						"What it does",
+						"Why it matters"
+					],
+					"rows": [
+						[
+							"`Strict-Transport-Security` (HSTS)",
+							"Tells the browser to use only HTTPS for this domain during `max-age`",
+							"Without it, the first request may go over HTTP and someone on the path can stop the upgrade to HTTPS. It only counts when received over HTTPS"
+						],
+						[
+							"`X-Content-Type-Options: nosniff`",
+							"The browser must respect the declared `Content-Type` and not guess",
+							"Stops an uploaded file full of HTML from being executed because the browser guessed it was a page"
+						],
+						[
+							"`frame-ancestors` (in CSP)",
+							"Declares who may frame the page",
+							"Defends against clickjacking: your page loaded invisibly in another site's frame to steal clicks. `'none'` allows nobody, `'self'` only your own origin"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Clickjacking is like someone gluing a transparent sticker over a real button. You think you are tapping the picture you see, but your finger presses the hidden button underneath. `frame-ancestors` is a rule that says \"this page can never be shown under someone else's sticker\"."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "CSP is a second layer, not a replacement for encoding. Avoid `'unsafe-inline'`, never reuse a nonce, start in report-only mode, and add HSTS, `nosniff` and `frame-ancestors`."
+				}
+			]
+		},
+		{
+			"id": "csrf-samesite",
+			"title": "CSRF and SameSite cookies: forged requests",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Picture a pizza shop that delivers to anyone holding your loyalty card. A prankster does not need to steal your card. He just calls out, \"Hey, shop, deliver 50 pizzas to this address!\" in a way that makes **your own phone** place the order, and the shop sees your card number and delivers. This is **cross-site request forgery (CSRF)**: another website makes the victim's browser send a request that the target site accepts as the victim's own."
+				},
+				{
+					"type": "paragraph",
+					"text": "Notice what the attacker does **not** do. He does not read the answer and does not steal the password. He just needs an **action** to happen with the victim's rights, such as changing an e-mail or transferring money. That is why CSRF targets requests that **change state**."
+				},
+				{
+					"type": "paragraph",
+					"text": "It works because of how cookies behave. A session cookie is an **ambient credential**: the browser attaches it by itself to every request to that site, **even when the request was started by a page from a different site**. The server gets a perfectly valid request and cannot tell that the user did not mean it."
+				},
+				{
+					"type": "diagram",
+					"caption": "How a forged request travels",
+					"content": "  evil.test page            Browser              bank.test\n      |  hidden form to bank.test  |                    |\n      | -------------------------> |                    |\n      |                            | POST /transfer     |\n      |                            | + bank.test cookie |\n      |                            | -----------------> |\n      |                            |   server: valid    |\n      |                            |   session, do it!  |"
+				},
+				{
+					"type": "heading",
+					"text": "Defence 1: SameSite cookies"
+				},
+				{
+					"type": "paragraph",
+					"text": "The `SameSite` attribute tells the browser when the cookie may be sent on **cross-site** requests. A **site** is the registrable domain (for example `example.com`), a bigger idea than an origin."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Value",
+						"Cookie is sent",
+						"Trade-off"
+					],
+					"rows": [
+						[
+							"`Strict`",
+							"Only on requests made from the same site",
+							"Safest. A user who arrives from an external link looks \"logged out\" for the first page"
+						],
+						[
+							"`Lax`",
+							"Also on top-level navigations with a safe method, such as clicking a link (GET)",
+							"A good default, but it assumes GET has no side effects"
+						],
+						[
+							"`None`",
+							"Always, including cross-site; it requires `Secure`",
+							"No protection against CSRF"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A user who arrives from an external link with Strict looks logged out on the first page. That is the price of the strongest setting."
+				},
+				{
+					"type": "paragraph",
+					"text": "`Lax` is not magic. If your site has `GET /account/delete`, a link on another site that points there will be clicked by the victim and the browser sends the cookie, so the account is deleted. **Never change data on GET.** Use POST, PUT, PATCH or DELETE, protected by a token."
+				},
+				{
+					"type": "paragraph",
+					"text": "Also remember that `SameSite` protects against other **sites**, not against other **origins of the same site**. If `app.example.com` and `pages.example.com` share the registrable domain `example.com`, and customers publish their own HTML at `pages`, then a page published there is same-site with your application. `SameSite=Strict` does not hold the cookie back. Put untrusted content on a separate registrable domain, and keep the token as the main defence."
+				},
+				{
+					"type": "heading",
+					"text": "Defence 2: the anti-CSRF token"
+				},
+				{
+					"type": "paragraph",
+					"text": "In the **synchroniser token** pattern, the server makes a random value tied to the session, places it in a hidden field of its forms and checks it on every POST. The cookie goes by itself, but the token is **not** sent automatically. The forged page cannot read your real page to copy the token, because the [[same-origin policy|the browser rule that stops a page of one origin from reading pages of another]] forbids it."
+				},
+				{
+					"type": "code",
+					"language": "html",
+					"caption": "A form carrying a token",
+					"content": "<form method=\"post\" action=\"/transfer\">\n  <input type=\"hidden\" name=\"csrf\" value=\"9f3a...random-per-session\">\n  <input name=\"amount\">\n</form>\n<!-- server: reject the POST if csrf is missing or does not match -->"
+				},
+				{
+					"type": "paragraph",
+					"text": "This also explains why **XSS defeats the token**: an injected script is in the same origin, so it is allowed to read the token."
+				},
+				{
+					"type": "heading",
+					"text": "Two common misunderstandings"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**\"We did not configure CORS, so other sites are blocked.\"** Wrong. The same-origin policy and CORS protect the **reading of responses** across origins. They do not stop a simple form POST from being sent and processed. CSRF needs to read nothing. The defence must live on the server, with a token and `SameSite`.",
+						"**\"Our API uses a Bearer token, are we exposed?\"** Little. If the token is kept in memory and sent explicitly in the `Authorization` header, the browser does not attach it to forged requests from another site. CSRF is a problem of **ambient credentials**: cookies, Basic authentication, client certificates. The price is that scripts on the page can reach the token, so defending against XSS matters even more."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "CSRF exists because the browser sends cookies by itself. Use `SameSite` cookies, anti-CSRF tokens for state-changing requests, never change data on GET, and do not rely on missing CORS headers."
+				}
+			]
+		},
+		{
+			"id": "authentication",
+			"title": "Authentication: passwords, hashing and more than one factor",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Two words are easy to mix up. **Authentication** answers \"who are you?\". **Authorisation** answers \"are you allowed to do this?\". At a cinema, showing your ticket at the door is authentication; being allowed into room 3 only, not room 5, is authorisation. A system can do the first perfectly and the second badly, and the other way round. They are different controls with different flaws."
+				},
+				{
+					"type": "heading",
+					"text": "How to store a password"
+				},
+				{
+					"type": "paragraph",
+					"text": "The server never needs to know your password, only to **recognise** it. So it stores the output of a one-way function and, at login, repeats the computation on what you typed and compares. Passwords are not **encrypted** (whoever gets the key would get every password); they are **hashed**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Two ingredients make a hash fit for passwords. First, a **salt**: a random value, different for each password and stored next to the hash. Without it, two users with the same password have the same hash, and an attacker can use a precomputed table of common passwords to break many accounts at once. With a salt, every row is a separate problem. The salt is not secret. Second, the hash must be **slow on purpose**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Why slow? Fast hashes such as MD5 or SHA-256 were made to check files quickly, which is wonderful for files and terrible for passwords, because someone with a stolen table can try millions of guesses per second. **Argon2id**, **scrypt** and **bcrypt** add a cost that you can raise over time; Argon2id and scrypt also demand lots of memory, which makes graphics cards (GPUs) expensive to use. A salted SHA-256 is still inadequate: the salt stops the bulk attack, but only the cost slows each single account."
+				},
+				{
+					"type": "chart",
+					"title": "Guesses per second on one CPU core, from this repository's benchmark (passwords and sessions lab)",
+					"unit": "hashes per second",
+					"bars": [
+						{
+							"label": "MD5, no salt",
+							"value": 843636
+						},
+						{
+							"label": "SHA-256 + 16-byte salt",
+							"value": 548724
+						},
+						{
+							"label": "Argon2id 19 MiB, t=2",
+							"value": 22
+						},
+						{
+							"label": "Argon2id 64 MiB, t=3",
+							"value": 3.5
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Read the chart as the number of guesses per second an attacker can try on a stolen table, per core. Argon2id costs each guess about 45 milliseconds and tens of megabytes of memory, roughly 38,000 times more than MD5 in that run. A user pays that cost once per login and does not notice. Machine, versions and command are recorded in the lab results."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Scheme",
+						"One-way",
+						"Salt",
+						"Slow and memory-hard"
+					],
+					"rows": [
+						[
+							"Plain text",
+							"no",
+							"no",
+							"no"
+						],
+						[
+							"MD5",
+							"yes",
+							"no",
+							"no"
+						],
+						[
+							"Salted SHA-256",
+							"yes",
+							"yes",
+							"no"
+						],
+						[
+							"Argon2id",
+							"yes",
+							"yes",
+							"yes"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A **pepper** is a different thing from a salt. The pepper is a **secret** shared by the whole application and kept **outside the database** (in a vault or environment). It helps when only the database leaks, for instance through a SQL injection or a stolen backup. If the whole server is taken, the pepper leaks as well, so it is an extra layer, not a replacement."
+				},
+				{
+					"type": "paragraph",
+					"text": "What if an old system stores only `MD5(password)` and we want everyone protected by Argon2id now, without knowing the passwords? Store `Argon2id(old MD5)` for every account at once, and record which scheme each row uses. At each user's next successful login, you have the real password in hand, so store plain Argon2id and drop the wrapper."
+				},
+				{
+					"type": "heading",
+					"text": "Login screens and policies"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Say the same thing for every failure.** If the screen answers \"user not found\" for unknown e-mails and \"wrong password\" for known ones, you hand out a list of who has an account. Answer \"invalid credentials\" every time, with the same status code and similar time. The same applies to sign-up and password-recovery screens.",
+						"**Limit attempts, but think about who controls the counter.** Locking an account forever after 3 wrong passwords lets anybody lock out anybody. Use short locks that grow, limits per account and per source, and a second factor.",
+						"**Follow current guidance (NIST SP 800-63B).** Require a minimum length, accept long phrases and any character, allow pasting, refuse passwords already found in leaks, and do not force periodic changes without reason. Length and uniqueness beat odd complexity rules."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Factors"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **factor** is a category of proof. There are three: **something you know** (password, PIN), **something you have** (a phone, a security key) and **something you are** (fingerprint, face). Real **multi-factor** authentication combines different categories, so stealing a password is not enough. A password plus a temporary code from an authenticator app is two factors. A password plus a security question is not: both are \"something you know\"."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Hashing twice, a bigger salt shared by every user, or a \"stronger\" fast hash do not fix weak password storage. The problem is the cost of each guess, so use a slow, salted, memory-hard function such as Argon2id."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Authentication is who, authorisation is what. Store passwords with Argon2id or bcrypt (salted, slow). Answer failed logins identically, limit attempts without creating a lockout weapon, and use factors from different categories."
+				}
+			]
+		},
+		{
+			"id": "sessions-cookies",
+			"title": "Sessions and cookies: staying logged in",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "After you log in, you do not want to type your password for every page. So the server gives your browser a **session identifier** inside a cookie, like a wristband at a theme park: show it and you go through. This also means the wristband is a **temporary password**. Whoever presents it is treated as you."
+				},
+				{
+					"type": "paragraph",
+					"text": "That is why the identifier must be **long, random and meaningless**: generated by a cryptographic random generator with at least 128 bits of entropy (unpredictability), and only a key to data the server keeps. A guessable identifier is a guessable password. Here is a good cookie:"
+				},
+				{
+					"type": "code",
+					"language": "http",
+					"caption": "A well-protected session cookie",
+					"content": "Set-Cookie: __Host-sid=<32 random bytes>; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=28800"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Attribute",
+						"What it closes"
+					],
+					"rows": [
+						[
+							"`HttpOnly`",
+							"Page scripts reading the cookie through `document.cookie`"
+						],
+						[
+							"`Secure`",
+							"The cookie travelling over plain HTTP, where it could be captured. Even a single request for an image would leak it. It goes together with HSTS"
+						],
+						[
+							"`SameSite=Lax`",
+							"The cookie being attached to background requests started by other sites"
+						],
+						[
+							"`__Host-` prefix",
+							"Another subdomain or an HTTP page setting or overwriting your cookie. The browser accepts the name only if the cookie has `Secure`, `Path=/` and no `Domain`"
+						],
+						[
+							"`Max-Age`",
+							"The browser keeping the cookie longer than you want (the server enforces the limit as well)"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The `__Host-` prefix needs explanation. Cookies do not follow the same idea of origin as the rest of the web: a subdomain is allowed to set a cookie for the parent domain and thereby override the application's own. The prefix closes that door and defends against fixation from less trusted subdomains."
+				},
+				{
+					"type": "heading",
+					"text": "Session fixation"
+				},
+				{
+					"type": "paragraph",
+					"text": "Here the attacker does not steal the wristband; he **hands you one he already knows** and waits for you to log in. If the server keeps the same identifier after login, your authentication promotes the session the attacker is holding."
+				},
+				{
+					"type": "diagram",
+					"caption": "Session fixation",
+					"content": "attacker -> victim browser : session id X (planted)\nvictim   -> server         : POST /login + cookie X\nserver                     : X is now \"alice\"  (same id kept)\nattacker -> server         : GET /me + cookie X  => alice's data\n\nFix: on login, create a NEW id and destroy the old one."
+				},
+				{
+					"type": "paragraph",
+					"text": "The rule: **change the identifier on every change of privilege** (login, logout, raising access)."
+				},
+				{
+					"type": "heading",
+					"text": "Ending a session and its limits"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Logout is a server operation.** Erasing the cookie in the browser is not enough. If the record stays valid on the server, anyone who copied the identifier before (from a shared computer, a log, a script) can still use it. Delete or invalidate the record.",
+						"**Never put the identifier in the URL** (`/orders?sid=...`). URLs get copied, stored in browser history and in server and proxy logs, and sent to other sites in the `Referer` header. Cookies were designed to carry it without those leaks.",
+						"**Use two timeouts.** The idle timeout (for example 15 minutes without activity) shrinks the window for an abandoned device. The absolute timeout (for example 8 hours total) caps the life of a captured identifier, because a stolen id used continuously never becomes idle. Sensitive applications use both and renew the id from time to time."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "An idle timeout is a library that puts your book back after 15 minutes if you left the table. An absolute timeout is a rule that every book must be returned by closing time, even if you never left the chair."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Session id: random and long. Cookie: `HttpOnly`, `Secure`, `SameSite`, preferably `__Host-`. New id at login, real logout on the server, never in the URL, and both idle and absolute timeouts."
+				}
+			]
+		},
+		{
+			"id": "jwt-oauth-oidc",
+			"title": "JWT, OAuth 2.0 and OpenID Connect: tokens and delegated login",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Some systems do not keep a session on the server. Instead they give you a signed note, a **JSON Web Token (JWT)**, and trust what is written on it, as long as the signature checks out. It is like a concert wristband with a hologram: the guard does not call the box office, he just checks the hologram. A JWT is three texts joined by dots:"
+				},
+				{
+					"type": "diagram",
+					"caption": "Anatomy of a JWT",
+					"content": "  base64url(header) . base64url(payload) . signature\n       |                   |                  |\n  how it was signed     the claims        proof the issuer\n  {\"alg\":\"HS256\"}     {\"sub\":\"bob\",      wrote the first\n                        \"exp\":1800000900}  two parts"
+				},
+				{
+					"type": "paragraph",
+					"text": "Two facts shape everything. First, the payload is only **encoded** with base64url, not encrypted. Anyone with the token can read it with any tool, so never put secrets or unneeded personal data in it. The signature guarantees that nothing was changed and who issued it, not secrecy. Second, the **header is written by the sender**. Whatever the verifier reads from it before the signature is checked is a suggestion from a stranger."
+				},
+				{
+					"type": "heading",
+					"text": "The checks a verifier must do"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Check",
+						"Why"
+					],
+					"rows": [
+						[
+							"The `alg` in the header matches the algorithm the **server** expects",
+							"Otherwise the sender decides whether any checking happens at all. The algorithm `none` means \"no signature\"; a verifier that obeys the token accepts a forged note"
+						],
+						[
+							"The signature is valid",
+							"Proves it was issued by the key holder and was not changed"
+						],
+						[
+							"`exp` is later than now (a small tolerance is fine)",
+							"Expiry limits the damage of a leaked token. A verifier that never compares `exp` accepts old tokens forever"
+						],
+						[
+							"`iss` is the issuer you trust",
+							"The token comes from the right place"
+						],
+						[
+							"`aud` includes **this** service",
+							"A token made for the reports service must not work on the payments service, even with a correct signature"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A valid signature alone is not enough: the token may be authentic but expired, or authentic but meant for someone else. Mature libraries check all of this by default and you pass them an explicit list of allowed algorithms (usually one). Hand-written verifiers tend to forget steps."
+				},
+				{
+					"type": "paragraph",
+					"text": "Another trap is the secret. With **HS256** the same key signs and verifies, so all the strength is the key's randomness. If the key is a human word such as `secret`, an attacker who has **one captured token** can try guesses on their own computer, offline, without touching the server and without any lockout, until one reproduces the signature. Then they can sign any payload. An HS256 key needs at least 256 randomly generated bits, never a memorable word."
+				},
+				{
+					"type": "paragraph",
+					"text": "Also, a stateless token cannot be taken back: after logout or theft it works until `exp`. The usual design is a short-lived access token (minutes) plus a server-side refresh token that is rotated and revocable."
+				},
+				{
+					"type": "heading",
+					"text": "OAuth 2.0 and OpenID Connect"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagine you give a valet the car key, but a special one that only opens the doors and starts the engine, not the glovebox or the trunk. **OAuth 2.0** is that idea: it lets an app act on your behalf with limited rights (the **scopes**), without ever seeing your password. It solves delegated authorisation: \"may this app access that resource for the user?\" The result is an **access token** meant for an API."
+				},
+				{
+					"type": "paragraph",
+					"text": "OAuth does not say who the user is. **OpenID Connect (OIDC)** is a thin layer on top of OAuth that adds authentication. It delivers an **ID token**, a signed JWT with the identity of the user, and a user-info endpoint."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspect",
+						"Access token",
+						"ID token"
+					],
+					"rows": [
+						[
+							"Answers",
+							"May this app call that API, with which scopes?",
+							"Who logged in?"
+						],
+						[
+							"Meant for",
+							"The API (resource server)",
+							"The client app itself (its `aud` is the client id)"
+						],
+						[
+							"Sent to the API?",
+							"Yes, in `Authorization: Bearer`",
+							"No. An API that accepts ID tokens stops checking that permission was granted for it"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Apps such as mobile apps and single-page applications cannot keep a client secret. The recommended flow for every client today is the **authorisation code flow with PKCE**, not the older implicit flow. With [[PKCE|Proof Key for Code Exchange: a secret made fresh for each login attempt]] the app creates a random `code_verifier`, sends its hash (`code_challenge`) when asking for the code, and sends the original value when trading the code for tokens. Someone who intercepts the authorisation code but did not start the flow does not have the verifier, so the code is useless to them."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Do not trust the token's own header, do not store secrets in the payload, do not skip `exp`, `iss` and `aud`, and do not send the ID token to an API."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A JWT is signed, not secret. Pin the algorithm, use a long random key, check signature, `exp`, `iss` and `aud`. OAuth 2.0 delegates authorisation (access token); OIDC adds authentication (ID token); PKCE protects the code."
+				}
+			]
+		},
+		{
+			"id": "access-control",
+			"title": "Access control: IDOR, roles and mass assignment",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "In a school, your student card lets you into the building (authentication). But it does not open the teachers' room or other students' lockers (authorisation). **Broken access control** happens when a program forgets to check the second part. It was the number one category in the OWASP Top 10 (2021)."
+				},
+				{
+					"type": "paragraph",
+					"text": "The most famous form is **IDOR (insecure direct object reference)**. A logged-in user changes `/invoices/1001` to `/invoices/1002` in the address bar and sees someone else's invoice. The number in the URL, body or hidden field is only a request. The server must decide, on every request, whether **this user** may access **that object**. Being logged in is not enough."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Vulnerable and fixed handler",
+					"content": "// Vulnerable: knows who you are, never asks whether it is yours\nconst invoice = await db.invoices.findById(params.id);\n\n// Fixed: the owner is part of the query itself\nconst invoice = await db.invoices.findOne({\n\tid: params.id,\n\townerId: session.user.id,\n});\nif (!invoice) return status(404);"
+				},
+				{
+					"type": "paragraph",
+					"text": "Putting the owner in the query (`WHERE id = $1 AND owner_id = $2`), or going through a single central policy function, means no route can forget the rule."
+				},
+				{
+					"type": "heading",
+					"text": "Two directions of the same flaw"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Direction",
+						"What the user reaches",
+						"Example"
+					],
+					"rows": [
+						[
+							"Horizontal",
+							"Data of another user at the same level",
+							"IDOR: reading another customer's invoice"
+						],
+						[
+							"Vertical",
+							"A function of a higher role",
+							"A regular user types `/admin/users` and the page answers"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Hiding the \"Manage users\" link from regular users is only navigation. The route must check the role itself. Everything on the client (pages, apps, hidden fields) is under the user's control. The interface can hide things to be friendly, but the **security decision happens on the server, on every request**, preferably in one reused mechanism."
+				},
+				{
+					"type": "heading",
+					"text": "Good rules"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Deny by default.** Refuse everything except what a rule explicitly allows. With an allow-list, a forgotten rule blocks a legitimate use, which someone complains about quickly. With a blocklist, a forgotten rule silently exposes data. You are choosing the way the system fails.",
+						"**Unpredictable ids are not access control.** Swapping sequential numbers for random UUIDs is a useful extra against guessing, but an identifier is designed to circulate. If another person gets the id by any means, a missing check still lets them in.",
+						"**Check mass assignment.** If a route lets users edit their own profile and does `update(session.user.id, body)`, a user may add `\"role\": \"admin\"` to the body and promote themselves, even though ownership was checked. Authorisation applies to fields too. Validate the body with a schema listing the allowed fields and refuse the rest.",
+						"**Choose the refusal code on purpose.** A private-repository service may answer 404 instead of 403 when the repository exists but is not yours, because a 403 confirms it exists. Both are valid refusals; the 404 hides the existence of the resource. Either way, the decision is on the server and the answer is consistent, timing included."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "\"Only admins see the link\" is not access control. Anyone can type the address."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "On every request, on the server: who is this, and may they do this to this object and these fields? Start from deny, keep the owner in the query, whitelist writable fields."
+				}
+			]
+		},
+		{
+			"id": "ssrf-path-traversal-upload",
+			"title": "SSRF, path traversal and file upload",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "This section is about three ways in which a server is tricked into using something it should not: a **web address**, a **file path** or a **file name** that came from outside."
+				},
+				{
+					"type": "heading",
+					"text": "SSRF: the helpful server"
+				},
+				{
+					"type": "paragraph",
+					"text": "Many features make the server act as a browser: link previews, \"import from URL\", webhooks, image fetchers. Imagine asking a friendly office worker, \"please call this number for me\". If you choose the number, you may ask him to call the boss's private line, which only the people inside the office can reach. In **server-side request forgery (SSRF)** the user supplies a URL and the server fetches it from **inside** the company network, so it can reach `localhost`, internal services and the cloud metadata address that have no password because \"only internal machines can connect\". It has its own OWASP category (A10, 2021)."
+				},
+				{
+					"type": "paragraph",
+					"text": "The fix follows the cause: the application must decide where it is willing to connect, and do the check on what the connection **really uses**, the numeric address, at **every hop**."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**A blocklist of text does not work.** Rejecting URLs that contain `localhost` or `127.0.0.1` fails, because the same address has many spellings and any DNS name can point inward. Parse the URL, accept only `http` and `https`, **resolve the name** and refuse loopback, private and link-local addresses. When the set of destinations is known, an **allow-list** of hosts is stronger than any blocklist.",
+						"**Redirects are a trap.** A permitted site can answer `302` with a `Location` that points to an internal service, and HTTP clients follow redirects by default. Turn automatic redirects off, follow them yourself up to a small limit, and re-check every new destination.",
+						"**Check and use must be the same lookup.** If you resolve the name, check it, then give the name to the client and it resolves again, a malicious DNS server can answer with a public address the first time and an internal one the second time (DNS rebinding). Resolve once, validate, connect to that same address, and keep the name only for the `Host` header and for TLS.",
+						"**Add network rules too.** Run the component that fetches user URLs in an isolated segment or behind an egress proxy, and authenticate between internal services. Application checks are one layer.",
+						"**Hiding the response is not a fix.** The request is still made (blind SSRF)."
+					]
+				},
+				{
+					"type": "diagram",
+					"caption": "Validation that follows the real connection",
+					"content": "URL from user\n  -> parse: scheme is http/https? host on allow-list?\n  -> resolve host once -> every address public?\n  -> connect to THAT address (Host header = name)\n  -> redirect? start again from the top (max 3 hops)"
+				},
+				{
+					"type": "heading",
+					"text": "Path traversal: walking out of the folder"
+				},
+				{
+					"type": "paragraph",
+					"text": "A download route joins the `uploads` folder with the file name from the request. A name like `../../etc/something` uses the sequence `..`, which means \"go up one folder\". The operating system resolves it as usual, and the file read is outside the uploads folder. This breaks the assumption that a name stays inside a folder."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Vulnerable and fixed",
+					"content": "// Vulnerable: join trusts the name\nconst target = path.join(UPLOADS, name);\n\n// Fixed: validate the RESULT, not the input\nconst target = path.resolve(UPLOADS, name);\nif (!target.startsWith(UPLOADS + path.sep)) return status(400);"
+				},
+				{
+					"type": "paragraph",
+					"text": "Validate the final absolute path (resolving symbolic links too) and check it is inside the allowed root. Better still, never accept paths from the client: receive an identifier and look it up in an index. Run the process with few permissions, because the reach of the flaw is whatever the process may read."
+				},
+				{
+					"type": "heading",
+					"text": "File upload: the name, the type and the content are claims"
+				},
+				{
+					"type": "paragraph",
+					"text": "When a user sends a file, the **name**, the **extension** and the declared `Content-Type` are all just text the client chose. A header saying `image/png` proves nothing. A safe upload combines several measures."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Measure",
+						"Why"
+					],
+					"rows": [
+						[
+							"Generate a **random name** on the server, keep the original name as metadata",
+							"The client's name is never used in the file system, so it cannot traverse or overwrite"
+						],
+						[
+							"Allow-list of types, and check the **leading bytes** (the file signature)",
+							"The declared type is only a claim"
+						],
+						[
+							"Size limit",
+							"Avoids filling the disk or the memory"
+						],
+						[
+							"Store outside executable or directly served folders; send `X-Content-Type-Options: nosniff`",
+							"A file full of HTML must not be run as a page or a program"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A coat check gives you a ticket number instead of writing your own label on the hook. The ticket is chosen by the cloakroom, so you cannot make the attendant walk into the staff room by writing a tricky label."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Never let outside text pick a destination, a path or a file name. Validate the real result (resolved address, resolved path, file bytes), at every hop, and keep the client's claims out of the file system."
+				}
+			]
+		},
+		{
+			"id": "secrets-supply-chain",
+			"title": "Secrets, dependencies and the supply chain",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **secret** is anything that proves who you are to another system: an API key, a database password, a private key. Think of the keys of the school. You do not tape them to the front door, and you do not make a photocopy for every visitor. Secrets are treated the same way."
+				},
+				{
+					"type": "heading",
+					"text": "Where secrets live"
+				},
+				{
+					"type": "paragraph",
+					"text": "A secret is **configuration, not code**. It enters the process at run time, from environment variables or from a **secrets manager** (a vault) that controls who may read it, logs each use and makes rotation easy. The repository keeps only the names of the expected variables, never the values."
+				},
+				{
+					"type": "paragraph",
+					"text": "What if a developer commits a key by mistake and then deletes the line in a new commit? The key is still in the history, and copies of the repository spread quickly. So the first effective action is to **revoke the key and issue a new one** (rotation). Only then clean the history, check whether the key was used, and prevent it from happening again with secret scanning before commits."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Revoke the leaked key and create a new one.",
+						"Check the logs for any use of the old key.",
+						"Clean the history and the copies, if possible.",
+						"Add secret scanning before commits so it does not happen again."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Dependencies: other people's code"
+				},
+				{
+					"type": "paragraph",
+					"text": "Most of your application is code written by others: libraries, and the libraries of those libraries. This is the **supply chain**. Two ideas protect it."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Lockfile.** Files such as `bun.lock` or `package-lock.json` record the exact version and the hash of every dependency. Without one, a range such as `^1.2.0` installs whatever is newest on that day, and different machines may run different code. Commit the lockfile and use it in strict mode in builds.",
+						"**Keep checking, even if you change nothing.** An application released a year ago with every dependency audited can be vulnerable today, because new flaws are disclosed in versions you already installed. Know what you have installed (indirect dependencies included), follow security advisories, update often and remove what you do not use. This is the OWASP category Vulnerable and Outdated Components."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Deleting a leaked secret from the latest commit does not make it safe. The only safe response is to revoke it and replace it."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Secrets come from the environment or a vault, never from the repository. If one leaks, rotate first. Lock your dependency versions and keep watching for new advisories."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Putting it together: one flaw, one habit",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "All these flaws look different, but most share one of two roots. Either **the program mixed up data and code** (injection, XSS), or **the program trusted a claim from the outside** (an id, a role, a file name, a URL, a token header) **without checking it on the server**. The table below connects each flaw to the habit that stops it."
+				},
+				{
+					"type": "table",
+					"caption": "Flaw, cause and main defence",
+					"headers": [
+						"Flaw",
+						"Root cause",
+						"Main defence",
+						"Extra layers"
+					],
+					"rows": [
+						[
+							"SQL / command injection",
+							"Data glued into command text",
+							"Parameters, argument lists",
+							"Validation, least privilege, allow-list for structure"
+						],
+						[
+							"XSS",
+							"Data parsed as markup or script",
+							"Output encoding, `textContent`",
+							"Sanitiser, CSP, URL scheme check"
+						],
+						[
+							"CSRF",
+							"Browser sends cookies by itself",
+							"Anti-CSRF token",
+							"`SameSite`, no state change on GET"
+						],
+						[
+							"Weak passwords",
+							"Fast or unsalted hashing",
+							"Argon2id / bcrypt with salt",
+							"Pepper, MFA, attempt limits"
+						],
+						[
+							"Session theft / fixation",
+							"Predictable or reused id, server keeps session after logout",
+							"Random id, new id at login, server-side logout",
+							"`HttpOnly`, `Secure`, `__Host-`, timeouts"
+						],
+						[
+							"JWT mistakes",
+							"Trusting the header and skipping claims",
+							"Pinned algorithm, strong key",
+							"`exp`, `iss`, `aud` checks"
+						],
+						[
+							"IDOR / mass assignment",
+							"No ownership or field check",
+							"Authorise on the server, every request",
+							"Deny by default, field allow-list"
+						],
+						[
+							"SSRF",
+							"Server fetches user-chosen address",
+							"Allow-list + resolved-address check",
+							"Manual redirects, pinned connection, network egress rules"
+						],
+						[
+							"Path traversal / upload",
+							"Client name or type trusted",
+							"Validate resolved path, random file name",
+							"Content signature check, `nosniff`"
+						],
+						[
+							"Leaked secret",
+							"Secret in the repository",
+							"Environment or vault, rotate",
+							"Secret scanning"
+						],
+						[
+							"Outdated component",
+							"Known holes in old libraries",
+							"Lockfile + advisories + updates",
+							"Remove unused packages"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Common mistakes to avoid"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Fixing the symptom (banning some characters) instead of the cause (keeping code and data apart).",
+						"Hiding things in the interface and calling it access control.",
+						"Using one defence and stopping. Layers fail one at a time; stack them.",
+						"Treating the OWASP Top 10 as a complete list or a certificate.",
+						"Believing that encrypting or hashing something is the same as authenticating it."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Four habits that cover most of this subject: **do not mix data with code**, **check everything on the server**, **give everything the least power it needs**, and **stack independent protections**. Think about what can go wrong while you are still drawing the plan."
+				}
+			]
+		}
+	]
+}

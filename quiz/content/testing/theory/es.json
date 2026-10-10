@@ -1,0 +1,1328 @@
+{
+	"area": "testing",
+	"intro": [
+		"Imagina que construiste un robot de juguete. Antes de dárselo a un amigo, aprietas todos los botones para ver si camina, habla y gira la cabeza. Estás **probando** el robot. Una [[prueba|una pequeña verificación que ejecuta el programa y compara lo que hizo con lo que debería haber hecho]] en software es la misma idea: un pedacito de código que usa tu programa y dice 'sí, está bien' o 'no, está mal'.",
+		"¿Por qué importa esto? Los programas cambian todo el tiempo. Cada cambio puede arreglar una cosa y romper otra muy lejos. Si una computadora puede volver a revisar todo en pocos segundos, las personas no tienen miedo de tocar el código. Las apps, los bancos, los juegos y el software dentro de los autos solo se pueden mejorar con seguridad porque muchas pruebas vigilan todo, todos los días.",
+		"En este resumen vas a aprender: los distintos tamaños de prueba y por qué queremos muchas pequeñas y pocas grandes, cómo mantener una prueba sola y limpia, cómo usar ayudantes de mentira llamados dobles de prueba, el ritmo rojo-verde-refactorizar del desarrollo guiado por pruebas, cómo probar piezas que trabajan juntas y una app completa en el navegador, verificaciones rápidas de salud y verificaciones contra errores antiguos, cómo medir si tus pruebas son buenas, cómo la computadora puede inventar casos de prueba por ti, por qué algunas pruebas fallan por suerte, cómo elegir buenos valores de prueba y cómo las pruebas se ejecutan solas cada vez que alguien comparte código. Al final estarás listo para el quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "El panorama general: ¿para qué sirve una prueba?",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una prueba tiene tres partes. Primero **preparas** una situación. Luego **haces** la cosa que quieres verificar. Por último **comparas** el resultado con lo que esperabas. Si el resultado es distinto, la prueba falla y se avisa a un humano."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Una prueba es como la hoja de respuestas de un examen. La profesora conoce la respuesta correcta de cada pregunta. La computadora hace el ejercicio y la hoja de respuestas dice 'correcto' o 'incorrecto'. Lo bueno es que la computadora hace miles de ejercicios en pocos segundos y nunca se cansa."
+				},
+				{
+					"type": "heading",
+					"text": "Palabras que vas a encontrar"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Defecto (bug)**: un error en el código que hace que el programa se comporte mal.",
+						"**Suite de pruebas**: un grupo de pruebas que se ejecutan juntas, como un examen entero hecho de muchas preguntas.",
+						"**Pasar y fallar**: una prueba pasa cuando el resultado es el esperado y falla cuando no lo es. Muchas herramientas muestran pasar en verde y fallar en rojo.",
+						"**Verificación**: comprobar que el software hace lo que dice su descripción escrita (la especificación). La pregunta es: ¿construimos la cosa bien?",
+						"**Validación**: comprobar que el software es lo que el cliente realmente necesita. La pregunta es: ¿construimos la cosa correcta? Un programa puede pasar la primera comprobación y fallar la segunda, por ejemplo cuando la propia descripción estaba equivocada.",
+						"**Prueba funcional**: comprueba qué hace el sistema, por ejemplo 'para esta entrada, esta salida'.",
+						"**Prueba no funcional**: comprueba cómo se comporta el sistema mientras lo hace, por ejemplo su rapidez, cuántos usuarios aguanta, su seguridad y su facilidad de uso."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Las pruebas pueden mostrar que existen errores, pero nunca pueden mostrar que no existe ningún error. Una prueba solo mira los casos en los que pensamos. Por eso elegimos las pruebas con cuidado, como verás en este resumen."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Una buena suite de pruebas es una red de seguridad: deja que las personas cambien el código sin miedo, porque un error pone algo en rojo."
+				}
+			]
+		},
+		{
+			"id": "test-pyramid-levels",
+			"title": "Niveles de prueba y la pirámide de pruebas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Piensa en revisar un autito de juguete. Puedes mirar solo una rueda. Puedes mirar la rueda y el eje juntos. O puedes poner el autito entero en el piso y empujarlo. Cada revisión mira una pieza más grande. Con las pruebas es igual, y llamamos a cada tamaño un **nivel de prueba**."
+				},
+				{
+					"type": "table",
+					"caption": "Los niveles, de pequeño a grande",
+					"headers": [
+						"Nivel",
+						"Qué se ejecuta",
+						"Velocidad",
+						"Si falla, ¿dónde está el error?"
+					],
+					"rows": [
+						[
+							"Unitaria",
+							"Una pieza pequeña (una función o una clase), sola",
+							"Muy rápida",
+							"Fácil de encontrar: se ejecutaron pocas líneas"
+						],
+						[
+							"Integración",
+							"Dos o más piezas trabajando juntas, como el código más una base de datos real",
+							"Media",
+							"En la conexión entre las piezas"
+						],
+						[
+							"Sistema o de extremo a extremo (end-to-end)",
+							"La aplicación entera, usada como la usaría una persona",
+							"Lenta",
+							"En cualquier lugar: la prueba solo dice que algo se rompió"
+						],
+						[
+							"Aceptación",
+							"El cliente decide si el producto es suficientemente bueno",
+							"La más lenta",
+							"No se trata de errores: se trata de la necesidad del cliente"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "La **pirámide de pruebas** es un consejo sobre cuántas pruebas de cada nivel escribir: muchas pruebas unitarias en la base ancha, menos pruebas de integración en el medio y poquísimas pruebas de extremo a extremo arriba. El motivo es el costo. Cuanto más alto el nivel, más lenta, más frágil y más cara es cada prueba."
+				},
+				{
+					"type": "diagram",
+					"caption": "La pirámide y su versión al revés",
+					"content": "      la pirámide                 el cono de helado\n         /\\                      ___________________\n        /e2e\\   pocas            \\ muchas e2e+manual /\n       /------\\                   \\ pocas integr. /\n      / integr.\\  algunas          \\ poquísimas /\n     /----------\\                  \\ unitarias /\n    / unitarias  \\  muchas          \\_________/\n   /--------------\\         lenta, inestable, difícil de depurar"
+				},
+				{
+					"type": "paragraph",
+					"text": "La versión al revés es un error conocido, llamado **cono de helado** o pirámide invertida. Casi toda la verificación la hacen pruebas de extremo a extremo lentas y pruebas manuales. La suite tarda, falla por motivos que nada tienen que ver con el código y no dice dónde está el error. El remedio es empujar cada verificación **hacia abajo**, hasta el nivel más bajo que puede ver el comportamiento."
+				},
+				{
+					"type": "chart",
+					"title": "Costo típico de una prueba (milisegundos, medido en el mini-proyecto test-pyramid de este repositorio)",
+					"unit": "ms",
+					"bars": [
+						{
+							"label": "unitaria",
+							"value": 3.6
+						},
+						{
+							"label": "integración",
+							"value": 7.6
+						},
+						{
+							"label": "extremo a extremo",
+							"value": 690
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "La aritmética de la pirámide"
+				},
+				{
+					"type": "paragraph",
+					"text": "Supón una suite con 400 pruebas unitarias de 5 ms, 50 pruebas de integración de 200 ms y 10 pruebas de extremo a extremo de 6 segundos, ejecutadas una tras otra. El tiempo de cada nivel es el número de pruebas por la duración de una prueba."
+				},
+				{
+					"type": "chart",
+					"title": "Segundos que gasta cada nivel de esa suite",
+					"unit": "s",
+					"bars": [
+						{
+							"label": "400 pruebas unitarias",
+							"value": 2
+						},
+						{
+							"label": "50 pruebas de integración",
+							"value": 10
+						},
+						{
+							"label": "10 pruebas de extremo a extremo",
+							"value": 60
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "La suite completa tarda 72 segundos, y las 10 pruebas lentas (una pequeña parte de todas) usan 60 de ellos, cerca del 83% del tiempo. Por eso no queremos una cima ancha."
+				},
+				{
+					"type": "heading",
+					"text": "¿Qué nivel ve qué error?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una prueba solo encuentra errores que están en el camino que ejecuta. Un error en una regla de precio escrita como función simple lo ve una prueba unitaria. Un nombre de columna equivocado entre el código y la base de datos solo se ve cuando código y base se ejecutan juntos. Un botón cuyo clic está conectado al elemento equivocado de la página solo lo ve una prueba que abre la página, porque el código del servidor está perfecto."
+				},
+				{
+					"type": "heading",
+					"text": "Las tres etapas de Sommerville"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Pruebas de desarrollo**: las hacen quienes construyen el sistema, para buscar defectos (pruebas unitarias, de componente y de sistema).",
+						"**Pruebas de versión (release)**: un equipo aparte prueba una versión completa para mostrar que cumple los requisitos y es suficientemente buena para usarse.",
+						"**Pruebas de usuario**: usuarios o clientes reales prueban el sistema. En la **prueba alfa** prueban junto con el equipo. En la **prueba beta** una versión inicial va a voluntarios que la usan en su entorno real. En la **prueba de aceptación** el cliente decide si acepta el sistema."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Prueba cada comportamiento en el nivel más bajo que puede verlo. Muchas pruebas baratas abajo, pocas caras arriba."
+				}
+			]
+		},
+		{
+			"id": "unit-tests-isolation",
+			"title": "Pruebas unitarias y aislamiento",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una **prueba unitaria** verifica una pieza pequeña del programa, como una función, sola. 'Sola' es la palabra clave. Para saber si una bombilla funciona, la pruebas sola, no dentro de toda la casa."
+				},
+				{
+					"type": "paragraph",
+					"text": "Una buena prueba unitaria es **rápida** (milisegundos), **aislada** (no depende de otras pruebas), **repetible** (mismo resultado siempre) y **autoverificable** (la propia prueba dice pasó o falló con aserciones, sin que una persona lea la salida y compare). Una suite autoverificable ejecuta miles de pruebas y tú solo miras las que fallaron."
+				},
+				{
+					"type": "heading",
+					"text": "Arrange, Act, Assert"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Una prueba, tres partes visibles",
+					"content": "test(\"un cupón de 10% baja 200 a 180\", () => {\n\t// Arrange: preparar la situación\n\tconst cart = new Cart([{ price: 200 }]);\n\t// Act: hacer la única cosa que se prueba\n\tconst total = cart.totalWith(\"TEN\");\n\t// Assert: comparar con lo esperado\n\texpect(total).toBe(180);\n});"
+				},
+				{
+					"type": "paragraph",
+					"text": "Mantén **un solo Act por prueba**. Así, cuando la prueba falla, sabes exactamente qué comportamiento está mal."
+				},
+				{
+					"type": "heading",
+					"text": "La fixture y la familia xUnit"
+				},
+				{
+					"type": "paragraph",
+					"text": "La [[fixture|los objetos y datos que una prueba necesita antes de poder ejecutarse]] es el escenario donde actúa la prueba. En la familia xUnit de herramientas (JUnit, pytest, Bun test y muchas más), `setUp` arma la fixture **antes de cada prueba** y `tearDown` la limpia **después de cada prueba**. Como cada prueba empieza en un escenario nuevo y no deja nada atrás, las pruebas pueden ejecutarse en cualquier orden, o una sola."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Imagina un juego de mesa que guardas de nuevo en la caja después de cada partida. Cada partida nueva empieza con las piezas en el lugar correcto. Si dejaras las piezas donde terminó la última partida, la siguiente dependería de la anterior."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un ejecutor de pruebas (test runner) también debe tratar una prueba que falló como un resultado normal. Captura el error de cada prueba, lo anota y sigue con la siguiente, de modo que una sola ejecución muestra todos los fallos a la vez. Un ejecutor que se detuviera en el primer error escondería los demás."
+				},
+				{
+					"type": "heading",
+					"text": "El estado compartido rompe el aislamiento"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Una dependencia de orden escondida",
+					"content": "const cart: string[] = [];          // compartido por todas las pruebas\n\ntest(\"adds an item\", () => {\n\tcart.push(\"book\");\n\texpect(cart.length).toBe(1);\n});\ntest(\"adds a second item\", () => {\n\tcart.push(\"pen\");\n\texpect(cart.length).toBe(2);   // solo pasa si la primera prueba corrió antes\n});"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejecuta el archivo entero y queda verde. Ejecuta solo la segunda prueba en un proceso nuevo y falla, porque la lista empieza vacía, así que después de un push tiene 1 elemento y no 2. La señal clásica de estado compartido es una prueba que pasa en la suite completa pero falla sola o en otro orden."
+				},
+				{
+					"type": "heading",
+					"text": "Qué hace fácil de probar una unidad"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Función pura**: para los mismos argumentos devuelve siempre el mismo valor y no cambia nada fuera de ella. No necesita reloj, números aleatorios, archivos ni red, así que solo das argumentos y revisas el valor devuelto. Pon la lógica en funciones puras y deja los efectos secundarios en una capa fina alrededor.",
+						"**[[Inyección de dependencias|entregar a un trozo de código lo que necesita desde afuera, en lugar de dejar que lo cree él mismo]]**: si `registerUser` hace `new SmtpMailer()` por dentro, la prueba no puede impedir que se envíe un correo de verdad. Si recibe un `mailer` como parámetro o en el constructor, la prueba le entrega un mailer de mentira.",
+						"**Probar por la interfaz pública**: revisa lo que la clase promete (valores devueltos, estado visible). Una prueba que lee un campo privado se rompe cuando el código se reescribe por dentro, aunque nada haya cambiado para los usuarios.",
+						"**Objetos con estado**: el efecto de un método depende de los métodos llamados antes. Probar una clase `Connection` con una prueba por método no basta: prueba también las secuencias, incluidas las inválidas, como `send` después de `close`. Todas las líneas pueden estar cubiertas y la secuencia peligrosa no ejecutarse nunca."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Las pruebas unitarias son rápidas, solas, repetibles y autoverificables. Lo que no ven es cómo funcionan las piezas juntas."
+				}
+			]
+		},
+		{
+			"id": "test-doubles",
+			"title": "Dobles de prueba: ayudantes de mentira",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una película usa un doble en las escenas peligrosas. En software, un **doble de prueba** es un objeto que ocupa el lugar de un ayudante real (una base de datos, un servidor de correo, un reloj) durante una prueba. Lo hacemos porque el ayudante real puede ser lento, costar dinero o ser imposible de controlar."
+				},
+				{
+					"type": "paragraph",
+					"text": "Las palabras de abajo vienen de Gerard Meszaros y las usa Martin Fowler. Son cinco tipos."
+				},
+				{
+					"type": "table",
+					"caption": "Los cinco tipos de doble de prueba",
+					"headers": [
+						"Tipo",
+						"Qué hace",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"Dummy",
+							"Solo llena un parámetro que la firma exige. Nunca se usa de verdad.",
+							"Un `logger` pasado al constructor en una prueba que no registra nada"
+						],
+						[
+							"Stub",
+							"Da respuestas preparadas a las llamadas que recibe. Controla las **entradas indirectas** del código probado.",
+							"Un servicio de cotización que siempre responde 5,2"
+						],
+						[
+							"Spy",
+							"Un stub que además anota cómo lo llamaron. La prueba mira las anotaciones **después** de actuar.",
+							"Un mailer escrito a mano que guarda una lista `sent`"
+						],
+						[
+							"Mock",
+							"Recibe **antes** de que la prueba actúe qué llamadas esperar, y verifica por sí mismo.",
+							"Un objeto de biblioteca con 'send debe llamarse una vez con esta dirección'"
+						],
+						[
+							"Fake",
+							"Una versión real y funcional con un atajo que la hace inadecuada para producción.",
+							"Un repositorio que guarda los registros en un `Map` en memoria"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un dummy es el cartón con forma de silla en una foto. Un stub es un loro que siempre repite la misma frase. Un spy es un amigo que anota todo lo que pasó. Un mock es una profesora que dice antes lo que debes hacer y lo revisa. Un fake es una cocina de juguete que cocina de verdad, pero solo con comida de plástico."
+				},
+				{
+					"type": "heading",
+					"text": "Verificación de estado y verificación de comportamiento"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Verificación de estado**: la prueba usa la unidad y luego mira el resultado, el valor devuelto o el estado final de los objetos.",
+						"**Verificación de comportamiento**: la prueba mira las **llamadas** hechas a los ayudantes. Es necesaria cuando el efecto es la propia llamada, como enviar un correo.",
+						"El segundo estilo ata la prueba a cómo está escrito el código. Una prueba que solo cuenta llamadas puede pasar cuando la respuesta está mal y fallar después de una refactorización inofensiva. Cuando hay un valor devuelto o un estado final, la aserción principal debe ser sobre él."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Un fake suele dar pruebas más cortas y más fuertes que un mock cuando el ayudante tiene memoria. Si un servicio de registro guarda un usuario y después lo busca y lo actualiza, un repositorio fake deja que la prueba solo mire el usuario guardado al final. Un mock necesitaría una expectativa por cada llamada, lo que describe la conversación, no el resultado."
+				},
+				{
+					"type": "heading",
+					"text": "Usos que vale la pena conocer"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Situaciones difíciles de provocar**: disco lleno, un servicio que responde 503, un timeout. Un doble configurado para fallar causa el error cuando lo pides, y así revisas cómo reacciona el código. El doble reemplaza al ayudante (el cliente HTTP), nunca a la unidad que se prueba.",
+						"**El tiempo como dependencia**: el código que lee el reloj del sistema tiene una entrada escondida. Inyecta un `FakeClock` que empieza en un instante fijo y solo avanza cuando la prueba llama a `advance`. Así 'el token expira después de 15 minutos' se prueba en milisegundos, justo en el borde, y nunca falla por suerte.",
+						"**Self Shunt**: el nombre que da Kent Beck al caso en que la propia clase de prueba hace el papel del doble."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Un doble congela lo que el equipo creía del ayudante real el día en que se escribió. Si el servicio real cambia su respuesta, las pruebas con dobles siguen verdes y producción se rompe. Una suite construida sobre dobles necesita algunas pruebas de integración o de contrato que comparen la creencia con la realidad."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Dummy llena, stub responde, spy registra, mock espera, fake funciona de forma sencilla. Prefiere revisar resultados a contar llamadas."
+				}
+			]
+		},
+		{
+			"id": "tdd-cycle",
+			"title": "Desarrollo guiado por pruebas: rojo, verde, refactorizar",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La mayoría de las personas escribe el código primero y la prueba después. El **desarrollo guiado por pruebas** (TDD, de test-driven development), creado por Kent Beck, lo da vuelta: escribes la prueba primero. Suena raro, pero es como dibujar la línea de meta antes de correr la carrera."
+				},
+				{
+					"type": "diagram",
+					"caption": "El ciclo del TDD",
+					"content": "    +--------+   hacerla pasar, rápido   +--------+\n    | ROJO   | ------------------------> | VERDE  |\n    | prueba |                           | todas  |\n    | nueva  |                           | las    |\n    | falla  | <------------------------ | pasan  |\n    +--------+    siguiente prueba chica  +---+----+\n         ^                                   |\n         |   limpiar, mismo comportamiento   v\n         +------------------------------ REFACTORIZAR"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"**Rojo (red)**: escribe una prueba pequeña que falla.",
+						"**Verde (green)**: hazla pasar de la forma más rápida que puedas.",
+						"**Refactorizar (refactor)**: mejora la estructura y quita duplicación **sin cambiar el comportamiento**, con todas las pruebas aún pasando."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El TDD tiene dos reglas: escribe código nuevo solo cuando una prueba automatizada ha fallado y elimina la duplicación. Si surge una idea en medio del trabajo (por ejemplo 'este método debería rechazar números negativos'), primero se convierte en una prueba, o en una línea de tu **lista de tareas**. La lista de tareas es la memoria de corto plazo del TDD: escribes los casos que conoces, agregas los que aparecen en el camino y los tachas cuando pasan."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Es como escalar con cuerda y gancho. Clavas un gancho (una prueba), subes hasta él (código) y solo entonces clavas el siguiente. Si te caes, caes solo un poquito."
+				},
+				{
+					"type": "heading",
+					"text": "¿Por qué ver fallar la prueba primero?"
+				},
+				{
+					"type": "paragraph",
+					"text": "El paso rojo prueba la propia prueba. Si una prueba nueva ya pasa antes de que exista el código, o falla por un motivo tonto como un error de tipeo o un import equivocado, no está verificando lo que querías. Solo después de verla fallar por la **razón correcta** la barra verde cuenta como prueba de que funciona."
+				},
+				{
+					"type": "heading",
+					"text": "Tres caminos al verde"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Estrategia",
+						"Qué haces",
+						"Cuándo sirve"
+					],
+					"rows": [
+						[
+							"Fake it (fingir)",
+							"Devuelves una constante que hace pasar la prueba y luego cambias la constante por variables hasta llegar al código real",
+							"Estás inseguro y quieres una barra verde ya"
+						],
+						[
+							"Triangulación",
+							"Esperas un segundo ejemplo antes de generalizar el código",
+							"Aún no conoces la abstracción correcta. Es la más cuidadosa"
+						],
+						[
+							"Implementación obvia",
+							"Escribes el código real directamente",
+							"La solución es clara. Es la más rápida"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Los pasos pueden ser grandes o pequeños. Cuando todo va bien, usa pasos grandes con implementación obvia. Si aparece un rojo inesperado, da pasos más pequeños (fake it, triangulación), porque un paso pequeño limita el lugar del error a pocas líneas."
+				},
+				{
+					"type": "heading",
+					"text": "Leer el historial de una sesión"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada paso deja una firma en la suite. **Rojo**: se agrega una prueba nueva y la suite pasa de verde a rojo. **Verde**: cambia el código de producción y la suite pasa de rojo a verde. **Refactorizar**: cambia el código de producción, la suite está verde antes y después y no aparece ninguna prueba nueva. Nunca mezcles una refactorización con un cambio de comportamiento en el mismo paso: las pruebas que no cambiaron son la prueba de que el comportamiento se mantuvo, y si también editas los valores esperados, pierdes esa garantía."
+				},
+				{
+					"type": "heading",
+					"text": "El ejemplo del dinero"
+				},
+				{
+					"type": "paragraph",
+					"text": "En el libro de Beck, `Dollar` y `Franc` se unen en una sola clase `Money`. `Money` es un **objeto de valor** (value object): se define por sus datos, no por su identidad, así que dos objetos con los mismos valores son iguales. Cuando las clases se unen, la moneda pasa a ser un campo, y `equals` debe compararla también."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Un defecto que una prueba nueva revelaría",
+					"content": "equals(other: Money): boolean {\n\treturn this.amount === other.amount;   // olvida la moneda\n}\n// ¿5 USD es igual a 5 CHF? Una prueba que lo pregunta falla y fuerza la corrección:\n// return this.amount === other.amount && this.currency === other.currency;"
+				},
+				{
+					"type": "heading",
+					"text": "Beneficios y límites"
+				},
+				{
+					"type": "paragraph",
+					"text": "Beneficios que se atribuyen al TDD: cobertura como subproducto, una suite de regresión que crece junto con el programa, depuración más fácil (el error está en las pocas líneas recién escritas) y pruebas que funcionan como documentación ejecutable. El límite: el TDD produce sobre todo pruebas unitarias escritas por el desarrollador, que revisa el código contra lo que él entendió. Formatos incompatibles entre servicios, lentitud bajo carga y la pregunta '¿el usuario necesita esto?' piden otros tipos de prueba."
+				},
+				{
+					"type": "video",
+					"title": "TDD, Where Did It All Go Wrong (Ian Cooper)",
+					"url": "https://www.youtube.com/watch?v=EZ05e7EMOLM"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Rojo, verde, refactorizar. Mira fallar la prueba por la razón correcta. Nunca refactorices y cambies el comportamiento a la vez."
+				}
+			]
+		},
+		{
+			"id": "integration-tests",
+			"title": "Pruebas de integración: piezas trabajando juntas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Dos piezas de un rompecabezas pueden ser perfectas y aun así no encajar. Una **prueba de integración** ejecuta dos o más módulos juntos, por su conexión real. El objetivo son los errores que solo existen en la frontera: parámetros intercambiados, formatos distintos, creencias equivocadas sobre el otro lado, configuración errónea. Las pruebas unitarias reemplazan a los vecinos por dobles y por eso nunca cruzan esa frontera."
+				},
+				{
+					"type": "heading",
+					"text": "Errores de interfaz"
+				},
+				{
+					"type": "paragraph",
+					"text": "Sommerville separa los errores de una interfaz en tres clases."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Clase",
+						"Significado",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"Mal uso (misuse)",
+							"La llamada se hace mal: parámetros intercambiados, faltantes o del tipo equivocado",
+							"`transfer(to, from, amount)` en vez de `transfer(from, to, amount)`"
+						],
+						[
+							"Malentendido (misunderstanding)",
+							"Quien llama supone un comportamiento que la parte llamada no ofrece",
+							"Suponer que la lista vuelve ordenada"
+						],
+						[
+							"Temporización (timing)",
+							"Los dos lados trabajan a velocidades distintas y uno lee datos viejos",
+							"Un lector ve datos compartidos antes de que el escritor termine"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Cómo juntar las piezas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Big-bang**: juntar todos los módulos de una vez y probar el conjunto al final. Un fallo puede venir de cualquier interfaz, así que es muy difícil de localizar.",
+						"**Incremental**: agregar un módulo a la vez y volver a ejecutar las pruebas, de modo que un fallo nuevo apunta a lo que acaba de entrar."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Mientras algunas piezas aún no existen, escribimos código de apoyo. Un **driver** llama al módulo probado en lugar de quien estaría encima. Un **stub** responde en lugar de quien estaría debajo. La integración **bottom-up** (de abajo hacia arriba) empieza con las capas de abajo reales y usa drivers. La **top-down** (de arriba hacia abajo) empieza con las capas de arriba reales y usa stubs. Imagina tres capas, UI sobre Service sobre Repository. Si el equipo construye de abajo hacia arriba y la UI aún no existe, escribe un driver que llame al Service."
+				},
+				{
+					"type": "diagram",
+					"caption": "Bottom-up con un driver",
+					"content": "  [ driver ]  -->  [ Service ]  -->  [ Repository ]\n   código de prueba    real              real\n   (hace el papel de la UI que aún no se escribió)"
+				},
+				{
+					"type": "heading",
+					"text": "¿Base de datos real o fake?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un fake en memoria es rápido, pero solo sabe lo que programamos en él. Una base de datos tiene reglas propias: claves únicas, claves foráneas, tipos, transacciones, el SQL real. Un repositorio que pasa con un `Map` puede romperse en producción con PostgreSQL cuando dos usuarios tienen el mismo correo. Por eso una suite saludable tiene algunas pruebas de integración contra la base real, o al menos el mismo motor."
+				},
+				{
+					"type": "paragraph",
+					"text": "Una base real es compartida, así que cada prueba debe empezar desde el mismo punto. Un truco común: abrir una transacción antes de cada prueba y deshacerla (rollback) después. Todo lo que la prueba escribió desaparece, sin el costo de reconstruir la base, y las pruebas no dependen del orden."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Cada prueba empieza con la tabla vacía",
+					"content": "beforeEach(() => db.run(\"BEGIN\"));\nafterEach(() => db.run(\"ROLLBACK\"));  // olvida lo que la prueba escribió\n\n// la prueba 1 inserta un pedido y ve 1 fila\n// la prueba 2 corre después y vuelve a ver 0 filas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una prueba de integración también puede enviar una petición al handler HTTP dentro del mismo proceso y luego leer la fila en un SQLite real. Revisa toda la costura: el cuerpo se lee, se convierte, se pasa, se transforma en SQL y la tabla lo acepta. Cada capa puede pasar sus pruebas unitarias y el conjunto fallar igual por un nombre de columna distinto."
+				},
+				{
+					"type": "heading",
+					"text": "Pruebas de contrato"
+				},
+				{
+					"type": "paragraph",
+					"text": "Supón que el servicio de pedidos se prueba contra un stub del servicio de pagos que responde `{ \"total\": 30 }`, y el equipo de pagos renombra el campo a `amount`. Las pruebas de ambos equipos pasan y producción se rompe. Una **prueba de contrato** lo resuelve: lo que el consumidor espera se convierte en un archivo, y ese archivo se ejecuta contra el proveedor real en el pipeline del propio proveedor. Obtienes la verificación de la interfaz sin levantar todos los servicios juntos."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Las pruebas de integración encuentran los errores entre las piezas. Usa una base real para las reglas que viven en la base y una prueba de contrato cuando no puedes levantar el otro servicio."
+				}
+			]
+		},
+		{
+			"id": "e2e-playwright",
+			"title": "Pruebas de extremo a extremo con Playwright",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una **prueba de extremo a extremo** (e2e, de end-to-end) usa el sistema como lo usa una persona: por la pantalla, con todas las capas reales conectadas. Es la que da más confianza de que todo funciona junto. A cambio, es la más lenta, la más cara de mantener y la menos precisa sobre dónde está el error. Por eso va en la cima de la pirámide, en pocas unidades."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Playwright** es una herramienta que controla un navegador real desde una prueba: abre páginas, hace clic en botones, escribe texto y lee lo que hay en pantalla."
+				},
+				{
+					"type": "heading",
+					"text": "Auto-waiting (espera automática)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Las páginas web no son instantáneas. Un botón puede estar deshabilitado mientras cargan los datos. Playwright **espera por sí solo** hasta que el elemento esté listo antes de actuar, así que la prueba no necesita pausas fijas como `waitForTimeout(2000)` (una pausa o es demasiado larga y pierde tiempo, o demasiado corta en una computadora lenta). Si el elemento nunca queda listo, la acción falla con un error de timeout."
+				},
+				{
+					"type": "heading",
+					"text": "Locators: encuentra las cosas como las ve el usuario"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Locator",
+						"Estilo",
+						"¿Resiste un rediseño?"
+					],
+					"rows": [
+						[
+							"`getByRole(\"button\", { name: \"Checkout\" })`",
+							"Lo que el elemento es para el usuario",
+							"Sí"
+						],
+						[
+							"`getByLabel`, `getByText`",
+							"Lo que el usuario lee",
+							"Sí"
+						],
+						[
+							"CSS o XPath largo como `div > div:nth-child(3) .btn-x`",
+							"Cómo el HTML está armado hoy por casualidad",
+							"No, se rompe en refactorizaciones que no cambian nada para el usuario"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Aserciones web-first y el await olvidado"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una **aserción web-first** como `await expect(locator).toBeVisible()` recibe el locator y repite la verificación hasta que pasa o se acaba el tiempo. Compárala con `expect(await locator.isVisible()).toBe(true)`: recibe un verdadero o falso ya terminado, una foto de un instante. Si la pantalla aún no se actualizó, la foto dice falso y la prueba falla por suerte."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Dos trampas en una sola prueba",
+					"content": "await page.getByRole(\"button\", { name: \"Add to cart\" }).click();\n// MAL: sin await, la promesa queda suelta y la prueba termina antes de la revisión\nexpect(page.getByTestId(\"cart-count\")).toHaveText(\"1\");\n// BIEN:\nawait expect(page.getByTestId(\"cart-count\")).toHaveText(\"1\");"
+				},
+				{
+					"type": "paragraph",
+					"text": "Las aserciones de Playwright son asíncronas y devuelven una promise. Sin `await`, la prueba corre hasta el final sin esperar el resultado, y puede quedar verde aunque el contador muestre 0. Una prueba que no puede fallar es peor que ninguna prueba. Una regla de lint para promesas sueltas atrapa este error."
+				},
+				{
+					"type": "heading",
+					"text": "Aislamiento por contexto de navegador"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada prueba recibe su propio **contexto de navegador** (browser context), que funciona como un perfil nuevo y vacío: sus propias cookies, `localStorage` y caché. Crear un contexto es barato. Así, si la primera prueba inicia sesión, la segunda prueba, que usa la fixture `page`, abre el sitio como un desconocido que no inició sesión. Las pruebas no dependen unas de otras ni del orden."
+				},
+				{
+					"type": "heading",
+					"text": "Controlar la red"
+				},
+				{
+					"type": "paragraph",
+					"text": "`page.route` intercepta las peticiones que hace la página y deja que la prueba decida: responder con datos inventados, abortar o dejar pasar. Reemplazar un servicio de terceros por una respuesta fija hace la prueba estable e independiente de internet. Lo que deja de verificarse es la integración real con ese servicio, que pide otro tipo de prueba."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "No pruebes cada regla de un cupón de descuento (unos 40 casos especiales) con pruebas de navegador de 8 segundos. Pon los casos de la regla en pruebas unitarias rápidas y deja unas pocas pruebas e2e para los recorridos críticos, como comprar, pagar e iniciar sesión, donde el riesgo está en la conexión entre las capas."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Pruebas e2e: pocas, para los recorridos críticos, con locators orientados al usuario, aserciones web-first y siempre un await."
+				}
+			]
+		},
+		{
+			"id": "smoke-regression",
+			"title": "Pruebas de humo y de regresión",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Cuando conectas una máquina nueva, primero revisas que no salga humo. Todavía no pruebas todas las funciones. Una **prueba de humo** (smoke test) es igual: un pequeño conjunto de verificaciones rápidas y superficiales de los caminos críticos. ¿La aplicación arranca? ¿Responde? ¿Funcionan las funciones esenciales? Se ejecuta justo después de un build o un deploy y actúa como un portero: si falla, la versión se rechaza al instante y nadie pierde tiempo con las suites largas."
+				},
+				{
+					"type": "paragraph",
+					"text": "Una **regresión** es la pérdida de un comportamiento que antes era correcto, causada por un cambio en algún lugar del código. La **prueba de regresión** consiste en volver a ejecutar las pruebas existentes después de cada cambio para ver que nada de lo que funcionaba dejó de funcionar. Con pruebas automatizadas es barato y puede hacerse en cada commit."
+				},
+				{
+					"type": "table",
+					"caption": "Humo contra regresión",
+					"headers": [
+						"Aspecto",
+						"Suite de humo",
+						"Suite de regresión completa"
+					],
+					"rows": [
+						[
+							"Profundidad",
+							"Superficial, muchas áreas de forma ligera",
+							"Profunda, en detalle"
+						],
+						[
+							"Tiempo",
+							"Segundos (por ejemplo 30 s)",
+							"Largo (por ejemplo 40 min)"
+						],
+						[
+							"Pregunta",
+							"¿Vale la pena probar más esta versión?",
+							"¿Todo lo que funcionaba sigue funcionando?"
+						],
+						[
+							"Cuándo",
+							"Justo después del build o deploy, primero",
+							"Después de que pasa la prueba de humo, y antes de un release"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Las suites se ordenan de la más barata a la más cara para que el fallo ocurra lo antes posible. La **prueba de sanidad** (sanity test) es un término que los equipos usan de maneras distintas, pero en general significa una verificación estrecha del área que acaba de cambiar."
+				},
+				{
+					"type": "paragraph",
+					"text": "Lo que entra en la suite de humo se elige por **criticidad**, no por profundidad: los caminos sin los cuales el sistema no sirve de nada (abrir el sitio, iniciar sesión, la operación principal). Los detalles de reglas, casos límite y errores antiguos van en las suites unitarias y de regresión. Si la suite de humo crece demasiado, pierde la rapidez que la justifica."
+				},
+				{
+					"type": "heading",
+					"text": "Cada error se convierte en una prueba"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un usuario reporta que un pedido con un cupón de 100% muestra un total negativo. ¿Qué debe hacer primero el desarrollador? **Escribir una prueba que reproduzca el error y falle.** Solo después arreglar el código y ver la prueba ponerse verde. El primer rojo demuestra que la prueba realmente ve el problema, y la prueba se queda para siempre protegiendo contra el regreso de ese error."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Una corrección sin prueba no está protegida. Imagina que la versión 1 acepta cantidad 0 (un error), la versión 2 lo corrige con `quantity <= 0` pero no escribe prueba, y después una refactorización cambia a `quantity < 0`. El error antiguo volvió y una suite que solo prueba -1 sigue verde. La prueba que reproduce el error reportado usa exactamente el valor que distingue `<` de `<=`."
+				},
+				{
+					"type": "heading",
+					"text": "Cuando la suite de regresión es demasiado lenta"
+				},
+				{
+					"type": "paragraph",
+					"text": "Si la suite completa tarda 3 horas, un equipo puede ejecutar en cada commit solo las pruebas de los archivos que importan los módulos cambiados. Eso da retroalimentación rápida, pero es una apuesta: las **dependencias indirectas** pueden hacer que un cambio rompa algo que parece lejano. La protección habitual es seguir ejecutando la suite completa a intervalos regulares y antes de cada release."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Humo primero, para decidir si vale la pena seguir. Regresión después, para proteger todo lo antiguo. Cada error encontrado se convierte en una prueba que falla primero."
+				}
+			]
+		},
+		{
+			"id": "coverage-mutation",
+			"title": "Cobertura y pruebas de mutación",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "¿Cómo saber si tus pruebas son buenas? Una primera idea es contar cuánto del código ejecutan. Eso se llama **cobertura** (coverage)."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Tipo de cobertura",
+						"Qué cuenta"
+					],
+					"rows": [
+						[
+							"De líneas (o de sentencias)",
+							"Cuántas líneas fueron ejecutadas por al menos una prueba"
+						],
+						[
+							"De ramas (branch)",
+							"Si cada decisión (`if`) se tomó **de las dos maneras**: verdadera y falsa"
+						]
+					]
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Todas las líneas se ejecutan, pero solo la mitad de las ramas",
+					"content": "export function shippingFee(total: number, isMember: boolean): number {\n\tlet fee = 10;\n\tif (isMember) fee = 5;\n\tif (total >= 100) fee = 0;\n\treturn fee;\n}\n\ntest(\"big member order is free\", () => {\n\texpect(shippingFee(150, true)).toBe(0);\n});"
+				},
+				{
+					"type": "paragraph",
+					"text": "Esta única prueba pasa por todas las líneas, así que la cobertura de líneas es 100%. Pero las dos condiciones de los `if` solo son verdaderas. Cada `if` tiene dos ramas, así que son 4 ramas y la prueba recorrió 2: la cobertura de ramas es 50%. 100% de las líneas no significa 100% de las ramas."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "La cobertura es una condición necesaria, no suficiente. El código que nunca se ejecutó ciertamente no se probó. Pero el código que se ejecutó puede no haberse comprobado: una prueba sin aserción ejecuta líneas tan bien como la mejor prueba del mundo. Cuando un número de cobertura se vuelve meta de la gerencia, las personas empiezan a perseguir el número y este deja de indicar la calidad de las pruebas."
+				},
+				{
+					"type": "heading",
+					"text": "Pruebas de mutación: probar las pruebas"
+				},
+				{
+					"type": "paragraph",
+					"text": "La **prueba de mutación** hace la mejor pregunta: ¿las pruebas notarían si esta línea estuviera mal? Una herramienta hace copias del programa, cada una con un pequeño defecto plantado, llamado **mutante**. La herramienta cambia cosas como `+` por `-`, `<` por `<=`, una constante por otra, o elimina una sentencia. Luego ejecuta la suite sobre cada mutante."
+				},
+				{
+					"type": "diagram",
+					"caption": "Qué pasa con cada mutante",
+					"content": "programa original --- cambia una cosita ---> mutante\n                                                  |\n                                     ejecuta la suite de pruebas\n                                                  |\n                 +--------------------------------+--------------+\n                 |                                               |\n      alguna prueba falla: MUERTO (killed)      todas pasan: SOBREVIVIÓ\n      la suite notó el error                    la suite acepta el error"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un mutante que **sobrevivió** es una pregunta que las pruebas no hicieron: muestra dónde falta una aserción o una prueba."
+				},
+				{
+					"type": "heading",
+					"text": "El puntaje de mutación"
+				},
+				{
+					"type": "paragraph",
+					"text": "El puntaje de mutación es los mutantes muertos divididos entre los mutantes que podían matarse. Un **mutante equivalente** tiene texto distinto pero se comporta exactamente como el original para cualquier entrada, así que ninguna prueba puede matarlo. Según la convención habitual, los mutantes equivalentes salen del denominador. Ejemplo: una herramienta genera 30 mutantes y la suite mata 24. De los 6 sobrevivientes, una persona decide que 2 son equivalentes. El puntaje es 24 / (30 - 2) = 24 / 28, cerca de 85,7%. Muchas herramientas no identifican los equivalentes y solo informan muertos sobre el total, así que di siempre qué convención se usa. Decidir si un mutante es equivalente es imposible en el caso general, por eso una persona suele revisar a los sobrevivientes."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Un mutante equivalente",
+					"content": "if (weightKg > 2) {                    // mutante: weightKg >= 2\n\tcents += (weightKg - 2) * 150;     // en exactamente 2 kg suma (2 - 2) * 150 = 0\n}"
+				},
+				{
+					"type": "heading",
+					"text": "Matar un mutante de frontera"
+				},
+				{
+					"type": "paragraph",
+					"text": "Toma `return age >= 18` y el mutante `return age > 18`. Solo difieren para la entrada 18. Una prueba solo mata al mutante si usa ese valor exacto y comprueba el resultado: `isAdult(18)` debe ser verdadero. Las pruebas con edades 10 y 30 dejan vivir al mutante. Esa es la razón práctica para probar los valores límite."
+				},
+				{
+					"type": "chart",
+					"title": "Misma cobertura de líneas, puntaje de mutación muy distinto (mini-proyecto mutation-testing)",
+					"unit": "%",
+					"bars": [
+						{
+							"label": "suite débil: cobertura de líneas",
+							"value": 100
+						},
+						{
+							"label": "suite fuerte: cobertura de líneas",
+							"value": 100
+						},
+						{
+							"label": "suite débil: puntaje de mutación",
+							"value": 21.1
+						},
+						{
+							"label": "suite fuerte: puntaje de mutación",
+							"value": 94.7
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El costo de la prueba de mutación crece con el número de mutantes por el tiempo de la suite. Las herramientas lo reducen ejecutando, para cada mutante, solo las pruebas que cubren la línea modificada, deteniéndose en la primera prueba que falla, mutando solo el código cambiado desde la última ejecución y muestreando los mutantes."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "La cobertura dice qué se ejecutó. El puntaje de mutación dice qué se notaría. Una cobertura alta con un puntaje de mutación bajo significa que las pruebas ejecutan el código pero no lo comprueban."
+				}
+			]
+		},
+		{
+			"id": "property-based-testing",
+			"title": "Pruebas basadas en propiedades",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una prueba común es un ejemplo: 'ordenar [3,1,2] y obtener [1,2,3]'. Una **prueba basada en propiedades** enuncia una regla general, como 'ordenar nunca cambia el tamaño de la lista', y un **generador** inventa cientos de entradas aleatorias para intentar romper la regla. Encuentra casos en los que no pensaste. Pero solo comprueba las entradas que se generaron, así que no es una demostración."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Una prueba de ejemplo es mirar una moneda para ver si es de verdad. Una prueba de propiedad es una máquina que lanza cientos de monedas y reclama si alguna rompe la regla 'cara o cruz, nunca las dos'."
+				},
+				{
+					"type": "heading",
+					"text": "Formas de propiedad"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Forma",
+						"Regla",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"Ida y vuelta (round trip)",
+							"Ir y volver lleva al comienzo",
+							"`decode(encode(x))` es igual a `x`"
+						],
+						[
+							"Invariante",
+							"Algo que la operación mantiene",
+							"Ordenar mantiene el mismo tamaño y los mismos elementos"
+						],
+						[
+							"Idempotencia",
+							"Hacerlo dos veces es lo mismo que una",
+							"`normalize(normalize(s))` es igual a `normalize(s)`"
+						],
+						[
+							"Conmutatividad",
+							"El orden no importa",
+							"`add(a, b)` es igual a `add(b, a)`"
+						],
+						[
+							"Oráculo",
+							"Comparar con una versión simple y confiable",
+							"Un ordenamiento rápido contra uno lento pero obviamente correcto"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Shrinking (encogimiento)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una entrada aleatoria que falla suele ser grande y llena de detalles inútiles, como una lista de 37 números. El **shrinking** busca por sí solo una entrada mínima que aún falla, por ejemplo `[0, -1]`. Un ejemplo pequeño hace fácil ver la causa del error."
+				},
+				{
+					"type": "heading",
+					"text": "La semilla (seed)"
+				},
+				{
+					"type": "paragraph",
+					"text": "La aleatoriedad viene de un generador pseudoaleatorio, cuya secuencia entera la decide un solo número, la **semilla** (seed). Cuando una prueba de propiedades falla en CI, la herramienta imprime algo como `seed: 48213`. Ejecuta la prueba otra vez con la misma semilla y obtienes exactamente las mismas entradas. Sin esto, una prueba aleatoria sería una prueba flaky."
+				},
+				{
+					"type": "heading",
+					"text": "Una propiedad que no prueba nada"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Una tautología",
+					"content": "function average(a: number, b: number) { return Math.floor((a + b) / 2); }\n\nfor (let i = 0; i < 1000; i++) {\n\tconst a = randomInt(-100, 100), b = randomInt(-100, 100);\n\texpect(average(a, b)).toBe(Math.floor((a + b) / 2));  // la misma fórmula\n}"
+				},
+				{
+					"type": "paragraph",
+					"text": "El lado esperado repite la fórmula del código, así que la prueba pasa por construcción y no detecta nada. Una buena propiedad enuncia una relación exigida por la especificación e independiente del código, como 'el promedio queda entre el menor y el mayor de los dos números'."
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Deben las propiedades reemplazar a los ejemplos? No. Las propiedades exploran muchas entradas, pero las buenas son difíciles de encontrar y son reglas generales, más débiles que un valor exacto. Los ejemplos documentan el comportamiento con números reales y garantizan que los casos límite conocidos siempre se ejecuten. Funcionan bien juntos."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Una propiedad es una regla que debe cumplirse para todas las entradas. La herramienta busca un contraejemplo, lo encoge e imprime la semilla para que puedas repetirlo."
+				}
+			]
+		},
+		{
+			"id": "flaky-tests",
+			"title": "Pruebas intermitentes (flaky)",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una **prueba flaky** (intermitente) pasa y falla con exactamente el mismo código. Nada cambió entre la ejecución verde y la roja. Ocurre cuando el resultado depende de algo que la prueba no controla: el reloj, el orden de las pruebas, el estado compartido, la red, la concurrencia o los números aleatorios. La señal típica es un fallo que desaparece cuando vuelves a ejecutar."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Imagina una alarma de humo que suena sola de vez en cuando, sin fuego. Después de unas cuantas falsas alarmas la familia deja de salir corriendo. Un día hay un incendio de verdad y nadie se mueve."
+				},
+				{
+					"type": "paragraph",
+					"text": "Ese es el daño real. El valor de una suite es la confianza: rojo significa error, verde significa que es seguro seguir. Las pruebas flaky rompen esto en los dos sentidos, generan falsas alarmas y enseñan al equipo a simplemente volver a ejecutar en lugar de investigar. Después de eso un error real puede pasar sin ser notado."
+				},
+				{
+					"type": "heading",
+					"text": "Las probabilidades pequeñas se suman"
+				},
+				{
+					"type": "paragraph",
+					"text": "Si cada una de `n` pruebas independientes falla por suerte con probabilidad `p`, la suite pasa completa con probabilidad (1 - p) elevado a n. Entonces muestra al menos un fallo con probabilidad 1 - (1 - p)^n."
+				},
+				{
+					"type": "chart",
+					"title": "Ejecuciones rojas sin error real, cuando cada prueba flaky falla el 2% de las veces",
+					"unit": "%",
+					"bars": [
+						{
+							"label": "1 prueba flaky",
+							"value": 2
+						},
+						{
+							"label": "10 pruebas flaky",
+							"value": 18
+						},
+						{
+							"label": "50 pruebas flaky",
+							"value": 64
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Con 50 pruebas de 2% cada una, 0,98^50 es cerca de 0,364, así que 1 - 0,364 es cerca de 0,636. La suite queda roja casi dos ejecuciones de cada tres. Lo mismo pasa con una suite de 300 pruebas de extremo a extremo que fallan por suerte el 0,5% de las veces cada una: 0,995^300 es cerca de 0,22, así que alrededor del 78% de las ejecuciones muestran un fallo con el código correcto."
+				},
+				{
+					"type": "heading",
+					"text": "Las causas habituales y sus soluciones"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Causa",
+						"Ejemplo",
+						"Solución"
+					],
+					"rows": [
+						[
+							"Tiempo",
+							"La prueba lee el reloj dos veces y espera el mismo milisegundo",
+							"Inyectar un reloj falso con un instante fijo"
+						],
+						[
+							"Zona horaria",
+							"El código fecha en hora local, la prueba en UTC, y discrepan cerca de medianoche",
+							"Reloj falso, y comparar fechas en la misma zona. Probar a propósito un instante dentro de la ventana de riesgo"
+						],
+						[
+							"`sleep` fijo",
+							"La prueba duerme 200 ms y revisa. En una máquina lenta el trabajo no terminó",
+							"Esperar la condición: esperar la promise o consultar con un timeout"
+						],
+						[
+							"Orden de los resultados",
+							"Trabajos concurrentes terminan en un orden distinto cada vez",
+							"Garantizar el orden en el código, o comparar los resultados ordenados"
+						],
+						[
+							"Estado compartido",
+							"Una prueba usa una caché que solo otra prueba llena",
+							"Cada prueba arma y restaura su propia fixture"
+						],
+						[
+							"Red real",
+							"El servicio tiene un mal momento",
+							"Usar un stub y probar el servicio real en una prueba de contrato aparte"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Mezclar el orden de las pruebas e imprimir la semilla es una forma de **encontrar y repetir** una dependencia de orden, no de curarla. Si B solo pasa cuando corre después de A, la cura es el aislamiento: B crea sus propios datos y limpia después de sí, para pasar solo y en cualquier posición."
+				},
+				{
+					"type": "heading",
+					"text": "Lo que no es una solución"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Reintentar hasta que quede verde**: esconde el síntoma y mantiene la causa.",
+						"**Un sleep más largo**: hace la carrera menos probable y la suite más lenta.",
+						"**Borrar u omitir la prueba** sin entenderla: a veces el producto tiene una carrera real.",
+						"**Fijar el orden de las pruebas** para que el estado compartido siga funcionando: la dependencia sigue ahí e impide ejecutar en paralelo."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Flaky significa una entrada escondida. Encuentra la cosa que cambia (tiempo, orden, estado, red) y ponla bajo el control de la prueba."
+				}
+			]
+		},
+		{
+			"id": "equivalence-boundaries",
+			"title": "Diseño de pruebas: clases de equivalencia y valores límite",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "No puedes probar todas las entradas posibles. Solo un campo numérico ya tiene miles de millones. Diseñar pruebas es el arte de elegir pocas entradas que dicen mucho."
+				},
+				{
+					"type": "heading",
+					"text": "Partición en clases de equivalencia"
+				},
+				{
+					"type": "paragraph",
+					"text": "Divide las entradas posibles en grupos, llamados **clases de equivalencia**, en los que el programa debe tratar a todos los miembros de la misma manera. Luego elige al menos un representante de cada clase. Las clases salen de la **especificación**, no del código, e incluyen clases de entradas inválidas."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "En la escuela, una nota de 0 a 4,9 es 'reprobado' y de 5 a 10 es 'aprobado'. No necesitas probar todas las notas posibles. Una nota reprobada y una aprobada representan a sus grupos."
+				},
+				{
+					"type": "paragraph",
+					"text": "Contar las clases: una clase por cada rango que la especificación trata de forma distinta. Para una entrada numérica con tramos separados, son una clase por tramo válido, más una clase inválida por debajo del menor valor válido y otra por encima del mayor. Si una tabla de precios tiene 3 tramos de peso, más errores por demasiado liviano y demasiado pesado, son 3 + 2 = 5 clases y al menos 5 casos de prueba."
+				},
+				{
+					"type": "heading",
+					"text": "Análisis de valores límite"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los programadores se equivocan justo en los bordes: `<` en lugar de `<=`, un bucle que se detiene un paso antes. Un valor del medio de una clase pasa por el código defectuoso sin notarlo. Por eso, además del valor típico, prueba el **borde** y su vecino del otro lado."
+				},
+				{
+					"type": "diagram",
+					"caption": "Análisis de límites con dos valores para el rango cerrado [1, 20]",
+					"content": "  rechazado |     rango aceptado      | rechazado\n  ... -1  0 | 1  2  3 ... 18 19  20 | 21  22 ...\n           ^  ^                  ^   ^\n          a-1 a                  b  b+1\n  valores de prueba: 0, 1, 20, 21"
+				},
+				{
+					"type": "paragraph",
+					"text": "La convención de este quiz: para un rango cerrado de números enteros [a, b], el método de dos valores prueba **a-1, a, b y b+1**. Imagina que el código dice `grade >= 0 && grade < 10` cuando la especificación dice que las notas de 0 a 10 son válidas. Solo el valor 10 da una respuesta distinta de la especificación (falso en vez de verdadero). Todos los otros valores de prueba quedan del lado correcto, así que solo el valor en la frontera muestra el error."
+				},
+				{
+					"type": "heading",
+					"text": "Varias entradas: una inválida a la vez"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando una función tiene varias entradas, las clases válidas pueden combinarse en una sola prueba. Pero cada **clase inválida debe ir sola**, con las demás entradas válidas. Un programa normalmente se detiene en la primera verificación que falla. Si una prueba da una edad inválida y un ingreso inválido juntos, la verificación del ingreso nunca se alcanza, y nunca descubres que existe y funciona."
+				},
+				{
+					"type": "heading",
+					"text": "Pautas para secuencias"
+				},
+				{
+					"type": "paragraph",
+					"text": "La experiencia dice dónde suelen romperse los programas. Para listas y otras secuencias: prueba la secuencia vacía, una secuencia con un elemento y tamaños distintos en pruebas distintas. Haz también que el elemento interesante aparezca primero, en el medio y al final. Para una función que devuelve el mayor número, buenas entradas incluyen `[]`, `[7]`, `[9, 2, 3]`, `[2, 9, 3]` y `[2, 3, 9]`."
+				},
+				{
+					"type": "heading",
+					"text": "Tablas de decisión"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando el resultado depende de varias condiciones de sí o no, una **tabla de decisión** lista las combinaciones y la acción esperada para cada una. Con n condiciones independientes de sí o no, la tabla completa tiene 2^n columnas, y cada columna se convierte en al menos una prueba. Si una condición decide sola, las columnas que difieren solo en las otras condiciones pueden unirse, escribiendo 'da igual' (don't care) para ellas."
+				},
+				{
+					"type": "table",
+					"caption": "Cuatro condiciones, 16 columnas. Cuando la primera condición es falsa la respuesta es siempre 'rechazar'",
+					"headers": [
+						"Columnas",
+						"Cuántas"
+					],
+					"rows": [
+						[
+							"Primera condición falsa: unidas en una columna con 'da igual'",
+							"1"
+						],
+						[
+							"Primera condición verdadera: las otras 3 condiciones dan 2 x 2 x 2 combinaciones",
+							"8"
+						],
+						[
+							"Total después de unir",
+							"9"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Clases a partir de la especificación, un representante de cada una, luego los bordes. Las entradas inválidas de una en una. Una tabla de decisión tiene 2^n columnas antes de unir."
+				}
+			]
+		},
+		{
+			"id": "ci-test-strategy",
+			"title": "Pruebas en CI y estrategia de pruebas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "**Integración continua** (CI) significa que todos comparten su trabajo con la línea principal con frecuencia, y cada aporte se verifica con un build y pruebas automáticos. Las pruebas se ejecutan **en cada push**, así que la retroalimentación llega rápido y apunta al cambio que se acaba de hacer. Cuando el build se rompe, arreglarlo va antes que el trabajo nuevo, porque todos dependen de la línea principal."
+				},
+				{
+					"type": "heading",
+					"text": "Ordena las etapas por costo"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un pipeline ordena sus verificaciones de la más barata a la más cara. Con **fail-fast**, la ejecución se detiene en la primera etapa que falla, así que un error que una verificación de 50 ms encuentra no espera detrás de una etapa de minutos."
+				},
+				{
+					"type": "diagram",
+					"caption": "Un pipeline fail-fast",
+					"content": "  push --> [ lint + tipos + unit ] --> [ integración ] --> [ e2e ] --> merge\n              segundos                  decenas de seg.     minutos\n               |                          |                  |\n               falla: se detiene aquí     falla: se detiene  falla: se detiene"
+				},
+				{
+					"type": "heading",
+					"text": "Una prueba flaky bloquea a todos: ponla en cuarentena"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un pipeline solo es útil si rojo significa defecto. Supón que una prueba falla en 1 de cada 10 ejecuciones y bloquea merges, y el equipo no puede arreglarla hoy. Los malos caminos esconden el problema (reintentos silenciosos, borrar la prueba, debilitar sus aserciones) o mantienen el ruido (volver a ejecutar a mano). El buen camino es una **cuarentena** explícita: la prueba sale del camino bloqueante, la deuda se anota con un responsable y una fecha, y sigue ejecutándose en algún lugar para no olvidarla."
+				},
+				{
+					"type": "heading",
+					"text": "Estrategia basada en riesgo"
+				},
+				{
+					"type": "paragraph",
+					"text": "No puedes probar todo, así que reparte el esfuerzo por el riesgo: **probabilidad de que haya un defecto por su impacto**. La probabilidad es mayor en código nuevo o muy cambiado, lógica compleja y partes con historial de fallos. El impacto es mayor cuando hay dinero, seguridad o muchos usuarios. La cobertura es solo una de las entradas."
+				},
+				{
+					"type": "table",
+					"caption": "Faltan dos días para entregar una tienda en línea",
+					"headers": [
+						"Módulo",
+						"¿Cambió mucho?",
+						"Impacto de un defecto",
+						"Cobertura de líneas"
+					],
+					"rows": [
+						[
+							"Página 'Quiénes somos'",
+							"No",
+							"Texto equivocado en una página estática",
+							"0%"
+						],
+						[
+							"Exportación de informe",
+							"No",
+							"2 usuarios internos, una vez al mes",
+							"40%"
+						],
+						[
+							"Cálculo de precio e impuesto",
+							"Sí, mucho",
+							"Cliente cobrado con un monto equivocado",
+							"85%"
+						],
+						[
+							"Colores del tema del panel",
+							"Un poco",
+							"Apariencia de una página interna",
+							"10%"
+						],
+						[
+							"Suscripción al boletín",
+							"No",
+							"No se envía un correo de marketing",
+							"60%"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El módulo de precio e impuesto tiene el mayor riesgo: cambió mucho y un error cuesta dinero real. Debe recibir el esfuerzo aunque su cobertura ya sea la más alta, porque una cobertura alta no hace seguro a un módulo."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El CI ejecuta las pruebas en cada push. Etapas baratas primero y detente temprano. Pon en cuarentena las pruebas flaky de forma abierta. Gasta el tiempo donde cambio e impacto son mayores."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando todo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Cada técnica responde una pregunta distinta. Un proyecto saludable usa varias, porque cada una es ciega a algo que otra ve."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Pregunta",
+						"Herramienta"
+					],
+					"rows": [
+						[
+							"¿Esta pieza pequeña funciona sola?",
+							"Prueba unitaria, con dobles para ayudantes lentos o incontrolables"
+						],
+						[
+							"¿Las piezas encajan?",
+							"Prueba de integración, prueba de contrato"
+						],
+						[
+							"¿Un usuario realmente puede hacer los recorridos principales?",
+							"Unas pocas pruebas de extremo a extremo con Playwright"
+						],
+						[
+							"¿Vale la pena probar esta versión?",
+							"Prueba de humo"
+						],
+						[
+							"¿Volvió un error antiguo?",
+							"Prueba de regresión, una por cada error encontrado"
+						],
+						[
+							"¿Mis pruebas ejecutan el código?",
+							"Cobertura de líneas y de ramas"
+						],
+						[
+							"¿Mis pruebas notarían un error?",
+							"Prueba de mutación"
+						],
+						[
+							"¿Olvidé alguna entrada rara?",
+							"Pruebas basadas en propiedades, clases de equivalencia y valores límite"
+						],
+						[
+							"¿Mis pruebas dicen la verdad?",
+							"Eliminar la flakiness: relojes falsos, aislamiento, stubs"
+						],
+						[
+							"¿Alguien está rompiendo el código compartido?",
+							"CI con etapas ordenadas"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Errores comunes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Poner toda verificación en pruebas de extremo a extremo (el cono de helado).",
+						"Contar llamadas a dobles en vez de revisar el resultado.",
+						"Confiar en un número de cobertura sin preguntar si las pruebas comprueban algo.",
+						"Corregir un error sin escribir la prueba que lo reproduce.",
+						"Dejar que las pruebas compartan estado o dependan del reloj, del orden o de la red.",
+						"Refactorizar y cambiar el comportamiento en el mismo paso.",
+						"Olvidar el `await` en una aserción asíncrona."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Muchas pruebas rápidas abajo, pocos recorridos arriba, pruebas que solo fallan cuando el código está mal y un pipeline que dice la verdad en cada push."
+				}
+			]
+		}
+	]
+}

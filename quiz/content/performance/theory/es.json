@@ -1,0 +1,1058 @@
+{
+	"area": "performance",
+	"intro": [
+		"Imagina dos panaderías. En la primera, cada pan está listo en 2 minutos, pero el sábado por la mañana la fila sale por la puerta y algunas personas esperan una hora. En la segunda, el pan tarda 3 minutos, pero nadie espera más de 5. ¿Cuál panadería es la \"más rápida\"? La respuesta honesta es: depende de lo que midas. El **rendimiento** (performance) es el estudio de qué tan rápido es un sistema informático, cuánto trabajo puede hacer y a dónde se va su tiempo.",
+		"Toda app que usas depende de esto. Una página que tarda 3 segundos en abrir hace que la gente se vaya. Una tienda que se congela durante una gran oferta pierde dinero. Un programa que es rápido en tu portátil puede arrastrarse cuando mil personas lo usan a la vez. Quien se ocupa del rendimiento no adivina. **Mide primero**, encuentra la parte realmente lenta, arregla solo esa parte y vuelve a medir.",
+		"En este resumen aprenderás: las palabras que se usan para hablar de velocidad (latencia, throughput, percentiles), cómo hacer una prueba justa (benchmarking), cómo descubrir qué está lento (profiling y flame graphs), cómo la memoria y la caché del computador cambian la velocidad, cómo funciona de verdad un servidor JavaScript, por qué las bases de datos se vuelven lentas, los tipos de pruebas de carga y cómo escribirlas con la herramienta k6, y las matemáticas que dicen cuántos servidores necesitas. Al final estarás listo para el quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "Panorama general: medir, encontrar, arreglar, medir",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Arreglar el rendimiento es como ser médico. Un médico no receta antes de revisar qué anda mal. De la misma forma, un buen ingeniero sigue un ciclo: **mide** cómo se comporta el sistema, **encuentra** la parte que más tiempo desperdicia, **cambia** solo esa parte y **vuelve a medir** para ver si de verdad mejoró."
+				},
+				{
+					"type": "diagram",
+					"content": "  medir --> encontrar la --> cambiar una --> medir\n    ^      parte lenta       cosa          de nuevo\n    |                                        |\n    +----------------------------------------+",
+					"caption": "El ciclo del rendimiento. Nunca te saltes el primer ni el último paso."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Si tu bicicleta va lenta, revisas las llantas, la cadena y los frenos antes de comprar un asiento nuevo. Pulir el asiento es agradable, pero no cambia nada. Los programas son iguales: la parte lenta casi nunca está donde piensas primero."
+				},
+				{
+					"type": "heading",
+					"text": "Cuatro capas de la misma historia"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Capa",
+						"Pregunta de ejemplo",
+						"Dónde la verás más abajo"
+					],
+					"rows": [
+						[
+							"La CPU y su memoria",
+							"¿Por qué recorrer una matriz por filas es más rápido que por columnas?",
+							"Caché de la CPU y localidad de memoria"
+						],
+						[
+							"El runtime del programa",
+							"¿Por qué una solicitud lenta congela un servidor Node.js?",
+							"Rendimiento del runtime"
+						],
+						[
+							"La base de datos",
+							"¿Por qué una página de lista ejecuta 21 consultas?",
+							"Rendimiento de bases de datos"
+						],
+						[
+							"El servicio completo",
+							"¿Cuántos servidores necesitamos el día de la oferta?",
+							"Pruebas de carga, k6 y planificación de capacidad"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "En todas las capas necesitas dos habilidades. Primero, buenos **números**: las medidas correctas, tomadas de forma justa (benchmarking). Segundo, saber **a dónde se va el tiempo** (profiling). El resto de este resumen construye esas habilidades paso a paso."
+				},
+				{
+					"type": "video",
+					"title": "Performance Matters, Emery Berger (Strange Loop)",
+					"url": "https://www.youtube.com/watch?v=r-TLSBdHe1A"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Mide antes de cambiar y vuelve a medir después. Optimizar una parte que usa el 2% del tiempo te da, como máximo, un 2%."
+				}
+			]
+		},
+		{
+			"id": "latency-throughput-percentiles",
+			"title": "Latencia, throughput y percentiles",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Volvamos a la panadería. Importan dos cosas distintas. Una es cuánto tiempo espera **una persona** desde que entra hasta que sale con su pan. La otra es cuántas personas atiende la panadería **por hora**. Los computadores tienen las mismas dos medidas."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Palabra",
+						"Significado",
+						"Panadería",
+						"Unidad habitual"
+					],
+					"rows": [
+						[
+							"[[Latencia|cuánto tarda una solicitud, desde que se envía hasta que llega la respuesta]]",
+							"Tiempo de una solicitud",
+							"Tiempo de espera de una persona",
+							"milisegundos (ms)"
+						],
+						[
+							"[[Throughput|cuánto trabajo termina el sistema por unidad de tiempo]]",
+							"Trabajo hecho por tiempo",
+							"Personas atendidas por hora",
+							"solicitudes por segundo (req/s)"
+						],
+						[
+							"Tasa de error",
+							"Fracción de solicitudes que fallaron",
+							"Personas que se fueron sin pan",
+							"fallos divididos por el total"
+						]
+					],
+					"caption": "Latencia y throughput son independientes: un sistema puede hacer muchas solicitudes por segundo y aun así dejar algunas muy lentas."
+				},
+				{
+					"type": "paragraph",
+					"text": "El tiempo que ve el cliente es el **tiempo de respuesta**. En este resumen usamos la convención: tiempo de respuesta = **tiempo de espera en la cola + tiempo de servicio** (el tiempo que el servidor realmente trabaja en la solicitud). Cuando el servidor está ocupado, el tiempo de servicio casi no cambia. Lo que crece es la espera."
+				},
+				{
+					"type": "heading",
+					"text": "Por qué el promedio miente"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina 10 solicitudes: nueve tardan 10 ms y una tarda 910 ms. El **promedio** (sumar todo y dividir entre 10) es 100 ms. ¡Pero ninguna solicitud tardó 100 ms! La **mediana** (el valor del medio tras ordenar) es 10 ms y describe mucho mejor la solicitud típica. Unos pocos valores enormes empujan el promedio hacia arriba, y las latencias casi siempre tienen unos pocos valores enormes."
+				},
+				{
+					"type": "heading",
+					"text": "Percentiles"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **percentil** responde: ¿por debajo de qué valor queda el p% de las medidas? El **p50** es la mediana. El **p95** es el valor que 95 de cada 100 solicitudes superan, así que 1 solicitud de cada 20 es más lenta que el p95. El **p99** deja 1 de cada 100 más lenta. El extremo lento de la distribución se llama **cola**, y los percentiles altos la describen. Esto es la **latencia de cola** (tail latency)."
+				},
+				{
+					"type": "paragraph",
+					"text": "Para calcular un percentil con el **método del rango más cercano** (nearest-rank): ordena los valores y toma el valor en la posición `ceil(p / 100 × n)`, contando desde 1. Ejemplo con 10 valores ordenados:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "valores: 5 6 7 8 9 10 11 12 13 50     (n = 10)\np50 -> posición ceil(0,50 x 10) = 5  -> 9\np90 -> posición ceil(0,90 x 10) = 9  -> 13\np99 -> posición ceil(0,99 x 10) = 10 -> 50",
+					"caption": "Otras herramientas interpolan entre vecinos y pueden dar un número ligeramente distinto, así que siempre di qué convención usas."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "No puedes calcular el p99 de un servicio completo promediando el p99 de cada servidor. Un percentil es una posición en la lista ordenada de TODAS las medidas. Para combinar servidores, junta las medidas en bruto o histogramas con los mismos buckets."
+				},
+				{
+					"type": "heading",
+					"text": "Throughput a partir de los números"
+				},
+				{
+					"type": "paragraph",
+					"text": "El throughput promedio de una prueba es el **total de solicitudes completadas dividido entre la duración**. En k6, `http_reqs` cuenta solicitudes HTTP, mientras que `iterations` cuenta ejecuciones completas del script, y una iteración puede hacer varias solicitudes. Por ejemplo, 18.000 solicitudes en 150 segundos son 120 req/s. No mezcles los dos conteos."
+				},
+				{
+					"type": "paragraph",
+					"text": "En un **modelo cerrado** sin pausa, cada uno de los U usuarios envía una solicitud a la vez, así que el throughput es aproximadamente `U / tiempo de respuesta`. Con 20 usuarios y respuestas de 100 ms: 20 / 0,1 = 200 req/s. Si el servidor se vuelve más lento, los usuarios también envían menos."
+				},
+				{
+					"type": "heading",
+					"text": "La cola crece cuando hay muchas llamadas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Si una llamada tiene un 1% de probabilidad de ser lenta (su p99), una página que hace muchas llamadas es lenta con mucha más frecuencia, porque solo se salva si todas las llamadas son rápidas. La probabilidad de al menos una llamada lenta es `1 - 0,99^n`."
+				},
+				{
+					"type": "chart",
+					"title": "Probabilidad de que una página tenga al menos una llamada entre el 1% más lento",
+					"unit": "%",
+					"bars": [
+						{
+							"label": "1 llamada",
+							"value": 1
+						},
+						{
+							"label": "10 llamadas",
+							"value": 9.6
+						},
+						{
+							"label": "50 llamadas",
+							"value": 39.5
+						},
+						{
+							"label": "100 llamadas",
+							"value": 63.4
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Dos trampas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Los fallos son rápidos.** Una solicitud que falla con un error muchas veces responde en 5 ms. Si los errores suben de 0% a 60%, la mediana puede bajar y parecer una mejora. Lee la latencia y la tasa de error juntas y mide las respuestas exitosas por separado.",
+						"**Omisión coordinada** (coordinated omission). Un generador de carga que espera la respuesta lenta antes de enviar la siguiente solicitud deja de enviar justo en el momento lento, así que nunca registra lo malo que fue. Los percentiles salen demasiado optimistas. La cura es un **modelo abierto**: las solicitudes salen a una tasa fija, hagan lo que hagan las respuestas."
+					]
+				},
+				{
+					"type": "video",
+					"title": "How NOT to Measure Latency, Gil Tene",
+					"url": "https://www.youtube.com/watch?v=lJ8ydIuPFeU"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Reporta los percentiles de latencia (p50, p95, p99) junto con el throughput y la tasa de error. Un requisito como \"95% de las solicitudes en menos de 100 ms\" se verifica con el p95, no con el promedio."
+				}
+			]
+		},
+		{
+			"id": "benchmarking-methodology",
+			"title": "Metodología de benchmark",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un **benchmark** es una carrera justa entre programas. Si un corredor sale con mochila y el otro sin ella, la carrera no prueba nada. Hacer benchmarks es el arte de volver justa la carrera, para que la diferencia en los números venga realmente del código."
+				},
+				{
+					"type": "heading",
+					"text": "Warm-up, repeticiones y ruido"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Warm-up (calentamiento).** Un programa recién iniciado no está en su estado normal. Los archivos no están en la caché del sistema, las cachés de la CPU están frías y los runtimes con [[compilador JIT|un compilador que traduce las partes calientes del código a código de máquina rápido mientras el programa corre]] aún no han optimizado. Por eso un runner ejecuta el trabajo algunas veces y descarta esos tiempos. Si lo que importa es el tiempo de arranque, mídelo por separado y dilo.",
+						"**Repite.** Una ejecución prueba poco. Otro programa en la misma máquina (una videollamada, un antivirus) puede retrasar una ejecución. Esto se llama **vecino ruidoso** (noisy neighbour). Ejecuta varias veces en una máquina lo más ociosa posible.",
+						"**Reporta la dispersión, no solo la mejor ejecución.** Di el promedio y la [[desviación estándar|un número que dice cuánto suelen alejarse las ejecuciones de su promedio]] y, si puedes, el mínimo y el máximo."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "La **desviación estándar muestral** divide entre `n - 1` (no entre `n`), porque el promedio se estimó con las mismas ejecuciones. Ejemplo con ejecuciones de 4, 6 y 8 ms: promedio = 6; las distancias al promedio son 2, 0 y 2, así que los cuadrados son 4, 0 y 4, que suman 8; divide entre 3 - 1 = 2 y da 4; la raíz cuadrada es **2 ms**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Cómo leer un resultado: si A tiene promedio 102 ms y B tiene promedio 99 ms, pero la desviación estándar de ambos es de unos 6 ms, entonces la diferencia de 3 ms es menor que el ruido. Repetir la prueba podría invertir el orden. Reporta un empate, o mide más, en una máquina más tranquila."
+				},
+				{
+					"type": "heading",
+					"text": "Speed-up y la ley de Amdahl"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **speed-up** es el tiempo antiguo dividido entre el tiempo nuevo, para el mismo trabajo. Pasar de 800 ms a 200 ms es un speed-up de 4. Cuidado: reducir el tiempo un 50% es un speed-up de 2, y reducirlo un 90% es un speed-up de 10. Di qué medida usas."
+				},
+				{
+					"type": "paragraph",
+					"text": "Acelerar una parte tiene un límite. Si una parte ocupa la fracción `p` del tiempo y la haces `s` veces más rápida, el programa completo se vuelve `1 / ((1 - p) + p / s)` veces más rápido. Esta es la **ley de Amdahl**. Ejemplo: un trabajo de 10 s tiene 5 s de cálculo. Hacer el cálculo 5 veces más rápido da `1 / (0,5 + 0,1)` = 1,67, no 5. Incluso un cálculo infinitamente rápido dejaría los otros 5 s, así que el techo es 2."
+				},
+				{
+					"type": "heading",
+					"text": "Una comparación justa"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Cambia **una cosa a la vez**. Para comparar dos runtimes, usa la misma carga de trabajo, el mismo tamaño de datos, la misma concurrencia y la misma máquina.",
+						"Mide el **proceso completo** (desde fuera) para saber cuánto espera el usuario. Incluye cargar el runtime y leer la entrada, un costo casi fijo que domina con entradas pequeñas. Mide solo la **sección** (dentro del programa) para saber el costo del algoritmo. Ambos son útiles si dices cuál muestras.",
+						"Haz que cada variante imprima un **checksum** de su resultado. Si una variante es mucho más rápida pero su checksum es distinto, no es una optimización, es un bug.",
+						"Consume el resultado. Un compilador optimizador puede borrar código cuyo resultado nadie usa, así que un microbenchmark puede imprimir \"0 ms\" porque midió un bucle vacío. Acumula los resultados en un checksum e imprímelo al final."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Resultados reproducibles"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un número publicado solo vale si otra persona puede repetirlo. Registra siempre la **máquina** (CPU, memoria, sistema), las **versiones exactas** de compiladores y runtimes y el **comando completo** con su entrada y opciones. La herramienta [hyperfine](https://github.com/sharkdp/hyperfine) mide comandos de terminal por ti, con warm-up, repeticiones y estadísticas (promedio, desviación estándar, mínimo, máximo), y exporta JSON o Markdown. Mide el proceso completo, así que el arranque está incluido."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Benchmark justo: mismo trabajo, misma máquina, warm-up descartado, muchas ejecuciones, dispersión reportada, checksum verificado, versiones y comando anotados."
+				}
+			]
+		},
+		{
+			"id": "profiling-flame-graphs",
+			"title": "Profiling y flame graphs",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Sabes que el programa está lento, pero ¿dónde? Un **profiler** es una herramienta que observa un programa y te dice a dónde se va el tiempo. Es como una cámara de seguridad en una cocina: después puedes ver qué paso consume más minutos. Haz profiling primero, optimiza después."
+				},
+				{
+					"type": "heading",
+					"text": "Muestreo e instrumentación"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Tipo",
+						"Cómo funciona",
+						"Bueno",
+						"Malo"
+					],
+					"rows": [
+						[
+							"Profiler por muestreo (sampling)",
+							"Espía el programa muchas veces por segundo y anota la [[pila de llamadas|la lista de funciones que se están ejecutando ahora, cada una llamada por la que está debajo]]",
+							"Costo bajo y estable, incluso con millones de llamadas",
+							"Una estimación estadística, sin conteo exacto de llamadas"
+						],
+						[
+							"Profiler por instrumentación",
+							"Agrega código a cada función para contar y medir cada llamada",
+							"Conteos y tiempos exactos",
+							"El costo crece con el número de llamadas y distorsiona funciones diminutas llamadas muchas veces"
+						]
+					],
+					"caption": "Una función llamada 50 millones de veces parece mucho más cara con un profiler de instrumentación. Por eso el muestreo es la opción habitual en sistemas bajo carga real."
+				},
+				{
+					"type": "heading",
+					"text": "Qué perfil para qué problema"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Perfil de CPU**: ¿dónde gasta su tiempo el procesador?",
+						"**Perfil de heap**: ¿quién asigna memoria y qué objetos siguen vivos? Úsalo cuando la memoria crece durante horas (una fuga) mientras la CPU está baja.",
+						"**Tiempo de reloj (wall-clock) vs tiempo de CPU**: wall-clock es el tiempo real entre el inicio y el fin. El tiempo de CPU es solo el tiempo en que el procesador ejecutó tu programa (`user` en tu código, `sys` en el kernel). La diferencia es el **tiempo off-CPU**: esperar disco, red, una base de datos o un lock."
+					]
+				},
+				{
+					"type": "code",
+					"language": "sh",
+					"content": "$ time ./script\nreal 5.0 s    # el reloj de la pared\nuser 0.3 s    # CPU ejecutando tu código\nsys  0.1 s    # CPU ejecutando el kernel por ti",
+					"caption": "Un programa de un solo hilo con real muy por encima de user + sys pasó casi todo el tiempo esperando, no calculando. Un perfil de CPU no ayuda aquí."
+				},
+				{
+					"type": "heading",
+					"text": "Cómo leer un flame graph"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **flame graph** dibuja las pilas de llamadas muestreadas. Cada caja es una función. Una caja está encima de la función que la llamó, así que la **altura** es la profundidad de la pila. El **ancho** de una caja es la fracción de muestras en que esa función estaba en la pila, así que ancho significa \"mucho tiempo\". Las pilas idénticas se fusionan y las cajas se ordenan por nombre."
+				},
+				{
+					"type": "diagram",
+					"content": "                [ escape  ]\n  [ parse ]     [ render .............. ][ send ]\n  [ handleRequest ............................ ]\n  [ main ..................................... ]\n   (la raíz siempre tiene 100% de ancho)",
+					"caption": "Lectura: handleRequest llamó a parse, render y send. render es ancho, escape está encima de render."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "El eje horizontal NO es tiempo. Que parse esté dibujado a la izquierda de render no significa que se ejecutó primero, solo que su nombre va antes en orden alfabético. Un gráfico donde el eje horizontal es el tiempo es otra cosa, llamada flame chart."
+				},
+				{
+					"type": "paragraph",
+					"text": "El **tiempo total** (total time) de una función incluye todo lo que ella llama. El **tiempo propio** (self time) es solo su código: el total menos la suma de sus hijos directos. Si renderHtml tiene un total de 600 ms y sus hijos tardan 450 + 100 ms, su tiempo propio es 50 ms. La CPU realmente trabaja donde el tiempo propio es alto, que en un flame graph es el **borde libre en la parte de arriba** de una caja. Busca la meseta más ancha arriba, no la caja más ancha (la raíz siempre es la más ancha) ni la torre más alta (eso es solo una pila profunda)."
+				},
+				{
+					"type": "callout",
+					"tone": "tip",
+					"text": "¿Endpoint lento pero con la CPU casi ociosa (por ejemplo 6% de un núcleo)? Entonces el tiempo es off-CPU: una base de datos, la red, una cola por una conexión del pool. Un perfil de CPU muestra un informe correcto sobre el recurso equivocado. Usa tracing o métricas de espera."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Haz profiling para encontrar a dónde se va el tiempo. Las cajas anchas con borde libre arriba son los puntos calientes. El tiempo total incluye a los hijos, el tiempo propio no."
+				}
+			]
+		},
+		{
+			"id": "runtime-performance",
+			"title": "Rendimiento del runtime: event loop, garbage collection, cluster",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Node.js y Bun ejecutan el JavaScript de tu servidor en **un solo hilo**. Un hilo (thread) es como un cocinero. ¿Cómo atiende un cocinero a miles de clientes? Porque la mayor parte del tiempo no está cocinando, solo esperando."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un mesero con un solo bolígrafo toma tu pedido, se lo da a la cocina y va a la siguiente mesa. No se queda mirando el horno. Cuando un plato está listo, lo sirve. Un mesero puede atender muchas mesas, siempre que ninguna de sus propias tareas tarde mucho."
+				},
+				{
+					"type": "heading",
+					"text": "El event loop"
+				},
+				{
+					"type": "paragraph",
+					"text": "El **event loop** es una cola de tareas listas (callbacks) que ejecuta una a la vez. Cuando tu código pide una respuesta a la base de datos, la espera se entrega al sistema operativo y el bucle sigue con otras solicitudes. Esto es trabajo **I/O-bound**: el tiempo se va esperando, no calculando. Un hilo mantiene miles de estas solicitudes en marcha, y el límite pasa a ser la base de datos o el pool de conexiones."
+				},
+				{
+					"type": "diagram",
+					"content": "I/O-bound:  [inicia query][ otras solicitudes corren aquí ][respuesta]\n                          (el event loop está libre)\n\nCPU-bound:  [ calculando 200 ms, nadie más corre ]\n            /ping espera detrás",
+					"caption": "El trabajo CPU-bound retiene el único hilo de JavaScript de principio a fin."
+				},
+				{
+					"type": "paragraph",
+					"text": "El trabajo **CPU-bound** es lo contrario: el hilo está ocupado calculando, así que ningún otro callback corre, ningún temporizador se dispara, ningún resultado de I/O se lee. Si dos solicitudes de 300 ms de CPU síncrona llegan juntas, seguidas de un `/ping` diminuto, el ping se responde solo después de unos 600 ms. Un endpoint lento arruina la latencia de todo el servidor."
+				},
+				{
+					"type": "heading",
+					"text": "Usar más núcleos"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Herramienta",
+						"Qué hace",
+						"Memoria",
+						"Bueno para"
+					],
+					"rows": [
+						[
+							"`worker_threads`",
+							"Hilos extra dentro del mismo proceso, cada uno con su propio event loop",
+							"Puede compartir memoria binaria",
+							"Sacar un cálculo pesado del hilo principal"
+						],
+						[
+							"`cluster` / `pm2 start app.js -i max`",
+							"Varias copias del servidor completo, normalmente una por núcleo, todas escuchando en el mismo puerto",
+							"Cada proceso tiene su propia memoria, nada se comparte",
+							"Atender más solicitudes, aislar fallos"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El cluster multiplica la capacidad de CPU, así que ayuda cuando la **CPU es el cuello de botella**. Si una solicitud necesita 25 ms de CPU, un proceso atiende como máximo 1 / 0,025 = 40 req/s. Cuatro workers en cuatro núcleos dan hasta 160 req/s (algo menos en la vida real). Pero para trabajo I/O-bound (5 ms de CPU y 95 ms esperando), un proceso está libre la mayor parte del tiempo, así que más workers no cambian nada. Antes de añadir workers, calcula cuánto de un núcleo usa realmente el proceso: `tasa de solicitudes × tiempo de CPU por solicitud`."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "El cluster cuesta memoria. Un proceso con 100 MB de base más una caché en memoria de 200 MB pasa a 4 × 300 = 1.200 MB con 4 workers. Las sesiones o cachés guardadas en memoria difieren entre los workers, por eso los equipos las mueven a un servicio externo como Redis."
+				},
+				{
+					"type": "heading",
+					"text": "Garbage collection"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los programas crean objetos y los olvidan. El **garbage collector** (GC) encuentra los objetos que nadie usa y libera su memoria. V8, el motor de Node.js, es **generacional**, basado en la observación de que la mayoría de los objetos mueren jóvenes. Los objetos nuevos van a un área pequeña, la **generación joven**, que se limpia a menudo con recolecciones **menores** (minor) rápidas. Los supervivientes pasan a la **generación vieja**, que se limpia rara vez con recolecciones **mayores** (major), más lentas porque el heap es mucho más grande."
+				},
+				{
+					"type": "paragraph",
+					"text": "Gran parte del trabajo del GC es incremental o corre en hilos auxiliares, pero algunas fases son **stop-the-world**: JavaScript se detiene por completo. Las recolecciones mayores sobre un heap viejo grande pueden pausar por mucho tiempo. Como son raras, casi no cambian el promedio ni la mediana, y aparecen como picos periódicos en el **p99**. No lo confundas con una **fuga**: tras una fuga, la memoria en uso después de cada recolección sigue creciendo. Si la memoria vuelve al mismo nivel después de cada recolección, no es una fuga."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un hilo de JavaScript por proceso. Las esperas de I/O son baratas, la CPU síncrona bloquea a todos. El cluster ayuda al trabajo CPU-bound y cuesta memoria. Las pausas del GC aparecen en los percentiles altos."
+				}
+			]
+		},
+		{
+			"id": "cpu-cache-locality",
+			"title": "Caché de la CPU y localidad de memoria",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Big O cuenta pasos, como si cada paso costara lo mismo. Pero leer de la memoria no es igual de rápido en todas partes. Piensa en tu escritorio, tu estantería y la biblioteca de la ciudad. El lápiz sobre el escritorio tarda un segundo. Un libro en la estantería tarda un minuto. Un libro de la biblioteca tarda una tarde."
+				},
+				{
+					"type": "heading",
+					"text": "La jerarquía de memoria"
+				},
+				{
+					"type": "diagram",
+					"content": "registros < L1 < L2 < L3 < RAM < disco\nmás pequeña, más rápida, más cara  -->\n               <-- más grande, más lenta, más barata",
+					"caption": "L1, L2 y L3 son cachés dentro del procesador o junto a él."
+				},
+				{
+					"type": "paragraph",
+					"text": "La memoria rápida es pequeña y cara, la memoria grande es barata y lenta. Por eso el computador mantiene los datos en uso ahora en los niveles pequeños y rápidos. En números redondos, la L1 responde en cerca de 1 nanosegundo y la memoria principal (RAM) en cerca de 100, unas cien veces más lenta. Un programa es rápido cuando la mayoría de sus lecturas las atienden los niveles de arriba. Una lectura que encuentra su dato en la caché es un **hit**, y una que debe ir más lejos es un **miss**."
+				},
+				{
+					"type": "heading",
+					"text": "Líneas de caché y localidad"
+				},
+				{
+					"type": "paragraph",
+					"text": "La caché no copia bytes sueltos. Copia bloques llamados **líneas de caché** (cache lines), normalmente de **64 bytes**. Si lees un byte que falta, el procesador carga la línea completa de 64 bytes que lo contiene. Los programas tienen dos costumbres, llamadas juntas **localidad**:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Localidad temporal**: usas la misma dirección otra vez poco después (un contador de bucle).",
+						"**Localidad espacial**: usas direcciones vecinas una tras otra (los elementos de un arreglo)."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuenta los misses de un recorrido secuencial: es el número de **líneas tocadas**, no el número de elementos. Un `double` tiene 8 bytes, así que una línea guarda 8 de ellos. Recorrer 4.096 doubles lee `4096 × 8 / 64` = 512 líneas: 1 miss por cada 8 elementos, y los siguientes 7 son hits."
+				},
+				{
+					"type": "heading",
+					"text": "Orden por filas (row-major)"
+				},
+				{
+					"type": "paragraph",
+					"text": "C, C++ y Rust guardan una matriz **fila tras fila** (row-major). El elemento `(i, j)` está en el índice `i × n + j`. Avanzar a lo largo de una fila usa vecinos. Bajar por una columna salta una fila completa en cada paso."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"content": "/* A: bucle interno en j, sigue el orden de la memoria */\nfor (i = 0; i < N; i++)\n    for (j = 0; j < N; j++) sum += a[i][j];\n\n/* B: bucle interno en i, salta N valores en cada paso */\nfor (j = 0; j < N; j++)\n    for (i = 0; i < N; i++) sum += a[i][j];",
+					"caption": "Ambos son O(N²). Cuando la matriz es mayor que la caché, A es varias veces más rápido."
+				},
+				{
+					"type": "paragraph",
+					"text": "La misma idea explica por qué sumar 1 millón de números en un **arreglo** le gana a una **lista enlazada** con nodos dispersos en la memoria. Ambos son O(n), pero la lista puede pagar un miss por elemento."
+				},
+				{
+					"type": "heading",
+					"text": "Multiplicación de matrices: intercambio de bucles y blocking"
+				},
+				{
+					"type": "paragraph",
+					"text": "Multiplicar dos matrices `n × n` tiene tres bucles anidados y `n³` multiplicaciones, sea cual sea el orden de los bucles. En el orden `i, j, k`, el bucle interno baja por una columna de `b`, el peor recorrido. El **intercambio de bucles** (loop interchange) a `i, k, j` hace que cada acceso interno sea secuencial o fijo. Mismo resultado, mismo Big O, velocidad muy distinta."
+				},
+				{
+					"type": "paragraph",
+					"text": "El **blocking** (o tiling) va más allá: hace el trabajo en pequeños bloques `B × B` que caben en la caché y reutiliza cada pedazo cargado muchas veces antes de seguir. Tres bloques de doubles usan `3 × B² × 8` bytes. Para una L1 de 32 KiB (32.768 bytes): `B = 32` necesita 24.576 bytes y cabe, mientras que `B = 64` necesita 98.304 y no cabe. El tamaño del bloque sale de la capacidad de la caché, y el blocking no cambia el número de operaciones."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Mismo Big O no significa misma velocidad. Lee la memoria en el orden en que está guardada, reutiliza los datos mientras están en la caché y recuerda que una línea de caché tiene 64 bytes."
+				}
+			]
+		},
+		{
+			"id": "database-performance",
+			"title": "Rendimiento de bases de datos: índices, N+1 y pool de conexiones",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Muchas apps lentas lo son por culpa de la base de datos. Una tabla con 10 millones de filas es como una biblioteca con 10 millones de libros. Encontrar un libro recorriendo todos los estantes toma una eternidad. El bibliotecario necesita un catálogo."
+				},
+				{
+					"type": "heading",
+					"text": "Índices"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **índice** es ese catálogo. Un índice B-tree guarda los valores de una columna ordenados en un árbol balanceado, así que encontrar un valor cuesta `O(log n)` en vez de `O(n)`. Cada nodo guarda cientos de claves, por lo que el árbol es poco profundo incluso en tablas enormes. Sin un índice útil, PostgreSQL hace un **recorrido secuencial** (sequential scan): lee todas las filas y descarta las que no coinciden."
+				},
+				{
+					"type": "paragraph",
+					"text": "`EXPLAIN` muestra el plan que eligió la base de datos, sin ejecutar la consulta. Cada nodo muestra un costo estimado (unidades abstractas), las filas estimadas y el ancho de fila en bytes. Un `Seq Scan` con un `Filter` que devuelve pocas filas de una tabla enorme es la señal clásica de un índice que falta."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "EXPLAIN SELECT * FROM orders WHERE customer_id = 42;\n-- Seq Scan on orders (cost=0.00..23864.00 rows=95 width=64)\n--   Filter: (customer_id = 42)\nCREATE INDEX idx_orders_customer ON orders (customer_id);"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Los índices cuestan escrituras.** Cada `INSERT`, y cada `UPDATE` o `DELETE` que toca columnas indexadas, debe actualizar cada índice, y cada índice usa disco y memoria. Crea índices para consultas que existen y elimina los que nadie usa.",
+						"**Selectividad.** Es la fracción de filas que deja pasar un filtro. Un índice vale la pena cuando esa fracción es pequeña. En una columna con tres valores donde 'delivered' es el 95% de las filas, el planificador prefiere el recorrido secuencial, porque millones de lecturas aleatorias son peores que una lectura directa.",
+						"**Índices compuestos y el prefijo izquierdo (leftmost prefix).** Un índice en `(tenant_id, status, created_at)` está ordenado por la primera columna, luego por la segunda dentro de cada valor de la primera, como una guía telefónica ordenada por apellido y luego por nombre. Atiende bien los filtros que fijan un prefijo empezando por la izquierda. Un filtro que se salta la primera columna encuentra sus filas dispersas por el índice y es el peor atendido.",
+						"**`SELECT *`** trae todas las columnas, incluso las que la app tira. Las columnas anchas (texto largo, JSON) cuestan lecturas de disco, memoria y red. Pide solo las columnas que necesitas."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "El problema N+1"
+				},
+				{
+					"type": "paragraph",
+					"text": "El código trae una lista con 1 consulta y luego hace más consultas por cada uno de los N elementos. Cada consulta es rápida, pero cada una paga un viaje de ida y vuelta a la base de datos. Una lista de 10 posts que carga el autor de cada post en un bucle ejecuta `1 + 10` = **11** consultas, y 100 posts ejecutarían 101. La solución es un número fijo de consultas: un `JOIN`, un filtro `WHERE id IN (...)` con todos los ids, o el eager loading del ORM."
+				},
+				{
+					"type": "heading",
+					"text": "Paginación"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con `OFFSET 100000`, la base de datos debe producir 100.000 filas y tirarlas antes de la página, así que las páginas más profundas cuestan más. La **paginación por clave** (keyset) recuerda el último valor visto: `WHERE id > 100000 ORDER BY id LIMIT 20`. El índice va directo a ese punto, y el costo es el mismo en cada página. La contrapartida: solo puedes ir a la página siguiente o anterior, y el orden necesita columnas indexadas sin empates."
+				},
+				{
+					"type": "heading",
+					"text": "Pool de conexiones"
+				},
+				{
+					"type": "paragraph",
+					"text": "Abrir una conexión con la base de datos cuesta varios viajes de ida y vuelta por la red y, en PostgreSQL, un proceso nuevo en el servidor. Eso puede costar más que la consulta misma. Un **pool de conexiones** abre un número limitado de conexiones, las mantiene abiertas y presta una a cada solicitud, que la devuelve al terminar."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un pool es una fila de 10 bicicletas en una estación. Si las 10 están en uso, la persona número 11 espera en la fila. La espera es parte de la latencia que ve el cliente."
+				},
+				{
+					"type": "paragraph",
+					"text": "La **capacidad de un pool** es el número de conexiones dividido entre el tiempo que cada solicitud retiene una. Con 20 conexiones y 40 ms cada una: 20 / 0,04 = **500 req/s**. Por encima de esa tasa las solicitudes se acumulan y la latencia crece sin límite, aunque cada consulta siga tardando lo mismo. En una prueba de carga esto aparece como una **rodilla** (knee): latencia estable hasta un punto y luego una subida empinada mientras el throughput deja de crecer. Acortar el tiempo que se retiene una conexión aumenta la capacidad tanto como agrandar el pool."
+				},
+				{
+					"type": "paragraph",
+					"text": "El límite `max_connections` de PostgreSQL pertenece a todo el servidor, pero cada instancia de la aplicación tiene su propio pool. Lo que debe caber es la suma: `tamaño del pool × instancias + reserva`. Con `max_connections = 100`, una reserva de 10 y 6 instancias: (100 - 10) / 6 = 15, así que como máximo 15 por instancia. Un pool enorme no es la respuesta: demasiadas conexiones activas pelean por CPU, memoria y disco en la base de datos."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Indexa las columnas por las que filtran tus consultas, evita N+1, pide solo las columnas necesarias, pagina por clave y dimensiona el pool con tasa de llegada por tiempo de retención."
+				}
+			]
+		},
+		{
+			"id": "load-test-types",
+			"title": "Pruebas de carga, estrés, pico y resistencia",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una **prueba de carga** envía muchos usuarios falsos a un servicio y observa cómo se comporta. Es como un simulacro de incendio: quieres encontrar los problemas antes del incendio de verdad. Preguntas distintas piden formas distintas de tráfico, por eso existen distintos tipos de prueba. Se diferencian en dos cosas: **cuánta** carga y **por cuánto tiempo**."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Tipo",
+						"Forma de la carga",
+						"Pregunta que responde"
+					],
+					"rows": [
+						[
+							"Smoke (humo)",
+							"Carga mínima, muy corta",
+							"¿Funcionan el script, el entorno y la recolección de métricas? También da una línea base"
+						],
+						[
+							"Carga (load, carga promedio)",
+							"El tráfico normal esperado, mantenido un tiempo",
+							"¿Cumple el servicio sus metas con la carga habitual?"
+						],
+						[
+							"Estrés (stress)",
+							"Sube gradualmente por encima de lo normal y se mantiene",
+							"¿Qué pasa por encima del tráfico esperado? ¿Dónde está el punto de saturación?"
+						],
+						[
+							"Pico (spike)",
+							"Muy alta, muy corta, casi sin rampa",
+							"¿Sobrevive a una ráfaga repentina y se recupera?"
+						],
+						[
+							"Resistencia (soak, endurance)",
+							"Carga promedio durante horas",
+							"¿Qué se degrada lentamente con el tiempo, como una fuga de memoria?"
+						],
+						[
+							"Punto de ruptura (breakpoint)",
+							"Crece lenta y continuamente hasta que falla un criterio",
+							"¿Cuál es el límite? El valor en la falla es la respuesta"
+						]
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "usuarios\n  |            pico                    estrés\n  |             /\\                       ____\n  |   carga    /  \\          carga       /\n  |  _____    /    \\       _____      /\n  | /     \\__/      \\_____/     \\____/\n  +----------------------------------> tiempo\n   (soak = la meseta de 'carga' durando horas)",
+					"caption": "Formas aproximadas. La altura de la meseta distingue carga de estrés, la longitud distingue carga de soak, la pendiente de la rampa distingue estrés de pico."
+				},
+				{
+					"type": "heading",
+					"text": "Qué revela cada uno"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Estrés y la rodilla.** Mientras sobra capacidad, más usuarios dan más throughput con latencia casi igual. En el **punto de saturación** se agota algún recurso (CPU, conexiones del pool, hilos): el throughput se aplana y los usuarios extra solo alargan la cola, así que la latencia se dispara. En una tabla: 100 usuarios dan 800 req/s a 30 ms, 150 usuarios dan 1200 req/s a 32 ms, pero 200 usuarios dan solo 1250 req/s a 190 ms. El codo está en unos 150 usuarios.",
+						"**Pico.** Observa tres momentos: antes, durante y después. Sobrevivir a la ráfaga no basta. Si el p95 sigue diez veces por encima de lo normal durante 15 minutos después de que baja la carga, hay colas sin límite, timeouts largos, tormentas de reintentos o pools lentos para liberar recursos. Una tienda que abre una oferta a una hora exacta necesita una prueba de pico.",
+						"**Soak.** ¿La memoria crece al principio y luego queda plana? Eso es warm-up (cachés llenándose), no una fuga. Una fuga es un crecimiento que continúa con carga constante. Por eso una prueba de soak dura horas: en pocos minutos las dos curvas se ven iguales.",
+						"**Punto de ruptura.** A diferencia del estrés, no tiene una meseta planeada. Normalmente se usa un executor de tasa de llegada, para que la presión siga subiendo incluso cuando las respuestas se vuelven lentas."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Modelos abierto y cerrado, otra vez"
+				},
+				{
+					"type": "paragraph",
+					"text": "En un **modelo cerrado** el número de usuarios es fijo y cada uno espera su respuesta. Cuando el servidor se vuelve lento, el generador se vuelve lento con él, lo que alivia al servidor en el peor momento. En un **modelo abierto** las llegadas siguen una tasa fija, como personas reales que no saben que el sitio está lento. Por eso, para pruebas de estrés y de pico, un executor de tasa de llegada es la mejor opción."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Las pruebas de carga deben apuntar solo a sistemas propios, de preferencia locales. La única diferencia entre una prueba de carga y un ataque de denegación de servicio es la autorización y el objetivo, no la herramienta. Los buenos scripts leen el objetivo de una variable con valor local por defecto y se niegan a correr contra cualquier otro host."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Smoke comprueba que funciona, carga comprueba el día normal, estrés encuentra el límite, pico prueba una ráfaga repentina y la recuperación, soak encuentra fugas lentas a lo largo de horas."
+				}
+			]
+		},
+		{
+			"id": "k6-fundamentals",
+			"title": "k6: usuarios virtuales, etapas, thresholds y checks",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "[[k6|una herramienta de pruebas de carga de código abierto de Grafana, cuyos scripts de prueba se escriben en JavaScript]] es la herramienta de esta área. Un script de k6 es un archivo JavaScript que dice qué hace un usuario falso y cuántos usuarios falsos hay. Piensa en un teatro de títeres: escribes la obra una vez y k6 mueve muchos títeres al mismo tiempo."
+				},
+				{
+					"type": "heading",
+					"text": "Usuarios virtuales e iteraciones"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **usuario virtual (VU)** es un ejecutor independiente que corre la función por defecto de tu script en un bucle. Cada pasada completa por la función es una **iteración**. Una iteración puede contener varias solicitudes, checks y pausas, así que k6 cuenta iteraciones y solicitudes en métricas distintas."
+				},
+				{
+					"type": "code",
+					"language": "js",
+					"content": "import http from 'k6/http';\nimport { sleep } from 'k6';\n\nexport const options = { vus: 10, duration: '60s' };\n\nexport default function () {\n  http.get('http://localhost:3000/products');\n  sleep(1); // una pausa, en segundos, como una persona pensando\n}"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una iteración dura lo que duran sus solicitudes más el `sleep`. Aquí, si la solicitud tarda 500 ms, una iteración dura 1,5 s, así que el número de iteraciones es `VUs × duración / tiempo de la iteración`, unas 10 × 60 / 1,5 = 400."
+				},
+				{
+					"type": "heading",
+					"text": "Etapas y executors"
+				},
+				{
+					"type": "paragraph",
+					"text": "La opción `stages` dibuja una rampa: cada etapa tiene una `duration` y un `target`, y k6 mueve el número de VUs en línea recta desde donde está hasta el objetivo. Una etapa que repite el objetivo anterior es una **meseta**, y una última etapa con objetivo 0 es la **rampa de bajada**."
+				},
+				{
+					"type": "code",
+					"language": "js",
+					"content": "export const options = {\n  stages: [\n    { duration: '1m', target: 20 }, // subida\n    { duration: '3m', target: 20 }, // meseta\n    { duration: '1m', target: 0 },  // bajada\n  ],\n};",
+					"caption": "Con etapas de ramping-vus 1m hasta 20, 2m hasta 80, 1m hasta 0: a los 2 minutos llevas 1 minuto dentro de la segunda etapa, a mitad de camino entre 20 y 80, es decir, 50 VUs."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Executor",
+						"Modelo",
+						"Qué controla",
+						"Nota"
+					],
+					"rows": [
+						[
+							"`constant-vus`, `ramping-vus`",
+							"Cerrado",
+							"Número de VUs",
+							"Una nueva iteración empieza solo cuando termina la anterior, así que tasa = VUs / tiempo de la iteración"
+						],
+						[
+							"`constant-arrival-rate`, `ramping-arrival-rate`",
+							"Abierto",
+							"Iteraciones iniciadas por unidad de tiempo",
+							"Necesita suficientes VUs: aproximadamente tasa × duración de la iteración. Si se acaban, las iteraciones se descartan y se cuentan en `dropped_iterations`"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo: 50 VUs de `constant-vus` sin sleep. Con 100 ms por solicitud envían 50 / 0,1 = 500 req/s. Si el servidor se ralentiza a 500 ms, envían solo 100 req/s: la prueba alivia la presión justo cuando el sistema sufre. Un `constant-arrival-rate` de 30 por segundo con una respuesta de 1 s necesita unos 30 VUs. Si solo tiene 20, k6 descarta el resto."
+				},
+				{
+					"type": "heading",
+					"text": "Thresholds y checks"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **threshold** es una regla de aprobado o fallo sobre una métrica: una agregación (`avg`, `p(95)`, `rate`, `count`), un operador y un límite. `http_req_duration: ['p(95)<500']` significa que el p95 de todas las duraciones de solicitud debe ser menor que 500 ms. Cuando se supera cualquier threshold, k6 termina con **código de salida 99**, así que un pipeline de CI ve un fallo. Por defecto k6 sigue corriendo. La forma larga `{ threshold: 'rate<0.05', abortOnFail: true, delayAbortEval: '30s' }` detiene la prueba antes, y `delayAbortEval` espera primero, para que unos pocos fallos iniciales no aborten la prueba antes de que existan suficientes muestras."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **check** verifica algo sobre una respuesta, como \"el cuerpo tiene elementos\". **No** detiene la prueba ni la hace fallar: solo registra la tasa de aciertos en la métrica `checks`. Para que un contenido incorrecto haga fallar la prueba, añade un threshold sobre los checks, por ejemplo `checks: ['rate>0.99']`."
+				},
+				{
+					"type": "heading",
+					"text": "Las cuatro fases y los tipos de métrica"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Fase",
+						"Cuándo corre",
+						"Uso"
+					],
+					"rows": [
+						[
+							"Init (nivel superior)",
+							"Una vez por VU",
+							"Imports, lectura de archivos, definir `options`"
+						],
+						[
+							"`setup()`",
+							"Una vez, antes de la carga",
+							"Crear datos compartidos, como una cuenta de prueba. Su valor de retorno debe ser serializable a JSON"
+						],
+						[
+							"función por defecto",
+							"Repetida por todos los VUs",
+							"La carga en sí"
+						],
+						[
+							"`teardown()`",
+							"Una vez, al final",
+							"Limpieza"
+						]
+					]
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Counter**: suma valores (cuánto).",
+						"**Gauge**: guarda el último valor (cuánto ahora).",
+						"**Rate**: la proporción de valores verdaderos (con qué frecuencia). `http_req_failed` y `checks` son Rates.",
+						"**Trend**: estadísticas como promedio y percentiles (qué distribución). Úsalo para el tiempo de un flujo de login."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Otras piezas útiles: `__ENV` guarda variables de entorno (`k6 run -e NOMBRE=valor`), así que `const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000'` hace que el caso seguro y local sea el predeterminado. Y `handleSummary(data)` recibe todas las métricas al final y devuelve un objeto cuyas claves son destinos (un archivo, `stdout`) y cuyos valores son el contenido, que es como se generan informes JSON o HTML. Reemplaza el resumen por defecto, así que incluye una clave `stdout` si quieres ambos."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Los VUs ejecutan iteraciones. Las stages dibujan la rampa. Los thresholds deciden aprobado o fallo (código 99). Los checks solo registran. Los executors cerrados siguen el tiempo de respuesta, los de tasa de llegada mantienen el ritmo."
+				}
+			]
+		},
+		{
+			"id": "capacity-planning-queueing",
+			"title": "Planificación de capacidad y colas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La **planificación de capacidad** responde: ¿cuántos servidores necesitamos? Para responder usamos unas pocas leyes simples de la teoría de colas, que son las matemáticas de esperar en una fila. Imagina una sola taquilla de cine."
+				},
+				{
+					"type": "heading",
+					"text": "Dos leyes que siempre se cumplen"
+				},
+				{
+					"type": "paragraph",
+					"text": "La **ley de utilización**: la fracción de tiempo que un servidor está ocupado es `tasa de llegada × tiempo medio de servicio` (con las mismas unidades de tiempo). Una taquilla que recibe 10 clientes por segundo y tarda 50 ms en cada uno está ocupada `10 × 0,05` = 0,5, o sea el 50% del tiempo. Es el primer cálculo de la planificación de capacidad: cuánto ya está comprometido."
+				},
+				{
+					"type": "paragraph",
+					"text": "La **ley de Little**: en un sistema estable, `L = λ × W`, donde L es el número promedio de elementos dentro, λ (lambda) la tasa de llegada y W el tiempo promedio que cada elemento pasa dentro (espera más servicio). No depende de cómo se distribuyan las llegadas ni de cuántos servidores haya. Si llegan 100 solicitudes por segundo y cada una pasa 0,05 s en el sistema, en promedio `100 × 0,05` = 5 solicitudes están dentro. Convierte entre concurrencia, throughput y latencia."
+				},
+				{
+					"type": "heading",
+					"text": "Por qué la latencia explota cerca del 100%"
+				},
+				{
+					"type": "paragraph",
+					"text": "Las llegadas nunca están espaciadas por igual. Cuando dos clientes llegan juntos, uno debe esperar. La cola se vacía durante el tiempo ocioso. Con utilización baja hay mucho tiempo ocioso y una ráfaga se absorbe rápido. Con utilización alta, la cola de una ráfaga no está vacía cuando llega la siguiente. Para un modelo simple, la **cola M/M/1** (un servidor, llegadas aleatorias de Poisson, tiempos de servicio exponenciales), el tiempo medio de respuesta es:"
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "R = S / (1 - U)\n\nS = tiempo medio de servicio, U = utilización (entre 0 y 1)\nejemplo: S = 20 ms, 40 req/s -> U = 0,8 -> R = 20 / 0,2 = 100 ms"
+				},
+				{
+					"type": "chart",
+					"title": "Tiempo de respuesta como múltiplo del tiempo de servicio, cola M/M/1",
+					"unit": "veces S",
+					"bars": [
+						{
+							"label": "U = 50%",
+							"value": 2
+						},
+						{
+							"label": "U = 70%",
+							"value": 3.33
+						},
+						{
+							"label": "U = 80%",
+							"value": 5
+						},
+						{
+							"label": "U = 90%",
+							"value": 10
+						},
+						{
+							"label": "U = 95%",
+							"value": 20
+						},
+						{
+							"label": "U = 99%",
+							"value": 100
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Mira la forma: casi plana al principio, luego muy empinada. Pasar del 50% al 90% de utilización (un tráfico que ni siquiera se duplicó) multiplica la latencia por 5. La fórmula depende del modelo, pero la forma es una buena intuición para sistemas reales. Por eso dejamos **holgura** (headroom): capacidad de sobra."
+				},
+				{
+					"type": "heading",
+					"text": "Dimensionar a partir de una prueba de carga"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Mide la capacidad de una instancia **dentro de la meta de latencia**, por ejemplo 250 req/s.",
+						"Aplica la regla de holgura: si cada instancia puede correr como máximo al 70%, la capacidad utilizable es 175 req/s.",
+						"Divide el pico esperado entre ella y **redondea hacia arriba**. Para un pico de 1.000 req/s: 1000 / 175 = 5,7, así que 6 instancias."
+					],
+					"ordered": true
+				},
+				{
+					"type": "paragraph",
+					"text": "Esto supone que la carga se reparte por igual y que la escala es lineal. Compruébalo: una base de datos compartida puede saturarse primero."
+				},
+				{
+					"type": "paragraph",
+					"text": "El mismo método dimensiona un **pool de conexiones**. El número promedio de conexiones ocupadas es `tasa de llegada × tiempo de retención`. Con 100 req/s reteniendo una conexión 30 ms: 3 ocupadas en promedio. Para mantener como máximo el 60% ocupadas, divide entre 0,6: 5 conexiones. Un pool dimensionado exactamente para el promedio estaría 100% ocupado, y la cola crecería mucho antes de eso."
+				},
+				{
+					"type": "heading",
+					"text": "La ley de Amdahl para escalar"
+				},
+				{
+					"type": "paragraph",
+					"text": "Si una fracción `s` del trabajo no se puede paralelizar, el speed-up con `N` procesadores es `1 / (s + (1 - s) / N)`. Con un 10% serial, nunca supera 10, sin importar cuántos procesadores añadas."
+				},
+				{
+					"type": "chart",
+					"title": "Speed-up cuando el 10% del trabajo es serial (Amdahl)",
+					"unit": "veces",
+					"bars": [
+						{
+							"label": "1 núcleo",
+							"value": 1
+						},
+						{
+							"label": "2 núcleos",
+							"value": 1.82
+						},
+						{
+							"label": "4 núcleos",
+							"value": 3.08
+						},
+						{
+							"label": "8 núcleos",
+							"value": 4.71
+						},
+						{
+							"label": "16 núcleos",
+							"value": 6.4
+						},
+						{
+							"label": "Infinito",
+							"value": 10
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "En un cluster de procesos, la parte serial suele ser un recurso compartido: la base de datos o un lock."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "U = tasa de llegada × tiempo de servicio. L = tasa de llegada × tiempo en el sistema. R = S / (1 - U) en M/M/1. Planifica siempre holgura y redondea hacia arriba el número de instancias."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando todo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Ahora tienes una caja de herramientas. Así se conectan las piezas cuando un servicio está lento, paso a paso."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Define rápido**: elige una meta con un percentil, por ejemplo \"95% de las solicitudes en menos de 300 ms\".",
+						"**Produce carga** con una prueba del tipo correcto (carga, estrés, pico, soak) en un modelo abierto, contra un objetivo local.",
+						"**Lee el resultado** con percentiles, throughput y tasa de error juntos, y busca la rodilla.",
+						"**Encuentra el cuello de botella**: CPU alta pide un perfil de CPU y un flame graph. CPU baja y latencia alta significa espera: base de datos, pool, red.",
+						"**Arregla una cosa**, vuelve a medir con justicia (warm-up, repeticiones, misma máquina, checksum) y reporta la dispersión.",
+						"**Dimensiona** el servicio con utilización, ley de Little y holgura."
+					],
+					"ordered": true
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Síntoma",
+						"Causa probable",
+						"Herramienta o idea"
+					],
+					"rows": [
+						[
+							"p99 alto, p50 normal",
+							"Pocas solicitudes lentas: pausa del GC, lock, cola",
+							"Percentiles, logs del GC"
+						],
+						[
+							"Un endpoint lento congela todas las solicitudes (Node.js)",
+							"CPU síncrona en el hilo único",
+							"Flame graph, worker threads, cluster"
+						],
+						[
+							"Latencia plana y luego una subida repentina al aumentar la carga",
+							"Un recurso saturado (pool, CPU)",
+							"Prueba de estrés, ley de utilización"
+						],
+						[
+							"Latencia alta pero CPU baja",
+							"Espera: base de datos, pool, red",
+							"Wall-clock vs tiempo de CPU, tracing"
+						],
+						[
+							"Una página de lista hace decenas de consultas",
+							"N+1",
+							"JOIN o IN, eager loading"
+						],
+						[
+							"Mismo Big O, velocidad muy distinta",
+							"Cache misses, mal orden de memoria",
+							"Intercambio de bucles, blocking"
+						],
+						[
+							"La memoria crece sin fin",
+							"Fuga",
+							"Perfil de heap, prueba de soak"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Errores comunes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Optimizar sin hacer profiling.",
+						"Mirar solo el promedio, o promediar percentiles de servidores distintos.",
+						"Comparar dos programas que hacen trabajos distintos, o nunca revisar el checksum.",
+						"Medir código que el compilador eliminó, o incluir el arranque sin querer.",
+						"Una prueba de modelo cerrado que esconde el problema que debería encontrar (omisión coordinada).",
+						"Apuntar una prueba de carga a un sistema que no es tuyo.",
+						"Añadir workers o un pool mayor sin comprobar dónde está el cuello de botella."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Trabajar en rendimiento es un ciclo de medir, encontrar, arreglar y volver a medir, con números honestos: percentiles en vez de promedios, comparaciones justas, holgura en vez de esperanza."
+				}
+			]
+		}
+	]
+}

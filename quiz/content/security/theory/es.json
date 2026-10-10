@@ -1,0 +1,1440 @@
+{
+	"area": "security",
+	"intro": [
+		"Imagina tu casa. Tiene puerta de entrada, ventanas, una cerradura, una llave debajo del felpudo y un vecino que a veces pide azúcar prestada. La **seguridad** es el trabajo de pensar en todo eso: quién puede entrar, qué puede llevarse y qué hacemos para que la persona equivocada no pueda. El software también tiene puertas y llaves. Un sitio web tiene un inicio de sesión (la puerta de entrada), cookies (notitas que dicen \"esta persona ya entró\") y una base de datos (el armario donde se guarda todo lo valioso).",
+		"La mayoría de las intrusiones en internet no son cosa de película, con un hacker tecleando rápido. Ocurren porque un programador **confió en algo que debió verificar**: un nombre escrito en una casilla, un número en la dirección, un archivo que alguien subió. Esta materia, llamada **seguridad de aplicaciones**, enseña cómo fallan los programas cuando alguien los usa de una forma que nadie esperaba, para que los construyamos de modo que no fallen.",
+		"Todo aquí es **defensivo**. Para cada falla explicamos por qué ocurre y, siempre, cómo prevenirla. El código que ves es el ejemplo más pequeño necesario para reconocer el problema, y siempre va junto a su corrección. Las ideas siguen las guías de [[OWASP|Open Worldwide Application Security Project, un grupo sin fines de lucro que escribe guías gratuitas de seguridad]], la referencia estándar del área.",
+		"Al final conocerás las principales familias de fallas web (inyección, scripts plantados en páginas, peticiones falsificadas, contraseñas débiles, sesiones robadas, tokens rotos, falta de comprobación de permisos, servidores engañados, subidas inseguras), los hábitos que frenan cada una y lo básico de criptografía y secretos que sostiene todo lo demás."
+	],
+	"sections": [
+		{
+			"id": "web-basics",
+			"title": "Cómo funciona la web: las piezas con las que juega un atacante",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Antes de estudiar cómo se rompen las cosas, necesitamos saber cómo funciona normalmente un sitio web. Piensa en un restaurante. Tú (el **navegador**) te sientas a la mesa y escribes un pedido en un papel. El mesero lo lleva a la cocina (el **servidor**). La cocina cocina y el mesero trae el plato. El papel del pedido se llama [[petición HTTP|un mensaje pequeño que el navegador envía al servidor para pedir algo, como una página o una acción]], y el plato es la **respuesta**."
+				},
+				{
+					"type": "diagram",
+					"caption": "Un viaje de ida y vuelta entre navegador y servidor",
+					"content": "  Navegador                          Servidor\n     |                                  |\n     |  GET /invoices/1001  + cookie    |\n     | -------------------------------> |  busca los datos,\n     |                                  |  arma una página\n     |  200 OK  + página (HTML)         |\n     | <------------------------------- |\n     |                                  |"
+				},
+				{
+					"type": "paragraph",
+					"text": "Algunas palabras volverán todo el tiempo. Una **cookie** es una notita que el servidor le pide al navegador que guarde y que muestre de nuevo en cada visita posterior, como la pulsera de un parque acuático: el personal no recuerda tu cara, solo revisa la pulsera. Un **origen** es la dirección exacta de un sitio: el protocolo (`https`), el nombre (`shop.test`) y el puerto. Dos páginas con orígenes distintos son extrañas entre sí, y el navegador lo hace cumplir con la [[política del mismo origen|una regla del navegador: un script de un origen no puede leer datos que pertenecen a otro origen]]."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Palabra",
+						"Imagen cotidiana",
+						"Qué es"
+					],
+					"rows": [
+						[
+							"Cliente",
+							"El comensal en la mesa",
+							"El navegador o la app del usuario. El usuario lo controla por completo"
+						],
+						[
+							"Servidor",
+							"La cocina",
+							"El programa que escribimos y protegemos"
+						],
+						[
+							"Cookie",
+							"Una pulsera",
+							"Una nota que el navegador devuelve automáticamente en cada petición"
+						],
+						[
+							"Origen",
+							"Una dirección de calle completa",
+							"Protocolo + nombre + puerto, por ejemplo `https://shop.test:443`"
+						],
+						[
+							"Entrada no confiable",
+							"La nota de un extraño",
+							"Todo lo que viene de fuera: formularios, URLs, cabeceras, archivos e incluso datos leídos de vuelta de la base de datos"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "La regla de oro de la seguridad web: **todo lo que viene del cliente puede ser cambiado por el cliente**. El servidor debe comprobar, nunca solo creer."
+				}
+			]
+		},
+		{
+			"id": "owasp-threat-modelling",
+			"title": "OWASP Top 10, amenazas y buenos hábitos",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "¿Por dónde empezar? Los médicos tienen una lista de las enfermedades más comunes. Quienes trabajan en seguridad también. El **OWASP Top 10** es un documento de concienciación, no es una ley ni un certificado. Agrupa las fallas en diez categorías de riesgo, ordenadas por la frecuencia con que aparecen en datos reales y por una encuesta a profesionales. Es un buen punto de partida para estudiar y revisar, pero **no es una lista completa** de todas las fallas, y pasar una revisión basada en él no prueba que una aplicación sea segura."
+				},
+				{
+					"type": "paragraph",
+					"text": "En este resumen usamos la **edición de 2021**. Su categoría número uno es **Broken Access Control** (control de acceso roto): una persona con sesión iniciada alcanza cosas que no son suyas. La inyección, que lideraba la edición de 2017, pasó al tercer lugar."
+				},
+				{
+					"type": "table",
+					"caption": "OWASP Top 10, edición 2021",
+					"headers": [
+						"Posición",
+						"Categoría",
+						"En una frase"
+					],
+					"rows": [
+						[
+							"A01",
+							"Broken Access Control",
+							"Un usuario lee o cambia lo que no debería"
+						],
+						[
+							"A02",
+							"Cryptographic Failures",
+							"Los datos sensibles no se protegen, o se protegen mal"
+						],
+						[
+							"A03",
+							"Injection",
+							"Los datos se mezclan con código (SQL, shell) y se ejecutan como código"
+						],
+						[
+							"A04",
+							"Insecure Design",
+							"El propio plan carece de un control necesario"
+						],
+						[
+							"A05",
+							"Security Misconfiguration",
+							"Valores por defecto, funciones abiertas y errores ruidosos olvidados en producción"
+						],
+						[
+							"A06",
+							"Vulnerable and Outdated Components",
+							"Bibliotecas viejas con fallas conocidas"
+						],
+						[
+							"A07",
+							"Identification and Authentication Failures",
+							"Contraseñas débiles, sesiones débiles, inicio de sesión débil"
+						],
+						[
+							"A08",
+							"Software and Data Integrity Failures",
+							"Actualizaciones y datos aceptados sin comprobar de dónde vienen"
+						],
+						[
+							"A09",
+							"Security Logging and Monitoring Failures",
+							"Nadie nota la intrusión"
+						],
+						[
+							"A10",
+							"Server-Side Request Forgery (SSRF)",
+							"Se engaña al servidor para que llame a lugares a los que no debería"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Pensar como defensor: el modelado de amenazas"
+				},
+				{
+					"type": "paragraph",
+					"text": "El [[modelado de amenazas|dibujar el sistema y preguntar qué puede salir mal, antes de construirlo]] consiste en responder cuatro preguntas temprano: **¿Qué estamos construyendo? ¿Qué puede salir mal? ¿Qué vamos a hacer al respecto? ¿Hicimos un buen trabajo?** Rinde más en la fase de diseño, antes de que exista código, porque cambiar un dibujo es barato y cambiar un sistema terminado es caro. Cuando la arquitectura cambia, lo haces otra vez."
+				},
+				{
+					"type": "paragraph",
+					"text": "Una lista práctica para \"qué puede salir mal\" es **STRIDE**. Cada letra es un tipo de amenaza, y cada una rompe una propiedad que queremos mantener. Saber qué propiedad se rompió indica el tipo de control que se debe usar."
+				},
+				{
+					"type": "table",
+					"caption": "STRIDE",
+					"headers": [
+						"Letra",
+						"Amenaza",
+						"Propiedad rota",
+						"Control típico"
+					],
+					"rows": [
+						[
+							"S",
+							"Spoofing: hacerse pasar por otra persona",
+							"Autenticidad",
+							"Autenticación fuerte"
+						],
+						[
+							"T",
+							"Tampering: alterar datos",
+							"Integridad",
+							"Firmas, comprobaciones en el servidor"
+						],
+						[
+							"R",
+							"Repudiation: negar que se hizo algo",
+							"No repudio",
+							"Registros y rastros de auditoría"
+						],
+						[
+							"I",
+							"Information disclosure: filtrar secretos",
+							"Confidencialidad",
+							"Cifrado, control de acceso"
+						],
+						[
+							"D",
+							"Denial of service: hacer que deje de funcionar",
+							"Disponibilidad",
+							"Límites, capacidad, filtrado"
+						],
+						[
+							"E",
+							"Elevation of privilege: obtener más derechos",
+							"Autorización",
+							"Comprobación de permisos, mínimo privilegio"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Principios que aparecen en todas partes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Mínimo privilegio**: cada persona, programa o cuenta de base de datos recibe solo los permisos que su trabajo necesita. Quien cuida la mascota del curso necesita la llave del salón, no la de toda la escuela. Si la app solo lee productos, su cuenta en la base de datos no debe poder borrar tablas.",
+						"**Defensa en profundidad**: apila varias protecciones independientes, porque cualquiera puede fallar. Un castillo tiene foso, muralla y guardias.",
+						"**Seguro por defecto y denegar por defecto**: la opción segura es la que obtienes cuando no haces nada.",
+						"**Diseño inseguro frente a implementación insegura**: un bug es código que no hace lo que decía el plan. El diseño inseguro es código que hace exactamente lo que decía el plan, cuando el plan olvidó un control. Ejemplo: una tienda deja que cualquiera reserve stock ilimitado durante 24 horas sin pagar. Los bots reservan todo. El código no tiene bug; a la regla le falta un límite. La corrección es rediseñar la regla, y la prevención es escribir casos de abuso junto a los casos de uso.",
+						"**Mala configuración de seguridad**: el código está bien pero el despliegue no. Cuentas por defecto `admin/admin`, listado de directorios activado y páginas de error que muestran el stack trace completo son ejemplos clásicos. La cura es un proceso de endurecimiento (hardening) repetible, igual en todos los entornos."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Una consulta parametrizada es una buena cerradura en la puerta de entrada. Darle a la cuenta de la base de datos solo permiso de SELECT es una segunda cerradura en el armario. Si un ladrón encuentra la forma de pasar la primera, la segunda aún limita el daño. Eso es defensa en profundidad."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Ninguna protección por sí sola basta. Elige los controles según la propiedad amenazada, apílalos y dale a todo el menor poder que necesita."
+				}
+			]
+		},
+		{
+			"id": "cryptography-tls",
+			"title": "Criptografía y TLS: códigos secretos que protegen el camino",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La [[criptografía|la ciencia de convertir información en una forma que solo las personas correctas pueden usar o verificar]] es la caja de herramientas detrás de las contraseñas, los tokens y el candado del navegador. No necesitas las matemáticas. Necesitas saber **qué herramienta responde a qué pregunta**."
+				},
+				{
+					"type": "heading",
+					"text": "Dos formas de cerrar un mensaje"
+				},
+				{
+					"type": "paragraph",
+					"text": "La criptografía **simétrica** usa la **misma clave** para cerrar y abrir, como un diario con una llave que tienen los dos amigos. Es muy rápida, pero hay un problema: ¿cómo acuerdan los dos la clave sin que nadie más escuche? La criptografía **asimétrica** usa un **par de claves**. La **clave pública** puede mostrarse a todo el mundo, como la ranura de un buzón donde cualquiera deja cartas. La **clave privada** se queda en secreto, como la llave que abre el buzón. Resuelve el problema de compartir, pero es mucho más lenta."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Simétrica",
+						"Asimétrica"
+					],
+					"rows": [
+						[
+							"Claves",
+							"Una clave secreta compartida",
+							"Una clave pública y una clave privada"
+						],
+						[
+							"Velocidad",
+							"Muy rápida",
+							"Mucho más lenta"
+						],
+						[
+							"Problema principal",
+							"Cómo compartir la clave con seguridad",
+							"El costo, por eso se usa solo un instante"
+						],
+						[
+							"En TLS sirve para",
+							"Cifrar todos los datos de la conexión",
+							"El handshake: probar quién es el servidor y acordar las claves"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Los sistemas reales usan ambas, lo que se llama **criptografía híbrida**. TLS usa la herramienta asimétrica, lenta, una vez al principio, para acordar un secreto sin ningún secreto previo. Después de eso, todo se protege con la herramienta simétrica, rápida."
+				},
+				{
+					"type": "heading",
+					"text": "Hash no es cifrado"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una **función hash** es como una máquina de moler carne: entra cualquier cosa, sale una \"huella digital\" de tamaño fijo, y no se puede volver a convertir la carne. Es de **una sola vía**. Un **cifrado** es una cerradura reversible: con la clave recuperas el original. Responden a necesidades distintas, y usar uno en lugar del otro es un error clásico."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Herramienta",
+						"¿Reversible?",
+						"Tamaño de la salida",
+						"Úsala para"
+					],
+					"rows": [
+						[
+							"Hash (por ejemplo SHA-256)",
+							"No",
+							"Siempre igual",
+							"Comprobar que un archivo no cambió"
+						],
+						[
+							"Cifrado (por ejemplo AES)",
+							"Sí, con la clave",
+							"Cerca del tamaño de la entrada",
+							"Mantener datos en secreto"
+						],
+						[
+							"MAC / HMAC",
+							"No",
+							"Fijo",
+							"Comprobar que un mensaje no fue alterado por quien no tiene la clave"
+						],
+						[
+							"Firma digital",
+							"No",
+							"Fijo",
+							"Probar quién escribió un mensaje cuando nadie comparte clave"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Por qué un hash simple no basta para proteger un mensaje en el camino? Porque si alguien en medio cambia el mensaje, puede simplemente **calcular un hash nuevo** para el mensaje nuevo. El hash no lleva ningún secreto. Un [[MAC|código de autenticación de mensajes: una huella digital mezclada con una clave secreta, de modo que solo quien conoce la clave puede producir una válida]] como **HMAC** mezcla una clave secreta en el hash. Sin la clave, nadie puede producir un valor válido para un mensaje alterado. Cuando las dos partes no comparten clave, una **firma digital** cumple el mismo papel."
+				},
+				{
+					"type": "heading",
+					"text": "TLS: qué significa realmente el candado"
+				},
+				{
+					"type": "paragraph",
+					"text": "**TLS** es el protocolo detrás de `https`. Cerrar la conversación no basta, porque podrías estar cerrándola para la persona equivocada. Por eso el servidor muestra un **certificado**, un documento firmado por una autoridad de confianza que dice \"esta clave pública pertenece a este dominio\". El navegador lo valida. ¿Qué prueba eso? Que la clave pública realmente pertenece al dominio que visitas, y que el servidor tiene la clave privada correspondiente. **No** prueba que el sitio sea honesto. Un sitio estafador puede tener un candado perfectamente válido."
+				},
+				{
+					"type": "diagram",
+					"caption": "TLS en pasos",
+					"content": "1. Navegador: \"hola, quiero shop.test\"\n2. Servidor  : certificado (clave pública + firma)\n              el navegador revisa: ¿es de shop.test?\n3. Ambos     : acuerdan claves de sesión nuevas\n              (asimétrica, Diffie-Hellman efímero)\n4. Desde aquí: cifrado simétrico rápido\n              + comprobación de integridad en cada mensaje"
+				},
+				{
+					"type": "paragraph",
+					"text": "Hay una propiedad más, muy buena. Supón que alguien graba hoy todo tu tráfico cifrado y, dentro de cinco años, roba la clave privada del servidor. ¿Puede leer las grabaciones antiguas? Con **TLS 1.3**, no. Esto se llama **confidencialidad directa** (forward secrecy). Cada conexión crea sus claves con un intercambio Diffie-Hellman [[efímero|de vida corta: se usa una vez y luego se tira]], con números aleatorios que se descartan al final. La clave del certificado se usa solo para probar identidad, no para proteger el tráfico, así que robarla después no abre nada del pasado."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Errores comunes: usar un hash donde se necesita un secreto (usa HMAC), usar cifrado donde se necesita una huella de una sola vía (las contraseñas se someten a hash, no se cifran) y creer que el candado significa que el sitio es de fiar."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "La simétrica es rápida, la asimétrica resuelve el reparto de claves, TLS usa ambas. Un hash solo no prueba nada frente a un atacante; un MAC o una firma sí. La confidencialidad directa significa que una clave robada no abre grabaciones antiguas."
+				}
+			]
+		},
+		{
+			"id": "injection",
+			"title": "Inyección: cuando los datos se vuelven comandos",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagina que le dices a un mesero robot: \"Tráeme la sopa\". Ahora un niño travieso escribe en la comanda: \"sopa, y también abre la caja registradora\". Si el robot lee la comanda como una lista larga de instrucciones, obedece las dos. Eso es **inyección**: el programa debería tratar lo que escribió el usuario como simples **datos**, pero deja que esos datos se lean como **código**. Los dos se mezclaron en un mismo trozo de texto."
+				},
+				{
+					"type": "paragraph",
+					"text": "En la **inyección SQL** el \"robot\" es la base de datos. El programa arma la consulta pegando textos, así que un valor con una comilla puede cambiar la forma del comando. El problema es el pegamento, no el usuario."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Vulnerable: el valor pasa a formar parte del texto SQL",
+					"content": "const email = body.email; // viene del usuario\nconst sql = \"SELECT id, name FROM users WHERE email = '\" + email + \"'\";\nconst result = await db.query(sql);\n// un email como  x' OR '1'='1  cambia el significado de la consulta"
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Corregido: la consulta parametrizada mantiene separados el texto y los valores",
+					"content": "const sql = \"SELECT id, name FROM users WHERE email = $1\";\nconst result = await db.query(sql, [email]);\n// la base de datos fija primero la forma del comando,\n// y solo después recibe email como valor"
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Por qué funciona la segunda versión? La base de datos primero lee el texto con sus marcadores (`$1`, o `?` en otras bases) y decide cuál es el comando. Solo después recibe los valores, y un valor solo puede ocupar una posición de dato. Así, `x' OR '1'='1` es apenas un email raro con el que comparar, no una condición. Esto se llama [[consulta parametrizada|también llamada prepared statement: el texto SQL y los valores viajan por separado]], y es la **defensa principal** porque elimina la causa."
+				},
+				{
+					"type": "heading",
+					"text": "Otras defensas y cosas que no funcionan"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**La validación** (¿el valor tiene la longitud, el tipo y el formato correctos?) es una buena capa extra. Decide si un valor tiene sentido. No reemplaza a los parámetros. Un campo de apellido debe seguir aceptando `O'Brien`, así que aceptas el apóstrofo y envías el valor como parámetro.",
+						"**Mínimo privilegio**: una cuenta de base de datos que solo lee lo que necesita limita el daño si algo se escapa.",
+						"**Las listas de bloqueo y el escape manual** (quitar comillas, prohibir palabras) tratan síntomas y son fáciles de esquivar. No cuentes con ellas.",
+						"**Los ORM** (bibliotecas que escriben el SQL por ti) parametrizan sus métodos normales, así que reducen mucho el riesgo. Pero el SQL crudo armado con interpolación de cadenas dentro de un ORM es tan inyectable como cualquier otro.",
+						"**Los datos de tu propia base de datos tampoco son confiables.** Si un nombre se guardó con seguridad y luego se pegó en otra consulta, esa segunda consulta es vulnerable. Parametrizar es una regla para toda consulta, no solo para lo que acaba de llegar.",
+						"**Los procedimientos almacenados no son magia.** Si un procedimiento arma SQL dinámico pegando su argumento en una cadena, es inyectable. Dentro de la base de datos, el SQL dinámico necesita sus propios parámetros (en PostgreSQL, `EXECUTE ... USING`)."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Cuando la estructura debe cambiar"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los marcadores representan valores, no nombres de columnas, nombres de tablas ni `ASC`/`DESC`. Supón que una lista puede ordenarse por `price` o `name`. No pegues la palabra recibida en la consulta. Usa la palabra solo como **clave de una lista fija** y toma el nombre real de la columna de esa lista."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Lista de permitidos para una parte estructural",
+					"content": "const columns: Record<string, string> = { price: \"price\", name: \"name\" };\nconst column = columns[query.sort];\nif (!column) return status(400);\nconst sql = `SELECT id, name FROM products ORDER BY ${column}`;\n// el texto sale de nuestra lista, nunca del usuario"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los parámetros tampoco cambian lo que un valor **significa** dentro de un mini-lenguaje propio. En `LIKE '%' || $1 || '%'`, si el usuario envía `%`, no hay inyección, pero `%` sigue funcionando como el comodín \"cualquier cosa\" y coincide con todas las filas. Si la búsqueda debe ser literal, escapa `%` y `_` en el valor."
+				},
+				{
+					"type": "heading",
+					"text": "La misma idea con el sistema operativo"
+				},
+				{
+					"type": "paragraph",
+					"text": "La **inyección de comandos** es el mismo error con otro intérprete: el shell. Un servidor que arma el texto `ping -c 1 ` más un host escrito por el usuario y se lo entrega a un shell está en problemas, porque caracteres como `;`, `|` y `&&` significan \"ejecuta otro comando\" para un shell. La cura: no uses el shell. Inicia el programa directamente, indicando el ejecutable y una **lista de argumentos**, para que cada argumento llegue como dato, y valida el host contra un formato estricto."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Vulnerable y corregido",
+					"content": "// Vulnerable: un shell lee la cadena completa\nexec(\"ping -c 1 \" + host);\n\n// Corregido: sin shell, argumentos en lista, host validado antes\nif (!/^[a-zA-Z0-9.-]{1,253}$/.test(host)) return status(400);\nspawn(\"ping\", [\"-c\", \"1\", host]);"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Una consulta parametrizada es como darle al mesero robot una tarjeta de menú impresa con espacios en blanco: \"Tráeme ____\". Lo que el niño escriba en el espacio es solo el nombre de un plato, nunca se vuelve una instrucción nueva."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "La inyección es la pérdida de la frontera entre código y datos. Envía los valores separados del texto del comando (parámetros, listas de argumentos), usa listas de permitidos para las partes que deben cambiar de forma y trata toda fuente de datos como no confiable."
+				}
+			]
+		},
+		{
+			"id": "xss",
+			"title": "Cross-site scripting (XSS): el script de un extraño en tu página",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La inyección tiene una prima en la que el \"robot\" es el **navegador**. Un navegador lee texto HTML y construye la página a partir de él. Algunas partes del HTML son código, como un bloque `<script>` o un atributo como `onerror=\"...\"`. En el **cross-site scripting (XSS)**, un script escrito por otra persona termina dentro de tu página, y el navegador no puede saber que no lo escribiste tú. Se ejecuta con el **origen del sitio vulnerable**, así que ve la página, lee lo que la página puede leer y actúa en nombre de quien la tiene abierta."
+				},
+				{
+					"type": "paragraph",
+					"text": "La causa raíz es siempre la misma: se escribieron datos en un lugar que se interpreta como código sin **codificarlos** para ese lugar. Hay tres tipos clásicos, y la diferencia es solo cómo llegan los datos a la página."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Tipo",
+						"Cómo llegan los datos",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"**Almacenado (stored)**",
+							"El servidor lo guarda y lo sirve a todos los que abren la página",
+							"Un comentario con una etiqueta de script, mostrado a cada lector del artículo"
+						],
+						[
+							"**Reflejado (reflected)**",
+							"El servidor devuelve de inmediato algo que vino en la petición",
+							"Una página de búsqueda que imprime tu texto buscado sin cambios"
+						],
+						[
+							"**Basado en DOM**",
+							"El JavaScript de la propia página lee los datos y los inserta en la página. El servidor puede no verlos nunca",
+							"Un script que pone en la página lo que va después del `#` en la dirección"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Defensa 1: codificar en la salida"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando escribas datos del usuario en HTML, convierte los caracteres de significado especial en equivalentes inofensivos: `<` pasa a `&lt;`, `>` pasa a `&gt;`, `&` pasa a `&amp;`, y las comillas también se reemplazan. El navegador entonces muestra los caracteres como texto en vez de leerlos como etiquetas. No se borra nada; el visitante ve exactamente lo que escribió."
+				},
+				{
+					"type": "diagram",
+					"caption": "Por qué la codificación detiene el script",
+					"content": "Sin codificación:\n  el servidor escribe : <span> <script>bad()</script> </span>\n  el navegador ve     : una etiqueta script -> SE EJECUTA\n\nCon codificación:\n  el servidor escribe : <span> &lt;script&gt;bad()&lt;/script&gt; </span>\n  el navegador ve     : texto plano         -> se muestra, nunca se ejecuta"
+				},
+				{
+					"type": "paragraph",
+					"text": "Codifica **en el momento de la salida**, no al guardar en la base de datos. La codificación correcta depende de dónde cae el dato (texto HTML, atributo, URL, JavaScript, CSS), y eso solo lo sabes al escribir la página. Un dato guardado ya codificado para HTML se vería mal en una API JSON y seguiría siendo inseguro dentro de JavaScript. El contexto importa: algo inofensivo en un lugar puede ser código en otro. En un `href` o `src`, por ejemplo, también hay que comprobar el esquema de la URL, porque un enlace `javascript:` ejecuta código al hacer clic. Acepta solo `http:` y `https:`, de una lista de permitidos."
+				},
+				{
+					"type": "heading",
+					"text": "Defensa 2: APIs seguras del navegador"
+				},
+				{
+					"type": "paragraph",
+					"text": "En el XSS basado en DOM el servidor no tiene nada que codificar, porque la parte peligrosa nunca viaja hasta él. La corrección está dentro del script: usa APIs que traten el valor como texto."
+				},
+				{
+					"type": "code",
+					"language": "js",
+					"caption": "Un XSS basado en DOM y su corrección",
+					"content": "const name = decodeURIComponent(location.hash.slice(1));\n\n// Vulnerable: innerHTML interpreta el texto como HTML\n// document.querySelector('#greeting').innerHTML = 'Hola, ' + name;\n\n// Corregido: textContent siempre inserta texto plano\ndocument.querySelector('#greeting').textContent = 'Hola, ' + name;"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Seguro: trata el valor como texto",
+						"Peligroso: interpreta el valor como marcado"
+					],
+					"rows": [
+						[
+							"`textContent`, `createTextNode`",
+							"`innerHTML`, `outerHTML`"
+						],
+						[
+							"`setAttribute` para atributos que no ejecutan código",
+							"`document.write`, `insertAdjacentHTML`"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Frameworks, sanitizadores y lo que queda"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Los frameworks modernos de interfaz **codifican automáticamente** los valores que interpolas en las plantillas. El XSS vuelve cuando usas su salida de \"HTML crudo\" con datos del usuario, pones una URL del usuario en un `href` o tocas el DOM directamente.",
+						"Si los usuarios deben poder enviar formato (negrita, listas, enlaces), la codificación lo arruinaría. Pasa el HTML por un **sanitizador mantenido** que conserve solo una **lista de permitidos** de etiquetas, atributos y esquemas de URL. Las listas de permitidos fallan de forma segura: todo lo desconocido se elimina. No escribas tú un sanitizador; son muy difíciles de hacer bien.",
+						"Las cookies `HttpOnly` son una mitigación, no una corrección. El script no puede leer esa cookie, pero aún puede enviar peticiones como la víctima, porque el navegador adjunta la cookie por sí solo. La corrección sigue siendo la codificación y los destinos seguros, con la Content Security Policy como capa extra (siguiente sección)."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "\"La cookie es HttpOnly, así que el XSS es inofensivo\" es falso. El script se ejecuta dentro de la página con la sesión iniciada. No necesita robar la cookie para actuar como el usuario."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Trata los datos como texto donde se escriben: codifica para el contexto en la salida, usa `textContent` en lugar de `innerHTML`, comprueba los esquemas de URL, sanitiza con lista de permitidos cuando se necesite HTML y añade CSP como segunda capa."
+				}
+			]
+		},
+		{
+			"id": "csp-security-headers",
+			"title": "Content Security Policy y cabeceras de seguridad",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La codificación es la defensa principal contra el XSS, pero los programadores olvidan cosas. Por eso añadimos una **red de seguridad**: le decimos al navegador, de antemano, qué puede hacer la página. Piensa en una excursión escolar: la profesora le entrega al conductor del autobús una lista escrita de los lugares que el grupo puede visitar. Si un extraño intenta añadir una parada, el conductor se niega. Esa lista es una **Content Security Policy (CSP)**."
+				},
+				{
+					"type": "paragraph",
+					"text": "La CSP es una cabecera HTTP del servidor. Es una **lista de permitidos aplicada por el navegador**: dice de qué orígenes puede la página cargar y ejecutar contenido. Reduce el daño cuando la codificación de salida falla en algún punto, pero no la reemplaza."
+				},
+				{
+					"type": "code",
+					"language": "http",
+					"caption": "Una política estricta",
+					"content": "Content-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Directiva",
+						"Significado"
+					],
+					"rows": [
+						[
+							"`script-src 'self'`",
+							"Solo se ejecutan archivos de script del mismo origen. Los bloques `<script>` en línea y los manejadores en línea como `onclick` se rechazan"
+						],
+						[
+							"`default-src 'self'`",
+							"Todo lo que no se listó (imágenes, estilos, conexiones) solo del mismo origen"
+						],
+						[
+							"`object-src 'none'`",
+							"Sin plugins como `<object>` o `<embed>`"
+						],
+						[
+							"`base-uri 'none'`",
+							"Sin elemento `<base>` que podría cambiar a dónde apuntan las direcciones relativas"
+						],
+						[
+							"`form-action 'self'`",
+							"Los formularios solo pueden enviarse al mismo origen"
+						],
+						[
+							"`frame-ancestors 'none'`",
+							"Nadie puede poner esta página dentro de un `<iframe>`"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Con `script-src 'self'`, si un comentario mal codificado cuela un script en línea en la página, el navegador ejecuta `/app.js` (un archivo del mismo origen) y **bloquea el script en línea**. Esa es la ganancia principal: la mayoría de las inyecciones parecen marcado dentro de la página. Para aprovecharla, tu JavaScript debe estar en archivos, no en atributos de evento."
+				},
+				{
+					"type": "heading",
+					"text": "No rompas la red"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando el código viejo necesita scripts en línea, alguien puede tentarse a escribir `script-src 'self' 'unsafe-inline'`. La palabra clave se llama así por algo: le devuelve al atacante el camino más fácil, y la política pasa a valer poco contra XSS. Las formas correctas de mantener un script en línea necesario son moverlo a un archivo o autorizarlo individualmente con un **nonce** o un **hash**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un [[nonce|\"number used once\", número usado una vez: un valor impredecible creado nuevo para cada respuesta]] se pone tanto en la cabecera (`script-src 'nonce-R4nd0m'`) como en el atributo `nonce` de tus propias etiquetas de script. Un script inyectado no conoce el valor de esa respuesta y se bloquea. Si el valor es **fijo** en un archivo de configuración, es igual en todas las páginas, cualquiera puede leerlo una vez y ponerlo en su propia etiqueta, y la protección desaparece."
+				},
+				{
+					"type": "heading",
+					"text": "Desplegarla con seguridad"
+				},
+				{
+					"type": "paragraph",
+					"text": "En un sitio grande y viejo, activar una política estricta puede romper páginas que usan algo que olvidaste. El camino seguro es `Content-Security-Policy-Report-Only`. El navegador **evalúa** la política sin aplicarla y envía informes de violaciones. Corrige lo que muestren los informes y, cuando estén limpios, mueve la misma política a la cabecera `Content-Security-Policy` real."
+				},
+				{
+					"type": "heading",
+					"text": "Otras cabeceras de seguridad"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Cabecera",
+						"Qué hace",
+						"Por qué importa"
+					],
+					"rows": [
+						[
+							"`Strict-Transport-Security` (HSTS)",
+							"Le dice al navegador que use solo HTTPS en este dominio durante `max-age`",
+							"Sin ella, la primera petición puede ir por HTTP y alguien en el camino puede impedir el salto a HTTPS. Solo cuenta cuando se recibe por HTTPS"
+						],
+						[
+							"`X-Content-Type-Options: nosniff`",
+							"El navegador debe respetar el `Content-Type` declarado y no adivinar",
+							"Evita que un archivo subido lleno de HTML se ejecute porque el navegador creyó que era una página"
+						],
+						[
+							"`frame-ancestors` (en CSP)",
+							"Declara quién puede enmarcar la página",
+							"Defiende del clickjacking: tu página cargada invisible en el marco de otro sitio para robar clics. `'none'` no permite a nadie, `'self'` solo a tu propio origen"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "El clickjacking es como si alguien pegara una calcomanía transparente sobre un botón real. Crees que tocas la imagen que ves, pero tu dedo presiona el botón escondido debajo. `frame-ancestors` es una regla que dice \"esta página nunca puede mostrarse bajo la calcomanía de otra persona\"."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "La CSP es una segunda capa, no un reemplazo de la codificación. Evita `'unsafe-inline'`, nunca reutilices un nonce, empieza en modo report-only y añade HSTS, `nosniff` y `frame-ancestors`."
+				}
+			]
+		},
+		{
+			"id": "csrf-samesite",
+			"title": "CSRF y cookies SameSite: peticiones falsificadas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagina una pizzería que entrega a quien tenga tu tarjeta de cliente frecuente. Un bromista no necesita robar tu tarjeta. Solo grita \"¡Oye, pizzería, entrega 50 pizzas en esta dirección!\" de una forma que hace que **tu propio teléfono** haga el pedido, y la pizzería ve el número de tu tarjeta y entrega. Eso es **cross-site request forgery (CSRF)**: otro sitio web hace que el navegador de la víctima envíe una petición que el sitio objetivo acepta como propia de la víctima."
+				},
+				{
+					"type": "paragraph",
+					"text": "Fíjate en lo que el atacante **no** hace. No lee la respuesta ni roba la contraseña. Solo necesita que se ejecute una **acción** con los derechos de la víctima, como cambiar un correo o transferir dinero. Por eso el CSRF apunta a peticiones que **cambian estado**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Funciona por cómo se comportan las cookies. Una cookie de sesión es una **credencial ambiental**: el navegador la adjunta por sí solo a toda petición a ese sitio, **incluso cuando la petición la inició una página de otro sitio**. El servidor recibe una petición perfectamente válida y no puede saber que el usuario no la quiso."
+				},
+				{
+					"type": "diagram",
+					"caption": "Cómo viaja una petición falsificada",
+					"content": "  página evil.test          Navegador            bank.test\n      |  form oculto a bank.test   |                    |\n      | -------------------------> |                    |\n      |                            | POST /transfer     |\n      |                            | + cookie bank.test |\n      |                            | -----------------> |\n      |                            |  servidor: sesión  |\n      |                            |  válida, ¡hazlo!   |"
+				},
+				{
+					"type": "heading",
+					"text": "Defensa 1: cookies SameSite"
+				},
+				{
+					"type": "paragraph",
+					"text": "El atributo `SameSite` le dice al navegador cuándo puede enviarse la cookie en peticiones **entre sitios**. Un **sitio** es el dominio registrable (por ejemplo `example.com`), una idea más grande que la de origen."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Valor",
+						"La cookie se envía",
+						"Contrapartida"
+					],
+					"rows": [
+						[
+							"`Strict`",
+							"Solo en peticiones hechas desde el mismo sitio",
+							"El más seguro. Quien llega desde un enlace externo parece \"sin sesión\" en la primera página"
+						],
+						[
+							"`Lax`",
+							"También en navegaciones de nivel superior con método seguro, como hacer clic en un enlace (GET)",
+							"Un buen valor por defecto, pero supone que GET no tiene efectos secundarios"
+						],
+						[
+							"`None`",
+							"Siempre, incluso entre sitios; exige `Secure`",
+							"Ninguna protección contra CSRF"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Quien llega desde un enlace externo con Strict parece sin sesión en la primera página. Ese es el precio del ajuste más fuerte."
+				},
+				{
+					"type": "paragraph",
+					"text": "`Lax` no es magia. Si tu sitio tiene `GET /account/delete`, un enlace en otro sitio que apunte allí será pulsado por la víctima y el navegador envía la cookie, así que la cuenta se borra. **Nunca cambies datos con GET.** Usa POST, PUT, PATCH o DELETE, protegidos por un token."
+				},
+				{
+					"type": "paragraph",
+					"text": "Recuerda también que `SameSite` protege contra otros **sitios**, no contra otros **orígenes del mismo sitio**. Si `app.example.com` y `pages.example.com` comparten el dominio registrable `example.com`, y los clientes publican su propio HTML en `pages`, una página publicada allí es del mismo sitio que tu aplicación. `SameSite=Strict` no retiene la cookie. Pon el contenido no confiable en un dominio registrable aparte y mantén el token como defensa principal."
+				},
+				{
+					"type": "heading",
+					"text": "Defensa 2: el token anti-CSRF"
+				},
+				{
+					"type": "paragraph",
+					"text": "En el patrón del **token sincronizador**, el servidor genera un valor aleatorio ligado a la sesión, lo pone en un campo oculto de sus formularios y lo comprueba en cada POST. La cookie va sola, pero el token **no** se envía automáticamente. La página falsificada no puede leer tu página real para copiar el token, porque la [[política del mismo origen|la regla del navegador que impide que una página de un origen lea páginas de otro]] lo prohíbe."
+				},
+				{
+					"type": "code",
+					"language": "html",
+					"caption": "Un formulario con token",
+					"content": "<form method=\"post\" action=\"/transfer\">\n  <input type=\"hidden\" name=\"csrf\" value=\"9f3a...aleatorio-por-sesion\">\n  <input name=\"amount\">\n</form>\n<!-- servidor: rechaza el POST si csrf falta o no coincide -->"
+				},
+				{
+					"type": "paragraph",
+					"text": "Esto también explica por qué el **XSS derrota al token**: un script inyectado está en el mismo origen, así que tiene permiso para leer el token."
+				},
+				{
+					"type": "heading",
+					"text": "Dos malentendidos comunes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**\"No configuramos CORS, así que los otros sitios están bloqueados.\"** Falso. La política del mismo origen y CORS protegen la **lectura de respuestas** entre orígenes. No impiden que un POST simple de formulario se envíe y se procese. El CSRF no necesita leer nada. La defensa debe vivir en el servidor, con token y `SameSite`.",
+						"**\"Nuestra API usa un token Bearer, ¿estamos expuestos?\"** Poco. Si el token se guarda en memoria y se envía explícitamente en la cabecera `Authorization`, el navegador no lo adjunta a peticiones falsificadas desde otro sitio. El CSRF es un problema de **credenciales ambientales**: cookies, autenticación Basic, certificados de cliente. El precio es que los scripts de la página alcanzan el token, así que la defensa contra XSS pesa aún más."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El CSRF existe porque el navegador envía cookies por sí solo. Usa cookies `SameSite`, tokens anti-CSRF en peticiones que cambian estado, nunca cambies datos con GET y no confíes en la ausencia de cabeceras CORS."
+				}
+			]
+		},
+		{
+			"id": "authentication",
+			"title": "Autenticación: contraseñas, hashing y más de un factor",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Dos palabras se confunden fácil. **Autenticación** responde \"¿quién eres?\". **Autorización** responde \"¿puedes hacer esto?\". En un cine, mostrar la entrada en la puerta es autenticación; poder entrar solo a la sala 3 y no a la sala 5 es autorización. Un sistema puede hacer la primera perfectamente y la segunda mal, y al revés. Son controles distintos, con fallas distintas."
+				},
+				{
+					"type": "heading",
+					"text": "Cómo guardar una contraseña"
+				},
+				{
+					"type": "paragraph",
+					"text": "El servidor nunca necesita saber tu contraseña, solo **reconocerla**. Así que guarda la salida de una función de una sola vía y, al iniciar sesión, repite el cálculo con lo que escribiste y compara. Las contraseñas no se **cifran** (quien obtuviera la clave se llevaría todas las contraseñas); se les aplica **hash**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Dos ingredientes hacen que un hash sea apto para contraseñas. Primero, una **sal** (salt): un valor aleatorio, distinto para cada contraseña y guardado junto al hash. Sin ella, dos usuarios con la misma contraseña tienen el mismo hash, y un atacante puede usar una tabla precalculada de contraseñas comunes para romper muchas cuentas a la vez. Con sal, cada fila es un problema aparte. La sal no es secreta. Segundo, el hash debe ser **lento a propósito**."
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Por qué lento? Los hashes rápidos como MD5 o SHA-256 se hicieron para comprobar archivos deprisa, lo cual es estupendo para archivos y terrible para contraseñas, porque quien tiene una tabla robada puede probar millones de intentos por segundo. **Argon2id**, **scrypt** y **bcrypt** añaden un **costo** que puedes subir con el tiempo; Argon2id y scrypt además exigen mucha memoria, lo que hace caras las tarjetas gráficas (GPU). Un SHA-256 con sal sigue siendo inadecuado: la sal frena el ataque masivo, pero solo el costo frena cada cuenta individual."
+				},
+				{
+					"type": "chart",
+					"title": "Intentos por segundo en un núcleo de CPU, del benchmark de este repositorio (laboratorio de contraseñas y sesiones)",
+					"unit": "hashes por segundo",
+					"bars": [
+						{
+							"label": "MD5, sin sal",
+							"value": 843636
+						},
+						{
+							"label": "SHA-256 + sal de 16 bytes",
+							"value": 548724
+						},
+						{
+							"label": "Argon2id 19 MiB, t=2",
+							"value": 22
+						},
+						{
+							"label": "Argon2id 64 MiB, t=3",
+							"value": 3.5
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Lee el gráfico como el número de intentos por segundo que un atacante puede probar en una tabla robada, por núcleo. Argon2id hace que cada intento cueste unos 45 milisegundos y decenas de megabytes de memoria, aproximadamente 38.000 veces más que MD5 en esa ejecución. Un usuario paga ese costo una vez por inicio de sesión y no lo nota. La máquina, las versiones y el comando están registrados en los resultados del laboratorio."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Esquema",
+						"Una vía",
+						"Sal",
+						"Lento y exigente en memoria"
+					],
+					"rows": [
+						[
+							"Texto plano",
+							"no",
+							"no",
+							"no"
+						],
+						[
+							"MD5",
+							"sí",
+							"no",
+							"no"
+						],
+						[
+							"SHA-256 con sal",
+							"sí",
+							"sí",
+							"no"
+						],
+						[
+							"Argon2id",
+							"sí",
+							"sí",
+							"sí"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Una **pimienta** (pepper) es distinta de una sal. La pimienta es un **secreto** compartido por toda la aplicación y guardado **fuera de la base de datos** (en una bóveda o en el entorno). Ayuda cuando solo se filtra la base de datos, por ejemplo por una inyección SQL o una copia de seguridad robada. Si se toma el servidor entero, la pimienta se filtra también, así que es una capa extra, no un reemplazo."
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Y si un sistema viejo guarda solo `MD5(contraseña)` y queremos a todos protegidos con Argon2id ya, sin conocer las contraseñas? Guarda `Argon2id(MD5 viejo)` para todas las cuentas a la vez y registra qué esquema usa cada fila. En el siguiente inicio de sesión exitoso de cada usuario tienes la contraseña real en la mano, así que guarda Argon2id simple y descarta la envoltura."
+				},
+				{
+					"type": "heading",
+					"text": "Pantallas de inicio de sesión y políticas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Di lo mismo en cada fallo.** Si la pantalla responde \"usuario no encontrado\" para correos desconocidos y \"contraseña incorrecta\" para los conocidos, regalas una lista de quién tiene cuenta. Responde \"credenciales inválidas\" siempre, con el mismo código de estado y un tiempo parecido. Lo mismo aplica a las pantallas de registro y de recuperación de contraseña.",
+						"**Limita los intentos, pero piensa en quién controla el contador.** Bloquear una cuenta para siempre tras 3 contraseñas erróneas permite que cualquiera bloquee a cualquiera. Usa bloqueos cortos que crecen, límites por cuenta y por origen, y un segundo factor.",
+						"**Sigue la guía actual (NIST SP 800-63B).** Exige una longitud mínima, acepta frases largas y cualquier carácter, permite pegar, rechaza contraseñas ya encontradas en filtraciones y no obligues a cambios periódicos sin motivo. La longitud y la unicidad valen más que reglas raras de complejidad."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Factores"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **factor** es una categoría de prueba. Hay tres: **algo que sabes** (contraseña, PIN), **algo que tienes** (un teléfono, una llave de seguridad) y **algo que eres** (huella digital, rostro). La autenticación **multifactor** de verdad combina categorías distintas, para que robar una contraseña no baste. Una contraseña más un código temporal de una app autenticadora son dos factores. Una contraseña más una pregunta secreta no lo son: ambas son \"algo que sabes\"."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Aplicar hash dos veces, usar una sal más grande compartida por todos los usuarios o un hash rápido \"más fuerte\" no corrige el almacenamiento débil de contraseñas. El problema es el costo de cada intento, así que usa una función lenta, con sal y exigente en memoria, como Argon2id."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Autenticación es quién, autorización es qué. Guarda las contraseñas con Argon2id o bcrypt (con sal, lentos). Responde igual a los inicios de sesión fallidos, limita los intentos sin crear un arma de bloqueo y usa factores de categorías distintas."
+				}
+			]
+		},
+		{
+			"id": "sessions-cookies",
+			"title": "Sesiones y cookies: seguir con la sesión iniciada",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Después de iniciar sesión, no quieres escribir la contraseña en cada página. Por eso el servidor le da a tu navegador un **identificador de sesión** dentro de una cookie, como la pulsera de un parque de diversiones: muéstrala y pasas. Esto también significa que la pulsera es una **contraseña temporal**. Quien la presenta es tratado como tú."
+				},
+				{
+					"type": "paragraph",
+					"text": "Por eso el identificador debe ser **largo, aleatorio y sin significado**: generado por un generador aleatorio criptográfico con al menos 128 bits de entropía (impredecibilidad), y solo una llave hacia datos que el servidor guarda. Un identificador adivinable es una contraseña adivinable. Esta es una buena cookie:"
+				},
+				{
+					"type": "code",
+					"language": "http",
+					"caption": "Una cookie de sesión bien protegida",
+					"content": "Set-Cookie: __Host-sid=<32 bytes aleatorios>; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=28800"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Atributo",
+						"Qué cierra"
+					],
+					"rows": [
+						[
+							"`HttpOnly`",
+							"Los scripts de la página leyendo la cookie con `document.cookie`"
+						],
+						[
+							"`Secure`",
+							"La cookie viajando por HTTP plano, donde podría capturarse. Incluso una sola petición de una imagen la filtraría. Va junto con HSTS"
+						],
+						[
+							"`SameSite=Lax`",
+							"La cookie adjuntándose a peticiones en segundo plano iniciadas por otros sitios"
+						],
+						[
+							"prefijo `__Host-`",
+							"Otro subdominio o una página HTTP definiendo o sobrescribiendo tu cookie. El navegador solo acepta el nombre si la cookie tiene `Secure`, `Path=/` y ningún `Domain`"
+						],
+						[
+							"`Max-Age`",
+							"El navegador guardando la cookie más tiempo del que quieres (el servidor también aplica el límite)"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El prefijo `__Host-` necesita explicación. Las cookies no siguen la misma idea de origen que el resto de la web: un subdominio puede definir una cookie para el dominio padre y así sobrescribir la de la propia aplicación. El prefijo cierra esa puerta y defiende de la fijación desde subdominios menos confiables."
+				},
+				{
+					"type": "heading",
+					"text": "Fijación de sesión"
+				},
+				{
+					"type": "paragraph",
+					"text": "Aquí el atacante no roba la pulsera; te **entrega una que ya conoce** y espera a que inicies sesión. Si el servidor conserva el mismo identificador después del inicio de sesión, tu autenticación asciende la sesión que el atacante tiene en la mano."
+				},
+				{
+					"type": "diagram",
+					"caption": "Fijación de sesión",
+					"content": "atacante -> navegador de la víctima : id de sesión X (plantado)\nvíctima  -> servidor                : POST /login + cookie X\nservidor                            : X ahora es \"alice\"  (mismo id conservado)\natacante -> servidor                : GET /me + cookie X  => datos de alice\n\nCorrección: al iniciar sesión, crea un id NUEVO y destruye el viejo."
+				},
+				{
+					"type": "paragraph",
+					"text": "La regla: **cambia el identificador en cada cambio de privilegio** (inicio de sesión, cierre de sesión, elevación de acceso)."
+				},
+				{
+					"type": "heading",
+					"text": "Terminar una sesión y sus límites"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Cerrar sesión es una operación del servidor.** Borrar la cookie en el navegador no basta. Si el registro sigue válido en el servidor, quien copió el identificador antes (de un computador compartido, de un registro, de un script) todavía puede usarlo. Borra o invalida el registro.",
+						"**Nunca pongas el identificador en la URL** (`/orders?sid=...`). Las URL se copian, se guardan en el historial del navegador y en registros de servidores y proxies, y se envían a otros sitios en la cabecera `Referer`. Las cookies se diseñaron para llevarlo sin esas fugas.",
+						"**Usa dos tiempos límite.** El idle timeout (por ejemplo 15 minutos sin actividad) reduce la ventana de un dispositivo abandonado. El timeout absoluto (por ejemplo 8 horas en total) limita la vida de un identificador capturado, porque un id robado usado continuamente nunca queda inactivo. Las aplicaciones sensibles usan ambos y renuevan el id cada cierto tiempo."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un idle timeout es una biblioteca que devuelve tu libro a la estantería después de 15 minutos si te fuiste de la mesa. Un timeout absoluto es la regla de que todo libro debe devolverse a la hora de cierre, aunque nunca te hayas levantado de la silla."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Id de sesión: aleatorio y largo. Cookie: `HttpOnly`, `Secure`, `SameSite`, preferiblemente `__Host-`. Id nuevo al iniciar sesión, cierre de sesión real en el servidor, nunca en la URL, y tiempos límite de inactividad y absoluto."
+				}
+			]
+		},
+		{
+			"id": "jwt-oauth-oidc",
+			"title": "JWT, OAuth 2.0 y OpenID Connect: tokens e inicio de sesión delegado",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Algunos sistemas no guardan una sesión en el servidor. En cambio te dan una nota firmada, un **JSON Web Token (JWT)**, y confían en lo que está escrito en ella, mientras la firma compruebe. Es como una pulsera de concierto con holograma: el guardia no llama a la taquilla, solo revisa el holograma. Un JWT son tres textos unidos por puntos:"
+				},
+				{
+					"type": "diagram",
+					"caption": "Anatomía de un JWT",
+					"content": "  base64url(header) . base64url(payload) . firma\n       |                   |                  |\n  cómo se firmó         las claims        prueba de que el emisor\n  {\"alg\":\"HS256\"}     {\"sub\":\"bob\",      escribió las dos\n                        \"exp\":1800000900}  primeras partes"
+				},
+				{
+					"type": "paragraph",
+					"text": "Dos hechos le dan forma a todo. Primero, el payload solo está **codificado** en base64url, no cifrado. Cualquiera que tenga el token lo lee con cualquier herramienta, así que nunca pongas secretos ni datos personales innecesarios en él. La firma garantiza que nada cambió y quién lo emitió, no el secreto. Segundo, el **header lo escribe quien envía**. Todo lo que el verificador lee de él antes de comprobar la firma es una sugerencia de un extraño."
+				},
+				{
+					"type": "heading",
+					"text": "Las comprobaciones que debe hacer un verificador"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Comprobación",
+						"Por qué"
+					],
+					"rows": [
+						[
+							"El `alg` del header coincide con el algoritmo que el **servidor** espera",
+							"Si no, quien envía decide si habrá alguna verificación. El algoritmo `none` significa \"sin firma\"; un verificador que obedece al token acepta una nota falsificada"
+						],
+						[
+							"La firma es válida",
+							"Prueba que lo emitió quien tiene la clave y que no cambió"
+						],
+						[
+							"`exp` es posterior a ahora (una pequeña tolerancia está bien)",
+							"La expiración limita el daño de un token filtrado. Un verificador que nunca compara `exp` acepta tokens viejos para siempre"
+						],
+						[
+							"`iss` es el emisor en el que confías",
+							"El token viene del lugar correcto"
+						],
+						[
+							"`aud` incluye **este** servicio",
+							"Un token hecho para el servicio de informes no debe funcionar en el servicio de pagos, aunque la firma sea correcta"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Una firma válida por sí sola no basta: el token puede ser auténtico pero estar vencido, o ser auténtico pero estar destinado a otro servicio. Las bibliotecas maduras comprueban todo esto por defecto y les pasas una lista explícita de algoritmos permitidos (normalmente uno). Los verificadores escritos a mano suelen olvidar pasos."
+				},
+				{
+					"type": "paragraph",
+					"text": "Otra trampa es el secreto. Con **HS256**, la misma clave firma y verifica, así que toda la fuerza es la aleatoriedad de la clave. Si la clave es una palabra humana como `secret`, un atacante que tenga **un token capturado** puede probar intentos en su propio computador, sin conexión, sin tocar el servidor y sin ningún bloqueo, hasta que uno reproduzca la firma. Entonces puede firmar cualquier payload. Una clave HS256 necesita al menos 256 bits generados al azar, nunca una palabra memorable."
+				},
+				{
+					"type": "paragraph",
+					"text": "Además, un token sin estado no se puede retirar: tras un cierre de sesión o un robo funciona hasta `exp`. El diseño habitual es un token de acceso de vida corta (minutos) más un refresh token guardado en el servidor, rotado y revocable."
+				},
+				{
+					"type": "heading",
+					"text": "OAuth 2.0 y OpenID Connect"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina que le das al valet la llave del auto, pero una llave especial que solo abre las puertas y arranca el motor, no la guantera ni el maletero. **OAuth 2.0** es esa idea: permite que una app actúe en tu nombre con derechos limitados (los **scopes**), sin ver nunca tu contraseña. Resuelve la autorización delegada: \"¿puede esta app acceder a ese recurso en nombre del usuario?\" El resultado es un **access token** destinado a una API."
+				},
+				{
+					"type": "paragraph",
+					"text": "OAuth no dice quién es el usuario. **OpenID Connect (OIDC)** es una capa delgada sobre OAuth que añade autenticación. Entrega un **ID token**, un JWT firmado con la identidad del usuario, y un endpoint de información del usuario."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Access token",
+						"ID token"
+					],
+					"rows": [
+						[
+							"Responde",
+							"¿Puede esta app llamar a esa API, con qué scopes?",
+							"¿Quién inició sesión?"
+						],
+						[
+							"Destinado a",
+							"La API (servidor de recursos)",
+							"La propia app cliente (su `aud` es el id del cliente)"
+						],
+						[
+							"¿Se envía a la API?",
+							"Sí, en `Authorization: Bearer`",
+							"No. Una API que acepta ID tokens deja de comprobar que el permiso se concedió para ella"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Las apps como las aplicaciones móviles y las single-page applications no pueden guardar un secreto de cliente. El flujo recomendado hoy para todo cliente es el **flujo de código de autorización con PKCE**, no el antiguo flujo implícito. Con [[PKCE|Proof Key for Code Exchange: un secreto creado nuevo en cada intento de inicio de sesión]], la app crea un `code_verifier` aleatorio, envía su hash (`code_challenge`) al pedir el código y envía el valor original al cambiar el código por tokens. Quien intercepta el código de autorización pero no inició el flujo no tiene el verifier, así que el código le resulta inútil."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "No confíes en el header del propio token, no guardes secretos en el payload, no te saltes `exp`, `iss` y `aud`, y no envíes el ID token a una API."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un JWT está firmado, no es secreto. Fija el algoritmo, usa una clave larga y aleatoria, comprueba firma, `exp`, `iss` y `aud`. OAuth 2.0 delega autorización (access token); OIDC añade autenticación (ID token); PKCE protege el código."
+				}
+			]
+		},
+		{
+			"id": "access-control",
+			"title": "Control de acceso: IDOR, roles y mass assignment",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "En una escuela, tu carné de estudiante te deja entrar al edificio (autenticación). Pero no abre la sala de profesores ni los casilleros de otros estudiantes (autorización). El **control de acceso roto** ocurre cuando un programa olvida comprobar la segunda parte. Fue la categoría número uno del OWASP Top 10 (2021)."
+				},
+				{
+					"type": "paragraph",
+					"text": "La forma más famosa es el **IDOR (insecure direct object reference, referencia directa insegura a objeto)**. Un usuario con sesión iniciada cambia `/invoices/1001` por `/invoices/1002` en la barra de direcciones y ve la factura de otra persona. El número en la URL, el cuerpo o un campo oculto es solo una solicitud. El servidor debe decidir, en cada petición, si **este usuario** puede acceder a **aquel objeto**. Haber iniciado sesión no basta."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Handler vulnerable y corregido",
+					"content": "// Vulnerable: sabe quién eres, nunca pregunta si es tuyo\nconst invoice = await db.invoices.findById(params.id);\n\n// Corregido: el dueño forma parte de la propia consulta\nconst invoice = await db.invoices.findOne({\n\tid: params.id,\n\townerId: session.user.id,\n});\nif (!invoice) return status(404);"
+				},
+				{
+					"type": "paragraph",
+					"text": "Poner el dueño en la consulta (`WHERE id = $1 AND owner_id = $2`), o pasar por una única función de política central, hace que ninguna ruta pueda olvidar la regla."
+				},
+				{
+					"type": "heading",
+					"text": "Dos direcciones de la misma falla"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Dirección",
+						"A qué llega el usuario",
+						"Ejemplo"
+					],
+					"rows": [
+						[
+							"Horizontal",
+							"Datos de otro usuario del mismo nivel",
+							"IDOR: leer la factura de otro cliente"
+						],
+						[
+							"Vertical",
+							"Una función de un rol superior",
+							"Un usuario común escribe `/admin/users` y la página responde"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Ocultar el enlace \"Gestionar usuarios\" a los usuarios comunes es solo navegación. La ruta debe comprobar el rol por sí misma. Todo lo del cliente (páginas, apps, campos ocultos) está bajo el control del usuario. La interfaz puede ocultar cosas por amabilidad, pero la **decisión de seguridad ocurre en el servidor, en cada petición**, preferiblemente en un único mecanismo reutilizado."
+				},
+				{
+					"type": "heading",
+					"text": "Buenas reglas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Denegar por defecto.** Rechaza todo excepto lo que una regla permite explícitamente. Con una lista de permitidos, una regla olvidada bloquea un uso legítimo, y alguien se queja pronto. Con una lista de bloqueo, una regla olvidada expone datos en silencio. Estás eligiendo la manera en que el sistema falla.",
+						"**Los ids impredecibles no son control de acceso.** Cambiar números secuenciales por UUID aleatorios es un extra útil contra las adivinanzas, pero un identificador está hecho para circular. Si otra persona obtiene el id por cualquier medio, una comprobación ausente aún la deja entrar.",
+						"**Cuidado con el mass assignment.** Si una ruta deja a los usuarios editar su propio perfil y hace `update(session.user.id, body)`, un usuario puede añadir `\"role\": \"admin\"` al cuerpo y ascenderse, aunque se haya comprobado la propiedad. La autorización también aplica a los campos. Valida el cuerpo con un esquema que liste los campos permitidos y rechace el resto.",
+						"**Elige el código de rechazo a propósito.** Un servicio de repositorios privados puede responder 404 en lugar de 403 cuando el repositorio existe pero no es tuyo, porque un 403 confirma que existe. Ambos son rechazos válidos; el 404 oculta la existencia del recurso. De cualquier modo, la decisión está en el servidor y la respuesta es consistente, tiempo incluido."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "\"Solo los administradores ven el enlace\" no es control de acceso. Cualquiera puede escribir la dirección."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "En cada petición, en el servidor: ¿quién es esta persona, y puede hacer esto con este objeto y estos campos? Empieza denegando, mantén al dueño en la consulta, lista los campos escribibles."
+				}
+			]
+		},
+		{
+			"id": "ssrf-path-traversal-upload",
+			"title": "SSRF, path traversal y subida de archivos",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Esta sección trata de tres formas de engañar a un servidor para que use algo que no debería: una **dirección web**, una **ruta de archivo** o un **nombre de archivo** que vino de fuera."
+				},
+				{
+					"type": "heading",
+					"text": "SSRF: el servidor servicial"
+				},
+				{
+					"type": "paragraph",
+					"text": "Muchas funciones hacen que el servidor actúe como un navegador: vistas previas de enlaces, \"importar desde una URL\", webhooks, descargadores de imágenes. Imagina pedirle a un amable empleado de oficina: \"por favor, llama a este número por mí\". Si tú eliges el número, puedes pedirle que llame a la línea privada del jefe, a la que solo llegan los de dentro de la oficina. En el **server-side request forgery (SSRF)** el usuario aporta una URL y el servidor la descarga desde **dentro** de la red de la empresa, así que puede alcanzar `localhost`, servicios internos y la dirección de metadatos de la nube, que no tienen contraseña porque \"solo las máquinas internas pueden conectarse\". Tiene su propia categoría en OWASP (A10, 2021)."
+				},
+				{
+					"type": "paragraph",
+					"text": "La corrección sigue a la causa: la aplicación debe decidir a dónde está dispuesta a conectarse, y hacer la comprobación sobre lo que la conexión **realmente usa**, la dirección numérica, en **cada salto**."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Una lista de bloqueo de texto no funciona.** Rechazar URL que contienen `localhost` o `127.0.0.1` falla, porque la misma dirección tiene muchas grafías y cualquier nombre DNS puede apuntar hacia dentro. Analiza la URL, acepta solo `http` y `https`, **resuelve el nombre** y rechaza direcciones de loopback, privadas y link-local. Cuando se conoce el conjunto de destinos, una **lista de permitidos** de hosts es más fuerte que cualquier lista de bloqueo.",
+						"**Las redirecciones son una trampa.** Un sitio permitido puede responder `302` con un `Location` que apunta a un servicio interno, y los clientes HTTP siguen las redirecciones por defecto. Desactiva las redirecciones automáticas, síguelas tú hasta un límite pequeño y vuelve a comprobar cada nuevo destino.",
+						"**Comprobar y usar deben ser la misma resolución.** Si resuelves el nombre, lo compruebas, y luego le das el nombre al cliente y este vuelve a resolver, un servidor DNS malicioso puede responder con una dirección pública la primera vez y una interna la segunda (DNS rebinding). Resuelve una vez, valida, conéctate a esa misma dirección y conserva el nombre solo para la cabecera `Host` y para TLS.",
+						"**Añade reglas de red también.** Ejecuta el componente que descarga URL de usuarios en un segmento aislado o detrás de un proxy de salida, y autentica entre servicios internos. Las comprobaciones de la aplicación son una capa.",
+						"**Ocultar la respuesta no es una corrección.** La petición igual se hace (SSRF ciego)."
+					]
+				},
+				{
+					"type": "diagram",
+					"caption": "Validación que sigue la conexión real",
+					"content": "URL del usuario\n  -> analizar: ¿esquema http/https? ¿host en la lista de permitidos?\n  -> resolver el host una vez -> ¿todas las direcciones públicas?\n  -> conectar a ESA dirección (cabecera Host = nombre)\n  -> ¿redirección? empezar de nuevo desde arriba (máx. 3 saltos)"
+				},
+				{
+					"type": "heading",
+					"text": "Path traversal: salir de la carpeta"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una ruta de descarga une la carpeta `uploads` con el nombre de archivo de la petición. Un nombre como `../../etc/something` usa la secuencia `..`, que significa \"sube una carpeta\". El sistema operativo la resuelve como siempre, y el archivo leído queda fuera de la carpeta de subidas. Esto rompe la suposición de que un nombre se queda dentro de una carpeta."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Vulnerable y corregido",
+					"content": "// Vulnerable: join confía en el nombre\nconst target = path.join(UPLOADS, name);\n\n// Corregido: valida el RESULTADO, no la entrada\nconst target = path.resolve(UPLOADS, name);\nif (!target.startsWith(UPLOADS + path.sep)) return status(400);"
+				},
+				{
+					"type": "paragraph",
+					"text": "Valida la ruta absoluta final (resolviendo también los enlaces simbólicos) y comprueba que está dentro de la raíz permitida. Mejor aún, nunca aceptes rutas del cliente: recibe un identificador y búscalo en un índice. Ejecuta el proceso con pocos permisos, porque el alcance de la falla es todo lo que el proceso puede leer."
+				},
+				{
+					"type": "heading",
+					"text": "Subida de archivos: el nombre, el tipo y el contenido son afirmaciones"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando un usuario envía un archivo, el **nombre**, la **extensión** y el `Content-Type` declarado son solo texto que eligió el cliente. Una cabecera que dice `image/png` no prueba nada. Una subida segura combina varias medidas."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Medida",
+						"Por qué"
+					],
+					"rows": [
+						[
+							"Generar un **nombre aleatorio** en el servidor, guardando el nombre original como metadato",
+							"El nombre del cliente nunca se usa en el sistema de archivos, así que no puede recorrer ni sobrescribir"
+						],
+						[
+							"Lista de permitidos de tipos, y comprobar los **primeros bytes** (la firma del archivo)",
+							"El tipo declarado es solo una afirmación"
+						],
+						[
+							"Límite de tamaño",
+							"Evita llenar el disco o la memoria"
+						],
+						[
+							"Guardar fuera de carpetas ejecutables o servidas directamente; enviar `X-Content-Type-Options: nosniff`",
+							"Un archivo lleno de HTML no debe ejecutarse como página o programa"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un guardarropa te da un número de ficha en vez de dejar que escribas tu propia etiqueta en el gancho. La ficha la elige el guardarropa, así que no puedes hacer que el encargado entre al cuarto del personal escribiendo una etiqueta astuta."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Nunca dejes que un texto de fuera elija un destino, una ruta o un nombre de archivo. Valida el resultado real (dirección resuelta, ruta resuelta, bytes del archivo), en cada salto, y mantén las afirmaciones del cliente fuera del sistema de archivos."
+				}
+			]
+		},
+		{
+			"id": "secrets-supply-chain",
+			"title": "Secretos, dependencias y la cadena de suministro",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Un **secreto** es cualquier cosa que prueba quién eres ante otro sistema: una clave de API, una contraseña de base de datos, una clave privada. Piensa en las llaves de la escuela. No las pegas en la puerta de entrada, ni haces una copia para cada visitante. Los secretos se tratan igual."
+				},
+				{
+					"type": "heading",
+					"text": "Dónde viven los secretos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un secreto es **configuración, no código**. Entra al proceso en tiempo de ejecución, desde variables de entorno o desde un **gestor de secretos** (una bóveda) que controla quién puede leerlo, registra cada uso y facilita la rotación. El repositorio guarda solo los nombres de las variables esperadas, nunca los valores."
+				},
+				{
+					"type": "paragraph",
+					"text": "¿Y si una persona desarrolladora hace commit de una clave por error y luego borra la línea en un commit nuevo? La clave sigue en el historial, y las copias del repositorio se esparcen rápido. Así que la primera acción eficaz es **revocar la clave y emitir una nueva** (rotación). Solo después limpia el historial, comprueba si la clave se usó y evita que vuelva a pasar con escaneo de secretos antes de los commits."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Revoca la clave filtrada y crea una nueva.",
+						"Revisa en los registros cualquier uso de la clave vieja.",
+						"Limpia el historial y las copias, si es posible.",
+						"Añade escaneo de secretos antes de los commits para que no vuelva a pasar."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Dependencias: el código de otros"
+				},
+				{
+					"type": "paragraph",
+					"text": "La mayor parte de tu aplicación es código escrito por otras personas: bibliotecas y las bibliotecas de esas bibliotecas. Esa es la **cadena de suministro**. Dos ideas la protegen."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Lockfile.** Archivos como `bun.lock` o `package-lock.json` registran la versión exacta y el hash de cada dependencia. Sin uno, un rango como `^1.2.0` instala lo más nuevo de ese día, y máquinas distintas pueden ejecutar código distinto. Haz commit del lockfile y úsalo en modo estricto en las compilaciones.",
+						"**Sigue verificando, aunque no cambies nada.** Una aplicación publicada hace un año con todas las dependencias auditadas puede ser vulnerable hoy, porque se divulgan fallas nuevas en versiones que ya instalaste. Sabe qué tienes instalado (dependencias indirectas incluidas), sigue los avisos de seguridad, actualiza a menudo y elimina lo que no uses. Esta es la categoría de OWASP Vulnerable and Outdated Components."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Borrar un secreto filtrado del último commit no lo hace seguro. La única respuesta segura es revocarlo y reemplazarlo."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Los secretos vienen del entorno o de una bóveda, nunca del repositorio. Si uno se filtra, rota primero. Fija las versiones de tus dependencias y sigue atento a los avisos nuevos."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando todo: una falla, un hábito",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Todas estas fallas parecen distintas, pero la mayoría comparte una de dos raíces. O **el programa mezcló datos con código** (inyección, XSS), o **el programa confió en una afirmación de fuera** (un id, un rol, un nombre de archivo, una URL, un header de token) **sin comprobarla en el servidor**. La tabla de abajo conecta cada falla con el hábito que la frena."
+				},
+				{
+					"type": "table",
+					"caption": "Falla, causa y defensa principal",
+					"headers": [
+						"Falla",
+						"Causa raíz",
+						"Defensa principal",
+						"Capas extra"
+					],
+					"rows": [
+						[
+							"Inyección SQL / de comandos",
+							"Datos pegados en el texto del comando",
+							"Parámetros, listas de argumentos",
+							"Validación, mínimo privilegio, lista de permitidos para la estructura"
+						],
+						[
+							"XSS",
+							"Datos interpretados como marcado o script",
+							"Codificación en la salida, `textContent`",
+							"Sanitizador, CSP, comprobación del esquema de la URL"
+						],
+						[
+							"CSRF",
+							"El navegador envía cookies por sí solo",
+							"Token anti-CSRF",
+							"`SameSite`, sin cambiar estado con GET"
+						],
+						[
+							"Contraseñas débiles",
+							"Hash rápido o sin sal",
+							"Argon2id / bcrypt con sal",
+							"Pimienta, MFA, límites de intentos"
+						],
+						[
+							"Robo / fijación de sesión",
+							"Id predecible o reutilizado, el servidor conserva la sesión tras cerrar sesión",
+							"Id aleatorio, id nuevo al iniciar sesión, cierre de sesión en el servidor",
+							"`HttpOnly`, `Secure`, `__Host-`, tiempos límite"
+						],
+						[
+							"Errores de JWT",
+							"Confiar en el header y saltarse las claims",
+							"Algoritmo fijado, clave fuerte",
+							"Comprobaciones de `exp`, `iss`, `aud`"
+						],
+						[
+							"IDOR / mass assignment",
+							"Sin comprobación de dueño ni de campo",
+							"Autorizar en el servidor, en cada petición",
+							"Denegar por defecto, lista de campos permitidos"
+						],
+						[
+							"SSRF",
+							"El servidor descarga una dirección elegida por el usuario",
+							"Lista de permitidos + comprobación de la dirección resuelta",
+							"Redirecciones manuales, conexión fijada, reglas de salida de red"
+						],
+						[
+							"Path traversal / subida",
+							"Se acepta el nombre o tipo del cliente",
+							"Validar la ruta resuelta, nombre de archivo aleatorio",
+							"Comprobación de la firma del contenido, `nosniff`"
+						],
+						[
+							"Secreto filtrado",
+							"Secreto en el repositorio",
+							"Entorno o bóveda, rotar",
+							"Escaneo de secretos"
+						],
+						[
+							"Componente desactualizado",
+							"Fallas conocidas en bibliotecas viejas",
+							"Lockfile + avisos + actualizaciones",
+							"Eliminar paquetes sin usar"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Errores comunes que evitar"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Corregir el síntoma (prohibir algunos caracteres) en lugar de la causa (mantener separados código y datos).",
+						"Ocultar cosas en la interfaz y llamarlo control de acceso.",
+						"Usar una defensa y detenerse. Las capas fallan de una en una; apílalas.",
+						"Tratar el OWASP Top 10 como una lista completa o un certificado.",
+						"Creer que cifrar o aplicar hash a algo es lo mismo que autenticarlo."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Cuatro hábitos cubren la mayor parte de esta materia: **no mezcles datos con código**, **comprueba todo en el servidor**, **dale a todo el menor poder que necesita** y **apila protecciones independientes**. Piensa en lo que puede salir mal mientras todavía dibujas el plan."
+				}
+			]
+		}
+	]
+}

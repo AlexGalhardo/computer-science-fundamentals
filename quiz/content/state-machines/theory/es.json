@@ -1,0 +1,412 @@
+{
+	"area": "state-machines",
+	"intro": [
+		"Piensa en un semáforo. En cada momento está en una situación: verde, amarillo o rojo. Un temporizador le dice cuándo cambiar, y solo puede seguir ciertos cambios: el verde pasa al amarillo, nunca directo al rojo. Una **máquina de estados** es exactamente esa idea escrita en el papel: una lista de situaciones, llamadas **estados**, y los saltos permitidos entre ellas.",
+		"Las máquinas de estados están en todas partes. Una máquina expendedora, un torniquete del metro, los botones de tu celular, los pasos de un pedido en línea, la forma en que dos computadoras se saludan antes de conversar y la parte de un compilador que corta el texto de un programa en palabras son todas máquinas de estados. Los científicos de la computación también las usan como regla: preguntando qué tipo de máquina hace falta para resolver un problema, descubrimos qué tan difícil es, e incluso descubrimos que algunos problemas no pueden ser resueltos por ninguna computadora.",
+		"En este resumen aprenderás: las palabras del tema (estado, evento, transición, acción), cómo una máquina lee una palabra y la acepta o la rechaza, máquinas que pueden adivinar, patrones escritos como expresiones regulares, cómo dejar una máquina lo más pequeña posible, máquinas que dan respuestas, máquinas grandes hechas de partes anidadas y paralelas, máquinas con pila, la máquina de Turing y los límites de la computación, y cómo usar todo esto para escribir mejor software. Al final estarás listo para el quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "El panorama: máquinas con memoria del pasado",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagina un interruptor de luz con un solo botón. Cada vez que lo presionas, la luz cambia. Presionar el mismo botón hace cosas distintas según la situación: si la luz está apagada se enciende, si está encendida se apaga. La máquina no necesita recordar todo lo que pasó. Necesita recordar **una sola cosa**: ¿la luz está encendida o apagada? Esa cosa es su **estado**." },
+				{ "type": "callout", "tone": "analogy", "text": "Un estado es como la ficha de un juego de mesa parada en una casilla. La casilla te dice todo lo que necesitas saber del juego hasta ahora. Cómo llegó la ficha ahí no importa." },
+				{ "type": "paragraph", "text": "Una máquina de estados **finita** tiene un número limitado (finito) de estados y ninguna otra memoria. Es un límite fuerte, y por eso algunas tareas piden máquinas más potentes. Esta área sube una escalera de máquinas, cada una con más memoria que la anterior." },
+				{ "type": "diagram", "caption": "La escalera de máquinas, de la que tiene menos memoria a la que tiene más", "content": "  autómata finito    solo sus estados\n        |\n  autómata de pila   estados + una pila\n        |\n  máquina de Turing  estados + una cinta sin fin\n\n  más memoria  =  más problemas resueltos" },
+				{ "type": "paragraph", "text": "Las máquinas de estados tienen dos vidas. En la **teoría** son modelos: preguntamos qué conjuntos de palabras (llamados [[lenguajes|un lenguaje es solo un conjunto de cadenas, por ejemplo todas las palabras que terminan en ab]]) puede reconocer cada máquina. En la **práctica** son una herramienta de diseño: si listas los estados de un pedido, de una conexión o de una pantalla, las situaciones imposibles se vuelven imposibles de escribir en el código." },
+				{ "type": "heading", "text": "Palabras que vas a encontrar" },
+				{ "type": "list", "items": [
+					"**Alfabeto (Σ)**: el conjunto de símbolos que la máquina puede leer, por ejemplo `{a, b}` o `{0, 1}`.",
+					"**Cadena (o palabra)**: una fila finita de símbolos del alfabeto, como `abba`. La **cadena vacía**, escrita ε (épsilon), no tiene ningún símbolo.",
+					"**Lenguaje**: un conjunto de cadenas. El lenguaje de una máquina es el conjunto de las cadenas que acepta.",
+					"**Aceptar / rechazar**: la máquina dice sí o no a una cadena."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Una máquina de estados finita solo recuerda en qué estado está. Todo lo demás lo olvida." }
+			]
+		},
+		{
+			"id": "states-transitions-events-actions",
+			"title": "Estados, transiciones, eventos y acciones",
+			"blocks": [
+				{ "type": "paragraph", "text": "Piensa en un horno microondas. Espera con la puerta cerrada. Presionas Iniciar. El horno enciende el magnetrón y empieza a calentar. En esa historia hay cuatro ideas escondidas, y toda máquina de estados se construye con ellas." },
+				{ "type": "list", "items": [
+					"**Estado**: una situación estable en la que el sistema espera que algo ocurra (Esperando, Calentando). Resume el pasado: dos historias distintas que terminan en el mismo estado se ven exactamente iguales desde ahí.",
+					"**Evento**: algo que le ocurre **al** sistema y que este no controla, como la pulsación de un botón, la llegada de un mensaje o el fin de un temporizador (Iniciar presionado).",
+					"**Transición**: una flecha de un estado de origen a un estado de destino, marcada con el evento que la dispara.",
+					"**Acción**: algo que el sistema **hace** al reaccionar (encender el magnetrón)."
+				] },
+				{ "type": "diagram", "caption": "Una transición: estado de origen, evento, acción, estado de destino", "content": "                 Iniciar presionado / enciende magnetrón\n   (Esperando) ---------------------------------> (Calentando)" },
+				{ "type": "paragraph", "text": "En la historia del microondas, el **evento** es el botón Iniciar y la **acción** es encender el magnetrón. No los mezcles: el evento viene de afuera, la acción es la respuesta del sistema." },
+				{ "type": "heading", "text": "Inicial, terminal, guardas" },
+				{ "type": "paragraph", "text": "El **estado inicial** es donde empieza toda nueva instancia. Un **estado terminal (final)** es donde termina: ninguna transición sale de él. En la vida de un pedido, `cancelled` y `refunded` son terminales, así que después de ellos todo evento debe ser rechazado." },
+				{ "type": "paragraph", "text": "En UML (un lenguaje de dibujo para software) la etiqueta de una transición tiene hasta tres partes, siempre en este orden. La **guarda** es una prueba de sí o no entre corchetes: la transición solo puede ocurrir si es verdadera." },
+				{ "type": "code", "language": "text", "content": "evento [guarda] / acción\ncoinInserted [amount >= price] / dispenseItem", "caption": "Aquí dispenseItem es la acción; el evento dispara, la guarda decide, la acción se ejecuta" },
+				{ "type": "callout", "tone": "warning", "text": "Si un estado tiene dos transiciones para el mismo evento, sus guardas deben ser mutuamente excluyentes, de modo que como máximo una sea verdadera. Las guardas `[amount > 100]` y `[amount > 50]` valen las dos para amount 150, así que la máquina no sabría adónde ir. Haz los rangos disjuntos: `[amount > 100]` y `[amount > 50 and amount <= 100]`." },
+				{ "type": "heading", "text": "Acciones en estados: entrada y salida" },
+				{ "type": "paragraph", "text": "Una acción puede estar en la transición o en el estado. Una **acción de entrada** se ejecuta cada vez que el estado se vuelve activo, y una **acción de salida** cada vez que se abandona, sea cual sea el camino. Si la luz del pasillo debe encenderse siempre que una puerta automática llega a Abierta, y tres flechas distintas llevan a Abierta, pon \"encender la luz\" como acción de entrada de Abierta. La escribes una sola vez, y una cuarta flecha creada mañana no puede olvidarla." },
+				{ "type": "heading", "text": "La tabla de transiciones" },
+				{ "type": "paragraph", "text": "Una máquina se puede escribir como tabla: una fila por estado, una columna por evento. Cada celda guarda el siguiente estado, o `-` cuando el evento no está permitido ahí. Ejecutar la máquina es simple: mira la celda (estado actual, evento). Si tiene un estado, ve a él. Si está vacía, **rechaza el evento y no cambies nada**." },
+				{ "type": "table", "caption": "La vida de un pedido (el `-` significa que el evento no está permitido)", "headers": ["estado", "pay", "ship", "deliver", "cancel", "refund"], "rows": [
+					["created", "paid", "-", "-", "cancelled", "-"],
+					["paid", "-", "shipped", "-", "-", "refunded"],
+					["shipped", "-", "-", "delivered", "-", "-"],
+					["delivered", "-", "-", "-", "-", "refunded"],
+					["cancelled", "-", "-", "-", "-", "-"],
+					["refunded", "-", "-", "-", "-", "-"]
+				] },
+				{ "type": "paragraph", "text": "Sigue un pedido que empieza en `created` y recibe pay, ship, deliver, refund: created, paid, shipped, delivered, refunded. Un pedido en `paid` que recibe `deliver` encuentra una celda vacía, así que el evento se rechaza. Así la tabla te impide entregar algo que nunca fue enviado." },
+				{ "type": "paragraph", "text": "La tabla es una [[función parcial|una regla que da respuesta para algunas entradas, pero no para todas]] sobre los pares (estado, evento). Con 6 estados y 5 eventos hay 6 × 5 = 30 pares. La tabla de arriba define 6 de ellos, así que los otros **24** deben ser rechazados. Una prueba puede recorrer los 30 pares: los 6 válidos deben funcionar, y los 24 restantes deben fallar sin cambiar el estado." },
+				{ "type": "heading", "text": "Por qué un solo campo de estado vence a varias banderas" },
+				{ "type": "paragraph", "text": "Algunos programas guardan un pedido con una bandera de sí o no por cada hecho: `isPaid`, `isShipped`, `isDelivered`, `isCancelled`, `isRefunded`. Cinco banderas se combinan de 2^5 = 32 maneras, pero el negocio conoce solo 6 situaciones. Las otras 26, como \"cancelado y entregado\", no significan nada, y aun así la base de datos las guarda sin quejarse." },
+				{ "type": "chart", "title": "Combinaciones de 5 banderas de sí/no", "unit": "combinaciones", "bars": [
+					{ "label": "todas las combinaciones", "value": 32 },
+					{ "label": "con sentido", "value": 6 },
+					{ "label": "bugs esperando ocurrir", "value": 26 }
+				] },
+				{ "type": "paragraph", "text": "Un solo campo de estado con 6 valores permitidos hace imposible representar las 26 combinaciones sin sentido." },
+				{ "type": "heading", "text": "Un ejemplo pequeño: el torniquete" },
+				{ "type": "table", "headers": ["estado", "coin", "push"], "rows": [
+					["Locked", "Unlocked", "Locked"],
+					["Unlocked", "Unlocked", "Locked"]
+				] },
+				{ "type": "paragraph", "text": "Empieza en Locked y envía coin, push, push, coin, coin, push. Los estados son Locked, Unlocked, Locked, Locked, Unlocked, Unlocked, Locked. El paso de Unlocked a Locked ocurre dos veces, así que pasaron dos personas. Fíjate en dos cosas: la misma entrada (push) hace cosas distintas en estados distintos, y la segunda moneda seguida se pierde, porque esta máquina tiene solo dos estados y no puede contar créditos." },
+				{ "type": "callout", "tone": "remember", "text": "Estado actual + evento deciden la reacción. Un evento que la tabla no permite se rechaza y no cambia nada." }
+			]
+		},
+		{
+			"id": "deterministic-finite-automata",
+			"title": "Autómatas finitos deterministas (AFD)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Ahora usamos máquinas de estados para leer palabras. Imagina un juego de mesa en el que pones una ficha en la casilla de inicio y lees una palabra, una letra a la vez. Para cada letra, el tablero te dice exactamente a qué casilla ir. Cuando se acaban las letras, miras dónde está la ficha: en una casilla verde significa \"sí, aceptada\", en cualquier otra significa \"no\". Ese tablero es un **autómata finito determinista**, o **AFD** (en inglés, DFA)." },
+				{ "type": "paragraph", "text": "Un AFD se describe con cinco cosas, la 5-tupla (Q, Σ, δ, q0, F):" },
+				{ "type": "table", "headers": ["Símbolo", "Nombre", "Significado simple"], "rows": [
+					["Q", "estados", "el conjunto finito de casillas"],
+					["Σ", "alfabeto", "las letras que puede leer"],
+					["δ (delta)", "función de transición", "la tabla: del estado y la letra al siguiente estado"],
+					["q0", "estado inicial", "donde empieza la ficha"],
+					["F", "estados de aceptación", "las casillas verdes"]
+				] },
+				{ "type": "paragraph", "text": "**Determinista** significa que no hay elección. En cada estado, para cada letra, hay exactamente un siguiente estado, y no hay transiciones ε (movimientos que cambian de estado sin leer nada). Así, la ejecución sobre una palabra es un único camino." },
+				{ "type": "heading", "text": "Aceptar una palabra" },
+				{ "type": "paragraph", "text": "El AFD lee la palabra desde el estado inicial. La palabra es **aceptada** si el estado alcanzado tras la última letra está en F, y rechazada en caso contrario. El **lenguaje** del AFD es el conjunto de todas las palabras que acepta. ¿Y la palabra vacía? No tiene letras, así que no se hace ningún movimiento y nos quedamos en el estado inicial. Por lo tanto ε es aceptada **si y solo si el estado inicial es de aceptación**. Este caso límite vale la pena probarlo en cualquier programa." },
+				{ "type": "table", "caption": "Un AFD. Inicio: q0. Aceptación: q2", "headers": ["estado", "a", "b"], "rows": [
+					["q0", "q1", "q0"],
+					["q1", "q1", "q2"],
+					["q2", "q1", "q0"]
+				] },
+				{ "type": "paragraph", "text": "Prueba la palabra `abab`: q0, a lleva a q1, b lleva a q2, a lleva a q1, b lleva a q2. Termina en q2, así que es aceptada. Para descubrir el lenguaje, pregunta qué recuerda cada estado: q0 significa que la palabra no termina ni en `a` ni en `ab`, q1 significa que termina en `a`, q2 significa que termina en `ab`. Solo q2 acepta, así que este AFD acepta las palabras que **terminan en ab**, lo mismo que la expresión regular `(a|b)*ab`." },
+				{ "type": "callout", "tone": "analogy", "text": "Una buena manera de diseñar un AFD es decidir qué debe recordar la máquina y dar un estado a cada cosa que vale la pena recordar." },
+				{ "type": "heading", "text": "Más ejemplos" },
+				{ "type": "paragraph", "text": "**Paridad.** Un AFD sobre `{0, 1}` con dos estados E (par, inicial y de aceptación) y O (impar) que cambia con cada `1` y se queda quieto con cada `0` acepta las palabras con una cantidad par de 1. La palabra `1011011` tiene cinco 1, así que termina en O y es rechazada." },
+				{ "type": "paragraph", "text": "**Divisible por 3.** Lee un número binario desde el primer bit (el más significativo). Leer un nuevo bit b convierte el valor n en 2n + b, así que el nuevo resto depende solo del resto anterior y de b. Tres restos, tres estados: 0, 1, 2. Desde 0 vas a 0 o 1; desde 1 a 2 o 0; desde 2 a 1 o 2 (leyendo 0 o 1). Inicio y aceptación en el resto 0, lo que también acepta la cadena vacía, contada como 0. La palabra `110` (seis) pasa por 0, 1, 0, 0 y es aceptada; `101` (cinco) pasa por 0, 1, 2, 2 y es rechazada." },
+				{ "type": "heading", "text": "El estado muerto y los AFD completos" },
+				{ "type": "paragraph", "text": "Los diagramas suelen omitir las flechas que llevan al rechazo seguro. Un AFD **completo** tiene una flecha para cada estado y cada letra. Para completar uno, agrega un **estado muerto** (también llamado estado trampa o de error): no es de aceptación y toda letra te mantiene en él. Toda palabra que cae ahí nunca sale." },
+				{ "type": "callout", "tone": "warning", "text": "Para construir el **complemento** (aceptar exactamente lo que antes se rechazaba), intercambiar estados de aceptación y de no aceptación funciona **solo en un AFD completo**. Si faltan flechas, las palabras que quedaron atascadas son rechazadas antes y después del intercambio. Primero agrega el estado muerto, luego intercambia: el estado muerto pasa a aceptar." },
+				{ "type": "heading", "text": "Ejecutar dos AFD a la vez: el producto" },
+				{ "type": "paragraph", "text": "La **construcción del producto** ejecuta dos AFD en paralelo. Cada nuevo estado es un **par** (estado de A, estado de B), y cada letra mueve ambas partes. Para la **intersección** (palabras aceptadas por los dos) un par acepta cuando ambas partes aceptan. Para la **unión** un par acepta cuando al menos una parte acepta. Dos AFD de 2 estados cada uno dan hasta 2 × 2 = 4 estados-par. Por ejemplo, A (cantidad par de a) y B (termina en b) dan los cuatro pares (par, no b), (impar, no b), (par, b) e (impar, b); para la intersección solo (par, b) acepta, así que exactamente uno de los 4 estados acepta." },
+				{ "type": "heading", "text": "Por qué los AFD son rápidos" },
+				{ "type": "code", "language": "ts", "content": "// table[state][symbol] da el siguiente estado\nlet state = start;\nfor (const symbol of input) {\n\tstate = table[state][symbol];\n}\nreturn accepting.has(state);", "caption": "Un AFD entero es un solo bucle" },
+				{ "type": "paragraph", "text": "Una cadena de n letras cuesta n consultas: **tiempo lineal, memoria constante**. El costo de un AFD se paga antes, cuando se construye la tabla. Por eso los lexers (la parte del compilador que corta el texto en palabras) son AFD guiados por tabla." },
+				{ "type": "video", "title": "Neso Academy: Theory of Computation and Automata Theory (diseño de AFD, AFN a AFD, minimización, Mealy y Moore)", "url": "https://www.youtube.com/playlist?list=PLBlnK6fEyqRgp46KUv4ZY69yXmpwKOIev" },
+				{ "type": "callout", "tone": "remember", "text": "AFD = un solo camino, acepta si el último estado está en F. ε solo se acepta si el estado inicial acepta. El complemento exige un AFD completo." }
+			]
+		},
+		{
+			"id": "nfa-subset-construction",
+			"title": "Autómatas no deterministas y construcción de subconjuntos",
+			"blocks": [
+				{ "type": "paragraph", "text": "¿Y si la máquina pudiera **adivinar**? Imagina que llegas a una bifurcación en un laberinto y, por arte de magia, haces una copia de ti mismo por cada camino. Todas las copias caminan al mismo tiempo. Si **cualquier** copia llega al tesoro, ganas. Eso es un **autómata finito no determinista**, o **AFN** (en inglés, NFA)." },
+				{ "type": "paragraph", "text": "Un AFN hace dos cosas que un AFD no puede. Primero, su función de transición devuelve un **conjunto** de estados: posiblemente vacío, posiblemente con varios elementos. Segundo, puede tener **transiciones ε**, que se mueven sin leer letra." },
+				{ "type": "paragraph", "text": "La aceptación es **existencial**: una palabra es aceptada si **existe alguna** secuencia de elecciones que lee toda la palabra y termina en un estado de aceptación. No importa que otros caminos fallen." },
+				{ "type": "callout", "tone": "remember", "text": "Los AFN no son más potentes que los AFD. Los AFN (con o sin ε) y los AFD reconocen exactamente los mismos lenguajes: los lenguajes regulares. El AFN solo es más fácil de construir." },
+				{ "type": "heading", "text": "De AFN a AFD: construcción de subconjuntos" },
+				{ "type": "paragraph", "text": "El truco: en vez de seguir muchas copias, guarda **el conjunto de todos los estados en los que el AFN podría estar**. Ese conjunto se vuelve un estado del AFD. Necesitamos dos auxiliares:" },
+				{ "type": "list", "items": [
+					"**ε-clausura(s)** (ε-closure): todos los estados que se alcanzan desde s sin leer nada. Contiene al propio s y todo lo que se alcanza por cadenas de flechas ε.",
+					"**move(T, a)**: todos los estados alcanzados desde los estados del conjunto T leyendo la letra a."
+				] },
+				{ "type": "list", "ordered": true, "items": [
+					"El estado inicial del AFD es la ε-clausura del estado inicial del AFN.",
+					"Para cada estado T del AFD y cada letra a, el siguiente estado es ε-clausura(move(T, a)).",
+					"Repite para cada nuevo conjunto que aparezca, hasta que no aparezca ninguno nuevo.",
+					"Un conjunto es de aceptación si **contiene al menos un** estado de aceptación del AFN (su intersección con F no es vacía)."
+				] },
+				{ "type": "table", "caption": "Un AFN con transiciones ε. Inicio: 0. Aceptación: 4", "headers": ["estado", "a", "b", "ε"], "rows": [
+					["0", "-", "-", "{1, 3}"],
+					["1", "{2}", "-", "-"],
+					["2", "-", "-", "{3}"],
+					["3", "-", "{4}", "-"],
+					["4", "-", "-", "{1}"]
+				] },
+				{ "type": "paragraph", "text": "Desde el estado 0 las flechas ε traen 1 y 3, y ninguno de los dos tiene flechas ε, así que la clausura de 0 es {0, 1, 3}: el estado inicial T del AFD. Con `a`: move(T, a) = {2}, y la clausura de {2} es {2, 3}. Con `b`: move(T, b) = {4}, y la clausura de {4} es {1, 4}." },
+				{ "type": "paragraph", "text": "Un segundo ejemplo, simple, sin ε. El AFN tiene q0 (inicial), q1, q2 (de aceptación), con q0 en `a` yendo a {q0, q1}, q0 en `b` a {q0}, q1 en `b` a {q2}. Desde {q0}: `a` lleva a {q0, q1}, `b` se queda en {q0}. Desde {q0, q1}: `a` se queda, `b` lleva a {q0, q2}. Desde {q0, q2}: `a` lleva a {q0, q1}, `b` lleva a {q0}. Aparecen solo 3 conjuntos, y solo {q0, q2} contiene a q2, así que solo él acepta. El lenguaje es el de las palabras que terminan en `ab`." },
+				{ "type": "heading", "text": "El precio: el tamaño puede explotar" },
+				{ "type": "paragraph", "text": "Un conjunto de m estados se puede elegir de hasta 2^m maneras, así que un AFD puede necesitar exponencialmente más estados. El caso clásico es \"el n-ésimo símbolo desde el final es a\". El AFN se queda en bucle en el estado inicial y adivina cuándo salir, usando n + 1 estados. Un AFD debe recordar una ventana con las últimas n letras, así que necesita 2^n estados." },
+				{ "type": "chart", "title": "Estados necesarios: el n-ésimo símbolo desde el final es a (AFD mínimo, 2^n)", "unit": "estados", "bars": [
+					{ "label": "n = 2 (el AFN tiene 3)", "value": 4 },
+					{ "label": "n = 4 (el AFN tiene 5)", "value": 16 },
+					{ "label": "n = 6 (el AFN tiene 7)", "value": 64 },
+					{ "label": "n = 8 (el AFN tiene 9)", "value": 256 }
+				] },
+				{ "type": "heading", "text": "Simular en vez de convertir" },
+				{ "type": "paragraph", "text": "También puedes ejecutar el AFN directamente, guardando el conjunto de estados actuales. Para una palabra de n letras y un AFN de tamaño m (estados más transiciones) esto cuesta tiempo O(n · m) y solo memoria O(m). Convertir antes a AFD puede generar hasta 2^m estados, pero después cada palabra cuesta solo O(n). Las herramientas de búsqueda suelen simular el AFN (o construir los estados del AFD bajo demanda y guardarlos en caché); los generadores de lexers pagan la conversión una sola vez." },
+				{ "type": "callout", "tone": "analogy", "text": "Un AFD es un excursionista cuidadoso que sigue un solo camino. Un AFN es una multitud de excursionistas que se divide en cada bifurcación. La construcción de subconjuntos es un fotógrafo que anota, después de cada paso, quién está dónde." }
+			]
+		},
+		{
+			"id": "regular-languages-regex",
+			"title": "Lenguajes regulares y expresiones regulares",
+			"blocks": [
+				{ "type": "paragraph", "text": "Cuando buscas \"c?t\" en un documento o escribes `*.png` para listar imágenes, describes un patrón en vez de una palabra. Una **expresión regular** (regex) es una forma corta de describir un conjunto entero de palabras. Los conjuntos que las regex describen son los **lenguajes regulares**, y son exactamente los lenguajes que los autómatas finitos reconocen." },
+				{ "type": "heading", "text": "Los tres bloques básicos" },
+				{ "type": "table", "headers": ["Operación", "Se escribe", "Significado"], "rows": [
+					["Unión", "`r|s`", "una palabra de r o una palabra de s"],
+					["Concatenación", "`rs`", "una palabra de r seguida de una palabra de s"],
+					["Clausura de Kleene (estrella)", "`r*`", "cero o más palabras de r pegadas"]
+				] },
+				{ "type": "paragraph", "text": "Además de esas tres, una regex usa símbolos simples y ε. Fíjate en que `a*` contiene ε (cero repeticiones), luego `a`, `aa`, y así sucesivamente: un lenguaje infinito cuyas palabras son todas finitas. Otros signos son atajos que se pueden reescribir con las tres: `r+ = rr*` (una o más), `r? = r|ε` (opcional) y `[abc] = a|b|c` (una clase). Dan comodidad, no poder." },
+				{ "type": "paragraph", "text": "La precedencia funciona como en la aritmética, de la más fuerte a la más débil: clausura (como una potencia), luego concatenación (como multiplicación), luego unión (como suma). Así `ab|c*` significa \"la palabra `ab`, o cualquier cantidad de `c`\", y no `a`, luego `b` o `c`, repetido." },
+				{ "type": "heading", "text": "Leer expresiones" },
+				{ "type": "list", "items": [
+					"`(a|b)*abb`: cualquier palabra de a y b (incluso vacía) seguida de `abb`. Entonces la palabra debe **terminar en abb**. `babb` coincide; `bba`, `bab`, `ab` y `bbb` no.",
+					"`(a|b)*a(a|b)`: el penúltimo símbolo es `a`. De longitud 3: `aaa`, `aab`, `baa`, `bab` (4 palabras); `aba`, `abb`, `bba` y `bbb` quedan fuera.",
+					"`b*(ab*ab*)*`: una cantidad par de `a`. Piensa en el autómata de dos estados (par, impar): volver a par exige dos `a`, con cualquier cantidad de `b` en medio."
+				] },
+				{ "type": "heading", "text": "Teorema de Kleene: expresiones y autómatas son gemelos" },
+				{ "type": "paragraph", "text": "Las expresiones regulares **describen** lenguajes y los autómatas finitos **los reconocen**. El teorema de Kleene dice que tienen el mismo poder. Por eso un generador de lexers puede tomar tus regex y producir un autómata por ti. El camino de la regex al autómata es la **construcción de McNaughton-Yamada-Thompson**, que arma un AFN pieza por pieza:" },
+				{ "type": "list", "items": [
+					"Un símbolo se vuelve un fragmento de 2 estados (uno inicial y uno de aceptación).",
+					"La unión agrega 2 estados nuevos (nuevo inicial, nuevo de aceptación) unidos a los fragmentos por 4 flechas ε. Así `a|b` tiene 2 + 2 + 2 = 6 estados.",
+					"La clausura (estrella) también agrega 2 estados y flechas ε para repetir y para saltar.",
+					"La concatenación no agrega estados nuevos: pega el final de un fragmento con el inicio del siguiente."
+				] },
+				{ "type": "paragraph", "text": "Cada fragmento tiene un estado inicial y uno de aceptación, así que las piezas encajan como bloques de Lego. El AFN tiene como máximo cerca del doble del tamaño de la expresión, así que la construcción es lineal." },
+				{ "type": "heading", "text": "Qué se puede hacer con lenguajes regulares" },
+				{ "type": "paragraph", "text": "Los lenguajes regulares son **cerrados** bajo unión, concatenación, estrella, complemento e intersección: aplicar esas operaciones a lenguajes regulares da un lenguaje regular. Cada una tiene una construcción detrás, como el producto para la intersección o el intercambio en un AFD completo para el complemento." },
+				{ "type": "heading", "text": "Lo que no pueden hacer" },
+				{ "type": "paragraph", "text": "Un autómata finito solo tiene sus estados como memoria. Toma el lenguaje a^n b^n (algunas `a` seguidas del **mismo número** de `b`). Tras leer las `a`, la máquina tendría que recordar exactamente cuántas fueron, y hay infinitas posibilidades. Con k estados, entre los prefijos a^0, a^1, ..., a^k dos deben caer en el mismo estado (el principio del palomar: más palomas que nidos). Completa ambos con las mismas b y el autómata acepta los dos o rechaza los dos, así que se equivoca en uno. Esa es la idea del **lema del bombeo**. Por lo tanto `a^n b^n` **no es regular**." },
+				{ "type": "callout", "tone": "warning", "text": "Las bibliotecas reales de regex no son exactamente las expresiones regulares de la teoría. Una **referencia hacia atrás** (backreference) como `^([ab]+)\\1$` exige una repetición exacta de lo capturado y describe el lenguaje de palabras duplicadas `ww`, que ni siquiera es libre de contexto. Los motores que soportan backreferences usan retroceso (backtracking) y pueden tardar tiempo exponencial; los motores basados en autómatas garantizan tiempo lineal porque no las ofrecen." },
+				{ "type": "callout", "tone": "remember", "text": "Regex = unión, concatenación, estrella. Regex y autómatas finitos describen los mismos lenguajes. Contar sin límite (a^n b^n) está más allá de ellos." }
+			]
+		},
+		{
+			"id": "dfa-minimisation",
+			"title": "Minimización de autómatas",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagina dos niños en la clase que siempre dan la misma respuesta a toda pregunta que les haces, ahora y en el futuro. Podrías quedarte con uno solo y nada cambiaría. En un AFD, dos estados así se llaman **equivalentes**, y la **minimización** los junta para dejar la máquina lo más pequeña posible." },
+				{ "type": "paragraph", "text": "Muchos AFD distintos reconocen el mismo lenguaje, pero solo uno tiene el menor número de estados, salvo por el nombre de los estados. Ese es el **AFD mínimo**. Como es único, da una prueba: dos AFD son equivalentes exactamente cuando sus formas mínimas son iguales." },
+				{ "type": "heading", "text": "¿Distinguibles o equivalentes?" },
+				{ "type": "paragraph", "text": "Dos estados p y q son **distinguibles** si existe una cadena w tal que leer w desde p termina en aceptación y desde q no (o al revés). Si ninguna cadena los distingue, son **equivalentes** y pueden volverse un solo estado. La cadena vacía por sí sola ya separa los estados de aceptación de los de no aceptación." },
+				{ "type": "paragraph", "text": "La equivalencia es recursiva: p y q son equivalentes si coinciden en la aceptación y, para cada letra, sus destinos son equivalentes. Así, dos estados de aceptación con δ(p, a) = r y δ(q, a) = s, siendo r y s distintos, **aún pueden ser equivalentes**, cuando r y s sean equivalentes entre sí. Comparar las filas de la tabla no basta; por eso el algoritmo trabaja con grupos." },
+				{ "type": "heading", "text": "Refinamiento de particiones" },
+				{ "type": "list", "ordered": true, "items": [
+					"Empieza con la **partición inicial** de dos grupos: los estados de aceptación y los de no aceptación.",
+					"Para cada grupo y cada letra, mira a qué grupo va cada estado. Si los estados de un grupo van a grupos distintos, **divídelo** en consecuencia.",
+					"Repite hasta que ningún grupo se divida. Cada grupo final se vuelve un estado del AFD mínimo."
+				] },
+				{ "type": "table", "caption": "Un AFD. Inicio: S0. Aceptación: S0 y S1", "headers": ["estado", "0", "1"], "rows": [
+					["S0", "S1", "S2"],
+					["S1", "S0", "S3"],
+					["S2", "S3", "S0"],
+					["S3", "S2", "S1"]
+				] },
+				{ "type": "paragraph", "text": "Partición inicial: A = {S0, S1} y B = {S2, S3}. Con 0: S0 y S1 van a S1 y S0, ambos en A; S2 y S3 van a S3 y S2, ambos en B. Con 1: S0 y S1 van a S2 y S3, ambos en B; S2 y S3 van a S0 y S1, ambos en A. Ningún grupo se divide, así que el AFD mínimo tiene **2 estados**. Acepta las palabras con una cantidad par de 1." },
+				{ "type": "paragraph", "text": "Otra ejecución. Estados A, B, C, D, E con D de aceptación, y partición inicial {A, B, C, E} y {D}. Con `b`, A y C van a C (dentro del grupo) mientras B y E van a D (fuera). El grupo se divide en {A, C} y {B, E}. Probando de nuevo, nada más se divide, así que el AFD mínimo tiene 3 estados." },
+				{ "type": "diagram", "caption": "Refinamiento por rondas", "content": "ronda 0:  { A B C E }    { D }\n                |\n           (con b: A,C -> dentro, B,E -> D)\n                v\nronda 1:  { A C }  { B E }  { D }   sin más divisiones\n          = 3 estados" },
+				{ "type": "heading", "text": "Contar estados por lo que hay que recordar" },
+				{ "type": "paragraph", "text": "El **teorema de Myhill-Nerode** dice que el número de estados del AFD mínimo es igual al número de clases de prefijos que necesitan futuros distintos. Ejemplo: las palabras que contienen `aab` como subcadena. Necesitamos q0 (sin progreso), q1 (termina en a), q2 (termina en aa), q3 (ya contiene aab: de aceptación, y se queda ahí para siempre). El final `b` separa `aa` de `a` y de ε; `ab` separa `a` de ε; y la cadena vacía separa `aab` del resto. Así el AFD mínimo completo tiene **4 estados**." },
+				{ "type": "heading", "text": "Cuando los estados producen respuestas" },
+				{ "type": "paragraph", "text": "El algoritmo clásico solo conserva la pregunta \"¿aceptada o no?\". Un lexer necesita más: **qué token** se reconoció, como `IF` frente a `ID`. La solución es empezar de una partición más fina: un grupo por cada tipo de salida (cada token) más el grupo de no aceptación. El resto corre como siempre. La misma idea vale para cualquier máquina cuyos estados produzcan salidas distintas." },
+				{ "type": "callout", "tone": "remember", "text": "Minimiza empezando con aceptación contra no aceptación y dividiendo los grupos cuyos estados van a grupos distintos. El AFD mínimo es único, así que AFD mínimos iguales significan lenguajes iguales." }
+			]
+		},
+		{
+			"id": "mealy-moore-machines",
+			"title": "Máquinas de Mealy y de Moore",
+			"blocks": [
+				{ "type": "paragraph", "text": "Hasta ahora las máquinas solo decían sí o no. Muchas veces queremos que **respondan con algo**, como un semáforo que muestra un color, o un circuito que enciende una lámpara. Las máquinas con salida vienen en dos sabores." },
+				{ "type": "callout", "tone": "analogy", "text": "Una máquina de Moore es como una sala con una lámpara de color: el color depende solo de la sala en la que estás. Una máquina de Mealy es como un portero que grita una respuesta cuando cruzas una puerta: la respuesta depende de la sala que dejas y de lo que acabas de decir." },
+				{ "type": "table", "headers": ["Propiedad", "Moore", "Mealy"], "rows": [
+					["La salida depende de", "solo del estado actual", "del estado actual y de la entrada actual (de la transición)"],
+					["Se dibuja como", "salida escrita dentro del estado", "`entrada/salida` escrita en la flecha"],
+					["Salidas para n entradas", "n + 1 (el estado inicial ya tiene una)", "n (una por transición)"],
+					["Número usual de estados", "igual o mayor", "igual o menor"],
+					["Temporización", "responde un ciclo después, salida estable", "responde en el mismo ciclo, sigue los cambios de la entrada"]
+				] },
+				{ "type": "paragraph", "text": "¿Por qué n + 1 en Moore? Una entrada de n símbolos causa n transiciones, así que la máquina visita n + 1 estados, y cada estado visitado tiene una salida, incluido el primero, que no depende de ninguna entrada. Con 5 símbolos de entrada una máquina de Moore produce 6 salidas y una de Mealy produce 5." },
+				{ "type": "heading", "text": "Ejemplo: detectar dos 1 seguidos" },
+				{ "type": "table", "caption": "Una máquina de Mealy. Cada celda: siguiente estado / salida. Inicio: S0", "headers": ["estado", "entrada 0", "entrada 1"], "rows": [
+					["S0", "S0 / 0", "S1 / 0"],
+					["S1", "S0 / 0", "S1 / 1"]
+				] },
+				{ "type": "paragraph", "text": "S1 significa \"el último símbolo fue 1\". La salida es 1 cuando el símbolo actual y el anterior son ambos 1. Para la entrada `0110111`: (S0,0) da 0; (S0,1) da 0; (S1,1) da 1; (S1,0) da 0; (S0,1) da 0; (S1,1) da 1; (S1,1) da 1. Salida: `0010011`." },
+				{ "type": "heading", "text": "De Mealy a Moore" },
+				{ "type": "paragraph", "text": "Para convertir, mueve la salida de cada transición al estado de destino. Si a un estado se llega con transiciones de salidas **distintas**, divídelo, una copia por cada salida. Aquí a S1 se llega con salida 0 (el primer 1) y con salida 1 (los 1 siguientes), así que S1 se vuelve dos estados. La máquina de Moore tiene **3 estados**. Una máquina de Moore puede necesitar más estados que la de Mealy, y nunca menos." },
+				{ "type": "heading", "text": "Máquinas en hardware" },
+				{ "type": "paragraph", "text": "Un **circuito combinacional** tiene una salida que depende solo de las entradas actuales, como el botón de una calculadora. Un **circuito secuencial** tiene realimentación y memoria, así que su salida también depende del estado, que resume las entradas pasadas. Los elementos de memoria son [[latches y flip-flops|pequeños circuitos que guardan un bit cada uno; un flip-flop solo cambia cuando el reloj marca un pulso]]. Todo circuito secuencial síncrono (guiado por un reloj) es una máquina de estados finita: los flip-flops guardan el estado y la lógica combinacional calcula el siguiente estado y la salida." },
+				{ "type": "paragraph", "text": "Con **codificación binaria** (el menor número de bits) necesitas ⌈log2(número de estados)⌉ flip-flops. Para 6 estados, log2(6) es cerca de 2,58, redondeado hacia arriba da **3 flip-flops**. Tres bits dan 8 códigos, de los cuales 6 se usan. Los 2 códigos sobrantes deben tratarse en el diseño para que la máquina no quede atrapada en ellos." },
+				{ "type": "callout", "tone": "warning", "text": "La temporización importa. Si la entrada cambia a mitad de un ciclo de reloj, una salida de Mealy cambia **de inmediato** en ese ciclo, cargando el ruido de la entrada. Una salida de Moore se mantiene estable todo el ciclo porque sale directo del registro de estado, y solo reacciona un ciclo después. Una forma común de limpiar una salida de Mealy ruidosa es pasarla por un flip-flop, al costo de un ciclo de retraso." },
+				{ "type": "callout", "tone": "remember", "text": "Moore: salida en el estado, n + 1 salidas. Mealy: salida en la transición, n salidas, normalmente menos estados." }
+			]
+		},
+		{
+			"id": "statecharts",
+			"title": "Statecharts: jerarquía, guardas, estados paralelos",
+			"blocks": [
+				{ "type": "paragraph", "text": "Un reproductor de música tiene un estado Reproduciendo y un estado Pausado. También tiene \"apagar\", que debe funcionar en ambos. En un diagrama plano dibujas una flecha apagar saliendo de cada estado. Con diez estados, diez flechas. Los **statecharts**, inventados por David Harel, resuelven esto con tres ideas: jerarquía, guardas y regiones paralelas." },
+				{ "type": "heading", "text": "Jerarquía: superestados" },
+				{ "type": "paragraph", "text": "Agrupa Reproduciendo y Pausado dentro de un **superestado** llamado Encendido, y dibuja la flecha powerOff una sola vez, saliendo de Encendido. Los subestados la **heredan**. Cuando llega un evento, la máquina busca primero una transición en el subestado activo. Si no hay, la búsqueda sube al superestado." },
+				{ "type": "diagram", "caption": "Una flecha para todos los subestados", "content": "+--------------- Encendido --------------+\n|  inicial: Reproduciendo                |\n|   (Reproduciendo) --pause--> (Pausado) |   powerOff\n|   (Reproduciendo) <--play--  (Pausado) |-------------> (Off)\n+----------------------------------------+" },
+				{ "type": "paragraph", "text": "Si el reproductor está en Pausado y recibe powerOff, Pausado no tiene esa flecha, así que la búsqueda sube hasta Encendido, que lleva a Off. Un statechart jerárquico siempre puede aplanarse en una máquina común, pero más grande y más difícil de leer." },
+				{ "type": "heading", "text": "Guardas" },
+				{ "type": "paragraph", "text": "Una guarda permite que un mismo evento lleve a destinos distintos según los datos: `withdraw [balance >= amount]` y `withdraw [balance < amount]`. Como vimos, las guardas del mismo evento en el mismo estado deben ser mutuamente excluyentes." },
+				{ "type": "heading", "text": "Transiciones internas y externas" },
+				{ "type": "paragraph", "text": "Supón que Calentando tiene la acción de entrada startTimer y la acción de salida stopTimer. Una transición de Calentando a sí mismo en cada `tick` puede modelarse de dos maneras:" },
+				{ "type": "list", "items": [
+					"**Autotransición externa**: sale del estado y vuelve a entrar. Ejecuta la acción de salida y luego la de entrada: el temporizador se detiene y se inicia en cada tick.",
+					"**Transición interna**: nunca cruza el borde del estado. Ejecuta solo su propia acción. Si solo quieres contar el tick sin reiniciar el temporizador, este es el modelo correcto."
+				] },
+				{ "type": "heading", "text": "Historia: recordar dónde estabas" },
+				{ "type": "paragraph", "text": "El reproductor está en Pausado (dentro de Encendido) cuando una llamada telefónica lo lleva al estado Llamada, fuera de Encendido. Cuando la llamada termina, quieres volver a Pausado, no al inicio. Un **pseudoestado de historia** da esta memoria al superestado. La **historia superficial (H)** recuerda solo el nivel justo debajo. La **historia profunda (H*)** recuerda toda la configuración anidada. En la primera entrada, cuando aún no hay historia, se usa el subestado inicial (Reproduciendo)." },
+				{ "type": "heading", "text": "Orden de las acciones al cruzar niveles" },
+				{ "type": "paragraph", "text": "Cuando una transición va de A1 (dentro de A) a B1 (dentro de B) con acción t, el orden es como cerrar y abrir cajas:" },
+				{ "type": "list", "ordered": true, "items": [
+					"acciones de salida de los estados que se abandonan, **del más interno al más externo**: sale de A1, luego sale de A;",
+					"la acción de la transición: t;",
+					"acciones de entrada de los estados que se activan, **del más externo al más interno**: entra en B, luego entra en B1."
+				] },
+				{ "type": "paragraph", "text": "Un superestado se activa antes que sus subestados y se desactiva después de ellos." },
+				{ "type": "heading", "text": "Regiones paralelas (ortogonales)" },
+				{ "type": "paragraph", "text": "Un reproductor tiene un modo de reproducción (Reproduciendo, Pausado, Detenido) y un volumen (Normal, Silenciado). Son independientes. Un diagrama plano necesita un estado por cada combinación. Un estado compuesto con **regiones ortogonales** da a cada aspecto su propio diagrama pequeño, y el estado del sistema es el conjunto de subestados activos, uno por región." },
+				{ "type": "chart", "title": "Dos regiones con 3 y 4 subestados", "unit": "estados", "bars": [
+					{ "label": "estados dibujados (3 + 4)", "value": 7 },
+					{ "label": "estados de la máquina plana (3 × 4)", "value": 12 }
+				] },
+				{ "type": "paragraph", "text": "Regiones con k1, k2, ..., kn subestados equivalen a k1 × k2 × ... × kn estados planos. El dibujo crece como una **suma**, la máquina plana como un **producto**. Esa es la **explosión de estados** que la notación evita." },
+				{ "type": "callout", "tone": "remember", "text": "Los superestados heredan transiciones (la búsqueda va de lo interno a lo externo). Sale de lo interno a lo externo, luego la acción, luego entra de lo externo a lo interno. Las regiones multiplican los estados planos." }
+			]
+		},
+		{
+			"id": "pushdown-automata-cfg",
+			"title": "Autómatas de pila y gramáticas libres de contexto",
+			"blocks": [
+				{ "type": "paragraph", "text": "Un autómata finito no puede comprobar que los paréntesis coincidan: `((()))` está bien y `(()` no. Tendría que contar los paréntesis abiertos sin límite. Dale a la máquina una **pila**, un montón de platos en el que solo tocas el plato de arriba (el último en entrar es el primero en salir), y puede. Un **autómata de pila (AP)** es un autómata finito más una pila. Cada transición mira el estado, el símbolo de entrada y el **tope de la pila**, y puede apilar o desapilar." },
+				{ "type": "heading", "text": "Contar con una pila: a^n b^n" },
+				{ "type": "paragraph", "text": "Para aceptar n letras `a` seguidas de n letras `b`: apila una X por cada `a`, desapila una X por cada `b`, y acepta si la entrada termina con la pila vacía." },
+				{ "type": "diagram", "caption": "Entrada aabbb (la pila aparece entre corchetes)", "content": "lee a  [X]\nlee a  [X X]\nlee b  [X]\nlee b  [ ]\nlee b  pila vacía, sin movimiento -> RECHAZA" },
+				{ "type": "paragraph", "text": "Una X sobrante significa demasiadas `a`; una X faltante significa demasiadas `b`. La aceptación exige las dos cosas: fin de la entrada **y** pila vacía." },
+				{ "type": "heading", "text": "Gramáticas: reglas que construyen palabras" },
+				{ "type": "paragraph", "text": "Una **gramática libre de contexto (GLC)** tiene **terminales** (los símbolos de verdad), **no terminales** (nombres de tipos de frase), un **símbolo inicial** y **producciones** `A → α`, donde el lado izquierdo es **un único no terminal** y α es cualquier secuencia de símbolos. \"Libre de contexto\" significa que la regla para A vale donde sea que aparezca A, sin importar lo que lo rodee. La sintaxis de los lenguajes de programación se escribe así." },
+				{ "type": "code", "language": "text", "content": "S -> a S b | ε\nS => aSb => aaSbb => aaaSbbb => aaabbb", "caption": "Esta gramática genera a^n b^n; aquí n = 3" },
+				{ "type": "paragraph", "text": "Cada uso de `S → aSb` agrega una `a` a la izquierda y una `b` a la derecha, y `S → ε` termina el proceso. La gramática `S → (S)S | ε` genera los paréntesis balanceados. Los dos lenguajes son **libres de contexto pero no regulares**. El anidamiento sin límite es la marca de esa diferencia. Por eso el lexer (regular) no puede comprobar paréntesis, y ese trabajo es del **parser** (libre de contexto)." },
+				{ "type": "heading", "text": "Ambigüedad" },
+				{ "type": "paragraph", "text": "Una gramática es **ambigua** si alguna cadena tiene más de un árbol de derivación (un árbol que muestra cómo la construyeron las reglas). Con `E → E + E | E * E | id`, la cadena `id + id * id` tiene **2** árboles: uno con `+` en la raíz, otro con `*` en la raíz. Con números, 2 + 3 * 4 sería 14 en un árbol y 20 en el otro. El arreglo habitual es estratificar la gramática en niveles (expresión, término, factor), incorporando en ella precedencia y asociatividad." },
+				{ "type": "heading", "text": "¿Adivinar ayuda aquí?" },
+				{ "type": "paragraph", "text": "En los autómatas finitos, adivinar (no determinismo) no añadió poder. En los autómatas de pila **sí**: los lenguajes libres de contexto deterministas son un **subconjunto propio** de los libres de contexto. El lenguaje de las palabras seguidas de su espejo, `w w^R`, necesita adivinar dónde está el medio. Con un marcador `c` en el medio, `w c w^R`, no hace falta adivinar, y es determinista. En la práctica, los parsers rápidos como LL y LR son autómatas de pila deterministas, y por eso las gramáticas de los lenguajes de programación se diseñan para caber en esa clase." },
+				{ "type": "heading", "text": "Dónde una pila no basta" },
+				{ "type": "paragraph", "text": "Una pila puede comprobar una dependencia anidada a la vez. En a^n b^n c^n hay dos igualdades a la vez (a con b, y b con c), y la primera comparación vacía la pila. Así `a^n b^n c^n` **no es libre de contexto** (la prueba usa el lema del bombeo para lenguajes libres de contexto). Curiosamente, a^n b^n c^m y a^m b^n c^n son ambos libres de contexto, pero su intersección es a^n b^n c^n. Por lo tanto los lenguajes libres de contexto **no son cerrados bajo intersección**." },
+				{ "type": "callout", "tone": "remember", "text": "AP = autómata finito + pila = lenguajes libres de contexto. Las estructuras anidadas (paréntesis, a^n b^n) necesitan una pila. Dos conteos simultáneos (a^n b^n c^n) necesitan más." }
+			]
+		},
+		{
+			"id": "turing-machines-computability",
+			"title": "Máquinas de Turing y computabilidad",
+			"blocks": [
+				{ "type": "paragraph", "text": "Imagina una tira de papel muy larga con cuadritos, un lápiz con goma y una persona que sigue un pequeño libro de reglas. La persona mira un cuadrito y sigue una regla: escribir un símbolo, moverse a la izquierda o a la derecha y pasar a otra página del libro. Eso es una **máquina de Turing**, inventada por Alan Turing en 1936." },
+				{ "type": "paragraph", "text": "Tiene un control finito (los estados), una **cinta ilimitada** de celdas y un **cabezal**. En cada paso lee el símbolo bajo el cabezal y, según el estado, **escribe** un símbolo, **se mueve** a la izquierda o a la derecha y **cambia de estado**. Poder volver atrás y reescribir es lo que la hace más potente que un autómata de pila, cuya pila solo se alcanza por arriba." },
+				{ "type": "heading", "text": "Un programa pequeño: sumar 1 en binario" },
+				{ "type": "code", "language": "text", "content": "empieza en q0, cabezal en el bit más a la derecha\n(q0, 1) -> escribe 0, mueve a la izquierda, sigue en q0\n(q0, 0) -> escribe 1, se queda, va a halt\n(q0, _) -> escribe 1, se queda, va a halt\n(_ = celda en blanco)", "caption": "Suma 1 a un número binario, propagando el acarreo de derecha a izquierda" },
+				{ "type": "paragraph", "text": "Con la cinta `1011` (once) y el cabezal en el último 1: escribe 0 y se mueve a la izquierda (`1010`), escribe 0 y se mueve a la izquierda (`1000`), luego llega a un 0, escribe 1 y se detiene: `1100`, que es doce. El acarreo viajó hacia la izquierda, como cuando sumas a mano." },
+				{ "type": "heading", "text": "Tres grandes ideas" },
+				{ "type": "list", "items": [
+					"**Tesis de Church-Turing**: varios modelos inventados de forma independiente (máquinas de Turing, cálculo lambda, funciones recursivas) resultaron ser equivalentes. La tesis dice que esa clase es exactamente lo que entendemos por \"computable\". Así que lo que una máquina de Turing no puede hacer, ningún lenguaje de programación puede.",
+					"**Máquina de Turing universal**: una máquina que lee de la cinta la tabla de transiciones de cualquier otra máquina y la ejecuta. Es la teoría detrás de la computadora de propósito general y de todo intérprete. También nos permite hablar de programas que reciben programas como entrada.",
+					"**Turing-completo**: un modelo que puede simular cualquier máquina de Turing. Necesita memoria ilimitada y decisión más repetición sin un límite fijado de antemano. Los autómatas finitos y los autómatas con una sola pila **no** son Turing-completos."
+				] },
+				{ "type": "heading", "text": "Decidible y reconocible" },
+				{ "type": "paragraph", "text": "Un lenguaje es **decidible** si una máquina de Turing siempre se detiene y responde sí o no. Es **reconocible** (semidecidible) si una máquina se detiene y acepta toda palabra del lenguaje, pero puede correr para siempre con las demás. Decidible es un subconjunto propio de reconocible. Una regla útil: un lenguaje es decidible exactamente cuando **él y su complemento son ambos reconocibles**." },
+				{ "type": "heading", "text": "El problema de la parada" },
+				{ "type": "paragraph", "text": "Pregunta: dado un programa y una entrada, ¿termina o corre para siempre? Turing demostró que **ningún algoritmo responde correctamente en todos los casos**: el problema de la parada es **indecidible**. Es reconocible (ejecuta el programa; si se detiene, di que sí) pero no decidible (nunca puedes estar seguro de que una ejecución larga no se detendrá más tarde). Aquí está la idea de la prueba, por diagonalización:" },
+				{ "type": "code", "language": "python", "content": "# Supón que H(p, x) siempre se detiene y dice si p se detiene con la entrada x\ndef D(p):\n    if H(p, p):\n        while True:\n            pass        # bucle infinito\n    else:\n        return          # se detiene\n# ¿Qué hace D(D)?", "caption": "D hace lo contrario de lo que H predice para ella" },
+				{ "type": "paragraph", "text": "Si H dice que D(D) se detiene, entonces D(D) entra en bucle, y H se equivocó. Si H dice que D(D) entra en bucle, entonces D(D) se detiene, y H se equivocó otra vez. Por lo tanto H no puede existir. D usa H solo como subrutina, así que ninguna implementación ingeniosa escapa." },
+				{ "type": "paragraph", "text": "El **teorema de Rice** generaliza esto: ningún algoritmo decide, para todo programa, una propiedad no trivial de lo que el programa computa (por ejemplo, \"¿esta función puede alguna vez devolver null?\"). Por eso los verificadores de tipos, los analizadores y los optimizadores son conservadores y se equivocan hacia el lado seguro: un optimizador aplica un cambio solo cuando puede probar que es seguro, y un verificador de tipos rechaza algunos programas correctos." },
+				{ "type": "heading", "text": "La jerarquía de Chomsky" },
+				{ "type": "table", "caption": "Cada escalón hacia arriba da más memoria a la máquina (la clase más pequeña arriba)", "headers": ["Nivel", "Lenguajes", "Máquina", "Memoria extra"], "rows": [
+					["Tipo 3", "regulares", "autómata finito", "ninguna más allá de los estados"],
+					["Tipo 2", "libres de contexto", "autómata de pila", "una pila"],
+					["Tipo 1", "sensibles al contexto", "autómata linealmente acotado", "una cinta del tamaño de la entrada"],
+					["Tipo 0", "recursivamente enumerables", "máquina de Turing", "una cinta ilimitada"]
+				] },
+				{ "type": "paragraph", "text": "Cada clase contiene a la que está encima en la tabla. Tener menos poder tiene una ventaja: preguntas como \"¿esta máquina acepta alguna palabra?\" o \"¿estas dos máquinas son equivalentes?\" son decidibles para autómatas finitos, pero indecidibles para modelos Turing-completos." },
+				{ "type": "video", "title": "MIT 18.404J Theory of Computation, Fall 2020 (Michael Sipser, videoclases)", "url": "https://www.youtube.com/playlist?list=PLUl4u3cNGP60_JNv2MmK3wkOt9syvfQWY" },
+				{ "type": "callout", "tone": "remember", "text": "Regulares, libres de contexto, sensibles al contexto, recursivamente enumerables: cada nivel añade memoria. El problema de la parada es reconocible, pero indecidible." }
+			]
+		},
+		{
+			"id": "state-machines-in-software",
+			"title": "Máquinas de estados en software: patrón State, protocolos, flujos de trabajo",
+			"blocks": [
+				{ "type": "paragraph", "text": "De vuelta a la programación de todos los días. Siempre que una cosa tiene una vida con etapas (un pedido, una descarga, un inicio de sesión, una conexión), una máquina de estados ayuda a decir exactamente qué puede pasar y cuándo." },
+				{ "type": "heading", "text": "Dos formas de programarla" },
+				{ "type": "list", "items": [
+					"**Patrón State** (orientado a objetos): el comportamiento de cada estado vive en su propia clase, con la misma interfaz. El objeto de contexto delega en el objeto del estado actual, y así parece cambiar de clase cuando cambia el estado. Ventaja: todo lo de un estado queda en un solo lugar. Costo: la visión general de las transiciones queda repartida en varias clases.",
+					"**Guiada por tabla**: las transiciones son **datos**, una tabla que asigna (estado, evento) al siguiente estado, y una función genérica hace la consulta. Ventaja: agregar una transición es agregar una fila, sin tocar el mecanismo, y un programa puede leer la tabla para generar pruebas y diagramas."
+				] },
+				{ "type": "callout", "tone": "analogy", "text": "La tabla es el libro de reglas de un juego de mesa. La función es el jugador que sigue el libro. Puedes cambiar las reglas sin enseñar de nuevo a jugar al jugador." },
+				{ "type": "heading", "text": "Protocolos" },
+				{ "type": "paragraph", "text": "Un protocolo es un conjunto de reglas sobre quién puede decir qué y **cuándo**. El \"cuándo\" es exactamente lo que representa un estado. Por eso los protocolos de comunicación, como el establecimiento de una conexión TCP, se especifican como máquinas de estados: queda explícito qué hacer con cada mensaje en cada fase, incluidos los mensajes inesperados, fuente frecuente de fallos." },
+				{ "type": "heading", "text": "Flujos de trabajo: el ejemplo del pedido" },
+				{ "type": "list", "items": [
+					"Guarda el estado en **un solo campo** con un conjunto cerrado de valores (y no derivado de `paidAt`, `shippedAt`, `cancelledAt`, lo que permite combinaciones sin sentido).",
+					"Una función de transición recibe el estado y el evento. Si el evento no está permitido, **rechaza de forma explícita** (un tipo de resultado o una excepción) y **no tiene ningún efecto** sobre el estado. Quien llama decide qué hacer con el error.",
+					"Genera las pruebas a partir de la tabla: para cada par (estado, evento), espera éxito si el par está en la tabla y rechazo si no. Ahora agrega un estado `returned`, un evento `return` y una transición desde `delivered`. Los pares pasan de 6 × 5 = 30 a 7 × 6 = 42, y los rechazos de 30 − 6 = 24 a 42 − 7 = 35. Los 11 nuevos casos negativos quedan probados sin que nadie los escriba.",
+					"Genera el **diagrama** a partir de la tabla y mantén una prueba que falle cuando el diagrama versionado difiera de lo que genera la tabla. Un diagrama dibujado a mano es una segunda copia de las reglas, y las copias se alejan. Con una única fuente de verdad más la prueba de actualidad, eso no ocurre."
+				] },
+				{ "type": "heading", "text": "Deja que el compilador te revise" },
+				{ "type": "code", "language": "ts", "content": "type OrderState = \"created\" | \"paid\" | \"shipped\";\n\nfunction assertNever(value: never): never {\n\tthrow new Error(`unexpected state: ${String(value)}`);\n}\n\nfunction label(state: OrderState): string {\n\tswitch (state) {\n\t\tcase \"created\": return \"Created\";\n\t\tcase \"paid\": return \"Paid\";\n\t\tcase \"shipped\": return \"Shipped\";\n\t\tdefault: return assertNever(state);\n\t}\n}", "caption": "Comprobación de exhaustividad" },
+				{ "type": "paragraph", "text": "Tras tratar todos los casos, el tipo que queda para `state` es `never`. Si alguien agrega `\"delivered\"` al tipo y olvida el switch, lo que queda deja de ser `never`, y pasarlo a `assertNever` es un **error de compilación**. El compilador lista todos los lugares que necesitan actualización." },
+				{ "type": "code", "language": "elixir", "content": "def transition(:created, :pay), do: {:ok, :paid}\ndef transition(:created, :cancel), do: {:ok, :cancelled}\ndef transition(:paid, :ship), do: {:ok, :shipped}\ndef transition(:shipped, :deliver), do: {:ok, :delivered}\ndef transition(_state, _event), do: {:error, :invalid_transition}", "caption": "En Elixir cada cláusula es una fila de la tabla" },
+				{ "type": "paragraph", "text": "Las cláusulas se prueban **de arriba hacia abajo**. La última, genérica, atrapa todos los demás pares, así que `transition(:shipped, :pay)` devuelve `{:error, :invalid_transition}`. El orden importa: si la cláusula genérica fuera primero, coincidiría con todo." },
+				{ "type": "heading", "text": "La vida real no es una función pura" },
+				{ "type": "paragraph", "text": "**Concurrencia.** Dos solicitudes leen `status = 'created'`; una quiere pagar, la otra cancelar. Una transición es leer, comprobar, escribir, y si esos pasos no son atómicos las dos pueden partir del mismo estado. Haz que la comprobación sea parte de la escritura, una **actualización condicional** (compare-and-swap). Opciones equivalentes: bloquear la fila con `SELECT ... FOR UPDATE`, o usar una **columna de versión** (control optimista)." },
+				{ "type": "code", "language": "sql", "content": "UPDATE orders SET status = 'paid'\nWHERE id = 42 AND status = 'created';\n-- 1 fila cambiada: ganamos. 0 filas: otro se movió primero.", "caption": "Actualización condicional" },
+				{ "type": "paragraph", "text": "**Duplicados.** Las colas suelen entregar un mensaje **al menos una vez**, así que el evento `pay` puede llegar dos veces. Una tabla estricta ayuda: la segunda copia encuentra el pedido en `paid`, donde `pay` no está permitido, y es rechazada. Aun así debes decidir la política a propósito: tratar el rechazo como error, o reconocer el duplicado y confirmarlo sin efecto." },
+				{ "type": "paragraph", "text": "**Efectos externos.** En `pay` el servicio cobra una tarjeta y luego guarda `paid`. Si el proceso se cae después del cobro y antes de guardar, el evento se procesa de nuevo con el pedido todavía en `created`. Los dos pasos no pueden ser atómicos entre sí, así que el reprocesamiento debe ser seguro. El remedio estándar es hacer el efecto **idempotente** ([[idempotente|hacerlo dos veces da el mismo resultado que hacerlo una vez]]), por ejemplo con una clave de idempotencia enviada al proveedor de pagos. La máquina de estados te protege después de guardar; la idempotencia te protege en la ventana anterior." },
+				{ "type": "video", "title": "Infinitely Better UIs with Finite Automata (David Khourshid)", "url": "https://www.youtube.com/watch?v=VU1NKX6Qkxc" },
+				{ "type": "callout", "tone": "remember", "text": "Reglas como datos, mecanismo como código. Un solo campo de estado. Rechaza los eventos inválidos de forma explícita. Haz las transiciones atómicas y los efectos externos idempotentes." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntándolo todo",
+			"blocks": [
+				{ "type": "paragraph", "text": "Subiste toda la escalera. Esta tabla pone las máquinas lado a lado." },
+				{ "type": "table", "headers": ["Máquina", "Memoria", "Lenguajes", "Ejemplo que puede", "Ejemplo que no puede"], "rows": [
+					["AFD / AFN", "solo los estados", "regulares", "termina en `ab`; cantidad par de 1", "a^n b^n"],
+					["Autómata de pila", "estados + pila", "libres de contexto", "a^n b^n; paréntesis balanceados", "a^n b^n c^n"],
+					["Máquina de Turing", "estados + cinta ilimitada", "recursivamente enumerables", "todo lo computable", "decidir el problema de la parada"]
+				] },
+				{ "type": "table", "caption": "Conversiones y sus costos", "headers": ["De", "A", "Cómo", "Costo"], "rows": [
+					["Regex", "AFN", "McNaughton-Yamada-Thompson", "lineal en el tamaño de la expresión"],
+					["AFN", "AFD", "construcción de subconjuntos", "hasta 2^m estados"],
+					["AFD", "AFD mínimo", "refinamiento de particiones", "junta estados equivalentes"],
+					["Mealy", "Moore", "mover salidas a los estados de destino", "puede necesitar más estados"]
+				] },
+				{ "type": "heading", "text": "Errores que evitar" },
+				{ "type": "list", "items": [
+					"Intercambiar los estados de aceptación para obtener el complemento de un AFD que **no es completo**.",
+					"Olvidar que ε se acepta exactamente cuando el estado inicial es de aceptación.",
+					"Creer que un AFN reconoce lenguajes que un AFD no reconoce. No los reconoce; solo puede ser más pequeño.",
+					"Olvidar ε al leer `a*`.",
+					"Contar n salidas para una máquina de Moore. Son n + 1.",
+					"Usar dos guardas que se solapan para el mismo evento.",
+					"Creer que un lexer comprueba paréntesis balanceados. Eso exige una pila.",
+					"Tratar un evento rechazado como un cambio de estado. El rechazo no cambia nada."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Siempre que una respuesta dependa de una convención, compruébala: una máquina de Moore produce una salida en el estado inicial; la aceptación en un AP aquí significa fin de la entrada con la pila vacía; un AFD mínimo se cuenta como completo, con su estado muerto." },
+				{ "type": "callout", "tone": "remember", "text": "Dibuja los estados, ponle nombre a los eventos, decide qué está permitido, rechaza el resto. La misma idea simple va desde un torniquete hasta los límites de lo que las computadoras pueden hacer." }
+			]
+		}
+	]
+}

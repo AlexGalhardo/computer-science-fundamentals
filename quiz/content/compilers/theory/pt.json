@@ -1,0 +1,1461 @@
+{
+	"area": "compilers",
+	"intro": [
+		"Os computadores só entendem instruções muito simples, feitas de zeros e uns. As pessoas gostam de escrever programas em linguagens amigáveis, como Python, Go ou Rust. Alguma coisa precisa traduzir uma coisa na outra. Essa coisa é o **compilador**. Um compilador é como um tradutor de livros: lê um livro inteiro em um idioma e escreve um livro novo em outro idioma. Um **interpretador** é mais parecido com alguém que traduz em voz alta, uma frase de cada vez, enquanto você fala.",
+		"Compiladores estão em todo lugar. Toda vez que você compila um app, abre uma página web que roda JavaScript ou vê uma mensagem de erro como 'unexpected token', um compilador ou um interpretador está trabalhando. Entender como eles funcionam tira o mistério das mensagens de erro, dos programas lentos, dos problemas de memória e de toda ferramenta que lê código, como formatadores e editores.",
+		"Um compilador funciona como uma linha de fábrica. O texto do seu programa entra por uma ponta. A cada estação, um trabalhador faz uma tarefa pequena: cortar o texto em palavras, conferir a gramática, descobrir o significado, deixar o código mais simples e rápido e, por fim, escrever as instruções da máquina. Neste resumo você visita todas as estações: [[análise léxica|cortar o texto em palavras]], [[análise sintática|conferir a gramática e montar uma árvore]], tradução, código intermediário, memória em tempo de execução, geração de código, otimização, os truques de velocidade do processador e os interpretadores com máquinas virtuais e JIT. No final você estará pronto para o quiz."
+	],
+	"sections": [
+		{
+			"id": "compiler-structure",
+			"title": "A estrutura de um compilador e um tradutor simples",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Um **compilador** lê um programa em uma **linguagem fonte** e escreve um programa equivalente em uma **linguagem alvo**. O programa novo roda depois, sozinho. Um **interpretador** não escreve programa novo. Ele lê o seu programa e faz o que ele manda, na hora, usando a entrada que o usuário dá."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Um compilador é um tradutor que passa um livro de receitas inteiro do francês para o português e entrega o livro novo. Um interpretador é um cozinheiro que lê a receita em francês e cozinha passo a passo enquanto você espera."
+				},
+				{
+					"type": "table",
+					"headers": ["Ponto", "Compilador", "Interpretador"],
+					"rows": [
+						["Saída", "Um programa alvo, executado depois", "Nenhum programa alvo: o trabalho é feito na hora"],
+						["Velocidade do resultado", "Em geral mais rápido", "Em geral mais lento"],
+						["Mensagens de erro", "Achadas antes de rodar, para o programa todo", "Muitas vezes melhores, porque executa instrução por instrução e sabe exatamente onde parou"]
+					],
+					"caption": "O mesmo trabalho, duas estratégias."
+				},
+				{
+					"type": "heading",
+					"text": "As fases"
+				},
+				{
+					"type": "paragraph",
+					"text": "O compilador é uma cadeia de **fases**. Cada fase recebe o que a anterior produziu. A primeira metade, chamada **front end**, entende o programa fonte. A segunda metade, o **back end**, escreve o programa para a máquina alvo."
+				},
+				{
+					"type": "diagram",
+					"content": "caracteres\n    |  análise léxica\n    v\n tokens\n    |  análise sintática\n    v\n árvore sintática\n    |  análise semântica\n    v\n árvore verificada\n    |  geração de código intermediário\n    v\n código intermediário   <-- aqui termina o front end\n    |  otimização, geração de código\n    v\n código alvo            <-- back end",
+					"caption": "Cada fase consome a saída da fase anterior."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **token** é um pedacinho do texto com uma etiqueta. Em geral é um par: o **nome do token** (por exemplo `id`) e um **atributo** (por exemplo um ponteiro para a entrada desse nome na tabela de símbolos). A fase léxica é a que lê o fluxo de caracteres, agrupa em pedaços e entrega os tokens para a fase seguinte."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **tabela de símbolos** é a lista telefônica do compilador. Para cada nome do programa (uma variável, uma função, um tipo) ela guarda um registro com os atributos desse nome: o tipo, o escopo, onde fica guardado e, para funções, o número e os tipos dos parâmetros. As fases de análise a preenchem e todas as fases, até a geração de código, a consultam. Quando a linguagem tem blocos aninhados, costuma haver uma tabela por escopo, e cada tabela é encadeada com a tabela do bloco que a envolve."
+				},
+				{
+					"type": "heading",
+					"text": "Por que front end e back end são separados"
+				},
+				{
+					"type": "paragraph",
+					"text": "O front end depende da linguagem fonte. O back end depende da máquina alvo. Os dois só se encontram na **representação intermediária**. Assim, com `m` linguagens e `n` máquinas você escreve `m + n` componentes e obtém `m × n` compiladores."
+				},
+				{
+					"type": "chart",
+					"title": "4 linguagens e 3 máquinas: peças a escrever",
+					"unit": "peças",
+					"bars": [
+						{ "label": "Uma forma intermediária comum (4 + 3)", "value": 7 },
+						{ "label": "Sem ela (4 × 3 compiladores completos)", "value": 12 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "É por isso que sistemas como LLVM e GCC atendem muitas linguagens e muitas arquiteturas."
+				},
+				{
+					"type": "heading",
+					"text": "Do texto ao programa em execução"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"O **pré-processador** expande macros e inclui outros arquivos.",
+						"O **compilador** gera código assembly.",
+						"O **montador** (assembler) transforma o assembly em código de máquina relocável.",
+						"O **linkador** junta os arquivos objeto e as bibliotecas e resolve os endereços de coisas definidas em outro lugar.",
+						"O **carregador** (loader) coloca o executável na memória."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Cada arquivo é compilado separadamente, então só o linkador enxerga o programa inteiro. Um erro 'undefined reference' significa que todos os arquivos compilaram bem, mas o linkador não achou uma função que algum arquivo chama."
+				},
+				{
+					"type": "heading",
+					"text": "Escopo e parâmetros"
+				},
+				{
+					"type": "paragraph",
+					"text": "O **escopo** de um nome diz onde o nome pode ser usado. No **escopo estático** (também chamado léxico), um uso de nome se refere à declaração do bloco que o envolve no texto do programa. O compilador consegue decidir isso antes de rodar. No **escopo dinâmico**, o uso se refere à declaração mais recente ainda ativa na pilha de chamadas, o que só se sabe durante a execução."
+				},
+				{
+					"type": "code",
+					"language": "js",
+					"content": "var x = 1;\nfunction show() { print(x); }\nfunction test() { var x = 2; show(); }\ntest();",
+					"caption": "Escopo estático imprime 1 (o x escrito em volta de show). Escopo dinâmico imprime 2 (o x de test, que chamou show)."
+				},
+				{
+					"type": "paragraph",
+					"text": "Parâmetros podem ser passados de duas formas principais. Na **passagem por valor**, o parâmetro é uma variável nova que recebe uma cópia do argumento, então mudá-lo não muda a variável de quem chamou. Na **passagem por referência**, o parâmetro recebe o endereço do argumento e vira outro nome para a mesma memória. Se dois parâmetros apontam para o mesmo lugar, eles são **aliases**: escrever por um muda o que o outro lê."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"content": "void f(int a, int b) { a = a + 10; b = b * 2; }\nint x = 1;\nf(x, x);\nprint(x);",
+					"caption": "Por valor: x continua 1. Por referência: a e b são o próprio x, então a vira 11 e depois b = 11 * 2 = 22, e x termina em 22."
+				},
+				{
+					"type": "heading",
+					"text": "Um tradutor minúsculo: infixa para pós-fixa"
+				},
+				{
+					"type": "paragraph",
+					"text": "Na notação **pós-fixa** o operador vem depois dos operandos. A tradução de `E1 op E2` é a tradução de `E1`, depois a de `E2`, depois o operador. Os parênteses desaparecem, porque a posição do operador já diz a quais operandos ele se aplica. Um esquema de tradução imprime o operador no fim de cada produção, e o resultado é exatamente o programa de uma máquina de pilha."
+				},
+				{
+					"type": "table",
+					"headers": ["Infixa", "Pós-fixa"],
+					"rows": [
+						["`2 + 3 * 4`", "`2 3 4 * +`"],
+						["`8 - 3 + 1 * 2`", "`8 3 - 1 2 * +`"]
+					],
+					"caption": "As regras de sempre: `*` vem antes de `+` e `-`, e `+` e `-` têm o mesmo nível e agrupam da esquerda."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Um compilador é uma cadeia de fases. O front end depende da linguagem fonte, o back end da máquina, e a forma intermediária é onde os dois se encontram."
+				}
+			]
+		},
+		{
+			"id": "lexical-analysis",
+			"title": "Análise léxica: regex, AFN e AFD",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Quando você lê 'o gato dorme', não olha letra por letra. Você vê palavras. O **analisador léxico** (ou lexer) faz o mesmo com um programa: transforma o fluxo de caracteres em um fluxo de tokens como `id`, `num` e `if`. Ele também joga fora espaços em branco e comentários. Assim a fase seguinte trabalha com palavras e não com letras, e o lexer pode usar autômatos finitos, que são muito rápidos."
+				},
+				{
+					"type": "heading",
+					"text": "Padrão, lexema e token"
+				},
+				{
+					"type": "list",
+					"items": [
+						"O **padrão** é a regra que diz como são as cadeias de uma categoria.",
+						"O **lexema** é uma cadeia real do programa que casa com um padrão, por exemplo `total` ou `42`.",
+						"O **token** é o que o lexer entrega ao parser: o nome da categoria mais um atributo opcional."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Então `total` e `sum` são dois lexemas diferentes do mesmo token `id`."
+				},
+				{
+					"type": "heading",
+					"text": "Expressões regulares"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **expressão regular** (regex) é um jeito curto de descrever um conjunto de cadeias. Ela usa três operações: **concatenação** (uma coisa depois da outra), **alternância** `|` (isto ou aquilo) e o **fecho de Kleene** `*` (zero ou mais repetições). Precedência: o asterisco liga primeiro, depois a concatenação, e o `|` por último. Uma **definição regular** dá um nome a uma expressão para você reutilizá-la."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "letter = [A-Za-z]\ndigit  = [0-9]\nid     = letter (letter | digit)*"
+				},
+				{
+					"type": "paragraph",
+					"text": "A expressão acima diz: um identificador começa com uma letra e continua com qualquer quantidade de letras ou dígitos."
+				},
+				{
+					"type": "heading",
+					"text": "Qual token vence? Casamento mais longo"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **regra do casamento mais longo** (maximal munch) diz que o lexer deve pegar o maior prefixo da entrada que case com algum padrão. Só quando dois padrões casam com o mesmo lexema é que a ordem das regras desempata. É assim que `if` vira palavra reservada e não identificador: a regra dele vem antes de `id`. Juntas, as duas regras dão uma única forma de dividir a entrada."
+				},
+				{
+					"type": "table",
+					"headers": ["Entrada", "Regras, em ordem", "Tokens"],
+					"rows": [
+						["`while2<=5`", "`WHILE` while, `ID` [a-z][a-z0-9]*, `LE` <=, `LT` <, `NUM` [0-9]+", "`ID(while2)` `LE` `NUM(5)`"],
+						["`while`", "as mesmas regras", "`WHILE` (mesmo tamanho que ID, e WHILE vem primeiro)"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Um lexer implementado com AFD lê enquanto houver transição. Ele lembra a posição e a regra do **último estado de aceitação** que visitou. Quando trava, volta o ponteiro da entrada até essa posição, emite o token guardado e lê de novo os caracteres a mais como parte dos próximos tokens."
+				},
+				{
+					"type": "heading",
+					"text": "Lendo a entrada rápido"
+				},
+				{
+					"type": "paragraph",
+					"text": "Pedir um caractere de cada vez ao sistema operacional seria muito lento. Por isso o lexer lê blocos grandes. Ele usa um **par de buffers**: duas metades, para que um lexema possa atravessar a fronteira entre dois blocos. No fim de cada metade há um caractere especial, a **sentinela**. O laço já precisa olhar todo caractere, então o teste de fim de buffer vira só mais um caso desse mesmo olhar, e uma comparação sai do laço mais executado do compilador."
+				},
+				{
+					"type": "heading",
+					"text": "AFN e AFD"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **autômato finito** é uma máquina com poucos estados e setas entre eles, rotuladas com símbolos. Pense num jogo de tabuleiro com casas e setas. Um **AFD** (determinístico) tem exatamente uma seta para cada estado e símbolo, então existe um único caminho. Um **AFN** (não determinístico) pode ter várias setas com o mesmo símbolo e também **transições ε**, que não gastam símbolo da entrada. Um AFN aceita se algum caminho termina em estado de aceitação. Os dois têm o mesmo poder: reconhecem exatamente as **linguagens regulares**."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Fecho ε** de um conjunto de estados: tudo que se alcança a partir deles seguindo só setas ε, zero ou mais vezes. O próprio conjunto está incluído. Calcula-se com uma busca em grafo.",
+						"A **construção de Thompson** transforma uma regex em um AFN, peça por peça. Cada símbolo dá um autômato de 2 estados. Alternância e fecho adicionam 2 estados novos cada (um inicial e um de aceitação). A concatenação junta o estado de aceitação da primeira peça com o inicial da segunda. O tamanho cresce só linearmente: no máximo cerca de o dobro do número de símbolos e operadores. Exemplo: `ab*` tem 2 + (2 + 2) estados, menos 1 estado unido, então 5.",
+						"A **construção de subconjuntos** transforma um AFN em AFD. Cada estado do AFD é um conjunto de estados do AFN, os lugares onde o AFN pode estar depois de ler um prefixo. Começa com o fecho do estado inicial e, para cada conjunto novo e cada símbolo, junta os destinos. Na teoria pode haver até 2^n conjuntos, mas só os alcançáveis são criados, e costumam ser poucos.",
+						"A **minimização** junta estados equivalentes. Dois estados são equivalentes se nenhuma cadeia leva um à aceitação e o outro à rejeição. Comece separando estados de aceitação dos demais, depois divida qualquer grupo cujos estados vão, com o mesmo símbolo, para grupos diferentes. Quando nada mais divide, cada grupo é um estado. O AFD mínimo é único."
+					]
+				},
+				{
+					"type": "table",
+					"headers": ["Estado", "com a", "com b"],
+					"rows": [
+						["A (inicial)", "B", "C"],
+						["B", "B", "D"],
+						["C", "B", "C"],
+						["D", "B", "E"],
+						["E (aceitação)", "B", "C"]
+					],
+					"caption": "O AFD que a construção de subconjuntos dá para (a|b)*abb: 5 estados. A e C se comportam exatamente igual, então a minimização os junta e sobram 4 estados."
+				},
+				{
+					"type": "heading",
+					"text": "Tempo contra espaço"
+				},
+				{
+					"type": "table",
+					"headers": ["Forma de casar", "Tempo para n caracteres", "Memória", "Observação"],
+					"rows": [
+						["Simular o AFN", "O(r) por caractere, ou seja, O(r · n)", "O(r), com r o tamanho da regex", "Pequeno, um pouco mais lento"],
+						["Rodar um AFD já construído", "O(1) por caractere, ou seja, O(n)", "Até 2^r estados", "Rápido, mas pode ser enorme e caro de construir"],
+						["Casador com backtracking", "Pode ser exponencial", "Pequena", "Tenta um caminho e volta; só é necessário para extras como retrorreferências"]
+					]
+				},
+				{
+					"type": "chart",
+					"title": "Casar (a*)*b com n letras a, passos dados (n = 20)",
+					"unit": "passos",
+					"bars": [
+						{ "label": "Backtracking", "value": 6291455 },
+						{ "label": "Simulação do AFN", "value": 120 },
+						{ "label": "AFD", "value": 20 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Os números foram medidos pelo mini-projeto regex-engine deste repositório. Um padrão assim num serviço que recebe entrada de usuários pode travá-lo (ReDoS). Casar com autômatos não explode desse jeito."
+				},
+				{
+					"type": "heading",
+					"text": "O que um lexer pode e não pode fazer"
+				},
+				{
+					"type": "paragraph",
+					"text": "O lexer enxerga um lexema de cada vez e não conhece a estrutura do programa. Ele só acha erros em que nenhum padrão casa com o resto da entrada: um caractere inválido, uma string ou comentário que nunca fecha, um número malformado. Uma ordem errada de tokens é erro sintático. Um significado errado é erro semântico."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Um autômato finito tem um número fixo de estados, e essa é toda a memória dele. Ele consegue contar até um limite fixo ou módulo um número, mas não sem limite. Por isso parênteses balanceados de qualquer profundidade não se escrevem como expressão regular. Esse trabalho é de uma gramática livre de contexto e do parser."
+				},
+				{
+					"type": "video",
+					"title": "MIT 18.404J Theory of Computation, vídeos das aulas (autômatos finitos e expressões regulares)",
+					"url": "https://www.youtube.com/playlist?list=PLUl4u3cNGP60_JNv2MmK3wkOt9syvfQWY"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Regex, AFN e AFD descrevem as mesmas linguagens. O lexer pega o casamento mais longo, e o empate vai para a regra listada primeiro."
+				}
+			]
+		},
+		{
+			"id": "syntax-analysis",
+			"title": "Análise sintática: gramáticas e árvores",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Palavras soltas não são uma frase. 'Gato o dorme' tem as palavras certas na ordem errada. O **parser** confere se os tokens seguem a gramática da linguagem e monta uma árvore que mostra como as peças se encaixam."
+				},
+				{
+					"type": "heading",
+					"text": "Gramáticas livres de contexto"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **gramática livre de contexto** tem quatro partes: **terminais** (os tokens, as palavras de verdade), **não terminais** (nomes para tipos de frase), **produções** (regras, cada uma com um não terminal à esquerda e uma sequência de símbolos à direita) e um **símbolo inicial**. A **linguagem** da gramática é o conjunto de cadeias de terminais que se derivam do símbolo inicial."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "S -> A B\nA -> a\nB -> b",
+					"caption": "Esta gramática tem uma única cadeia, ab."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **derivação** começa no símbolo inicial e, a cada passo, troca um não terminal pelo lado direito de uma de suas produções. Na **derivação mais à esquerda** você sempre troca o não terminal mais à esquerda; na **derivação mais à direita**, o mais à direita. As duas podem montar a mesma árvore, só a ordem muda."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "esquerda: S => A B => a B => a b\ndireita:  S => A B => A b => a b"
+				},
+				{
+					"type": "heading",
+					"text": "Árvore de derivação e árvore sintática abstrata"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **árvore de derivação** (parse tree) tem um nó para cada símbolo da gramática usado, até os não terminais que existem só para codificar precedência. A **árvore sintática abstrata** (AST) guarda só o que importa para as fases seguintes: cada construção e suas partes. O formato da árvore já diz o que os parênteses e os níveis da gramática diziam."
+				},
+				{
+					"type": "diagram",
+					"content": "árvore de derivação de 1 + 2    AST\n\n        E                    +\n      / | \\                 / \\\n     E  +  T               1   2\n     |     |\n     T     F\n     |     |\n     F     2\n     |\n     1",
+					"caption": "A AST joga fora os não terminais auxiliares."
+				},
+				{
+					"type": "heading",
+					"text": "Ambiguidade, precedência e associatividade"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma gramática é **ambígua** quando uma cadeia tem mais de uma árvore de derivação. O caso clássico é `E -> E + E | E * E | id`: a cadeia `id + id * id` pode ser agrupada de duas formas. Como o compilador dá significado a partir da árvore, a ambiguidade precisa ser removida, reescrevendo a gramática ou com regras de desempate de precedência e associatividade."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "E -> E + T | T       (menor precedência, perto do início)\nT -> T * F | F\nF -> id | ( E )       (maior precedência, perto dos operandos)"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Cada nível de precedência ganha seu próprio não terminal. Operadores de **menor** precedência ficam perto do símbolo inicial, e os de **maior** precedência mais fundo, perto dos operandos. Por isso `*` liga mais forte que `+` aqui: suas partes precisam ser agrupadas primeiro, mais fundo na árvore.",
+						"A **recursão à esquerda** (`E -> E + T`) faz um operador ser associativo à esquerda: `1 - 2 - 3` significa `(1 - 2) - 3`. A recursão à direita o tornaria associativo à direita."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Erros"
+				},
+				{
+					"type": "paragraph",
+					"text": "A recuperação mais simples é o **modo pânico**. Quando o parser encontra um erro, ele descarta tokens até achar um **token de sincronização**, em geral um delimitador como ponto e vírgula ou chave de fechamento, e então segue. Pode pular um trecho longo sem conferir, mas nunca entra em laço infinito, e deixa o compilador relatar vários erros numa só execução."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Uma gramática diz quais ordens de tokens são legais. A árvore de derivação mostra como a cadeia foi derivada, a AST guarda só o significado, e a ambiguidade precisa ser removida."
+				}
+			]
+		},
+		{
+			"id": "top-down-parsing",
+			"title": "Análise descendente: descida recursiva e LL(1)",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Um parser **descendente** (top-down) começa no símbolo inicial e tenta montar a árvore em direção aos tokens, como montar um quebra-cabeça olhando a figura da caixa. O mais simples é a **descida recursiva**: escreva uma função por não terminal. A pilha de chamadas da linguagem faz o papel da pilha do parser. Ele é **preditivo** quando o próximo token basta para escolher a produção, sem backtracking."
+				},
+				{
+					"type": "heading",
+					"text": "Dois problemas a resolver antes"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Recursão à esquerda.** Uma produção `A -> A α` faz a função de `A` chamar a si mesma antes de ler qualquer token. Nunca termina. A correção, para `A -> A α | β`, é `A -> β A'` e `A' -> α A' | ε`. A linguagem é a mesma, mas agora a repetição acontece à direita."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "antes:   E -> E + T | T\ndepois:  E  -> T E'\n         E' -> + T E' | ε"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Prefixo comum.** Quando duas alternativas começam igual, um parser preditivo não consegue escolher olhando um único token. A **fatoração à esquerda** adia a decisão: `A -> α β1 | α β2` vira `A -> α A'` e `A' -> β1 | β2`. O parser lê primeiro o prefixo comum e só escolhe onde as alternativas diferem."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "antes:   S -> if E then S | if E then S else S\ndepois:  S  -> if E then S S'\n         S' -> else S | ε"
+				},
+				{
+					"type": "heading",
+					"text": "FIRST e FOLLOW"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para decidir, o parser precisa de dois conjuntos. `FIRST(α)` é o conjunto de terminais que podem iniciar uma cadeia derivada de `α`, mais `ε` se `α` pode derivar a cadeia vazia. Para um corpo `X1 X2 ... Xn` você pega `FIRST(X1)` sem `ε` e, enquanto todos os símbolos até ali podem ser vazios, soma o `FIRST` do próximo. `ε` só entra se todos os símbolos do corpo podem ser vazios."
+				},
+				{
+					"type": "paragraph",
+					"text": "`FOLLOW(A)` é o conjunto de terminais que podem aparecer logo depois de `A` em alguma derivação. `$` representa o fim da entrada. Para cada produção `X -> α A β`, some `FIRST(β)` sem `ε`; se `β` é vazio ou pode ser vazio, some também `FOLLOW(X)`. O `FOLLOW` do símbolo inicial sempre tem `$`, e `ε` nunca aparece em um conjunto `FOLLOW`."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "S -> A d\nA -> a | ε\n\nFIRST(A)  = { a, ε }\nFIRST(S)  = { a, d }     (A pode ser vazio, então d pode iniciar S)\nFOLLOW(A) = { d }"
+				},
+				{
+					"type": "heading",
+					"text": "A tabela LL(1)"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **tabela LL(1)** `M[A, t]` diz qual produção usar quando o não terminal `A` está no topo da pilha e o próximo token é `t`. Uma produção `A -> α` entra em `M[A, t]` para todo terminal `t` em `FIRST(α)` e, se `α` pode derivar `ε`, também para todo terminal em `FOLLOW(A)`. Células vazias são erros de sintaxe. O primeiro `L` significa que a entrada é lida da esquerda, o segundo `L` que se constrói uma derivação mais à esquerda, e `1` é um token de lookahead."
+				},
+				{
+					"type": "table",
+					"headers": ["Linha \\ próximo token", "a", "d"],
+					"rows": [
+						["A", "A -> a", "A -> ε (porque d está em FOLLOW(A))"],
+						["S", "S -> A d", "S -> A d"]
+					],
+					"caption": "A tabela LL(1) da gramática pequena acima."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma gramática é **LL(1)** quando nenhuma célula recebe mais de uma produção. De forma equivalente, para cada par de alternativas `A -> α | β`: `FIRST(α)` e `FIRST(β)` são disjuntos e, se uma pode derivar `ε`, o `FIRST` da outra não pode encontrar `FOLLOW(A)`."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A segunda condição é fácil de esquecer. Em `S -> A x` e `A -> x | ε`, as duas alternativas de `A` têm FIRST disjuntos, mas `x` está em `FOLLOW(A)`, então com `x` o parser não distingue 'A é x' de 'A é vazio, e este x pertence a S'. Tirar a recursão à esquerda e fatorar ajudam, mas não garantem LL(1)."
+				},
+				{
+					"type": "heading",
+					"text": "Escalada de precedência (parser de Pratt)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um parser de Pratt dá a cada operador um **poder de ligação** (binding power), um número que diz com que força ele agarra os vizinhos. A função que analisa uma expressão recebe o **poder mínimo** que aceita. Depois de um operando, ela só pega o próximo operador se o poder dele for maior que esse mínimo. Para um operador associativo à esquerda, o operando da direita é analisado com o mínimo igual ao poder do próprio operador, então um segundo operador igual não é engolido pelo operando da direita."
+				},
+				{
+					"type": "table",
+					"headers": ["Expressão", "Poderes", "AST (prefixa)"],
+					"rows": [
+						["`1 - 2 - 3`", "`-` vale 10", "`(- (- 1 2) 3)`"],
+						["`1 + 2 * 3`", "`+` vale 10, `*` vale 20", "`(+ 1 (* 2 3))`"]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A análise descendente exige ausência de recursão à esquerda, ausência de prefixos comuns e conjuntos FIRST e FOLLOW claros. Descida recursiva é uma função por não terminal."
+				}
+			]
+		},
+		{
+			"id": "bottom-up-parsing",
+			"title": "Análise ascendente: shift-reduce e LR",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Um parser **ascendente** (bottom-up) trabalha ao contrário: começa pelos tokens e os junta em pedaços cada vez maiores até a entrada inteira virar o símbolo inicial. Pense em construir com blocos pequenos até ter o castelo todo. Ele constrói uma derivação mais à direita, de trás para frente."
+				},
+				{
+					"type": "heading",
+					"text": "Shift e reduce"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um parser **shift-reduce** mantém uma pilha. A cada passo ele escolhe entre dois movimentos: **shift** (empilhar o próximo token) ou **reduce** (trocar o topo da pilha, que casa com o corpo de uma produção, pela cabeça dessa produção). Um **handle** é um pedaço que casa com o corpo de uma produção e cuja redução é um passo de uma derivação mais à direita feita de trás para frente."
+				},
+				{
+					"type": "table",
+					"headers": ["Pilha", "Entrada", "Ação"],
+					"rows": [
+						["`$`", "`id + id $`", "shift"],
+						["`$ id`", "`+ id $`", "reduce `E -> id`"],
+						["`$ E`", "`+ id $`", "shift"],
+						["`$ E +`", "`id $`", "shift"],
+						["`$ E + id`", "`$`", "reduce `E -> E + id`"],
+						["`$ E`", "`$`", "aceitar"]
+					],
+					"caption": "Gramática: E -> E + id | id. O topo da pilha fica à direita."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Nem toda subcadeia que casa com o corpo de uma produção é um handle. Reduzir ou não depende do que vem a seguir na entrada. Por isso o parser precisa de estados e de lookahead."
+				},
+				{
+					"type": "heading",
+					"text": "Itens LR, closure e goto"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **item LR(0)** é uma produção com um ponto, como `A -> α · β`. O ponto marca quanto do corpo já foi visto. O **closure** de um conjunto de itens acrescenta os itens iniciais de todo não terminal que aparece logo depois de um ponto. O **goto** de um conjunto e um símbolo move o ponto sobre esse símbolo. Os conjuntos de itens são os estados do parser."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um estado com um item completo (ponto no fim) e outro item que quer fazer shift é um **conflito** em LR(0). O **SLR(1)** resolve isso quando o token do shift não pertence ao `FOLLOW` do não terminal a reduzir."
+				},
+				{
+					"type": "heading",
+					"text": "Três métodos LR"
+				},
+				{
+					"type": "paragraph",
+					"text": "Eles compartilham um só algoritmo. Diferem apenas em como decidem quando reduzir."
+				},
+				{
+					"type": "table",
+					"headers": ["Método", "Como decide reduzir", "Estados", "Poder"],
+					"rows": [
+						["SLR(1)", "Usa o FOLLOW do não terminal", "Os mesmos do LR(0)", "O mais fraco"],
+						["LR(1) canônico", "Cada item carrega um lookahead exato", "Muitos", "O mais forte"],
+						["LALR(1)", "Parte do LR(1) e une estados com o mesmo núcleo", "O mesmo número do SLR(1)", "No meio; usado por geradores como o Yacc"]
+					],
+					"caption": "Em poder: SLR(1) < LALR(1) < LR(1)."
+				},
+				{
+					"type": "heading",
+					"text": "Conflitos"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Conflito shift/reduce**: no mesmo estado e com o mesmo lookahead o parser poderia fazer shift ou reduce.",
+						"**Conflito reduce/reduce**: duas produções diferentes poderiam ser reduzidas.",
+						"O **Yacc** resolve o primeiro fazendo shift e o segundo escolhendo a produção que aparece primeiro na gramática, sempre com um aviso."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "O exemplo famoso é o **else pendente** (dangling else). Com `if c then S` e `if c then S else S`, no token `else` um estado tem um item completo e outro que pode fazer shift de `else`. Fazer shift significa que cada `else` fica com o `if` mais próximo que ainda não tem `else`, que é a regra que as pessoas esperam."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Parsers LR fazem shift e reduce usando estados construídos de itens. Conflitos shift/reduce são resolvidos com shift, reduce/reduce pela produção anterior."
+				}
+			]
+		},
+		{
+			"id": "syntax-directed-translation",
+			"title": "Tradução dirigida por sintaxe",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Agora o compilador conhece o formato do programa. Como ele descobre o significado? A ideia: pendurar pequenas anotações, chamadas **atributos**, nos nós da árvore (um tipo, um valor, um pedaço de código) e escrever regras para calculá-las. Isso é a **tradução dirigida por sintaxe**."
+				},
+				{
+					"type": "heading",
+					"text": "Atributos sintetizados e herdados"
+				},
+				{
+					"type": "table",
+					"headers": ["Tipo", "Calculado a partir de", "Direção"],
+					"rows": [
+						["Atributo **sintetizado** de A no nó N", "Atributos dos filhos de N e do próprio N (regra da produção cuja cabeça é A)", "Para cima na árvore"],
+						["Atributo **herdado** de B no nó N", "Atributos do pai, dos irmãos e do próprio N (regra da produção do pai)", "Para baixo ou para o lado"]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Sintetizado é um relatório que sobe pelo organograma da empresa: cada gerente soma o que a equipe mandou. Herdado é uma ordem que desce do chefe ou vem de um colega da esquerda."
+				},
+				{
+					"type": "heading",
+					"text": "SDD e esquema de tradução"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **definição dirigida por sintaxe** (SDD) associa atributos a símbolos da gramática e regras a produções, sem dizer em que ordem as regras rodam. Um **esquema de tradução** (SDT) está mais perto do programa real: **ações** entre chaves são escritas em posições exatas dentro dos corpos das produções e rodam quando o parser chega a elas. A SDD é mais fácil de ler como especificação. O esquema é mais eficiente porque já carrega a ordem de avaliação."
+				},
+				{
+					"type": "heading",
+					"text": "Árvores anotadas e o grafo de dependências"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **árvore de derivação anotada** mostra o valor de todo atributo em todo nó. Com atributos sintetizados, os valores são calculados das folhas até a raiz. Para decidir a ordem no caso geral, desenhe o **grafo de dependências**: um nó para cada instância de atributo e uma seta de `x` para `y` quando a regra de `y` usa `x`. Qualquer **ordem topológica** desse grafo (cada atributo depois de tudo de que precisa) é uma ordem válida de avaliação. Se o grafo tem um ciclo, não existe ordem e a definição não pode ser avaliada."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "E -> E1 + T   E.val = E1.val + T.val\nE -> T        E.val = T.val\nT -> num      T.val = num.value\n\nentrada 2 + 3 + 4:  T.val=2, 3, 4  ->  E.val = 2 -> 5 -> 9"
+				},
+				{
+					"type": "heading",
+					"text": "S-atribuída e L-atribuída"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**S-atribuída**: só atributos sintetizados. Podem ser calculados de baixo para cima durante a análise.",
+						"**L-atribuída**: cada atributo é sintetizado, ou é um atributo herdado de um símbolo `X` do corpo que depende apenas de atributos herdados da cabeça, de atributos de símbolos à esquerda de `X` no corpo e de atributos do próprio `X`, sem ciclo. A informação flui da esquerda para a direita, então tudo pode ser avaliado numa só travessia em profundidade, como faz um parser descendente."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Em `A -> B C D`, uma regra que dá a um atributo herdado de `C` um valor que depende de um atributo de `D` quebra a propriedade L-atribuída, porque `D` está à direita de `C`."
+				},
+				{
+					"type": "heading",
+					"text": "Construindo uma AST"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma AST se constrói com regras sintetizadas: quando a produção representa uma construção, crie um nó; em produções auxiliares como `E -> T`, apenas passe o ponteiro para cima. O atributo é sintetizado, então a definição é S-atribuída e a árvore é montada de baixo para cima durante a análise. A árvore de `a + b + c` tem 5 nós: três folhas e dois nós `+`."
+				},
+				{
+					"type": "heading",
+					"text": "Quando as ações rodam?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Em um esquema de tradução, uma ação roda assim que tudo à esquerda dela foi processado. Na árvore de derivação, as ações contam como folhas extras, e a ordem é uma travessia em profundidade, da esquerda para a direita. Uma ação colocada depois de um não terminal recursivo só roda depois que toda a subárvore desse não terminal foi percorrida."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "T -> x { print('x') } T { print('y') }\nT -> ε\n\nentrada: x x     saída: x x y y",
+					"caption": "Os dois x são impressos na descida; os dois y na volta."
+				},
+				{
+					"type": "heading",
+					"text": "Atributos em um parser de descida recursiva"
+				},
+				{
+					"type": "paragraph",
+					"text": "Em um parser de descida recursiva, cada não terminal é uma função. Os atributos **herdados** viram parâmetros e os **sintetizados** viram valores de retorno. Depois que a recursão à esquerda é removida, o operando da esquerda de um operador é reconhecido por outra função. Para manter a associatividade à esquerda, o valor calculado até ali desce como atributo herdado, e o resultado final volta para cima como atributo sintetizado quando se chega à produção `ε`."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "// E -> T R      R -> - T R | ε\nfunction R(acc: number): number {\n\tif (next() === \"-\") {\n\t\tmatch(\"-\");\n\t\treturn R(acc - T());   // (acc - t), não (acc - (resto))\n\t}\n\treturn acc;              // ε: devolve o resultado para cima\n}"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Sintetizado sobe, herdado desce ou vai para o lado. Qualquer ordem topológica do grafo de dependências serve, e um ciclo significa que a definição não pode ser avaliada."
+				}
+			]
+		},
+		{
+			"id": "intermediate-code-generation",
+			"title": "Geração de código intermediário",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A árvore sintática é boa para entender o programa, mas não para executá-lo nem para deixá-lo rápido. Por isso o compilador a transforma numa linguagem simples e plana, que não é nem fonte nem máquina: o **código intermediário**."
+				},
+				{
+					"type": "heading",
+					"text": "Código de três endereços"
+				},
+				{
+					"type": "paragraph",
+					"text": "No **código de três endereços** cada instrução tem no máximo um operador do lado direito, como em `x = y op z`. Uma expressão longa é desmontada, e o compilador inventa **nomes temporários** para os valores intermediários. Um endereço pode ser um nome do programa, uma constante ou um temporário."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "a = b * c + d\n\nt1 = b * c\nt2 = t1 + d\na  = t2",
+					"caption": "Cada nó de operador da árvore produz uma instrução e um temporário novo."
+				},
+				{
+					"type": "paragraph",
+					"text": "Então o número de temporários é igual ao número de nós de operador da árvore. Partir de um DAG (abaixo) cria menos, porque subexpressões repetidas viram um só nó."
+				},
+				{
+					"type": "heading",
+					"text": "Como guardar: quádruplas e triplas"
+				},
+				{
+					"type": "table",
+					"headers": ["Forma", "Campos", "Como nomeia um resultado"],
+					"rows": [
+						["Quádrupla", "op, arg1, arg2, result", "Um nome no campo `result`"],
+						["Tripla", "op, arg1, arg2", "A posição (número) da instrução que o calculou"],
+						["Triplas indiretas", "Uma lista de ponteiros para triplas", "Igual às triplas, mas a lista pode ser reordenada sem mudar as referências"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "As triplas economizam temporários, mas são difíceis de mover: quando uma tripla muda de lugar, toda referência a ela muda. As triplas indiretas resolvem isso."
+				},
+				{
+					"type": "heading",
+					"text": "Atribuição única estática (SSA)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Na forma **SSA** toda variável é atribuída em exatamente um lugar do texto do programa. Cada atribuição nova cria uma versão nova (`x1`, `x2`, e assim por diante). Quando dois caminhos com versões diferentes se encontram, depois de um `if` ou no topo de um laço, uma **função φ** cria uma versão nova cujo valor é uma ou outra, conforme o caminho por onde o controle chegou. Isso deixa claro qual definição chega a cada uso."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "x1 = 1\nif c goto L1 else L2\nL1: x2 = 2\nL2: x3 = φ(x1, x2)    // x1 se pulamos L1, x2 se passamos por ele"
+				},
+				{
+					"type": "heading",
+					"text": "Tipos e conversões"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma conversão pode ser **explícita** (o programador escreve um cast) ou **implícita** (o compilador a insere sozinho, o que se chama **coerção**). Muitas linguagens permitem só coerções de **alargamento** (widening), que preservam toda a informação, como inteiro para ponto flutuante. No código intermediário a coerção é uma instrução de conversão como `t1 = (float) i`."
+				},
+				{
+					"type": "heading",
+					"text": "DAG: compartilhando trabalho repetido"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **DAG de expressão** (grafo acíclico dirigido) é como a árvore sintática, mas um nó pode ter mais de um pai: uma subexpressão que aparece várias vezes é guardada uma vez só. Antes de criar um nó, o compilador procura um nó existente com o mesmo operador e os mesmos filhos. Folhas iguais também são compartilhadas. Isso expõe as **subexpressões comuns**, que podem ser calculadas uma única vez."
+				},
+				{
+					"type": "diagram",
+					"content": "(x + y) * (x + y)\n\nárvore: 7 nós           DAG: 4 nós\n      *                     *\n     / \\                   / \\\n    +   +                  \\ /\n   / \\ / \\                  +\n  x  y x  y                / \\\n                          x   y",
+					"caption": "No DAG os dois operandos de `*` são o mesmo nó `+`."
+				},
+				{
+					"type": "heading",
+					"text": "Arrays"
+				},
+				{
+					"type": "paragraph",
+					"text": "Com armazenamento por **linhas** (row-major) e índices começando em 0, o endereço de `A[i][j]` é `base + (i · n2 + j) · w`. Aqui `n2` é o número de colunas e `w` a largura de um elemento. O número de linhas não aparece, só o número de colunas."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "A tem 5 linhas, 3 colunas, w = 4 bytes, base = 200\nendereço de A[2][1] = 200 + (2 * 3 + 1) * 4 = 228"
+				},
+				{
+					"type": "heading",
+					"text": "Booleanos e saltos"
+				},
+				{
+					"type": "paragraph",
+					"text": "No **código de saltos** (jumping code) o valor de uma expressão booleana não é guardado em variável. Ele é o lugar onde o controle termina. Em `B1 || B2`, se `B1` é verdadeiro o controle salta direto para a saída verdadeira; em `B1 && B2`, se `B1` é falso ele salta direto para a saída falsa. Operandos que não podem mudar o resultado nunca são avaliados. Isso é a **avaliação em curto-circuito**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um `while` vira três peças: o teste no topo com um salto de saída para logo depois do laço, o corpo e um salto incondicional de volta ao teste. Um `if` sem `else` vira um teste que pula só o comando controlado."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "while (i < n) i = i + 1;\n\nL1: ifFalse i < n goto L2\n    i = i + 1\n    goto L1\nL2: ..."
+				},
+				{
+					"type": "heading",
+					"text": "Backpatching"
+				},
+				{
+					"type": "paragraph",
+					"text": "Em uma só passada, um salto é escrito antes de o destino existir. O **backpatching** deixa o destino em branco e põe a instrução numa lista: a **truelist** tem os saltos tomados quando a condição é verdadeira, a **falselist** os tomados quando é falsa. Quando o destino é conhecido, todos os saltos da lista são preenchidos de uma vez. Para `B1 || B2`: a falselist de `B1` é preenchida com o início de `B2`; a truelist do todo é a união das duas truelists; a falselist do todo é a falselist de `B2`."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "O código de três endereços tem um operador por instrução. Triplas nomeiam resultados por posição, quádruplas por nome. SSA atribui cada variável uma vez e usa φ nos encontros de caminhos."
+				}
+			]
+		},
+		{
+			"id": "run-time-environments",
+			"title": "Ambientes de execução: layout da memória e chamadas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Enquanto o programa roda, onde ficam as coisas dele? Pense na sua carteira na escola. Algumas coisas ficam coladas nela para sempre (a etiqueta com seu nome), outras ficam numa bandeja que cresce e diminui em ordem (os livros de hoje), e outras ficam numa caixa grande no canto, de onde você tira e põe coisas em qualquer ordem. Os programas têm os mesmos três tipos de lugar."
+				},
+				{
+					"type": "heading",
+					"text": "As quatro áreas"
+				},
+				{
+					"type": "diagram",
+					"content": "endereço baixo\n+--------------------+\n| código             |  tamanho conhecido na compilação\n+--------------------+\n| dados estáticos    |  tamanho conhecido na compilação\n+--------------------+\n| heap               |  cresce em direção ao\n|               v    |  espaço livre\n|   (espaço livre)   |\n|               ^    |  cresce em direção ao\n| pilha              |  espaço livre\n+--------------------+\nendereço alto",
+					"caption": "O heap e a pilha ficam em pontas opostas e crescem um em direção ao outro."
+				},
+				{
+					"type": "paragraph",
+					"text": "Código e dados estáticos têm tamanho conhecido na compilação. A pilha e o heap mudam de tamanho enquanto o programa roda. Colocá-los em pontas opostas da mesma região livre deixa qualquer um crescer enquanto sobrar espaço entre eles."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Alocação estática**: o endereço é escolhido na compilação (ou no link). Serve para dados que existem exatamente uma vez durante toda a execução, como variáveis globais e constantes.",
+						"**Pilha**: dados cuja vida está ligada a uma chamada.",
+						"**Heap**: dados cuja vida não depende das chamadas, e dados cujo tamanho só se conhece na execução."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Registros de ativação"
+				},
+				{
+					"type": "paragraph",
+					"text": "Toda vez que um procedimento é chamado, um **registro de ativação** (stack frame) é empilhado. Quando a chamada retorna, ele é desempilhado. Ele guarda os dados daquela execução: os parâmetros reais, o valor retornado, o **elo de controle** (control link), o **elo de acesso** (access link), o estado salvo da máquina (incluindo o endereço de retorno), as variáveis locais e os temporários. É isso que torna a **recursão** possível: cada chamada tem suas próprias variáveis locais."
+				},
+				{
+					"type": "heading",
+					"text": "Elo de controle e elo de acesso"
+				},
+				{
+					"type": "table",
+					"headers": ["Elo", "Aponta para", "Reflete"],
+					"rows": [
+						["Elo de controle (elo dinâmico)", "O registro de quem chamou", "Quem chamou quem em tempo de execução"],
+						["Elo de acesso", "A ativação mais recente do procedimento que envolve este no texto", "Como o texto do programa está aninhado"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Os dois coincidem só quando quem chamou é o próprio procedimento que envolve. Com procedimentos aninhados e escopo estático, um nome que pertence a um procedimento externo é achado pelo par (diferença de profundidade de aninhamento, deslocamento no registro). O código segue tantos elos de acesso quanto a diferença entre a profundidade do procedimento que usa o nome e a do que o declara."
+				},
+				{
+					"type": "diagram",
+					"content": "procedure main (profundidade 1): var x\n  procedure a (profundidade 2)\n    procedure b (profundidade 3): usa x\n\nchamadas: main -> a -> b\nb usa x, declarado em main: 3 - 1 = 2 elos de acesso\nb --> a --> main  (depois o deslocamento de x)",
+					"caption": "O número de elos seguidos é a diferença de profundidades, não o tamanho da cadeia de chamadas."
+				},
+				{
+					"type": "heading",
+					"text": "Closures quebram a regra da pilha"
+				},
+				{
+					"type": "paragraph",
+					"text": "A pilha supõe que os dados de uma chamada morrem quando a chamada retorna. Uma **closure** quebra isso: ela lembra o ambiente onde foi criada e pode ser chamada depois que a função externa terminou."
+				},
+				{
+					"type": "code",
+					"language": "js",
+					"content": "function makeCounter() {\n\tlet n = 0;\n\treturn () => { n = n + 1; return n; };\n}\nconst next = makeCounter();\nnext(); next();   // n precisa continuar existindo aqui"
+				},
+				{
+					"type": "paragraph",
+					"text": "Por isso as variáveis capturadas vivem em um **ambiente no heap**, liberado só quando nenhuma closure aponta para ele."
+				},
+				{
+					"type": "heading",
+					"text": "Dois erros clássicos da memória manual"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Vazamento de memória** (memory leak): esquecer de liberar o que não será mais usado. O programa continua correto, mas usa cada vez mais memória.",
+						"**Ponteiro pendente** (dangling pointer): liberar o que ainda será usado. O programa então lê ou escreve em memória que pode já pertencer a outro objeto."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Dados estáticos têm endereços fixos, a pilha guarda um registro por chamada, o heap guarda dados que sobrevivem às chamadas. Elos de controle seguem as chamadas; elos de acesso seguem o texto."
+				}
+			]
+		},
+		{
+			"id": "heap-and-garbage-collection",
+			"title": "Alocação no heap e coleta de lixo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "O heap é uma caixa grande onde o programa pede pedaços de memória de qualquer tamanho. Alguém precisa lembrar quais pedaços estão livres e quais estão ocupados, e limpar quando um pedaço deixa de ser necessário. Vamos ver como."
+				},
+				{
+					"type": "heading",
+					"text": "Achando um pedaço livre"
+				},
+				{
+					"type": "paragraph",
+					"text": "Os pedaços livres ficam numa **lista livre**. O **first fit** pega o primeiro pedaço grande o bastante. É rápido, mas tende a quebrar pedaços grandes. O **best fit** pega o menor pedaço que seja grande o bastante. Guarda pedaços grandes para pedidos grandes, mas a busca é mais longa e deixa sobras minúsculas. Os dois tentam limitar a **fragmentação**: o espaço livre total basta, mas está espalhado em pedaços pequenos demais para usar."
+				},
+				{
+					"type": "diagram",
+					"content": "lista livre: [40] -> [10] -> [25] -> [18]\npedido: 12 bytes\n\nfirst fit: [40]  (primeiro grande o bastante, sobram 28)\nbest fit:  [18]  (menor grande o bastante, sobram 6)"
+				},
+				{
+					"type": "heading",
+					"text": "Coleta de lixo"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **coletor de lixo** (garbage collector) libera memória automaticamente: ele recupera só objetos que não podem mais ser alcançados, então elimina o erro do ponteiro pendente. As **raízes** são os lugares de onde o programa pode partir (variáveis da pilha, globais). Um objeto está vivo se um caminho de ponteiros leva até ele a partir de uma raiz."
+				},
+				{
+					"type": "heading",
+					"text": "Contagem de referências"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada objeto conta quantos ponteiros se referem a ele. Quando a contagem chega a zero, o objeto é liberado na hora, e os objetos para os quais ele apontava têm a contagem diminuída, possivelmente em cadeia. A fraqueza clássica são os **ciclos**: objetos que apontam um para o outro mantêm contagem positiva mesmo quando nenhuma raiz os alcança, então vazam. Os coletores por rastreamento não têm esse problema, porque usam alcançabilidade a partir das raízes."
+				},
+				{
+					"type": "diagram",
+					"content": "raízes: p -> A -> B\n        F <-> E   (apontam um para o outro, ninguém aponta para eles)\n\np = null:  A contagem 0 -> liberado, depois B contagem 0 -> liberado\nE e F ficam com contagem 1 cada -> vazam na contagem de referências",
+					"caption": "Ciclos inalcançáveis são o ponto fraco da contagem de referências."
+				},
+				{
+					"type": "heading",
+					"text": "Mark-and-sweep e cópia"
+				},
+				{
+					"type": "table",
+					"headers": ["Ponto", "Mark-and-sweep", "Cópia (dois semiespaços)"],
+					"rows": [
+						["Como funciona", "Marca o que é alcançável, depois varre o heap inteiro liberando o que não está marcado", "Move os objetos alcançáveis para uma metade vazia e abandona a metade antiga"],
+						["O custo depende de", "O tamanho do heap", "Só dos objetos vivos"],
+						["Objetos se movem?", "Não", "Sim, então os ponteiros precisam ser atualizados"],
+						["Fragmentação", "Pode continuar", "Eliminada"],
+						["Preço", "Tempo para varrer tudo", "Metade do espaço fica em reserva"]
+					]
+				},
+				{
+					"type": "chart",
+					"title": "Trabalho para um heap de 2.000 objetos dos quais 200 estão vivos (contagem simplificada)",
+					"unit": "visitas a objetos",
+					"bars": [
+						{ "label": "Mark-and-sweep (200 marcados + 2.000 varridos)", "value": 2200 },
+						{ "label": "Cópia (200 copiados)", "value": 200 }
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Coleta geracional"
+				},
+				{
+					"type": "paragraph",
+					"text": "A maioria dos objetos morre jovem. Por isso um coletor **geracional** coleta a geração jovem com frequência, recuperando muito lixo com pouco trabalho. Para uma coleta parcial ser segura, todo ponteiro que entra na região jovem vindo de fora deve ser tratado como raiz. O coletor mantém um **conjunto lembrado** (remembered set), atualizado por uma **barreira de escrita** (write barrier), um pedacinho de código que roda em toda atribuição de ponteiro. Se um objeto velho é alterado para apontar para um jovem, o conjunto lembrado registra isso, e o objeto jovem não é liberado por engano."
+				},
+				{
+					"type": "heading",
+					"text": "Coleta incremental"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um coletor **incremental** marca um pouco de cada vez, misturado com o programa em execução, que continua mudando o grafo de objetos. O perigo: o programa guarda um ponteiro para um objeto ainda não marcado dentro de um objeto que já foi varrido e remove o caminho original. O objeto vivo escapa da marcação e é liberado por engano. Uma barreira de escrita anota essas escritas, então o destino é marcado ou o objeto alterado é varrido de novo. O preço é um pouco de **lixo flutuante** (floating garbage), objetos mortos que sobrevivem a mais um ciclo."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Contagem de referências libera na hora, mas vaza ciclos. Mark-and-sweep custa pelo tamanho do heap, cópia pelos objetos vivos. Coletores geracionais e incrementais precisam de barreira de escrita."
+				}
+			]
+		},
+		{
+			"id": "code-generation",
+			"title": "Geração de código",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "O último grande passo: do código intermediário para instruções que a máquina consegue executar. O **gerador de código** tem três tarefas principais: **seleção de instruções** (quais instruções de máquina usar), **alocação e atribuição de registradores** (quais valores ficam em registradores, e em qual) e **ordenação de instruções** (em que ordem). Registradores são a memória mais rápida e mais escassa da máquina, então decidir o que fica neles pesa muito na velocidade. Achar a melhor atribuição é NP-completo, então na prática os compiladores usam heurísticas como a coloração de grafos."
+				},
+				{
+					"type": "heading",
+					"text": "Máquinas de pilha e máquinas de registradores"
+				},
+				{
+					"type": "paragraph",
+					"text": "Em uma **máquina de pilha** as instruções não nomeiam seus operandos. Elas pegam os operandos do topo da pilha e empilham o resultado. O código de uma expressão é a sua forma pós-fixa: primeiro o operando da esquerda, depois o da direita, depois o operador. Em uma **máquina de registradores** cada instrução nomeia onde está cada valor, como em `MUL R1, R1, R2`."
+				},
+				{
+					"type": "table",
+					"headers": ["Expressão", "Código da máquina de pilha"],
+					"rows": [
+						["`p * q + r`", "`push p; push q; mul; push r; add`"],
+						["`p - q * r`", "`push p; push q; push r; mul; sub`"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Blocos básicos e o grafo de fluxo"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **bloco básico** é uma sequência máxima de instruções consecutivas com uma única entrada (a primeira instrução) e uma única saída (a última). Dentro dele não há saltos nem destinos de salto, então as instruções sempre rodam juntas e em ordem. Para achar os blocos, marque os **líderes**: a primeira instrução, toda instrução que é destino de um salto e toda instrução que vem logo depois de um salto. Um bloco vai de um líder até a instrução anterior ao próximo líder, então o número de blocos é igual ao número de líderes. Os blocos são os nós do **grafo de fluxo**, e as arestas dizem qual bloco pode rodar depois de qual."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "1: i = 0\n2: if i > 9 goto 5\n3: i = i + 1\n4: goto 2\n5: print i\n\nlíderes: 1 (primeira), 2 (destino de 4), 3 (depois de um salto), 5 (destino de 2)\nblocos: [1] [2] [3-4] [5]  ->  4 blocos"
+				},
+				{
+					"type": "heading",
+					"text": "Vivacidade dentro de um bloco"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma variável está **viva** em um ponto se o valor dela ali ainda pode ser usado antes de ser sobrescrito. Dentro de um bloco, ande para trás. Comece pelo conjunto vivo na saída. Para cada instrução `x = y op z`, primeiro remova `x`, depois adicione `y` e `z`. O gerador usa isso para saber quando um registrador pode ser reaproveitado."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "vivas na saída: {z}\n3: z = y + 1      antes de 3: ({z} - z) + y = {y}\n2: y = x * 2      antes de 2: ({y} - y) + x = {x}\n1: x = x + 1      antes de 1: ({x} - x) + x = {x}"
+				},
+				{
+					"type": "heading",
+					"text": "Um modelo de custo"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um modelo simples dá a cada instrução o seu tamanho em palavras: 1 pela instrução mais o custo do modo de endereçamento de cada operando. Registradores custam 0, endereços de memória e constantes custam 1 porque ocupam uma palavra extra. Assim a seleção de instruções prefere manter valores em registradores e evitar loads e stores inúteis."
+				},
+				{
+					"type": "table",
+					"headers": ["Instrução", "Custo"],
+					"rows": [
+						["`ADD R0, R0, R1`", "1"],
+						["`LD R0, x`", "2"],
+						["`ADD R0, R0, #5`", "2"],
+						["`ST y, R0`", "2"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Registradores: coloração e o número de Ershov"
+				},
+				{
+					"type": "paragraph",
+					"text": "Na alocação por **coloração de grafos**, cada variável é um nó, cada **interferência** (duas variáveis vivas ao mesmo tempo) é uma aresta, e cada registrador é uma cor. Vizinhos precisam de cores diferentes. O menor número de registradores que funciona sem derramar é o **número cromático** do grafo. Se a máquina tem menos registradores, alguma variável é **derramada** (spilled): ela vive na memória, com loads e stores em volta de cada uso."
+				},
+				{
+					"type": "paragraph",
+					"text": "Para uma árvore de expressão, o **número de Ershov** diz quantos registradores bastam para avaliá-la sem guardar temporários. Folhas valem 1. Um nó cujos filhos têm números diferentes recebe o maior. Se os números são iguais, ele recebe esse valor mais 1. O truque é avaliar primeiro o filho mais exigente: o resultado dele então ocupa só um registrador enquanto o outro filho é calculado."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "(a + b) * c        a+b: 1,1 iguais -> 2     raiz: 2 e 1 -> 2\n(a + b) * (c + d)  dois filhos 2, iguais -> 3"
+				},
+				{
+					"type": "heading",
+					"text": "Descritores e peephole"
+				},
+				{
+					"type": "paragraph",
+					"text": "O gerador simples mantém duas tabelas. O **descritor de registradores** diz quais variáveis têm o valor atual em cada registrador. O **descritor de endereços** diz em quais lugares (registradores, memória) está o valor atual de cada variável. Antes de reutilizar um registrador, o gerador os consulta: se o registrador guarda a única cópia de um valor vivo, ele primeiro emite um store. No fim de um bloco, toda variável viva cuja cópia na memória está desatualizada também é guardada."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **otimizador peephole** olha por uma pequena janela deslizante de poucas instruções e troca o que encontra por algo mais curto ou mais rápido. Por exemplo, remove um load logo depois de um store no mesmo endereço, remove código inalcançável, encurta um salto para um salto e troca `x * 2` por `x + x`. Cada melhoria pode abrir espaço para outras, então a passada costuma ser repetida."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A geração de código seleciona instruções, aloca registradores e ordena instruções. Blocos básicos começam em líderes, e registradores não custam nada, enquanto memória e constantes custam uma palavra extra."
+				}
+			]
+		},
+		{
+			"id": "machine-independent-optimisations",
+			"title": "Otimizações independentes de máquina",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma **otimização** deixa o programa mais rápido ou menor sem mudar o que ele faz. 'Independente de máquina' quer dizer que ela trabalha sobre o código intermediário, então não depende do processador."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A regra única: uma otimização só é permitida se preservar o significado. O programa novo precisa se comportar como o antigo em toda execução possível. Quando o compilador não consegue provar que uma mudança é segura, ele deixa o código como está. Um programa mais lento ainda é correto; um programa rápido e errado é inútil."
+				},
+				{
+					"type": "heading",
+					"text": "Truques locais simples"
+				},
+				{
+					"type": "table",
+					"headers": ["Otimização", "O que faz", "Exemplo"],
+					"rows": [
+						["Dobra de constantes", "Faz na compilação a aritmética cujos operandos são todos constantes", "`s = 2 * 60` vira `s = 120`"],
+						["Propagação de constantes", "Troca uma variável pela constante que ela certamente tem naquele ponto, o que cria coisas novas para dobrar", "`n = 4; m = n * 3` vira `m = 12`"],
+						["Propagação de cópias", "Depois de `x = y`, troca os usos seguintes de `x` por `y` enquanto nenhum dos dois for reatribuído", "Sozinha não remove nada; o ganho vem quando `x = y` fica sem uso e a eliminação de código morto a apaga"],
+						["Eliminação de código morto", "Apaga comandos cujo resultado nunca é usado", "Uma cópia que ficou sem leitores"],
+						["Eliminação de subexpressões comuns", "Reaproveita um valor já calculado se os operandos não mudaram", "Veja abaixo"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "As otimizações funcionam em cadeia: uma prepara o terreno para a próxima."
+				},
+				{
+					"type": "heading",
+					"text": "Subexpressões comuns"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma ocorrência de expressão é uma **subexpressão comum** se foi calculada antes e nenhum de seus operandos mudou desde então. Uma atribuição a um operando **mata** a expressão. A versão **local** olha um bloco básico; a versão **global** usa a análise de expressões disponíveis para reaproveitar valores entre blocos."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "(1) t1 = a + b\n(2) t2 = a + b    reaproveita t1 (a, b não mudaram)\n(3) a  = t2 * 2    mata a + b\n(4) t3 = a + b    precisa ser calculada de novo"
+				},
+				{
+					"type": "heading",
+					"text": "Laços: onde o tempo vai"
+				},
+				{
+					"type": "paragraph",
+					"text": "Os programas gastam a maior parte do tempo em laços, então as otimizações de laço compensam. Um comando é **invariante de laço** quando seus operandos são constantes, ou são definidos só fora do laço, ou são definidos por outros comandos invariantes. A **movimentação de código** o leva para o **pré-cabeçalho** (preheader), um bloco logo antes do laço, para que rode uma vez em vez de uma vez por iteração. Uma **variável de indução** muda por um passo fixo a cada iteração, como `i` e `t = i * 4`. Essas são tratadas por **redução de força** (strength reduction), que troca a multiplicação por uma adição feita a cada passo, e não pela movimentação de código."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "antes:   L: t1 = n - 2      depois:  t1 = n - 2      (movido para fora)\n            t2 = i * 4               L: t2 = i * 4\n            ...                           ...",
+					"caption": "n - 2 não muda dentro do laço, então vai para o pré-cabeçalho. i * 4 muda toda vez, então não vai."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Otimizações precisam manter o significado. Dobra e propagação preparam a eliminação de código morto, invariantes saem dos laços, e variáveis de indução ganham operações mais baratas."
+				}
+			]
+		},
+		{
+			"id": "data-flow-analysis",
+			"title": "Análise de fluxo de dados e laços",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Para saber o que é seguro, o compilador faz perguntas sobre o **grafo de fluxo** inteiro: 'qual atribuição pode chegar até aqui?', 'esta variável ainda vai ser usada?', 'este valor já foi calculado em todos os caminhos?'. A **análise de fluxo de dados** responde a essas perguntas com uma receita comum."
+				},
+				{
+					"type": "heading",
+					"text": "O arcabouço"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Uma **direção**: para frente (a partir da entrada) ou para trás (a partir da saída).",
+						"**Funções de transferência**: como cada bloco muda a informação.",
+						"Um **operador de encontro** (meet): como combinar a informação que vem de vários caminhos (união ou interseção).",
+						"A análise é **conservadora**: na dúvida, assume o pior, então as otimizações que a usam continuam seguras."
+					]
+				},
+				{
+					"type": "table",
+					"headers": ["Análise", "Pergunta", "Direção", "Encontro"],
+					"rows": [
+						["Definições alcançantes", "Quais definições podem chegar a este ponto?", "Para frente", "União"],
+						["Variáveis vivas", "Existe um caminho que usa esta variável antes de redefini-la?", "Para trás", "União"],
+						["Expressões disponíveis", "Esta expressão é calculada em todos os caminhos, sem operando alterado depois?", "Para frente", "Interseção"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A união serve para as perguntas 'existe algum caminho'. A interseção serve para as de 'em todos os caminhos', porque a eliminação global de subexpressões comuns só é segura se o valor está pronto por qualquer caminho de chegada."
+				},
+				{
+					"type": "heading",
+					"text": "Definições alcançantes"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma definição `d` **alcança** um ponto se existe um caminho de `d` até ele sem outra definição da mesma variável no meio. Para cada bloco, **gen** guarda as definições do bloco que sobrevivem até o fim dele, e **kill** guarda as outras definições das mesmas variáveis. As equações são `OUT[B] = gen[B] ∪ (IN[B] − kill[B])` e `IN[B] = ∪ OUT[P]` sobre os predecessores `P`. Elas são resolvidas repetindo até nada mais mudar."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"content": "B1: d1: x = 1      B2: d2: x = x + 1 ; if x < 9 goto B2     B3: d3: y = x\narestas: B1->B2, B2->B2, B2->B3\n\nIN[B2]  = OUT[B1] ∪ OUT[B2] = {d1} ∪ {d2} = {d1, d2}\nIN[B3]  = OUT[B2] = {d2}      (d2 mata d1: mesma variável x)"
+				},
+				{
+					"type": "heading",
+					"text": "Variáveis vivas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Percorra o código **para trás**. Para `x = y op z`, o conjunto antes dela é `(conjunto depois − {x}) ∪ {y, z}`: a definição mata `x`, e os usos tornam `y` e `z` vivas. Uma variável está viva na entrada de um bloco se é lida no bloco antes de ser redefinida, ou se está viva na saída e não é redefinida nele. O resultado orienta a eliminação de código morto e a alocação de registradores."
+				},
+				{
+					"type": "heading",
+					"text": "Expressões disponíveis"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma expressão está **disponível** em um ponto se, em todo caminho da entrada até ele, a expressão foi calculada e nenhum operando foi atribuído depois do último cálculo. A ordem importa dentro de um bloco: calcular e depois matar deixa a expressão indisponível na saída."
+				},
+				{
+					"type": "diagram",
+					"content": "         B1: t1 = a + b\n          /           \\\n B2: t2 = a + b    B3: d = t1 - c\n     a = t2 * 2            |\n          \\           /\n           B4: t3 = a + b\n\npor B3: a + b está disponível.\npor B2: a mudou depois, então foi morta.\nInterseção dos dois caminhos: NÃO disponível em B4.",
+					"caption": "Basta um caminho que mata a expressão para ela ficar indisponível."
+				},
+				{
+					"type": "heading",
+					"text": "Dominadores e laços naturais"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um nó `d` **domina** `n` se todo caminho da entrada até `n` passa por `d`. Uma **aresta de retorno** (back edge) é uma aresta cujo destino domina a origem. O destino é o **cabeçalho** do laço. O **laço natural** de uma aresta de retorno é o cabeçalho mais todos os nós que alcançam a origem da aresta sem passar pelo cabeçalho, achados andando para trás pelos predecessores a partir da origem. Blocos onde o controle sai do laço não fazem parte dele."
+				},
+				{
+					"type": "diagram",
+					"content": "B1 -> B2 -> B3 -> B4 -> B2      (B4 -> B2 é a aresta de retorno)\n      B2 -> B5\n\nB2 domina B4, então o cabeçalho é B2.\nLaço = {B2, B3, B4}.  B5 fica fora (a saída).",
+					"caption": "Ande para trás a partir de B4: B3, depois B2 (o cabeçalho, pare)."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Definições alcançantes: para frente, união. Variáveis vivas: para trás, união. Expressões disponíveis: para frente, interseção. Um laço natural é um cabeçalho mais o que alcança a aresta de retorno sem cruzá-lo."
+				}
+			]
+		},
+		{
+			"id": "parallelism-and-locality",
+			"title": "Paralelismo em nível de instrução e localidade",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Um processador moderno não faz uma coisa de cada vez. E a memória é muito mais lenta que o processador, então o lugar onde os dados ficam importa. O compilador ajuda nas duas coisas."
+				},
+				{
+					"type": "heading",
+					"text": "Pipelines"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um processador com **pipeline** corta o trabalho de uma instrução em estágios: busca, decodificação, execução, acesso à memória e escrita do resultado. Ele começa a próxima instrução antes que a anterior termine. Esse é o tipo mais simples de **paralelismo em nível de instrução**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Pense em lavar roupa: enquanto a primeira leva está na secadora, a segunda já está na máquina de lavar. Ninguém espera o trabalho todo da primeira leva acabar."
+				},
+				{
+					"type": "diagram",
+					"content": "tempo ->  1    2    3    4    5    6\ninstr 1   B    D    E    M    W\ninstr 2        B    D    E    M    W\ninstr 3             B    D    E    M    W",
+					"caption": "B busca, D decodifica, E executa, M memória, W escrita do resultado."
+				},
+				{
+					"type": "paragraph",
+					"text": "Ele é limitado por **dependências**: uma instrução que precisa do resultado da anterior, ou um desvio cujo destino ainda não se conhece, faz o pipeline esperar."
+				},
+				{
+					"type": "heading",
+					"text": "Dependências de dados"
+				},
+				{
+					"type": "paragraph",
+					"text": "Duas instruções dependem uma da outra quando usam o mesmo local e pelo menos uma delas o escreve. Há três tipos, e qualquer escalonador, no compilador ou no processador, só pode reordenar ou sobrepor instruções que não estejam presas por eles, nem por dependências de controle."
+				},
+				{
+					"type": "table",
+					"headers": ["Tipo", "Ordem", "Exemplo"],
+					"rows": [
+						["Dependência verdadeira", "Escrita, depois leitura", "`a = b + c` e depois `d = a * 2`"],
+						["Antidependência", "Leitura, depois escrita", "`d = a * 2` e depois `a = 7`"],
+						["Dependência de saída", "Escrita, depois escrita", "`a = 1` e depois `a = 2`"]
+					],
+					"caption": "Duas leituras nunca criam dependência."
+				},
+				{
+					"type": "heading",
+					"text": "Laços e iterações paralelas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma dependência é **carregada pelo laço** (loop-carried) quando duas iterações diferentes usam o mesmo local de memória e pelo menos uma delas escreve. Se não há nenhuma, as iterações são independentes e podem ser dadas a processadores diferentes, em qualquer ordem. A **análise de dependência de dados** compara os índices das escritas com os das leituras e escritas das outras iterações. Acessos só de leitura nunca criam dependência."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"content": "for (i = 1; i < n; i++) a[i] = a[i-1] + 1;   // carregada: precisa da iteração anterior\nfor (i = 1; i < n; i++) a[i] = b[i] + 1;     // independente: pode rodar em paralelo"
+				},
+				{
+					"type": "heading",
+					"text": "Localidade"
+				},
+				{
+					"type": "paragraph",
+					"text": "O cache traz de uma vez uma **linha** inteira de memória vizinha. **Localidade espacial** é usar dados próximos na memória em momentos próximos, de modo que todo elemento trazido seja usado. Em C, uma matriz é guardada linha por linha (**row-major**). Descer por uma coluna dá um salto longo na memória a cada passo. A **troca de laços** (loop interchange) inverte os laços aninhados para que o laço interno percorra a dimensão guardada de forma contígua."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"content": "// lento: o laço interno salta uma linha inteira a cada passo\nfor (j = 0; j < N; j++) for (i = 0; i < N; i++) sum += m[i][j];\n// rápido: o laço interno anda ao longo de uma linha\nfor (i = 0; i < N; i++) for (j = 0; j < N; j++) sum += m[i][j];"
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A troca de laços só é válida se não inverte nenhuma dependência de dados. Somar inteiros dá o mesmo resultado em qualquer ordem, então aqui é seguro."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Pipelines sobrepõem instruções, mas esperam nas dependências. Iterações sem dependência carregada pelo laço podem rodar em paralelo. Percorra a memória na ordem em que ela é guardada."
+				}
+			]
+		},
+		{
+			"id": "interpreters-vms-jit",
+			"title": "Interpretadores, máquinas virtuais e JIT",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Começamos com a diferença entre compiladores e interpretadores. As linguagens reais misturam as duas ideias, em etapas: de um interpretador simples e lento para um rápido, e depois para uma máquina que compila enquanto roda."
+				},
+				{
+					"type": "heading",
+					"text": "Interpretador que percorre a árvore"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **interpretador que percorre a árvore** (tree-walking) executa o programa visitando recursivamente os nós da árvore sintática. É a forma mais simples de implementar uma linguagem. Mas cada operação paga por seguir ponteiros, escolher o código pelo tipo do nó e procurar nomes em ambientes."
+				},
+				{
+					"type": "heading",
+					"text": "Bytecode e máquinas virtuais"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Bytecode** é uma lista compacta e plana de instruções para uma máquina imaginária, a **máquina virtual** (VM). Os nomes já foram trocados por números, o que melhora a localidade e reduz o trabalho por operação."
+				},
+				{
+					"type": "table",
+					"headers": ["Pergunta", "Interpretador que percorre a árvore, em tempo de execução", "Compilador para bytecode, antes de rodar"],
+					"rows": [
+						["Qual variável é `x`?", "Procurar o nome por uma cadeia de tabelas", "Um número de posição"],
+						["O que roda depois de um `if`?", "A recursão retorna pelas chamadas aninhadas", "Um salto para um índice conhecido"],
+						["Que tipo de nó é este?", "Um switch sobre um objeto alcançado por ponteiro", "O próximo elemento de um array plano"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "No mini-projeto bytecode-vm deste repositório, uma VM ficou cerca de 2 vezes mais rápida que o interpretador de árvore em um laço e de 3 a 5 vezes mais rápida em uma função recursiva, usando cerca de 2 MiB de memória contra 58 a 98 MiB. São os resultados medidos da execução registrada nele."
+				},
+				{
+					"type": "heading",
+					"text": "VM de pilha ou de registradores?"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**VM de pilha**: as instruções trocam valores por uma pilha de operandos. Quem produz valor empilha, quem consome desempilha. As instruções são curtas e fáceis de gerar a partir da árvore, em pós-ordem.",
+						"**VM de registradores**: cada instrução nomeia suas fontes e o destino. Precisa de menos instruções para o mesmo trabalho, mas cada uma é maior e o compilador é mais difícil de escrever."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "O bytecode de pilha é a expressão em pós-fixa. As instruções binárias desempilham primeiro o operando da direita, depois o da esquerda, e empilham o resultado. Isso importa para subtração e divisão."
+				},
+				{
+					"type": "table",
+					"headers": ["Instrução", "Pilha depois (topo à direita)"],
+					"rows": [
+						["`PUSH 10`", "10"],
+						["`PUSH 4`", "10 4"],
+						["`SUB`", "6   (10 - 4: a esquerda é 10, a direita é 4)"],
+						["`PUSH 2`", "6 2"],
+						["`MUL`", "12"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "O laço de despacho"
+				},
+				{
+					"type": "paragraph",
+					"text": "O núcleo de uma VM é o **laço de despacho** (dispatch loop): ler o opcode para o qual o ponteiro de instrução aponta, avançar o ponteiro e saltar para o código que executa esse opcode. Esse custo fixo é pago uma vez por instrução executada, não por instrução escrita, então domina o tempo dos laços. Se o corpo de um laço tem 5 instruções e roda 100 vezes, o laço paga esse custo 500 vezes. Truques como threaded code e superinstruções o reduzem."
+				},
+				{
+					"type": "heading",
+					"text": "Compilação JIT"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um compilador **JIT** (just-in-time) traduz para código de máquina, enquanto o programa roda, os pedaços que o **perfil** (profile) mostra serem quentes (mais usados). Compilar também gasta tempo. Por isso as VMs usam **camadas** (tiers): interpretam primeiro, compilam rápido depois e otimizam pesado só o que continua quente. O preço é o **aquecimento** (warm-up): o programa começa lento e vai ficando mais rápido. A compilação **antecipada** (AOT, ahead-of-time) começa rápido, mas não conhece o comportamento real do programa."
+				},
+				{
+					"type": "heading",
+					"text": "Especulação e desotimização"
+				},
+				{
+					"type": "paragraph",
+					"text": "O JIT pode apostar. Ele gera código rápido para o caso que o perfil mostrou ser comum e o protege com **guardas** (guards), testes da suposição. Quando uma guarda falha, a VM **desotimiza**: move a execução, até no meio de uma função, para a versão genérica, reconstruindo o estado que essa versão espera. Assim, apostas agressivas nunca quebram a regra de que o programa deve continuar se comportando igual."
+				},
+				{
+					"type": "diagram",
+					"content": "chamada add(a, b)\n   |\n [guarda: os dois são inteiros?] -- sim --> soma de máquina rápida\n   |\n   não\n   v\n desotimiza --> versão genérica (trata strings, floats...)"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "O bytecode elimina os custos da árvore e da busca de nomes. O laço de despacho é pago por instrução executada. Um JIT compila o código quente, aposta com guardas e desotimiza quando uma aposta falha."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando tudo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Você viu a linha de fábrica inteira. Aqui está ela numa tabela só, com a saída típica de cada estação e a ideia típica para lembrar."
+				},
+				{
+					"type": "table",
+					"headers": ["Estação", "Recebe", "Produz", "Ideia-chave"],
+					"rows": [
+						["Análise léxica", "Caracteres", "Tokens", "Regex, AFN, AFD; casamento mais longo"],
+						["Análise sintática", "Tokens", "Árvore de derivação ou AST", "Gramáticas; LL(1) usa FIRST e FOLLOW; LR faz shift e reduce"],
+						["Análise semântica e tradução", "AST", "Árvore anotada", "Sintetizado sobe, herdado desce"],
+						["Código intermediário", "Árvore anotada", "Código de três endereços, SSA", "Um operador por instrução; backpatching"],
+						["Suporte em tempo de execução", "-", "Pilha, heap, coletor de lixo", "Registros de ativação; closures no heap"],
+						["Otimização", "Grafo de fluxo", "Código mais rápido, mesmo significado", "Análise de fluxo de dados; laços importam mais"],
+						["Geração de código", "Código otimizado", "Código de máquina", "Seleção de instruções, registradores, ordenação"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Erros a evitar"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Achar que um lexer confere parênteses balanceados: não confere, um autômato finito não conta sem limite.",
+						"Esquecer a condição do `FOLLOW` quando uma produção pode ser vazia na checagem LL(1).",
+						"Misturar o elo de controle (quem chamou) com o elo de acesso (quem envolve no texto).",
+						"Usar união onde a pergunta diz 'em todos os caminhos': isso pede interseção.",
+						"Reordenar um laço ou comandos sem checar as dependências.",
+						"Achar que escopo dinâmico e escopo estático dão a mesma resposta: não dão quando uma função é chamada de um lugar onde os nomes dela têm outro significado."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Como as ideias se conectam"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Uma regex vira um AFN, depois um AFD: a mesma máquina roda o lexer e o motor de regex.",
+						"Uma gramática dá a árvore; atributos na árvore dão o significado; a árvore vira código intermediário plano.",
+						"O mesmo grafo de fluxo alimenta as análises de fluxo de dados, as otimizações e a alocação de registradores.",
+						"Um interpretador de árvore, uma VM de bytecode e um JIT rodam a mesma linguagem com custos diferentes.",
+						"A notação pós-fixa aparece três vezes: no tradutor simples, no código de máquina de pilha e no bytecode de pilha."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Um compilador é uma cadeia de tradutores pequenos e simples. Cada um é fácil de entender sozinho, e cada um facilita o trabalho do próximo."
+				}
+			]
+		}
+	]
+}

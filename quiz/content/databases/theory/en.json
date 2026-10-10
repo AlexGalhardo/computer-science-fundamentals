@@ -1,0 +1,917 @@
+{
+	"area": "databases",
+	"intro": [
+		"A **database** is an organised collection of facts that many people and programs share: the students of a school, the products of a shop, the messages of a chat. Think of a huge, very tidy filing cabinet. A **DBMS** (database management system) is the librarian of that cabinet. You never walk to the shelves yourself. You ask the librarian, and the librarian finds, adds, changes or removes the papers, keeps the cabinet tidy and stops two people from messing it up at the same time.",
+		"Almost every app you use has a database behind it: your bank balance, your game score, the videos a site recommends. The most common kind is the **relational** database, which keeps facts in tables, and it is asked questions in a language called **SQL**. Behind SQL there is a small, beautiful theory: how to describe data, how to ask for it, how to design tables without repeating facts, how to keep the data correct when the power fails or when many people use it at once, and how to make questions fast.",
+		"In this summary you will learn those ideas one step at a time, with everyday pictures. You will meet keys, tables, joins, SQL, normal forms, indexes, transactions, locks and permissions. At the end you will be able to read a small schema, tell what a query returns, spot a badly designed table and explain why a bank transfer never loses money in the middle. Use the table of contents to jump to any topic."
+	],
+	"sections": [
+		{
+			"id": "overview-and-architecture",
+			"title": "What a database system is and how it is built",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine a school that keeps every student's address in two places: the office writes it in one notebook and the cafeteria writes it in another. A student moves house, the office fixes its notebook, and the cafeteria forgets. Now the school has two different answers to the same question. Keeping the same fact in several places is called **redundancy**. When the copies stop agreeing, we have **inconsistency**."
+				},
+				{
+					"type": "paragraph",
+					"text": "A database system fixes this by putting the data in one integrated place, shared by everybody, and by putting a program in charge of it: the [[DBMS|Database Management System: the software that stores, protects and answers questions about the data]]. Some redundancy may stay for speed, but then the DBMS itself takes care of updating every copy."
+				},
+				{
+					"type": "heading",
+					"text": "Three levels of description"
+				},
+				{
+					"type": "paragraph",
+					"text": "The classic **ANSI/SPARC architecture** describes the same data in three levels, like three ways to look at a building: the floor plan, the photo from the street and the pipes inside the walls."
+				},
+				{
+					"type": "diagram",
+					"content": "  user A view      user B view        EXTERNAL level\n       |                |             (what each user sees)\n       +--- mapping ----+\n                |\n        conceptual schema             CONCEPTUAL level\n                |                (the whole data, logically)\n          mapping\n                |\n         internal schema              INTERNAL level\n                         (files, indexes, physical order)",
+					"caption": "Three levels and the mappings between them. The internal level is the one that describes how data is physically stored."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**External level**: the view of each user or program. Many different views can exist.",
+						"**Conceptual level**: one common logical description of the whole database.",
+						"**Internal level**: how the data is physically stored: stored record formats, indexes, physical order.",
+						"**Mappings** translate between the levels, so that a change in one level can be absorbed without touching the others."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Data independence"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Data independence** means that programs are not broken when the way the data is stored or arranged changes. Without it, every program would know the exact file format and would stop working when someone changed it. There are two kinds:"
+				},
+				{
+					"type": "table",
+					"headers": ["Kind", "What changes", "What is protected", "Which mapping does the work"],
+					"rows": [
+						["Physical", "The internal level, for example a new index or a reorganised file", "The conceptual schema and the programs", "conceptual/internal"],
+						["Logical", "The conceptual level, for example one table is split in two", "The user views and the programs", "external/conceptual"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Example of logical independence: the table `EMP` is split into `EMP_PESSOAL` and `EMP_SALARIO`. A **view** named `EMP` that joins the two tables lets old programs keep working. Queries are fully protected. Updates only work if the view is updatable, because not every change to a view can be translated in one clear way to the real tables. Creating an index, on the other hand, is a physical change: only the internal schema and the conceptual/internal mapping change."
+				},
+				{
+					"type": "heading",
+					"text": "Languages, catalog and people"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**DDL** (data definition language) describes the objects: `CREATE TABLE` is a DDL statement.",
+						"**DML** (data manipulation language) works on the content: `SELECT`, `INSERT`, `UPDATE`, `DELETE`.",
+						"The **catalog** holds the metadata, which is data about the data: tables, columns, constraints, users. In a relational system the catalog is itself made of tables, so you can query it with the same language you use for ordinary data.",
+						"The **data administrator (DA)** decides which data the organisation keeps and the policies about it. The **database administrator (DBA)** is the technical person who implements those decisions: schemas, security, recovery and tuning."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Three levels (external, conceptual, internal) plus mappings give data independence. The DA decides what and why, the DBA does how. The catalog is made of ordinary tables."
+				}
+			]
+		},
+		{
+			"id": "relational-model",
+			"title": "The relational model: tables, keys and integrity",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A class list on paper has a title row (name, number, grade) and one line for each student. The relational model turns that picture into precise words. A **relation** is the table. Its **heading** is the set of column names, called **attributes**. Its **body** is the set of rows, called **tuples**. The **degree** is how many attributes there are, and the **cardinality** is how many tuples there are right now."
+				},
+				{
+					"type": "table",
+					"headers": ["Word in the model", "Everyday word", "Example"],
+					"rows": [
+						["Relation", "Table", "`EMP`"],
+						["Attribute", "Column", "`salario`"],
+						["Tuple", "Row", "one employee"],
+						["Degree", "Number of columns", "5 attributes, so degree 5"],
+						["Cardinality", "Number of rows", "12 tuples, so cardinality 12"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Because a relation is built from **sets**, it has four properties: no two tuples are equal, tuples have no order, attributes have no order, and each attribute holds one single value in each tuple. A table on paper is only a picture of a relation, and the order in which you see the rows means nothing. Each attribute is declared over a **domain**, which is the same as a data type: the set of values it may take."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Tuples do not stay in the order in which they were inserted. If you need an order, you must ask for it in the query."
+				},
+				{
+					"type": "paragraph",
+					"text": "A small but important point from Date: a relation **value** never changes, just like the number 5 never changes. What changes is the variable that holds the value. That variable is called a **relvar** (relation variable). When people say 'updating a relation', they really mean putting a new value into a relvar."
+				},
+				{
+					"type": "heading",
+					"text": "Keys"
+				},
+				{
+					"type": "paragraph",
+					"text": "How do we tell students apart when two share a name? With a key. A **superkey** is any set of attributes whose values are unique in every tuple. A **candidate key** is a superkey with nothing to spare: if you remove any attribute, it stops being unique. A relation can have several candidate keys. One is picked as the **primary key**, and the others are the **alternate keys**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Counting trick: every superkey is a set that contains some candidate key. If `MATRICULA(aluno, disciplina, nota)` has the single candidate key `{aluno, disciplina}`, the only free attribute is `nota`. You may add it or not, so there are exactly 2 superkeys: `{aluno, disciplina}` and `{aluno, disciplina, nota}`."
+				},
+				{
+					"type": "paragraph",
+					"text": "Every relation has at least one candidate key. The reason: there are no duplicate tuples, so the set of all attributes is always unique, and removing unnecessary attributes from it leaves a candidate key. SQL tables that accept duplicate rows lose this guarantee."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A key is a rule about every value the relation may ever have, not something you see in today's rows. If two tuples agree on `X`, then `X` is certainly not a key. But if nobody repeats in today's sample, you still cannot say that `X` is a key. That comes from the meaning of the data."
+				},
+				{
+					"type": "heading",
+					"text": "Integrity rules"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Entity integrity**: no component of the primary key of a base relation may be null. Otherwise there would be a recorded thing with no known identity.",
+						"**Referential integrity**: a **foreign key** is a set of attributes whose values must match a candidate key of another relation, or of the same relation. Every non-null foreign key value must exist as a value of the referenced key. The rule is checked when inserting into the referencing relation and when deleting or changing the referenced tuple.",
+						"A foreign key may point to its own relation. In `EMP(eno, nome, gerente_eno)`, the attribute `gerente_eno` can reference `eno` of `EMP` itself: the manager is an employee too."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "When a referenced row is deleted, a **referential action** says what the DBMS does with the rows that point to it:"
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "CREATE TABLE emp (\n\teno CHAR(3) PRIMARY KEY,\n\tdno CHAR(2) NOT NULL\n\t\tREFERENCES dept (dno) ON DELETE CASCADE\n);\n-- DELETE FROM dept WHERE dno = 'D1'\n-- also deletes every employee of D1 (CASCADE).\n-- RESTRICT / NO ACTION would refuse; SET NULL / SET DEFAULT\n-- would change the foreign key instead.",
+					"caption": "ON DELETE CASCADE: deleting the department takes its employees with it"
+				},
+				{
+					"type": "heading",
+					"text": "Constraints by scope, and the missing value"
+				},
+				{
+					"type": "paragraph",
+					"text": "Date sorts integrity constraints by how much must be examined to check them: a **type** constraint looks at one value, an **attribute** constraint at the type of one attribute, a **relation variable** constraint at one relvar, and a **database** constraint at two or more relvars. 'The salary of an employee cannot be greater than the budget of their department' mentions `EMP` and `DEPT`, so it is a database constraint. Referential integrity is the best-known database constraint."
+				},
+				{
+					"type": "paragraph",
+					"text": "Sometimes a value is unknown. SQL marks it with `NULL`, and uses **three-valued logic**: a condition can be true, false or **unknown**. Any comparison with `NULL` is unknown, and `WHERE` keeps only the rows where the condition is true."
+				},
+				{
+					"type": "table",
+					"headers": ["emp row", "salario", "salario > 1000 OR salario <= 1000"],
+					"rows": [
+						["row 1", "800", "true"],
+						["row 2", "1500", "true"],
+						["row 3", "2000", "true"],
+						["row 4", "3000", "true"],
+						["row 5", "NULL", "unknown, so the row is dropped"]
+					],
+					"caption": "In a table of 5 rows with one NULL salary, COUNT(*) with this condition returns 4"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Relation = heading + body of tuples. Candidate key = unique and irreducible. Entity integrity protects the primary key, referential integrity protects foreign keys. NULL makes conditions unknown, and unknown rows do not pass WHERE."
+				}
+			]
+		},
+		{
+			"id": "semantic-modelling-and-entity-relationship",
+			"title": "Designing before building: entities and relationships",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Before building a house you draw a plan. Before building a database you also draw a plan, and the most famous one is the **entity-relationship (E/R) diagram**. An **entity** is a thing we want to remember (a student, a course). A **relationship** connects entities (a student takes a course). Both can have **attributes**."
+				},
+				{
+					"type": "paragraph",
+					"text": "In Chen's original notation, rectangles are entities, **diamonds are relationships** and ellipses are attributes. The lines are labelled with the cardinality (1 or M)."
+				},
+				{
+					"type": "diagram",
+					"content": "+--------------+          /\\          +-----------+\n| DEPARTAMENTO |--1----- <  > ---M--| EMPREGADO |\n+--------------+          \\/          +-----------+\n                         tem\n\nrectangle = entity    diamond = relationship",
+					"caption": "A department has many employees, each employee has one department"
+				},
+				{
+					"type": "heading",
+					"text": "Cardinality"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **cardinality** of a relationship says how many occurrences of one entity connect to one occurrence of the other. To find it, read the relationship in both directions: how many employees does a department have? Many. How many departments does an employee have? One. So the relationship is **one-to-many**. The three kinds are one-to-one, one-to-many and many-to-many."
+				},
+				{
+					"type": "table",
+					"headers": ["Kind", "Example", "How it becomes tables"],
+					"rows": [
+						["One-to-many", "department and employees", "put a foreign key with the department number in the table of the 'many' side (`EMPREGADO`)"],
+						["Many-to-many", "students and courses", "create a third table with foreign keys to both entities, plus the attributes of the relationship"],
+						["One-to-one", "person and passport", "a foreign key on either side, declared unique"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Why a third table for many-to-many? A foreign key holds one single value, so it can only point to the 'one' side. A student takes many courses and a course has many students, so neither table can hold the link. The new table is called an associative relation. In the 'one' side nothing is stored: to find the employees of a department you query `EMPREGADO` by its foreign key."
+				},
+				{
+					"type": "paragraph",
+					"text": "Relationships can have attributes of their own, when a fact only makes sense for the pair. The grade `nota` belongs to the relationship `MATRICULA`, not to the student or to the course alone, because `{aluno, disciplina}` determines it and neither one alone does."
+				},
+				{
+					"type": "heading",
+					"text": "Weak entities and subtypes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"A **weak entity** depends on another entity for its existence. If the owner goes, the weak one goes too. The dependants of an employee, or the lines of an order, are examples. In tables, the key of the weak entity usually includes the key of the owner.",
+						"In the extended E/R model, a **supertype** and its **subtypes** express 'is a'. Every `ENGENHEIRO` is an `EMPREGADO`, and inherits its attributes. A common design is one table for the supertype and one for each subtype, where the primary key of the subtype is also a foreign key to the supertype."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The ternary trap"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **ternary** relationship links three entities in one fact: 'supplier F delivers part P to project J'. It is tempting to replace it with three binary relationships (supplier-part, part-project, project-supplier). But three weaker facts do not add up to the one strong fact: joining them can invent combinations that never happened. This mistake is the **connection trap**. The replacement is safe only when the ternary table satisfies a join dependency on its three projections, which is the subject of fifth normal form."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Knowing that Ana likes pizza, pizza is sold at Luigi's and Ana has been to Luigi's does not tell you that Ana ate pizza at Luigi's. Three small facts are not the big fact."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Rectangle = entity, diamond = relationship. One-to-many: foreign key on the many side. Many-to-many: a third table. Attributes of the pair live in the relationship."
+				}
+			]
+		},
+		{
+			"id": "relational-algebra",
+			"title": "Relational algebra: calculating with tables",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "In arithmetic you take numbers and make new numbers with `+` and `×`. In **relational algebra** you take relations (tables) and make new relations with operators. The important rule is **closure**: the result of every operator is again a relation. That is why you can plug operators into each other, like a projection of a selection of a join."
+				},
+				{
+					"type": "table",
+					"headers": ["Operator", "Symbol", "SQL cousin", "What it does"],
+					"rows": [
+						["Selection (restriction)", "σ", "`WHERE`", "keeps the tuples that satisfy a condition, with all attributes"],
+						["Projection", "π", "the `SELECT` list", "keeps some attributes of every tuple"],
+						["Union, intersection, difference", "∪ ∩ −", "`UNION`, `INTERSECT`, `EXCEPT`", "set operations on tuples"],
+						["Cartesian product", "×", "`CROSS JOIN`", "every tuple of one with every tuple of the other"],
+						["Natural join", "⋈", "`JOIN`", "pairs tuples that agree on the attributes with the same name"],
+						["Division", "÷", "double `NOT EXISTS`", "answers 'for all' questions"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Selection and projection"
+				},
+				{
+					"type": "diagram",
+					"content": "FORNECEDOR            pi cidade (FORNECEDOR)\nfno | cidade           cidade\nF1  | Lisboa    --->  Lisboa\nF2  | Porto           Porto\nF3  | Lisboa           Faro\nF4  | Faro\nF5  | Porto         3 tuples, not 5",
+					"caption": "After dropping fno, equal tuples are one: a relation is a set"
+				},
+				{
+					"type": "paragraph",
+					"text": "Selection cuts rows, projection cuts columns. Projection can make different tuples equal, and since a relation is a set, the repeated ones are shown once. SQL differs: it keeps repeated rows unless you write `DISTINCT`."
+				},
+				{
+					"type": "heading",
+					"text": "Union, intersection and difference"
+				},
+				{
+					"type": "paragraph",
+					"text": "These come from set theory, but the result must still be a relation. So both inputs must have the same heading (same attributes and types). This is called **union compatibility**. Uniting suppliers with parts would give tuples of different shapes."
+				},
+				{
+					"type": "paragraph",
+					"text": "Difference answers 'in A and not in B'. With `A = {1, 2, 3, 4}` and `B = {3, 4, 5}`, `A − B = {1, 2}`. Unlike union and intersection, it is **not commutative**: `B − A = {5}`. Intersection is not even primitive: `A ∩ B = A − (A − B)`."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "For 'students who are NOT enrolled in D1', do not select `dno ≠ 'D1'`. That only finds enrolments that are not for D1, so a student enrolled in D1 and D2 would still appear. The right form is difference: all students minus the students that have an enrolment in D1, that is `π aid (ALUNO) − π aid (σ dno = 'D1' (MATRICULA))`."
+				},
+				{
+					"type": "heading",
+					"text": "Product and join"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **Cartesian product** `R × S` pairs each tuple of R with each tuple of S. Each result tuple is the two glued together, so the **degree is the sum** of the degrees and the **cardinality is the product** of the cardinalities. If R has degree 3 and 4 tuples, and S has degree 2 and 5 tuples, the product has degree 5 and 20 tuples."
+				},
+				{
+					"type": "paragraph",
+					"text": "The **natural join** keeps only the pairs that agree on the common attributes, and writes the common attribute once. Tuples without a partner disappear."
+				},
+				{
+					"type": "diagram",
+					"content": "EMP            DEPT              EMP join DEPT\neno dno        dno cidade        eno dno cidade\nE1  D1        D1  Lima          E1  D1  Lima\nE2  D1        D2  Quito         E2  D1  Lima\nE3  D2        D4  Bogota        E3  D2  Quito\nE4  D3\n\nE4 looks for D3: no match.   Nobody looks for D4.\nResult: 3 tuples.",
+					"caption": "Natural join on dno"
+				},
+				{
+					"type": "paragraph",
+					"text": "Two extreme cases show that product and intersection are special cases of join. With **no** common attribute, every pair is accepted, so the join is the Cartesian product. With **all** attributes in common, only identical tuples pair up, so the join is the intersection `R ∩ S`."
+				},
+				{
+					"type": "heading",
+					"text": "Division"
+				},
+				{
+					"type": "paragraph",
+					"text": "Division answers 'for all' questions: which suppliers supply every part in `P`? `FP ÷ P` returns the `fno` values that appear in `FP` together with each `pno` in `P`. Extra parts do not matter. One missing part removes the supplier."
+				},
+				{
+					"type": "diagram",
+					"content": "FP            P        FP / P\nfno pno       pno      fno\nF1  P1        P1       F1   (has P1, P2)\nF1  P2        P2       F2   (has P1, P2)\nF1  P3\nF2  P1        F3 has P2 and P3 but not P1: out\nF2  P2\nF3  P2\nF3  P3",
+					"caption": "Suppliers that supply every part listed in P"
+				},
+				{
+					"type": "heading",
+					"text": "Laws that the optimiser loves"
+				},
+				{
+					"type": "paragraph",
+					"text": "Selection decides each tuple by itself, so it distributes over union, intersection and difference. Projection distributes over union, but **not** over difference or intersection, because dropping attributes can make different tuples coincide. For example `π A (R − S)` is not always `π A (R) − π A (S)`. Rules like these are what lets a DBMS rewrite a query into a faster equal one."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Closure: relations in, relation out. Union, intersection and difference need the same heading. Product: degrees add, cardinalities multiply. 'There is no' questions use difference, 'for all' questions use division."
+				}
+			]
+		},
+		{
+			"id": "relational-calculus-and-sql",
+			"title": "Calculus and SQL: saying what you want",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "There are two ways to ask a friend for a sandwich. You can give a recipe: 'take two slices, spread butter, add cheese'. Or you can describe the result: 'I want a sandwich with cheese'. Relational algebra is the recipe: operators applied step by step. **Relational calculus** is the description: it states a condition that the result tuples must satisfy, using predicate logic. The two are equivalent in power, so a DBMS can accept a description and turn it into algebra internally."
+				},
+				{
+					"type": "table",
+					"headers": ["Version", "A variable stands for", "Close relative"],
+					"rows": [
+						["Tuple relational calculus", "a whole tuple of a relation, reached as `F.cidade`", "SQL"],
+						["Domain relational calculus", "a single value of a domain", "QBE (query by example)"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The two quantifiers are linked by negation: `FORALL x (p)` is the same as `NOT EXISTS x (NOT p)`. SQL has `EXISTS` and no `FORALL`, so a 'for all' query uses two negations. 'Students enrolled in ALL courses' becomes: students for whom there is no course in which they are not enrolled."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "SELECT a.nome FROM aluno a\nWHERE NOT EXISTS (\n\tSELECT * FROM disciplina d\n\tWHERE NOT EXISTS (\n\t\tSELECT * FROM matricula m\n\t\tWHERE m.aid = a.aid AND m.did = d.did));",
+					"caption": "The outer NOT EXISTS hunts for a counterexample, the inner one checks the enrolment is missing"
+				},
+				{
+					"type": "heading",
+					"text": "The order SQL really thinks in"
+				},
+				{
+					"type": "paragraph",
+					"text": "You write `SELECT` first, but the DBMS thinks in another order: `FROM` builds the rows, `WHERE` throws away rows, `GROUP BY` makes groups, `HAVING` throws away groups, and only then the `SELECT` list is computed. So `WHERE` filters **rows** and `HAVING` filters **groups**."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "-- pedido(cliente, valor): (A,10) (A,30) (B,50)\n--                       (C,5)  (C,5)  (C,15)\nSELECT cliente\nFROM pedido\nGROUP BY cliente\nHAVING SUM(valor) > 30;\n-- A: 40, B: 50, C: 25  ->  A and B",
+					"caption": "HAVING looks at the sum of the whole group"
+				},
+				{
+					"type": "heading",
+					"text": "Where SQL departs from the model"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Bags, not sets.** A table of 5 suppliers in 3 cities gives 5 rows for `SELECT cidade FROM fornecedor`. Repeats go away only with `SELECT DISTINCT`.",
+						"**Aggregates skip NULL.** `SUM`, `AVG`, `MAX`, `MIN` and `COUNT(column)` ignore nulls. Only `COUNT(*)` counts rows. For bonuses 10, 20, NULL, 30, `AVG(bonus)` is 20 (three values), not 15.",
+						"**NOT IN and NULL.** `x NOT IN (list)` means `x <> v1 AND x <> v2 AND ...`. If the list contains a `NULL`, one term is always unknown, the whole condition is never true, and the query returns no rows. Use `NOT EXISTS`, or filter the nulls out of the subquery."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Views"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **view** is a virtual table: the catalog stores only the query that defines it. When you query the view, the DBMS replaces its name with the definition. So a view always shows the current data: if a new product with price 500 is inserted, the view `caros` (products above 100) shows it at once."
+				},
+				{
+					"type": "paragraph",
+					"text": "Updating through a view is harder. A row of a view that averages salaries by department summarises many `emp` rows, so `UPDATE media_depto SET media = 5000` has no single translation to the base rows, and the DBMS rejects it."
+				},
+				{
+					"type": "heading",
+					"text": "Relational completeness"
+				},
+				{
+					"type": "paragraph",
+					"text": "A language is **relationally complete** when it can express every query that relational calculus can. Algebra and calculus both meet this minimum, and SQL does too. It is only a minimum: recursive questions, like 'all the components of a part at any depth', are outside it."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Calculus says what, algebra says how. SQL keeps duplicates, ignores NULL in aggregates, and NOT IN with a NULL returns nothing. WHERE filters rows, HAVING filters groups."
+				}
+			]
+		},
+		{
+			"id": "functional-dependencies-and-normalisation",
+			"title": "Functional dependencies and normal forms",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Look at a table that stores, in every line, the order, the product, the quantity and also the product name. The name of product 7 is written again in every line that mentions product 7. That wastes space, and worse, when the name changes you must fix many lines. **Normalisation** is the cure: split the table so each fact is written once."
+				},
+				{
+					"type": "heading",
+					"text": "Functional dependency"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **functional dependency** `X → Y` holds when two tuples that agree on `X` always agree on `Y`. `X` is the **determinant**. Like a zip code that determines the city: same zip, same city. It is a rule about the meaning of the data, so it must hold in every valid value of the relation."
+				},
+				{
+					"type": "paragraph",
+					"text": "Valid inferences come from **Armstrong's rules**: reflexivity, augmentation and transitivity. You may split the right side freely (`A → BC` gives `A → B` and `A → C`). You may **not** shrink the left side: from `AB → C` you cannot conclude `A → C`, because that is a stronger claim that may be false."
+				},
+				{
+					"type": "heading",
+					"text": "Closure, keys and covers"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **closure** `X+` is everything `X` determines. Start with `X`, then keep adding the right side of every dependency whose left side is already inside, until nothing changes. If `X+` is the whole relation, `X` is a superkey."
+				},
+				{
+					"type": "diagram",
+					"content": "F = { A -> B,  B -> C,  CD -> E }\n\n{A}+ :  {A}  --A->B-->  {A,B}  --B->C-->  {A,B,C}\n                                CD -> E needs D: stop\n\nresult: {A}+ = {A, B, C}",
+					"caption": "Computing a closure step by step"
+				},
+				{
+					"type": "list",
+					"items": [
+						"An attribute that appears on **no right side** can never be derived, so it belongs to every candidate key. In `R(A, B, C, D)` with `A → B` and `B → C`, both `A` and `D` are such attributes, and `{A, D}+` is everything, so `{A, D}` is the only candidate key.",
+						"For `R(A, B, C, D)` with `AB → C`, `C → D`, `D → A`, the mandatory attribute is `B`. Trying the others gives three irreducible keys: `{A, B}`, `{B, C}` and `{B, D}`.",
+						"A **redundant** dependency can be derived from the rest. In `{A → B, B → C, A → C}`, the dependency `A → C` goes away, because `{A}+` without it already contains `C`. The cleaned set is called an irreducible (minimal) cover."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The ladder of normal forms"
+				},
+				{
+					"type": "table",
+					"headers": ["Form", "Requirement", "What breaks it"],
+					"rows": [
+						["1NF", "one single value per attribute in each tuple", "a repeating group, such as telefone1, telefone2, telefone3"],
+						["2NF", "1NF, and no non-key attribute depends on only part of a candidate key", "a partial dependency: in `ITEM(pedido, produto, qtd, nome_produto)` the name depends on `produto` alone"],
+						["3NF", "2NF, and no non-key attribute depends on another non-key attribute", "a transitive chain `eno → dno → cidade_depto`"],
+						["BCNF", "every determinant is a candidate key", "any determinant that is not a key"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "To find the highest normal form, climb from the bottom and stop at the first failure. `ITEM` meets 1NF but fails 2NF. A 1NF relation whose key has a single attribute is automatically in 2NF. For a transitive chain, decompose into `EMP(eno, dno)` and `DEPT(dno, cidade_depto)`."
+				},
+				{
+					"type": "paragraph",
+					"text": "A relation that mixes two subjects suffers three **anomalies**. **Insertion**: you cannot record a supplier's city until it supplies a part. **Deletion**: erasing the last shipment of a supplier erases the city too. **Modification**: the same fact repeated in many rows must be changed in all of them."
+				},
+				{
+					"type": "heading",
+					"text": "3NF against BCNF"
+				},
+				{
+					"type": "paragraph",
+					"text": "They differ only with composite candidate keys that overlap. Take `AULA(aluno, disciplina, professor)` with `{aluno, disciplina} → professor` and `professor → disciplina`. The keys are `{aluno, disciplina}` and `{aluno, professor}`. The dependency `professor → disciplina` has a non-key determinant but a prime (key) attribute on the right. 3NF tolerates that, BCNF does not. So `AULA` is in 3NF but not in BCNF."
+				},
+				{
+					"type": "diagram",
+					"content": "AULA(aluno, disciplina, professor)\n   aluno, disciplina -> professor     professor -> disciplina\n\nBCNF:  R1(professor, disciplina)   R2(aluno, professor)\nlossless: yes\nlost:     aluno, disciplina -> professor (spans two tables)",
+					"caption": "The classic price of BCNF: no table holds the whole first dependency"
+				},
+				{
+					"type": "paragraph",
+					"text": "A good decomposition is **lossless** (joining the pieces gives back exactly the original, with no invented tuples) and **dependency preserving** (each dependency can be checked inside one piece). A decomposition to 3NF with both qualities always exists. To BCNF a lossless one always exists, but a dependency may be lost. **Heath's theorem** gives a safe case: if `R(A, B, C)` satisfies `A → B`, then `R(A, B)` and `R(A, C)` join back to `R`."
+				},
+				{
+					"type": "heading",
+					"text": "Higher forms: 4NF and 5NF"
+				},
+				{
+					"type": "paragraph",
+					"text": "Some redundancy has no functional dependency behind it. In `OFERTA(curso, professor, livro)`, the teachers of a course and the books of a course are independent, so every teacher must be listed with every book. This is a **multivalued dependency** `curso →→ professor`. The relation is in BCNF, because the only key is all three attributes, but it is **not in 4NF**. The fix is two tables: `curso, professor` and `curso, livro`."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **join dependency** says a relation can be rebuilt by joining some projections. With two projections it is the same as a multivalued dependency. Some relations only decompose losslessly into three or more pieces, and **5NF** (projection-join normal form) handles those. It is the last form when only projection and join are used."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Closure is the tool behind keys and normal forms. Climb 1NF, 2NF, 3NF, BCNF and stop at the first failure. 3NF always keeps dependencies, BCNF may lose one. Multivalued dependency breaks 4NF, join dependency breaks 5NF."
+				}
+			]
+		},
+		{
+			"id": "query-optimisation-and-indexes",
+			"title": "Making queries fast: optimiser and indexes",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "When you ask a taxi to go to the airport, you do not choose the streets. A SQL query is the same: it says what you want, not how to find it. Inside the DBMS, the **query optimiser** is the driver who picks the route. It rewrites the query into equal ones, lists the possible ways to run it (read the whole table, use an index, which join method), estimates the cost of each with the **statistics** in the catalog, and picks a cheap plan. This automatic choice is what makes data independence practical."
+				},
+				{
+					"type": "heading",
+					"text": "Do the cutting first"
+				},
+				{
+					"type": "paragraph",
+					"text": "The best-known trick: apply selections as early as possible, and projections too. If you join two large tables and only then keep one city, the join works on everything. If you keep the city first, the join receives far fewer rows. The two plans give the same answer because of the algebra laws, but not the same cost."
+				},
+				{
+					"type": "diagram",
+					"content": "slow plan                   fast plan\n\n  select city = X             join\n       |                     /    \\\n     join              select      \\\n    /    \\             city = X     \\\n  R        S              |          S\n                          R",
+					"caption": "The same result, but the right plan joins fewer rows"
+				},
+				{
+					"type": "heading",
+					"text": "Indexes"
+				},
+				{
+					"type": "paragraph",
+					"text": "An **index** is the list at the back of a book: it leads from a value to the pages where it appears. Searches become faster, but every insert, update or delete must also fix the index, and the index takes space. That is the trade-off: **faster search, slower update**. So you index columns that are searched a lot and changed little."
+				},
+				{
+					"type": "table",
+					"headers": ["Index", "Equality `= 15`", "Range `BETWEEN 10 AND 20`", "Order, prefix"],
+					"rows": [
+						["B-tree", "yes, logarithmic time", "yes, keys are kept in order", "yes"],
+						["Hash", "yes, very fast", "no, nearby values land far apart", "no"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Three ways to join"
+				},
+				{
+					"type": "table",
+					"headers": ["Algorithm", "Idea", "Which conditions", "Cost"],
+					"rows": [
+						["Nested loop", "for every row of R, scan all of S", "any condition (`<`, `<>`, a function)", "n times m"],
+						["Hash join", "put S in buckets by key, probe with each row of R", "equality only", "about n plus m"],
+						["Sort-merge join", "sort both, walk them together", "equality (and ordered conditions)", "n log n plus m log m, then n plus m"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "With 1,000 rows in R and 10,000 in S, the nested loop makes 1,000 × 10,000 = 10,000,000 comparisons. Hash does about 1,000 + 10,000 = 11,000 steps. A join with `R.a < S.b` is not an equality, so hash does not apply, but the nested loop still works. The optimiser must know which algorithms are possible before it compares costs."
+				},
+				{
+					"type": "chart",
+					"title": "Steps to join 1,000 rows with 10,000 rows (counted, not measured)",
+					"unit": "steps",
+					"bars": [
+						{ "label": "Nested loop", "value": 10000000 },
+						{ "label": "Hash join (about n + m)", "value": 11000 }
+					]
+				},
+				{
+					"type": "chart",
+					"title": "Measured join time for n = 10,000 rows in each table (Rust, mini-project of this repository)",
+					"unit": "ms",
+					"bars": [
+						{ "label": "Nested loop", "value": 332 },
+						{ "label": "Hash join", "value": 3.05 },
+						{ "label": "Sort-merge join", "value": 2.63 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The mini-project **Mini relational DBMS** measured it: ten times more rows cost the nested loop about 80 times more time (the theory says 100), while hash and sort-merge grow almost in a straight line. The numbers depend on the machine recorded in the project results."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "The optimiser picks the plan, not you. Selections first. An index trades update time and space for search time. B-tree handles ranges, hash only equality. Nested loop works for any condition, but costs n times m."
+				}
+			]
+		},
+		{
+			"id": "transactions-and-recovery",
+			"title": "Transactions and recovery",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Sending 100 reais from Ana to Bia takes two steps: take 100 from Ana, add 100 to Bia. If the lights go out between the two steps, 100 reais vanish. A **transaction** is a box around the steps: a logical unit of work that takes the database from one correct state to another correct state. Either everything inside the box happens, or nothing does."
+				},
+				{
+					"type": "heading",
+					"text": "COMMIT and ROLLBACK"
+				},
+				{
+					"type": "list",
+					"items": [
+						"`COMMIT` says 'success': the updates become permanent.",
+						"`ROLLBACK` says 'failure': the DBMS undoes every update since the transaction began, using the old values kept in the log, and the transaction ends.",
+						"After either one, the locks are released and a new transaction may begin."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "ACID"
+				},
+				{
+					"type": "table",
+					"headers": ["Letter", "Property", "Promise"],
+					"rows": [
+						["A", "Atomicity", "all or nothing: if the crash comes after the debit and before COMMIT, the DBMS undoes the debit at restart"],
+						["C", "Consistency", "the transaction takes the database from one correct state to another"],
+						["I", "Isolation", "concurrent transactions do not disturb each other"],
+						["D", "Durability", "after COMMIT, the updates survive a crash"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "The log and the write-ahead rule"
+				},
+				{
+					"type": "paragraph",
+					"text": "The **log** (or journal) is a sequential file where the DBMS writes the start and the end of each transaction and, for each update, the value before and after. It is the base of all recovery. The **write-ahead log rule** says the log record always goes to disk before the changed data page does. Before a page is written, the old value is already logged (so it can be undone). Before COMMIT finishes, all the records are on disk (so it can be redone)."
+				},
+				{
+					"type": "paragraph",
+					"text": "The buffer manager has two freedoms. It may write pages of a transaction that has **not** committed (to free memory): the disk may hold changes to **undo**. And it is not forced to write pages at COMMIT: the disk may lack committed changes, which must be **redone**. Most systems use both freedoms, so they need both undo and redo."
+				},
+				{
+					"type": "heading",
+					"text": "Restart after a crash"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **checkpoint** is a moment when all changed pages are written to disk. At restart, the DBMS reads the log from the last checkpoint and builds two lists: transactions that committed after the checkpoint go to **redo**, those with no COMMIT up to the crash go to **undo**. Transactions that finished before the checkpoint are left alone."
+				},
+				{
+					"type": "diagram",
+					"content": "                 tc (checkpoint)          tf (crash)\nT1  |------|      |                   |   ended before tc: nothing\nT2       |--------|--------|          |   COMMIT after tc: REDO\nT3           |----|-------------------|   no COMMIT:       UNDO\nT4                |   |---------|      |   COMMIT after tc: REDO\nT5                |          |---------|   no COMMIT:       UNDO",
+					"caption": "Redo T2 and T4, undo T3 and T5"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **system failure** loses memory but the disk database remains, so recovery undoes and redoes from the checkpoint. A **media failure** destroys the disk itself. Then recovery restores the last **backup** and redoes, from the log, the transactions committed after it. That is why the log lives on a different device from the database."
+				},
+				{
+					"type": "heading",
+					"text": "Two-phase commit"
+				},
+				{
+					"type": "paragraph",
+					"text": "When one transaction changes data in two systems, each with its own log, a separate COMMIT in each could succeed in one and fail in the other. In **two-phase commit**, a coordinator first asks everyone to prepare and vote. If all say yes, it decides commit. One no makes the decision rollback. Then it announces the decision."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "A participant that answered yes is 'in doubt'. If the coordinator crashes before announcing, the participant cannot decide alone: it waits for the decision and keeps its locks. This blocking is the known weakness of two-phase commit."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Transaction = all or nothing. Durability comes from the log reaching disk before COMMIT ends. After a crash: redo the committed, undo the uncommitted. Two-phase commit makes several systems agree."
+				}
+			]
+		},
+		{
+			"id": "concurrency",
+			"title": "Many users at once: locks and isolation",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Two children try to write on the same line of one notebook at the same moment. Without a rule, one of them erases the other's words. A database has thousands of users, so it needs rules for sharing. The classic accident is the **lost update**."
+				},
+				{
+					"type": "diagram",
+					"content": "saldo = 100\n\nT1 (+10)                T2 (+20)\nREAD saldo  -> 100\n                        READ saldo  -> 100\nWRITE saldo <- 110\n                        WRITE saldo <- 120\nCOMMIT\n                        COMMIT\n\nsaldo = 120   (should be 130: the +10 was lost)",
+					"caption": "Both read 100, both write: the second write wipes out the first"
+				},
+				{
+					"type": "heading",
+					"text": "Locks"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **lock** is a sign on the door: 'in use'. A **shared lock (S)** is taken to read, and many can hold it together. An **exclusive lock (X)** is taken to change, and it allows nobody else. If a request is incompatible with a lock another transaction holds, the requester waits."
+				},
+				{
+					"type": "table",
+					"headers": ["Holds \\ Requests", "S", "X"],
+					"rows": [
+						["S", "granted", "waits"],
+						["X", "waits", "waits"]
+					],
+					"caption": "Compatibility of S and X locks on the same item"
+				},
+				{
+					"type": "heading",
+					"text": "Deadlock"
+				},
+				{
+					"type": "paragraph",
+					"text": "Locks create a new danger: two children each hold one pencil and each waits for the other's pencil. A **deadlock** is a cycle of transactions in which each waits for a lock of the next. The DBMS draws a **wait-for graph** (an arrow Ti → Tj means Ti waits for Tj). A cycle means deadlock. It picks one transaction of the cycle as the **victim** and rolls it back, which frees its locks."
+				},
+				{
+					"type": "diagram",
+					"content": "T4 ---> T1 ---> T2\n        ^        |\n        |        v\n        +------ T3\n\ncycle: T1 -> T2 -> T3 -> T1   (T4 only waits)",
+					"caption": "T4 waits for someone in the cycle, but is not part of it"
+				},
+				{
+					"type": "heading",
+					"text": "Serializability and two-phase locking"
+				},
+				{
+					"type": "paragraph",
+					"text": "An interleaved execution is **serializable** when its result equals the result of **some** serial execution (one transaction after the other). Each transaction is correct alone, so any serial order is correct. Different serial orders may give different results, and all are accepted."
+				},
+				{
+					"type": "paragraph",
+					"text": "To test it, build a **precedence graph**: an arrow Ti → Tj when an operation of Ti comes before a conflicting operation of Tj on the same item (at least one is a write). The execution is serializable if and only if the graph has no cycle. In `r1(A) w1(A) r2(A) w2(A) r2(B) w2(B) r1(B) w1(B)`, `w1(A)` before `r2(A)` gives T1 → T2, and `w2(B)` before `r1(B)` gives T2 → T1. A cycle, so it is not serializable."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Two-phase locking (2PL)** is the rule that guarantees serializability. A transaction has a **growing phase**, where it only takes locks, and then a **shrinking phase**, where it only releases them. After the first release it may never lock again. So `lock(A), unlock(A), lock(B), unlock(B)` breaks the protocol, while `lock(A), lock(B), unlock(A), unlock(B)` obeys it."
+				},
+				{
+					"type": "heading",
+					"text": "Isolation levels"
+				},
+				{
+					"type": "paragraph",
+					"text": "Full isolation costs speed, so the SQL standard offers four levels defined by the phenomena they allow. A **dirty read** reads data from a transaction that has not committed. A **nonrepeatable read** reads a row twice and finds it changed or removed by another transaction. A **phantom** runs the same condition twice and finds a new row that another transaction inserted."
+				},
+				{
+					"type": "table",
+					"headers": ["Level", "Dirty read", "Nonrepeatable read", "Phantom"],
+					"rows": [
+						["READ UNCOMMITTED", "possible", "possible", "possible"],
+						["READ COMMITTED", "prevented", "possible", "possible"],
+						["REPEATABLE READ", "prevented", "prevented", "possible"],
+						["SERIALIZABLE", "prevented", "prevented", "prevented"]
+					],
+					"caption": "Standard SQL isolation levels. Lower levels run faster and protect less"
+				},
+				{
+					"type": "paragraph",
+					"text": "Protecting the rows you read does not protect against rows that did not exist yet. Phantoms need locking the condition or range, which `SERIALIZABLE` provides."
+				},
+				{
+					"type": "heading",
+					"text": "Intent locks"
+				},
+				{
+					"type": "paragraph",
+					"text": "Locks can be on a whole table or on single rows. Before locking a row, a transaction takes an **intent lock** on the table: IS to read rows, IX to change rows. Then a request to lock the whole table is decided by looking only at the table locks. IS and IX coexist with each other, S coexists with IS, and X coexists with nothing. So if T1 holds IX on `emp`, a request by T2 for S on the whole table waits."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "S with S is fine, anything with X waits. Deadlock is a cycle in the wait-for graph. Serializable means equal to some serial order, and a cycle in the precedence graph means it is not. 2PL: never lock after the first unlock."
+				}
+			]
+		},
+		{
+			"id": "security-and-integrity",
+			"title": "Security and integrity: who may do what, and what is valid",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A school has two kinds of protection. The door guard asks 'are you allowed to come in?'. The teacher who checks homework asks 'is what you wrote correct?'. A database has the same two. **Security** protects against unauthorised users. **Integrity** protects against mistakes by authorised users. Both work the same way: the rules are declared to the DBMS, kept in the catalog and checked at each operation."
+				},
+				{
+					"type": "table",
+					"headers": ["Aspect", "Security", "Integrity"],
+					"rows": [
+						["Question", "May this user do this?", "Is the result a valid state of the database?"],
+						["Protects against", "unauthorised users", "errors of authorised users"],
+						["Example", "`GRANT SELECT ON emp TO ana`", "a salary cannot be negative; a foreign key must match"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Integrity rules were explained earlier (keys, foreign keys and constraints). A user with every permission can still type a wrong salary, and it is integrity that rejects it. Disk failures and power cuts are neither: they belong to recovery."
+				},
+				{
+					"type": "heading",
+					"text": "Discretionary control: GRANT and REVOKE"
+				},
+				{
+					"type": "paragraph",
+					"text": "In **discretionary access control**, users have privileges (query, insert, change, remove) on objects, and privileges are given with `GRANT` and taken away with `REVOKE`. This is the scheme of SQL. With `WITH GRANT OPTION`, the receiver may pass the privilege on, which forms a chain."
+				},
+				{
+					"type": "code",
+					"language": "sql",
+					"content": "-- DBA:\nGRANT SELECT ON emp TO ana WITH GRANT OPTION;\n-- ana:\nGRANT SELECT ON emp TO bruno;\n-- DBA:\nREVOKE SELECT ON emp FROM ana CASCADE;\n-- bruno loses it too: his privilege came only from ana",
+					"caption": "CASCADE revokes the derived privileges; RESTRICT would refuse the REVOKE"
+				},
+				{
+					"type": "paragraph",
+					"text": "In standard SQL, `CASCADE` also revokes the privileges derived from the one you remove, and `RESTRICT` refuses the operation if derived privileges exist. A privilege survives only if some other grant still supports it."
+				},
+				{
+					"type": "heading",
+					"text": "Mandatory control"
+				},
+				{
+					"type": "paragraph",
+					"text": "In **mandatory access control** each data item has a classification level and each user has a clearance level, and fixed rules decide, not the owner. The Bell-LaPadula model protects secrecy with two rules. With levels Public < Confidential < Secret < Top Secret, a user with Secret clearance:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"may **read** items classified Secret or lower (the simple security property: no reading above your clearance);",
+						"may **write** only at Secret or higher (the star property: no writing below your clearance), so a program cannot copy a secret item, even by accident, to a place readable by users with lower clearance."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Security asks who may. Integrity asks whether it is valid. GRANT and REVOKE are discretionary, with CASCADE following the chain. Bell-LaPadula: read down, write up."
+				}
+			]
+		},
+		{
+			"id": "summary",
+			"title": "Putting it all together",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A database system is a story with a clear order. We describe the data (levels and the relational model), we draw a plan (E/R), we ask questions (algebra, calculus, SQL), we clean the design (functional dependencies and normal forms), we make it fast (optimiser and indexes), and we keep it safe and correct (transactions, concurrency, security, integrity)."
+				},
+				{
+					"type": "table",
+					"headers": ["Question you have", "Idea to use"],
+					"rows": [
+						["How do programs survive a storage change?", "data independence, mappings, views"],
+						["How do I tell tuples apart?", "candidate keys, primary key"],
+						["How do I link tables?", "foreign keys and referential integrity"],
+						["How do I get 'not enrolled' or 'all courses'?", "difference and division, or NOT EXISTS (twice for 'all')"],
+						["Why is my table repeating facts?", "functional dependencies, normal forms"],
+						["Why is my query slow?", "statistics, indexes, join algorithm"],
+						["What if the system crashes mid-transfer?", "transaction, log, undo and redo"],
+						["What if two users write the same row?", "locks, 2PL, isolation levels"],
+						["Who may read this table?", "GRANT, REVOKE, mandatory levels"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Mistakes that catch many students"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Believing a relation keeps rows in insertion order. It does not: a relation is a set.",
+						"Calling something a key because today's rows do not repeat. A key is a rule about the meaning of the data.",
+						"Expecting `SELECT` to remove duplicates. SQL tables are bags, so use `DISTINCT`.",
+						"Selecting with a not-equal condition when the question is 'has no': that needs difference or `NOT EXISTS`.",
+						"Forgetting that `NULL` makes comparisons unknown, so `NOT IN` with a null in the list returns nothing and `AVG` ignores nulls.",
+						"Thinking BCNF is always better. It removes more redundancy, but may lose a dependency, which 3NF always keeps.",
+						"Mixing up security (who) with integrity (what is valid), and both with recovery (failures).",
+						"Believing an index is free. It speeds searches and slows updates."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Think of a library. The catalog tells where books are (data independence: the shelves can move). Library cards are keys. The librarian plans the fastest route to your book (optimiser). The lending desk never loses a book halfway (transaction). Two readers never take the same last copy at once (locks). And only members may borrow, and only staff may enter the archive (security)."
+				},
+				{
+					"type": "video",
+					"title": "CMU Database Group: recorded university lectures on databases",
+					"url": "https://www.youtube.com/@CMUDatabaseGroup"
+				}
+			]
+		}
+	]
+}

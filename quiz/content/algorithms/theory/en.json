@@ -1,0 +1,1129 @@
+{
+	"area": "algorithms",
+	"intro": [
+		"An **algorithm** is a recipe for a computer: a list of small steps that, followed in order, solves a problem. Putting names in alphabetical order, finding the shortest way home on a map, choosing which games fit in your backpack. Every time you do any of these things, you follow an algorithm, even if you never wrote it down.",
+		"Why study them? Because two recipes for the same problem can be very different in cost. One may finish in a blink and the other may take longer than the age of the universe. The difference is almost never the speed of the computer. It is the **idea** behind the recipe. That idea is what this area teaches.",
+		"You meet algorithms everywhere. Your phone sorts your contacts, a map app finds the shortest route, a game finds a path around a wall, a build tool decides which files to compile first, and a database looks up one row among millions in a few steps. All of them use the ideas you will see here.",
+		"At the end you will know the classic ways to **sort** and **search**, and the four big **design techniques** (divide and conquer, greedy, dynamic programming and backtracking). You will also know how to walk a **graph** to find shortest paths, cheap networks and a valid order of tasks. Most important, you will know how to choose the right tool and say why."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "The big picture and the vocabulary",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine you must find one name in a phone book. You could read every line from the start, or you could open the book in the middle and decide which half to keep. Both ways are correct, but the second one is much faster. Comparing recipes like this is the heart of the study of algorithms."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "An algorithm is like a cooking recipe. Many recipes make the same cake, but some need ten minutes and others need ten hours. We want the recipe that is correct and does not waste time or space on the kitchen table."
+				},
+				{
+					"type": "paragraph",
+					"text": "For every algorithm we ask three questions. Is it **correct**, which means it always gives the right answer? How much **time** does it need as the input grows? How much extra **memory** does it need? To answer the second question we count steps and describe how that count grows with the size n of the input, using [[Big O|A short way to say how fast the number of steps grows when the input grows, ignoring small details]] notation."
+				},
+				{
+					"type": "chart",
+					"title": "Steps needed for n = 1,000 under each growth rate",
+					"unit": "steps",
+					"bars": [
+						{ "label": "log₂ n (binary search)", "value": 10 },
+						{ "label": "n (one pass)", "value": 1000 },
+						{ "label": "n·log₂ n (good sorts)", "value": 9966 },
+						{ "label": "n² (simple sorts)", "value": 1000000 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Look at how much the last bar towers over the others. With only a thousand items, a quadratic algorithm already does a hundred times more work than a good sort. With a million items, the gap becomes a million times a thousand. That is why we care about the idea and not only about a fast machine."
+				},
+				{
+					"type": "heading",
+					"text": "The four design techniques"
+				},
+				{
+					"type": "table",
+					"headers": ["Technique", "Main idea", "Classic examples"],
+					"rows": [
+						["Divide and conquer", "Split the problem into smaller copies of itself, solve each one, combine the answers", "Merge sort, quicksort, binary search"],
+						["Greedy", "At each step take the choice that looks best right now and never change it", "Minimum spanning tree, activity selection, change with common coins"],
+						["Dynamic programming", "Solve each small subproblem once and keep the answer in a table", "Knapsack, longest common subsequence, change with any coins"],
+						["Backtracking", "Build the answer one decision at a time and go back when a path is hopeless", "N-queens, sudoku, mazes"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Words you will meet in every section"
+				},
+				{
+					"type": "table",
+					"headers": ["Word", "What it means"],
+					"rows": [
+						["Comparison sort", "A sort that learns about the data only by asking 'is this one bigger than that one?'"],
+						["Inversion", "A pair of items in the wrong order: the bigger one comes first. A sorted array has 0 inversions"],
+						["In-place", "The algorithm rearranges the items inside the array itself and uses little or no extra memory"],
+						["Stable", "Items with equal keys come out in the same order in which they went in"],
+						["Adaptive", "The more sorted the input already is, the faster the algorithm runs"],
+						["Recurrence", "A formula that gives the cost of a problem using the cost of smaller copies of it"]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A good algorithm is not a faster computer. It is a better idea. And the best idea depends on the shape of the problem, so every section ends with when to use it."
+				}
+			]
+		},
+		{
+			"id": "elementary-sorts",
+			"title": "Elementary sorts: bubble, selection, insertion",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "**Sorting** means putting items in order. The three simplest ways are easy to explain and easy to write. They all take about n² steps in the worst case, so they are used for small inputs, or as a helper inside smarter algorithms."
+				},
+				{
+					"type": "heading",
+					"text": "Insertion sort: sorting playing cards"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "You hold some cards in your hand, already in order. You pick a new card from the table and slide it into its place between the others. Insertion sort does exactly that."
+				},
+				{
+					"type": "paragraph",
+					"text": "The rule that always holds is the **invariant**: before handling position i, the positions 0 to i − 1 are sorted. After handling it, positions 0 to i are sorted and the rest of the array is untouched. To insert, the algorithm shifts bigger items one place to the right and drops the new item in the gap."
+				},
+				{
+					"type": "paragraph",
+					"text": "Its cost depends on how disordered the input is. If the input is already sorted, the new item is never smaller than its left neighbour, so each step costs one comparison and the total is about n. If the input is reversed, every item travels all the way to the front and the total is about n²/2. More exactly, the cost is about n plus the number of inversions. If every item is at most k places from its final home, there are at most about n·k inversions, so the cost is about n·k. That makes insertion sort the best choice for nearly sorted data."
+				},
+				{
+					"type": "paragraph",
+					"text": "You can use binary search to find the place where the new item goes, which lowers the number of comparisons to about log n per item. But the shifting is still needed, and on an array it is the bigger cost. So this trick pays off only when a comparison is much more expensive than a move."
+				},
+				{
+					"type": "heading",
+					"text": "Selection sort: pick the smallest"
+				},
+				{
+					"type": "paragraph",
+					"text": "Look at all items that are still unsorted, find the smallest one, and swap it with the first of them. Repeat for the next place. Finding the smallest of m items always needs m − 1 comparisons, even if the array is already sorted. So the total is always (n − 1) + (n − 2) + ... + 1 = n(n − 1)/2 comparisons. It is **not adaptive**."
+				},
+				{
+					"type": "paragraph",
+					"text": "But it moves very little: one swap per round, so **at most n − 1 swaps** in total. If moving a big record is expensive and comparing is cheap, selection sort is a good fit."
+				},
+				{
+					"type": "heading",
+					"text": "Bubble sort: the biggest floats up"
+				},
+				{
+					"type": "paragraph",
+					"text": "Walk through the array from left to right and swap every pair of neighbours that is out of order. At the end of the first pass, the biggest item has 'bubbled' to the last place. After k passes, the k biggest items are in their final places, so each pass can stop one position earlier."
+				},
+				{
+					"type": "diagram",
+					"content": "Pass 1 on [3, 1, 2]:\n  [3, 1, 2]  3 > 1, swap\n  [1, 3, 2]  3 > 2, swap\n  [1, 2, 3]  biggest is at the end\nPass 2: no swap happened -> stop",
+					"caption": "Two passes. The second one only checks."
+				},
+				{
+					"type": "paragraph",
+					"text": "Swapping two neighbours that are out of order removes exactly one inversion and creates none. So the number of swaps of bubble sort is exactly the number of inversions of the input. If you add a flag that remembers whether a pass swapped something, the algorithm stops after a pass with no swaps, because that proves everything is in order. With the flag, a sorted input costs only about n steps."
+				},
+				{
+					"type": "table",
+					"headers": ["Algorithm", "Comparisons", "Swaps or moves", "Best case", "Worst case"],
+					"rows": [
+						["Bubble (with flag)", "up to n(n − 1)/2", "equal to the inversions", "n", "n²"],
+						["Selection", "always n(n − 1)/2", "at most n − 1", "n²", "n²"],
+						["Insertion", "n − 1 to n(n − 1)/2", "equal to the inversions", "n", "n²"]
+					]
+				},
+				{
+					"type": "video",
+					"title": "15 Sorting Algorithms in 6 Minutes (Timo Bingmann)",
+					"url": "https://www.youtube.com/watch?v=kPRA0W1kECg"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Insertion sort is the champion of small and nearly sorted inputs. Selection sort moves the fewest items. Bubble sort is mostly for teaching, and the swaps it makes equal the inversions."
+				}
+			]
+		},
+		{
+			"id": "merge-sort",
+			"title": "Merge sort",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Suppose two friends each have a pile of homework sheets, already sorted by name. To join the piles into one sorted pile, you only need to look at the top sheet of each pile and take the smaller one. Repeat until both piles are empty. That joining step is called **merge**, and merge sort is built on it."
+				},
+				{
+					"type": "paragraph",
+					"text": "Merge sort has three steps. **Split** the array in two halves, **sort** each half by calling merge sort again, and **merge** the two sorted halves. An array with one item is already sorted, so the splitting stops there. This is [[divide and conquer|Solving a big problem by solving smaller copies of the same problem and combining the answers]]."
+				},
+				{
+					"type": "diagram",
+					"content": "          [6 2 8 3]\n          /       \\\n      [6 2]       [8 3]\n      /   \\       /   \\\n    [6]   [2]   [8]   [3]\n      \\   /       \\   /\n      [2 6]       [3 8]\n          \\       /\n          [2 3 6 8]",
+					"caption": "Going down splits, going up merges. All the real work happens on the way up."
+				},
+				{
+					"type": "paragraph",
+					"text": "The cost is described by a recurrence: T(n) = 2·T(n/2) + n. Two halves, plus a merge that touches every item once. The recursion tree has about log₂ n levels, and each level does about n work in total. So merge sort costs **n·log₂ n**."
+				},
+				{
+					"type": "paragraph",
+					"text": "The split is made by position (the middle), never by looking at the values. So the shape of the tree is always the same, whatever the order of the data. A sorted, a reversed and a random array all cost the same order of growth. Only the exact count of comparisons changes a little."
+				},
+				{
+					"type": "heading",
+					"text": "How many comparisons does a merge need?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Each comparison sends exactly one item to the output. When one pile runs out, the rest of the other pile is copied with no comparison. The worst case is when the piles are interleaved so that one pile is left with a single item at the end. Merging m and n items then takes at most **m + n − 1** comparisons."
+				},
+				{
+					"type": "heading",
+					"text": "Extra memory and stability"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Memory.** Merging inside the same array without extra space is hard and slow. The classic solution copies the items into a buffer and writes them back in order. That buffer has size n, so the classic merge sort is **not in-place**.",
+						"**Stability.** When the item of the left half and the item of the right half are equal, take the one from the **left**, because it came first in the input. Copy the left one when `left[i] <= right[j]`. Using a strict `<` would take the right one on ties and break stability."
+					]
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "// EN: take from the left on ties, so equal keys keep their order\nif (left[i] <= right[j]) {\n\tout.push(left[i++]);\n} else {\n\tout.push(right[j++]);\n}",
+					"caption": "The one comparison that decides if merge sort is stable."
+				},
+				{
+					"type": "heading",
+					"text": "The doubling test"
+				},
+				{
+					"type": "paragraph",
+					"text": "When n doubles, an n·log n algorithm takes a little more than twice as long (about 2 × (1 + 1/log₂ n)), far less than the four times of a quadratic algorithm. In a benchmark, a ratio near 2 points to linear or n log n growth, and a ratio near 4 points to n²."
+				},
+				{
+					"type": "heading",
+					"text": "Bonus: counting inversions"
+				},
+				{
+					"type": "paragraph",
+					"text": "Merge sort can count the inversions of an array in n log n time. The inversions inside each half are counted by the recursion. The ones that cross the halves are counted during the merge: when the next item to copy comes from the **right** half, it is smaller than every item still waiting in the left half, so we add the number of items left in the left half to the counter."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Merge sort: always n·log n, stable, but it needs a buffer of size n. The work is in the combine step. Quicksort will be the opposite."
+				}
+			]
+		},
+		{
+			"id": "quicksort",
+			"title": "Quicksort and pivot strategies",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine a teacher who asks the class to line up by height. She picks one student, the **pivot**, and says: 'shorter than the pivot to the left, taller to the right'. Now the pivot is exactly where it will stay at the end. The two groups are then sorted by the same method, and nobody needs to join them afterwards."
+				},
+				{
+					"type": "diagram",
+					"content": "before:   [ 6  2  8  3  5 ]      pivot = 5 (last)\nafter:    [ 2  3 |5| 6  8 ]\n            <= 5  pivot  > 5\nthen sort the left part and the right part",
+					"caption": "After partitioning, the pivot is in its final place."
+				},
+				{
+					"type": "paragraph",
+					"text": "This step is called **partitioning**, and it is where the work is. Quicksort is the opposite of merge sort: the split is hard and the combine step is empty. One popular way to partition (called Lomuto) takes the last item as pivot and keeps a marker `i` at the end of the region of small items. Each item smaller than or equal to the pivot is swapped just after that region. At the end, the pivot is swapped into the place after the region."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "function partition(a: number[], lo: number, hi: number): number {\n\tconst pivot = a[hi];\n\tlet i = lo - 1; // EN: end of the 'small' region\n\tfor (let j = lo; j < hi; j++) {\n\t\tif (a[j] <= pivot) {\n\t\t\ti++;\n\t\t\t[a[i], a[j]] = [a[j], a[i]];\n\t\t}\n\t}\n\t[a[i + 1], a[hi]] = [a[hi], a[i + 1]];\n\treturn i + 1; // EN: final place of the pivot\n}",
+					"caption": "On [6, 2, 8, 3, 5] this ends with [2, 3, 5, 6, 8] and returns 2 (here the parts happen to be sorted already)."
+				},
+				{
+					"type": "heading",
+					"text": "Everything depends on the pivot"
+				},
+				{
+					"type": "paragraph",
+					"text": "The best pivot is the **median**: it cuts the range in half, so there are about log₂ n levels of work n each, and the total is n·log n. The worst pivot is the smallest or the biggest item: the parts have 0 and n − 1 items, there are n levels, and the cost is (n − 1) + (n − 2) + ... + 1 = n(n − 1)/2, which is **n²**. In that worst case, each pair of items is compared exactly once."
+				},
+				{
+					"type": "table",
+					"headers": ["Pivot strategy", "Random input", "Already sorted input", "Weak point"],
+					"rows": [
+						["First (or last) item", "n log n", "n², the first item is the smallest", "Real data is often nearly sorted"],
+						["Random item", "n log n expected", "n log n expected", "Needs a random number, and bad luck is possible but very unlikely"],
+						["Median of three", "n log n", "n log n, the middle item is the true median", "Special inputs can still beat it"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "**Median of three** looks at the first, the middle and the last item and uses the median of those three as pivot. With a **random pivot**, the worst case no longer belongs to a certain input (like the sorted one). It belongs to an unlucky sequence of draws, so the average is over the choices of the algorithm, and an enemy cannot build a bad input in advance."
+				},
+				{
+					"type": "chart",
+					"title": "Sorting 16,000 already sorted values: pivot choice (measured in this repository)",
+					"unit": "ms",
+					"bars": [
+						{ "label": "C++ first item", "value": 51.4 },
+						{ "label": "C++ median of three", "value": 0.17 },
+						{ "label": "Rust first item", "value": 212 },
+						{ "label": "Rust median of three", "value": 0.19 }
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Memory: in-place, but with a stack"
+				},
+				{
+					"type": "paragraph",
+					"text": "Quicksort rearranges items inside the array, so it is [[in-place|It works inside the input array and does not copy it into a second array of the same size]]. But every recursive call uses a little memory on the **call stack**. With balanced parts the depth is about log n. With the worst parts it is n. A common trick is to recurse on the smaller part and loop on the bigger one, which keeps the depth at log n even in bad cases."
+				},
+				{
+					"type": "heading",
+					"text": "Many equal keys"
+				},
+				{
+					"type": "paragraph",
+					"text": "If the partition has only two regions ('smaller or equal' and 'bigger') and all n keys are equal, every item goes to the same side, the parts have 0 and n − 1 items, and the cost is n², whatever pivot you choose. The classic fix is **three-way partitioning** (the Dutch national flag): put the keys smaller than, equal to and bigger than the pivot in three groups, and recurse only on the first and the last. With few different keys the cost becomes close to linear."
+				},
+				{
+					"type": "heading",
+					"text": "Hybrid quicksort"
+				},
+				{
+					"type": "paragraph",
+					"text": "Most calls of quicksort handle tiny ranges. For ten items, choosing a pivot and making two calls costs more than the work itself. So many libraries hand every range smaller than a constant k (for example 16) to insertion sort. This does not change the order of growth, which stays n log n, but it lowers the constant, and the best k is found by measuring. In this repository's benchmark, a threshold of a few dozen items helped in both C++ and Rust."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Quicksort is n log n on average but n² in the worst case. The first item as pivot is a trap on sorted data, and many equal keys are a trap for two-way partitioning."
+				}
+			]
+		},
+		{
+			"id": "heapsort",
+			"title": "Heapsort",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **heap** is a family tree with one strict rule. In a **max-heap**, every parent is bigger than or equal to its children. So the biggest item of the whole tree is always at the top, the root. The tree is also **complete**: every level is full, except maybe the last one, which is filled from the left."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Think of a company where every boss earns at least as much as the people directly under them. The top boss earns the most, but two workers in different teams are never compared. This is a partial order, weaker than a full sort, and that is why it is cheap to keep."
+				},
+				{
+					"type": "heading",
+					"text": "A tree inside an array"
+				},
+				{
+					"type": "paragraph",
+					"text": "Because the tree is complete, it fits in a plain array, level by level, with no pointers. The relations become arithmetic on the index."
+				},
+				{
+					"type": "diagram",
+					"content": "        9            index:  0  1  2  3  4  5\n      /   \\          value:  9  4  5  1  3  2\n     4     5\n    / \\   /\n   1   3 2",
+					"caption": "A max-heap and its array."
+				},
+				{
+					"type": "table",
+					"headers": ["Index base", "Left child", "Right child", "Parent"],
+					"rows": [
+						["Starts at 0", "2i + 1", "2i + 2", "⌊(i − 1)/2⌋"],
+						["Starts at 1", "2i", "2i + 1", "⌊i/2⌋"]
+					],
+					"caption": "Where to find the family of the node at index i. The symbol ⌊ ⌋ means 'round down'."
+				},
+				{
+					"type": "heading",
+					"text": "Sift-down and building the heap"
+				},
+				{
+					"type": "paragraph",
+					"text": "**Sift-down** (also called heapify) fixes one node: compare it with its bigger child, swap if the child is bigger, and repeat down that path. To turn any array into a heap, apply sift-down to each internal node, from the last one up to the root. For [2, 8, 5, 1], the last internal node (index 1) is fine, then the root 2 swaps with 8 and the array becomes [8, 2, 5, 1]."
+				},
+				{
+					"type": "paragraph",
+					"text": "Building a heap this way costs only **n**, not n log n. The reason is that the cost of a node is its own height, and most nodes are low: about n/2 are leaves (height 0), n/4 have height 1, n/8 have height 2, and the sum n/4·1 + n/8·2 + n/16·3 + ... stays below n. If you build the heap by inserting items one by one and sifting each one **up**, the cost of a node is its depth, and most nodes are deep, so the total is n log n."
+				},
+				{
+					"type": "heading",
+					"text": "The sort itself"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Build a max-heap in the array (cost n).",
+						"Swap the root (the biggest) with the last item of the heap. It is now in its final place.",
+						"Shrink the heap by one item and sift the new root down.",
+						"Repeat steps 2 and 3 until the heap has one item (n − 1 times, each costing about log n)."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The total is **n log n** in every case, with **constant extra memory**. It is the only classic sort with both properties. The price is that it is **not stable**, because swaps jump over equal keys, and that it reads memory in scattered positions, which makes it slower in practice than a good quicksort."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Heapsort: n log n guaranteed, in-place, not stable. Building a heap bottom-up costs n, and building it by repeated insertion costs n log n."
+				}
+			]
+		},
+		{
+			"id": "linear-time-sorts",
+			"title": "Linear-time sorts: counting, radix, bucket",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Every sort in the previous sections is a **comparison sort**. There is a hard limit for them: to tell apart the n! possible orders of n items using only yes-or-no questions, you need at least log₂(n!) questions, which is about **n·log n**. No comparison sort can beat that, however clever it is."
+				},
+				{
+					"type": "paragraph",
+					"text": "The way out is to stop comparing. If the keys are small integers, we can use the keys themselves as positions. These sorts use the structure of the keys, so the limit does not apply to them."
+				},
+				{
+					"type": "heading",
+					"text": "Counting sort"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "A teacher sorts exam grades from 0 to 10 by making 11 boxes. Each paper goes into the box of its grade. At the end she empties the boxes in order. Nobody compared two papers."
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Count how many times each value appears in an array `C`.",
+						"Do a running sum on `C`, so `C[v]` becomes how many items are smaller than or equal to v. That tells where the group of v ends in the output.",
+						"Walk the input **backwards**, put each item at position `C[v] − 1` of the output and decrement `C[v]`."
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "input:        [1, 3, 1, 0, 3]      values 0..3\ncounts:       [1, 2, 0, 2]\nrunning sum:  [1, 3, 3, 5]\noutput:       [0, 1, 1, 3, 3]",
+					"caption": "Counting sort on a small array."
+				},
+				{
+					"type": "paragraph",
+					"text": "The cost is n + k, where k is the size of the range of values (from 0 to k). It is great when k is about n, and terrible when k is huge. Going backwards in step 3 keeps equal items in their original order, so the sort is **stable**. That matters for the next one."
+				},
+				{
+					"type": "heading",
+					"text": "Radix sort (LSD)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Radix sort sorts numbers digit by digit, starting from the **least significant digit** (LSD), the one on the right. Each pass uses a stable sort (usually counting sort) on one digit. The stability is essential: when two numbers share the digit of the current pass, they must stay in the order that the previous passes gave them."
+				},
+				{
+					"type": "diagram",
+					"content": "start:        329 457 657 839 436 720 355\nunits pass:   720 355 436 457 657 329 839\ntens pass:    720 329 436 839 355 457 657\nhundreds:     329 355 436 457 657 720 839",
+					"caption": "Three passes sort seven numbers of three digits."
+				},
+				{
+					"type": "paragraph",
+					"text": "With d digits in base k, the cost is d·(n + k). The number of passes is the number of digits of the key: a 32-bit integer treated as 4 bytes (base 256) needs **4 passes**. A bigger base means fewer passes but a bigger counting array. A nice trick: for n integers between 0 and n³ − 1, choose base n. Each number has at most 3 digits, so 3 passes of cost about n each sort everything in linear time. For a range of n^c, it takes c passes."
+				},
+				{
+					"type": "heading",
+					"text": "Bucket sort"
+				},
+				{
+					"type": "paragraph",
+					"text": "Divide the interval of values into buckets of equal width, throw each item into its bucket, sort each bucket (usually with insertion sort) and join them. It is linear on average **if the data is spread evenly** over the interval, because then each bucket gets only a few items. If most of the data lands in one bucket, the cost becomes the cost of the inner sort, which is n² with insertion sort."
+				},
+				{
+					"type": "table",
+					"headers": ["Sort", "Cost", "Needs"],
+					"rows": [
+						["Counting", "n + k", "Integers in a small range 0..k"],
+						["Radix (LSD)", "d·(n + k)", "Keys with digits, and a stable sort per digit"],
+						["Bucket", "n on average, n² worst case", "Values spread evenly over a known interval"]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Linear sorts do not break the n log n limit. They avoid it, because they do not rely only on comparisons. They pay with assumptions about the keys."
+				}
+			]
+		},
+		{
+			"id": "sorting-properties",
+			"title": "Stability, in-place and adaptive sorting",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Speed is not the only thing that matters when we choose a sort. Three properties tell us how an algorithm behaves with real records, with memory limits and with data that is already almost in order."
+				},
+				{
+					"type": "heading",
+					"text": "Stable"
+				},
+				{
+					"type": "paragraph",
+					"text": "A sort is **stable** if items with equal keys leave in the same relative order in which they arrived. It matters when records carry more than the key. Suppose a list of students is sorted by name. If you now sort by class with a **stable** algorithm, each class keeps its students in alphabetical order. This gives you a sort by two criteria: sort by the least important key first and by the most important key last. That is also the reason why LSD radix sort works."
+				},
+				{
+					"type": "paragraph",
+					"text": "How can a sort break stability? By moving an item far away in one jump. Imagine selection sort on the cards 7♥, 7♠, 3♣. It swaps the first card with the smallest card, the 3♣. The result is 3♣, 7♠, 7♥. The two sevens changed places. Algorithms that only move an item past strictly bigger neighbours, or that copy items in arrival order, are stable."
+				},
+				{
+					"type": "heading",
+					"text": "In-place"
+				},
+				{
+					"type": "paragraph",
+					"text": "A sort is **in-place** if it works inside the input array, with at most about log n extra memory (for instance, a recursion stack). Merge sort needs a buffer of size n, so it is not in-place. Quicksort is, because its stack is small. Heapsort is, with constant extra memory."
+				},
+				{
+					"type": "heading",
+					"text": "Adaptive"
+				},
+				{
+					"type": "paragraph",
+					"text": "A sort is **adaptive** if it gets faster when the input is closer to sorted. Insertion sort costs about n plus the inversions, and bubble sort with the flag also stops early. Selection, merge and heapsort do about the same work for any order. Library sorts such as Timsort use the same idea at a bigger scale: they find stretches that are already sorted and merge only those."
+				},
+				{
+					"type": "table",
+					"headers": ["Algorithm", "Stable", "In-place", "Adaptive", "Worst case"],
+					"rows": [
+						["Bubble (with flag)", "yes", "yes", "yes", "n²"],
+						["Selection", "no", "yes", "no", "n²"],
+						["Insertion", "yes", "yes", "yes", "n²"],
+						["Merge", "yes", "no (buffer of n)", "no", "n log n"],
+						["Quicksort", "no", "yes (log n stack)", "no", "n²"],
+						["Heapsort", "no", "yes", "no", "n log n"],
+						["Counting", "yes", "no", "no", "n + k"],
+						["Radix (LSD)", "yes", "no", "no", "d·(n + k)"]
+					],
+					"caption": "Classic array versions. A sort that is not stable can be made stable, but it needs a change or extra memory."
+				},
+				{
+					"type": "callout",
+					"tone": "tip",
+					"text": "Quick memory trick: the algorithms that swap items far apart (selection, quick, heap) are not stable. The ones that move items step by step or copy in order (bubble, insertion, merge, counting) are."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "No sort wins in everything. Merge sort is stable but needs memory. Heapsort is in-place and guaranteed, but not stable. Insertion sort is stable and adaptive, but quadratic."
+				}
+			]
+		},
+		{
+			"id": "searching",
+			"title": "Searching: sequential, binary, interpolation",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "**Searching** means finding an item, called the **key**, in a collection. The right method depends on one question: is the collection sorted?"
+				},
+				{
+					"type": "heading",
+					"text": "Sequential search"
+				},
+				{
+					"type": "paragraph",
+					"text": "Look at the items one by one until you find the key or reach the end. It works on any collection. The best case is 1 comparison, the worst is n, and if every position is equally likely for the key, a successful search makes on average (n + 1)/2 comparisons. All of this is linear in n."
+				},
+				{
+					"type": "paragraph",
+					"text": "A small improvement is the **sentinel**. Normally each round tests two things: 'did I reach the end?' and 'is this the key?'. If you first copy the key into one extra place at the end of the array, the loop is sure to stop at the key, and the first test is not needed any more. The cost is still linear, but the constant is smaller, a detail that Big O notation does not show."
+				},
+				{
+					"type": "heading",
+					"text": "Binary search"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Guess a number from 1 to 100 that a friend is thinking of. If you always guess the middle and your friend says 'higher' or 'lower', you finish in at most 7 guesses."
+				},
+				{
+					"type": "paragraph",
+					"text": "Binary search needs the data to be **sorted**. Look at the middle item. If it is the key, stop. If the key is bigger, the key cannot be in the left half, so set `low = mid + 1`. If the key is smaller, set `high = mid − 1`. Repeat until the interval is empty. On unsorted data, the comparison with the middle says nothing about the other items, and the method fails."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "function binarySearch(a: number[], key: number): number {\n\tlet low = 0;\n\tlet high = a.length - 1;\n\twhile (low <= high) {\n\t\t// EN: low + (high - low) / 2 cannot overflow a 32-bit int\n\t\tconst mid = low + Math.floor((high - low) / 2);\n\t\tif (a[mid] === key) return mid;\n\t\tif (a[mid] < key) low = mid + 1;\n\t\telse high = mid - 1;\n\t}\n\treturn -1;\n}",
+					"caption": "On [1, 3, 5, 7, 9, 11, 13] with key 11, it looks at 7 and then at 11."
+				},
+				{
+					"type": "paragraph",
+					"text": "Each step halves the interval, so the maximum number of looks is **⌊log₂ n⌋ + 1**. For a failed search the number is the same: an interval of 7 becomes 3, then 1, then 0, so 3 looks. Arrays of size 2ᵏ − 1 form perfect trees with k levels."
+				},
+				{
+					"type": "chart",
+					"title": "Comparisons to search 1,000,000 sorted items",
+					"unit": "comparisons",
+					"bars": [
+						{ "label": "Sequential, average", "value": 500000 },
+						{ "label": "Sequential, worst case", "value": 1000000 },
+						{ "label": "Binary, worst case", "value": 20 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Doubling the array adds only one step: 1 million items need 20 looks and 1 billion need 30."
+				},
+				{
+					"type": "heading",
+					"text": "Two famous details"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**The overflow bug.** Writing `mid = (low + high) / 2` with 32-bit integers breaks when `low + high` is bigger than 2³¹ − 1, which happens for sorted arrays with more than about one billion items. The sum becomes negative. A program that is correct on paper can fail on a real machine because integers have a fixed size. Write `mid = low + (high − low) / 2`.",
+						"**Repeated keys.** To find the **first** occurrence of a key in O(log n), do not stop when you find it. Search for the first index whose value is **greater than or equal to** the key (a lower bound): when `a[mid] >= key`, keep the left half including `mid`. It never stops early, and always takes about log₂ n steps."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Interpolation search"
+				},
+				{
+					"type": "paragraph",
+					"text": "When you look for 'Zebra' in a dictionary, you do not open it in the middle: you open it near the end. **Interpolation search** does that. If the values grow roughly in a straight line between `v[lo]` and `v[hi]`, it estimates the position of the key on that line."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"content": "// EN: the key is a fraction of the way between the two ends\npos = lo + (hi - lo) * (key - v[lo]) / (v[hi] - v[lo]);",
+					"caption": "With lo = 0, hi = 10, v[0] = 0, v[10] = 100 and key = 30, the first position looked at is 3."
+				},
+				{
+					"type": "paragraph",
+					"text": "If the values are spread evenly, the interval shrinks very fast (about log log n steps on average). If they are not, for example when they grow exponentially, the estimate sticks to one end and the interval shrinks by one item at a time, so the cost can reach n. The speed of interpolation search depends on the **distribution** of the keys."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Sorted data allows binary search, with log₂ n steps. Evenly spread data allows interpolation search, which is even faster on average. Unsorted data forces sequential search."
+				}
+			]
+		},
+		{
+			"id": "divide-and-conquer",
+			"title": "Divide and conquer",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "How do you eat a giant pizza? One slice at a time. **Divide and conquer** solves a big problem by cutting it into smaller copies of the same problem. It always has three steps: **divide** the problem, **conquer** each part by solving it recursively, and **combine** the answers. The recursion stops at a **base case**, a problem so small that the answer is immediate."
+				},
+				{
+					"type": "paragraph",
+					"text": "Merge sort, quicksort and binary search are divide and conquer. In these algorithms the parts are fractions of the problem (half, a third), so the depth of the recursion is logarithmic. Insertion and selection sort are different: they are **incremental**, because they shrink the problem by one item each step. That leads to n stages and, usually, to a quadratic cost."
+				},
+				{
+					"type": "heading",
+					"text": "The cost as a recurrence"
+				},
+				{
+					"type": "paragraph",
+					"text": "If an algorithm makes a subproblems of size n/b and spends f(n) to divide and combine, then T(n) = a·T(n/b) + f(n). To solve it, compare f(n) with n^(log_b a), which is the number of leaves of the recursion tree. This is the **master theorem**."
+				},
+				{
+					"type": "table",
+					"headers": ["Case", "Who wins", "Result"],
+					"rows": [
+						["f(n) is polynomially smaller than n^(log_b a)", "The leaves (the bottom of the tree)", "T(n) = Θ(n^(log_b a))"],
+						["f(n) is about the same as n^(log_b a)", "Every level costs the same", "T(n) = Θ(n^(log_b a) · log n)"],
+						["f(n) is polynomially bigger than n^(log_b a)", "The top (the combine step)", "T(n) = Θ(f(n))"]
+					],
+					"caption": "'Polynomially' means by a factor n^ε, for some ε > 0. A mere log n factor is not enough."
+				},
+				{
+					"type": "table",
+					"headers": ["Algorithm", "Recurrence", "n^(log_b a)", "Result"],
+					"rows": [
+						["Binary search", "T(n) = T(n/2) + 1", "n⁰ = 1", "Θ(log n)"],
+						["Merge sort", "T(n) = 2T(n/2) + n", "n¹ = n", "Θ(n log n)"],
+						["Four halves, linear combine", "T(n) = 4T(n/2) + n", "n²", "Θ(n²)"],
+						["Karatsuba", "T(n) = 3T(n/2) + n", "n^1.585", "Θ(n^1.585)"]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "For binary search you can also expand by hand: T(n) = T(n/2) + c = T(n/4) + 2c = ... = c·log₂ n, because log₂ n counts how many times n can be halved until it reaches 1. For the recurrence T(n) = 4T(n/2) + n with n = 8, the levels cost 8, 16, 32 and 64: the bottom dominates, as the theorem says."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "The basic master theorem does not cover T(n) = 2T(n/2) + n·log n. Here f(n) is bigger than n only by a log n factor, not by a power of n, so no case applies. The recursion tree solves it: each level costs n·log n (a bit less each time), and the sum gives one more log, so T(n) = Θ(n·log² n)."
+				},
+				{
+					"type": "heading",
+					"text": "Two classic tricks"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Exponentiation by squaring.** To compute xⁿ, use xⁿ = (xⁿ/²)² when n is even and xⁿ = x · xⁿ⁻¹ when n is odd. The exponent halves each time, so the number of multiplications is about log n instead of n − 1. For x¹⁰: x², x⁴, x⁵, x¹⁰ is just 4 multiplications.",
+						"**Karatsuba.** Multiplying two n-digit numbers the school way splits each in two halves and needs 4 products of n/2 digits, which costs Θ(n²). Karatsuba finds a way with only 3 products and a little extra additions. Since the number of subproblems a appears in the exponent log_b a, going from 4 to 3 lowers the cost from n² to about n^1.585. Strassen does the same for matrices, with 7 products instead of 8."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "When it does not work well"
+				},
+				{
+					"type": "paragraph",
+					"text": "Divide and conquer is great when the subproblems are **independent**, like the two halves of an array. The naive Fibonacci function, `fib(n) = fib(n − 1) + fib(n − 2)`, also splits into smaller problems, but they **overlap**: `fib(n − 2)` is computed again inside `fib(n − 1)`. The calls multiply and the time is exponential. The cure is to remember the answers, which is dynamic programming."
+				},
+				{
+					"type": "video",
+					"title": "Algorithms playlist: divide and conquer, greedy, dynamic programming (Abdul Bari)",
+					"url": "https://www.youtube.com/playlist?list=PLDN4rrl48XKpZkf03iYFl-O29szjTrs_O"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Divide, conquer, combine. The recurrence T(n) = a·T(n/b) + f(n) gives the cost, and the number of subproblems a is the knob that matters most."
+				}
+			]
+		},
+		{
+			"id": "greedy",
+			"title": "Greedy algorithms",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A child with a plate of food that eats the tastiest thing first, then the next tastiest, is being **greedy**. A greedy algorithm builds the answer one step at a time and, at each step, takes the choice that looks best **right now**. It never looks ahead and **never changes its mind**."
+				},
+				{
+					"type": "paragraph",
+					"text": "That makes greedy algorithms fast and simple. But it is only correct if the problem has the **greedy-choice property**: there is always an optimal solution that contains the locally best choice. Without a proof of that, a greedy algorithm is just a [[heuristic|A rule of thumb that is fast and often good, but with no promise of the best answer]]."
+				},
+				{
+					"type": "heading",
+					"text": "Giving change"
+				},
+				{
+					"type": "paragraph",
+					"text": "A cashier with coins of 1, 5, 10, 25 and 50 cents gives change by always using the largest coin that still fits. For 68 cents: 50, 10, 5, 1, 1, 1, which is 6 coins. With these coins the rule always gives the fewest coins. But with other coins it can fail."
+				},
+				{
+					"type": "table",
+					"headers": ["Coins", "Amount", "Greedy answer", "Best answer"],
+					"rows": [
+						["1, 5, 10, 25, 50", "68", "6 coins", "6 coins"],
+						["1, 5, 6", "10", "6 + 1 + 1 + 1 + 1 = 5 coins", "5 + 5 = 2 coins"]
+					],
+					"caption": "A good local choice (the 6) closed the road to the best global answer."
+				},
+				{
+					"type": "heading",
+					"text": "Activity selection"
+				},
+				{
+					"type": "paragraph",
+					"text": "Many activities want the same room. Each has a start and an end time. Which choice gives the largest number of activities with no overlap? Pick the activity that **finishes earliest**, throw away those that overlap with it, and repeat. The proof uses an **exchange argument**: take any best solution and replace its first activity by the one that finishes earliest. The solution stays valid and has the same size. So some best solution starts with the greedy choice, and the same reasoning applies to the time that remains."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Other criteria look reasonable but fail. 'Shortest activity first' and 'earliest start first' both have counterexamples. Only 'earliest finish' is proved correct."
+				},
+				{
+					"type": "heading",
+					"text": "Fractional and 0-1 knapsack"
+				},
+				{
+					"type": "paragraph",
+					"text": "You have a backpack with a weight limit and items with a value and a weight. In the **fractional** knapsack you may take part of an item (like sand or flour). Sort the items by value per kilogram and take the best ratio first. Every kilogram is used with the most valuable material still available, so this is optimal."
+				},
+				{
+					"type": "paragraph",
+					"text": "Example with capacity 10: item X is worth 20 and weighs 5 (ratio 4), and item Y is worth 18 and weighs 6 (ratio 3). Greedy takes all of X and 5/6 of Y, for 20 + 15 = 35. In the **0-1** knapsack you must take an item whole or leave it, and the same rule can fail. With capacity 10 and items A (value 36, weight 6, ratio 6), B (value 25, weight 5, ratio 5) and C (value 25, weight 5, ratio 5), the ratio rule takes A and nothing else fits, for 36. But B and C together weigh 10 and are worth 50. The proof of the fractional case needs the option to fill the remaining space with a fraction. The 0-1 version needs a table that compares 'take' and 'skip' for each item and capacity, and that is **dynamic programming**."
+				},
+				{
+					"type": "heading",
+					"text": "Where greedy is proved correct"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Minimum spanning tree (Prim and Kruskal, in the graph section).",
+						"Shortest paths with non-negative weights (Dijkstra).",
+						"Activity selection and the fractional knapsack.",
+						"Huffman codes, which compress text by giving short codes to common letters.",
+						"Change with 'well-behaved' coin systems."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Greedy as a heuristic"
+				},
+				{
+					"type": "paragraph",
+					"text": "The travelling salesman problem is NP-hard: no known algorithm finds the best tour in polynomial time. The **nearest-neighbour** heuristic starts in one city and always goes to the closest city not yet visited. It is fast, but it guarantees nothing about how long the tour is: cheap legs at the start can force very long legs at the end. It is usually improved by **2-opt**, a local search that removes crossings in the tour. In this repository's experiments with 5 to 12 cities, nearest neighbour was on average 8% above the best tour, and 2-opt only 0.6%. But those numbers describe those instances, not a promise."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Greedy is correct only when the locally best choice is always part of some best answer. When in doubt, look for a counterexample, such as coins 1, 5 and 6, before trusting it."
+				}
+			]
+		},
+		{
+			"id": "dynamic-programming",
+			"title": "Dynamic programming",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "If someone asks you '1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 equals what?' and you say 8, then they add one more '+ 1' and ask again, you do not count from zero. You remember 8 and say 9. **Dynamic programming** (DP) is this: solve each small problem **once**, write the answer down, and reuse it whenever the same small problem comes back."
+				},
+				{
+					"type": "paragraph",
+					"text": "DP works when the problem has two properties."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Optimal substructure.** The best answer is built from the best answers of smaller subproblems. This is what makes DP correct.",
+						"**Overlapping subproblems.** The same subproblem shows up many times. This is what makes DP worthwhile. Without overlap, DP is not wrong, it just gains nothing over plain recursion."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Two ways to write it"
+				},
+				{
+					"type": "table",
+					"headers": ["Aspect", "Memoisation (top-down)", "Tabulation (bottom-up)"],
+					"rows": [
+						["How", "Keep the recursive code and add a cache indexed by the arguments", "Fill a table with loops, smallest subproblems first"],
+						["Solves", "Only the subproblems that are reached", "All subproblems, even unnecessary ones"],
+						["Risk", "Deep recursion uses the call stack", "Choosing a wrong filling order"],
+						["Memory trick", "None", "Keep only the rows still needed"]
+					],
+					"caption": "The recurrence is the same in both."
+				},
+				{
+					"type": "paragraph",
+					"text": "The cost of DP is always: **the number of distinct subproblems times the work for each one**, assuming the smaller ones are done. For Fibonacci with memoisation, there are n + 1 subproblems of constant cost, so the time is linear. The naive recursion makes 2·fib(n + 1) − 1 calls, which grows by about 1.618 times for each +1 of n."
+				},
+				{
+					"type": "chart",
+					"title": "Function calls: plain recursion against memoisation (measured in this repository)",
+					"unit": "calls",
+					"bars": [
+						{ "label": "Knapsack, 20 items, naive", "value": 734544 },
+						{ "label": "Knapsack, 20 items, memoised", "value": 2380 },
+						{ "label": "LCS, 12 letters, naive", "value": 117808 },
+						{ "label": "LCS, 12 letters, memoised", "value": 198 },
+						{ "label": "Coin change, amount 30, naive", "value": 2550408 },
+						{ "label": "Coin change, amount 30, memoised", "value": 86 }
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Problem 1: coin change with any coins"
+				},
+				{
+					"type": "paragraph",
+					"text": "Let `dp[v]` be the fewest coins that make the amount v. Then `dp[0] = 0` and `dp[v] = 1 + min(dp[v − c])` over the coins c that fit in v. The table tries every coin for every amount, so it does not fall in the greedy trap. With coins 1, 5 and 6:"
+				},
+				{
+					"type": "table",
+					"headers": ["v", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+					"rows": [["dp[v]", "0", "1", "2", "3", "4", "1", "1", "2", "3", "4", "2"]],
+					"caption": "dp[10] = 1 + min(dp[9], dp[5], dp[4]) = 1 + min(4, 1, 4) = 2, which is 5 + 5."
+				},
+				{
+					"type": "heading",
+					"text": "Problem 2: the 0-1 knapsack"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cell (i, w) holds the best value using the first i items with capacity w. It is the larger of two options: skip item i, which is cell (i − 1, w), or take it, which is its value plus cell (i − 1, w − weight), if it fits. With capacity 4 and items P (value 5, weight 2), Q (value 4, weight 3) and R (value 3, weight 1), the rows are:"
+				},
+				{
+					"type": "table",
+					"headers": ["After item", "w = 0", "w = 1", "w = 2", "w = 3", "w = 4"],
+					"rows": [
+						["none", "0", "0", "0", "0", "0"],
+						["P", "0", "0", "5", "5", "5"],
+						["Q", "0", "0", "5", "5", "5"],
+						["R", "0", "3", "5", "8", "8"]
+					],
+					"caption": "The answer is 8 (items P and R). The table has n × W cells, so the time is O(n·W)."
+				},
+				{
+					"type": "paragraph",
+					"text": "The knapsack is NP-hard, yet O(n·W) looks polynomial. The catch: this is **pseudo-polynomial**. The time is polynomial in the numeric value of W, not in the number of bits needed to write it. If W = 2⁶⁴, the input is only 64 bits for the capacity, but the table would have 2⁶⁴ columns. For small capacities it is excellent in practice."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Saving memory with one array `dp[w]` is possible, but you must walk w from RIGHT to LEFT. Going left to right, you would read a cell you already updated in the same round, and use the same item twice, which turns it into the unbounded knapsack."
+				},
+				{
+					"type": "heading",
+					"text": "Problem 3: longest common subsequence (LCS)"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **subsequence** keeps the order of the letters but they need not be next to each other. Cell (i, j) holds the LCS length of the first i letters of one word and the first j of the other. If the last letters match, the cell is 1 plus the diagonal cell. Otherwise, it is the larger of the cell above and the cell to the left. The cost is m·n. For CAT and ACT:"
+				},
+				{
+					"type": "table",
+					"headers": ["Letters", "(empty)", "A", "C", "T"],
+					"rows": [
+						["(empty)", "0", "0", "0", "0"],
+						["C", "0", "0", "1", "1"],
+						["A", "0", "1", "1", "1"],
+						["T", "0", "1", "1", "2"]
+					],
+					"caption": "The LCS has length 2 (for example 'AT')."
+				},
+				{
+					"type": "paragraph",
+					"text": "Each LCS cell depends only on the current row and the previous one, so you can keep just two rows. You gain memory, but you **lose the decisions** that lead to the answer, so you can still know the length but not rebuild the subsequence. This trade between memory and rebuilding the solution appears in almost every DP problem."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "DP = optimal substructure + overlapping subproblems. Cost = number of subproblems times the work of each one. Greedy compares nothing, DP compares all the choices."
+				}
+			]
+		},
+		{
+			"id": "backtracking",
+			"title": "Backtracking and brute force",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "You are in a maze. At each crossing you pick a path. If you reach a dead end, you walk back to the last crossing and try another path. That is **backtracking**: a depth-first search through partial answers that builds the solution one decision at a time and goes back when a path cannot work."
+				},
+				{
+					"type": "paragraph",
+					"text": "Its power is in the **pruning**. When a partial solution is already impossible, the algorithm drops it, and with it every complete solution that would grow from it. Sudoku solvers, mazes and the n-queens problem work this way."
+				},
+				{
+					"type": "heading",
+					"text": "Brute force: try everything"
+				},
+				{
+					"type": "paragraph",
+					"text": "The simplest method is **brute force**: generate every candidate and test each one. It is easy to get right, and it works for small inputs. But candidates multiply very fast. In the travelling salesman problem, a tour is an order of the cities. Fixing the start city removes equivalent rotations, and leaves **(n − 1)!** orders to test. With 5 cities that is 24."
+				},
+				{
+					"type": "chart",
+					"title": "Orders a brute-force travelling salesman must test, start city fixed",
+					"unit": "orders",
+					"bars": [
+						{ "label": "8 cities", "value": 5040 },
+						{ "label": "10 cities", "value": 362880 },
+						{ "label": "12 cities", "value": 39916800 },
+						{ "label": "13 cities", "value": 479001600 }
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "The factorial grows faster than any exponential: each extra city multiplies the work by the number of cities, a multiplier that keeps growing. Going from 13 to 14 cities makes it 13 times slower, and 13 to 16 cities makes it 13 × 14 × 15 = 2,730 times slower. In this repository's benchmark, brute force took about 0.2 seconds for 11 cities and 1.7 seconds for 12 in TypeScript, and passed 10 seconds at 13 cities. A language that is 2 or 3 times faster buys you about one extra city."
+				},
+				{
+					"type": "heading",
+					"text": "Choosing a good representation"
+				},
+				{
+					"type": "paragraph",
+					"text": "How you describe a candidate can remove candidates before any search. Take the 8-queens problem (place 8 queens on a chessboard so that none attacks another). Choosing 8 squares freely out of 64 gives more than 4 billion possibilities. Allowing only one queen per row gives 8⁸ = 16 million. Allowing one queen per row **and** per column, which are permutations, gives 8! = 40,320. Backtracking then cuts even more, because it drops a partial placement as soon as two queens share a diagonal."
+				},
+				{
+					"type": "heading",
+					"text": "Pruning must be safe"
+				},
+				{
+					"type": "paragraph",
+					"text": "Every pruning rule rests on a **monotone property**: something that, once broken, stays broken in every extension. Example: find a subset of numbers whose sum is exactly T, and drop a branch whenever the partial sum is above T. This is correct only if all numbers are **non-negative**, because then the sum can only grow. If negative numbers are allowed, a later number could bring the sum back down, and the pruning would throw away valid answers. Before pruning, ask which assumption about the input supports it."
+				},
+				{
+					"type": "heading",
+					"text": "Branch and bound"
+				},
+				{
+					"type": "paragraph",
+					"text": "For the travelling salesman you can keep the best complete tour found so far, as a bound. If a partial path is already as long as that bound or longer, no way of finishing it can beat the best tour, so you drop the branch. This is called **branch and bound**. The cut is safe because distances are not negative, so a path never gets shorter when extended. A good first bound, for instance from the nearest-neighbour heuristic, makes the pruning start earlier."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Held-Karp** is a dynamic programming answer that remembers, for each set of visited cities and last city, the best path. It costs n²·2ⁿ, which is still exponential but far smaller than n!.",
+						"**Heuristics** such as nearest neighbour and 2-opt trade the guarantee of the best tour for speed."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Brute force tries all candidates, backtracking drops hopeless ones early, and branch and bound uses the best answer so far to drop more. None of them escapes exponential worst cases, which is why DP and heuristics exist."
+				}
+			]
+		},
+		{
+			"id": "graph-algorithms",
+			"title": "Graph algorithms: shortest path, spanning tree, topological sort",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "A **graph** is a set of dots, called **vertices**, joined by lines, called **edges**. Cities and roads, friends and friendships, tasks and their dependencies are graphs. Edges may have a **weight**, such as a distance or a cost, and may have a direction. Let V be the number of vertices and E the number of edges."
+				},
+				{
+					"type": "heading",
+					"text": "Minimum spanning tree"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **spanning tree** of a connected, undirected graph is a set of edges that connects all the vertices with **no cycles**. Starting with V separate vertices, each edge that does not make a cycle joins two groups, and V − 1 joins are needed to leave one group. So every spanning tree has exactly **V − 1 edges**. The **minimum spanning tree** (MST) is the one with the smallest total weight. Think of the cheapest set of cables to connect all the houses in a town."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Kruskal.** Sort the edges by weight. Go through them and accept each edge that joins two different groups (checked with a structure called disjoint set, or union-find). Stop when V − 1 edges are accepted.",
+						"**Prim.** Start from one vertex and grow a single tree. At each step add the cheapest edge that connects the tree to a vertex outside. Both are greedy, and both give the same total weight."
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "edges: R-S 1, P-Q 2, Q-R 3, P-R 4, Q-S 6\n\nKruskal, in order of weight:\n  R-S 1  accept\n  P-Q 2  accept\n  Q-R 3  accept (joins {P,Q} and {R,S})\n  P-R 4  reject (would close a cycle)\n  Q-S 6  reject\n4 vertices -> 3 edges, total weight 1 + 2 + 3 = 6",
+					"caption": "Kruskal's algorithm on a small graph."
+				},
+				{
+					"type": "heading",
+					"text": "Shortest path: Dijkstra"
+				},
+				{
+					"type": "paragraph",
+					"text": "Dijkstra finds the shortest path from one source to all other vertices. It keeps the best known distance of every vertex. At each step it picks the vertex not yet finished with the smallest distance, finishes it, and **relaxes** its edges: if `dist[u] + weight(u, v) < dist[v]`, then `dist[v]` is updated. The idea is greedy and correct because extending a path never makes it cheaper."
+				},
+				{
+					"type": "diagram",
+					"content": "edges: S-A 7, S-B 2, B-A 3, A-T 1, B-T 8\n\nstart:      S=0\nfinish S:   A=7, B=2\nfinish B:   A=min(7, 2+3)=5, T=2+8=10\nfinish A:   T=min(10, 5+1)=6\nshortest S to T: S-B-A-T = 6",
+					"caption": "The best path has 3 edges, while the direct-looking S-A has only 1."
+				},
+				{
+					"type": "paragraph",
+					"text": "With a heap, Dijkstra runs in about (V + E)·log V. It requires **non-negative weights**. A negative edge breaks the proof. Example: edges S → A with weight 3, S → B with weight 4 and B → A with weight −2. Dijkstra finishes A at distance 3 (it is the smallest) and never reopens it, but the real shortest path to A is S → B → A, with cost 2. **Bellman-Ford** solves the problem: it relaxes all edges V − 1 times, in O(V·E), and also detects negative cycles."
+				},
+				{
+					"type": "heading",
+					"text": "Topological sort"
+				},
+				{
+					"type": "paragraph",
+					"text": "A directed graph can model dependencies: 'socks before shoes'. A **topological ordering** lists the vertices so that for every edge u → v, u comes before v. It exists only if the graph has **no cycle**. A cycle is a circular dependency (A needs B, B needs A), which no order can satisfy. There can be several valid orderings."
+				},
+				{
+					"type": "paragraph",
+					"text": "**Kahn's algorithm** repeats this: remove a vertex with **in-degree zero** (no unfinished dependency), put it in the output, and lower by one the in-degree of its successors. Take Socks → Shoes, Pants → Shoes and Pants → Belt. Socks and Pants start at 0, so remove Socks (Shoes goes to 1), remove Pants (Shoes and Belt go to 0), and then Shoes and Belt. The result: Socks, Pants, Shoes, Belt."
+				},
+				{
+					"type": "paragraph",
+					"text": "If the algorithm ends having removed **fewer than V vertices**, the rest of the graph has a cycle: those vertices always wait for another one of the same cycle. This is how package managers and build tools report a circular dependency. Kahn's algorithm costs V + E. To check a given ordering, walk the edges and confirm that the source of each one appears before its destination."
+				},
+				{
+					"type": "table",
+					"headers": ["Problem", "Algorithm", "Cost", "Condition"],
+					"rows": [
+						["Cheapest network", "Kruskal or Prim", "about E·log E, or E·log V with a heap", "Connected, undirected graph"],
+						["Shortest path", "Dijkstra", "about (V + E)·log V", "No negative weights"],
+						["Shortest path with negative edges", "Bellman-Ford", "V·E", "No negative cycle"],
+						["Order of tasks", "Kahn (topological sort)", "V + E", "Directed graph with no cycle"]
+					]
+				},
+				{
+					"type": "video",
+					"title": "Graph Theory playlist (William Fiset)",
+					"url": "https://www.youtube.com/playlist?list=PLDV1Zeh2NRsDGO4--qE8yH72HFL1Km93P"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "A spanning tree has V − 1 edges. Dijkstra needs non-negative weights. A topological order exists exactly when there is no cycle."
+				}
+			]
+		},
+		{
+			"id": "choosing-the-right-tool",
+			"title": "Choosing the right tool",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Now you have a toolbox. The skill is to look at a problem and pick the right tool. These questions help."
+				},
+				{
+					"type": "table",
+					"headers": ["If the problem...", "Try", "Watch out for"],
+					"rows": [
+						["Splits into independent parts of the same kind", "Divide and conquer", "Parts that overlap lead to repeated work"],
+						["Has a local choice that is provably part of a best answer", "Greedy", "Needs a proof or a counterexample search, like coins 1, 5, 6"],
+						["Has overlapping subproblems and optimal substructure", "Dynamic programming", "Table size, and the order of filling"],
+						["Has constraints that kill partial answers early", "Backtracking and pruning", "Pruning must rest on a monotone property"],
+						["Is on a network of connections", "Graph algorithms", "Negative weights, cycles"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Choosing a sort"
+				},
+				{
+					"type": "table",
+					"headers": ["Situation", "Good choice", "Why"],
+					"rows": [
+						["Few items, or nearly sorted", "Insertion sort", "About n + inversions steps, stable, in-place"],
+						["Moving a record is very costly", "Selection sort", "At most n − 1 swaps"],
+						["Need a guarantee and stability", "Merge sort", "Always n log n and stable, with a buffer of n"],
+						["Need a guarantee and little memory", "Heapsort", "n log n and in-place, but not stable"],
+						["Fast on average, memory is small", "Quicksort with median of three (and insertion sort for small ranges)", "Best constants in practice"],
+						["Integers in a small range, or fixed-width keys", "Counting or radix sort", "Linear time, using the structure of the keys"]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Common mistakes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Using binary search on data that is not sorted.",
+						"Trusting a greedy rule with no proof. Look for a counterexample first.",
+						"Using Dijkstra with negative edges.",
+						"Forgetting the memory of an algorithm: merge sort needs a buffer, quicksort needs a stack.",
+						"Blaming the language when the algorithm is the problem. In the sorting race of this repository, merge sort in Python with 10,000 values (32.7 ms) beat bubble sort in C++ (69.0 ms)."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "An algorithm that is correct on paper can still fail on a real machine: integers overflow (the binary search midpoint), recursion depth can blow the stack, and a table of 2⁶⁴ columns does not fit anywhere."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Ask three things before you choose: What shape is my data? What do I need to guarantee (time, memory, order of equal keys)? And what does the cost look like when n is a million?"
+				}
+			]
+		}
+	]
+}

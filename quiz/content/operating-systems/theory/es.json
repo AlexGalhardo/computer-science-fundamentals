@@ -1,0 +1,1553 @@
+{
+	"area": "operating-systems",
+	"intro": [
+		"Un **sistema operativo** (SO) es el programa principal de una computadora. Windows, macOS, Linux, Android e iOS son sistemas operativos. Cuando enciendes la computadora, el sistema operativo arranca primero, y todos los demás programas (un juego, un navegador, un editor de texto) se ejecutan encima de él.",
+		"¿Por qué lo necesitamos? Una computadora tiene solo unas pocas cosas reales: una [[CPU|el chip que sigue instrucciones, el cerebro de la computadora]], algo de memoria, discos, teclado, pantalla. Sin ayuda, cada programador tendría que saber cómo funciona cada disco y cada pantalla, y dos programas pelearían por la misma memoria. El sistema operativo es como el **director de una escuela grande**: decide quién usa cada salón y cuándo, evita que los alumnos rompan las cosas de los demás y esconde los detalles aburridos para que los maestros puedan simplemente enseñar.",
+		"Te encuentras con el sistema operativo todo el tiempo. Abrir un archivo, ejecutar dos programas a la vez, conectar una memoria USB, recibir un error de 'sin memoria' e instalar una máquina virtual son cosas que el sistema operativo hace o controla.",
+		"Esta página sigue los temas del quiz: cómo los programas piden ayuda al SO, procesos y threads, cómo comparten datos sin dañarlos, quién recibe la CPU, memoria, archivos, dispositivos, deadlocks, máquinas virtuales, varias CPU y seguridad. Al final sabrás explicar cada idea con un ejemplo y hacer los pequeños cálculos que pide el quiz."
+	],
+	"sections": [
+		{
+			"id": "introduction-and-system-calls",
+			"title": "Introducción, conceptos y llamadas al sistema",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Piensa en un restaurante. Tú (el programa del usuario) te sientas a una mesa. La cocina (el hardware) es peligrosa: cuchillos, fuego, aceite caliente. Nunca entras. Le dices al mesero lo que quieres, y el mesero habla con la cocina. El sistema operativo es el mesero y el gerente al mismo tiempo."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "El kernel es el gerente del restaurante. Los clientes (programas) pueden pedir comida, pero solo el personal puede entrar a la cocina."
+				},
+				{
+					"type": "paragraph",
+					"text": "Hay dos maneras de mirar el sistema operativo, y las dos son verdaderas:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Máquina extendida** (mirando de arriba hacia abajo): el hardware real es incómodo. Un disco solo sabe 'leer el sector 4.821'. El SO esconde eso y te da ideas agradables como **archivos** y **procesos**. Hace que la computadora sea más fácil de usar.",
+						"**Administrador de recursos** (mirando de abajo hacia arriba): la CPU, la memoria y los dispositivos los comparten muchos programas. El SO los reparte de forma justa y segura, en el tiempo (por turnos) y en el espacio (cada programa recibe su parte)."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Modo kernel y modo usuario"
+				},
+				{
+					"type": "paragraph",
+					"text": "El [[kernel|el núcleo del sistema operativo, la parte que siempre está en memoria y puede hacer cualquier cosa]] debe protegerse de los errores de los programas comunes. Por eso la CPU tiene al menos dos **modos**, como una puerta con un guardia."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Modo",
+						"Quién se ejecuta en él",
+						"Qué se permite"
+					],
+					"rows": [
+						[
+							"Modo kernel",
+							"El kernel del sistema operativo",
+							"Todas las instrucciones, incluso las peligrosas"
+						],
+						[
+							"Modo usuario",
+							"Tus programas",
+							"Solo instrucciones seguras. Las peligrosas causan una [[trap|un salto forzado al kernel porque se intentó algo prohibido]]"
+						]
+					],
+					"caption": "Los dos modos de la CPU"
+				},
+				{
+					"type": "paragraph",
+					"text": "Las instrucciones peligrosas son las **privilegiadas**: apagar las interrupciones, hacer entrada y salida directamente en un dispositivo y cambiar las tablas de páginas (los mapas que deciden qué memoria ve un programa). Solo el kernel puede hacerlo. Las cuentas comunes, como sumar dos números, se permiten en cualquier modo."
+				},
+				{
+					"type": "heading",
+					"text": "Llamadas al sistema: pedirle un servicio al kernel"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un programa que quiere leer un archivo no puede tocar el disco. Hace una **llamada al sistema** (system call), que es una petición educada al kernel. Una instrucción especial (la trap) cambia la CPU a modo kernel y salta a un lugar fijo del SO. El SO hace el trabajo y luego vuelve al modo usuario."
+				},
+				{
+					"type": "diagram",
+					"content": "programa:   read(fd, buf, n)           <- llamada normal\n      |\nbiblioteca: pone el número de llamada en un registro\n           TRAP  ------------------------+   <- el modo cambia AQUÍ\n                                         v\nkernel:    usa el número como índice en una tabla de rutinas\n           hace el trabajo (lee el archivo)\n           vuelve al modo usuario  ------+\n      ^                                  |\nel programa continúa  <------------------+",
+					"caption": "Pasos de una llamada al sistema. Solo la trap cambia el modo."
+				},
+				{
+					"type": "paragraph",
+					"text": "Fíjate en que llamar a `read` es solo una llamada de función normal a una biblioteca. El modo solo cambia en la instrucción trap dentro de esa función de la biblioteca."
+				},
+				{
+					"type": "heading",
+					"text": "fork, exec y el shell"
+				},
+				{
+					"type": "paragraph",
+					"text": "En UNIX, crear un proceso nuevo y cargar un programa nuevo son dos pasos separados. `fork` hace una copia del proceso que lo llama. La copia continúa en el mismo punto, justo después del fork. `fork` devuelve **0 en el hijo** y el **número del hijo (su PID) en el padre**, así cada uno sabe quién es. `exec` reemplaza el programa que el proceso está ejecutando por otro programa."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"content": "fork();\nfork();\nprintf(\"hi\\n\");\n/* 1 proceso -> 2 -> 4 procesos: 2^n después de n forks,\n   así que esto imprime \"hi\" 4 veces */",
+					"caption": "Cada fork duplica el número de procesos (si nada los detiene)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Como los dos pasos están separados, el hijo puede cambiar cosas entre ellos, por ejemplo redirigir su entrada y su salida. Así es exactamente como un shell hace `ls > archivo.txt` y los pipes. Cada proceso también tiene su propio directorio actual, heredado del padre. Por eso los comandos que deben cambiar el **propio shell**, como `cd` y `exit`, están **incorporados** (builtins) en el shell: si `cd` se ejecutara en un hijo, solo el hijo cambiaría de carpeta."
+				},
+				{
+					"type": "heading",
+					"text": "Cómo se organiza el kernel"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Diseño",
+						"Idea",
+						"Bueno",
+						"Malo"
+					],
+					"rows": [
+						[
+							"Kernel monolítico",
+							"Todo el SO se ejecuta en modo kernel, en un programa grande",
+							"Rápido: una petición son solo llamadas de función",
+							"Un error en cualquier driver puede tumbar todo"
+						],
+						[
+							"Microkernel (por ejemplo MINIX 3)",
+							"Solo lo mínimo (planificación, mensajes, interrupciones) está en el kernel. Los drivers y servidores son procesos de usuario normales",
+							"Un driver roto queda contenido y se puede reiniciar",
+							"Más lento: cada paso se vuelve un mensaje, con copia de datos y un [[cambio de contexto|guardar un proceso y cargar otro en la CPU]]"
+						]
+					],
+					"caption": "Dos maneras de construir un kernel"
+				},
+				{
+					"type": "heading",
+					"text": "Un poco de historia"
+				},
+				{
+					"type": "paragraph",
+					"text": "En los primeros sistemas por **lotes** (batch), la costosa CPU se quedaba inactiva cada vez que un trabajo esperaba una entrada o salida lenta. La **multiprogramación** lo arregló: la memoria se divide en partes, varios trabajos quedan cargados y, cuando uno se bloquea, la CPU pasa a otro. El **tiempo compartido** (timesharing) añadió cambios muy rápidos para que muchos usuarios trabajaran de forma interactiva al mismo tiempo."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Los programas no pueden tocar el hardware. Se lo piden al kernel con una llamada al sistema, y solo la instrucción trap cambia del modo usuario al modo kernel."
+				}
+			]
+		},
+		{
+			"id": "processes-and-threads",
+			"title": "Procesos y threads",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una receta de pastel está escrita en papel. Sola no hace nada. Cuando alguien realmente prepara el pastel, siguiendo la receta, midiendo y mezclando, esa actividad es lo importante. Un **programa** es la receta, una lista de instrucciones guardada. Un **proceso** es el acto de preparar el pastel: un programa en ejecución, con su paso actual (el [[contador de programa|un número que dice qué instrucción se ejecuta a continuación]]), sus variables y sus archivos abiertos. Ejecuta el mismo programa dos veces y tendrás dos procesos distintos, como dos cocineros preparando pasteles con la misma receta."
+				},
+				{
+					"type": "heading",
+					"text": "Los tres estados"
+				},
+				{
+					"type": "paragraph",
+					"text": "En cada momento un proceso está en uno de tres estados:"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**En ejecución** (running): está usando la CPU ahora mismo.",
+						"**Listo** (ready): podría ejecutarse, pero la CPU está ocupada con otro proceso. Espera su turno.",
+						"**Bloqueado** (blocked): no puede ejecutarse hasta que ocurra algo externo, como pulsar una tecla o que un disco termine."
+					]
+				},
+				{
+					"type": "diagram",
+					"content": "              1: espera un evento\n   +-----------+ -----------------> +-----------+\n   | EJECUCIÓN |                    | BLOQUEADO |\n   +-----------+ <-+                +-----------+\n     | ^           |                      |\n 2:  | | 3:        |                      | 4: el evento\ntiempo| | el planificador                 | ocurrió\nse   | | lo elige                         |\nacaba| |                                  |\n     v |                                  |\n   +---------+ <------------------------+\n   |  LISTO  |\n   +---------+",
+					"caption": "Cuatro transiciones: ejecución a bloqueado (1), ejecución a listo (2), listo a ejecución (3), bloqueado a listo (4). NO existe bloqueado a ejecución."
+				},
+				{
+					"type": "paragraph",
+					"text": "Listo y bloqueado se diferencian en el **motivo** por el que el proceso no se está ejecutando. Un proceso listo solo espera al planificador. Un proceso bloqueado espera un evento, así que darle la CPU sería inútil. La causa habitual de ejecución a listo es la interrupción del reloj que termina el turno del proceso."
+				},
+				{
+					"type": "heading",
+					"text": "Cómo empieza y termina un proceso"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un proceso termina de cuatro maneras. Dos son voluntarias: la **salida normal** y la **salida por error** que el propio programa detecta (por ejemplo 'archivo no encontrado'). Dos son involuntarias: un **error fatal** causado por un fallo (como dividir entre cero) y ser **eliminado** (killed) por otro proceso."
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando un proceso termina, el kernel libera sus recursos pero guarda su código de salida, para que el padre pueda leerlo con `wait`. Hasta que el padre lo haga, el hijo es un **zombi**: terminó, pero sigue ocupando una fila en la tabla de procesos. Un padre que nunca llama a `wait` acumula zombis."
+				},
+				{
+					"type": "paragraph",
+					"text": "Después de `fork`, el hijo tiene una **copia** de la memoria del padre. Desde entonces son independientes: si el hijo cambia una variable, el padre no lo ve. Para compartir datos hace falta algo explícito, como un pipe, un archivo o memoria compartida. Copiarlo todo sería lento, así que los sistemas modernos usan **copy-on-write** (copia al escribir): padre e hijo comparten las mismas páginas (marcadas como de solo lectura), y una página se copia solo cuando uno de los dos escribe en ella."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"content": "int x = 5;\npid_t pid = fork();\nif (pid == 0) { x = 10; exit(0); }   /* el hijo cambia SU copia */\nwaitpid(pid, NULL, 0);\nprintf(\"%d\\n\", x);                    /* el padre sigue viendo 5 */",
+					"caption": "Un hijo no puede cambiar las variables del padre"
+				},
+				{
+					"type": "heading",
+					"text": "Threads"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un proceso es como una casa: es dueño de las habitaciones (espacio de direcciones), los muebles (variables globales) y las llaves (archivos abiertos). Un **thread** es una persona que vive en la casa haciendo su propia tarea. Varios threads comparten la casa, pero cada uno tiene su propio cuaderno de lo que está haciendo."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Compartido por todos los threads de un proceso",
+						"Privado de cada thread"
+					],
+					"rows": [
+						[
+							"Espacio de direcciones, variables globales",
+							"Contador de programa"
+						],
+						[
+							"Archivos abiertos, procesos hijos",
+							"Registros"
+						],
+						[
+							"Manejadores de señales",
+							"Pila (variables locales, direcciones de retorno)"
+						],
+						[
+							"Alarmas pendientes del proceso",
+							"Estado (en ejecución, listo, bloqueado)"
+						]
+					],
+					"caption": "Qué comparten los threads y qué guarda cada uno"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cambiar entre dos threads del **mismo** proceso es más barato que cambiar entre dos procesos, porque el mapa de memoria sigue igual y la [[TLB|un pequeño caché rápido de traducciones de direcciones]] y los cachés siguen siendo útiles. Los threads también son una buena forma de escribir programas que hacen varias cosas a la vez, por ejemplo un servidor web donde cada petición tiene su thread y puede esperar al disco mientras los demás siguen trabajando."
+				},
+				{
+					"type": "heading",
+					"text": "Threads de usuario, threads de kernel"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Threads a nivel de usuario",
+						"Threads de kernel"
+					],
+					"rows": [
+						[
+							"Quién los administra",
+							"Una biblioteca dentro del proceso; el kernel no los conoce",
+							"El sistema operativo, con una tabla de threads"
+						],
+						[
+							"Velocidad para crear y cambiar",
+							"Muy rápida (sin trap)",
+							"Más lenta (cada operación entra al kernel)"
+						],
+						[
+							"Un thread hace una llamada bloqueante",
+							"Se bloquea el proceso entero",
+							"Solo ese thread se bloquea; los demás siguen"
+						],
+						[
+							"Paralelismo real en varios núcleos",
+							"No",
+							"Sí"
+						]
+					],
+					"caption": "Dos maneras de implementar threads"
+				},
+				{
+					"type": "paragraph",
+					"text": "Las **scheduler activations** intentan obtener lo mejor de ambos: el kernel da al proceso procesadores virtuales y hace un **upcall** a la biblioteca de usuario cuando ocurre algo importante (un thread se bloquea, termina una entrada o salida). La decisión de qué thread se ejecuta se queda en el espacio de usuario."
+				},
+				{
+					"type": "heading",
+					"text": "Tres formas de construir un servidor y una trampa del código antiguo"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Threads**: paralelismo con llamadas bloqueantes simples.",
+						"**Un único flujo, bloqueante**: simple pero sin paralelismo.",
+						"**Máquina de estados finitos con llamadas no bloqueantes y un bucle de eventos**: paralelo, pero el programador debe simular a mano los threads y sus pilas, lo cual es difícil."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "El código antiguo de un solo thread suele guardar resultados en variables globales, como `errno` (el código de error de la última llamada al sistema). Con varios threads, esa variable pasa a ser compartida y los threads se pisan. Las curas son las variables locales al thread y las versiones reentrantes de las funciones."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Un proceso es dueño de recursos. Un thread es un flujo de ejecución dentro de un proceso. El cambio entre threads del mismo proceso es más barato porque el espacio de direcciones no cambia."
+				}
+			]
+		},
+		{
+			"id": "ipc-and-synchronisation",
+			"title": "Comunicación entre procesos y sincronización",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagina a dos niños escribiendo a la vez en la misma página de un cuaderno compartido. Si los dos escriben 'el marcador es' y luego cada uno añade un número, la página se vuelve un desastre. Cuando los programas comparten datos y al menos uno escribe, el resultado puede depender del momento exacto. Eso es una **condición de carrera** (race condition). Es molesta porque ocurre pocas veces y es casi imposible de repetir cuando se quiere."
+				},
+				{
+					"type": "heading",
+					"text": "La actualización perdida"
+				},
+				{
+					"type": "paragraph",
+					"text": "La línea `count = count + 1` parece un solo paso, pero son tres: cargar el valor en un registro, sumar uno, guardarlo de vuelta. Si ocurre un cambio entre cargar y guardar, una actualización puede desaparecer."
+				},
+				{
+					"type": "diagram",
+					"content": "count = 0\nThread A            Thread B\nload  (0)\n                    load  (0)\nadd   (1)\n                    add   (1)\nstore (1)\n                    store (1)   <- count final = 1, ¡no 2!",
+					"caption": "Dos incrementos, pero uno se pierde. Los valores finales 1 o 2 son posibles."
+				},
+				{
+					"type": "heading",
+					"text": "Regiones críticas y las cuatro condiciones"
+				},
+				{
+					"type": "paragraph",
+					"text": "La parte del código que toca datos compartidos es la **región crítica**. La cura es la **exclusión mutua**: solo un proceso dentro a la vez, como una llave para un baño. Una buena solución necesita cuatro cosas:"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Nunca dos procesos dentro de la región crítica a la vez.",
+						"Ninguna suposición sobre la velocidad ni el número de CPU.",
+						"Un proceso fuera de su región crítica no puede bloquear a otro.",
+						"Nadie espera para siempre."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Observa que una promesa sobre el **orden** de entrada no está en la lista."
+				},
+				{
+					"type": "heading",
+					"text": "Soluciones con espera activa"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Alternancia estricta**: una variable `turn` dice de quién es el turno. Garantiza la exclusión mutua, pero rompe la condición 3: un proceso rápido debe esperar a uno lento aunque el lento esté lejos de la región crítica. También gasta CPU dando vueltas en un bucle (espera activa).",
+						"**La solución de Peterson** lo arregla añadiendo una bandera 'tengo interés' por proceso.",
+						"**Una simple variable de cerradura** falla por el hueco entre probar la cerradura y marcarla: dos procesos pueden verla libre. Las instrucciones de hardware **TSL** (test and set lock) y **XCHG** hacen las dos acciones como un solo paso **atómico**, así el hueco desaparece. Una cerradura hecha así y esperada en un bucle es un **spin lock**."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Inversión de prioridad: L, de baja prioridad, sostiene una cerradura, H, de alta prioridad, espera por ella, y M, de prioridad media, sigue quitándole la CPU a L. Así H queda atascado detrás de M. La herencia de prioridad le da temporalmente a L la prioridad de H hasta que suelte la cerradura."
+				},
+				{
+					"type": "heading",
+					"text": "Semáforos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **semáforo** es un contador con dos acciones atómicas. `down` (también llamada P o wait): si el contador es mayor que cero, resta uno y continúa; si es cero, se duerme. `up` (V o signal): si alguien duerme, despierta a uno; si no, suma uno. Como comprobar, cambiar y dormir son una acción indivisible, un despertar nunca se pierde."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Un semáforo contador que empieza en 3 es una cesta con 3 fichas para 3 bicicletas. Cada ciclista toma una ficha (down). Sin fichas, esperas. Devolver la bicicleta pone una ficha de vuelta (up) y despierta a un ciclista que esperaba."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un semáforo que empieza en 1 funciona como **mutex** (una cerradura). Un semáforo que empieza en N deja pasar a N procesos, lo que controla un conjunto de N recursos idénticos. Si empieza en 3 y cinco procesos hacen `down`, tres pasan y dos duermen. Un `up` despierta a uno de los dos."
+				},
+				{
+					"type": "heading",
+					"text": "Productor y consumidor"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un productor pone elementos en un búfer de N espacios; un consumidor los saca. Tres semáforos lo resuelven: `mutex` (empieza en 1, protege el búfer), `empty` (empieza en N, cuenta los espacios libres) y `full` (empieza en 0, cuenta los espacios llenos)."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"content": "productor:              consumidor:\n  down(&empty);           down(&full);\n  down(&mutex);           down(&mutex);\n  put(item);              item = take();\n  up(&mutex);             up(&mutex);\n  up(&full);              up(&empty);",
+					"caption": "mutex = exclusión; empty y full = esperar una condición"
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Nunca te duermas esperando una condición mientras sostienes el mutex que el otro lado necesita para hacer verdadera esa condición. Si el consumidor hiciera down(&mutex) antes de down(&full), dormiría sosteniendo el mutex, el productor nunca podría poner un elemento y los dos quedarían atascados."
+				},
+				{
+					"type": "heading",
+					"text": "Monitores y variables de condición"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **monitor** es un grupo de datos y procedimientos en el que el lenguaje garantiza que solo hay un proceso dentro a la vez. Para esperar una condición, un proceso hace `wait` sobre una **variable de condición**, lo que lo bloquea y deja entrar a otros. Un `signal` despierta a quien espera. **Diferencia con el semáforo**: un signal **no se recuerda**. Si nadie espera, se pierde. Por eso quien espera debe probar la condición (guardada en variables comunes) dentro del monitor, y el wait debe venir antes del signal."
+				},
+				{
+					"type": "heading",
+					"text": "Lectores y escritores"
+				},
+				{
+					"type": "paragraph",
+					"text": "Muchos lectores pueden leer los mismos datos a la vez, pero un escritor necesita los datos para él solo. Si siempre se deja entrar a los lectores mientras otros leen, un escritor puede esperar para siempre (**starvation**, inanición). La alternativa justa hace que los lectores nuevos esperen detrás de un escritor que espera, con un poco menos de concurrencia."
+				},
+				{
+					"type": "heading",
+					"text": "Paso de mensajes"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los procesos también pueden hablar con `send` y `receive`, sin memoria compartida. Con **buzones** (mailboxes), los mensajes esperan en un búfer hasta que se leen. Sin ningún búfer (**rendezvous**, usado por MINIX 3), quien llega primero se bloquea hasta que el otro esté listo, y el mensaje se copia directamente. Es simple, pero ata el ritmo de los dos lados."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Datos compartidos más un escritor exigen exclusión mutua. Las instrucciones atómicas (TSL, XCHG) cierran el hueco entre probar y marcar. Los semáforos cuentan; los monitores esconden la cerradura; el signal de un monitor no se recuerda."
+				}
+			]
+		},
+		{
+			"id": "scheduling",
+			"title": "Planificación",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Muchos procesos están listos, pero hay una sola CPU (o pocas). ¿A quién le toca? La parte del SO que decide es el **planificador** (scheduler), como un maestro que elige quién puede usar la única computadora del salón. Cada lugar quiere cosas distintas."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Entorno",
+						"Qué importa más"
+					],
+					"rows": [
+						[
+							"Lotes (trabajos grandes sin nadie esperando)",
+							"Rendimiento (trabajos terminados por hora), tiempo de retorno, uso de la CPU"
+						],
+						[
+							"Interactivo (una persona escribe y hace clic)",
+							"Tiempo de respuesta y proporcionalidad: lo que parece simple debe ser rápido"
+						],
+						[
+							"Tiempo real (un robot, un marcapasos)",
+							"Cumplir plazos, ser predecible"
+						],
+						[
+							"Todos ellos",
+							"Justicia y equilibrio"
+						]
+					],
+					"caption": "Los objetivos de la planificación dependen del lugar"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los planificadores **expropiativos** (preemptive) pueden quitarle la CPU a un proceso usando la interrupción del reloj, para que nadie la acapare. Esto es vital en sistemas interactivos. Los planificadores **no expropiativos** dejan que un proceso se ejecute hasta que se bloquea o termina. Son más simples y tienen menos cambios de contexto, lo que va bien para el trabajo por lotes."
+				},
+				{
+					"type": "heading",
+					"text": "Palabras que hay que conocer"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Tiempo de retorno** (turnaround): desde que llega un trabajo hasta que termina.",
+						"**Tiempo de espera**: tiempo en la cola de listos, sin ejecutarse.",
+						"**Tiempo de respuesta**: desde una petición hasta la primera respuesta.",
+						"**Quantum**: la rebanada de tiempo que se da a un proceso en round-robin."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Primero en llegar, primero en ser atendido (FCFS)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Los trabajos se ejecutan hasta el final en orden de llegada, como una fila en la cafetería. El tiempo de espera de un trabajo es la suma de los tiempos de ejecución de los trabajos que están delante. Si un trabajo largo va primero, todos los cortos esperan detrás: el **efecto convoy**."
+				},
+				{
+					"type": "heading",
+					"text": "El trabajo más corto primero (SJF)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Si todos los trabajos están presentes desde el principio, ejecutar primero el más corto da el mejor tiempo **promedio** posible de retorno y de espera, porque el tiempo del primer trabajo se cuenta en todos los demás. El problema: hay que conocer o estimar los tiempos de ejecución."
+				},
+				{
+					"type": "diagram",
+					"content": "Los trabajos llegan juntos con tiempos de CPU  A=6   B=3   C=3\n\nFCFS  |AAAAAA|BBB|CCC|   esperas: A0 B6 C9 -> promedio 5\nSJF   |BBB|CCC|AAAAAA|   esperas: B0 C3 A6 -> promedio 3",
+					"caption": "Los mismos trabajos, dos órdenes. Contar las esperas es solo sumar lo que hay delante."
+				},
+				{
+					"type": "chart",
+					"title": "Tiempo promedio de espera para trabajos de 6, 3 y 3 unidades",
+					"unit": "unidades",
+					"bars": [
+						{
+							"label": "FCFS (A, B, C)",
+							"value": 5
+						},
+						{
+							"label": "SJF (B, C, A)",
+							"value": 3
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El **menor tiempo restante primero (SRTN)** es el SJF con expropiación: cuando llega un trabajo nuevo, compara **su tiempo total** con el **tiempo restante** del trabajo en ejecución. Si el recién llegado es más corto, toma la CPU. Favorece aún más a los trabajos cortos, pero puede retrasar mucho a los largos."
+				},
+				{
+					"type": "heading",
+					"text": "Round-robin"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada proceso recibe un quantum y luego va al **final** de la cola. Un proceso que necesita menos de un quantum devuelve la CPU cuando termina. Para saber cuándo termina algo, simula la cola paso a paso."
+				},
+				{
+					"type": "diagram",
+					"content": "X necesita 4, Y necesita 3, quantum = 2\n\ntiempo: 0   2   4   6   7\n        |XX |YY |XX |Y  |\n                  X termina en 6, Y termina en 7",
+					"caption": "Round-robin, sin costo en los cambios de contexto"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Quantum demasiado pequeño**: muy buena respuesta, pero la CPU pierde tiempo en cambios de contexto.",
+						"**Quantum demasiado grande** (mayor que el tiempo que los procesos usan antes de bloquearse): el round-robin se vuelve casi FCFS y las peticiones cortas esperan.",
+						"Un quantum de unos 20 a 50 ms es un compromiso habitual."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Prioridades e inanición"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada proceso recibe una prioridad, y se ejecuta el listo de mayor prioridad. Pero si el trabajo de alta prioridad nunca se detiene, los de baja prioridad pueden sufrir **inanición** (starvation). La cura es cambiar las prioridades con el tiempo: bajar la prioridad de quien ha usado mucha CPU o subir la de quien ha esperado mucho (**aging**, envejecimiento)."
+				},
+				{
+					"type": "heading",
+					"text": "Colas multinivel con retroalimentación"
+				},
+				{
+					"type": "paragraph",
+					"text": "El sistema no sabe qué procesos son interactivos y cuáles devoran CPU. Así que deja que se revelen. Hay clases; la clase superior tiene un quantum de 1, la siguiente 2, luego 4, y así sucesivamente. Un proceso que usa todo su quantum baja una clase. Uno que se bloquea pronto se queda arriba y se atiende rápido. Los procesos pesados en CPU se hunden y se ejecutan menos veces pero por más tiempo. Un proceso que necesita mucha CPU se cambia solo unas log2 de esa cantidad de veces."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Clases usadas",
+						"Quanta dados en total",
+						"Significado"
+					],
+					"rows": [
+						[
+							"1",
+							"1",
+							"Un trabajo muy corto"
+						],
+						[
+							"2",
+							"1 + 2 = 3",
+							"Necesita hasta 3 quanta"
+						],
+						[
+							"3",
+							"1 + 2 + 4 = 7",
+							"Necesita hasta 7"
+						],
+						[
+							"5",
+							"31",
+							"Necesita hasta 31 con solo 5 movimientos"
+						]
+					],
+					"caption": "Quanta que se duplican: el número de movimientos crece como un logaritmo"
+				},
+				{
+					"type": "heading",
+					"text": "Tiempo real"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un sistema de tiempo real atiende eventos periódicos. Si un evento cuesta C milisegundos de CPU cada P milisegundos, usa la fracción C/P de la CPU. El conjunto solo se puede planificar si la **suma de C/P es como máximo 1** (suponiendo que el cambio de contexto es gratis). Algoritmos como el **EDF** (earliest deadline first, plazo más cercano primero) pueden planificar cualquier conjunto que cumpla esto. Ejemplo: 20 ms cada 100 ms (0,2) y 100 ms cada 400 ms (0,25) dan 0,45, que cabe."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El SJF solo minimiza la espera promedio cuando todos los trabajos se conocen. El round-robin necesita un buen quantum. Las prioridades necesitan aging. Los conjuntos de tiempo real necesitan que la suma de C/P sea como máximo 1."
+				}
+			]
+		},
+		{
+			"id": "memory-management",
+			"title": "Gestión de memoria: paginación, TLB, reemplazo de páginas, segmentación",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La memoria es donde viven los programas en ejecución. Dos grandes problemas: los programas no deben leer la memoria de los demás, y un programa no debería necesitar caber entero en la memoria real. La solución es la **memoria virtual**: cada proceso ve sus propias direcciones privadas (**direcciones virtuales**), y el hardware las traduce a direcciones reales (**direcciones físicas**)."
+				},
+				{
+					"type": "heading",
+					"text": "Paginación"
+				},
+				{
+					"type": "paragraph",
+					"text": "La memoria virtual se corta en trozos iguales llamados **páginas**; la memoria real se corta en trozos del mismo tamaño llamados **marcos de página** (page frames), como un estante con cajas todas del mismo tamaño. Una **tabla de páginas** dice qué marco guarda cada página. Una dirección virtual tiene dos partes: el **número de página** (bits altos) y el **desplazamiento** (offset, bits bajos, el lugar dentro de la página). La traducción cambia el número de página por el número de marco y copia el desplazamiento sin cambios."
+				},
+				{
+					"type": "paragraph",
+					"text": "Con páginas de 4096 bytes, el desplazamiento tiene 12 bits (2 elevado a 12 es 4096). Ejemplo: dirección virtual 8200. Dividiendo, página = 2 (2 x 4096 = 8192) y desplazamiento = 8. Si la página 2 está en el marco 7, la dirección física es 7 x 4096 + 8 = 28680."
+				},
+				{
+					"type": "diagram",
+					"content": "dirección virtual 8200\n+--------------------+----------------+\n| número de página=2 | desplazamiento 8 |\n+--------------------+----------------+\n         |                |\n tabla de páginas: 2 -> 7 |\n         v                v\n+--------------------+----------------+\n| número de marco=7  | desplazamiento 8 |  = 7*4096 + 8 = 28680\n+--------------------+----------------+",
+					"caption": "Traducción de dirección con páginas de 4 KB"
+				},
+				{
+					"type": "heading",
+					"text": "¿Qué tan grande es la tabla de páginas?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Número de páginas virtuales = tamaño del espacio de direcciones dividido entre el tamaño de página. En bits: bits de la dirección menos bits del desplazamiento. Con direcciones de 32 bits y páginas de 4 KB, 32 - 12 = 20, así que 2^20 = 1.048.576 páginas. Una tabla de un nivel necesita **una entrada por página virtual**, se use o no, lo que da cerca de un millón de entradas por proceso (4 MB con 4 bytes cada una). Con direcciones de 64 bits se vuelve imposible."
+				},
+				{
+					"type": "paragraph",
+					"text": "Una **tabla multinivel** lo arregla. La tabla de primer nivel apunta a tablas de segundo nivel, y las entradas de las regiones no usadas simplemente se marcan como ausentes. Con 10 + 10 + 12 bits: descarta los 12 bits del desplazamiento; luego los 10 bits de arriba indexan la primera tabla y los 10 bits siguientes indexan la segunda. Para la dirección 0x00C02010: los 10 bits de arriba dan 3 (PT1 = 3), los 10 siguientes dan 2 (PT2 = 2) y el desplazamiento es 0x010 = 16. Cambiamos un poco de tiempo de traducción por un gran ahorro de memoria. Una **tabla de páginas invertida** va al revés: una entrada por marco físico, así que crece con la memoria real. El precio es que la búsqueda ya no es un índice directo, por lo que se usa un hash de la dirección virtual y la TLB hace la mayor parte del trabajo."
+				},
+				{
+					"type": "heading",
+					"text": "Fallos de página y la entrada de la tabla de páginas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Solo algunas páginas están en la memoria real. El **bit presente/ausente** de cada entrada dice si la página está cargada. Tocar una página ausente causa una trap llamada **fallo de página** (page fault). El SO elige un marco, carga la página desde el disco, actualiza la tabla y reinicia la instrucción. Otros bits ayudan: el **bit R** (referenciada: se activa cuando la página se lee o se escribe) y el **bit M** (modificada o sucia, dirty: se activa en la primera escritura). Una página sucia debe escribirse en el disco antes de reutilizar el marco, mientras que una página limpia puede simplemente descartarse, por eso los algoritmos prefieren víctimas limpias."
+				},
+				{
+					"type": "heading",
+					"text": "La TLB"
+				},
+				{
+					"type": "paragraph",
+					"text": "Leer la tabla de páginas en memoria haría que cada acceso fuera el doble de lento. Pero los programas usan pocas páginas a la vez, así que un pequeño caché rápido de traducciones, la **TLB** (translation lookaside buffer), responde la mayoría de las preguntas. En un **acierto de TLB** (hit) la respuesta está ahí. En un **fallo** (miss) se lee la tabla de páginas y la entrada se carga en la TLB. El tiempo efectivo es un promedio ponderado: la consulta a la TLB siempre ocurre, y un fallo añade un acceso a memoria por nivel de tabla."
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo: acceso a memoria 100 ns, consulta a la TLB 10 ns, tasa de aciertos 90%, tabla de un nivel. Tiempo efectivo = 10 + 100 + 0,10 x 100 = 120 ns. Cuanto mayor la tasa de aciertos, más cerca de 110 ns (consulta más un acceso)."
+				},
+				{
+					"type": "heading",
+					"text": "Reemplazo de páginas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando la memoria está llena y se necesita una página nueva, alguna página debe salir. ¿Cuál?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Algoritmo",
+						"Expulsa",
+						"Nota"
+					],
+					"rows": [
+						[
+							"Óptimo",
+							"La página que se usará más lejos en el futuro",
+							"Imposible en la práctica; se usa como vara de medir"
+						],
+						[
+							"FIFO",
+							"La página que llegó primero, la más antigua en memoria",
+							"Ignora si se usó hace poco; un acierto no cambia la cola"
+						],
+						[
+							"LRU",
+							"La página sin uso desde hace más tiempo",
+							"Un acierto renueva la página. El LRU exacto es caro"
+						],
+						[
+							"Segunda oportunidad / Reloj",
+							"Una página con R = 0, recorriendo en círculo; si R = 1, lo pone en 0 y sigue",
+							"Aproximación barata del LRU"
+						],
+						[
+							"Aging",
+							"Contadores desplazados en cada tic",
+							"Otra aproximación del LRU"
+						]
+					],
+					"caption": "Algoritmos comunes de reemplazo de páginas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo con 3 marcos y referencias 1, 2, 3, 1, 4, 1. FIFO: las páginas 1, 2, 3 se cargan (3 fallos); el acierto en 1 no cambia nada; el 4 expulsa la página 1 (la más antigua) aunque acaba de usarse; luego el 1 vuelve a fallar. Total 5 fallos. LRU: el 4 expulsa la página 2 (sin uso desde hace más tiempo) y el último 1 es un acierto. Total 4 fallos."
+				},
+				{
+					"type": "paragraph",
+					"text": "En el algoritmo del **reloj** (clock) los marcos están en un círculo con una manecilla. En un fallo, si la página bajo la manecilla tiene R = 0, se reemplaza. Si R = 1, el bit se pone en 0 y la manecilla avanza. Una página solo sobrevive a una vuelta completa si se usa de nuevo mientras tanto."
+				},
+				{
+					"type": "heading",
+					"text": "Anomalía de Belady y thrashing"
+				},
+				{
+					"type": "paragraph",
+					"text": "Esperarías que más marcos significaran menos fallos. Eso es cierto para los **algoritmos de pila** (LRU, óptimo): las páginas retenidas con n marcos siempre están dentro de las retenidas con n+1. El FIFO no es uno de ellos. En la cadena clásica 1,2,3,4,1,2,5,1,2,3,4,5 el FIFO da **9** fallos con 3 marcos y **10** con 4. Esta sorpresa es la **anomalía de Belady**."
+				},
+				{
+					"type": "chart",
+					"title": "Fallos de página del FIFO en 1,2,3,4,1,2,5,1,2,3,4,5",
+					"unit": "fallos",
+					"bars": [
+						{
+							"label": "3 marcos",
+							"value": 9
+						},
+						{
+							"label": "4 marcos",
+							"value": 10
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "El **conjunto de trabajo** (working set) de un proceso es el conjunto de páginas que usa en una ventana de tiempo reciente. Si la memoria no puede contener los conjuntos de trabajo de todos los procesos activos, se roban páginas unos a otros y la máquina pasa el tiempo intercambiando páginas en lugar de trabajar. Esto es **thrashing**. Señales típicas: poco uso de la CPU, un disco de paginación casi siempre ocupado, muchos procesos en memoria. Meter más procesos lo empeora; la cura es el control de carga, es decir, reducir el número de procesos que compiten por la memoria (o añadir memoria)."
+				},
+				{
+					"type": "heading",
+					"text": "Segmentación y listas de memoria libre"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **segmento** es una unidad de tamaño variable que coincide con lo que usa el programa (código, pila, una tabla). Encaja bien, pero con el tiempo la memoria se llena de huecos pequeños entre segmentos (**efecto tablero de ajedrez**, o fragmentación externa). La **compactación** une los huecos, pero es cara. La paginación usa trozos de tamaño fijo: cualquier marco libre sirve para cualquier página, y el desperdicio queda solo dentro de la última página de una región (fragmentación interna)."
+				},
+				{
+					"type": "paragraph",
+					"text": "Para colocar una petición de tamaño variable en una lista de huecos: el **first fit** (primer ajuste) toma el primer hueco suficientemente grande (rápido). El **best fit** (mejor ajuste) toma el hueco más pequeño suficientemente grande (recorre todo y deja pedazos diminutos inútiles). El **worst fit** (peor ajuste) toma el hueco más grande, esperando que el resto siga siendo útil. Ejemplo: huecos de 10, 4, 25, 6, 15 KB en orden de dirección, petición de 5 KB. El first fit usa el de 10, el best fit usa el de 6, el worst fit usa el de 25. Las simulaciones muestran que el first fit suele ser tan bueno como los otros."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Dirección = número de página + desplazamiento. Tamaño de la tabla de páginas = número de páginas virtuales por el tamaño de la entrada. El FIFO puede empeorar con más memoria; el LRU no. Thrashing significa que los conjuntos de trabajo no caben."
+				}
+			]
+		},
+		{
+			"id": "file-systems",
+			"title": "Sistemas de archivos",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "La memoria se olvida cuando se va la luz. Un **sistema de archivos** es la manera en que el disco guarda información durante mucho tiempo, como **archivos** (cajas con nombre llenas de bytes) dentro de **directorios** (carpetas). El sistema operativo esconde el disco real, que solo sabe 'dame el bloque número 4.000', y ofrece nombres y rutas en su lugar."
+				},
+				{
+					"type": "heading",
+					"text": "Abrir un archivo"
+				},
+				{
+					"type": "paragraph",
+					"text": "Encontrar un archivo es la parte cara: recorrer cada directorio de la ruta, hallar la descripción del archivo y comprobar los permisos. Por eso el programa primero llama a `open`. El SO hace este trabajo una vez y guarda el resultado en tablas del kernel. Devuelve un número pequeño, el **descriptor de archivo** (file descriptor). Después, `read` y `write` usan el número, y la posición de lectura actual queda ligada a ese open."
+				},
+				{
+					"type": "heading",
+					"text": "El i-node: la descripción de un archivo"
+				},
+				{
+					"type": "paragraph",
+					"text": "En los sistemas tipo UNIX cada archivo tiene un **i-node** (index node) con sus atributos (dueño, permisos, tamaño, fechas) y las direcciones de sus bloques. Un directorio es solo una tabla de pares: un **nombre** y un **número de i-node**. El **nombre no está en el i-node**. Separar nombre y descripción permite varios nombres para un archivo y hace que renombrar un archivo solo cambie el directorio."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Enlace duro (hard link)",
+						"Enlace simbólico (soft link)"
+					],
+					"rows": [
+						[
+							"Qué es",
+							"Otra entrada de directorio para el mismo i-node",
+							"Un pequeño archivo especial cuyo contenido es una ruta"
+						],
+						[
+							"Contador de enlaces",
+							"El i-node cuenta las entradas",
+							"No cuenta"
+						],
+						[
+							"Se elimina el original",
+							"El archivo permanece hasta que el contador llega a 0 (y nadie lo tiene abierto)",
+							"El enlace queda colgando: apunta a una ruta que ya no existe"
+						],
+						[
+							"Cruza sistemas de archivos / directorios",
+							"No",
+							"Sí"
+						]
+					],
+					"caption": "Dos tipos de enlace"
+				},
+				{
+					"type": "paragraph",
+					"text": "`rm` llama a `unlink`: quita una entrada de directorio y resta 1 al contador. Solo cuando llega a cero, y ningún proceso tiene el archivo abierto, se liberan el i-node y los bloques. Si un archivo tiene dos nombres y quitas uno, el archivo sigue existiendo con el otro."
+				},
+				{
+					"type": "heading",
+					"text": "Cómo se encuentran los bloques de un archivo"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Asignación contigua**: un archivo es una serie de bloques vecinos; se describe con el primer bloque y la longitud. Muy rápida de leer, pero borrar archivos deja huecos y hay que saber el tamaño final al crearlo. Por eso funciona en CD y DVD de una sola escritura (nunca se borra nada) pero no en discos normales.",
+						"**Lista enlazada con tabla en memoria (FAT)**: cada entrada de la tabla guarda el número del siguiente bloque del archivo. Hay una entrada por cada bloque del disco, así que la tabla crece con el disco. Ejemplo: un disco de 8 GB con bloques de 4 KB tiene 2^33 / 2^12 = 2.097.152 entradas; con 4 bytes cada una, son 8 MB de tabla, toda en memoria.",
+						"**I-node con punteros**: algunos punteros directos para los primeros bloques y un puntero indirecto a un bloque lleno de direcciones. El número de direcciones en un bloque es el tamaño del bloque dividido entre el tamaño de la dirección. Los punteros indirectos dobles y triples repiten la idea."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo: un i-node con 12 punteros directos y 1 puntero indirecto simple, bloques de 1 KB, direcciones de 4 bytes. Un bloque indirecto guarda 1024 / 4 = 256 direcciones. El archivo máximo tiene 12 + 256 = 268 bloques = 268 KB."
+				},
+				{
+					"type": "diagram",
+					"content": "i-node\n+---------+\n| dueño ..|\n| directo1|--> [datos]\n| ...     |--> [datos]\n| directo12-->[datos]\n| indirecto|--> [bloque de 256 direcciones]\n+---------+        |--> [datos]\n                   |--> [datos] ...",
+					"caption": "Punteros directos e indirectos"
+				},
+				{
+					"type": "heading",
+					"text": "Tamaño del bloque"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un compromiso. Los **bloques grandes** significan menos búsquedas y menos entradas, por tanto mayor tasa de datos, pero crece el espacio no usado al final del último bloque de cada archivo (slack). Como la mayoría de los archivos son pequeños, los bloques enormes desperdician mucho disco. Los **bloques pequeños** desperdician poco pero vuelven más lento el disco."
+				},
+				{
+					"type": "heading",
+					"text": "Caídas: journaling y fsck"
+				},
+				{
+					"type": "paragraph",
+					"text": "Borrar un archivo requiere varios pasos en lugares distintos: quitar la entrada del directorio, liberar el i-node, devolver los bloques. Un corte de luz en medio deja el disco inconsistente. Con **journaling**, el sistema primero escribe en un registro (log) lo que va a hacer, y luego lo hace. Después de una caída reproduce el registro. Algunos pasos pueden haberse hecho ya, así que cada paso registrado debe ser **idempotente**: hacerlo dos veces da el mismo resultado que una."
+				},
+				{
+					"type": "paragraph",
+					"text": "Un verificador como **fsck** mantiene dos contadores por bloque: en cuántos archivos aparece y cuántas veces está en la lista de libres. Un bloque sano tiene exactamente 1 en un contador y 0 en el otro. Un bloque que no está en ninguno vuelve a la lista de libres. Un bloque en dos archivos es grave: borrar uno liberaría un bloque que el otro aún usa, así que el verificador hace una copia del bloque para cada archivo."
+				},
+				{
+					"type": "heading",
+					"text": "VFS y sistemas de archivos estructurados en registro"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un sistema UNIX puede montar muchos tipos de sistemas de archivos en un solo árbol. La capa **VFS** (virtual file system, sistema de archivos virtual) define objetos comunes (superblock, v-node, directorio) y una lista de operaciones que cada sistema de archivos real implementa. Los programas siempre usan las mismas llamadas POSIX y no les importa lo que hay debajo."
+				},
+				{
+					"type": "paragraph",
+					"text": "Los discos son lentos en escrituras pequeñas y dispersas. Un **sistema de archivos estructurado en registro (LFS)** junta todas las escrituras pendientes (datos, i-nodes, directorios) en memoria y las escribe juntas como un segmento largo al final de un registro. Un mapa de i-nodes dice dónde está la copia más nueva de cada i-node. Las copias viejas se acumulan, así que un **limpiador** (cleaner) copia lo que sigue siendo válido y libera segmentos."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El nombre vive en el directorio, los atributos en el i-node. Un enlace duro añade un nombre; un enlace simbólico guarda una ruta. Los pasos del journal deben ser idempotentes. El tamaño de la tabla FAT depende del tamaño del disco, no de los archivos abiertos."
+				}
+			]
+		},
+		{
+			"id": "input-output",
+			"title": "Entrada y salida: interrupciones, drivers, discos, RAID",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Teclados, pantallas, discos, impresoras, tarjetas de red: todos son muy distintos y mucho más lentos que la CPU. El sistema operativo debe hablar con todos de forma ordenada. Cada dispositivo tiene un **controlador** (un chip pequeño) con registros para comandos, estado y datos."
+				},
+				{
+					"type": "heading",
+					"text": "Llegar al controlador"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**E/S mapeada en puertos** (port-mapped I/O): los registros viven en un espacio de direcciones aparte, al que se llega con instrucciones especiales.",
+						"**E/S mapeada en memoria** (memory-mapped I/O): los registros aparecen en direcciones de la memoria normal. La protección es simple: el SO solo no mapea esas páginas para los procesos de usuario, usando la gestión de memoria normal."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Tres formas de hacer E/S"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Forma",
+						"Cómo funciona",
+						"Interrupciones para un búfer de 1.000 caracteres"
+					],
+					"rows": [
+						[
+							"E/S programada",
+							"La CPU da vueltas en un bucle preguntando al dispositivo '¿ya estás listo?'",
+							"Ninguna, pero la CPU está ocupada todo el tiempo"
+						],
+						[
+							"E/S por interrupciones",
+							"La CPU hace otro trabajo y el dispositivo la interrumpe por cada unidad",
+							"1.000"
+						],
+						[
+							"DMA (acceso directo a memoria)",
+							"Un controlador de DMA mueve los datos entre dispositivo y memoria por sí solo y avisa a la CPU cuando termina toda la cuenta",
+							"1"
+						]
+					],
+					"caption": "E/S programada, por interrupciones y DMA"
+				},
+				{
+					"type": "chart",
+					"title": "Interrupciones para enviar un búfer de 1.000 caracteres",
+					"unit": "interrupciones",
+					"bars": [
+						{
+							"label": "Por interrupciones (una por carácter)",
+							"value": 1000
+						},
+						{
+							"label": "DMA (una para todo el búfer)",
+							"value": 1
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada interrupción cuesta tiempo de CPU, así que para dispositivos rápidos es importante reducirlas. Esa es la ventaja del DMA."
+				},
+				{
+					"type": "heading",
+					"text": "Interrupciones"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una **interrupción** es una señal de un dispositivo que dice 'necesito atención'. La CPU deja lo que hace, guarda dónde estaba, ejecuta una rutina corta (el manejador) y luego vuelve. Una interrupción **precisa** (precise) deja la máquina como si se hubiera detenido exactamente entre dos instrucciones: el contador de programa se guarda en un lugar conocido, todo lo anterior terminó, nada posterior cambió nada. Eso hace fácil reanudar. Las CPU modernas ejecutan muchas instrucciones a la vez (pipelines, fuera de orden), así que necesitan lógica extra en el hardware para presentar esa imagen limpia; si no, el SO tendría que averiguar qué quedó a medias."
+				},
+				{
+					"type": "heading",
+					"text": "Capas del software de E/S"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Capa",
+						"Trabajo"
+					],
+					"rows": [
+						[
+							"Manejadores de interrupciones",
+							"Esconden las interrupciones al resto del sistema"
+						],
+						[
+							"Drivers de dispositivo",
+							"Conocen un dispositivo. Traducen 'leer el bloque n' a los comandos de ese controlador. Normalmente los escribe el fabricante"
+						],
+						[
+							"Software independiente del dispositivo",
+							"Una interfaz uniforme: nombres, protección, búferes, informe de errores, asignación de dispositivos dedicados"
+						],
+						[
+							"Software a nivel de usuario",
+							"Bibliotecas y spooling (por ejemplo una cola de impresión)"
+						]
+					],
+					"caption": "Cada capa tiene un trabajo claro"
+				},
+				{
+					"type": "paragraph",
+					"text": "Gracias a los drivers, se puede añadir un dispositivo nuevo sin cambiar el resto del sistema operativo."
+				},
+				{
+					"type": "heading",
+					"text": "Planificación de disco"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un disco duro tiene un brazo que se mueve sobre **cilindros**. Mover el brazo (la búsqueda, seek) es lento, así que el orden de las peticiones importa."
+				},
+				{
+					"type": "list",
+					"items": [
+						"**FCFS**: atender en orden de llegada. Justo, pero el brazo salta de un lado a otro.",
+						"**SSTF** (shortest seek time first, menor tiempo de búsqueda primero): atiende siempre la petición más cercana. Recorre mucho menos que el FCFS pero no siempre es el mínimo, y con un flujo de llegadas las peticiones de los bordes pueden esperar mucho tiempo.",
+						"**Ascensor (SCAN)**: el brazo va en una dirección atendiendo todo lo que encuentra y luego regresa, como un ascensor en un edificio."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo: el brazo está en el cilindro 40 y llegan peticiones para 10, 45 y 12. FCFS: 30 + 35 + 33 = 98 cilindros. SSTF: va a 45 (5), luego 12 (33), luego 10 (2) = 40 cilindros."
+				},
+				{
+					"type": "chart",
+					"title": "Movimiento del brazo, brazo en 40, peticiones 10, 45, 12",
+					"unit": "cilindros",
+					"bars": [
+						{
+							"label": "FCFS",
+							"value": 98
+						},
+						{
+							"label": "SSTF",
+							"value": 40
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "RAID: muchos discos trabajando como uno"
+				},
+				{
+					"type": "paragraph",
+					"text": "El RAID une discos para ganar velocidad, seguridad o ambas. El **striping** (reparto en franjas) distribuye los datos entre discos para que trabajen en paralelo. El **espejado** (mirroring) guarda una copia. La **paridad** guarda información extra para reconstruir datos perdidos."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Nivel",
+						"Idea",
+						"Capacidad útil (n discos de tamaño S)",
+						"Sobrevive a"
+					],
+					"rows": [
+						[
+							"RAID 0",
+							"Solo striping, sin redundancia",
+							"n x S",
+							"Ningún fallo de disco; menos fiable que un solo disco (cualquier fallo pierde todo)"
+						],
+						[
+							"RAID 1",
+							"Espejado",
+							"S por cada par",
+							"Un disco de un par"
+						],
+						[
+							"RAID 4",
+							"Striping + un disco dedicado de paridad",
+							"(n - 1) x S",
+							"Un disco; el disco de paridad es un cuello de botella"
+						],
+						[
+							"RAID 5",
+							"Striping + paridad repartida entre todos los discos",
+							"(n - 1) x S",
+							"Cualquier disco"
+						]
+					],
+					"caption": "Niveles comunes de RAID"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ejemplo: 4 discos de 1 TB en RAID 5 dan 3 TB para datos. La **paridad** es el XOR de los bloques de datos de la franja. El XOR es su propio inverso, así que cualquier bloque perdido es el XOR de todos los demás, paridad incluida. Ejemplo: D1 = 0101, D3 = 0011, paridad P = 1110. Si muere el disco con D2, D2 = 0101 XOR 0011 XOR 1110 = 1000. La reconstrucción debe leer todos los discos restantes."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El DMA reduce las interrupciones a una por búfer. Los drivers esconden las diferencias entre controladores. El RAID 0 no tiene redundancia. El RAID 5 da n - 1 discos de espacio y sobrevive a un fallo."
+				}
+			]
+		},
+		{
+			"id": "deadlocks",
+			"title": "Deadlocks",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Dos autos llegan a un puente angosto por lados opuestos. Cada uno espera que el otro retroceda. Nadie se mueve nunca. Un **deadlock** (interbloqueo) es un grupo de procesos en el que cada uno espera algo que solo otro miembro del grupo puede dar. Todos quedan bloqueados para siempre."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Deadlock e inanición (starvation) son distintos. En un deadlock los procesos están todos bloqueados. En la inanición, un proceso que está listo nunca es atendido porque siempre se elige a otros primero. Un caso parecido es el **livelock**: los procesos siguen ejecutándose y reaccionando unos a otros, pero nunca avanzan."
+				},
+				{
+					"type": "heading",
+					"text": "Las cuatro condiciones"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un deadlock de recursos necesita estas cuatro a la vez:"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"**Exclusión mutua**: un recurso lo tiene un solo proceso a la vez.",
+						"**Retención y espera** (hold and wait): un proceso que retiene recursos puede pedir más.",
+						"**Sin expropiación**: los recursos no se pueden quitar por la fuerza.",
+						"**Espera circular**: un anillo de procesos, cada uno esperando un recurso que tiene el siguiente."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Rompe cualquiera y el deadlock se vuelve imposible. Esa es la idea detrás de la **prevención**."
+				},
+				{
+					"type": "heading",
+					"text": "Grafo de asignación de recursos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Dibuja los procesos como círculos y los recursos como cuadrados. Una flecha de un recurso a un proceso significa 'posee'. Una flecha de un proceso a un recurso significa 'solicita'. Cuando cada recurso tiene una sola instancia, hay deadlock exactamente cuando el grafo tiene un **ciclo**, y los procesos del ciclo son los que están en deadlock."
+				},
+				{
+					"type": "diagram",
+					"content": "  A tiene R, quiere S\n  B tiene S, quiere T\n  C tiene T, quiere R\n\n   A --quiere--> S --retenido por--> B\n   ^                                 |\n   |                               quiere\n retenido por                        v\n   |                                 T\n   R <--------quiere--------------- C   (C tiene T)\n\n El anillo A -> B -> C -> A nunca se abre: DEADLOCK",
+					"caption": "Un ciclo de espera. Un proceso que espera pero no está en un ciclo aún puede continuar más tarde."
+				},
+				{
+					"type": "heading",
+					"text": "Cuatro maneras de tratar los deadlocks"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Estrategia",
+						"Idea",
+						"Costo"
+					],
+					"rows": [
+						[
+							"Ignorar (el algoritmo del avestruz)",
+							"Fingir que no ocurre. Si ocurre, el usuario reinicia algo",
+							"Gratis. La usan la mayoría de los sistemas de uso general porque las otras soluciones tienen costos que los usuarios no aceptarían"
+						],
+						[
+							"Detectar y recuperar",
+							"Dejar que ocurra, encontrar el ciclo y luego matar un proceso o quitar un recurso",
+							"Requiere trabajo de detección y un plan de recuperación"
+						],
+						[
+							"Evitar",
+							"Comprobar cada petición y rechazar las que podrían llevar a deadlock (algoritmo del banquero)",
+							"Requiere conocer de antemano las necesidades máximas"
+						],
+						[
+							"Prevenir",
+							"Negar una de las cuatro condiciones",
+							"Restricciones sobre cómo funcionan los programas"
+						]
+					],
+					"caption": "Cómo tratar los deadlocks"
+				},
+				{
+					"type": "heading",
+					"text": "Prevención en la práctica"
+				},
+				{
+					"type": "paragraph",
+					"text": "La forma más práctica es **ordenar los recursos**: numera todas las cerraduras y exige que un thread pida solo una cerradura con un número **mayor** que todas las que ya tiene. Así un ciclo es imposible, porque siguiendo las flechas los números solo crecen. Esto niega la condición de **espera circular**. El precio es la disciplina: a veces hay que soltar y volver a tomar cerraduras para respetar el orden."
+				},
+				{
+					"type": "paragraph",
+					"text": "Otra idea es intentar la cerradura sin bloquear (`trylock`) y, si falla, soltar lo que se tiene y empezar de nuevo. Esto niega la **retención y espera**, pero puede causar livelock: dos procesos repitiendo el mismo baile para siempre, como dos personas que se mueven al mismo lado en un pasillo. Esperar un tiempo aleatorio antes de reintentar suele ayudar."
+				},
+				{
+					"type": "heading",
+					"text": "Estados seguros e inseguros"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un estado es **seguro** si existe algún orden en el que todos los procesos pueden terminar, incluso si cada uno pide su máximo. Un estado **inseguro** no significa que el deadlock ya ocurrió; significa que se perdió la garantía y el resultado depende de la suerte. El **algoritmo del banquero** funciona como un banquero cuidadoso con dinero limitado: solo concede una petición si el nuevo estado sigue siendo seguro, aunque haya recursos libres."
+				},
+				{
+					"type": "paragraph",
+					"text": "Para probar la seguridad: necesidad restante = máximo - asignado. Busca un proceso cuya necesidad restante quepa en lo que está libre. Finge que termina y devuelve todo. Repite. Si todos pueden terminar, el estado es seguro."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Proceso",
+						"Tiene",
+						"Máximo",
+						"Necesita más",
+						"¿Puede terminar ahora? (3 libres)"
+					],
+					"rows": [
+						[
+							"A",
+							"3",
+							"9",
+							"6",
+							"No, necesita 6"
+						],
+						[
+							"B",
+							"2",
+							"4",
+							"2",
+							"Sí, necesita 2"
+						],
+						[
+							"C",
+							"2",
+							"7",
+							"5",
+							"No, necesita 5"
+						]
+					],
+					"caption": "Un tipo de recurso, 10 unidades en total, 3 libres. B necesita 2 y puede terminar: lo libre pasa a 5. Luego C necesita 5 y termina: lo libre pasa a 7. Luego A necesita 6: todos terminan. Orden seguro B, C, A."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El deadlock necesita las cuatro condiciones. Ordenar las cerraduras niega la espera circular. Un estado seguro tiene al menos un orden en el que todos terminan. Inseguro no significa que ya haya deadlock."
+				}
+			]
+		},
+		{
+			"id": "virtualisation-and-cloud",
+			"title": "Virtualización y la nube",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagina un edificio grande dividido en muchos apartamentos separados. Cada familia cree que es dueña de su casa, pero todas comparten las mismas paredes y tuberías. La **virtualización** hace eso con las computadoras: una máquina real finge ser varias. Cada máquina de mentira es una **máquina virtual** (VM) y tiene su propio sistema operativo, llamado **invitado** (guest). La nube lo usa mucho: una empresa te alquila una VM en lugar de una computadora entera."
+				},
+				{
+					"type": "heading",
+					"text": "El hypervisor"
+				},
+				{
+					"type": "paragraph",
+					"text": "El programa que crea la ilusión es el **hypervisor** (o monitor de máquinas virtuales, VMM)."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Tipo",
+						"Dónde se ejecuta",
+						"Uso típico"
+					],
+					"rows": [
+						[
+							"Tipo 1",
+							"Directamente sobre el hardware, en el modo más privilegiado",
+							"Servidores y la nube"
+						],
+						[
+							"Tipo 2",
+							"Como una aplicación normal de un sistema operativo anfitrión (host)",
+							"Computadoras personales: fácil de instalar"
+						]
+					],
+					"caption": "Dos tipos de hypervisor"
+				},
+				{
+					"type": "heading",
+					"text": "Trap y emulación"
+				},
+				{
+					"type": "paragraph",
+					"text": "El SO invitado cree que está en modo kernel, pero en realidad se ejecuta en modo usuario, así que el hypervisor sigue al mando. Cuando el invitado intenta una instrucción privilegiada, la CPU hace una trap al hypervisor, que finge ejecutarla y regresa. Esto es **trap and emulate**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Solo funciona si toda instrucción **sensible** (la que se comporta distinto según el modo o toca el estado privilegiado de la máquina) también es **privilegiada** (hace trap en modo usuario). Este es el criterio de **Popek y Goldberg**: las instrucciones sensibles deben ser un subconjunto de las privilegiadas. El x86 original lo incumplía: algunas instrucciones sensibles hacían silenciosamente otra cosa en modo usuario, sin trap. Las soluciones fueron la **traducción binaria** (reescribir el código del invitado al vuelo) y más tarde el **soporte de hardware** (Intel VT-x, AMD-V)."
+				},
+				{
+					"type": "heading",
+					"text": "Virtualización completa y paravirtualización"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Virtualización completa",
+						"Paravirtualización"
+					],
+					"rows": [
+						[
+							"El invitado ve",
+							"Una copia fiel del hardware",
+							"Una interfaz especial de hypercalls (como llamadas al sistema hacia el hypervisor)"
+						],
+						[
+							"¿Invitado modificado?",
+							"No, se ejecuta sin modificar",
+							"Sí, su kernel se adapta"
+						],
+						[
+							"Beneficio",
+							"Ejecuta cualquier SO",
+							"Mejor rendimiento y un hypervisor más simple"
+						],
+						[
+							"Costo",
+							"Más trabajo para ser fiel",
+							"Hay que mantener versiones modificadas de cada SO"
+						]
+					],
+					"caption": "Dos estilos"
+				},
+				{
+					"type": "heading",
+					"text": "Memoria con máquinas virtuales"
+				},
+				{
+					"type": "paragraph",
+					"text": "Hay tres tipos de dirección: **virtual del invitado**, **física del invitado** y **física de la máquina** (la real). El invitado controla solo la primera traducción. Sin ayuda del hardware, el hypervisor mantiene **tablas de páginas sombra** (shadow page tables) que van directamente de virtual del invitado a física de la máquina, y debe interceptar cada escritura del invitado en sus propias tablas para mantenerlas sincronizadas, lo cual es caro. Las CPU modernas tienen **tablas de páginas anidadas** (EPT en Intel, NPT en AMD) que hacen las dos traducciones en hardware."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "El tipo 1 va sobre el hardware, el tipo 2 va sobre un SO anfitrión. Trap and emulate necesita que las instrucciones sensibles sean privilegiadas. Las tablas sombra son un rodeo por software que las tablas anidadas reemplazan."
+				}
+			]
+		},
+		{
+			"id": "multiple-processor-systems",
+			"title": "Sistemas con múltiples procesadores",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Hoy incluso los teléfonos tienen varios núcleos de CPU. Con una CPU, los programas solo parecen ejecutarse juntos porque se turnan rápidamente. Con varias CPU, dos trozos de código realmente se ejecutan **en el mismo instante**, lo que crea problemas nuevos para el kernel."
+				},
+				{
+					"type": "heading",
+					"text": "Por qué apagar las interrupciones no basta"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con una CPU, todo lo que puede interrumpir un trozo de código del kernel viene de las interrupciones y de los cambios de contexto que provocan. Así que deshabilitar las interrupciones hace segura una región crítica corta. En un multiprocesador, deshabilitar las interrupciones afecta **solo a esa CPU**. Otra CPU puede entrar al mismo código en el mismo momento. Por eso necesitamos **cerraduras** construidas sobre instrucciones atómicas (como la TSL), normalmente combinadas con deshabilitar las interrupciones localmente."
+				},
+				{
+					"type": "heading",
+					"text": "¿Girar o bloquear?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Cuando un thread encuentra la cerradura tomada, puede **girar** (espera activa, seguir preguntando) o **bloquearse** (dormir y ceder la CPU)."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Girar (spinning)",
+						"Bloquear"
+					],
+					"rows": [
+						[
+							"Costo",
+							"Desperdicia ciclos de CPU mientras espera",
+							"Guarda el contexto, elige otro thread, pierde parte del contenido del caché y después deshace todo"
+						],
+						[
+							"Mejor cuando",
+							"La cerradura se retiene por un tiempo muy corto (menor que bloquear y despertar)",
+							"La espera será larga"
+						]
+					],
+					"caption": "Girar o bloquear"
+				},
+				{
+					"type": "paragraph",
+					"text": "Por eso las cerraduras alrededor de regiones críticas muy cortas del kernel son **spin locks**. Muchas implementaciones giran durante un tiempo limitado y luego se bloquean si la cerradura sigue tomada, acercándose a lo mejor de ambos."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Con varias CPU, deshabilitar las interrupciones no es exclusión mutua. Usa cerraduras de instrucciones atómicas, girando en esperas cortas y bloqueando en esperas largas."
+				}
+			]
+		},
+		{
+			"id": "security",
+			"title": "Seguridad",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Una escuela deja algunos salones abiertos y otros cerrados con llave, y da a cada persona solo las llaves que necesita. El sistema operativo hace lo mismo con los archivos, la memoria y los dispositivos. El objetivo es que un programa o usuario pueda hacer solo lo que se le permite."
+				},
+				{
+					"type": "heading",
+					"text": "La matriz de protección"
+				},
+				{
+					"type": "paragraph",
+					"text": "Imagina una tabla. Cada **fila** es un dominio (un usuario o proceso). Cada **columna** es un objeto (un archivo, una impresora). Cada **celda** lista los derechos, como leer o escribir. La tabla es enorme y casi toda está vacía, así que se guarda en pedazos:"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"ACL (lista de control de acceso)",
+						"Lista de capacidades (capabilities)"
+					],
+					"rows": [
+						[
+							"Se guarda",
+							"Por columna: unida a cada objeto",
+							"Por fila: unida a cada dominio (el titular guarda los boletos)"
+						],
+						[
+							"Buena para",
+							"Revocar el acceso a un objeto: basta editar su lista",
+							"Comprobación rápida y delegación fácil de derechos"
+						],
+						[
+							"Analogía",
+							"La lista de invitados en la puerta de una fiesta",
+							"Un boleto en tu bolsillo"
+						]
+					],
+					"caption": "Dos maneras de guardar la matriz"
+				},
+				{
+					"type": "paragraph",
+					"text": "Una buena regla es el **mínimo privilegio**: dar a cada programa solo los derechos que realmente necesita."
+				},
+				{
+					"type": "heading",
+					"text": "Desbordamiento de búfer y sus defensas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Un **desbordamiento de búfer** (buffer overflow) ocurre cuando un programa copia más datos en una caja de tamaño fijo de los que caben, derramándose en la memoria vecina. En el ataque clásico los datos contienen código de máquina y sobrescriben la **dirección de retorno** en la pila para que el programa salte a ese código. Lo estudiamos solo para defendernos."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Defensa",
+						"Qué hace",
+						"Qué no detiene"
+					],
+					"rows": [
+						[
+							"Canario de pila (stack canary)",
+							"Un valor secreto colocado antes de la dirección de retorno; si cambió, el programa se detiene",
+							"Ataques que no alteran el canario"
+						],
+						[
+							"DEP / bit NX",
+							"Marca la pila y el heap como no ejecutables, así el código inyectado no se ejecuta",
+							"La reutilización de código legítimo que ya está en memoria"
+						],
+						[
+							"ASLR",
+							"Mueve el código y los datos a direcciones aleatorias en cada ejecución, así el código reutilizable es difícil de encontrar",
+							"Ataques que filtran una dirección"
+						]
+					],
+					"caption": "Las defensas se suman; ninguna basta por sí sola"
+				},
+				{
+					"type": "paragraph",
+					"text": "Con el DEP, los atacantes pasaron a **reutilizar código** ya cargado y ejecutable, y por eso combinamos canarios, DEP y ASLR."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Las ACL cuelgan de los objetos, las capabilities de los dominios. El DEP detiene el código inyectado pero no la reutilización de código existente. Varias capas de defensa funcionan mejor que una sola."
+				}
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntándolo todo",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Todos los temas son partes de una sola historia. Un programa empieza como un **proceso** (con threads). Pide servicios al kernel con **llamadas al sistema**. Comparte datos con seguridad mediante la **sincronización**. El **planificador** le da la CPU. La **memoria virtual** le da las direcciones. Los **archivos** guardan sus datos. La **E/S** llega a los dispositivos. El SO debe evitar los **deadlocks**, puede ejecutarse dentro de una **máquina virtual**, maneja **varias CPU** y hace cumplir la **seguridad**."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Problema",
+						"Herramienta",
+						"Costo o trampa"
+					],
+					"rows": [
+						[
+							"Los programas no deben tocar el hardware",
+							"Modo kernel y modo usuario, llamadas al sistema",
+							"Cada llamada cuesta una trap"
+						],
+						[
+							"Hacer muchas cosas a la vez",
+							"Procesos y threads",
+							"Cambios de contexto; condiciones de carrera"
+						],
+						[
+							"Los datos compartidos se corrompen",
+							"Cerraduras, semáforos, monitores",
+							"Deadlocks; inversión de prioridad"
+						],
+						[
+							"Quién recibe la CPU",
+							"Algoritmos de planificación",
+							"Inanición, efecto convoy"
+						],
+						[
+							"La memoria es pequeña y compartida",
+							"Paginación, TLB, reemplazo",
+							"Fallos de página; thrashing"
+						],
+						[
+							"Guardar datos sin electricidad",
+							"Sistemas de archivos, i-nodes, journaling",
+							"Consistencia tras caídas"
+						],
+						[
+							"Dispositivos lentos",
+							"Interrupciones, DMA, drivers, RAID",
+							"Costo de las interrupciones; tiempo de reconstrucción"
+						],
+						[
+							"Los procesos esperan para siempre",
+							"Ordenación, algoritmo del banquero",
+							"Restricciones a los programas"
+						]
+					],
+					"caption": "Problemas y las herramientas que los resuelven"
+				},
+				{
+					"type": "heading",
+					"text": "Errores comunes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Creer que un proceso listo y uno bloqueado son lo mismo. El listo espera la CPU; el bloqueado espera un evento.",
+						"Creer que el modo cambia al llamar a `read`. Cambia en la trap que hay dentro.",
+						"Creer que más memoria siempre reduce los fallos del FIFO (anomalía de Belady).",
+						"Creer que un estado inseguro ya es un deadlock.",
+						"Creer que deshabilitar las interrupciones basta en un multiprocesador.",
+						"Olvidar que el nombre de un archivo se guarda en el directorio y no en el i-node.",
+						"Confundir deadlock (todos bloqueados), inanición (a uno lo ignoran) y livelock (todos ocupados, sin progreso)."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Casi toda idea en sistemas operativos es un intercambio: velocidad contra seguridad, simplicidad contra justicia, memoria contra tiempo. Al responder una pregunta, piensa qué se gana y cuál es el precio."
+				}
+			]
+		}
+	]
+}

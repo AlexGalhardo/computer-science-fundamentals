@@ -1,0 +1,436 @@
+{
+	"area": "file-systems",
+	"intro": [
+		"Piensa en tu mochila de la escuela. Dentro hay cuadernos, y en cada cuaderno hay hojas. Si quieres encontrar la tarea de matemáticas, no lees toda la mochila desde el principio: sabes en qué cuaderno está y lo abres en la hoja correcta. La computadora tiene el mismo problema. Guarda millones de cosas (fotos, canciones, partidas de juegos, registros de un banco) en un disco, y tiene que encontrar cualquiera de ellas rápido, sin perderla cuando se va la luz. La parte de la computadora que resuelve esto se llama **sistema de archivos**, y las formas ingeniosas de ordenar los datos dentro de un archivo se llaman **organización de archivos**.",
+		"Esto es importante porque el disco es muchísimo más lento que la memoria de la computadora. Traer algo del disco puede tardar lo mismo que cien mil búsquedas en la memoria. Por eso todo el tema se apoya en una idea: **contar cuántas veces vas al disco** e intentar ir lo menos posible. Los celulares, los navegadores, las bases de datos (como la que está detrás de una tienda), los videojuegos y tu laptop usan los trucos de este resumen.",
+		"Al final sabrás cómo funcionan un disco y una memoria flash y cuánto cuesta un acceso, qué es un archivo y qué se puede hacer con él, las cuatro formas de colocar un archivo en el disco (contigua, enlazada, FAT e i-nodes), cómo funcionan las carpetas y los enlaces, cómo recuerda la computadora qué espacio está libre y cómo sobrevive a un corte de energía (journaling), cómo organizar registros dentro de un archivo, cómo comprimirlos, cómo los índices y los árboles B encuentran un registro en pocos pasos y cómo ordenar un archivo demasiado grande para la memoria. Entonces estarás listo para el quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "El panorama general: dos mitades de un mismo tema",
+			"blocks": [
+				{ "type": "paragraph", "text": "Para la computadora, un [[archivo|una bolsa de bytes con nombre, que sigue en el disco después de apagar la computadora]] es solo una fila larga de **bytes** (un byte es un número pequeño, de 0 a 255). La computadora no sabe si los bytes son una foto, una canción o una lista de nombres. El significado lo deciden los programas que escriben y leen." },
+				{ "type": "callout", "tone": "analogy", "text": "Un sistema de archivos es como una biblioteca. Los estantes son el disco. La ficha del catálogo dice en qué estante está cada libro (es el directorio y el i-node). La bibliotecaria lleva una lista de los lugares vacíos (espacio libre) y un diario de lo que está haciendo, para que, si la interrumpen, pueda terminar el trabajo después (el journal)." },
+				{ "type": "paragraph", "text": "El tema tiene dos mitades. La **primera** es el trabajo del sistema operativo: archivos, nombres, carpetas, colocar los bytes en el disco, espacio libre y seguridad ante caídas. La **segunda** es el trabajo de quien diseña el interior de un archivo: registros, índices, árboles B, ordenación y compresión. Ambas obedecen la misma ley: el disco es lento, así que contamos los accesos al disco." },
+				{ "type": "heading", "text": "Palabras que vas a encontrar" },
+				{ "type": "table", "headers": ["Palabra", "Qué significa", "Imagen cotidiana"], "rows": [
+					["Bloque (o cluster)", "El trozo de disco más pequeño que el sistema de archivos entrega o lee de una vez, por ejemplo 4,096 bytes", "Una hoja del cuaderno"],
+					["Registro", "Un elemento de información en un archivo, como todos los datos de un cliente", "Una línea de la lista del curso"],
+					["Campo", "Una parte de un registro, como el nombre o la ciudad", "Una columna de la lista del curso"],
+					["Clave", "Un campo que sirve para encontrar un registro, como un número de identidad", "El número de lista del alumno"],
+					["Índice", "Una lista pequeña y ordenada de claves y de dónde están sus registros", "El índice de contenido de un libro"],
+					["Directorio", "Una lista de nombres y de dónde están los archivos", "Una carpeta"],
+					["I-node", "Una fichita con los datos de un archivo y las direcciones de sus bloques", "La ficha de préstamo de un libro"]
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Un archivo es solo una fila de bytes. Los campos, registros y claves los decide el programa. Y el costo de todo se mide en accesos al disco, no en cuántas cuentitas hace el procesador." }
+			]
+		},
+		{
+			"id": "secondary-storage",
+			"title": "Almacenamiento secundario: disco, flash y costo de acceso",
+			"blocks": [
+				{ "type": "paragraph", "text": "La memoria (RAM) es como el escritorio donde trabajas: pequeño, pero todo lo que hay en él está a un segundo de distancia. El disco, también llamado [[almacenamiento secundario|almacenamiento más grande y barato que la memoria, que conserva los datos sin energía]], es como una biblioteca al otro lado de la ciudad: enorme, pero cada viaje tarda. Un acceso típico a la memoria dura unos 100 nanosegundos. Un acceso típico a un disco magnético dura unos 10 milisegundos. Es una razón de 100,000 a 1." },
+				{ "type": "chart", "title": "Tiempo de un acceso (en nanosegundos)", "unit": "ns", "bars": [
+					{ "label": "Memoria principal", "value": 100 },
+					{ "label": "Disco magnético", "value": 10000000 }
+				] },
+				{ "type": "paragraph", "text": "Por esta distancia, el trabajo que hace el procesador entre dos accesos al disco es casi gratis. Lo que decide la velocidad de un programa de archivos es **cuántos accesos al disco hace**. Los índices, los árboles B y la ordenación externa nacen de este único hecho." },
+				{ "type": "heading", "text": "Dentro de un disco magnético" },
+				{ "type": "diagram", "content": "   un disco con 2 platos (4 superficies)\n\n   superficie = un círculo plano con material magnético\n   pista      = un anillo de una superficie\n   sector     = una rebanada de una pista (a menudo 512 bytes)\n   cilindro   = la misma pista en todas las superficies,\n                apiladas como los anillos de una lata\n\n        pista 5 de la superficie 0   --+\n        pista 5 de la superficie 1   --+-- cilindro 5\n        pista 5 de la superficie 2   --+\n        pista 5 de la superficie 3   --+", "caption": "Las pistas del mismo radio en todas las superficies forman un cilindro" },
+				{ "type": "paragraph", "text": "El disco gira y un brazo con la cabeza de lectura se mueve hacia dentro y hacia fuera. El brazo lee todas las pistas de un cilindro sin moverse, así que conviene grabar un archivo a lo largo de un cilindro antes de pasar al siguiente." },
+				{ "type": "paragraph", "text": "La **capacidad** de un disco es el producto: tamaño del sector x sectores por pista x pistas por cilindro x número de cilindros. Por ejemplo, 512 bytes x 32 sectores x 4 pistas x 100 cilindros = 6,553,600 bytes, es decir, 6.25 MiB (1 MiB = 2^20 = 1,048,576 bytes). La BIOS de las primeras PC solo podía direccionar 1,024 cilindros, 16 cabezas y 63 sectores, y de ese límite viene la antigua **barrera de 504 MiB**." },
+				{ "type": "heading", "text": "Las tres partes de un acceso" },
+				{ "type": "table", "headers": ["Parte", "Qué ocurre", "Tiempo"], "rows": [
+					["Seek (búsqueda)", "El brazo se mueve hasta la pista correcta", "Milisegundos (unos 8 ms en promedio)"],
+					["Retardo rotacional", "Se espera a que el sector deseado pase bajo la cabeza", "En promedio media vuelta"],
+					["Transferencia", "Se leen o escriben los bytes", "Muy pequeño por bloque"]
+				], "caption": "Tiempo de acceso = seek + retardo rotacional + transferencia" },
+				{ "type": "paragraph", "text": "Una vuelta completa dura 60,000 / rpm milisegundos, donde rpm son las vueltas por minuto. Un disco de 5,400 rpm necesita 60,000 / 5,400 = 11.1 ms por vuelta, así que el retardo rotacional promedio (media vuelta) es de unos 5.6 ms. Un disco más rápido, de 10,000 rpm, lo reduce en la misma proporción." },
+				{ "type": "paragraph", "text": "El seek y la rotación son mecánicos, por eso lentos. La transferencia es rápida. Entonces leer **bloques vecinos** paga el seek y la rotación una sola vez, pero leer **bloques dispersos** los paga cada vez. Toma 100 bloques, un seek de 10 ms, un retardo rotacional de 5 ms y una transferencia de 0.2 ms por bloque. Leerlos seguidos cuesta 10 + 5 + 100 x 0.2 = 35 ms. Leerlos uno a uno en lugares al azar cuesta 100 x (10 + 5 + 0.2) = 1,520 ms. Es unas 43 veces más, con los mismos datos." },
+				{ "type": "callout", "tone": "analogy", "text": "Leer seguido es como un autobús que para una vez y lleva a todo el curso. Leer al azar es como llamar un taxi para cada niño: cada uno paga el viaje completo." },
+				{ "type": "heading", "text": "Bloqueo: varios registros por bloque" },
+				{ "type": "paragraph", "text": "Una lectura de disco siempre trae un bloque entero, no un registro. Si un bloque guarda 20 registros (el **factor de bloqueo**), un archivo de 6,000 registros ocupa 300 bloques. Una búsqueda secuencial de una clave que existe examina en promedio cerca de la mitad del archivo, así que hace unas 150 lecturas, no 3,000. El bloqueo divide las lecturas por el factor de bloqueo, pero la búsqueda sigue siendo lineal." },
+				{ "type": "heading", "text": "Memoria flash (SSD)" },
+				{ "type": "paragraph", "text": "Un [[SSD|solid state drive: un disco sin partes móviles, hecho de chips de memoria flash]] no tiene brazo ni giro, así que no tiene seek. Pero la flash NAND tiene una regla extraña: lee y escribe en **páginas** pequeñas, pero solo puede **borrar** un **bloque de borrado** completo (muchas páginas juntas), y cada bloque de borrado aguanta un número limitado de borrados." },
+				{ "type": "list", "items": [
+					"Una página que ya tiene datos no se puede reescribir en el lugar. El disco escribe la nueva versión en una página libre y marca la vieja como inválida.",
+					"La **flash translation layer (FTL)** es un programita dentro del SSD. Guarda una tabla del bloque lógico que pide el sistema de archivos a la página real, y así el SSD parece un disco común.",
+					"La **recolección de basura** copia las páginas válidas de un bloque de borrado casi todo inválido y borra ese bloque.",
+					"La **nivelación de desgaste (wear levelling)** reparte las escrituras entre todos los bloques para que ninguno se gaste primero.",
+					"El comando **TRIM** le avisa al SSD qué bloques liberó el sistema de archivos, para que no copie páginas muertas en vano."
+				] },
+				{ "type": "heading", "text": "Cinta magnética" },
+				{ "type": "paragraph", "text": "En la cinta, cada bloque va seguido de un **espacio** (gap) vacío, porque la cinta necesita lugar para frenar y volver a la velocidad. La longitud usada es S = n x (b + g), donde n es el número de bloques, b es la longitud de datos de un bloque y g es el espacio. Ejemplo: 1,000 registros de 100 bytes, a 1,000 bytes por pulgada, con un espacio de 0.4 pulgada. Un registro por bloque: b = 0.1 pulgada, S = 1,000 x 0.5 = 500 pulgadas. Diez registros por bloque: n = 100, b = 1 pulgada, S = 100 x 1.4 = 140 pulgadas. El bloqueo deja la cinta 3.6 veces más corta, porque hay diez veces menos espacios." },
+				{ "type": "callout", "tone": "remember", "text": "Tiempo de acceso = seek + retardo rotacional + transferencia. Disco contra memoria es unas 100,000 a 1. Por eso las buenas estructuras de archivo reducen el número de seeks, no el número de bytes." }
+			]
+		},
+		{
+			"id": "files-attributes-and-operations",
+			"title": "Archivos, atributos y operaciones",
+			"blocks": [
+				{ "type": "paragraph", "text": "Cuando escribes `fopen(\"clientes.dat\", \"r\")` en C, se encuentran dos cosas distintas. El **archivo físico** es la fila real de bytes que el sistema operativo guarda en el disco. El **archivo lógico** es el nombre que usa tu programa para él, por ejemplo la variable `fp` de tipo `FILE *`. La operación **abrir** une uno con otro. El mismo programa puede unirse a otro archivo físico con solo cambiar el nombre." },
+				{ "type": "callout", "tone": "analogy", "text": "El archivo físico es un libro de verdad en el estante. El archivo lógico es la ficha de lector que sostienes mientras lees. Abrir es el momento en que la bibliotecaria une tu ficha con ese libro." },
+				{ "type": "heading", "text": "Qué hay dentro: bytes y tipos de archivo" },
+				{ "type": "paragraph", "text": "UNIX y Windows tratan un archivo regular como una **secuencia de bytes** simple. El sistema no sabe qué significan los bytes, así que los campos, registros y líneas los decide la **aplicación**. Es el modelo más flexible, y por eso ganó. El sistema conoce solo unos pocos tipos de archivo: **regulares**, **directorios** y **archivos especiales** que representan dispositivos (especial de caracteres para teclados, especial de bloques para discos). Entre los regulares, el único formato que el kernel necesita entender de verdad es el **ejecutable**, que reconoce por el **número mágico** al comienzo del archivo. Una extensión como `.txt` es solo una costumbre que los programas pueden seguir o ignorar." },
+				{ "type": "heading", "text": "Atributos" },
+				{ "type": "paragraph", "text": "Además de sus bytes, un archivo tiene datos sobre él, llamados **atributos** o metadatos: tamaño, dueño, permisos, número de enlaces y tres marcas de tiempo. Esos datos viven en el i-node del archivo, no en los bytes de este." },
+				{ "type": "table", "headers": ["Marca de tiempo", "Significado", "Qué la cambia"], "rows": [
+					["atime", "Último acceso al contenido", "Leer el archivo"],
+					["mtime", "Última modificación del contenido", "Escribir en el archivo (esto también cambia el ctime)"],
+					["ctime", "Último cambio del i-node (metadatos)", "Escribir, y también `chmod`, `chown`, `ln`. No es la fecha de creación"]
+				], "caption": "Ejecutar chmod sobre un archivo cambia solo su ctime, porque el contenido no se leyó ni se escribió" },
+				{ "type": "heading", "text": "Operaciones y el desplazamiento actual" },
+				{ "type": "paragraph", "text": "Todo archivo abierto tiene un **desplazamiento actual (offset)**: el lugar donde ocurre la próxima lectura o escritura. `read` y `write` lo mueven hacia delante. `lseek` solo **cambia el offset**. No hace entrada ni salida, por eso es barato. El costo real aparece en la próxima lectura, cuando el sistema convierte el offset en un bloque y lo trae del disco (a menos que ya esté en el caché)." },
+				{ "type": "heading", "text": "Modos de apertura de fopen" },
+				{ "type": "table", "headers": ["Modo", "¿El archivo debe existir?", "Qué pasa con el contenido viejo", "Dónde van las escrituras"], "rows": [
+					["`r`", "Sí", "Se mantiene", "Solo lectura"],
+					["`r+`", "Sí", "Se mantiene", "En el offset actual"],
+					["`w`, `w+`", "No (se crea)", "Se corta a cero bytes", "En el offset actual"],
+					["`a`, `a+`", "No (se crea)", "Se mantiene", "Siempre al final, incluso después de `fseek`"]
+				] },
+				{ "type": "heading", "text": "Descriptores, entradas de archivo abierto e i-nodes" },
+				{ "type": "diagram", "content": "tabla del proceso        tabla de archivos      tabla de i-nodes\n(una por proceso)         abiertos (del sistema) (uno por archivo)\n\n fd 3 ------------+--->  entrada A: offset 2 ---+\n fd 4 (dup del 3) -+                            +--> i-node de f\n fd 5 ----------------->  entrada B: offset 0 ---+", "caption": "dup y fork copian el descriptor; cada open nuevo crea una entrada nueva" },
+				{ "type": "paragraph", "text": "Hay tres niveles. Un **descriptor** es un número pequeño en la tabla del proceso. Apunta a una **entrada de archivo abierto**, que guarda el offset actual y el modo de apertura. Esta apunta al **i-node**, que tiene los atributos y los bloques. `dup` y `fork` copian el descriptor, así que las dos copias comparten una entrada y un offset. Un `open` separado del mismo archivo crea una entrada nueva con su propio offset." },
+				{ "type": "code", "language": "c", "content": "// el archivo contiene los bytes 0123456\nint a = open(\"f\", O_RDONLY);\nint b = dup(a);                 // misma entrada de archivo abierto que a\nint c = open(\"f\", O_RDONLY);    // entrada nueva, offset 0\nchar buf[2], x, y;\nread(a, buf, 2);                // buf = '0','1'; el offset compartido ahora es 2\nread(b, &x, 1);                 // x = '2', porque el offset es compartido\nread(c, &y, 1);                 // y = '0', porque c tiene su propio offset" },
+				{ "type": "paragraph", "text": "Por eso un proceso padre y un hijo, después de `fork`, escriben uno después del otro en el mismo archivo de salida en lugar de escribir uno encima del otro." },
+				{ "type": "heading", "text": "Dos capas de buffer" },
+				{ "type": "list", "items": [
+					"El **buffer de la biblioteca C** vive en la memoria de tu proceso. `fwrite` pone ahí los bytes para evitar una llamada al sistema por llamada. `fflush` o `fclose` los envían al kernel. Si el proceso muere antes (por ejemplo por SIGKILL), esos bytes se pierden.",
+					"El **caché del kernel** (page cache) recibe los bytes en el `write` y sobrevive a la muerte del proceso. `fsync` lo fuerza hasta el disco. Esos bytes se pierden solo si falla antes la máquina entera."
+				] },
+				{ "type": "heading", "text": "Archivos dispersos y mapeo en memoria" },
+				{ "type": "paragraph", "text": "Si creas un archivo vacío, haces `lseek` al offset 40,960 y escribes un byte, el archivo se vuelve un **archivo disperso (sparse)**. Su tamaño lógico (el que muestra `ls -l`) es 40,961 bytes, pero con bloques de 4 KB solo se asigna el bloque que contiene ese último byte, así que `du` muestra un bloque. La parte saltada es un **hueco** (hole), y leer dentro de él devuelve ceros sin tocar el disco. Copiar un archivo disperso byte a byte puede llenar un disco." },
+				{ "type": "paragraph", "text": "Con `mmap` un proceso puede **mapear** un archivo en memoria: un rango de direcciones corresponde a los bytes del archivo, y el sistema carga las páginas cuando se tocan (paginación por demanda). No hay copia entre el caché del kernel y un buffer del programa, y el acceso aleatorio resulta sencillo. Pero el programa deja de decidir cuándo llegan los datos al disco, a menos que llame a `msync`." },
+				{ "type": "callout", "tone": "warning", "text": "Un `write` exitoso no significa que el dato esté seguro en el disco. Puede seguir en un buffer. Solo `fflush` más `fsync` lo empujan hasta el final." }
+			]
+		},
+		{
+			"id": "allocation-methods",
+			"title": "Asignación: contigua, enlazada, FAT, i-nodes",
+			"blocks": [
+				{ "type": "paragraph", "text": "Un archivo puede necesitar muchos bloques. La **asignación** es la elección de qué bloques del disco pertenecen a qué archivo, y cómo lo recuerda el sistema. Hay cuatro respuestas clásicas." },
+				{ "type": "callout", "tone": "analogy", "text": "Imagina un cine y un curso que quiere sentarse junto. Contigua: el curso recibe las butacas 10 a 19, una al lado de otra. Enlazada: cada niño lleva una nota que dice dónde se sienta el siguiente. FAT: todas las notas se juntan en una lista en la recepción. I-node: la profesora lleva una ficha con la dirección de cada niño." },
+				{ "type": "heading", "text": "1. Asignación contigua" },
+				{ "type": "paragraph", "text": "El archivo queda en una fila de bloques vecinos. La entrada de directorio necesita solo dos números: el **bloque inicial** y el **número de bloques**. La dirección del bloque k es inicio + k, una suma. Por eso el acceso aleatorio y la lectura secuencial son muy rápidos. Los problemas: un archivo que debe crecer puede no encontrar lugar después de él, y cuando se borran archivos el espacio libre se parte en **huecos**. Es la **fragmentación externa**: el espacio libre total puede alcanzar, pero ningún hueco es lo bastante grande para un archivo nuevo. El remedio, la **compactación**, es caro." },
+				{ "type": "heading", "text": "2. Asignación enlazada" },
+				{ "type": "paragraph", "text": "Cada bloque lleva el número del siguiente bloque, y el directorio guarda el número del primero. Sirve cualquier bloque libre, así que no hay fragmentación externa. Pero para llegar al bloque lógico k (contando desde 0) el sistema debe leer los bloques 0, 1, ... hasta k, porque todos los punteros están en el disco: son **k + 1 lecturas**. Además, el puntero ocupa unos bytes de cada bloque, así que la parte de datos deja de ser una potencia de dos, lo que molesta a los programas que leen bloques enteros." },
+				{ "type": "heading", "text": "3. FAT (tabla de asignación de archivos)" },
+				{ "type": "paragraph", "text": "La FAT saca todos los punteros de los bloques y los pone en una **tabla con una entrada por bloque del disco**. La entrada i dice qué bloque sigue al bloque i, o marca el final o un bloque libre. El bloque entero queda libre para datos, y el sistema sigue la cadena **en memoria**." },
+				{ "type": "diagram", "content": "entrada:  0     1     2     3     4     5     6     7\nvalor:    -     5     EOF   LIBRE 1     2     LIBRE -\n\nel archivo empieza en el bloque 4 (viene del directorio):\n   4 --> 1 --> 5 --> 2 --> EOF       archivo = bloques 4, 1, 5, 2", "caption": "Siguiendo una cadena en una FAT" },
+				{ "type": "paragraph", "text": "El precio: la **tabla entera debe estar en memoria**, y es tan grande como el disco, no como el número de archivos en uso. El ancho de la entrada limita el volumen: FAT-12, FAT-16 y FAT-32 usan 12, 16 y 28 bits de dirección. El mayor volumen es el **número de clusters x el tamaño del cluster**. Ejemplo: entradas de 12 bits y clusters de 4 KB dan 2^12 x 2^12 bytes = 16 MiB. Por eso los volúmenes más grandes necesitaron clusters más grandes (más desperdicio), hasta que se ensanchó la entrada." },
+				{ "type": "heading", "text": "4. I-nodes" },
+				{ "type": "paragraph", "text": "Un **i-node** es una fichita de un archivo: sus atributos más las direcciones de sus bloques. Solo los i-nodes de los **archivos en uso** deben estar en memoria, así que la memoria necesaria es proporcional al número de archivos abiertos, mientras que la FAT es proporcional al tamaño del disco. Esa es la gran ventaja." },
+				{ "type": "paragraph", "text": "El i-node tiene unos pocos **punteros directos** a bloques de datos, luego un puntero **indirecto simple** (a un bloque lleno de punteros), un **indirecto doble** (un bloque de bloques de punteros) y un **indirecto triple**. Los archivos pequeños, que son la mayoría, viven enteros en los punteros directos. Un bloque guarda (tamaño del bloque / tamaño del puntero) números. Con bloques de 1 KB y números de 4 bytes son 256." },
+				{ "type": "chart", "title": "Bloques cubiertos por cada tipo de puntero (bloques de 1 KB, números de 4 bytes, 10 punteros directos)", "unit": "bloques", "bars": [
+					{ "label": "Directo (10 punteros)", "value": 10 },
+					{ "label": "Indirecto simple", "value": 256 },
+					{ "label": "Indirecto doble", "value": 65536 },
+					{ "label": "Indirecto triple", "value": 16777216 }
+				] },
+				{ "type": "paragraph", "text": "Cómo encontrar un byte, paso a paso. Toma bloques de 2 KB, números de 4 bytes (así que 512 números por bloque) y 8 punteros directos, y busca el byte en el offset 3,000,000. Primero convierte el offset en bloque lógico: 3,000,000 div 2,048 = 1,464. Los directos cubren los bloques 0 a 7, el indirecto simple cubre 8 a 519, y el indirecto doble empieza en 520. Entonces el bloque está en la zona del indirecto doble, en la posición 1,464 - 520 = 944. Divide 944 entre 512: cociente 1, resto 432. Lee el bloque indirecto doble, toma su entrada 1, lee ese bloque, toma su entrada 432 y lee el bloque de datos." },
+				{ "type": "paragraph", "text": "Convención usada en este resumen y en el quiz: el i-node ya está en memoria y no hay nada en caché, y la cuenta de bloques leídos incluye el bloque de datos. Así que el ejemplo anterior lee 3 bloques: el indirecto doble, un indirecto simple y el de datos. Un bloque directo cuesta 1 lectura, uno indirecto simple cuesta 2, uno doble 3 y uno triple 4." },
+				{ "type": "paragraph", "text": "**El mayor archivo** es el menor de tres límites independientes: cuánto alcanza el árbol de punteros, cuántos bloques puede nombrar el ancho del número de bloque, y qué número puede guardar el **campo de tamaño** del i-node. Los sistemas reales se vieron limitados por cada uno de ellos, uno a la vez, y por eso los campos de tamaño pasaron a 64 bits." },
+				{ "type": "heading", "text": "Extents, falta de i-nodes y archivos pequeños" },
+				{ "type": "list", "items": [
+					"Un **extent** (llamado **run** en NTFS) registra un tramo de bloques contiguos con dos números: el inicio y la longitud. Un archivo en pocos pedazos necesita muy pocos metadatos. Es un punto medio entre la asignación contigua y un puntero por bloque. ext4 y NTFS lo usan.",
+					"Un volumen UNIX clásico tiene dos cosas que se pueden agotar: bloques de datos e i-nodes. El número de i-nodes se fija al formatear el disco. Un disco lleno de archivos diminutos puede decir 'sin espacio' al crear un archivo nuevo aunque queden miles de bloques libres. El comando `df -i` muestra los i-nodes.",
+					"En **NTFS**, todo lo que describe un archivo es un atributo de su registro en la **MFT**, incluidos los datos. Un archivo diminuto (digamos 200 bytes) se guarda **dentro del registro de la MFT** (residente). Los datos grandes van a clusters descritos por runs (no residente)."
+				] },
+				{ "type": "heading", "text": "Fragmentación: los dos tipos" },
+				{ "type": "paragraph", "text": "La **fragmentación interna** es espacio entregado a un archivo y no usado por él: la sobra de su último bloque. Ejemplo: clusters de 4,096 bytes, archivos de 100, 5,000 y 8,192 bytes. Ocupan 1, 2 y 2 clusters, así que el desperdicio es 3,996 + 3,192 + 0 = 7,188 bytes. En promedio se pierde medio bloque por archivo. La **fragmentación externa** es espacio libre cortado en pedazos entre los archivos, demasiado pequeños para usarlos." },
+				{ "type": "table", "headers": ["Método", "Dónde están las direcciones", "Acceso aleatorio", "Punto débil"], "rows": [
+					["Contigua", "Inicio y longitud en el directorio", "Muy rápido", "Fragmentación externa, difícil de crecer"],
+					["Enlazada", "Dentro de cada bloque", "Lento (k + 1 lecturas)", "El puntero se come el bloque; archivo disperso"],
+					["FAT", "Una tabla para todo el disco", "Rápido (cadena en memoria)", "Tabla entera en memoria, crece con el disco"],
+					["I-node", "Una ficha por archivo, con bloques indirectos", "Pocas lecturas", "Número de i-nodes fijo al formatear"]
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Contigua: inicio + longitud. Enlazada: puntero en el bloque. FAT: todos los punteros en una tabla en memoria. I-node: una ficha por archivo, con punteros directos e indirectos. Solo los i-nodes de los archivos abiertos deben estar en memoria." }
+			]
+		},
+		{
+			"id": "directories-and-links",
+			"title": "Directorios y enlaces",
+			"blocks": [
+				{ "type": "paragraph", "text": "No quieres recordar que tu tarea está en el i-node 48,213. Quieres llamarla `tarea.txt`. Un **directorio** es lo que une nombres con archivos. En un sistema de archivos UNIX clásico, un directorio es solo una tabla de pares: un **nombre** y un **número de i-node**. Los atributos y las direcciones de los bloques viven en el i-node, no en la entrada del directorio." },
+				{ "type": "callout", "tone": "analogy", "text": "Un directorio es una guía telefónica. Lista nombres y números. No guarda a la persona. El número del i-node es el número de teléfono; el i-node es la persona que contesta." },
+				{ "type": "heading", "text": "Rutas" },
+				{ "type": "paragraph", "text": "Una **ruta absoluta** empieza en la raíz `/` y no depende de dónde esté el proceso. Una **ruta relativa** se resuelve desde el **directorio de trabajo** del proceso. Todo directorio tiene dos entradas especiales: `.` (el directorio mismo) y `..` (su padre). Son nombres comunes guardados en el directorio. Así, si el directorio de trabajo es `/home/ana`, la ruta `docs/../notes.txt` entra en `docs`, vuelve y termina en `/home/ana/notes.txt`." },
+				{ "type": "heading", "text": "Cómo resuelve el sistema una ruta" },
+				{ "type": "paragraph", "text": "Para abrir `/usr/ast/mbox` el sistema recorre la ruta nombre por nombre. Para cada nombre necesita dos lecturas: el **bloque del directorio actual** (para hallar el número de i-node del siguiente nombre) y luego **ese i-node** (para saber dónde están los bloques del siguiente nivel)." },
+				{ "type": "diagram", "content": "open(\"/a/b/c\")      el i-node de la raíz ya está en memoria\n\n 1. leer el bloque de /      -> halla el número de i-node de a\n 2. leer el i-node de a\n 3. leer el bloque de a      -> halla el número de i-node de b\n 4. leer el i-node de b\n 5. leer el bloque de b      -> halla el número de i-node de c\n 6. leer el i-node de c      -> ahora está en memoria", "caption": "3 componentes cuestan 6 lecturas sin caché. Unas 2n lecturas para n componentes." },
+				{ "type": "paragraph", "text": "Por eso los sistemas mantienen un **caché de nombres**. Suponemos que cada directorio cabe en un bloque." },
+				{ "type": "heading", "text": "Enlaces duros y enlaces simbólicos" },
+				{ "type": "table", "headers": ["Propiedad", "Enlace duro (hard link)", "Enlace simbólico (soft link)"], "rows": [
+					["Qué es", "Otra entrada de directorio con el **mismo número de i-node**", "Un archivo pequeño cuyo contenido es una **ruta**"],
+					["¿Cruza a otra partición?", "No: el número de i-node solo tiene sentido dentro de un sistema de archivos", "Sí: una ruta puede apuntar a cualquier lugar"],
+					["¿Apunta a un directorio?", "No está permitido a usuarios comunes", "Sí"],
+					["Si se borra el destino", "Los datos quedan mientras exista otro nombre", "El enlace queda roto (dangling)"],
+					["Costo", "Ningún i-node nuevo", "Un i-node más y una resolución de ruta más en cada uso"]
+				] },
+				{ "type": "heading", "text": "El contador de enlaces" },
+				{ "type": "paragraph", "text": "El i-node guarda un **contador de enlaces**: cuántas entradas de directorio apuntan a él. Cuando se quita un nombre (`unlink`) el contador baja, y cuando llega a cero (y nadie tiene el archivo abierto) el sistema libera el archivo. Para un directorio: un enlace viene de su nombre en el padre, uno de su propia entrada `.`, y uno de la entrada `..` de **cada subdirectorio directo**. Así, un directorio vacío tiene contador 2, y un directorio con 3 subdirectorios tiene 2 + 3 = 5. El contador menos 2 es el número de subdirectorios." },
+				{ "type": "paragraph", "text": "¿Por qué un usuario común no puede hacer un enlace duro a un directorio? Porque el contador funciona como la regla 'libera en cero' solo cuando el grafo de directorios **no tiene ciclos**. Un ciclo mantendría el contador por encima de cero para algo que nadie alcanza, y haría falta un recolector de basura para encontrarlo. Un enlace simbólico puede apuntar a un directorio porque no entra en el contador, y los programas que recorren el árbol pueden simplemente negarse a seguirlo." },
+				{ "type": "heading", "text": "Mover un archivo" },
+				{ "type": "paragraph", "text": "`mv` dentro de un sistema de archivos llama a `rename`: crea una entrada en el directorio nuevo y quita la vieja. No se toca ningún bloque de datos, así que mover un archivo de 4 GB es instantáneo. Entre dos sistemas de archivos el número de i-node no vale, así que el sistema debe **copiar** los datos y borrar el original." },
+				{ "type": "callout", "tone": "remember", "text": "Entrada de directorio = nombre + número de i-node. Enlace duro = otro nombre para el mismo i-node (solo en el mismo sistema de archivos). Enlace simbólico = un archivo que contiene una ruta. Mover dentro de un sistema de archivos cambia solo entradas de directorio." }
+			]
+		},
+		{
+			"id": "free-space-and-journaling",
+			"title": "Gestión del espacio libre y journaling",
+			"blocks": [
+				{ "type": "paragraph", "text": "Cuando guardas un archivo nuevo, el sistema debe encontrar bloques vacíos. Por eso necesita un registro de qué bloques están libres. Hay dos formas clásicas." },
+				{ "type": "heading", "text": "Mapa de bits (bitmap)" },
+				{ "type": "paragraph", "text": "Un **mapa de bits** tiene **un bit por bloque**: 1 significa usado, 0 significa libre (o al revés). Su tamaño es fijo, cualquiera que sea la ocupación del disco, y facilita encontrar bloques libres vecinos, lo que ayuda a mantener los archivos contiguos. Ejemplo: un disco de 2^38 bytes (256 GB) con bloques de 4 KB (2^12 bytes) tiene 2^26 bloques, así que el mapa tiene 2^26 bits = 2^23 bytes = 8 MiB, que caben en 2^23 / 2^12 = 2,048 bloques. Cuesta cerca de 0.003% del disco." },
+				{ "type": "heading", "text": "Lista enlazada de bloques libres" },
+				{ "type": "paragraph", "text": "Los bloques libres se guardan en una lista. Cada bloque de la lista contiene muchos números de bloques libres y un puntero al siguiente bloque de la lista. Con bloques de 2 KB y números de 32 bits, un bloque de la lista guarda 512 números: 511 números de bloques libres y 1 puntero. Para registrar 102,200 bloques libres hacen falta 102,200 / 511 = 200 bloques de lista. El costo crece con el **espacio libre**, no con el tamaño del disco, y la lista puede vivir dentro de los propios bloques libres, así que no le quita nada a los archivos." },
+				{ "type": "paragraph", "text": "¿Cuál es más pequeña? El mapa de bits cuesta B bits para un disco de B bloques. La lista cuesta 32 bits por bloque libre. La lista solo gana si 32 x (bloques libres) < B, es decir, cuando **menos de 1/32 del disco (cerca de 3%) está libre**. Es un disco casi lleno, así que el mapa de bits es la opción común." },
+				{ "type": "heading", "text": "Caídas: por qué una operación son varias escrituras" },
+				{ "type": "paragraph", "text": "Borrar un archivo en un sistema UNIX sin journal requiere varias escrituras en lugares distintos del disco: (1) quitar la entrada del directorio, (2) liberar el i-node, (3) devolver los bloques de datos a la lista de libres. La energía puede cortarse entre dos de ellas." },
+				{ "type": "table", "headers": ["La caída ocurre después de", "Estado del disco", "Gravedad"], "rows": [
+					["Solo la escritura 1", "El nombre desapareció, pero el i-node y los bloques siguen pareciendo en uso", "Espacio perdido (fuga)"],
+					["Las escrituras 1 y 2", "Sin nombre, i-node libre, pero los bloques no están en ningún archivo ni en la lista de libres", "Espacio perdido (fuga); ningún archivo se daña"],
+					["Si el orden fuera erróneo: bloques liberados primero", "Un nombre aún apunta a bloques que otro archivo puede recibir", "Dos archivos comparten un bloque: corrupción real de datos"]
+				] },
+				{ "type": "paragraph", "text": "El orden de las escrituras decide el daño. Liberar las cosas **al final** solo puede perder espacio, lo cual es mejor que dejar un nombre que apunta a algo ya liberado. El espacio vuelve solo después de una verificación completa con **fsck**." },
+				{ "type": "heading", "text": "El verificador de consistencia" },
+				{ "type": "paragraph", "text": "fsck arma dos tablas con un contador por bloque: cuántas veces aparece el bloque en algún archivo y cuántas veces aparece en la lista de libres. En un disco sano todo bloque tiene exactamente (1, 0) o (0, 1)." },
+				{ "type": "table", "headers": ["En archivos", "En la lista de libres", "Significado", "Arreglo"], "rows": [
+					["1", "0", "Normal, bloque en uso", "Ninguno"],
+					["0", "1", "Normal, bloque libre", "Ninguno"],
+					["0", "0", "**Bloque perdido**: nadie lo tiene, espacio desperdiciado", "Agregarlo a la lista de libres"],
+					["0", "2 o más", "Duplicado en la lista de libres", "Reconstruir la lista de libres"],
+					["2 o más", "0", "Bloque en dos archivos (peligroso)", "Copiar el bloque, dar uno a cada archivo"],
+					["1", "1", "Usado y libre a la vez (peligroso)", "Quitarlo de la lista de libres"]
+				] },
+				{ "type": "heading", "text": "Journaling (registro de escritura anticipada)" },
+				{ "type": "paragraph", "text": "Un journal es un diario. Antes de tocar las estructuras reales, el sistema escribe en el diario lo que va a hacer. Solo cuando la anotación está segura hace los cambios reales. Cuando terminan, la anotación se puede tirar." },
+				{ "type": "diagram", "content": " 1. grabar los cambios planeados en el journal\n 2. grabar un registro de COMMIT   <-- ahora la operación vale\n 3. aplicar los cambios en sus lugares reales\n 4. liberar la anotación del journal\n\n caída antes del 2 : sin commit -> descartar la anotación (no pasó nada)\n caída después del 2: con commit -> rehacer la anotación (pasa todo)", "caption": "Journal de rehacer (redo): cada operación ocurre completa o no ocurre" },
+				{ "type": "paragraph", "text": "Después de una caída el sistema lee el journal, **rehace las transacciones con commit** y **descarta las que no tienen registro de commit**. Es mucho más rápido que revisar todo el disco." },
+				{ "type": "paragraph", "text": "Muchos sistemas de archivos registran en el journal **solo los metadatos** (i-nodes, directorios, mapas de bloques): el journal se mantiene pequeño y rápido, y las estructuras siempre vuelven a un estado consistente. Pero el **contenido** de un archivo que aún estaba en el caché se puede perder. La durabilidad del contenido exige `fsync` o un modo que también registre los datos, lo que escribe cada bloque dos veces." },
+				{ "type": "heading", "text": "Cuotas (quotas)" },
+				{ "type": "paragraph", "text": "Para impedir que un usuario llene el disco, el sistema guarda, para cada usuario, el uso actual de bloques y de i-nodes y dos límites. El **límite blando (soft)** se puede superar por poco tiempo (el usuario recibe avisos). El **límite duro (hard)** nunca se puede superar: la asignación simplemente falla." },
+				{ "type": "callout", "tone": "remember", "text": "Bitmap: 1 bit por bloque, tamaño fijo. Lista de libres: 32 bits por bloque libre, solo gana si menos de 1/32 del disco está libre. El journal escribe la intención primero; la recuperación rehace lo que tiene commit y descarta el resto. Un journal de metadatos protege las estructuras, no tus datos." }
+			]
+		},
+		{
+			"id": "record-organisation",
+			"title": "Organización de registros: fijos, variables, RRN",
+			"blocks": [
+				{ "type": "paragraph", "text": "Supón que un programa escribe nombres y ciudades uno tras otro y el archivo queda así: `AnaSilvaRecifeBrunoLimaNatal`. ¿Dónde termina el nombre y dónde empieza la ciudad? Nadie lo sabe. Un archivo es solo bytes, así que el programa debe **escribir la estructura**. Hay cuatro formas clásicas de separar campos:" },
+				{ "type": "list", "items": [
+					"**Campos de longitud fija**: cada campo tiene el mismo número de bytes, rellenado con espacios.",
+					"**Indicador de longitud**: un número antes de cada campo dice cuántos bytes tiene.",
+					"**Delimitador**: un carácter especial como `|` después de cada campo.",
+					"**Palabra clave y valor**: pares como `ciudad=Recife`."
+				] },
+				{ "type": "heading", "text": "Registros de longitud fija y el RRN" },
+				{ "type": "paragraph", "text": "Si todos los registros tienen el mismo tamaño, la posición de cualquier registro se **calcula, no se busca**. El **RRN** (relative record number, número relativo de registro) es el número de orden del registro en el archivo. En este curso el RRN empieza en 0. Si el archivo tiene un encabezado de H bytes y cada registro tiene R bytes, el registro de número RRN empieza en el byte" },
+				{ "type": "diagram", "content": "desplazamiento = H + RRN x R\n\nejemplo: H = 32, R = 100, RRN = 7\ndesplazamiento = 32 + 7 x 100 = 732\n\nbyte 0       32        132       232\n     +--------+---------+---------+---------+\n     | encab. | RRN 0   | RRN 1   | RRN 2   | ...\n     +--------+---------+---------+---------+" },
+				{ "type": "paragraph", "text": "Un seek va directo al registro: tiempo constante. Esta es la razón por la que el acceso directo por RRN **exige** registros de longitud fija. Además, el número de registros de un archivo es (tamaño del archivo - encabezado) / tamaño del registro. Si la división no es exacta, el archivo está dañado. Ejemplo: un archivo de 4,032 bytes con encabezado de 32 y registros de 100 tiene (4,032 - 32) / 100 = 40 registros." },
+				{ "type": "paragraph", "text": "El precio es el **desperdicio interno**: cada campo se dimensiona para el mayor valor esperado, así que la sobra es relleno (padding). Si un registro tiene campos de 30, 20 y 14 bytes (64 en total) y los valores usan 3, 6 y 11 bytes, 64 - 20 = 44 bytes son relleno." },
+				{ "type": "heading", "text": "Registros de longitud variable" },
+				{ "type": "paragraph", "text": "Aquí cada registro tiene solo el tamaño que necesita, a menudo con un **indicador de longitud** al inicio. El archivo queda más pequeño, pero pierdes el acceso directo: el inicio del siguiente registro solo se conoce después de leer el indicador del registro actual. Ejemplo: registros de 1 + 4, 1 + 7 y 1 + 3 bytes empiezan en los offsets 0, 5 y 13. Para llegar al registro 500 hay que pasar por 499 registros, así que el tiempo es proporcional a n. La solución es un **índice** aparte con el offset de cada registro." },
+				{ "type": "table", "headers": ["Propiedad", "Longitud fija", "Longitud variable"], "rows": [
+					["Encontrar el registro n", "Un seek (offset por fórmula)", "Recorrer desde el inicio, o usar un índice"],
+					["Espacio", "El relleno se desperdicia (desperdicio interno)", "Compacto"],
+					["Borrar y reutilizar espacio", "Cualquier espacio libre sirve para cualquier registro", "Huecos de varios tamaños (fragmentación externa)"]
+				] },
+				{ "type": "heading", "text": "El registro de encabezado" },
+				{ "type": "paragraph", "text": "Un **registro de encabezado** al inicio del archivo guarda datos sobre todo el archivo: un número mágico, una versión, el tamaño del registro, el número de registros, y así sucesivamente. Hace que el archivo sea **autodescriptivo**: quien lo abre lee primero el encabezado y aprende cómo leer el resto. El precio es que el primer registro de datos ya no empieza en el byte 0." },
+				{ "type": "heading", "text": "Orden de los bytes (endianness)" },
+				{ "type": "paragraph", "text": "Un número de 4 bytes se puede guardar con el extremo grande primero (**big-endian**) o el extremo pequeño primero (**little-endian**). Si un programa escribe un entero copiando sus bytes de la memoria, el archivo depende de la máquina. El número 258 es 0x00000102. Una máquina big-endian escribe los bytes 00 00 01 02. Una máquina little-endian que lee esos bytes directo en un entero arma 0x02010000 = 33,619,968. Un **formato portable** fija el orden de los bytes de cada campo, y los programas convierten al leer y al escribir. Con un formato acordado, N arquitecturas necesitan 2N convertidores en lugar de uno por cada par." },
+				{ "type": "heading", "text": "La forma canónica de una clave" },
+				{ "type": "paragraph", "text": "Una búsqueda compara bytes. 'maria silva', 'MARIA SILVA' y 'Maria  Silva ' te parecen iguales, pero no a la computadora. La **forma canónica** es la única manera acordada de escribir una clave (por ejemplo, mayúsculas, sin acentos, sin espacios de sobra). Todo programa la aplica antes de grabar y antes de buscar." },
+				{ "type": "callout", "tone": "remember", "text": "Longitud fija: desplazamiento = encabezado + RRN x tamaño del registro, con RRN desde 0. Longitud variable: el registro n-ésimo cuesta un recorrido, a menos que haya un índice. Siempre escribe la estructura del archivo: delimitadores, indicadores o un encabezado." }
+			]
+		},
+		{
+			"id": "compression-and-space-reclamation",
+			"title": "Compresión y recuperación de espacio",
+			"blocks": [
+				{ "type": "paragraph", "text": "¿Qué pasa con el espacio de un registro que borras? Hay tres respuestas, de la perezosa a la ordenada." },
+				{ "type": "list", "items": [
+					"**Marcarlo como borrado** y no hacer nada más. Es rápido y se puede deshacer. El espacio sigue ahí, desperdiciado.",
+					"**Compactación**: de vez en cuando, reescribir el archivo sin los registros marcados. El espacio vuelve, pero las direcciones cambian, así que los **índices deben reconstruirse**.",
+					"**Reutilizar** el espacio en la próxima inserción, usando una lista de registros libres."
+				], "ordered": true },
+				{ "type": "heading", "text": "Registros de longitud fija: la lista de libres como pila" },
+				{ "type": "paragraph", "text": "Con registros de longitud fija cualquier espacio libre sirve para cualquier registro nuevo, así que basta una **pila**. El encabezado guarda el RRN de la cima. Cada espacio borrado guarda el RRN del que está debajo. Borrar = apilar. Insertar = desapilar. La lista no ocupa espacio extra, pues vive dentro de los espacios libres. El archivo crece solo cuando la pila está vacía." },
+				{ "type": "code", "language": "text", "content": "inicio: cima = -1 (vacía)\nborra RRN 4    -> pila (cima primero): 4\nborra RRN 1    -> pila: 1, 4\ninserta P      -> P va al RRN 1, pila: 4\nborra RRN 6    -> pila: 6, 4\ninserta Q      -> Q va al RRN 6, pila: 4\ninserta R      -> R va al RRN 4, pila: vacía (cima = -1)\ninserta S      -> pila vacía, así que S va al final del archivo" },
+				{ "type": "heading", "text": "Registros de longitud variable: ¿qué hueco usar?" },
+				{ "type": "paragraph", "text": "Ahora los huecos tienen tamaños distintos, así que el sistema debe elegir uno que quepa. Toma una lista de libres 50 -> 25 -> 90 -> 35 (tamaños en bytes) y un registro nuevo de 30 bytes." },
+				{ "type": "table", "headers": ["Estrategia", "Regla", "Elige aquí", "Sobra"], "rows": [
+					["First-fit", "El primer hueco que cabe (el más rápido)", "50", "20"],
+					["Best-fit", "El hueco más pequeño que cabe", "35", "5"],
+					["Worst-fit", "El hueco más grande", "90", "60"]
+				] },
+				{ "type": "paragraph", "text": "El best-fit deja sobras diminutas que ningún registro puede usar (si el registro más pequeño tiene 10 bytes, una sobra de 5 es inútil). El worst-fit intenta que la sobra siga siendo útil. Ninguna estrategia elimina la **fragmentación externa**, así que igual juntamos huecos vecinos y compactamos." },
+				{ "type": "paragraph", "text": "Para dejar claros los dos tipos de desperdicio en un archivo de registros: la **fragmentación interna** es el desperdicio **dentro** de un área asignada (el relleno de un registro de longitud fija). La **fragmentación externa** es el desperdicio **entre** áreas asignadas, en huecos demasiado pequeños para usarlos. Los registros de longitud fija sufren solo la interna. Los de longitud variable cambian la interna por la externa." },
+				{ "type": "heading", "text": "Compresión: hacer el archivo más pequeño" },
+				{ "type": "paragraph", "text": "**Notación compacta.** Reemplaza un valor legible por un código binario con solo los bits necesarios. Para n valores distintos hacen falta ceil(log2 n) bits. Para 100 valores: 2^6 = 64 no alcanza y 2^7 = 128 sí, así que 7 bits. El archivo se encoge, pero un editor de texto ya no puede leerlo, y todo programa necesita la tabla de códigos." },
+				{ "type": "paragraph", "text": "**Codificación por rachas (RLE, run-length encoding).** Una racha de bytes iguales se vuelve un código corto: un marcador, el valor y la cuenta. En la versión usada aquí una racha de 4 o más bytes iguales se vuelve 3 bytes, y las rachas más cortas se copian tal cual (un código de 3 bytes no conviene para 2 o 3 bytes). Ejemplo, con marcador FF: los bytes `41 41 41 41 41 42 43 43` se vuelven `FF 41 05` (los cinco 41), `42`, `43 43`, es decir, 3 + 1 + 2 = 6 bytes en lugar de 8. Los datos sin repetición no se encogen. El RLE funciona bien en imágenes con zonas uniformes y en registros llenos de relleno." },
+				{ "type": "paragraph", "text": "**Codificación de Huffman.** Da **códigos cortos a los símbolos frecuentes** y códigos largos a los raros. Arma un árbol: une los dos nodos menos frecuentes en un nodo nuevo cuyo peso es la suma, y repite hasta que quede un solo árbol. El código de un símbolo es su camino desde la raíz (izquierda = 0, derecha = 1)." },
+				{ "type": "diagram", "content": "frecuencias: A 40, B 30, C 20, D 10  (total 100)\n\n paso 1: C + D = 30\n paso 2: B + (CD) = 60\n paso 3: A + 60 = 100\n\n            (100)\n            /   \\\n          A(40)  (60)          A = 0\n                 /  \\          B = 10\n               B(30) (30)      C = 110\n                     /  \\      D = 111\n                  C(20) D(10)", "caption": "Árbol de Huffman. Los empates se pueden resolver de cualquier modo; el tamaño total es el mismo." },
+				{ "type": "paragraph", "text": "El tamaño del archivo codificado es la suma de **frecuencia x longitud del código**: 40x1 + 30x2 + 20x3 + 10x3 = 190 bits (un código fijo de 2 bits necesitaría 200). Un atajo: la suma también es igual a los pesos de todos los nodos internos, 30 + 60 + 100 = 190. Un código de Huffman es **libre de prefijo**: ningún código es el comienzo de otro. Esto importa porque el decodificador debe saber dónde termina cada código. Con la propiedad del prefijo, leer de izquierda a derecha nunca es ambiguo y no se gastan bits en separadores. En el árbol significa simplemente que los símbolos están solo en las **hojas**." },
+				{ "type": "chart", "title": "Tamaño de un archivo de datos de 672,096 bytes tras la compresión (porcentaje del original)", "unit": "%", "bars": [
+					{ "label": "Original", "value": 100 },
+					{ "label": "Codificación por rachas", "value": 67.3 },
+					{ "label": "Codificación de Huffman", "value": 57.1 },
+					{ "label": "RLE y luego Huffman", "value": 53.1 }
+				] },
+				{ "type": "paragraph", "text": "Estos números se midieron en este repositorio, sobre un archivo de registros de longitud fija con mucho relleno. El RLE quita el relleno y el Huffman aprovecha las frecuencias desiguales de los bytes, y usar uno después del otro es lo mejor." },
+				{ "type": "callout", "tone": "warning", "text": "Después de la compactación, las direcciones de los registros cambian. Todo índice que guarde una dirección debe corregirse o reconstruirse." }
+			]
+		},
+		{
+			"id": "indexes",
+			"title": "Índices: primario, secundario, listas invertidas",
+			"blocks": [
+				{ "type": "paragraph", "text": "Encontrar un registro leyendo todo el archivo es lento. Un libro lo resuelve con un índice de contenido al principio. Un **índice** es esa tabla para un archivo de datos." },
+				{ "type": "heading", "text": "El índice simple (primario)" },
+				{ "type": "paragraph", "text": "Un **índice simple** es una lista de entradas pequeñas de longitud fija (clave, dirección del registro), **ordenada por la clave**. El archivo de datos se queda en el orden en que llegaron los registros. El índice separa dos cosas: el orden de búsqueda (en el índice) y los datos (sin cambios). La dirección puede ser un RRN o un offset en bytes." },
+				{ "type": "paragraph", "text": "Por qué la búsqueda binaria funciona en el índice pero no en el archivo de datos: necesita los elementos en orden de clave y una forma de saltar directo al elemento del medio. Los registros de longitud variable en orden de llegada no ofrecen ninguna de las dos cosas. El índice ofrece ambas y entrega la dirección, así que el registro se lee con un seek." },
+				{ "type": "paragraph", "text": "Una búsqueda binaria descarta la mitad de lo que queda en cada paso. Para N entradas el peor caso es **floor(log2 N) + 1** entradas examinadas. Ejemplo: N = 1,000 y 2^9 = 512 < 1,000 <= 1,024 = 2^10, así que como máximo 10 entradas. En memoria eso no es nada. Pero si el índice está en disco, 10 o 17 accesos por búsqueda siguen siendo muchos, y por eso existen los árboles B." },
+				{ "type": "heading", "text": "Mantener el índice correcto" },
+				{ "type": "table", "headers": ["Qué cambia la actualización", "Qué debe cambiar en el índice primario"], "rows": [
+					["El contenido, y el registro se queda donde está", "Nada"],
+					["El registro se mueve (por ejemplo, creció y se reescribió al final)", "Solo la dirección en su entrada; el orden sigue igual"],
+					["La clave", "La entrada debe ir a otra posición: quitarla e insertarla de nuevo"]
+				] },
+				{ "type": "paragraph", "text": "Si el índice se mantiene en memoria y solo se graba en disco al cerrar el archivo, hay un peligro: el programa puede fallar y dejar viejo el índice del disco. La solución es una **bandera de desactualizado** en el encabezado del archivo de índice. Se enciende en el disco antes del primer cambio de una sesión y se apaga cuando se graba el índice. Si la bandera está encendida al abrir el archivo, la última sesión no terminó bien. Como el índice se puede armar a partir de los datos, el programa **reconstruye el índice leyendo el archivo de datos**." },
+				{ "type": "heading", "text": "Índices secundarios" },
+				{ "type": "paragraph", "text": "La clave primaria identifica **un** registro. Pero la gente pregunta por otras cosas: todas las canciones de un compositor, todos los clientes de una ciudad. Un **índice secundario** está ordenado por uno de esos campos. Como el valor puede repetirse, la respuesta es una **lista** de registros." },
+				{ "type": "heading", "text": "Listas invertidas" },
+				{ "type": "paragraph", "text": "En una **lista invertida** el índice secundario tiene una entrada de longitud fija por clave secundaria, con la posición del primer elemento de una lista enlazada. La lista está en otro archivo. Cada elemento guarda una **clave primaria** y la posición del siguiente elemento (-1 significa el final)." },
+				{ "type": "diagram", "content": "índice secundario        archivo de listas (posición: clave primaria, siguiente)\nCIUDAD -> inicio\nNATAL  -> 2              0: P40, 3\nRECIFE -> 0              1: P77, -1\n                         2: P10, 1\n                         3: P55, -1\n\nbúsqueda RECIFE: empieza en 0 -> P40, va a 3 -> P55, siguiente -1: fin\nresultado, en el orden de la lista: P40, P55", "caption": "Recorriendo una lista invertida" },
+				{ "type": "paragraph", "text": "Agregar un registro añade un elemento al archivo de listas y cambia un puntero. No se desplaza nada. El precio: los elementos de una lista quedan dispersos por el archivo." },
+				{ "type": "paragraph", "text": "La lista guarda **claves primarias**, no direcciones. Esto se llama **ligadura tardía (late binding)**: la dirección se descubre solo al momento de la búsqueda, pasando por el índice primario. Una búsqueda secundaria cuesta una consulta más, pero cuando el archivo de datos se compacta y los registros cambian de dirección, **solo el índice primario** debe corregirse. Los índices secundarios siguen correctos porque las claves primarias no cambiaron." },
+				{ "type": "heading", "text": "Combinar búsquedas: procesamiento cosecuencial" },
+				{ "type": "paragraph", "text": "Si cada lista está ordenada por clave primaria, dos listas se pueden combinar en una sola pasada. Compara el elemento actual de cada lista y avanza la que tiene la clave menor. Toma CIUDAD = RECIFE -> 10, 20, 30, 40 y AÑO = 2020 -> 20, 25, 40, 50, 60." },
+				{ "type": "list", "items": [
+					"**Y (matching, emparejamiento)**: claves que aparecen en las dos listas: 20 y 40. Son 2 claves.",
+					"**O (merging, mezcla)**: toda clave vista, una vez: 10, 20, 25, 30, 40, 50, 60. Son 4 + 5 - 2 = 7 claves.",
+					"Solo después de combinar las listas se leen los registros, y solo los que importan."
+				] },
+				{ "type": "paragraph", "text": "El mini-proyecto `file-organisation` de este repositorio hace exactamente esto: 10,500 registros, un índice primario buscado con como máximo 14 sondeos, y una búsqueda por ciudad que lee unos 880 espacios por el índice, frente a 10,500 de un recorrido completo." },
+				{ "type": "callout", "tone": "remember", "text": "Índice primario: clave a dirección, ordenado, búsqueda binaria con floor(log2 N) + 1 pasos. Índice secundario: claves repetidas, listas invertidas de claves primarias, ligadura tardía. Cuando el índice es demasiado grande para la memoria, usa un árbol B." }
+			]
+		},
+		{
+			"id": "b-trees",
+			"title": "Árboles B",
+			"blocks": [
+				{ "type": "paragraph", "text": "Un árbol binario de búsqueda tiene dos hijos por nodo y puede ser alto: un millón de claves necesitan unos 20 niveles. En el disco cada nivel es un acceso, así que 20 accesos son demasiados. El truco es hacer cada nodo **tan grande como una página de disco** y poner cientos de claves en él. Ese es el **árbol B**." },
+				{ "type": "callout", "tone": "analogy", "text": "Piensa en un diccionario. No encuentras una palabra preguntando '¿viene antes o después de esta?' por dos caminos. Abres en la letra correcta, luego en la página correcta, luego en la palabra. Cada paso descarta casi todo. Un árbol B hace lo mismo, con cientos de caminos en cada paso." },
+				{ "type": "heading", "text": "Orden y reglas" },
+				{ "type": "paragraph", "text": "En este resumen el **orden m** es el **número máximo de hijos** de un nodo (los libros difieren, así que di siempre qué definición usas). Las reglas:" },
+				{ "type": "list", "items": [
+					"Un nodo tiene como máximo m hijos y por tanto como máximo **m - 1 claves**. Las claves de un nodo están en orden, y los subárboles quedan entre ellas.",
+					"Todo nodo, excepto la raíz, tiene al menos **ceil(m/2) hijos**, y por tanto al menos ceil(m/2) - 1 claves. Orden 8: de 4 a 8 hijos, así que de 3 a 7 claves.",
+					"La raíz tiene al menos 2 hijos (a menos que sea una hoja).",
+					"**Todas las hojas están en el mismo nivel.**"
+				] },
+				{ "type": "paragraph", "text": "Un árbol con h niveles, con todos los nodos llenos, tiene 1 + m + m^2 + ... nodos, cada uno con m - 1 claves, lo que da **m^h - 1 claves**. La capacidad crece exponencialmente con la altura. Orden 5 y 3 niveles: 5^3 - 1 = 124 claves." },
+				{ "type": "chart", "title": "Máximo de claves de un árbol B de orden 200, según el número de niveles", "unit": "claves", "bars": [
+					{ "label": "1 nivel", "value": 199 },
+					{ "label": "2 niveles", "value": 39999 },
+					{ "label": "3 niveles", "value": 7999999 }
+				] },
+				{ "type": "heading", "text": "Elegir el orden" },
+				{ "type": "paragraph", "text": "En el disco el orden es el mayor número de hijos que **cabe en una página**. Ejemplo: una página de 4,096 bytes, un encabezado de 12 bytes, claves de 4 bytes y punteros de 4 bytes. Necesitamos 12 + 4(m - 1) + 4m <= 4,096, así que 8m <= 4,088 y m <= 511. Comprobación: 12 + 4 x 510 + 4 x 511 = 4,096. Claves más pequeñas dan un orden mayor y un árbol más bajo. Por eso los índices prefieren claves cortas." },
+				{ "type": "heading", "text": "¿Qué tan alto puede ser el árbol?" },
+				{ "type": "paragraph", "text": "El peor caso es cuando todo nodo tiene el mínimo. Llama c = ceil(m/2). La raíz tiene 1 clave y 2 hijos, y los demás nodos tienen al menos c - 1 claves. Toma el orden 10 (c = 5). Con 3 niveles el menor número de claves es 1 (raíz) + 2 x 4 (dos nodos) + 10 x 4 (diez nodos) = 49, y con 4 niveles es 249. Así que un árbol B de orden 10 con 100 claves puede tener como máximo 3 niveles. Para orden 200 y un millón de claves, el árbol tiene como máximo 3 niveles: una búsqueda lee como máximo 3 nodos, y 2 si la raíz se queda en memoria." },
+				{ "type": "heading", "text": "Inserción: siempre en una hoja, y la división" },
+				{ "type": "paragraph", "text": "Una clave nueva va a la **hoja** correcta. Si la hoja queda con demasiadas claves (overflow), se **divide**: la clave del medio sube al padre y el resto forma dos nodos. Si el padre se desborda, también se divide. Si la división llega a la raíz, se crea una **raíz nueva** con una sola clave. Esta es la única forma en que un árbol B crece en altura. Por eso todas las hojas quedan en el mismo nivel: el árbol crece por arriba, como consecuencia de cómo se construye, no por una reparación posterior." },
+				{ "type": "paragraph", "text": "Convención del quiz: un nodo 'se desborda' cuando queda con una clave más que el máximo (m claves). Entonces la clave del medio sube. Con un número par de claves, el nodo izquierdo se queda con la primera mitad y la clave siguiente es la que sube." },
+				{ "type": "diagram", "content": "orden 4 (máx. 3 claves). Inserta 8 en la hoja [5 | 6 | 7]:\n\n   antes:         [ 20 ]                  la hoja [5 | 6 | 7] está llena\n                  /    \\\n          [5|6|7]      [30|40]\n\n   la hoja queda con 4 claves: 5 6 7 8  -> overflow\n   división: izquierda [5|6], la tercera clave 7 sube, derecha [8]\n\n   después:       [ 7 | 20 ]\n                 /    |     \\\n            [5|6]   [8]   [30|40]", "caption": "División de una hoja. Cada clave aparece una sola vez en un árbol B." },
+				{ "type": "heading", "text": "Eliminación" },
+				{ "type": "list", "items": [
+					"**Clave en un nodo interno**: reemplázala por su sucesora (o predecesora), que siempre está en una hoja, y elimina esa. Así toda eliminación termina en una hoja.",
+					"**Hoja por debajo del mínimo**: intenta primero la **redistribución**. Si un hermano adyacente tiene más que el mínimo, el separador del padre baja a la hoja y la clave más cercana del hermano sube a ocupar su lugar.",
+					"Si ningún hermano adyacente puede ceder una clave, haz la **concatenación**: une la hoja, el separador y el hermano en un solo nodo. El padre pierde una clave y también puede quedar por debajo del mínimo, así que el problema puede subir."
+				], "ordered": true },
+				{ "type": "heading", "text": "El árbol B+" },
+				{ "type": "paragraph", "text": "En un **árbol B+** los nodos internos guardan solo copias de claves para **guiar la búsqueda** (sin datos), y **todas las claves y datos están en las hojas**, que están enlazadas en orden. Como los nodos internos no llevan datos, caben más separadores por página, así que el árbol es más bajo. Para una **consulta por rango** (todas las claves de 100 a 900) buscas la primera clave y luego sigues los enlaces de las hojas sin volver arriba: un acceso por hoja. Por eso las bases de datos usan árboles B+ para consultas por rango y para ordenar por un campo indexado." },
+				{ "type": "callout", "tone": "warning", "text": "Un árbol B guarda cada clave una vez, en cualquier nodo. Un árbol B+ guarda los datos reales solo en las hojas y repite claves arriba como señales de tránsito. No los confundas." },
+				{ "type": "callout", "tone": "remember", "text": "Árbol B = nodo del tamaño de una página de disco, cientos de claves, todas las hojas en el mismo nivel. Se inserta en una hoja, se divide hacia arriba, y una raíz nueva es el único crecimiento en altura. Capacidad m^h - 1. Eliminación: redistribuir primero, concatenar si no se puede." }
+			]
+		},
+		{
+			"id": "external-sorting",
+			"title": "Ordenación externa",
+			"blocks": [
+				{ "type": "paragraph", "text": "¿Cómo se ordena un archivo más grande que la memoria? Si lo cargas todo, el programa muere. Si lo ordenas en el lugar, saltando de un punto a otro, cada comparación es un acceso al disco, y eso es 100,000 veces más lento que la memoria. El **merge sort externo (ordenación externa por mezcla)** hace dos promesas: el uso de memoria no depende del tamaño del archivo, y el archivo siempre se lee y se escribe **en secuencia**." },
+				{ "type": "callout", "tone": "analogy", "text": "Tienes 1,000 exámenes y un escritorio donde caben 50. Tomas 50 a la vez, los ordenas en el escritorio y guardas cada pila ordenada en una caja. Luego mezclas las pilas: miras el examen de arriba de cada pila, tomas el menor y repites." },
+				{ "type": "heading", "text": "Fase 1: generar rachas" },
+				{ "type": "paragraph", "text": "Lee un trozo del tamaño de la memoria, ordénalo en memoria y escríbelo como una **racha (run)**: un archivo ordenado. Repite hasta que se acabe la entrada. Si el archivo tiene N registros y la memoria contiene M, el número de rachas es **ceil(N / M)**. Ejemplo: 2,000,000 de registros y espacio para 150,000 dan 2,000,000 / 150,000 = 13.3, así que 14 rachas (13 llenas y una menor)." },
+				{ "type": "heading", "text": "Fase 2: mezclar las rachas" },
+				{ "type": "paragraph", "text": "Lee todas las rachas de principio a fin al mismo tiempo. Escribe siempre el menor de los registros del frente. Un **min-heap** guarda una entrada por racha (el registro actual de esa racha). La cima es el menor: escríbelo, lee el siguiente registro de la misma racha y déjalo bajar hasta su lugar. Esto cuesta unas **log2 k** comparaciones por registro, en lugar de **k - 1** mirando los k frentes. Un heap de 64 elementos tiene 6 niveles, así que un registro baja como máximo 6 pasos, no 63 comparaciones. La memoria usada es proporcional a k, no al archivo." },
+				{ "type": "diagram", "content": "racha 0:  3  8  9 ...    el heap guarda el frente de cada racha:\nracha 1:  1  4  7 ...    [ 3 , 1 , 2 ]   menor = 1 (racha 1)\nracha 2:  2  5  6 ...    escribe 1, lee 4 de la racha 1:\n                         [ 3 , 4 , 2 ]   menor = 2 (racha 2) ...\n\nsalida: 1 2 3 4 5 6 ...", "caption": "Una mezcla de k vías con heap, aquí k = 3" },
+				{ "type": "heading", "text": "Varias pasadas" },
+				{ "type": "paragraph", "text": "Si la memoria permite solo **k rachas a la vez** (el **fan-in**), una pasada de mezcla une grupos de k rachas en rachas más largas. Después de una pasada el número de rachas es ceil(R / k). El número de pasadas es **ceil(log base k de R)**. Ejemplo: 60 rachas con fan-in 4: 60 -> 15 -> 4 -> 1, es decir, 3 pasadas. No contamos la generación de rachas entre las pasadas de mezcla." },
+				{ "type": "paragraph", "text": "Cada pasada lee y escribe el archivo entero una vez, y la generación de rachas también. Así que una ordenación externa con 2 pasadas de mezcla mueve el archivo 3 veces en cada dirección: para un archivo de 8 GB son 3 x 8 = 24 GB escritos. **El número de pasadas es el costo real.**" },
+				{ "type": "heading", "text": "El intercambio de un fan-in grande" },
+				{ "type": "paragraph", "text": "Un fan-in mayor significa menos pasadas. Pero la memoria se reparte entre los k buffers de entrada, así que cada buffer es más pequeño y se rellena más seguido. En un **disco magnético** cada rellenado desde una racha distinta es un **seek**. Mezclar 800 rachas de una vez puede ser más lento que mezclar en dos pasos (por ejemplo 25 grupos de 32 rachas y luego las 25 resultantes), aunque la segunda forma lea y escriba todo dos veces: sus lecturas son más largas y más secuenciales." },
+				{ "type": "chart", "title": "Tiempo medido para ordenar 1,000,000 de líneas (50 MB) con rachas de 1 MiB, en Rust (milisegundos)", "unit": "ms", "bars": [
+					{ "label": "Fan-in 2 (6 pasadas)", "value": 971 },
+					{ "label": "Fan-in 4 (3 pasadas)", "value": 669 },
+					{ "label": "Fan-in 16 (2 pasadas)", "value": 496 },
+					{ "label": "Fan-in 64 (1 pasada)", "value": 588 }
+				] },
+				{ "type": "paragraph", "text": "Estos resultados vienen del mini-proyecto `external-sorting` de este repositorio (media de 7 ejecuciones). Pasar de fan-in 2 a 16 reduce las pasadas de 6 a 2 y el tiempo a cerca de la mitad. El fan-in 64 ahorra una pasada más pero no es más rápido, porque la memoria se reparte en 65 buffers pequeños. La variación entre ejecuciones fue grande en una máquina compartida, así que las diferencias pequeñas no son diferencias reales." },
+				{ "type": "heading", "text": "Selección por reemplazo: rachas más largas" },
+				{ "type": "paragraph", "text": "Una fase 1 más lista usa un heap de M registros. Escribe el menor registro del heap y lee un registro nuevo en su lugar. Si el registro nuevo es menor que el que se acaba de escribir, no puede entrar en la racha actual y se reserva para la siguiente. El resultado depende de cuánto orden tiene ya la entrada:" },
+				{ "type": "table", "headers": ["Entrada", "Rachas producidas", "Por qué"], "rows": [
+					["Aleatoria", "Rachas de cerca de 2M en promedio", "Los registros a menudo caben en la racha actual"],
+					["Ya ordenada", "Una sola racha", "Cada registro nuevo es mayor que el último"],
+					["Orden inverso (decreciente)", "Rachas de exactamente M cada una: N / M rachas", "Cada registro nuevo es menor, así que siempre se reserva (sin ganancia)"]
+				] },
+				{ "type": "paragraph", "text": "Ejemplo: 50,000 registros en orden decreciente y M = 1,000 dan 50 rachas. Menos rachas significan una mezcla más barata." },
+				{ "type": "callout", "tone": "remember", "text": "Rachas = ceil(N / M). Pasadas de mezcla = ceil(log base k de R). Total escrito = tamaño del archivo x (1 + pasadas). Un heap elige el menor de k frentes en unos log2 k pasos. Más memoria o un fan-in mayor significa menos pasadas, pero en un disco magnético un fan-in muy grande significa más seeks." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Uniendo todo",
+			"blocks": [
+				{ "type": "paragraph", "text": "Cada idea de esta área responde a una pregunta: **¿cómo mantengo bajo el número de accesos al disco?** Aquí está toda la historia en una tabla." },
+				{ "type": "table", "headers": ["Problema", "Herramienta", "Dato clave"], "rows": [
+					["El disco es lento", "Bloques, buffers, lecturas secuenciales", "Acceso = seek + rotación + transferencia; memoria contra disco es unas 100,000 a 1"],
+					["¿Dónde están los bloques de un archivo?", "Contigua, enlazada, FAT, i-node", "La FAT es del tamaño del disco; i-nodes solo de los archivos abiertos"],
+					["Nombres para archivos", "Directorios, enlaces", "Entrada = nombre + número de i-node; enlace duro solo dentro de un sistema de archivos"],
+					["¿Qué bloques están libres?", "Bitmap o lista de libres", "El bitmap es 1 bit por bloque; la lista solo gana por debajo de 1/32 libre"],
+					["Una caída en medio de un trabajo", "Journal, fsck", "Rehacer lo que tiene commit, descartar el resto"],
+					["¿Dónde está el registro n?", "Registros fijos y el RRN", "desplazamiento = encabezado + RRN x tamaño del registro"],
+					["Encontrar un registro por clave", "Índice, búsqueda binaria", "floor(log2 N) + 1 pasos"],
+					["Buscar por otro campo", "Índice secundario y listas invertidas", "La ligadura tardía deja solo el índice primario por corregir"],
+					["El índice es demasiado grande para la memoria", "Árbol B, árbol B+", "m^h - 1 claves en h niveles; pocos accesos para millones de claves"],
+					["El archivo es demasiado grande para ordenar", "Merge sort externo", "Rachas = ceil(N/M); pasadas = ceil(log_k R)"],
+					["El archivo es demasiado grande para guardar", "RLE, Huffman, notación compacta", "Códigos libres de prefijo; ceil(log2 n) bits"]
+				] },
+				{ "type": "heading", "text": "Errores que debes evitar" },
+				{ "type": "list", "items": [
+					"Creer que `lseek` lee el disco. Solo cambia el offset.",
+					"Creer que el ctime es la fecha de creación. Es el último cambio del i-node.",
+					"Creer que un enlace duro cruza particiones. El número de i-node solo tiene sentido dentro de un sistema de archivos.",
+					"Olvidar el bloque de datos al contar las lecturas de una búsqueda por i-node, u olvidar que por suposición el i-node ya está en memoria.",
+					"Empezar el RRN en 1 cuando el problema dice 0, u olvidar el encabezado al calcular un desplazamiento.",
+					"Olvidar el más 1 en el peor caso de la búsqueda binaria, floor(log2 N) + 1.",
+					"Mezclar el orden de un árbol B (hijos) con el número de claves (una menos).",
+					"Creer que un journal protege el contenido de tus archivos. Un journal de metadatos protege las estructuras."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Cuando un resultado depende de una convención, dila: ¿el RRN empieza en 0? ¿Hay encabezado? ¿El i-node ya está en memoria? ¿El orden es el número de hijos? ¿La cuenta de lecturas incluye el bloque de datos? El mismo problema tiene respuestas distintas bajo convenciones distintas." },
+				{ "type": "heading", "text": "Para aprender más" },
+				{ "type": "list", "items": [
+					"[Operating Systems: Three Easy Pieces](https://pages.cs.wisc.edu/~remzi/OSTEP/) tiene capítulos gratuitos sobre discos, archivos, implementación de sistemas de archivos, journaling y flash.",
+					"[Files are hard](https://danluu.com/file-consistency/), de Dan Luu, muestra lo difícil que es escribir un archivo de forma segura.",
+					"[ext4 Data Structures and Algorithms](https://docs.kernel.org/filesystems/ext4/) describe el diseño real de un sistema de archivos de producción.",
+					"[SQLite Database File Format](https://www.sqlite.org/fileformat2.html) muestra cómo se guardan tablas e índices como páginas de árbol B en un solo archivo."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Cuenta los accesos al disco. Mantén junto lo que se lee junto, lee en orden cuando puedas, escribe la intención antes del cambio y usa un índice para no leer nunca el archivo entero." }
+			]
+		}
+	]
+}

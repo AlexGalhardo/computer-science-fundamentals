@@ -1,0 +1,1513 @@
+{
+	"area": "data-structures",
+	"intro": [
+		"Imagine o seu quarto. Se você joga todos os brinquedos numa pilha enorme, achar o carrinho vermelho demora uma eternidade. Se guarda os carrinhos numa caixa, os livros na estante e as cartas numa pasta, você acha tudo em segundos. Uma **estrutura de dados** é exatamente isto: um jeito de organizar informação dentro do computador para que as coisas que o programa mais faz (adicionar, remover, procurar) fiquem rápidas.",
+		"Não existe uma estrutura que seja a melhor para tudo. A fila da cantina da escola, uma pilha de pratos, uma árvore genealógica, um dicionário e um mapa de estradas são formas diferentes, e cada uma é boa em tarefas diferentes. Escolher a forma certa costuma ser a decisão que deixa um programa rápido ou lento. Contatos do celular, o botão de desfazer, o botão de voltar do navegador, o cálculo de rotas nos mapas, a lista de amigos de uma rede social e o índice de um banco de dados usam as estruturas deste resumo.",
+		"Você vai aprender, passo a passo: como esconder os detalhes de uma estrutura atrás de um conjunto limpo de operações (tipos abstratos de dados), vetores e listas encadeadas, pilhas e filas, recursão, árvores (simples, de busca, AVL e rubro-negras), heaps e filas de prioridade, tabelas de espalhamento e grafos com suas duas caminhadas famosas, BFS e DFS. No fim você saberá o que cada estrutura custa e estará pronto para o quiz."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "Visão geral: formas para guardar informação",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma estrutura de dados tem duas partes: um **jeito de guardar** os itens e um pequeno conjunto de **operações** para usá-los: `inserir`, `remover`, `buscar` e, às vezes, `acessar por posição`. Toda escolha tem um preço. Uma estante deixa você pegar o 5º livro na hora, mas colocar um livro no meio obriga a empurrar todos os outros. Uma corrente de clipes deixa você colocar um clipe em qualquer lugar, mas para chegar ao 5º você precisa contar desde o início."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Pense numa loja de brinquedos. Corredores com caixas numeradas (um vetor), uma caça ao tesouro em que cada pista diz onde está a próxima (uma lista encadeada), uma pilha de pratos (uma pilha), a fila do caixa (uma fila), uma árvore genealógica (uma árvore) e um mapa de amizades (um grafo). Os mesmos brinquedos, com organizações diferentes e velocidades diferentes."
+				},
+				{
+					"type": "heading",
+					"text": "Palavras que você vai encontrar"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Nó**: um pedaço de uma estrutura que guarda um valor e, em geral, os endereços de outros nós.",
+						"**[[Ponteiro|um número que diz onde algo está na memória, como o endereço de uma casa]]**: o jeito como um nó aponta para outro nó. Um ponteiro que não aponta para nada se chama **nulo** (null).",
+						"**Chave**: a parte de um item que usamos para encontrá-lo, como o nome numa lista de contatos.",
+						"Organização **sequencial**: vizinhos na memória são vizinhos na estrutura. Organização **encadeada**: a ordem é dada por ponteiros.",
+						"**Custo**: quantos passos uma operação leva quando o número de itens `n` cresce. `O(1)` quer dizer 'sempre mais ou menos igual', `O(log n)` quer dizer 'cresce bem devagar' e `O(n)` quer dizer 'cresce junto com n'."
+					]
+				},
+				{
+					"type": "table",
+					"caption": "Crescimento para n = 1.000 itens (passos aproximados)",
+					"headers": [
+						"Custo",
+						"Significado",
+						"Passos para n = 1.000"
+					],
+					"rows": [
+						[
+							"O(1)",
+							"constante: um passo, seja qual for n",
+							"1"
+						],
+						[
+							"O(log n)",
+							"dividir o problema ao meio a cada passo",
+							"cerca de 10"
+						],
+						[
+							"O(n)",
+							"olhar cada item uma vez",
+							"1.000"
+						],
+						[
+							"O(n²)",
+							"comparar cada item com cada item",
+							"1.000.000"
+						]
+					]
+				},
+				{
+					"type": "chart",
+					"title": "Passos necessários para n = 1.000",
+					"unit": "passos",
+					"bars": [
+						{
+							"label": "O(1)",
+							"value": 1
+						},
+						{
+							"label": "O(log n)",
+							"value": 10
+						},
+						{
+							"label": "O(n)",
+							"value": 1000
+						},
+						{
+							"label": "O(n²)",
+							"value": 1000000
+						}
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Uma estrutura de dados é um jeito de guardar itens mais as operações sobre eles. Toda estrutura é rápida em algumas tarefas e lenta em outras, então escolhemos perguntando: qual operação o meu programa vai fazer mais vezes?"
+				}
+			]
+		},
+		{
+			"id": "abstract-data-types",
+			"title": "Tipos abstratos de dados e encapsulamento",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Quando você aperta o botão do controle remoto da TV, não precisa saber a eletrônica lá dentro. Só precisa saber o que cada botão faz. Um **tipo abstrato de dados** (TAD) é a mesma ideia para programas: ele diz **o que** você pode fazer com os dados (um conjunto de valores e as operações sobre eles), mas não **como** os dados são guardados. A parte escondida é a **representação**."
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Uma máquina de salgadinhos é um TAD. Os botões e a entrada de moedas são a interface. Os motores e as prateleiras lá dentro são a implementação. A loja pode trocar o interior sem ensinar a você um jeito novo de comprar um salgadinho."
+				},
+				{
+					"type": "heading",
+					"text": "Interface e implementação"
+				},
+				{
+					"type": "paragraph",
+					"text": "A **interface** é a lista de operações (seus nomes, seus parâmetros e o que significam). A **implementação** é o código e a organização da memória por trás delas. O grande ganho é a **independência de representação**: enquanto a interface continuar igual, você pode mudar a representação à vontade. Se uma data era guardada num vetor de três inteiros e você troca por uma struct com três campos, os programas que só chamam as funções do TAD não precisam mudar. Só quebra o código que entrava por dentro, de fora do TAD."
+				},
+				{
+					"type": "paragraph",
+					"text": "Isso também permite deixar uma estrutura mais rápida sem incomodar ninguém. Se uma lista procurava a primeira posição livre a cada `add` e agora guarda um contador privado de quantos elementos tem, quem a usa chama os mesmos métodos e só percebe que ficou mais rápida."
+				},
+				{
+					"type": "heading",
+					"text": "Encapsulamento em C"
+				},
+				{
+					"type": "paragraph",
+					"text": "Em C, um TAD vira um **módulo** de dois arquivos. O cabeçalho (`.h`) publica um **tipo opaco** (um nome sem campos visíveis) e os protótipos das funções. O arquivo `.c` guarda a `struct` de verdade. Quem usa só segura ponteiros e não consegue ler os campos, porque o compilador recusa. Assim o encapsulamento é garantido pelo compilador, não pela boa vontade."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"caption": "stack.h (o que o cliente vê) e stack.c (o que fica escondido)",
+					"content": "/* stack.h */\ntypedef struct Stack Stack;   /* opaco: nenhum campo visível */\nStack *stack_new(void);\nint    stack_push(Stack *s, int x);\nint    stack_pop(Stack *s, int *out);\n\n/* stack.c */\nstruct Stack { int data[100]; int top; };  /* escondido */"
+				},
+				{
+					"type": "heading",
+					"text": "Erros e invariantes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Erros**: o que `pop` deve fazer numa pilha vazia? Um TAD reutilizável só **detecta** o problema e devolve um indicador de sucesso ou falha. O programa que o usa **decide** a reação: mostrar uma mensagem, perguntar de novo ou falhar num teste. Assim o mesmo módulo serve a um programa de terminal, a uma janela ou a um teste automático. Imprimir e encerrar dentro do TAD o tornaria inútil nos outros casos.",
+						"**Invariantes**: uma regra que deve ser sempre verdadeira, por exemplo 'um Conjunto não tem elementos repetidos'. Ela continua verdadeira porque toda mudança passa pelas operações do TAD.",
+						"**Exposição da representação**: se uma função entrega um ponteiro para o vetor interno 'para evitar cópia', quem usa pode escrever ali e quebrar o invariante. A cura é devolver uma **cópia**, uma visão somente de leitura ou um **iterador** (um ajudante que entrega os elementos um de cada vez)."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Um TAD não é um jeito específico de guardar. 'Pilha' é um TAD. 'Pilha em vetor' e 'pilha em lista encadeada' são duas implementações do mesmo TAD."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "TAD = um conjunto de valores + operações, com a representação escondida. Representação escondida quer dizer que ela pode ser trocada sem quebrar quem usa."
+				}
+			]
+		},
+		{
+			"id": "arrays-and-lists",
+			"title": "Vetores e listas: sequencial, encadeada, duplamente encadeada, circular",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma **lista** é uma sequência de itens em que a ordem importa. Há duas formas principais de construí-la. Numa **lista sequencial** (um vetor) os itens ficam lado a lado na memória, como as cadeiras de uma fileira do cinema. Numa **lista encadeada** cada item mora num nó junto com o endereço do próximo nó, como numa caça ao tesouro em que cada pista diz onde está a próxima."
+				},
+				{
+					"type": "diagram",
+					"caption": "Vetor (vizinhos) e lista encadeada (setas)",
+					"content": "vetor:    [ 7 ][ 3 ][ 9 ][ 4 ]      índice 0 1 2 3\n\nencadeada: início -> [7|*]-> [3|*]-> [9|*]-> [4|nulo]"
+				},
+				{
+					"type": "heading",
+					"text": "Acesso e inserção"
+				},
+				{
+					"type": "paragraph",
+					"text": "Num vetor, o endereço do elemento `i` é o início mais `i` vezes o tamanho de um elemento, então ler a posição `i` custa `O(1)`. Numa lista encadeada cada nó só conhece o próximo, então para chegar à posição `i` é preciso andar `i` passos: `O(n)`. Por outro lado, inserir no início de um vetor obriga todos os elementos a andar uma casa para abrir espaço (`O(n)`), enquanto inserir logo depois de um nó que você já tem numa lista encadeada só muda ponteiros (`O(1)`)."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Operação",
+						"Vetor (sequencial)",
+						"Lista simplesmente encadeada"
+					],
+					"rows": [
+						[
+							"Ler a posição i",
+							"O(1)",
+							"O(i), linear"
+						],
+						[
+							"Inserir no início",
+							"O(n), desloca tudo",
+							"O(1)"
+						],
+						[
+							"Inserir no fim",
+							"O(1) se houver espaço",
+							"O(n), a menos que guarde um ponteiro para o último nó"
+						],
+						[
+							"Buscar por chave",
+							"O(n)",
+							"O(n)"
+						],
+						[
+							"Memória extra por item",
+							"nenhuma",
+							"um ponteiro"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Tipos de listas encadeadas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Simplesmente encadeada**: cada nó tem o dado e `next`. O `next` do último nó é **nulo**, e um laço anda enquanto o ponteiro atual não for nulo.",
+						"**Duplamente encadeada**: cada nó também tem `prev`. Custa mais um ponteiro por nó, mas de qualquer nó os dois vizinhos são alcançáveis em `O(1)`, então dá para remover um nó conhecido e andar para trás.",
+						"**Circular**: o último nó aponta para o primeiro, então não existe nulo. Para percorrê-la, guarde o nó inicial e pare quando encontrá-lo de novo. É boa para coisas atendidas em rodízio, como jogadores de um jogo.",
+						"**Sentinela**: um nó extra sem dado do usuário que elimina casos especiais. Numa busca, você copia a chave procurada para a sentinela no fim, então o laço sempre termina e precisa de uma só comparação por passo em vez de duas. Continua linear.",
+						"**Nó cabeça** (header): um primeiro nó de mentira. Remover um nó é fazer o antecessor apontar para o sucessor. O primeiro nó de verdade não tem antecessor, então sem nó cabeça ele é um caso especial. Com nó cabeça, todo nó de dados tem antecessor."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "A ordem das linhas de ponteiro"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para inserir `node` depois de `p`, o endereço do antigo próximo nó existe só em `p->next`. Se você o sobrescreve primeiro, perde o resto da lista. Então é preciso primeiro ligar o novo nó ao resto e só depois fazer `p` apontar para o novo nó."
+				},
+				{
+					"type": "code",
+					"language": "c",
+					"caption": "Ordem correta",
+					"content": "node->next = p->next;  /* 1: o novo nó guarda o resto da lista */\np->next    = node;     /* 2: só agora p aponta para o novo nó */"
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Escrever `p->next = node;` primeiro e `node->next = p->next;` depois faz o nó apontar para ele mesmo, e o resto da lista se perde."
+				},
+				{
+					"type": "heading",
+					"text": "Organização versus alocação"
+				},
+				{
+					"type": "paragraph",
+					"text": "São duas perguntas diferentes. **Organização** é como a ordem é representada: por posições vizinhas (sequencial) ou por ligações (encadeada). **Alocação** é quando a memória é reservada: toda de uma vez (**estática**) ou sob demanda (**dinâmica**). Uma lista guardada num vetor de tamanho fixo em que cada célula guarda o índice do sucessor é, portanto, **encadeada** (organização) e **estática** (alocação)."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **pool de nós** simula `malloc` e `free` dentro de um vetor: os nós livres formam uma lista encadeada de índices (a lista de livres). `getnode` pega o nó da frente da lista de livres e `freenode(i)` coloca o nó `i` na frente. Ambos custam `O(1)` e o pool se comporta como uma pilha: o nó liberado por último é o primeiro a ser reutilizado."
+				},
+				{
+					"type": "heading",
+					"text": "Vetores dinâmicos e custo amortizado"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **vetor dinâmico** cresce quando fica cheio: aloca um bloco com o dobro do tamanho e copia tudo. Um acréscimo pode custar `O(n)`, mas dobrar o tamanho o torna raro, então o custo [[amortizado|calculado como média de uma longa série de operações, não a pior operação isolada]] de acrescentar é `O(1)`."
+				},
+				{
+					"type": "table",
+					"caption": "Acrescentando 5 elementos, começando com capacidade 1 e dobrando",
+					"headers": [
+						"Número do acréscimo",
+						"Estado antes",
+						"Cópias feitas"
+					],
+					"rows": [
+						[
+							"1",
+							"capacidade 1, vazio",
+							"0"
+						],
+						[
+							"2",
+							"capacidade 1, cheio",
+							"1"
+						],
+						[
+							"3",
+							"capacidade 2, cheio",
+							"2"
+						],
+						[
+							"4",
+							"capacidade 4, tem espaço",
+							"0"
+						],
+						[
+							"5",
+							"capacidade 4, cheio",
+							"4"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "As cópias são 1 + 2 + 4 = 7. Cada realocação copia o dobro da anterior, mas acontece com metade da frequência, então o total é uma soma de potências de 2, sempre menor que o dobro do número de elementos. Por isso o custo médio por acréscimo fica constante."
+				},
+				{
+					"type": "heading",
+					"text": "Listas ordenadas e duas armadilhas clássicas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Uma lista encadeada mantida **ordenada** por chave faz as buscas que falham pararem mais cedo (assim que você passa do lugar onde a chave estaria). Mas você continua andando nó a nó, então ela não vira logarítmica. A busca binária precisa de acesso direto por posição, que só o vetor tem.",
+						"**Remover enquanto percorre uma lista em vetor**: depois de `remove(i)`, o próximo elemento desliza para o índice `i`. Se o laço faz `i++` em seguida, ele pula esse elemento. Para a lista `[1, 5, 5, 2]` e a tarefa 'remover todos os 5', o laço removeria o primeiro 5 e pularia o segundo. Corrija não incrementando depois de uma remoção, ou andando do fim para o início.",
+						"Um **cache LRU** ('remover o menos usado recentemente') precisa de um mapa hash de chave para nó e de uma lista ordenada por uso. Cada acesso tira um nó do meio e o coloca na frente, e a remoção por falta de espaço tira o último nó. Ambos custam `O(1)` só se a lista for **duplamente encadeada**, porque o nó precisa conhecer os dois vizinhos para sair do seu lugar."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Vetor: rápido por posição, lento para inserir no meio. Lista encadeada: rápida para inserir onde você já está, lenta para chegar a uma posição. Ligue os ponteiros na ordem certa e cuidado com os casos especiais (primeiro nó, lista vazia)."
+				}
+			]
+		},
+		{
+			"id": "stacks",
+			"title": "Pilhas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma pilha é uma pilha de pratos. Você coloca um prato novo em cima e também tira um do topo. Nunca puxa um prato do meio. Em computação: **push** coloca um elemento no topo e **pop** tira o do topo. O elemento removido é sempre o mais recente. Essa regra se chama **LIFO**: last in, first out (o último a entrar é o primeiro a sair)."
+				},
+				{
+					"type": "diagram",
+					"caption": "push 1, push 2, push 3, e então pop devolve 3",
+					"content": "   | 3 |  <- topo\n   | 2 |\n   | 1 |\n   +---+"
+				},
+				{
+					"type": "heading",
+					"text": "Implementando uma pilha"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Em vetor** (estática): guarde um inteiro `top` com o índice do último elemento empilhado. Convenção: `top == -1` quer dizer vazia e `top == N - 1` quer dizer cheia, em que `N` é o tamanho do vetor. Teste 'cheia' antes de empilhar, para não escrever fora do vetor (**overflow**), e teste 'vazia' antes de desempilhar (**underflow**).",
+						"**Em lista simplesmente encadeada**: o topo é o **primeiro nó**. `push` cria um nó que aponta para o antigo primeiro e move o ponteiro de início para ele. `pop` só avança o ponteiro de início. Nada é percorrido, então ambos custam `O(1)`. Só fica cheia quando a memória acaba."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "tip",
+					"text": "Não empilhe no fim de uma lista simplesmente encadeada: para remover o último nó você precisaria percorrer a lista inteira para achar o anterior."
+				},
+				{
+					"type": "heading",
+					"text": "Onde aparecem as pilhas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Chamadas de função**: cada chamada empilha o endereço de retorno e as variáveis locais, e o retorno desempilha. Essa é a **pilha de chamadas**.",
+						"Botões de **desfazer** e o botão de **voltar** de um navegador.",
+						"**Parênteses casados**: empilhe cada abertura, e cada fechamento deve combinar com o topo.",
+						"**Inverter uma sequência**: converter 13 para binário dividindo por 2 dá os bits do último para o primeiro (restos 1, 0, 1, 1 empilhados nessa ordem). Desempilhar escreve o número 1101 na ordem certa.",
+						"**Avaliar expressões** escritas em notação pós-fixa."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Notação pós-fixa (polonesa reversa)"
+				},
+				{
+					"type": "paragraph",
+					"text": "Na notação pós-fixa o operador vem **depois** dos operandos, então não precisa de parênteses nem de regras de precedência. Leia da esquerda para a direita: se vir um número, empilhe. Se vir um operador, desempilhe dois números, calcule e empilhe o resultado. O primeiro número desempilhado é o operando da **direita**, o que importa na subtração e na divisão."
+				},
+				{
+					"type": "code",
+					"language": "text",
+					"caption": "Avaliando  2 3 + 4 *  (isto é, (2 + 3) * 4)",
+					"content": "lê 2  -> pilha: 2\nlê 3  -> pilha: 2 3\nlê +  -> desempilha 3, desempilha 2, empilha 2+3 -> pilha: 5\nlê 4  -> pilha: 5 4\nlê *  -> desempilha 4, desempilha 5, empilha 5*4 -> pilha: 20"
+				},
+				{
+					"type": "heading",
+					"text": "Quais ordens de saída são possíveis?"
+				},
+				{
+					"type": "paragraph",
+					"text": "Suponha que 1, 2, 3, 4 sejam empilhados nessa ordem, e que desempilhar possa acontecer a qualquer momento. Quando um valor sai, tudo o que foi empilhado depois dele e ainda está dentro precisa sair primeiro, na ordem inversa. Então, depois de imprimir um valor `x`, os valores menores ainda não impressos devem sair em ordem decrescente. Por exemplo, 2, 1, 3, 4 é possível, mas 2, 4, 1, 3 não é: depois que 4 sai, o 3 está acima do 1 e tem de sair primeiro."
+				},
+				{
+					"type": "heading",
+					"text": "Uma pilha que conhece o seu mínimo"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para obter o mínimo em `O(1)`, mantenha uma segunda pilha de mínimos. Empilhe `x` nela quando estiver vazia ou quando `x` for **menor ou igual** ao topo dela. Ao desempilhar, se o valor removido for igual ao topo da segunda pilha, desempilhe também essa. A comparação precisa ser 'menor ou igual': se o mínimo 3 é empilhado duas vezes e só a primeira cópia é registrada, remover um 3 apaga o registro do outro e a resposta fica errada."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Pilha = LIFO, acesso só no topo, push e pop em O(1). Sempre que a última coisa começada precisa ser a primeira a terminar, pense numa pilha."
+				}
+			]
+		},
+		{
+			"id": "queues-and-deques",
+			"title": "Filas e deques",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma fila é a fila do caixa: as pessoas entram no fim e saem pela frente, então o primeiro a chegar é o primeiro a ser atendido. Isto é **FIFO**: first in, first out (o primeiro a entrar é o primeiro a sair). As operações são **enqueue** (inserir no **fim**) e **dequeue** (remover da **frente**). Ninguém entra nem sai pelo meio."
+				},
+				{
+					"type": "diagram",
+					"caption": "A, B, C entram; uma remoção; D entra",
+					"content": "frente -> [ A ][ B ][ C ] <- fim\ndequeue devolve A:  [ B ][ C ]\nenqueue D:          [ B ][ C ][ D ]"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **deque** (double-ended queue, fila de duas pontas, lido como 'dék') permite inserir e remover pelas **duas pontas**, mas ainda não pelo meio. Ele generaliza a pilha e a fila. Numa lista duplamente encadeada ou num vetor circular, as quatro operações custam `O(1)`."
+				},
+				{
+					"type": "heading",
+					"text": "Fila em lista encadeada"
+				},
+				{
+					"type": "paragraph",
+					"text": "Os elementos saem pela frente e entram pelo fim, então guarde **dois ponteiros**, um para cada ponta. Assim nenhuma operação percorre nós. O caso especial clássico: quando você remove o único elemento, os dois ponteiros devem voltar a nulo, senão o ponteiro do fim apontaria para um nó que não existe mais."
+				},
+				{
+					"type": "heading",
+					"text": "Fila em vetor: o truque circular"
+				},
+				{
+					"type": "paragraph",
+					"text": "Com índices `front` e `rear` que só avançam, as células à esquerda de `front` são desperdiçadas a cada remoção, e logo a fila diz 'cheia' com o vetor quase vazio. Um conserto é deslocar todos os elementos para trás, mas então a remoção custa `O(n)`. O conserto melhor é a **fila circular**: trate o vetor como um anel, em que depois do último índice vem o índice 0."
+				},
+				{
+					"type": "diagram",
+					"caption": "Um anel de N = 6 células",
+					"content": "índice:   0     1     2     3     4     5\n        [ C ] [ D ] [   ] [   ] [ A ] [ B ]\n                                   ^front = 4\nN = 6, front = 4, count = 4: A em 4, B em 5, C em 0, D em 1"
+				},
+				{
+					"type": "paragraph",
+					"text": "A próxima inserção vai no índice `(front + count) mod N`, em que `mod` é o resto de uma divisão. A frente anda do mesmo jeito, `front = (front + 1) mod N`, a cada remoção. No anel acima, `N = 6`, `front = 4` e 4 elementos estão guardados, então a próxima inserção é em `(4 + 4) mod 6 = 2`."
+				},
+				{
+					"type": "callout",
+					"tone": "warning",
+					"text": "Se você guarda só `front` e `rear` e diz 'vazia quando front == rear', uma fila cheia fica igual a uma fila vazia. Existem N diferenças possíveis entre os dois índices, mas N + 1 quantidades possíveis (de 0 a N). Resolva desperdiçando uma célula (no máximo N - 1 elementos) ou guardando um contador separado. Então um anel de 8 células sem contador guarda no máximo 7 itens."
+				},
+				{
+					"type": "heading",
+					"text": "Filas e pilhas juntas"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Inverter uma fila**: uma fila mantém a ordem de chegada, uma pilha a inverte. Se você passa os elementos de uma fila por uma pilha e de volta, a ordem deles fica invertida. Exemplo: a fila 3, 6, 9 entra na pilha como 3, 6, 9 (9 no topo) e sai como 9, 6, 3.",
+						"**Uma fila feita com duas pilhas**, `In` e `Out`: `enqueue` empilha em `In`. `dequeue` desempilha de `Out`, e só quando `Out` está vazia ele antes move **todos** os elementos de `In` para `Out`, um pop e um push de cada vez. Mover inverte a ordem, e duas inversões devolvem a ordem de chegada. Cada elemento é empilhado e desempilhado no máximo duas vezes, então n operações custam `O(n)` no total, isto é, `O(1)` **amortizado** por operação, mesmo que um único dequeue custe `O(n)`."
+					]
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Estrutura",
+						"Inserir",
+						"Remover",
+						"Regra"
+					],
+					"rows": [
+						[
+							"Pilha",
+							"topo",
+							"topo",
+							"LIFO"
+						],
+						[
+							"Fila",
+							"fim",
+							"frente",
+							"FIFO"
+						],
+						[
+							"Deque",
+							"as duas pontas",
+							"as duas pontas",
+							"sem acesso ao meio"
+						]
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Fila = FIFO. Num anel, a próxima célula livre é (front + count) mod N. Sem contador, um anel de N células guarda no máximo N - 1 itens."
+				}
+			]
+		},
+		{
+			"id": "recursion-and-generalised-lists",
+			"title": "Recursão e listas generalizadas",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Você já viu dois espelhos um de frente para o outro, com uma imagem dentro da imagem dentro da imagem? **Recursão** é quando uma função resolve um problema chamando a **si mesma** para uma versão menor do problema. Para funcionar, toda função recursiva precisa de duas partes: um **caso base**, respondido direto sem mais chamadas, e um **passo recursivo** que leva o problema na direção do caso base. Se uma delas falta, as chamadas se empilham na pilha de chamadas até a memória acabar (um **estouro de pilha**, stack overflow)."
+				},
+				{
+					"type": "code",
+					"language": "ts",
+					"caption": "Soma de 1..n",
+					"content": "function sum(n: number): number {\n\tif (n === 0) return 0;      // caso base: nada mais a somar\n\treturn n + sum(n - 1);      // passo: um problema menor\n}"
+				},
+				{
+					"type": "callout",
+					"tone": "analogy",
+					"text": "Bonecas russas encaixadas: para contar todas as bonecas, abra a primeira e conte o resto do mesmo jeito, até chegar a uma boneca sem nada dentro. Essa boneca é o caso base."
+				},
+				{
+					"type": "heading",
+					"text": "Torres de Hanói"
+				},
+				{
+					"type": "paragraph",
+					"text": "Há 3 pinos e `n` discos de tamanhos diferentes, e um disco grande nunca pode ficar sobre um menor. Para mover `n` discos do pino A para o pino C: mova os `n - 1` discos de cima para o pino B (reserva), mova o maior disco para C e depois mova os `n - 1` discos de B para cima de C. O número de movimentos segue `T(n) = 2 T(n - 1) + 1`, cuja solução é **2ⁿ - 1**."
+				},
+				{
+					"type": "chart",
+					"title": "Movimentos mínimos nas Torres de Hanói",
+					"unit": "movimentos",
+					"bars": [
+						{
+							"label": "n = 1",
+							"value": 1
+						},
+						{
+							"label": "n = 2",
+							"value": 3
+						},
+						{
+							"label": "n = 4",
+							"value": 15
+						},
+						{
+							"label": "n = 10",
+							"value": 1023
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Fibonacci: quando a recursão repete trabalho"
+				},
+				{
+					"type": "paragraph",
+					"text": "`fib(n) = fib(n-1) + fib(n-2)`, com `fib(0) = 0` e `fib(1) = 1`. A versão recursiva direta resolve os mesmos problemas pequenos várias vezes: na figura abaixo, `fib(2)` é calculado duas vezes. As chamadas no total são 9 para `fib(4)`, e o número cresce exponencialmente quando `n` cresce. Guardar os resultados já calculados, ou usar um laço simples, torna o custo `O(n)`."
+				},
+				{
+					"type": "diagram",
+					"caption": "Chamadas feitas por fib(4): fib(2) aparece duas vezes",
+					"content": "              fib(4)\n             /      \\\n        fib(3)      fib(2)\n        /    \\      /    \\\n    fib(2) fib(1) fib(1) fib(0)\n    /    \\\nfib(1) fib(0)"
+				},
+				{
+					"type": "heading",
+					"text": "Listas generalizadas"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma lista normal guarda só coisas simples. Numa **lista generalizada** cada elemento é um **átomo** (um valor simples, como `a`) ou **outra lista generalizada**. Os parênteses mostram o aninhamento: `(a, (b, c))` tem um átomo `a` e uma sublista `(b, c)`. Como a definição se refere a si mesma, os algoritmos que a percorrem são naturalmente recursivos."
+				},
+				{
+					"type": "paragraph",
+					"text": "A **profundidade** também é definida recursivamente: 1 mais a maior profundidade entre as sublistas, e átomos não somam nada. Uma lista feita só de átomos tem profundidade 1. Então `(a, (b, (c, d)))` tem profundidade 3: a lista mais interna `(c, d)` tem profundidade 1, `(b, (c, d))` tem 2 e a lista inteira tem 3. É o mesmo raciocínio usado para a altura de uma árvore."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Recursão = caso base + um passo que chega mais perto dele. Pode ser elegante, mas confira quantas vezes o mesmo trabalho é repetido."
+				}
+			]
+		},
+		{
+			"id": "binary-trees-and-traversals",
+			"title": "Árvores binárias e percursos",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma árvore genealógica começa com um avô, que tem filhos, que têm seus próprios filhos. Uma **árvore** em computação é assim, desenhada de cabeça para baixo: uma **raiz** no topo e galhos descendo. Uma **árvore binária** é uma árvore em que todo nó tem **no máximo dois filhos**, chamados esquerdo e direito."
+				},
+				{
+					"type": "heading",
+					"text": "Palavras sobre árvores"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Raiz**: o único nó sem pai. **Folha**: um nó sem filhos. Os outros são nós **internos**.",
+						"**Grau** de um nó: o seu número de filhos. As folhas têm grau 0. Numa árvore com um só nó, a raiz também é uma folha.",
+						"**Nível**: a distância da raiz, em passos. **Altura** da árvore: o número de arestas (ligações) no caminho mais longo da raiz até uma folha. Neste resumo, uma árvore com um só nó tem altura 0.",
+						"**Subárvore**: qualquer nó junto com tudo o que está abaixo dele."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada nível pode ter o dobro de nós do nível de cima: 1, 2, 4, 8... Então uma árvore de altura `h` tem `h + 1` níveis e no máximo **2^(h+1) - 1** nós (altura 3 dá 15). Lendo ao contrário: n nós cabem numa altura perto de log₂ n, e é por isso que uma boa árvore é tão rápida."
+				},
+				{
+					"type": "chart",
+					"title": "Maior número de nós de uma árvore binária, por altura",
+					"unit": "nós",
+					"bars": [
+						{
+							"label": "h = 0",
+							"value": 1
+						},
+						{
+							"label": "h = 1",
+							"value": 3
+						},
+						{
+							"label": "h = 2",
+							"value": 7
+						},
+						{
+							"label": "h = 3",
+							"value": 15
+						},
+						{
+							"label": "h = 4",
+							"value": 31
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Passeando pela árvore"
+				},
+				{
+					"type": "paragraph",
+					"text": "Os três **percursos em profundidade** diferem só em quando visitam a raiz de cada subárvore: antes das duas subárvores (**pré-ordem**), entre elas (**em-ordem**) ou depois delas (**pós-ordem**). Em todos eles a subárvore esquerda é percorrida antes da direita, e a regra é aplicada recursivamente a cada subárvore."
+				},
+				{
+					"type": "diagram",
+					"caption": "Uma árvore pequena",
+					"content": "        1\n       / \\\n      2   3\n     / \\\n    4   5"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Percurso",
+						"Regra",
+						"Resultado para a árvore acima"
+					],
+					"rows": [
+						[
+							"Pré-ordem",
+							"nó, esquerda, direita",
+							"1 2 4 5 3"
+						],
+						[
+							"Em-ordem",
+							"esquerda, nó, direita",
+							"4 2 5 1 3"
+						],
+						[
+							"Pós-ordem",
+							"esquerda, direita, nó",
+							"4 5 2 3 1"
+						],
+						[
+							"Por níveis (em largura)",
+							"nível por nível, da esquerda para a direita",
+							"1 2 3 4 5"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "A pós-ordem serve quando um nó precisa primeiro das respostas dos filhos, como liberar a memória de uma árvore ou calcular a sua altura. A raiz é sempre a última, e o primeiro nó visitado é sempre uma folha. O percurso **por níveis** usa uma **fila**: visite um nó e coloque seus filhos no fim da fila. A fila guarda os nós descobertos e ainda não visitados. Se você trocar a fila por uma pilha, o mesmo algoritmo vira um percurso em profundidade."
+				},
+				{
+					"type": "heading",
+					"text": "Reconstruindo uma árvore"
+				},
+				{
+					"type": "paragraph",
+					"text": "A pré-ordem diz qual é a raiz: o primeiro item. A em-ordem diz quais chaves estão à esquerda e quais à direita dessa raiz. Repita a separação em cada parte, e uma única árvore aparece (desde que todas as chaves sejam diferentes). Exemplo: pré-ordem `D B A C E` e em-ordem `A B C D E`. A raiz é `D`. Na em-ordem, `A B C` fica à esquerda e `E` à direita. Na parte esquerda, a pré-ordem `B A C` diz que a raiz é `B`, com `A` à esquerda e `C` à direita. Então a pós-ordem é `A C B E D`."
+				},
+				{
+					"type": "heading",
+					"text": "Árvores de expressão"
+				},
+				{
+					"type": "paragraph",
+					"text": "A expressão `a * (b + c) - d` pode ser guardada com operadores nos nós internos e operandos nas folhas. O formato da árvore já diz a ordem das operações, então não precisa de parênteses. A pós-ordem escreve cada operador depois dos operandos (`a b c + * d -`, a notação pós-fixa, que uma pilha sabe avaliar). A pré-ordem dá a notação pré-fixa."
+				},
+				{
+					"type": "heading",
+					"text": "Fatos de contagem"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Uma árvore binária com `n` nós tem `n - 1` ligações (todo nó, exceto a raiz, tem um pai). Com 2 ponteiros de filho por nó há `2n` ponteiros, então exatamente **n + 1 deles são nulos**, seja qual for o formato.",
+						"Toda árvore binária não vazia tem **uma folha a mais do que nós com dois filhos**. Então uma árvore com 5 nós de dois filhos tem 6 folhas, não importa quantos nós tenham um filho só."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Árvores em um vetor"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma árvore pode ser guardada nível por nível num vetor, sem ponteiros. Com a raiz no índice 0, os filhos do nó no índice `i` estão em `2i + 1` e `2i + 2`, e o pai está em `(i - 1) div 2` (divisão inteira). Então os filhos do índice 3 estão em 7 e 8. Não desperdiça espaço só para árvores **completas**, porque cada nó que falta deixa um buraco."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Pré-ordem: nó primeiro. Em-ordem: nó no meio. Pós-ordem: nó por último. Por níveis: uma fila. n nós têm n + 1 ponteiros nulos."
+				}
+			]
+		},
+		{
+			"id": "binary-search-trees",
+			"title": "Árvores binárias de busca",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Pense numa brincadeira de adivinhação: 'estou pensando num número de 1 a 100'. Você diz 50 e eu respondo 'maior'. Com uma pergunta você descartou metade dos números. Uma **árvore binária de busca** (ABB) é uma árvore binária construída para jogar esse jogo. Em **todo nó**, todas as chaves da **subárvore esquerda são menores** e todas as chaves da **subárvore direita são maiores** (aqui as chaves são todas diferentes)."
+				},
+				{
+					"type": "diagram",
+					"caption": "Inserindo 8, 3, 10, 1, 6",
+					"content": "        8\n       / \\\n      3   10\n     / \\\n    1   6"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para **buscar**, compare com o nó e siga só um lado, jogando o outro fora. Para **inserir**, busque a chave e coloque-a como uma nova folha onde a busca termina. O custo de busca, inserção e remoção é o tamanho do caminho, no máximo a **altura** da árvore."
+				},
+				{
+					"type": "heading",
+					"text": "Fatos úteis"
+				},
+				{
+					"type": "list",
+					"items": [
+						"O percurso **em-ordem** visita as chaves em **ordem crescente**, em `O(n)`. É assim que uma ABB lista dados ordenados.",
+						"O **mínimo** é achado seguindo os ponteiros da esquerda a partir da raiz até não haver filho esquerdo. O **máximo** é simétrico, pela direita.",
+						"A propriedade é sobre **subárvores inteiras**, não só pai e filho. Um validador que só confere 'filho esquerdo menor, filho direito maior' aceita uma árvore errada, por exemplo um nó 5 com filho esquerdo 3, em que o 3 tem um filho direito 7: o 7 está na subárvore esquerda do 5, mas é maior que 5. Um validador correto leva um **intervalo** de valores permitidos para baixo na árvore (ir para a esquerda baixa o limite superior, ir para a direita sobe o limite inferior), ou confere se a em-ordem é crescente."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "O formato depende da ordem de inserção"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma ABB simples não faz balanceamento: uma chave nova só vira folha onde a sua busca termina. Assim, as mesmas chaves dão árvores diferentes conforme a ordem em que chegam. Se as chaves chegam já ordenadas (1, 2, 3, ..., 1000), cada chave nova é maior que todas as outras e vai à direita da última. A árvore vira uma **lista encadeada** de altura `n - 1`, e uma busca custa `O(n)`."
+				},
+				{
+					"type": "diagram",
+					"caption": "Inserção ordenada: uma corrente",
+					"content": "1\n \\\n  2\n   \\\n    3\n     \\\n      4"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para obter a menor altura com as chaves de 1 a 7, insira primeiro a **mediana** (4), depois as medianas de cada metade (2 e 6), depois o resto. A árvore tem altura 2. Quando você não pode escolher a ordem, só o balanceamento automático garante uma boa altura. É isso que as árvores AVL e rubro-negras fazem."
+				},
+				{
+					"type": "chart",
+					"title": "Altura após inserir 100.000 chaves em ordem crescente (projeto balanced-trees deste repositório)",
+					"unit": "níveis",
+					"bars": [
+						{
+							"label": "ABB simples",
+							"value": 100000
+						},
+						{
+							"label": "Rubro-negra",
+							"value": 31
+						},
+						{
+							"label": "AVL",
+							"value": 17
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Remoção"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Uma folha**: é só cortar.",
+						"**Um filho**: o filho toma o lugar do nó removido.",
+						"**Dois filhos**: não dá para deixar um buraco. Troque a chave pela sua vizinha na ordem: o **sucessor em-ordem** (menor chave da subárvore direita) ou o **antecessor** (maior chave da subárvore esquerda). Essa vizinha tem no máximo um filho, então removê-la do lugar antigo cai num dos casos fáceis."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Exemplo: uma árvore com 40 na raiz, 20 e 60 abaixo, 10 e 30 sob o 20, 50 e 70 sob o 60, e 55 sob o 50. Removendo 40 pela regra do sucessor: a menor chave da subárvore direita é 50 (a mais à esquerda sob o 60). O 50 toma o lugar da raiz, e o seu lugar antigo é preenchido pelo único filho, 55, que vira filho esquerdo do 60."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "ABB: menores à esquerda, maiores à direita, em todo nó. As operações custam a altura: cerca de log n se balanceada, n se for uma corrente. Em-ordem = ordenado."
+				}
+			]
+		},
+		{
+			"id": "avl-trees",
+			"title": "Árvores AVL",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma árvore que se inclina demais é como uma pilha de livros prestes a cair. A **árvore AVL** (nome dos inventores Adelson-Velsky e Landis) é uma árvore binária de busca que se conserta sozinha. A regra: em **todo nó**, as alturas das subárvores esquerda e direita diferem em **no máximo 1**. Essa regra local simples mantém a altura da árvore inteira em `O(log n)`."
+				},
+				{
+					"type": "paragraph",
+					"text": "Cada nó guarda um número pequeno, o **fator de balanceamento**: aqui, a altura da subárvore direita menos a altura da subárvore esquerda. Numa AVL válida ele é sempre **-1, 0 ou +1**. Depois de uma inserção ou remoção, os fatores são atualizados na volta até a raiz. Se algum nó chega a **±2**, ele é consertado com uma rotação."
+				},
+				{
+					"type": "heading",
+					"text": "A rotação"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **rotação** troca os papéis de um nó e de um de seus filhos mudando alguns ponteiros, em tempo constante. Ela muda as alturas, mas mantém a ordem da esquerda para a direita de todas as chaves, então a árvore continua sendo de busca."
+				},
+				{
+					"type": "diagram",
+					"caption": "Rotação à esquerda em x (A, B e C são subárvores)",
+					"content": "    x                  y\n   / \\                / \\\n  A   y     ---->    x   C\n     / \\            / \\\n    B   C          A   B\n\nAmbas leem:  A x B y C"
+				},
+				{
+					"type": "heading",
+					"text": "Os quatro casos"
+				},
+				{
+					"type": "paragraph",
+					"text": "Ache o primeiro nó desbalanceado subindo a partir da chave nova. Olhe o caminho até a chave nova, abaixo desse nó:"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Caso",
+						"Onde o nó novo entrou",
+						"Sinais dos fatores",
+						"Conserto"
+					],
+					"rows": [
+						[
+							"Direita-direita",
+							"à direita do filho direito (externo)",
+							"mesmo sinal (+2 e +1)",
+							"uma rotação à esquerda"
+						],
+						[
+							"Esquerda-esquerda",
+							"à esquerda do filho esquerdo (externo)",
+							"mesmo sinal (-2 e -1)",
+							"uma rotação à direita"
+						],
+						[
+							"Direita-esquerda",
+							"à esquerda do filho direito (interno)",
+							"sinais opostos (+2 e -1)",
+							"rotação dupla: à direita no filho, depois à esquerda no nó"
+						],
+						[
+							"Esquerda-direita",
+							"à direita do filho esquerdo (interno)",
+							"sinais opostos (-2 e +1)",
+							"rotação dupla: à esquerda no filho, depois à direita no nó"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "No caso interno uma rotação simples só espelharia o problema. A rotação dupla primeiro endireita o caminho e depois gira o nó desbalanceado. O neto sobe dois níveis e suas duas subárvores são divididas entre o antigo pai e o antigo avô."
+				},
+				{
+					"type": "diagram",
+					"caption": "Inserindo 3, 1, 2 (caso esquerda-direita): gira o 1 à esquerda, depois o 3 à direita",
+					"content": "  3          3           2\n /          /           / \\\n1    ->    2     ->    1   3\n \\        /\n  2      1"
+				},
+				{
+					"type": "paragraph",
+					"text": "Para um caso externo, pegue as chaves 1, 2, 3 nessa ordem: elas formam uma corrente à direita, a raiz 1 chega a +2, e uma rotação à esquerda no 1 faz do 2 a raiz, com 1 e 3 como filhos. O conserto é local: os nós acima do ponto consertado não mudam."
+				},
+				{
+					"type": "heading",
+					"text": "Que altura ela pode ter?"
+				},
+				{
+					"type": "paragraph",
+					"text": "A AVL mais magra de altura `h` tem uma subárvore de altura `h - 1`, outra de altura `h - 2`, ambas também magras, mais a raiz. A recorrência é `N(h) = N(h-1) + N(h-2) + 1`, que cresce como os números de Fibonacci. Por isso a altura de uma AVL com `n` nós é no máximo cerca de **1,44 log₂ n**."
+				},
+				{
+					"type": "chart",
+					"title": "Menor número de nós de uma AVL de altura h",
+					"unit": "nós",
+					"bars": [
+						{
+							"label": "h = 0",
+							"value": 1
+						},
+						{
+							"label": "h = 1",
+							"value": 2
+						},
+						{
+							"label": "h = 2",
+							"value": 4
+						},
+						{
+							"label": "h = 3",
+							"value": 7
+						},
+						{
+							"label": "h = 4",
+							"value": 12
+						},
+						{
+							"label": "h = 5",
+							"value": 20
+						}
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Inserção versus remoção"
+				},
+				{
+					"type": "paragraph",
+					"text": "Depois de uma inserção, a árvore ficou mais alta em algum lugar, e um passo de rotação (simples ou dupla) devolve aquela subárvore à altura anterior, então o conserto **termina ali**: no máximo um passo de rotação. Depois de uma remoção, uma subárvore ficou mais baixa, e a rotação que conserta um nó pode deixar a subárvore ainda mais baixa, o que pode desequilibrar o pai. Então a remoção pode precisar conferir **todos os ancestrais até a raiz**, com até `O(log n)` passos de rotação. O custo total continua `O(log n)`."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "AVL: alturas de irmãos diferem em no máximo 1; fator de balanceamento -1, 0, +1; ±2 dispara uma rotação (simples nos casos externos, dupla nos internos). A inserção precisa de no máximo um passo de rotação, a remoção pode precisar de vários."
+				}
+			]
+		},
+		{
+			"id": "red-black-trees",
+			"title": "Árvores rubro-negras",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Uma árvore rubro-negra se balanceia com cores em vez de alturas. Cada nó é pintado de **vermelho** ou **preto**, e algumas regras impedem que a árvore se incline demais. É uma regra mais frouxa que a da AVL: a árvore pode ficar um pouco mais alta, mas as atualizações pedem menos reorganização."
+				},
+				{
+					"type": "heading",
+					"text": "As regras"
+				},
+				{
+					"type": "list",
+					"ordered": true,
+					"items": [
+						"Todo nó é vermelho ou preto.",
+						"A **raiz é preta** (a convenção deste resumo).",
+						"As folhas vazias, chamadas **NIL**, são pretas.",
+						"Um **nó vermelho só tem filhos pretos** (nunca dois vermelhos seguidos).",
+						"Todos os caminhos de um nó até as folhas NIL abaixo dele têm o **mesmo número de nós pretos**."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Por que isso dá uma árvore baixa? Todos os caminhos da raiz até as folhas têm o mesmo número de pretos, e entre dois pretos cabe no máximo um vermelho. Então o caminho mais longo tem no máximo **o dobro** de nós do mais curto. Isso limita a altura em **2 log₂(n + 1)**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Exemplo: se todo caminho da raiz até um NIL tem exatamente 2 nós pretos (sem contar o NIL), o caminho mais curto tem 2 nós (ambos pretos) e o mais longo alterna preto e vermelho, terminando num vermelho: preto, vermelho, preto, vermelho, o que dá no máximo **4** nós."
+				},
+				{
+					"type": "heading",
+					"text": "Inserção"
+				},
+				{
+					"type": "paragraph",
+					"text": "A chave nova entra como folha e é pintada de **vermelho**. Um nó vermelho nunca muda a contagem de pretos de nenhum caminho, que é a regra mais delicada. No máximo uma regra pode quebrar: um nó vermelho com pai vermelho. O conserto (o **fix-up**) olha o **tio**, o irmão do pai."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Tio",
+						"O que o fix-up faz",
+						"Continua?"
+					],
+					"rows": [
+						[
+							"Vermelho",
+							"Só recolore: pai e tio ficam pretos, o avô fica vermelho",
+							"Sim: o avô pode agora ter um pai vermelho, então a conferência sobe dois níveis"
+						],
+						[
+							"Preto (ou NIL)",
+							"Uma ou duas rotações mais uma troca de cores",
+							"Não: resolvido de vez"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Com tio vermelho nenhum caminho muda a sua contagem de pretos, porque o preto do avô só desce para os seus dois filhos. Esse é o único caso que se repete. Se chegar à raiz e a raiz ficar vermelha, ela é pintada de preto de novo, o que sobe em um a contagem de pretos de todos os caminhos ao mesmo tempo, então as regras continuam valendo."
+				},
+				{
+					"type": "diagram",
+					"caption": "Inserir 5, 8, 9, 12 dá esta árvore (R = vermelho, B = preto)",
+					"content": "      8B\n     /  \\\n   5B    9B\n           \\\n           12R"
+				},
+				{
+					"type": "paragraph",
+					"text": "Acompanhe: 5 é a raiz (preta). O 8 vai para a direita, vermelho. Inserir 9 coloca um filho vermelho sob um pai vermelho com tio preto (NIL): uma rotação à esquerda no 5 e uma troca de cores fazem do 8 preto, com filhos vermelhos 5 e 9. Inserir 12 como filho do 9 vermelho encontra um tio vermelho (5): recolore, então 5 e 9 ficam pretos e 8 fica vermelho, e depois 8 é a raiz e é pintado de preto de novo. O 12 continua vermelho."
+				},
+				{
+					"type": "heading",
+					"text": "AVL ou rubro-negra?"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"AVL",
+						"Rubro-negra"
+					],
+					"rows": [
+						[
+							"Regra de balanceamento",
+							"Estrita: alturas de irmãos diferem em no máximo 1",
+							"Frouxa: o caminho mais longo tem no máximo o dobro do mais curto"
+						],
+						[
+							"Altura máxima",
+							"cerca de 1,44 log₂ n",
+							"até 2 log₂(n + 1)"
+						],
+						[
+							"Buscas",
+							"um pouco mais rápidas (árvore mais baixa)",
+							"um pouco mais lentas"
+						],
+						[
+							"Atualizações",
+							"podem girar mais",
+							"menos rotações e menos reorganização"
+						],
+						[
+							"Onde você encontra",
+							"cargas com muitas buscas",
+							"bibliotecas de mapas e conjuntos ordenados"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "As duas garantem busca, inserção e remoção em `O(log n)`. Nas medições deste repositório, com 100.000 chaves aleatórias uma árvore simples é só cerca de duas vezes mais alta que as balanceadas (41 contra 20), mas com chaves ordenadas ela é uma corrente. Balancear é um seguro contra uma ordem de chegada que você não escolhe."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Rubro-negra: raiz preta, NIL preto, nenhum nó vermelho com filho vermelho, mesma contagem de pretos em todos os caminhos. Nós novos são vermelhos. Tio vermelho: recolore e sobe. Tio preto: gira e para."
+				}
+			]
+		},
+		{
+			"id": "heaps-and-priority-queues",
+			"title": "Heaps e filas de prioridade",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "No pronto-socorro de um hospital, quem chegou primeiro nem sempre é atendido primeiro: o caso mais urgente vai na frente. Uma **fila de prioridade** funciona assim: você insere itens com uma prioridade, e ela sempre entrega o de **maior prioridade** (não o mais antigo). O jeito usual de construí-la é um **heap**."
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **max-heap binário** tem duas propriedades independentes. **Ordem**: todo nó é maior ou igual aos seus filhos, então o maior elemento está sempre na raiz. **Forma**: a árvore é **completa**, isto é, todos os níveis estão cheios, exceto possivelmente o último, que é preenchido da esquerda para a direita. Irmãos e primos não são comparados, então manter essa ordem parcial é bem mais barato do que manter tudo ordenado."
+				},
+				{
+					"type": "heading",
+					"text": "Uma árvore dentro de um vetor"
+				},
+				{
+					"type": "paragraph",
+					"text": "Por causa da forma completa, não há buracos, e o heap cabe num vetor sem ponteiros. Com a raiz no índice 0, os filhos do índice `i` estão em `2i + 1` e `2i + 2`, e o pai está em `(i - 1) div 2`."
+				},
+				{
+					"type": "diagram",
+					"caption": "O max-heap [9, 5, 6, 1, 2]",
+					"content": "árvore:       9            vetor: [9][5][6][1][2]\n            /   \\                  0  1  2  3  4\n           5     6\n          / \\\n         1   2"
+				},
+				{
+					"type": "heading",
+					"text": "Inserir e remover o máximo"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Inserir**: ponha o elemento na primeira posição livre do vetor (isso mantém a forma completa) e depois **suba** (sift up): troque com o pai enquanto for maior. Insira 8 no heap acima: ele vai para o índice 5, o pai é 6 (índice 2), 8 é maior, troca. O próximo pai é 9, para. Resultado: `[9, 5, 8, 1, 2, 6]`. No máximo cerca de log₂ n trocas.",
+						"**Remover o máximo**: pegue a raiz. Para não deixar um buraco, mova o **último elemento** do vetor para a raiz e depois **desça** (sift down): troque com o **maior** dos dois filhos enquanto ele for menor que esse filho. Remova o máximo de `[9, 5, 8, 1, 2, 6]`: o 6 vai para a raiz, o maior filho é 8, troca. Resultado: `[8, 5, 6, 1, 2]`. Trocar com o maior filho é essencial: senão o novo pai poderia ser menor que o seu irmão."
+					]
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Operação",
+						"Custo com um heap binário"
+					],
+					"rows": [
+						[
+							"Olhar o máximo",
+							"O(1)"
+						],
+						[
+							"Inserir",
+							"O(log n)"
+						],
+						[
+							"Remover o máximo",
+							"O(log n), no pior caso"
+						],
+						[
+							"Achar o mínimo num max-heap",
+							"O(n): ele pode estar em qualquer folha"
+						],
+						[
+							"Construir um heap com n itens",
+							"O(n)"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Dois fatos surpreendentes"
+				},
+				{
+					"type": "list",
+					"items": [
+						"**Construir um heap é linear.** Aplicar sift-down a cada nó interno, do último até a raiz, custa a cada nó a sua **altura**, não a altura da árvore. A maioria dos nós está perto do fundo, onde a altura é pequena, então a soma é `O(n)`, mais barata que inserir n itens um por um (`O(n log n)`). É o primeiro passo do **heapsort**.",
+						"**A menor chave de um max-heap** não fica num lugar fixo. Ela pode estar em qualquer folha. Num heap com n nós as folhas ocupam os índices de `n div 2` em diante, cerca de metade do vetor. Procurar o mínimo é conferir todas elas: `O(n)`."
+					]
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Heap = árvore completa + pai maior ou igual aos filhos, guardado num vetor. Inserir: coloca no fim e sobe. Remover o máximo: move o último para a raiz e desce, sempre com o maior filho. Ambos O(log n)."
+				}
+			]
+		},
+		{
+			"id": "hash-tables",
+			"title": "Tabelas de espalhamento: colisões, fator de carga, rehashing",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Imagine uma escola com um armário para cada número de chamada. Para achar o caderno do aluno 17 você não procura em todos os armários: vai direto ao armário 17. Uma **tabela de espalhamento** (tabela hash) faz isso para qualquer tipo de chave, até nomes. Uma **função de espalhamento** (hash) transforma a chave em um número, que vira um índice num vetor. Então a busca vai direto a um lugar só, em média em `O(1)`."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma boa função hash é **determinística** (a mesma chave sempre dá o mesmo código), rápida, e espalha bem as chaves. Uma função ruim ainda é correta, mas põe muitas chaves nos mesmos lugares e deixa tudo lento."
+				},
+				{
+					"type": "heading",
+					"text": "Colisões"
+				},
+				{
+					"type": "paragraph",
+					"text": "Há muito mais chaves possíveis do que posições, então duas chaves diferentes às vezes caem no mesmo índice. Isso é uma **colisão**. Toda tabela precisa de um plano para isso. Os dois clássicos:"
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Encadeamento separado",
+						"Endereçamento aberto (sondagem linear)"
+					],
+					"rows": [
+						[
+							"Onde ficam as entradas",
+							"Em listas penduradas em cada posição, fora do vetor principal",
+							"No próprio vetor"
+						],
+						[
+							"Numa colisão",
+							"Acrescenta mais um nó na lista daquela posição",
+							"Tenta a próxima posição, e a próxima, voltando ao início no fim"
+						],
+						[
+							"Custo de uma operação",
+							"Tamanho da lista, em média o fator de carga",
+							"Número de posições sondadas"
+						]
+					]
+				},
+				{
+					"type": "diagram",
+					"caption": "Tabela de 5 posições, h(k) = k mod 5, sondagem linear, inserir 7, 12, 2",
+					"content": "7  -> índice 2: livre, guarda.\n12 -> índice 2 ocupado, tenta 3: livre, guarda.\n2  -> índices 2 e 3 ocupados, tenta 4: livre, guarda.\n\níndice:  0    1    2    3    4\n       [   ][   ][ 7 ][ 12][ 2 ]"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma busca segue o mesmo caminho de posições: pergunta o índice 2, depois o 3, depois o 4, e para quando encontra a chave ou uma posição vazia."
+				},
+				{
+					"type": "heading",
+					"text": "Remover com endereçamento aberto: lápides"
+				},
+				{
+					"type": "paragraph",
+					"text": "No endereçamento aberto, uma busca termina quando encontra uma posição **vazia**. Se você remove a chave A (que está antes de B na mesma sequência de sondagem) só esvaziando a posição dela, uma busca posterior por B para na célula vazia e diz errado 'não encontrada'. A solução é uma **lápide** (tombstone), uma marca especial: a busca passa por cima dela, e uma inserção pode reutilizá-la. As lápides ainda alongam as sondagens, então uma reconstrução (rehash) as descarta."
+				},
+				{
+					"type": "heading",
+					"text": "Fator de carga"
+				},
+				{
+					"type": "paragraph",
+					"text": "O **fator de carga** α é o número de elementos guardados dividido pelo número de posições. Com 40 posições e 30 elementos, α = 0,75. Ele mede quão cheia está a tabela, e portanto quão provável é uma colisão. Com encadeamento, α é o tamanho médio de uma lista: uma busca que falha examina cerca de α entradas e uma que acha examina cerca de 1 + α/2. Com 300 elementos em 100 posições, α = 3, então uma busca por uma chave ausente olha cerca de 3 entradas."
+				},
+				{
+					"type": "paragraph",
+					"text": "Com sondagem linear, as células ocupadas se juntam em longas sequências (**agrupamento primário**), e uma chave que cai numa sequência precisa andar até o fim dela, deixando-a ainda maior. O número esperado de posições examinadas numa busca que falha é cerca de `(1 + 1/(1 - α)²) / 2`, que explode quando α chega perto de 1."
+				},
+				{
+					"type": "chart",
+					"title": "Posições examinadas numa busca que falha com sondagem linear",
+					"unit": "posições",
+					"bars": [
+						{
+							"label": "α = 0,25",
+							"value": 1.4
+						},
+						{
+							"label": "α = 0,5",
+							"value": 2.5
+						},
+						{
+							"label": "α = 0,75",
+							"value": 8.5
+						},
+						{
+							"label": "α = 0,9",
+							"value": 50.5
+						}
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Com encadeamento, as mesmas cargas custam 0,25, 0,5, 0,75 e 0,9 entradas: uma reta. Por isso as tabelas de endereçamento aberto são redimensionadas com cargas menores (o mini-projeto deste repositório usa 0,5 para sondagem e 0,75 para encadeamento)."
+				},
+				{
+					"type": "heading",
+					"text": "Rehashing"
+				},
+				{
+					"type": "paragraph",
+					"text": "Quando α passa de um limite, a tabela cresce (em geral dobrando). Mas o índice é `hash mod capacidade`, então depende do tamanho: **toda entrada precisa ser inserida de novo**. Isso é o **rehashing**. Custa `O(n)`, mas dobrar o tamanho o torna raro, então a inserção continua `O(1)` amortizado. Ele também encurta as listas ao separar chaves que colidiam: as chaves 3, 11 e 27 caem todas no índice 3 com 8 posições; com 16 posições, o 3 fica no 3 e o 11 e o 27 vão os dois para o 11."
+				},
+				{
+					"type": "heading",
+					"text": "equals e hashCode"
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma tabela acha um objeto em dois passos: o código hash escolhe a posição, e a igualdade decide dentro dela. Então **objetos iguais devem ter o mesmo código hash**. Em Java, se a classe `Point` sobrescreve `equals` mas não `hashCode`, `set.contains(new Point(1, 2))` depois de adicionar outro `new Point(1, 2)` muito provavelmente devolve `false`: o código hash padrão é diferente, a busca olha no lugar errado, e o objeto parece sumir embora esteja guardado."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Tabela hash: O(1) em média se o fator de carga for mantido baixo. Colisões: encadeamento ou sondagem. Remover com sondagem exige lápides. Redimensionar significa fazer rehashing de toda chave. Objetos iguais devem ter códigos hash iguais."
+				}
+			]
+		},
+		{
+			"id": "graphs",
+			"title": "Grafos: representações, BFS e DFS",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Um mapa de cidades e estradas, uma rede de amigos, os links entre páginas da web: tudo isso são **grafos**. Um grafo tem **vértices** (os pontos, como as cidades) e **arestas** (as linhas entre eles, como as estradas). Se as arestas têm sentido (ruas de mão única), o grafo é **dirigido**, e a aresta também se chama **arco**. O **grau** de um vértice é o seu número de vizinhos."
+				},
+				{
+					"type": "heading",
+					"text": "Duas formas de guardar um grafo"
+				},
+				{
+					"type": "paragraph",
+					"text": "Seja `V` o número de vértices e `E` o número de arestas."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Aspecto",
+						"Matriz de adjacência",
+						"Listas de adjacência"
+					],
+					"rows": [
+						[
+							"Ideia",
+							"Uma tabela V × V: a célula (i, j) diz se há aresta de i para j",
+							"Para cada vértice, uma lista dos seus vizinhos"
+						],
+						[
+							"Memória",
+							"Θ(V²), mesmo com poucas arestas",
+							"Θ(V + E)"
+						],
+						[
+							"Existe aresta entre u e v?",
+							"O(1)",
+							"O(grau de u)"
+						],
+						[
+							"Listar os vizinhos de um vértice",
+							"O(V)",
+							"O(seu grau)"
+						],
+						[
+							"Boa para",
+							"grafos densos, ou quando o teste de aresta domina",
+							"grafos esparsos"
+						]
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Um grafo é **esparso** quando `E` é muito menor que `V²`. Com 10.000 vértices e 30.000 arestas, uma matriz precisaria de 100 milhões de células, enquanto as listas precisam de apenas dezenas de milhares de entradas. Use listas."
+				},
+				{
+					"type": "paragraph",
+					"text": "Num grafo **não dirigido**, uma aresta v–w precisa ser encontrada por qualquer ponta, então é guardada duas vezes, uma em cada lista. O tamanho total das listas, que é a soma dos graus, é sempre **2E**. Um grafo com 5 arestas e sem laços tem 10 entradas."
+				},
+				{
+					"type": "heading",
+					"text": "Duas formas de caminhar num grafo"
+				},
+				{
+					"type": "diagram",
+					"caption": "Grafo com arestas A-B, A-C, B-D, C-D, D-E",
+					"content": "    A\n   / \\\n  B   C\n   \\ /\n    D --- E"
+				},
+				{
+					"type": "list",
+					"items": [
+						"A **busca em profundidade (DFS)** segue um caminho até onde der, depois volta e tenta outro, como explorar um labirinto com um novelo de lã. Usa recursão ou uma **pilha** explícita, e os vértices na pilha são exatamente o caminho atual. A partir de A (vizinhos em ordem alfabética) a ordem é **A B D C E**.",
+						"A **busca em largura (BFS)** visita a origem, depois todos os seus vizinhos, depois os vizinhos deles: camada por camada, como ondas na água. Usa uma **fila**, e cada vértice é marcado quando **entra** na fila, para não ser inserido duas vezes. A partir de A a ordem é **A B C D E**."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Num grafo **sem pesos**, a BFS garante que a camada em que um vértice é achado pela primeira vez é a sua **distância mínima em arestas** a partir da origem. Guardar o predecessor de cada vértice permite reconstruir o caminho mais curto de trás para frente."
+				},
+				{
+					"type": "paragraph",
+					"text": "O custo de uma caminhada depende da representação, porque o passo principal é listar os vizinhos de cada vértice. Com listas, o total é **Θ(V + E)**. Com matriz, listar custa V para cada vértice, então **Θ(V²)** mesmo para um grafo com poucas arestas."
+				},
+				{
+					"type": "heading",
+					"text": "Ciclos e ordem topológica"
+				},
+				{
+					"type": "paragraph",
+					"text": "Um **ciclo** é um caminho que volta ao ponto de partida. Num grafo **dirigido**, encontrar um vértice já visitado durante a DFS é um ciclo **só se esse vértice ainda estiver no caminho atual** (um ancestral). Um vértice que já terminou e é alcançado por outro caminho não fecha ciclo nenhum. Por isso a detecção usa três estados: **não visitado**, **em andamento** e **terminado**. Um detector que diz 'ciclo' sempre que vê um vértice visitado está errado: em A→B, A→C, B→D, C→D ele acusaria um ciclo ao chegar em D pela segunda vez, mas não existe nenhum."
+				},
+				{
+					"type": "paragraph",
+					"text": "Uma **ordenação topológica** lista os vértices de modo que, para toda aresta v→w, v vem antes de w, como a ordem de se vestir (meias antes dos sapatos). Ela existe só para grafos dirigidos **sem ciclos** (DAGs) e em geral **não é única**: vértices sem caminho entre eles podem aparecer em qualquer ordem relativa. Para as arestas A→B, A→C, B→D e C→D, A tem de ser o primeiro e D o último, mas B e C podem trocar: A B C D e A C B D são ambas válidas, então há 2 ordenações."
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Listas para grafos esparsos, matriz quando o teste de aresta é o trabalho principal. DFS = pilha ou recursão, BFS = fila e caminhos mais curtos em arestas. As caminhadas custam Θ(V + E) com listas e Θ(V²) com matriz. Ciclos em grafos dirigidos precisam de três estados."
+				}
+			]
+		},
+		{
+			"id": "choosing-a-structure",
+			"title": "Juntando tudo: como escolher uma estrutura",
+			"blocks": [
+				{
+					"type": "paragraph",
+					"text": "Agora você conhece muitas formas. A habilidade está em olhar o que o programa mais faz e escolher a forma que é barata para isso. Aqui está o quadro todo lado a lado (médias, a menos que se diga outra coisa; `n` é o número de itens)."
+				},
+				{
+					"type": "table",
+					"headers": [
+						"Estrutura",
+						"Buscar",
+						"Inserir",
+						"Remover",
+						"Boa para"
+					],
+					"rows": [
+						[
+							"Vetor (lista sequencial)",
+							"O(1) por posição, O(n) por chave",
+							"O(1) amortizado no fim, O(n) no meio",
+							"O(n)",
+							"ler por posição"
+						],
+						[
+							"Lista encadeada",
+							"O(n)",
+							"O(1) num lugar conhecido",
+							"O(1) se você tem o nó (duplamente encadeada)",
+							"mudanças frequentes no meio"
+						],
+						[
+							"Pilha",
+							"só o topo",
+							"O(1)",
+							"O(1)",
+							"desfazer, chamadas, expressões"
+						],
+						[
+							"Fila / deque",
+							"só as pontas",
+							"O(1)",
+							"O(1)",
+							"atender em ordem, BFS"
+						],
+						[
+							"Árvore binária de busca",
+							"O(log n) balanceada, O(n) no pior caso",
+							"igual",
+							"igual",
+							"dados ordenados"
+						],
+						[
+							"Árvore AVL / rubro-negra",
+							"O(log n) sempre",
+							"O(log n)",
+							"O(log n)",
+							"dados ordenados com garantia"
+						],
+						[
+							"Heap",
+							"máximo em O(1)",
+							"O(log n)",
+							"O(log n) para o máximo",
+							"filas de prioridade"
+						],
+						[
+							"Tabela hash",
+							"O(1) em média",
+							"O(1) amortizado",
+							"O(1) em média",
+							"busca por chave exata"
+						],
+						[
+							"Grafo (listas)",
+							"vizinhos em O(grau)",
+							"O(1) por aresta",
+							"depende",
+							"relações e rotas"
+						]
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Perguntas para fazer"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Preciso dos itens **em ordem** (ordenados, ou a próxima chave maior)? Use uma árvore de busca balanceada, não uma tabela hash.",
+						"Só preciso de **busca exata** por chave? Use uma tabela hash.",
+						"Só preciso do **maior ou do menor** item, repetidas vezes? Use um heap.",
+						"O último ou o primeiro item importa (**LIFO ou FIFO**)? Use uma pilha ou uma fila.",
+						"Os itens estão **relacionados entre si** numa rede? Use um grafo, com listas se for esparso.",
+						"O acesso **por posição** é importante? Use um vetor."
+					]
+				},
+				{
+					"type": "heading",
+					"text": "Erros comuns"
+				},
+				{
+					"type": "list",
+					"items": [
+						"Achar que uma lista encadeada é sempre mais rápida que um vetor porque 'inserir é O(1)'. Chegar ao lugar custa `O(n)`.",
+						"Esquecer que uma ABB simples alimentada com dados ordenados vira uma corrente.",
+						"Esquecer os casos vazio e cheio (underflow de pilha, fila com um elemento, lista vazia, primeiro nó).",
+						"Usar uma tabela hash com uma função hash ruim ou com fator de carga alto, ou mudar os campos-chave de um objeto depois de inseri-lo.",
+						"Confundir o TAD (o quê) com a sua implementação (o como)."
+					]
+				},
+				{
+					"type": "paragraph",
+					"text": "Para ver essas ideias se mexendo, experimente as visualizações do [VisuAlgo](https://visualgo.net/en), onde você insere e remove chaves e acompanha, passo a passo, listas, heaps, tabelas hash, árvores AVL e rubro-negras e caminhadas em grafos. Para aulas, o curso do MIT abaixo cobre sequências, hashing, árvores binárias, AVL, heaps e busca em grafos."
+				},
+				{
+					"type": "video",
+					"title": "MIT 6.006 Introduction to Algorithms, Spring 2020 (vídeos das aulas, em inglês)",
+					"url": "https://www.youtube.com/playlist?list=PLUl4u3cNGP63EdVPNLG3ToM6LaEUuStEY"
+				},
+				{
+					"type": "video",
+					"title": "Data Structures (mycodeschool), vídeos de quadro branco sobre listas, pilhas, filas, árvores e grafos (em inglês)",
+					"url": "https://www.youtube.com/playlist?list=PL2_aWCzGMAwI3W_JlcBbtYTwiQSsOTa6P"
+				},
+				{
+					"type": "callout",
+					"tone": "remember",
+					"text": "Não existe a melhor estrutura de dados, só a melhor para as operações que você mais faz. Conheça o custo de cada operação e a escolha fica fácil."
+				}
+			]
+		}
+	]
+}

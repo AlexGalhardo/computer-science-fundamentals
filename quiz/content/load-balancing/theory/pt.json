@@ -1,0 +1,357 @@
+{
+	"area": "load-balancing",
+	"intro": [
+		"Imagine a cantina da escola com um único caixa e uma fila enorme. A fila anda devagar, as crianças ficam bravas e, se o caixa passa mal e vai embora, ninguém come. Agora imagine que a cantina abre quatro caixas e uma professora fica na porta dizendo \"você vai para o caixa 1, você vai para o caixa 2...\". A fila anda quatro vezes mais rápido e, se um caixa passa mal, a professora simplesmente para de mandar crianças para lá. Essa professora é um **balanceador de carga** (load balancer).",
+		"Na internet é igual. Um site ou um aplicativo é mantido por um programa em um computador chamado [[servidor|um computador que espera pedidos de outros computadores e responde a eles]]. Um servidor só consegue fazer um tanto de trabalho. Quando milhões de pessoas pedem páginas ao mesmo tempo, usamos muitos servidores, e alguma coisa precisa decidir qual servidor responde a cada pessoa. Essa coisa é o balanceador de carga. Você encontra um toda vez que abre um site grande, um app de vídeo ou um jogo online, mesmo sem nunca vê-lo.",
+		"Neste resumo você vai aprender, passo a passo: por que usamos muitos servidores em vez de um servidor gigante, o que é um balanceador de carga e como ele se diferencia de um proxy reverso e de um API gateway, em qual \"andar\" da rede ele pode trabalhar, como ele escolhe um servidor (os algoritmos), como ele percebe que um servidor morreu, como mantém um usuário no mesmo servidor quando é preciso, como lida com o cadeado secreto do HTTPS, como evitar que o próprio balanceador derrube tudo e como configurá-lo no NGINX e no Caddy. No final, você será capaz de responder ao quiz desta área."
+	],
+	"sections": [
+		{
+			"id": "big-picture",
+			"title": "O quadro geral e as palavras que usamos",
+			"blocks": [
+				{ "type": "paragraph", "text": "Vamos começar com algumas palavras que você verá o tempo todo. Um **cliente** é quem pede alguma coisa (seu navegador, o app do celular). Uma **requisição** (request) é uma pergunta que o cliente envia, como \"me dê a página inicial\". Um **servidor** responde. Quando colocamos muitos servidores iguais atrás de uma única porta, cada um deles se chama **back end** (ou instância, uma cópia do mesmo programa). A porta é o balanceador de carga." },
+				{ "type": "diagram", "caption": "O desenho mais simples de balanceamento de carga", "content": "            ┌──────────┐      ┌─> back end 1\nclientes ─> │ balance- │ ─────┼─> back end 2\n            │   ador   │      └─> back end 3\n            └──────────┘\n  um endereço         várias cópias iguais\n  que os clientes     da aplicação\n  enxergam" },
+				{ "type": "paragraph", "text": "Os clientes só conhecem o endereço do balanceador. Eles nunca descobrem quantos back ends existem. Isso é muito útil: podemos adicionar ou remover back ends e ninguém de fora percebe." },
+				{ "type": "callout", "tone": "analogy", "text": "O recepcionista de um restaurante fica na entrada e manda cada grupo novo para uma mesa livre. Os clientes não escolhem o garçom, quem escolhe é o recepcionista. O recepcionista é o balanceador de carga, as mesas com garçons são os back ends." },
+				{ "type": "heading", "text": "Os dois trabalhos de um balanceador de carga" },
+				{ "type": "list", "items": [
+					"**Repartir o trabalho**: para que nenhum servidor seja esmagado enquanto outros ficam parados. Isso dá mais capacidade (mais requisições por segundo).",
+					"**Sobreviver a falhas**: quando um servidor morre, parar de mandar requisições para ele. Os usuários continuam sendo atendidos pelos outros. Isso dá [[disponibilidade|a fração do tempo em que um serviço está funcionando e utilizável]]."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Um balanceador de carga recebe as requisições em um único endereço e as reparte entre vários back ends iguais, para ter mais capacidade e sobreviver à perda de um servidor." }
+			]
+		},
+		{
+			"id": "horizontal-vs-vertical-scaling",
+			"title": "Escalabilidade horizontal contra vertical",
+			"blocks": [
+				{ "type": "paragraph", "text": "Sua loja recebe mais clientes do que consegue atender. Há duas coisas que você pode fazer. Pode comprar uma máquina gigante e super rápida para trocar a antiga. Ou pode comprar mais máquinas comuns e usá-las juntas. Esses dois caminhos têm nome." },
+				{ "type": "table", "headers": ["Aspecto", "Escalabilidade vertical (scale up)", "Escalabilidade horizontal (scale out)"], "rows": [
+					["O que você faz", "Deixa uma máquina maior: mais núcleos, mais memória, discos mais rápidos", "Adiciona mais instâncias do mesmo serviço"],
+					["Imagem", "Trocar o caixa por um super caixa", "Abrir mais caixas"],
+					["Precisa mudar a aplicação?", "Normalmente não, é o jeito mais simples", "Sim: ela precisa funcionar com várias cópias ao mesmo tempo"],
+					["Precisa de balanceador de carga?", "Não, existe uma só máquina", "Sim, algo precisa repartir as requisições"],
+					["Limites", "Existe um tamanho máximo, o preço sobe rápido perto dele, redimensionar muitas vezes exige parar o serviço, e continua sendo UMA máquina (um ponto único de falha)", "Não há teto de uma máquina só, mas partes compartilhadas (como um único banco de dados) podem virar o novo limite"]
+				] },
+				{ "type": "heading", "text": "Por que serviços stateless escalam fácil na horizontal" },
+				{ "type": "paragraph", "text": "Um serviço é [[stateless|não guarda, entre uma requisição e a seguinte, nada de que a seguinte dependa]] quando qualquer cópia pode responder a qualquer requisição. Os dados que precisam sobreviver (sessões, carrinhos, pedidos) ficam em um armazenamento compartilhado, como um banco de dados. Assim o balanceador pode mandar cada requisição para qualquer lugar, e as cópias podem surgir ou sumir à vontade." },
+				{ "type": "callout", "tone": "analogy", "text": "Um banco em que todos os atendentes enxergam os mesmos registros no computador: você pode ir a qualquer guichê. Compare com um atendente que guarda seus papéis em uma gaveta particular: você precisa voltar sempre àquele atendente." },
+				{ "type": "heading", "text": "Dimensionamento: N+1" },
+				{ "type": "paragraph", "text": "Se uma instância atende 400 requisições por segundo e o momento de maior movimento traz 1500, você precisa de ceil(1500 / 400) = ceil(3,75) = 4 instâncias só para atender o pico (sempre arredondamos para cima). Chame esse número de N. Para continuar atendendo o pico inteiro quando uma instância morrer, você acrescenta uma reserva: N + 1 = 5." },
+				{ "type": "paragraph", "text": "A reserva fica mais barata quando as máquinas são pequenas. Para sobreviver a uma falha com 2 máquinas grandes, cada uma capaz de carregar 100% do pico, você paga 200% do pico. Com 8 máquinas pequenas, cada uma carregando 1/7 do pico, você paga 8/7, cerca de 114%. Uma reserva em 8 é uma fração menor do que uma reserva em 2." },
+				{ "type": "chart", "title": "Capacidade que você precisa comprar para sobreviver à perda de uma máquina (pico = 100)", "unit": "% do pico", "bars": [
+					{ "label": "2 máquinas grandes", "value": 200 },
+					{ "label": "8 máquinas pequenas", "value": 114.3 }
+				] },
+				{ "type": "heading", "text": "Elasticidade e suas armadilhas" },
+				{ "type": "paragraph", "text": "Com a escalabilidade horizontal você pode ligar instâncias no horário de pico e desligá-las nas horas calmas, uma de cada vez, enquanto as outras continuam trabalhando. Isso se chama [[elasticidade|capacidade que acompanha a demanda, para cima e para baixo]]. Uma máquina escalada na vertical fica dimensionada para o pico o dia inteiro, ou precisa ser parada a cada mudança de tamanho." },
+				{ "type": "callout", "tone": "warning", "text": "Escalar uma camada só ajuda essa camada. Se 10 instâncias esperam por um único banco de dados que está com 100% de CPU, adicionar a 11ª instância não muda nada: o gargalo é o banco. Além disso, cada instância multiplica o que consome dos recursos compartilhados. Se cada uma de 8 instâncias abre um pool de 20 conexões com o banco e o banco aceita no máximo 100, as 160 conexões pedidas não cabem. Confira o limite para o maior tamanho que você planeja, ou use um pooler de conexões para que muitas instâncias compartilhem poucas conexões reais." },
+				{ "type": "callout", "tone": "remember", "text": "Vertical = uma máquina maior, simples, mas com teto e ainda uma única máquina. Horizontal = mais máquinas, precisa de balanceador de carga e funciona melhor quando o serviço é stateless. Sempre ache o gargalo real antes de adicionar instâncias." }
+			]
+		},
+		{
+			"id": "reverse-proxy-load-balancer-api-gateway",
+			"title": "Proxy reverso, balanceador de carga e API gateway",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um [[proxy|um programa intermediário que repassa pedidos e respostas entre dois lados]] fica entre duas partes. A pergunta é: para quem ele trabalha?" },
+				{ "type": "table", "headers": ["Tipo", "Onde fica", "Quem ele representa"], "rows": [
+					["Proxy direto (forward proxy)", "Ao lado dos clientes (por exemplo, uma rede de empresa em que todos saem para a internet por ele)", "Os clientes. O servidor não vê quem está por trás"],
+					["Proxy reverso (reverse proxy)", "Ao lado dos servidores", "Os servidores. O cliente fala só com ele e não precisa saber que ele existe"]
+				] },
+				{ "type": "paragraph", "text": "Um proxy reverso é um lugar natural para fazer trabalhos que toda requisição precisa: TLS (o cadeado do HTTPS), cache, compressão, esconder o endereço real da origem e segurar clientes lentos para que a aplicação fique livre para a próxima requisição. Por isso um proxy reverso é útil mesmo com UM SÓ servidor atrás dele. O que ele não consegue dar é redundância, que exige mais de um servidor." },
+				{ "type": "paragraph", "text": "Um **balanceador de carga de camada 7** é um proxy reverso que também decide qual de várias cópias equivalentes atende cada requisição. É por isso que o NGINX e o Caddy fazem os dois papéis com a mesma configuração." },
+				{ "type": "paragraph", "text": "Um **API gateway** é um proxy reverso especializado em APIs. Em um único ponto ele aplica regras comuns a todas as rotas: quem pode chamar (autenticação), com que frequência (rate limiting), para qual serviço vai cada rota e como requisições ou respostas são adaptadas. A lógica de negócio fica nos serviços." },
+				{ "type": "diagram", "caption": "Duas decisões diferentes", "content": "                        ┌─> réplica 1 de pedidos\n               /orders  │   (balanceador de pedidos)\n clientes ─> API ───────┼─> réplica 2 de pedidos\n            gateway     │\n               /users   ├─> réplica 1 de usuários\n                        │   (balanceador de usuários)\n                        └─> réplica 2 de usuários" },
+				{ "type": "callout", "tone": "remember", "text": "Rotear decide entre serviços DIFERENTES olhando a rota (o gateway). Balancear decide entre réplicas IGUAIS de um serviço (o balanceador de carga). Um produto pode fazer os dois, mas as duas decisões continuam diferentes." },
+				{ "type": "heading", "text": "O que muda quando há um proxy no meio" },
+				{ "type": "paragraph", "text": "O proxy mantém **duas** conexões separadas: uma com o cliente, outra com o back end. Isso traz três consequências práticas." },
+				{ "type": "list", "items": [
+					"**A aplicação vê o endereço do proxy, não o do cliente.** O proxy passa o endereço do cliente em um cabeçalho chamado `X-Forwarded-For`. Ele é uma lista que cresce para a direita: cada proxy acrescenta o endereço de quem lhe entregou a requisição. Com saltos honestos, `X-Forwarded-For: 203.0.113.7, 10.0.0.5, 10.0.0.9` significa que o cliente é `203.0.113.7` (o primeiro), depois veio o proxy `10.0.0.5`, e `10.0.0.9` é outro salto. O último proxy não aparece na lista, porque é o par da conexão que a aplicação enxerga.",
+					"**Nunca confie nesse cabeçalho às cegas.** Qualquer cliente pode enviar `X-Forwarded-For` com um valor inventado, e os proxies acrescentam no FIM. Então a entrada mais à esquerda é a que o cliente controla. Para limites de taxa ou controle de acesso, leia da direita para a esquerda, pule os endereços dos seus próprios proxies confiáveis e fique com o primeiro que sobrar.",
+					"**Cabeçalhos hop-by-hop são removidos.** Alguns cabeçalhos (`Connection`, `Keep-Alive`, `Transfer-Encoding`, `Upgrade`) valem apenas para uma conexão entre dois vizinhos, ao contrário dos cabeçalhos end-to-end, que viajam do cliente até a origem. Como o proxy tem duas conexões independentes, ele descarta os hop-by-hop que recebeu e cria os que servem para a outra conexão."
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Proxies costumam fazer buffering (segurar) da resposta do back end para proteger a aplicação de clientes lentos. Em respostas de streaming, como server-sent events, esse buffer guarda os dados até encher ou até a resposta acabar, então os eventos chegam em rajadas grandes e atrasadas, embora nenhum se perca. A solução é desligar o buffering da resposta nessas rotas." }
+			]
+		},
+		{
+			"id": "layer-4-vs-layer-7",
+			"title": "Camada 4 contra camada 7",
+			"blocks": [
+				{ "type": "paragraph", "text": "Descrevemos as redes como um prédio com andares, chamados camadas. O [[modelo OSI|uma forma padrão de descrever redes em sete camadas, dos cabos até as aplicações]] tem sete: física, enlace de dados, rede, transporte, sessão, apresentação e aplicação. Só duas importam aqui. A **camada 4** é o andar do transporte, onde moram o TCP e o UDP, com endereços e portas. A **camada 7** é o andar da aplicação, onde mora o HTTP, com URLs, cabeçalhos e cookies. \"L4\" e \"L7\" dizem até qual andar um balanceador lê o tráfego antes de decidir." },
+				{ "type": "callout", "tone": "analogy", "text": "Um balanceador de camada 4 é um carteiro que separa as encomendas pelo endereço na caixa e nunca a abre. Um balanceador de camada 7 abre a caixa e lê a carta que está dentro antes de escolher para onde ela vai." },
+				{ "type": "table", "headers": ["Aspecto", "Camada 4", "Camada 7"], "rows": [
+					["Enxerga", "Endereços e portas de origem e destino", "A mensagem HTTP inteira: caminho, cabeçalho Host, cookies, outros cabeçalhos"],
+					["Unidade de trabalho", "A conexão: uma decisão e depois só repassa bytes", "A requisição: cada requisição é lida, interpretada e enviada de novo"],
+					["Conexões", "Repassa os bytes de uma conexão", "Termina a conexão TCP do cliente e abre (ou reaproveita) outra para o back end, então há duas conexões"],
+					["Protocolos", "Qualquer um (não se importa com o que há dentro)", "Os que ele entende, normalmente HTTP"],
+					["Custo por requisição", "Menor", "Maior (mais CPU e memória)"],
+					["Regras de roteamento", "Pobres: só endereço e porta", "Ricas: por caminho, host, cabeçalho, cookie"]
+				] },
+				{ "type": "paragraph", "text": "Então a regra de escolha é simples: olhe o que a sua regra de roteamento precisa. Separar serviços por endereços ou portas diferentes funciona na camada 4. Se a diferença está no caminho da URL (`/api/*` aqui, `/static/*` ali, mesmo host e mesma porta), em um cabeçalho ou em um cookie, essa informação só aparece depois de ler o HTTP, então você precisa de pelo menos a camada 7." },
+				{ "type": "heading", "text": "A armadilha da conexão longa" },
+				{ "type": "paragraph", "text": "Um balanceador de camada 4 escolhe uma vez por conexão. Se os clientes mantêm uma conexão aberta e mandam milhares de requisições por ela (keep-alive do HTTP/1.1), todas vão para o mesmo back end, e conexões com volumes diferentes geram carga desigual. O mesmo acontece, com mais força, com HTTP/2 e gRPC, que multiplexam muitas chamadas em uma só conexão. Um cliente muito ativo pode sobrecarregar um back end enquanto dois outros ficam parados. A correção é balancear na unidade certa, a requisição ou o stream: um proxy de camada 7, ou um cliente que abre conexões com vários back ends e se alterna entre elas." },
+				{ "type": "diagram", "caption": "A camada 4 vê uma conexão, a camada 7 vê muitas requisições", "content": "camada 4:  [conn A: req req req req req ...] -> back end 1\n           [conn B: req ................] -> back end 2\n\ncamada 7:  req -> back end 1\n           req -> back end 2\n           req -> back end 3   (uma escolha por requisição)" },
+				{ "type": "paragraph", "text": "Com HTTPS, um balanceador de camada 4 pode trabalhar em **passthrough**: ele repassa os bytes criptografados e o túnel secreto vai do cliente até o back end. Ele ainda vê o que está fora da criptografia (endereços, portas, quando as conexões abrem e fecham), mas caminho, cabeçalhos e cookies são invisíveis para ele." },
+				{ "type": "callout", "tone": "warning", "text": "Depois de colocar um proxy de camada 7 na frente de uma aplicação, o log da aplicação mostra todas as requisições vindo do endereço do proxy, porque o proxy abriu a própria conexão. O endereço do cliente viaja em `X-Forwarded-For`, e a aplicação só deve acreditar nele quando a conexão vier de um proxy em que ela confia." },
+				{ "type": "callout", "tone": "remember", "text": "Camada 4: decide por conexão, enxerga endereços e portas, é rápida e cega ao protocolo. Camada 7: decide por requisição, enxerga o HTTP, tem regras mais ricas, custa mais e usa duas conexões." }
+			]
+		},
+		{
+			"id": "balancing-algorithms",
+			"title": "Algoritmos de balanceamento",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um [[algoritmo|uma receita fixa de passos para resolver um problema]] de balanceamento responde a uma pergunta: qual back end recebe a próxima requisição? Vamos conhecer os mais comuns." },
+				{ "type": "heading", "text": "Round robin" },
+				{ "type": "paragraph", "text": "Os back ends recebem requisições em turnos, um depois do outro, e quando a lista acaba ela recomeça, como distribuir cartas ao redor de uma mesa. Ele ignora a carga e a velocidade de cada servidor. Com os back ends A, B, C começando por A, a requisição número k vai para a posição (k − 1) mod 3 da lista, contada a partir de zero. Para k = 7, (7 − 1) mod 3 = 0, então a 7ª requisição vai para A." },
+				{ "type": "heading", "text": "Round robin ponderado" },
+				{ "type": "paragraph", "text": "Cada back end tem um **peso**, um número escrito na configuração. A parcela de um servidor é o seu peso dividido pela soma de todos os pesos. Com pesos 3, 2 e 1, a soma é 6, então as parcelas são 3/6, 2/6 e 1/6. De 600 requisições: 300, 200 e 100." },
+				{ "type": "chart", "title": "Pesos 3, 2 e 1: como 600 requisições são repartidas", "unit": "requisições", "bars": [
+					{ "label": "servidor de peso 3", "value": 300 },
+					{ "label": "servidor de peso 2", "value": 200 },
+					{ "label": "servidor de peso 1", "value": 100 }
+				] },
+				{ "type": "paragraph", "text": "Os pesos são estáticos: são um palpite feito de antemão e não mudam sozinhos quando um servidor fica mais lento." },
+				{ "type": "heading", "text": "Menos conexões (least connections)" },
+				{ "type": "paragraph", "text": "O balanceador mantém um contador para cada back end: soma 1 quando envia uma requisição e subtrai 1 quando ela termina. A próxima requisição vai para o back end com menos requisições em andamento. É uma estimativa simples do quão ocupado cada servidor está. Ele vence claramente o round robin quando as requisições têm durações muito diferentes, porque o round robin iguala o número de requisições enviadas, não o trabalho." },
+				{ "type": "paragraph", "text": "O **least connections ponderado** divide as conexões ativas pelo peso e escolhe o menor resultado. Exemplo: A tem 12 conexões e peso 1, B tem 20 e peso 4, C tem 9 e peso 1. As razões são 12, 5 e 9, então B é escolhido: um servidor de peso 4 aguenta quatro vezes mais." },
+				{ "type": "heading", "text": "Um servidor lento, dois algoritmos" },
+				{ "type": "paragraph", "text": "Considere três back ends: dois respondem em 10 ms e um em 40 ms, e um número fixo de clientes manda a próxima requisição assim que a anterior termina. Com round robin, cada back end recebe um terço das requisições. Mas o lento precisa de quatro vezes mais tempo por requisição, então as requisições se acumulam nele. Com least connections, todo back end mantém o mesmo número de requisições em andamento. Um back end que mantém certo número de requisições as termina a uma taxa de (em andamento) dividido por (tempo por requisição), então as taxas ficam na proporção 1/40 : 1/10 : 1/10 = 1 : 4 : 4. Isso soma 9 partes, então o back end lento recebe 1/9 das requisições, cerca de 11%, e cada rápido 4/9, cerca de 44%." },
+				{ "type": "chart", "title": "Parcela das requisições que o back end lento recebe", "unit": "%", "bars": [
+					{ "label": "round robin", "value": 33.3 },
+					{ "label": "least connections", "value": 11.1 }
+				] },
+				{ "type": "callout", "tone": "warning", "text": "O round robin simples, sem pesos, dá o mesmo número de requisições a todo servidor, seja qual for a velocidade dele. Sob carga pesada, um servidor mais lento fica para trás. A correção é declarar a diferença com pesos, ou usar um algoritmo que observa a carga, como o least connections." },
+				{ "type": "heading", "text": "Aleatório e o poder de duas escolhas" },
+				{ "type": "paragraph", "text": "O **aleatório** (random) escolhe um servidor por sorteio a cada requisição. Em poucas requisições a divisão parece desigual, mas em muitas cada um de N servidores iguais recebe cerca de 1/N. Ele não precisa de contador nem de posição, então vários balanceadores podem aplicá-lo sem conversar entre si. O **poder de duas escolhas** (`random two` no NGINX, `random_choose 2` no Caddy) sorteia dois servidores e fica com o menos carregado dos dois. Isso é bem mais equilibrado que o aleatório simples e custa só uma comparação. Também reduz o \"efeito manada\", em que vários balanceadores mandam tudo para o único servidor que parece o mais folgado." },
+				{ "type": "heading", "text": "Hash: IP hash e URL hash" },
+				{ "type": "paragraph", "text": "Um [[hash|uma função que transforma qualquer entrada em um número, sempre o mesmo número para a mesma entrada]] de uma chave escolhe o servidor. No **IP hash** a chave é o endereço do cliente, então o mesmo cliente volta ao mesmo servidor sem nenhuma tabela (isso vale enquanto o conjunto de servidores não muda). No **URL hash** a chave é o endereço pedido, então a mesma URL sempre vai para o mesmo servidor. É o melhor encaixe para caches: cada nó guarda respostas das URLs que atende, e a taxa de acerto sobe." },
+				{ "type": "callout", "tone": "warning", "text": "Um hash divide chaves, não requisições. Se 80% do tráfego vem de um escritório atrás de um único endereço público (NAT), tudo vira uma só chave e cai em um só back end. Um hash da URL tem o mesmo problema se poucas URLs concentram o tráfego." },
+				{ "type": "heading", "text": "Mais duas armadilhas do least connections" },
+				{ "type": "list", "items": [
+					"**Contadores não compartilhados.** Se dois processos de balanceador mantêm contadores separados, cada um decide com metade do quadro e as decisões podem se acumular no mesmo back end. O estado precisa ser compartilhado (uma zona de memória compartilhada), ou você usa uma política que tolera informação parcial.",
+					"**O servidor novo e vazio.** Um servidor recém-chegado tem zero conexões, então num pool movimentado ele atrai quase todo o tráfego novo de uma vez, enquanto ainda está frio (caches vazios, nenhuma conexão aberta). Um **slow start** aumenta a parcela dele aos poucos."
+				] },
+				{ "type": "table", "headers": ["Algoritmo", "Decide por", "Melhor quando", "Ponto fraco"], "rows": [
+					["Round robin", "Um contador (turnos)", "Servidores iguais, requisições parecidas", "Cego à carga e à velocidade"],
+					["Round robin ponderado", "Contador e pesos", "Servidores de tamanhos diferentes", "Os pesos são palpites fixos"],
+					["Least connections", "Requisições em andamento", "Requisições com durações muito diferentes", "Precisa de contadores compartilhados, servidores novos são inundados"],
+					["Aleatório / duas escolhas", "Sorteio (e uma comparação)", "Vários balanceadores sem coordenação", "Desigualdade de curto prazo (aleatório simples)"],
+					["IP hash / URL hash", "Um hash de uma chave", "Afinidade, caches", "Desigual quando as chaves se concentram"]
+				] },
+				{ "type": "callout", "tone": "remember", "text": "O round robin reparte requisições igualmente, os pesos as repartem em proporção, o least connections acompanha o trabalho em andamento, e os hashes amarram uma chave a um servidor. Um servidor lento recebe 1/3 das requisições no round robin e 1/9 no least connections no exemplo de 10 ms / 10 ms / 40 ms." }
+			]
+		},
+		{
+			"id": "sticky-sessions",
+			"title": "Sessões fixas (sticky sessions)",
+			"blocks": [
+				{ "type": "paragraph", "text": "Às vezes o usuário precisa voltar ao **mesmo** back end. A **afinidade de sessão** (session affinity, também chamada de sticky session) é a regra pela qual o balanceador manda todas as requisições de um cliente para o mesmo back end, em vez de escolher de novo a cada vez. O balanceador reconhece o cliente por um cookie ou pelo endereço IP." },
+				{ "type": "paragraph", "text": "Por que alguém precisaria disso? Por causa de estado guardado dentro de uma instância. Se o seu login ou o seu carrinho de compras vive só na memória do processo que atendeu você, uma requisição enviada a outra instância não encontra nada. Prender o cliente à instância contorna o problema, mas não o resolve." },
+				{ "type": "callout", "tone": "analogy", "text": "Você deixa o casaco com um atendente específico do guarda-volumes, que o guarda em um armário particular. Você precisa voltar a esse atendente. Se ele for para casa, seu casaco se perde, mesmo havendo muitos outros atendentes." },
+				{ "type": "heading", "text": "Duas formas de reconhecer o cliente" },
+				{ "type": "table", "headers": ["Aspecto", "Por cookie", "Por endereço IP"], "rows": [
+					["Como", "O balanceador escolhe um back end na primeira requisição e acrescenta à resposta um cookie que identifica a escolha. O navegador devolve o cookie toda vez, e o balanceador repete o destino. O estado mora no cliente, não numa tabela do balanceador", "Um hash do endereço do cliente escolhe o back end (`ip_hash` no NGINX, `client_ip_hash` no Caddy)"],
+					["Precisa de camada 7?", "Sim (lê e escreve cabeçalhos HTTP)", "Não"],
+					["Ponto fraco", "O cookie é um dado controlado pelo cliente", "Supõe que um endereço = um usuário, o que falha nos dois sentidos: o mesmo usuário muda de endereço ao trocar de rede, e muitos usuários atrás de um NAT parecem um só"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Um cookie é um dado que o cliente pode ler e alterar. Se o cookie diz `srv=10.0.3.17:8080` e o balanceador encaminha para o endereço que encontrar ali, você vaza a sua rede interna e entrega um volante ao cliente. O valor precisa ser **opaco**, por exemplo um hash ou um HMAC do endereço calculado com um segredo que só o balanceador conhece. O balanceador compara o valor recebido com o que ele calcula para cada back end conhecido, porque um hash não pode ser revertido." },
+				{ "type": "heading", "text": "O que a afinidade não dá" },
+				{ "type": "list", "items": [
+					"**Ela não protege o estado.** Se a sessão existe só na memória de uma instância e essa instância cai, a sessão morre. O failover apenas garante que o usuário chegue a um servidor que não o conhece.",
+					"**Ela atrapalha o autoscaling.** As instâncias sobrecarregadas mantêm todas as sessões que já tinham, e as instâncias novas recebem só clientes que ainda não estão presos. Quanto mais longas as sessões, mais lenta a redistribuição. Serviços stateless se reequilibram já na requisição seguinte.",
+					"**Ela pode desequilibrar a carga** quando endereços são compartilhados (veja IP hash)."
+				] },
+				{ "type": "heading", "text": "A cura de verdade: remover o estado" },
+				{ "type": "paragraph", "text": "A afinidade só é necessária enquanto o estado da sessão vive dentro de uma instância. Tire o estado de lá, seja para um **armazenamento compartilhado** que todas as instâncias consultam, seja para um **token assinado** que o cliente envia a cada requisição, e as instâncias passam a ser stateless. O balanceador pode escolher qualquer uma, e instâncias podem cair ou ser adicionadas sem perder sessões." },
+				{ "type": "callout", "tone": "remember", "text": "Sticky sessions são um remendo para estado guardado em instâncias. A afinidade por cookie acompanha o usuário entre redes e exige camada 7. A afinidade por IP é mais fraca. Um armazenamento compartilhado ou um token assinado elimina a necessidade." }
+			]
+		},
+		{
+			"id": "consistent-hashing",
+			"title": "Hashing consistente",
+			"blocks": [
+				{ "type": "paragraph", "text": "Usar o hash de uma chave para escolher um servidor tem um grande problema. A receita simples é `hash(chave) mod N`, onde N é o número de servidores (mod é o resto da divisão). Se N muda, a resposta para quase toda chave muda." },
+				{ "type": "paragraph", "text": "Confira com números. Chaves 0, 1, 2, ... com `chave mod N`. Indo de N = 4 para N = 5, uma chave mantém o servidor só se o resto antigo e o novo forem iguais. O padrão se repete a cada 20 chaves, e os restos coincidem apenas nas chaves 0, 1, 2 e 3, ou seja, 4 em 20. Então 80% das chaves trocam de servidor. Para um cache, isso significa perder quase todo o conteúdo aquecido de uma vez." },
+				{ "type": "paragraph", "text": "O **hashing consistente** foi inventado para que uma mudança no conjunto de servidores mova apenas uma pequena fração das chaves, cerca de 1/N." },
+				{ "type": "diagram", "caption": "O anel (a saída do hash é tratada como um círculo)", "content": "              0\n        S1 *       * k1\n     *               *\n   k2 *               * S2\n     *               *\n        S3 *       * k3\n\n uma chave pertence ao primeiro servidor\n encontrado andando no sentido horário\n a partir da posição dela" },
+				{ "type": "paragraph", "text": "A mesma função de hash dá uma posição no círculo a cada servidor e a cada chave. No desenho clássico, cada chave pertence ao primeiro servidor encontrado andando no **sentido horário** a partir da posição da chave. A regra depende só de posições, então quando um servidor entra ou sai, só as chaves de um trecho do anel mudam de dono." },
+				{ "type": "paragraph", "text": "Exemplo: 4 servidores iguais dividem as chaves por igual, e um 5º servidor igual entra. As únicas chaves que se movem são as que o novo servidor agora possui: 1/5. Cada servidor antigo passa de 1/4 para 1/5, cedendo 1/20 do total, e 4 × 1/20 = 1/5." },
+				{ "type": "chart", "title": "Chaves que trocam de servidor ao ir de 4 para 5 servidores", "unit": "%", "bars": [
+					{ "label": "chave mod N", "value": 80 },
+					{ "label": "hashing consistente", "value": 20 }
+				] },
+				{ "type": "heading", "text": "Nós virtuais" },
+				{ "type": "paragraph", "text": "Se cada servidor tem apenas UMA posição no anel, os trechos (arcos) podem ter tamanhos muito diferentes, e quando um servidor sai, o vizinho no sentido horário herda a parcela inteira dele. Esse vizinho passa a carregar duas parcelas e, se também falhar, passa três ao próximo: uma cascata de falhas." },
+				{ "type": "paragraph", "text": "A solução são os **nós virtuais** (virtual nodes): cada servidor aparece dezenas ou centenas de vezes no anel, em muitas posições. Assim os arcos ficam uniformes, um servidor maior pode receber mais posições (mais parcela), e quando um servidor sai, as chaves dele se espalham por muitos outros em vez de um só." },
+				{ "type": "callout", "tone": "remember", "text": "chave mod N move cerca de 80% das chaves quando N vai de 4 para 5. O hashing consistente move cerca de 1/N (aqui 1/5, cerca de 20%). O dono de uma chave é o primeiro servidor no sentido horário do anel, e os nós virtuais igualam as parcelas e espalham a carga de um servidor perdido. O NGINX oferece isso como `hash ... consistent`." }
+			]
+		},
+		{
+			"id": "health-checks-and-failover",
+			"title": "Verificações de saúde e failover",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um balanceador que continua mandando requisições para um servidor morto é pior do que nenhum balanceador. Por isso ele precisa descobrir quem está vivo. Isso é uma **verificação de saúde** (health check). Quando ele descobre um problema e passa o trabalho para os outros, isso é **failover**: a transferência automática do trabalho de um componente que falhou para um saudável. O failover precisa de duas coisas: redundância (outro componente pode assumir) e detecção (algo percebe a falha)." },
+				{ "type": "table", "headers": ["Aspecto", "Verificação ativa", "Verificação passiva"], "rows": [
+					["O que faz", "O balanceador envia as próprias requisições de teste (probes) em intervalo fixo, por exemplo para `/health`", "O balanceador não envia probes. Observa as requisições reais e conta falhas (erros de conexão, timeouts)"],
+					["Precisa de tráfego?", "Não, funciona até sem clientes", "Sim, precisa de requisições reais para aprender"],
+					["Custo de descobrir um servidor morto", "Só tráfego de teste", "As primeiras requisições reais enviadas ao servidor morto falham ou esperam um timeout, então usuários reais pagam"],
+					["Exemplo", "Caddy: `health_uri`, `health_interval`", "NGINX: `max_fails` dentro de `fail_timeout`"]
+				] },
+				{ "type": "paragraph", "text": "As duas se completam. A passiva é imediata, mas precisa de tráfego. A ativa funciona sem tráfego e é a única que consegue trazer um servidor de volta, porque ninguém manda requisições reais para um servidor que está fora." },
+				{ "type": "paragraph", "text": "Um back end marcado como **não saudável** (unhealthy) não é apagado. O balanceador apenas para de escolhê-lo para novas requisições e espalha o tráfego pelos outros. Quando a verificação passa de novo, ele volta à rotação sem nenhum passo manual." },
+				{ "type": "heading", "text": "Em qual camada você verifica?" },
+				{ "type": "paragraph", "text": "Uma verificação só detecta problemas na camada em que trabalha. Abrir uma conexão TCP prova que algum processo está escutando na porta, nada além. Se a aplicação responde status HTTP 500 a tudo, uma verificação TCP diz \"saudável\". Para perceber erros da aplicação, o probe precisa fazer uma requisição HTTP e conferir o código de status (e o corpo, quando necessário)." },
+				{ "type": "heading", "text": "Quanto tempo até um servidor morto ser removido?" },
+				{ "type": "paragraph", "text": "No pior caso, tempo de detecção = intervalo entre probes × número de falhas exigidas + timeout do probe. Se os probes saem a cada 2 s, três falhas consecutivas são exigidas e o timeout é minúsculo, um servidor que morre logo depois de um probe bom é removido 2 × 3 = 6 segundos depois. Durante esses 6 segundos ele ainda recebe requisições. Intervalos curtos detectam mais rápido, mas aumentam os alarmes falsos: esse é o equilíbrio a ser buscado." },
+				{ "type": "paragraph", "text": "Os limites também dão à decisão uma **histerese** (um atraso que evita mudar de decisão com facilidade demais). Se um servidor que alterna entre funcionar e falhar pudesse entrar e sair do pool a cada probe, cada entrada custaria requisições de clientes. Exigir vários sucessos consecutivos antes de voltar troca um retorno mais lento por estabilidade." },
+				{ "type": "heading", "text": "Tentar de novo ou não" },
+				{ "type": "paragraph", "text": "Quando uma tentativa falha, o balanceador pode enviar a mesma requisição a outro back end? Depende do que o primeiro back end viu." },
+				{ "type": "table", "headers": ["O que aconteceu", "O back end viu a requisição?", "Tentar em outro back end?"], "rows": [
+					["Conexão recusada ou timeout de conexão", "Não", "Sempre seguro, qualquer método"],
+					["A requisição foi enviada e depois a conexão caiu ou a resposta não veio", "Talvez, e talvez tenha sido executada", "Somente para requisições [[idempotentes|uma operação que dá o mesmo resultado se executada duas vezes ou uma vez só]], como GET, HEAD e OPTIONS"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "Um POST que talvez já tenha sido executado não deve ser repetido às cegas: você poderia criar o pedido duas vezes. O NGINX, por padrão, não repassa a outro servidor uma requisição não idempotente já enviada. Só o parâmetro `non_idempotent` de `proxy_next_upstream` permite isso, e apenas para aplicações que toleram duplicatas." },
+				{ "type": "heading", "text": "Liveness, readiness e verificações rasas" },
+				{ "type": "list", "items": [
+					"**Liveness** pergunta: o processo travou e precisa de reinício? **Readiness** pergunta: ele pode receber tráfego agora? Uma instância que ainda está carregando caches e abrindo conexões com o banco está viva, mas não pronta. O balanceador deve pulá-la, e ninguém deve reiniciá-la.",
+					"Uma verificação **profunda** (que testa dependências compartilhadas, como rodar uma consulta no banco compartilhado) faz todos os back ends falharem juntos quando a dependência falha. Removê-los todos não ajuda, e ainda derruba rotas que continuariam funcionando (como páginas em cache). A verificação usada pelo balanceador deve ser **rasa**: ESTA instância consegue atender? Acompanhe as dependências por outros meios."
+				] },
+				{ "type": "heading", "text": "Retirar um servidor sem perder requisições" },
+				{ "type": "paragraph", "text": "O **connection draining** faz isso em dois passos. Primeiro, o balanceador para de escolher a instância para novas requisições. Depois espera as requisições em andamento terminarem, até um prazo limite. Só então o processo é parado. Tentativas repetidas (retries) não substituem o draining, porque requisições não idempotentes não podem ser repetidas com segurança." },
+				{ "type": "callout", "tone": "remember", "text": "Ativa = probes próprios, funciona sem tráfego. Passiva = observa requisições reais, usuários reais pagam pela descoberta. Verifique na camada que importa (status HTTP, não só TCP), mantenha as verificações rasas e faça draining antes de parar." }
+			]
+		},
+		{
+			"id": "high-availability-and-spof",
+			"title": "Alta disponibilidade e pontos únicos de falha",
+			"blocks": [
+				{ "type": "paragraph", "text": "Um **ponto único de falha (SPOF, single point of failure)** é qualquer parte do sistema que não tem substituto: se ela para, tudo para, por mais redundantes que sejam as outras partes. A pergunta útil para cada componente é: o que acontece se só este falhar? **Alta disponibilidade** é o trabalho de achar os SPOFs e duplicá-los." },
+				{ "type": "callout", "tone": "analogy", "text": "Uma casa com cinco portas, mas uma única chave para todas. As portas são redundantes, a chave é o ponto único de falha." },
+				{ "type": "paragraph", "text": "Aqui vai a surpresa: cinco servidores de aplicação atrás de UM balanceador de carga. O balanceador remove o SPOF da camada de aplicação, mas, se estiver sozinho, vira um novo SPOF. Por isso os balanceadores são colocados em pares ou grupos, com um jeito de fazer o tráfego chegar ao que está saudável, como um [[endereço IP virtual|um endereço que não está preso a uma máquina e pode se mudar para outra]] que troca de dono, ou o DNS. Redundância em uma camada não compensa a falta dela em outra." },
+				{ "type": "heading", "text": "Ativo-passivo e ativo-ativo" },
+				{ "type": "table", "headers": ["Aspecto", "Ativo-passivo", "Ativo-ativo"], "rows": [
+					["Quem atende", "Um nó atende todo o tráfego, o outro espera em standby", "Os dois atendem ao mesmo tempo"],
+					["Quando um falha", "O standby assume", "O outro absorve toda a carga"],
+					["Recursos", "O standby fica ocioso", "Melhor aproveitamento dos recursos"],
+					["O senão", "A troca leva algum tempo", "Cada nó precisa de folga suficiente para carregar tudo sozinho"]
+				] },
+				{ "type": "heading", "text": "A aritmética da disponibilidade" },
+				{ "type": "paragraph", "text": "**Em paralelo** (componentes redundantes, o conjunto funciona enquanto pelo menos um estiver de pé): o conjunto só falha se TODOS falharem juntos. Com falhas independentes, a indisponibilidade do conjunto é o produto das indisponibilidades. Dois balanceadores de 99% cada: indisponibilidade 0,01 × 0,01 = 0,0001, então disponibilidade 1 − 0,0001 = 99,99%." },
+				{ "type": "paragraph", "text": "**Em série** (as duas partes são necessárias): a disponibilidade do conjunto é o produto das disponibilidades. O par de 99,99% na frente de UM banco de dados de 99,9%: 0,9999 × 0,999 = 0,9989001, cerca de 99,89%. Nunca passa da parte mais fraca. Adicionar ainda mais balanceadores quase não ajuda. O ganho está em tornar o banco de dados redundante." },
+				{ "type": "chart", "title": "Disponibilidade dos exemplos", "unit": "%", "bars": [
+					{ "label": "um balanceador", "value": 99 },
+					{ "label": "par de balanceadores", "value": 99.99 },
+					{ "label": "par + um banco de dados", "value": 99.89 }
+				] },
+				{ "type": "callout", "tone": "warning", "text": "A fórmula do paralelo supõe que as falhas são **independentes**. Uma causa comum, como o mesmo switch de rede, a mesma linha de energia ou a mesma configuração errada enviada aos dois, derruba os dois nós de uma vez." },
+				{ "type": "heading", "text": "Split brain" },
+				{ "type": "paragraph", "text": "Dois balanceadores em um par ativo-passivo se vigiam por um **heartbeat** (uma mensagem regular de \"estou vivo\"). Suponha que o enlace entre eles se quebre enquanto os dois estão saudáveis. Nenhum consegue distinguir a morte do par de uma falha do enlace, pois nos dois casos o heartbeat para. Os dois podem decidir \"devo ser eu o ativo\" e brigar pelo mesmo recurso, como o endereço IP virtual. Isso é o **split brain** (cérebro dividido). Para evitá-lo você precisa de informação de fora do enlace: um **quórum** com um terceiro participante (uma testemunha) que decide quem pode continuar ativo, ou **fencing**, que garante que o outro nó foi realmente desligado." },
+				{ "type": "callout", "tone": "remember", "text": "Ache todo SPOF, inclusive o balanceador. Partes em paralelo multiplicam a indisponibilidade (99% + 99% = 99,99%). Partes em série multiplicam as disponibilidades, e a parte mais fraca limita o todo. Pares precisam de quórum ou fencing para evitar o split brain." }
+			]
+		},
+		{
+			"id": "tls-termination",
+			"title": "Terminação TLS",
+			"blocks": [
+				{ "type": "paragraph", "text": "O [[TLS|a tecnologia que criptografa uma conexão; é o cadeado por trás do HTTPS]] cria um túnel secreto entre duas pontas. Quem é a ponta do túnel guarda o **certificado** (a carteira de identidade do site) e a **chave privada** (o segredo que prova que a identidade é dele). **Terminar** o TLS é ser essa ponta: você descriptografa os dados. Onde o túnel deve terminar quando há um balanceador? Há três jeitos." },
+				{ "type": "table", "headers": ["Modo", "O que acontece", "Lê o HTTP (regras de camada 7)?", "Tráfego interno criptografado?", "Onde ficam certificado e chave?"], "rows": [
+					["Passthrough", "O balanceador (camada 4) não descriptografa. O túnel vai do cliente ao back end", "Não", "Sim, de ponta a ponta", "Em cada back end (distribuir e renovar em cada um)"],
+					["Terminação (simples)", "O balanceador descriptografa e depois fala HTTP puro com os back ends", "Sim", "Não, o trecho interno é em texto puro", "Só no balanceador"],
+					["Recriptografia", "O balanceador descriptografa, inspeciona e depois abre uma nova conexão TLS com o back end", "Sim", "Sim", "No balanceador e nos back ends"]
+				] },
+				{ "type": "diagram", "caption": "Onde o túnel termina", "content": "passthrough:  cliente ════════════════════> back end\n\nterminação:   cliente ═══════> balanceador ───> back end\n               (HTTPS)                (HTTP puro)\n\nrecriptogr.:  cliente ═══════> balanceador ═══> back end\n               (HTTPS)                (novo HTTPS)" },
+				{ "type": "paragraph", "text": "O principal benefício de terminar no balanceador é operacional: o TLS (certificados, chaves, versões, cifras) é configurado em um único lugar. Os back ends ficam mais simples e gastam a CPU com a aplicação. O preço é que o trecho interno deixa de ser criptografado, a menos que você recriptografe." },
+				{ "type": "callout", "tone": "analogy", "text": "Um segurança no portão de uma empresa confere a identidade de cada visitante uma só vez. Lá dentro, as pessoas circulam livremente. Isso é a terminação. A recriptografia é como pedir que cada visitante mostre a identidade de novo na porta de cada sala." },
+				{ "type": "heading", "text": "Consequências que você precisa conhecer" },
+				{ "type": "list", "items": [
+					"**O esquema se perde.** Depois da terminação, a aplicação enxerga só a conexão interna, que é HTTP. Se os usuários navegam em `https://` mas a aplicação monta redirecionamentos que começam com `http://`, essa é a causa. O proxy informa o esquema original no cabeçalho `X-Forwarded-Proto`, e a aplicação deve usá-lo. Como qualquer cliente pode enviar esse cabeçalho, aceite-o apenas de proxies confiáveis.",
+					"**Criptografar não é autenticar.** Se o NGINX abre `proxy_pass https://backend;` sem nenhuma diretiva `proxy_ssl_*`, ele não verifica o certificado do back end. Alguém dentro da rede que se passe pelo back end recebe tráfego que consegue descriptografar. Com recriptografia você precisa ligar a verificação explicitamente (`proxy_ssl_verify on;`) e informar a lista de autoridades certificadoras aceitas."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Passthrough: ponta a ponta, sem regras HTTP, chaves nos back ends. Terminação: um lugar só para o TLS, trecho interno em texto puro. Recriptografia: regras de camada 7 e criptografia por dentro, mas verifique o certificado do back end. Use `X-Forwarded-Proto` para dizer à aplicação o que o cliente usou." }
+			]
+		},
+		{
+			"id": "nginx-configuration",
+			"title": "Configuração do NGINX",
+			"blocks": [
+				{ "type": "paragraph", "text": "O NGINX (aqui, a versão open source 1.30) recebe suas ordens por um arquivo de configuração. Para balancear, você faz duas coisas: **declara** um grupo de servidores com nome e **aponta** uma diretiva de proxy para esse nome." },
+				{ "type": "code", "language": "nginx", "caption": "Um grupo e um location que o usa", "content": "upstream api {\n    server app1:3000;\n    server app2:3000;\n    server app3:3000;\n}\n\nserver {\n    location /api/ {\n        proxy_pass http://api/;\n        proxy_set_header Host $host;\n    }\n}" },
+				{ "type": "list", "items": [
+					"`upstream api { ... }` declara um grupo de servidores e dá um nome a ele. O grupo sozinho não recebe tráfego.",
+					"`proxy_pass` dentro de um `location` transforma-o em um proxy reverso. Quando o nome na URL é um grupo upstream, o destino é escolhido entre os servidores do grupo pelo método de balanceamento.",
+					"O método padrão é o **round robin ponderado**, e cada servidor tem peso 1 a menos que você escreva `weight`. Os outros métodos (`least_conn`, `ip_hash`, `hash`, `random`) só valem quando você escreve a diretiva dentro do bloco. No `ip_hash`, para IPv4 a chave são apenas os **três primeiros octetos** do endereço, então `192.168.1.10` e `192.168.1.200` (mesma rede /24) vão para o mesmo servidor, e para IPv6 é o endereço inteiro."
+				] },
+				{ "type": "heading", "text": "Parâmetros do servidor" },
+				{ "type": "table", "headers": ["Parâmetro", "Significado", "Padrão"], "rows": [
+					["`weight=3`", "Proporção entre os servidores na rotação", "1"],
+					["`max_fails=2`", "Quantas tentativas sem sucesso, dentro de `fail_timeout`, fazem o servidor ser considerado indisponível", "1"],
+					["`fail_timeout=15s`", "Ao mesmo tempo a janela de contagem E por quanto tempo o servidor fica indisponível", "10s"],
+					["`backup`", "Um reserva: fica fora da rotação normal e só é usado quando os servidores primários estão indisponíveis", "não é backup"]
+				] },
+				{ "type": "paragraph", "text": "Então um grupo com `server a weight=3;`, `server b;` e `server c backup;` manda tráfego para a e b na proporção 3 para 1, e o c só recebe requisições quando a e b estão indisponíveis." },
+				{ "type": "heading", "text": "Verificações passivas e novas tentativas" },
+				{ "type": "paragraph", "text": "O NGINX open source tem **apenas verificação passiva** (o `health_check` ativo pertence à versão comercial). Ele julga um servidor pelas requisições reais. Quando `max_fails` é atingido dentro de `fail_timeout`, o servidor é pulado durante `fail_timeout`, e depois disso uma requisição real de cliente é usada para testá-lo de novo. Enquanto o servidor continua morto, esse ciclo se repete. Nesse meio tempo, `proxy_next_upstream` (padrão `error timeout`) repassa a requisição que falhou para outro servidor. Requisições não idempotentes (POST, LOCK, PATCH) já enviadas ficam fora dessa nova tentativa, a menos que você acrescente `non_idempotent`." },
+				{ "type": "heading", "text": "Dois detalhes que mordem" },
+				{ "type": "list", "items": [
+					"**A barra final do proxy_pass.** Se o `proxy_pass` tem uma parte de URI depois do nome do destino (mesmo uma única `/`), o NGINX substitui a parte da requisição que casou com o location por essa URI. Com `location /api/ { proxy_pass http://backend/; }`, uma requisição para `/api/users` chega ao back end como `/users`. Sem a barra (`http://backend`) o caminho chega como `/api/users`.",
+					"**O cabeçalho Host.** O NGINX reescreve o `Host` com `$proxy_host`, o destino escrito no `proxy_pass`. Uma aplicação que usa o `Host` para escolher o site ou montar links veria um nome interno. `proxy_set_header Host $host;` repassa o nome que o cliente realmente pediu."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "upstream declara o grupo, proxy_pass o usa. Padrões: round robin ponderado, max_fails=1, fail_timeout=10s, nova tentativa em error e timeout, apenas verificações passivas. O ip_hash em IPv4 usa os três primeiros octetos. Uma barra depois do destino no proxy_pass muda o caminho que a aplicação recebe." }
+			]
+		},
+		{
+			"id": "caddy-configuration",
+			"title": "Configuração do Caddy",
+			"blocks": [
+				{ "type": "paragraph", "text": "O Caddy (versão 2.11) faz o mesmo trabalho com um arquivo mais curto, chamado Caddyfile. Não existe um bloco separado para declarar o grupo: a diretiva `reverse_proxy` é proxy reverso e balanceador de carga ao mesmo tempo. Você lista os endereços na mesma linha, e as opções vão em um bloco entre chaves." },
+				{ "type": "code", "language": "caddy", "caption": "Um Caddyfile com balanceamento, verificação de saúde e novas tentativas", "content": "example.com {\n    reverse_proxy app1:3000 app2:3000 app3:3000 {\n        lb_policy round_robin\n        health_uri /health\n        health_interval 5s\n        lb_try_duration 5s\n    }\n}" },
+				{ "type": "heading", "text": "HTTPS automático" },
+				{ "type": "paragraph", "text": "Quando o endereço de um site é um nome de domínio público (como `example.com` acima), o Caddy liga o HTTPS sem nenhuma configuração extra. Ele obtém o certificado de uma autoridade certificadora usando ACME, renova automaticamente e redireciona o HTTP para HTTPS. Como balanceador de carga, isso é terminação TLS sem gerenciar arquivos de certificado." },
+				{ "type": "heading", "text": "Padrões diferentes dos do NGINX" },
+				{ "type": "table", "headers": ["Ideia", "NGINX (open source)", "Caddy"], "rows": [
+					["Grupo de back ends", "`upstream nome { server ...; }` mais `proxy_pass`", "`reverse_proxy a b c`"],
+					["Algoritmo padrão", "Round robin ponderado", "`random`"],
+					["Outras políticas", "`least_conn`, `ip_hash`, `hash`, `random two`", "`lb_policy round_robin`, `least_conn`, `client_ip_hash`, `cookie`, `random_choose 2`"],
+					["Verificação ativa", "Não (só na versão comercial)", "`health_uri` (desligada até você escrevê-la); `health_interval` padrão 30s, `health_timeout` padrão 5s"],
+					["Verificação passiva", "Ligada: `max_fails=1`, `fail_timeout=10s`", "Desligada até `fail_duration` ser maior que 0"],
+					["Nova tentativa após uma falha", "Ligada: `proxy_next_upstream error timeout`", "Desligada até `lb_try_duration` (ou `lb_retries`) ser definido; `lb_try_interval` é a pausa, 250 ms por padrão"]
+				] },
+				{ "type": "callout", "tone": "warning", "text": "No Caddy, a tolerância a falhas não vem ligada. Com três upstreams listados e sem `health_uri`, sem `fail_duration` e sem `lb_try_duration`, quando um processo morre e as conexões são recusadas, esse upstream continua recebendo sua parcela de requisições e cada uma termina em 502. Listar vários upstreams reparte a carga, mas sozinho isso não dá alta disponibilidade." },
+				{ "type": "paragraph", "text": "`lb_try_duration 5s` diz ao Caddy para continuar escolhendo upstreams e tentando de novo por até 5 segundos. Isso esconde do cliente a perda de um back end, ao preço de alguma espera. Nas verificações ativas, `health_uri` faz o próprio proxy enviar requisições a esse caminho em cada upstream, haja ou não tráfego de clientes. Um upstream que falha sai da seleção e volta quando o probe tem sucesso de novo." },
+				{ "type": "callout", "tone": "remember", "text": "Caddy: uma linha de reverse_proxy, random por padrão, HTTPS por padrão para nomes de domínio, e o tratamento de falhas (health_uri, fail_duration, lb_try_duration) você precisa ligar por conta própria." }
+			]
+		},
+		{
+			"id": "putting-it-together",
+			"title": "Juntando tudo",
+			"blocks": [
+				{ "type": "paragraph", "text": "Agora podemos ler a história inteira. Um servidor não basta, então escalamos na horizontal (mais instâncias) e colocamos um balanceador de carga na frente. O balanceador é um proxy reverso que decide qual cópia igual atende cada requisição. Na camada 4 ele decide por conexão, na camada 7 por requisição, com regras mais ricas. Ele escolhe por um algoritmo, evita servidores mortos graças às verificações de saúde, termina o TLS em um só lugar e precisa ser duplicado para não ser ele mesmo um ponto único de falha." },
+				{ "type": "table", "headers": ["Se você precisa de...", "Olhe para..."], "rows": [
+					["Mais capacidade", "Escalabilidade horizontal, dimensionamento N+1, achar o gargalo real"],
+					["Rotear por caminho, host ou cookie", "Balanceador de camada 7 ou API gateway"],
+					["Balancear gRPC ou outras conexões longas", "Proxy de camada 7 ou um cliente que espalha as chamadas"],
+					["Divisão igual com servidores desiguais", "Pesos, ou least connections"],
+					["Um acerto de cache no mesmo nó", "URL hash, hashing consistente"],
+					["Manter um usuário em um servidor", "Afinidade por cookie (mas prefira estado compartilhado ou token assinado)"],
+					["Sobreviver a um servidor morto", "Verificações de saúde, novas tentativas só para requisições idempotentes, draining"],
+					["Sobreviver a um balanceador morto", "Um par com IP virtual, quórum ou fencing"],
+					["HTTPS em um só lugar", "Terminação TLS, com `X-Forwarded-Proto`"]
+				] },
+				{ "type": "heading", "text": "Erros comuns a evitar" },
+				{ "type": "list", "items": [
+					"Acreditar no `X-Forwarded-For` às cegas: leia da direita, pulando os proxies confiáveis.",
+					"Adicionar instâncias quando o banco de dados é o verdadeiro limite, ou quando os pools de conexões não vão caber.",
+					"Usar round robin simples com servidores de velocidades diferentes.",
+					"Usar IP hash quando muitos usuários compartilham um endereço.",
+					"Confiar nas sticky sessions para proteger estado: use armazenamento compartilhado ou tokens.",
+					"Esperar que o Caddy tente de novo e verifique a saúde sem configuração, ou que o NGINX open source faça verificações ativas.",
+					"Tentar de novo um POST que talvez já tenha sido executado.",
+					"Esquecer que um balanceador de carga sozinho é um SPOF, e que partes dependentes em série limitam a disponibilidade.",
+					"Criptografar até o back end mas não verificar o certificado dele."
+				] },
+				{ "type": "callout", "tone": "remember", "text": "Para aprender na prática, experimente os mini-projetos desta área: NGINX contra Caddy (algoritmos e falhas) e um balanceador de carga de camada 7 escrito à mão. Para um ensaio visual interativo veja [Load Balancing, de Sam Rose](https://samwho.dev/load-balancing/), e para a introdução oficial veja [Using nginx as HTTP load balancer](https://nginx.org/en/docs/http/load_balancing.html)." }
+			]
+		}
+	]
+}
