@@ -1,11 +1,14 @@
 #!/usr/bin/env sh
-# EN: The whole "product" of the sample mini-project: prints the sum of its arguments.
-# PT: Todo o "produto" do mini-projeto de exemplo: imprime a soma dos seus argumentos.
-# ES: Todo el "producto" del mini-proyecto de ejemplo: imprime la suma de sus argumentos.
+# EN: Demonstration change: the broken version of src/total.sh. It subtracts instead of adding,
+#     so the test of the sample mini-project fails.
+# PT: Mudança de demonstração: a versão quebrada de src/total.sh. Ela subtrai em vez de somar,
+#     então o teste do mini-projeto de exemplo falha.
+# ES: Cambio de demostración: la versión rota de src/total.sh. Resta en vez de sumar, así que la
+#     prueba del mini-proyecto de ejemplo falla.
 set -eu
 
 total=0
 for price in "$@"; do
-	total=$((total + price))
+	total=$((total - price))
 done
 echo "$total"
