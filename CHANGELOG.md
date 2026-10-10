@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-10
+
+First stable release: the 32 quiz areas and every planned mini-project are complete, in English, Portuguese and Spanish.
+
+### Added
+
+- Mini-project `projects/continuous-integration/ci-pipeline` (MP-CI-1): a walkthrough of every job and step of `.github/workflows/ci.yml`, and a Docker-only demo that breaks each of its 14 quality gates on purpose and asserts "passes clean, fails with the change" for each one. The gate commands are read from the workflow file, and the checks `workflow-sync` and `isolation` keep the lesson in step with the workflow.
+- `demo-branches.sh` and `demo-branches.ps1`: one `demo/ci-fails-<gate>` branch per gate, built in a temporary clone, with the failed run of each linked from the READMEs.
+- Documentation pages `docs/{en,pt,es}/continuous-integration/ci-pipeline.md`.
+
+## [0.125.0] - 2026-10-10
+
+### Added
+
+- markdownlint (`markdownlint-cli2` 0.23.3) for every Markdown file of the repository: `bun run lint:md` and `bun run format:md`, with the rules in `.markdownlint-cli2.jsonc`.
+- CI: step "Markdown lint (markdownlint)" in the `typescript` job.
+
+### Fixed
+
+- 420 markdownlint violations: a language on 360 fenced code blocks, separated blockquotes, array indexes in backticks, bold lines turned into headings, and smaller fixes.
+
+### Removed
+
+- The local log folder of the browser tool (`.playwright-mcp/`) is no longer tracked.
+
+## [0.124.0] - 2026-10-10
+
+### Added
+
+- Quiz: a theory summary on each area page, under the form that starts the quiz, for the 32 areas in English, Portuguese and Spanish (`quiz/content/<area>/theory/`). Each one starts with an introduction and a linked table of contents, teaches every topic of the coverage map for a beginner, and uses tables, text diagrams, bar charts, callouts, tooltips and links to videos.
+- Quiz: content model of the summary (`theorySchema`), a check that the three languages share one skeleton, the inline marks `**bold**`, `` `code` ``, links and `[[term|meaning]]` tooltips, and the section "Theory summary" in the authoring guide.
+
+### Changed
+
+- Quiz: interactive controls use Base UI (`@base-ui/react` 1.9.0) styled with Tailwind CSS v4 and the theme tokens: `ToggleGroup` and `Toggle` for the language switch and the theme toggle, `Select` with `Field` for the filters, `Button` for actions and alternatives, `Meter` for the progress of each area, and `Popover` for the terms of the theory summary.
+- Quiz: the dark theme is black and white: pure black background, white text, borders and accent. Colour stays only for right and wrong answers and for code highlighting.
+- Quiz: the language switch is a group of toggle buttons with client-side navigation instead of links.
+
+## [0.123.0] - 2026-10-10
+
+### Added
+
+- Spanish as the third language of the repository, next to English (the main language) and Portuguese: `README.es.md` next to every `README.pt-BR.md`, `docs/es/` mirroring `docs/pt/`, `README-es.md` and `REFERENCES.es.md` at the root, a Spanish section in `CONTRIBUTING.md` and `SECURITY.md`, and an `ES:` comment block after every `PT:` block.
+- Quiz in Spanish: `/es/` pages, the `es` block required in every question, area and topic name, and the Spanish translation of all 3384 questions.
+- Spanish in everything that showed Portuguese to the user: the benchmark dashboard, the report tables written into the READMEs, the demo output of the security labs and of `order-state-machine`, `--lang es` in `normalisation-tool`, and `burst.es.svg` in `rate-limiter`.
+- The mini-project generator creates `README.es.md`, three-way language lines and `ES:` comment blocks.
+- `.claude/scripts/check-es.ts`: reports every place that has Portuguese and no Spanish.
+- Quiz: "Source Code" link to the repository in the header, and the Vercel configuration `quiz/vercel.json`.
+
+### Changed
+
+- CI tests every mini-project on every run, not only the ones whose folder changed.
+- `AGENTS.md`, `CLAUDE.md`, `.claude/rules/`, `CONTRIBUTING.md` and the docs describe three languages.
+
+### Fixed
+
+- `mutation-testing` and `mini-xunit`: line numbers cited in the READMEs and in the mutation report follow the source again.
+- Go `misspell` ignore lists accept the Spanish words of the comments, and comment wrapping passes `clang-format`, `ruff` and `gofmt`.
+
+## [0.122.0] - 2026-10-10
+
+### Added
+
+- Quiz: the software engineering area is complete, 150 questions in three languages. New topics: testing, evolution and maintenance; simplicity and technical debt. Blind review in two rounds, with the 15 notes of the reviewer resolved in `review.md`.
+
+### Fixed
+
+- Quiz: chapter numbers of Code Simplicity, and section numbers of Sommerville that could not be confirmed were replaced by chapter and title.
+
+## [0.121.0] - 2026-10-10
+
+### Added
+
+- Quiz: the continuous integration area is complete, 100 questions in three languages. New topics: quality gates, deployment strategies, SemVer with Conventional Commits and changelog, and supply-chain security in CI. Blind review in two rounds, with the 11 notes of the reviewer resolved in `review.md` against the official documentation.
+
+### Fixed
+
+- Quiz: the lifetime of `GITHUB_TOKEN` (6 hours on a GitHub-hosted runner, 24 hours on a self-hosted one) and the events a workflow token can trigger.
+
+## [0.120.0] - 2026-10-10
+
+### Added
+
+- The observability area: 100 quiz questions and four mini-projects in `projects/observability/`. `three-signals` (three services with OpenTelemetry, Prometheus, Grafana, Loki and Tempo, and a slow dependency found in one trace), `structured-logs` (JSON logs with a correlation id through HTTP and a queue, against plain text), `slo-alert` (availability and latency objectives, error budget and burn-rate alerts, violated by a local k6 load) and `flame-graph` (a hidden hot path found with a profile, fixed and measured).
+
+### Fixed
+
+- `slo-alert`: two races in the watcher of the end-to-end test. A `NaN` ratio (no request in the window yet) was kept as the peak, and "before the load" was decided from a smoothed rate. The test command passed 10 consecutive runs.
+- `flame-graph`: the setup scripts profile for 15 seconds, because a CI runner collected fewer samples of the fast handler than the check requires in 5, and the Bun server sets `idleTimeout` so a profile longer than 10 seconds no longer ends in a connection reset.
+- `dining-philosophers`: Spanish comments wrapped as google-java-format requires.
+
 ## [0.119.0] - 2026-10-07
 
 ### Added

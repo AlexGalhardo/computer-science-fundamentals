@@ -96,9 +96,11 @@ Each area has a quiz and, except for the two theory-only areas, a folder in
 | Electronics | theory only: a 170-question quiz |
 | Software engineering | theory only: a 150-question quiz |
 
-Not every area is finished yet. The [status page](./docs/en/README.md) says
-which ones are, and [PLAN.md](./PLAN.md) has the full roadmap with acceptance
-criteria.
+Every area is finished: the 32 quizzes (3,384 questions, each one in the three
+languages, with a theory summary to read before answering) and the 86
+mini-projects. The [status page](./docs/en/README.md) shows the numbers of each
+area, and [PLAN.md](./PLAN.md) has the full roadmap with the acceptance
+criteria that were checked.
 
 ## Roadmap for beginners
 
@@ -214,7 +216,7 @@ Every document under `docs/en/` has an equivalent under `docs/pt/` and `docs/es/
 ```text
 /quiz/         the quiz app and its questions (quiz/content/<area>/<topic>.json)
 /projects/     mini-projects, by area, each with tests, a demo and three READMEs
-/benchmarks/   cross-language benchmark workloads and their dashboard (in progress)
+/benchmarks/   cross-language benchmark workloads and their dashboard
 /docs/         documentation per area, in English (en/), Portuguese (pt/) and Spanish (es/)
 /tools/        benchmark runner and mini-project generator
 /docker/       one pinned base image per language

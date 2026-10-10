@@ -189,7 +189,7 @@ O que você deve ver na lista de jobs de cada execução: um job vermelho, com o
 
 ## Limites
 
-- Os branches estão preparados e não foram enviados, então a tabela do README ainda não tem links para as execuções que falharam.
+- Os branches foram enviados em 2026-10-10, e a tabela do README aponta a execução com falha de cada portão.
 - Três portões são mostrados em um fixture reduzido, porque os reais sobem Docker e um contêiner da demo não tem Docker dentro: os testes de ponta a ponta do quiz (um site de uma página no lugar do quiz), os dashboards (uma página de exemplo no lugar de todas) e os testes dos mini-projetos (um mini-projeto de exemplo que só precisa de um shell).
 - Os portões do `typescript` rodam os comandos reais sobre `quiz/`, `tools/` e `benchmarks/` com o conteúdo pequeno dos testes do quiz, e os portões de formatação conferem arquivos de exemplo. A demo prova que cada portão pega o seu erro. Só o pipeline de verdade prova que o repositório inteiro está limpo.
 

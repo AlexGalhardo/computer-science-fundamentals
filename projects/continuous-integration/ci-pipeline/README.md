@@ -85,22 +85,22 @@ Each gate has a prepared change in `demo/<gate>/change/` and a short note in `de
 
 | Gate | Job and step | The prepared change | Local demo | Branch | Failed run |
 | --- | --- | --- | --- | --- | --- |
-| `biome` | `typescript`, Format and lint | unformatted TypeScript | real command, reduced file set | `demo/ci-fails-biome` | PENDING |
-| `markdownlint` | `typescript`, Markdown lint | a code block with no language | real command, reduced file set | `demo/ci-fails-markdownlint` | PENDING |
-| `typecheck` | `typescript`, Type check | a function that returns the wrong type | real command, reduced file set | `demo/ci-fails-typecheck` | PENDING |
-| `unit-tests` | `typescript`, Unit tests | a failing test | real command | `demo/ci-fails-unit-tests` | PENDING |
-| `quiz-validate` | `typescript`, Quiz content validation | a question with 4 alternatives | real command, fixture content | `demo/ci-fails-quiz-validate` | PENDING |
-| `docs-index` | `typescript`, Documentation index | a generated page edited by hand | real command, fixture content | `demo/ci-fails-docs-index` | PENDING |
-| `format-python` | `formatters`, python | unformatted Python | real command and image, sample files | `demo/ci-fails-format-python` | PENDING |
-| `format-go` | `formatters`, go | unformatted Go | real command and image, sample files | `demo/ci-fails-format-go` | PENDING |
-| `format-rust` | `formatters`, rust | unformatted Rust | real command and image, sample files | `demo/ci-fails-format-rust` | PENDING |
-| `format-cpp` | `formatters`, cpp | unformatted C++ | real command and image, sample files | `demo/ci-fails-format-cpp` | PENDING |
-| `format-elixir` | `formatters`, elixir | unformatted Elixir | real command and image, sample files | `demo/ci-fails-format-elixir` | PENDING |
-| `quiz-e2e` | `quiz`, Unit and end-to-end tests | a browser test that cannot pass | reduced: same image and configuration, sample page | `demo/ci-fails-quiz-e2e` | PENDING |
-| `dashboards` | `quiz`, Static dashboards open from disk | a dashboard that needs a CDN | reduced: same script and image, sample page | `demo/ci-fails-dashboards` | PENDING |
-| `mini-project` | `mini-projects`, setup script | a broken sample mini-project | reduced: same shell lines, sample mini-project | `demo/ci-fails-mini-project` | PENDING |
+| `biome` | `typescript`, Format and lint | unformatted TypeScript | real command, reduced file set | `demo/ci-fails-biome` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048113228) |
+| `markdownlint` | `typescript`, Markdown lint | a code block with no language | real command, reduced file set | `demo/ci-fails-markdownlint` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048120941) |
+| `typecheck` | `typescript`, Type check | a function that returns the wrong type | real command, reduced file set | `demo/ci-fails-typecheck` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048128388) |
+| `unit-tests` | `typescript`, Unit tests | a failing test | real command | `demo/ci-fails-unit-tests` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048136281) |
+| `quiz-validate` | `typescript`, Quiz content validation | a question with 4 alternatives | real command, fixture content | `demo/ci-fails-quiz-validate` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048144569) |
+| `docs-index` | `typescript`, Documentation index | a generated page edited by hand | real command, fixture content | `demo/ci-fails-docs-index` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048153531) |
+| `format-python` | `formatters`, python | unformatted Python | real command and image, sample files | `demo/ci-fails-format-python` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048162838) |
+| `format-go` | `formatters`, go | unformatted Go | real command and image, sample files | `demo/ci-fails-format-go` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048171156) |
+| `format-rust` | `formatters`, rust | unformatted Rust | real command and image, sample files | `demo/ci-fails-format-rust` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048178682) |
+| `format-cpp` | `formatters`, cpp | unformatted C++ | real command and image, sample files | `demo/ci-fails-format-cpp` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048185484) |
+| `format-elixir` | `formatters`, elixir | unformatted Elixir | real command and image, sample files | `demo/ci-fails-format-elixir` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048192938) |
+| `quiz-e2e` | `quiz`, Unit and end-to-end tests | a browser test that cannot pass | reduced: same image and configuration, sample page | `demo/ci-fails-quiz-e2e` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048201135) |
+| `dashboards` | `quiz`, Static dashboards open from disk | a dashboard that needs a CDN | reduced: same script and image, sample page | `demo/ci-fails-dashboards` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048210540) |
+| `mini-project` | `mini-projects`, setup script | a broken sample mini-project | reduced: same shell lines, sample mini-project | `demo/ci-fails-mini-project` | [failed run](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048219496) |
 
-**PENDING**: the branches are not pushed yet, so there are no runs to link. The column is filled in after `./demo-branches.sh --push` (see below).
+The links were filled in on 2026-10-10, after `./demo-branches.sh --push`. Each run is red in exactly the job of its row.
 
 ## Demo
 
@@ -143,7 +143,6 @@ The script works in a temporary clone and only reads the working tree it is laun
 
 ## Limits
 
-- **MP-CI-1.2 is half met.** The 14 changes and the script exist and were tried locally. The branches were not pushed, so the "Failed run" column has no links yet.
 - `quiz-e2e`, `dashboards` and `mini-project` run on a reduced fixture. The real gates start Docker (docker-compose, a container per check, the setup script of each mini-project), and a container of this demo has no Docker inside. The fixtures are in `fixture/`: a one-page site, a sample dashboard and a sample mini-project that needs only a shell. The Playwright image, its configuration, the dashboard script and the shell lines of the step are the real ones.
 - The six `typescript` gates run the real commands on a copy of `quiz/`, `tools/` and `benchmarks/`, without `projects/`, and with the small content of the quiz tests in place of the real questions. So "the clean copy passes" does not prove that the whole repository is clean: the real `typescript` job proves that.
 - The formatter gates check the sample files in `fixture/formatters/`, not every file of the repository.

@@ -97,8 +97,11 @@ Cada área tem um quiz e, com exceção das duas áreas só de teoria, uma pasta
 | Eletrônica | só teoria: quiz de 170 questões |
 | Engenharia de software | só teoria: quiz de 150 questões |
 
-Nem toda área está pronta. A [página de status](./docs/pt/README.md) diz quais
-estão, e o [PLAN.md](./PLAN.md) tem o roteiro completo com critérios de aceite.
+Todas as áreas estão prontas: os 32 quizzes (3.384 questões, cada uma nos três
+idiomas, com um resumo teórico para ler antes de responder) e os 86
+mini-projetos. A [página de status](./docs/pt/README.md) mostra os números de
+cada área, e o [PLAN.md](./PLAN.md) tem o roteiro completo com os critérios de
+aceite que foram conferidos.
 
 ## Roteiro para iniciantes
 
@@ -221,7 +224,7 @@ Todo documento em `docs/pt/` tem um equivalente em `docs/en/` e `docs/es/`.
 ```text
 /quiz/         o app do quiz e as questões (quiz/content/<area>/<topico>.json)
 /projects/     mini-projetos, por área, cada um com testes, demo e três READMEs
-/benchmarks/   cargas de benchmark entre linguagens e o dashboard (em andamento)
+/benchmarks/   cargas de benchmark entre linguagens e o dashboard
 /docs/         documentação por área, em inglês (en/), português (pt/) e espanhol (es/)
 /tools/        runner de benchmark e gerador de mini-projetos
 /docker/       uma imagem base fixada por linguagem

@@ -12,7 +12,7 @@ The decisions behind this plan are in [docs/en/decisions.md](docs/en/decisions.m
 - [x] Phase 1: import content from the previous repositories and external skills
 - [x] Phase 2: brainstorming and documented decisions
 - [x] Phase 3: full PLAN.md
-- [ ] Phase 4: parallel development (main session plus up to 10 git worktrees, one complete area each)
+- [x] Phase 4: parallel development (main session plus up to 10 git worktrees, one complete area each)
 
 ## Theory and practice
 
@@ -30,33 +30,35 @@ Every area gets a quiz. What else it gets depends on the kind of content:
 
 ### Definition of done: mini-project
 
+The two lists below are the template every item is checked against, so they carry no boxes of their own: each mini-project ticks its "Definition of done for mini-projects met" box, and each quiz area ticks its `QC-<AREA>` boxes.
+
 A mini-project is done when all of these hold:
 
-- [ ] Lives in `projects/<area>/<mini-project>/`, one subfolder per language.
-- [ ] `README.md` (English), `README.pt-BR.md` (Portuguese) and `README.es.md` (Spanish) explain what it teaches.
-- [ ] `setup-unix-<project>.sh` and `setup-windows-<project>.ps1` bring it up needing only Docker.
-- [ ] Demo or benchmark runs with one documented command.
-- [ ] Automated tests pass inside Docker.
-- [ ] Linter and formatter of each language pass with no warnings.
-- [ ] Trilingual didactic comments (`EN`, `PT`, `ES`), one block per concept.
-- [ ] Documented in `docs/en/<area>/`, `docs/pt/<area>/` and `docs/es/<area>/`.
-- [ ] Docker images and dependencies pinned to exact stable versions.
-- [ ] The three READMEs list the quiz topics the mini-project demonstrates.
-- [ ] `CHANGELOG.md` entry added.
+- Lives in `projects/<area>/<mini-project>/`, one subfolder per language.
+- `README.md` (English), `README.pt-BR.md` (Portuguese) and `README.es.md` (Spanish) explain what it teaches.
+- `setup-unix-<project>.sh` and `setup-windows-<project>.ps1` bring it up needing only Docker.
+- Demo or benchmark runs with one documented command.
+- Automated tests pass inside Docker.
+- Linter and formatter of each language pass with no warnings.
+- Trilingual didactic comments (`EN`, `PT`, `ES`), one block per concept.
+- Documented in `docs/en/<area>/`, `docs/pt/<area>/` and `docs/es/<area>/`.
+- Docker images and dependencies pinned to exact stable versions.
+- The three READMEs list the quiz topics the mini-project demonstrates.
+- `CHANGELOG.md` entry added.
 
 ### Definition of done: quiz area
 
 A quiz area is done when all of these hold:
 
-- [ ] Coverage map committed in `quiz/content/<area>/coverage.json` (topics, source chapters, target count per topic).
-- [ ] At least 100 questions (170 for Electronics, 150 for Software engineering), and every topic of the coverage map reaches its target.
-- [ ] Difficulty split close to 40 basic, 40 intermediate, 20 advanced.
-- [ ] Every question has 5 alternatives, one correct, an explanation for each alternative, a `source`, and texts in EN, PT and ES.
-- [ ] `bun run quiz:validate` passes for the area.
-- [ ] Independent reviewer answered the whole area without the answer key, and every disagreement was resolved and logged in `quiz/content/<area>/review.md`.
-- [ ] Theory summary of the area committed in `quiz/content/<area>/theory/` (`en.json`, `pt.json`, `es.json`), teaching every topic of the coverage map.
-- [ ] No sentence copied from a book.
-- [ ] In a theory-and-practice area, every question about a concept shown by a mini-project carries its `miniProject` link.
+- Coverage map committed in `quiz/content/<area>/coverage.json` (topics, source chapters, target count per topic).
+- At least 100 questions (170 for Electronics, 150 for Software engineering), and every topic of the coverage map reaches its target.
+- Difficulty split close to 40 basic, 40 intermediate, 20 advanced.
+- Every question has 5 alternatives, one correct, an explanation for each alternative, a `source`, and texts in EN, PT and ES.
+- `bun run quiz:validate` passes for the area.
+- Independent reviewer answered the whole area without the answer key, and every disagreement was resolved and logged in `quiz/content/<area>/review.md`.
+- Theory summary of the area committed in `quiz/content/<area>/theory/` (`en.json`, `pt.json`, `es.json`), teaching every topic of the coverage map.
+- No sentence copied from a book.
+- In a theory-and-practice area, every question about a concept shown by a mini-project carries its `miniProject` link.
 
 ## Area index
 
@@ -150,20 +152,22 @@ Shared tooling that every other part depends on. Done before any wave starts.
 
 Requested by the owner on 2026-10-08. Everywhere Portuguese exists, Spanish exists too. English stays the main language.
 
-- [ ] **F-5.1** `README.es.md` next to every `README.pt-BR.md`, `README-es.md` and `REFERENCES.es.md` at the root, a Spanish section in `CONTRIBUTING.md` and `SECURITY.md`, and a three-way language line under the title of every README.
-- [ ] **F-5.2** `docs/es/` mirrors `docs/pt/` page by page, and `bun run docs:index` writes `docs/es/README.md`.
-- [ ] **F-5.3** An `ES:` block after every `PT:` comment block, in every file type.
-- [ ] **F-5.4** User-facing texts of dashboards and report tables that had Portuguese have Spanish (benchmark dashboard, report generators of the mini-projects).
-- [ ] **F-5.5** The mini-project generator creates `README.es.md`, the three-way language lines and `ES:` comment blocks.
+- [x] **F-5.1** `README.es.md` next to every `README.pt-BR.md`, `README-es.md` and `REFERENCES.es.md` at the root, a Spanish section in `CONTRIBUTING.md` and `SECURITY.md`, and a three-way language line under the title of every README.
+- [x] **F-5.2** `docs/es/` mirrors `docs/pt/` page by page, and `bun run docs:index` writes `docs/es/README.md`.
+- [x] **F-5.3** An `ES:` block after every `PT:` comment block, in every file type.
+- [x] **F-5.4** User-facing texts of dashboards and report tables that had Portuguese have Spanish (benchmark dashboard, report generators of the mini-projects).
+- [x] **F-5.5** The mini-project generator creates `README.es.md`, the three-way language lines and `ES:` comment blocks.
 	- **Accept:** `bun .claude/scripts/check-es.ts .` ends with `ok:`, and `bun test tools` passes.
-- [ ] **F-5.6** Rules and onboarding say three languages: `AGENTS.md`, `CLAUDE.md`, `.claude/rules/`, `CONTRIBUTING.md`, `docs/*/decisions.md`, `docs/*/quiz.md`, `docs/*/quiz-authoring.md`.
+	- Note (2026-10-10): `ok: 4051 file(s), Spanish is present everywhere Portuguese is`. The 18 mini-projects whose code changed for Spanish were rerun in Docker, and the formatters of every language were run over the whole repository.
+- [x] **F-5.6** Rules and onboarding say three languages: `AGENTS.md`, `CLAUDE.md`, `.claude/rules/`, `CONTRIBUTING.md`, `docs/*/decisions.md`, `docs/*/quiz.md`, `docs/*/quiz-authoring.md`.
 
 ### F-6 CI tests every mini-project on every run
 
 Requested by the owner on 2026-10-08.
 
-- [ ] **F-6.1** The job `list-projects` of `.github/workflows/ci.yml` lists every mini-project, not only the ones whose folder changed.
+- [x] **F-6.1** The job `list-projects` of `.github/workflows/ci.yml` lists every mini-project, not only the ones whose folder changed.
 	- **Accept:** a CI run on `main` shows one job per mini-project, all green.
+	- Note (2026-10-10): run <https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38047794333>, 94 of 94 jobs green (86 mini-projects). The run before it found two failures that were fixed (`flame-graph`, `dining-philosophers`). In the 14 demonstration runs that followed, two tests failed for reasons that have nothing to do with the gate under demonstration: the Go test of `counter-race` (2 of 16 runs: 8 of 10 runs lost updates, the criterion asks for 9) and the Tempo search of `three-signals` (1 of 16 runs, a 300 second timeout). Both pass on rerun and stay as open items in `.claude/agents.md`.
 
 ---
 
@@ -276,11 +280,11 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 
 Requested by the owner on 2026-10-08: Spanish everywhere Portuguese exists, with English as the main language. Neutral Latin American Spanish (`tú`).
 
-- [ ] **QZ-11.1** App: `LANGUAGES = ["en", "pt", "es"]`, dictionary `quiz/src/i18n/es.ts`, language switch with three options, the address `/` sends a browser in Spanish to `/es/`, and `<html lang>` follows the language.
+- [x] **QZ-11.1** App: `LANGUAGES = ["en", "pt", "es"]`, dictionary `quiz/src/i18n/es.ts`, language switch with three options, the address `/` sends a browser in Spanish to `/es/`, and `<html lang>` follows the language.
 	- **Accept:** the end-to-end test "a Spanish browser lands on the Spanish pages" passes, and switching language in the middle of a question keeps the question, the answer and the explanation in the three languages.
-- [ ] **QZ-11.2** Content model: the schema requires the `es` block in every question and `name.es` in `areas.json` and in every `coverage.json`. `snippet` and `example` are present in the three languages or in none.
+- [x] **QZ-11.2** Content model: the schema requires the `es` block in every question and `name.es` in `areas.json` and in every `coverage.json`. `snippet` and `example` are present in the three languages or in none.
 	- **Accept:** the unit test "rejects a missing language" passes.
-- [ ] **QZ-11.3** Every question of every area has its `es` block. Helper for translators: `bun .claude/scripts/merge-es.ts <topic.json> <translations.json>`.
+- [x] **QZ-11.3** Every question of every area has its `es` block. Helper for translators: `bun .claude/scripts/merge-es.ts <topic.json> <translations.json>`.
 	- **Accept:** `bun run quiz:validate` reports 0 errors over all areas.
 
 ### QZ-12 Theory summary on the area page
@@ -295,31 +299,34 @@ Implementation notes:
 - `quiz/src/components/Theory.tsx` is a server component: the summary is HTML at build time.
 - Images: no image block for now. Pictures are text diagrams and bar charts, which follow the theme and need no licence.
 
-- [ ] **QZ-12.1** Content model and validation: schema, skeleton check, `getTheory(area, language)`.
+- [x] **QZ-12.1** Content model and validation: schema, skeleton check, `getTheory(area, language)`.
 	- **Accept:** the unit tests of "theory summary" pass: the fixture is accepted in three languages; fewer than 3 sections, a duplicate section, a ragged table and a non-https video are refused; a language with other sections fails; a missing file is a warning, and an error with `--strict`.
-- [ ] **QZ-12.2** Rendering under the start form: introduction, linked table of contents, every block type, tooltips that open with mouse, keyboard and touch, in the three languages and both themes.
+- [x] **QZ-12.2** Rendering under the start form: introduction, linked table of contents, every block type, tooltips that open with mouse, keyboard and touch, in the three languages and both themes.
 	- **Accept:** the end-to-end tests of "theory summary of an area" pass, including the accessibility check in the light and dark themes.
-- [ ] **QZ-12.3** Authoring guide: section "Theory summary" in `docs/en/quiz-authoring.md`, `docs/pt/quiz-authoring.md` and `docs/es/quiz-authoring.md`.
-- [ ] **QZ-12.4** Summaries written for the 33 areas, in the three languages.
+- [x] **QZ-12.3** Authoring guide: section "Theory summary" in `docs/en/quiz-authoring.md`, `docs/pt/quiz-authoring.md` and `docs/es/quiz-authoring.md`.
+- [x] **QZ-12.4** Summaries written for the 32 areas, in the three languages.
 	- **Accept:** `bun run quiz:validate --strict` reports no `theory summary is missing`, and no skeleton error.
+	- Note (2026-10-10): `3384 questions, 0 errors, 0 warnings`. The 53 links and videos used by the summaries were checked (videos through the YouTube oEmbed endpoint).
 
 ### QZ-13 Look and components
 
 Requested by the owner on 2026-10-10.
 
-- [ ] **QZ-13.1** Dark theme in black and white: pure black background, white text, borders and accent. Colour stays only for right and wrong answers and for code highlighting.
+- [x] **QZ-13.1** Dark theme in black and white: pure black background, white text, borders and accent. Colour stays only for right and wrong answers and for code highlighting.
 	- **Accept:** the contrast checks of the end-to-end tests pass in the dark theme.
-- [ ] **QZ-13.2** Interactive components built with Base UI (`@base-ui/react`, pinned), styled with Tailwind CSS v4 and the theme tokens: language switch, theme toggle, selects, buttons, progress bars and the tooltips of the theory summary.
+- [x] **QZ-13.2** Interactive components built with Base UI (`@base-ui/react`, pinned), styled with Tailwind CSS v4 and the theme tokens: language switch, theme toggle, selects, buttons, progress bars and the tooltips of the theory summary.
 	- **Accept:** `./quiz/setup-unix-quiz.sh test` passes (unit and end-to-end tests in Docker).
+	- Note (2026-10-10): run on Windows with `quiz/setup-windows-quiz.ps1 test`, 44 unit and 39 end-to-end tests passed; the Unix script runs in CI. The language switch became a group of toggle buttons with client-side navigation, so it no longer works as plain links without JavaScript.
 
 ### QZ-14 Publication
 
 Requested by the owner on 2026-10-08.
 
-- [ ] **QZ-14.1** "Source Code" link with the GitHub icon in the header, left of the language switch, label translated, icon only on narrow screens.
+- [x] **QZ-14.1** "Source Code" link with the GitHub icon in the header, left of the language switch, label translated, icon only on narrow screens.
 	- **Accept:** the end-to-end test "the Source Code link opens the main repository in a new tab" passes.
-- [ ] **QZ-14.2** Deploy on Vercel: project `computer-science-fundamentals-quiz`, static build (`quiz/vercel.json`, root directory `quiz`, output `out/`).
+- [x] **QZ-14.2** Deploy on Vercel: project `computer-science-fundamentals-quiz`, static build (`quiz/vercel.json`, root directory `quiz`, output `out/`).
 	- **Accept:** the production address serves `/en/`, `/pt/` and `/es/` built from the current `main`.
+	- Note (2026-10-10): deployed as a prebuilt static output (`vercel deploy --prebuilt --prod`); <https://cs-fundamentals-quiz.vercel.app> answers 200 on `/en/`, `/pt/` and `/es/` with the theory summary on the area pages. Connecting the GitHub repository so every push to `main` deploys by itself is still to do.
 
 ---
 
@@ -1011,10 +1018,10 @@ Sources: Majors et al., Observability Engineering, OpenTelemetry documentation.
 | Profiling | 4 |
 | Prometheus, Grafana, Loki and Tempo basics | 4 |
 
-- [ ] QC-OBS.1 Coverage map committed
-- [ ] QC-OBS.2 100 questions written (EN, PT and ES)
-- [ ] QC-OBS.3 Validation passing
-- [ ] QC-OBS.4 Blind review resolved
+- [x] QC-OBS.1 Coverage map committed
+- [x] QC-OBS.2 100 questions written (EN, PT and ES)
+- [x] QC-OBS.3 Validation passing
+- [x] QC-OBS.4 Blind review resolved
 
 #### QC-CHAIN Blockchain
 
@@ -1054,10 +1061,10 @@ Sources: GitHub Actions course material in references/courses/github-actions.
 | SemVer, Conventional Commits and changelog | 8 |
 | Supply-chain security in CI | 4 |
 
-- [ ] QC-CI.1 Coverage map committed
-- [ ] QC-CI.2 100 questions written (EN, PT and ES)
-- [ ] QC-CI.3 Validation passing
-- [ ] QC-CI.4 Blind review resolved
+- [x] QC-CI.1 Coverage map committed
+- [x] QC-CI.2 100 questions written (EN, PT and ES)
+- [x] QC-CI.3 Validation passing
+- [x] QC-CI.4 Blind review resolved
 
 #### QC-SE Software engineering
 
@@ -1080,10 +1087,10 @@ Sources: Sommerville (9th edition), Brooks, Clean Code, Code Simplicity, The Lea
 | Agile methods and lean startup | 14 |
 | Simplicity and technical debt | 10 |
 
-- [ ] QC-SE.1 Coverage map committed
-- [ ] QC-SE.2 150 questions written (EN, PT and ES)
-- [ ] QC-SE.3 Validation passing
-- [ ] QC-SE.4 Blind review resolved
+- [x] QC-SE.1 Coverage map committed
+- [x] QC-SE.2 150 questions written (EN, PT and ES)
+- [x] QC-SE.3 Validation passing
+- [x] QC-SE.4 Blind review resolved
 
 ### Wave 7
 
@@ -2030,43 +2037,43 @@ Teaches: how to sort a file larger than memory. Languages: Rust, Go.
 
 Teaches: how the three signals together explain one slow request. Languages: TS, Go.
 
-- [ ] **MP-OBS-1.1** Three services instrumented with OpenTelemetry, plus Prometheus, Grafana, Loki and Tempo in docker-compose
+- [x] **MP-OBS-1.1** Three services instrumented with OpenTelemetry, plus Prometheus, Grafana, Loki and Tempo in docker-compose
 	- **Accept:** one command brings everything up locally with pinned images.
-- [ ] **MP-OBS-1.2** Injected slow dependency
+- [x] **MP-OBS-1.2** Injected slow dependency
 	- **Accept:** a single trace shows the slow span, and the README has the screenshot and the query used.
-- [ ] **MP-OBS-1.3** Dashboards as code
+- [x] **MP-OBS-1.3** Dashboards as code
 	- **Accept:** dashboards are committed as JSON and load on start-up.
-- [ ] **MP-OBS-1.4** Definition of done for mini-projects met.
+- [x] **MP-OBS-1.4** Definition of done for mini-projects met.
 
 #### MP-OBS-2 Structured logs and correlation id
 
 Teaches: how to follow one request across services. Languages: TS.
 
-- [ ] **MP-OBS-2.1** JSON logs with a correlation id propagated through HTTP and a queue
+- [x] **MP-OBS-2.1** JSON logs with a correlation id propagated through HTTP and a queue
 	- **Accept:** a test finds every log line of one request with a single query.
-- [ ] **MP-OBS-2.2** Unstructured version for contrast
+- [x] **MP-OBS-2.2** Unstructured version for contrast
 	- **Accept:** the README shows the same search on both.
-- [ ] **MP-OBS-2.3** Definition of done for mini-projects met.
+- [x] **MP-OBS-2.3** Definition of done for mini-projects met.
 
 #### MP-OBS-3 SLO and alert
 
 Teaches: how an objective becomes an alert. Languages: TS.
 
-- [ ] **MP-OBS-3.1** Availability and latency indicators with an error budget
+- [x] **MP-OBS-3.1** Availability and latency indicators with an error budget
 	- **Accept:** recording rules are committed and tested with the Prometheus rule tester.
-- [ ] **MP-OBS-3.2** Violation caused by local k6
+- [x] **MP-OBS-3.2** Violation caused by local k6
 	- **Accept:** the alert fires within the documented time and resolves after the load stops.
-- [ ] **MP-OBS-3.3** Definition of done for mini-projects met.
+- [x] **MP-OBS-3.3** Definition of done for mini-projects met.
 
 #### MP-OBS-4 Profiling with a flame graph
 
 Teaches: how to find where time goes. Languages: Go, TS.
 
-- [ ] **MP-OBS-4.1** Service with a hidden hot path
+- [x] **MP-OBS-4.1** Service with a hidden hot path
 	- **Accept:** the flame graph points at the function, and the image is committed.
-- [ ] **MP-OBS-4.2** Fix and before/after benchmark
+- [x] **MP-OBS-4.2** Fix and before/after benchmark
 	- **Accept:** throughput improves by a factor recorded in the README.
-- [ ] **MP-OBS-4.3** Definition of done for mini-projects met.
+- [x] **MP-OBS-4.3** Definition of done for mini-projects met.
 
 #### MP-CHAIN-1 Didactic blockchain
 
@@ -2085,11 +2092,12 @@ Teaches: how hashing, proof of work and validation make a tamper-evident chain. 
 
 Teaches: what the pipeline of this repository does and why. Languages: YAML.
 
-- [ ] **MP-CI-1.1** Documented walkthrough of the workflow built in F-4
+- [x] **MP-CI-1.1** Documented walkthrough of the workflow built in F-4
 	- **Accept:** both READMEs explain every job.
-- [ ] **MP-CI-1.2** Demonstration branches
+- [x] **MP-CI-1.2** Demonstration branches
 	- **Accept:** one branch fails each quality gate, with links to the failed runs.
-- [ ] **MP-CI-1.3** Definition of done for mini-projects met.
+	- Note (2026-10-10): 14 gates (markdownlint was added to the workflow on the same day), 14 branches `demo/ci-fails-<gate>`, 14 runs that ended red in the expected job, linked from the three READMEs. Locally, `quiz-e2e`, `dashboards` and `mini-project` are demonstrated on a reduced fixture, because a container of the demo has no Docker inside; the READMEs say so.
+- [x] **MP-CI-1.3** Definition of done for mini-projects met.
 
 #### MP-AI-1 BPE tokenizer
 

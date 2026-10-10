@@ -189,7 +189,7 @@ Lo que deberías ver en la lista de jobs de cada ejecución: un job en rojo, con
 
 ## Límites
 
-- Las ramas están preparadas y no se enviaron, así que la tabla del README aún no tiene enlaces a las ejecuciones fallidas.
+- Las ramas se enviaron el 2026-10-10, y la tabla del README enlaza la ejecución fallida de cada puerta.
 - Tres puertas se muestran sobre un fixture reducido, porque las reales levantan Docker y un contenedor de la demo no tiene Docker dentro: las pruebas de punta a punta del quiz (un sitio de una página en lugar del quiz), los dashboards (una página de ejemplo en lugar de todas) y las pruebas de los mini-proyectos (un mini-proyecto de ejemplo que solo necesita un shell).
 - Las puertas de `typescript` ejecutan los comandos reales sobre `quiz/`, `tools/` y `benchmarks/` con el contenido pequeño de las pruebas del quiz, y las puertas de formato comprueban archivos de ejemplo. La demo prueba que cada puerta detecta su error. Solo el pipeline de verdad prueba que todo el repositorio está limpio.
 

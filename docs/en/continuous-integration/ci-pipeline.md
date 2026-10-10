@@ -189,7 +189,7 @@ What you should see in the list of jobs of each run: one red job, with the name 
 
 ## Limits
 
-- The branches are prepared and not pushed, so the table of the README has no links to failed runs yet.
+- The branches were pushed on 2026-10-10, and the table of the README links the failed run of each gate.
 - Three gates are shown on a reduced fixture, because the real ones start Docker and a container of the demo has no Docker inside: the end-to-end tests of the quiz (a one-page site in place of the quiz), the dashboards (one sample page in place of all of them) and the mini-project tests (one sample mini-project that needs only a shell).
 - The `typescript` gates run the real commands on `quiz/`, `tools/` and `benchmarks/` with the small content of the quiz tests, and the formatter gates check sample files. The demo proves that each gate catches its mistake. Only the real pipeline proves that the whole repository is clean.
 

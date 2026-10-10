@@ -27,7 +27,7 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | `docs/en/`, `docs/pt/`, `docs/es/` | Documentation per area and sub-area. English is the main language. The three languages are mandatory and must stay equivalent |
 | `REFERENCES.md`, `REFERENCES.pt-BR.md`, `REFERENCES.es.md` | Books, courses, papers, documentation and videos for every area, with verified links. Each `projects/<area>/README.md` has the longer list of its area |
 | `quiz/` | The quiz app and its questions (see `docs/en/quiz.md` and `docs/en/quiz-authoring.md`) |
-| `benchmarks/` | Cross-language benchmark workloads and their static dashboard (planned, Part BD of `PLAN.md`) |
+| `benchmarks/` | Cross-language benchmark workloads and their static dashboard (Part BD of `PLAN.md`) |
 | `tools/bench/` | Benchmark runner: `bun run bench -- --project <name>` (see `docs/en/benchmarks.md`) |
 | `tools/scaffold/` | Mini-project generator: `bun run new:project <area> <name> --langs ts,go` |
 | `docker/` | Pinned base image per language (see `docs/en/environment.md`) |

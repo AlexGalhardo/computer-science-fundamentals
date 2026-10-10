@@ -85,22 +85,22 @@ Cada portão tem uma mudança preparada em `demo/<gate>/change/` e uma nota curt
 
 | Portão | Job e passo | A mudança preparada | Demo local | Branch | Execução que falhou |
 | --- | --- | --- | --- | --- | --- |
-| `biome` | `typescript`, Format and lint | TypeScript sem formatação | comando real, conjunto reduzido de arquivos | `demo/ci-fails-biome` | PENDENTE |
-| `markdownlint` | `typescript`, Markdown lint | um bloco de código sem linguagem | comando real, conjunto reduzido de arquivos | `demo/ci-fails-markdownlint` | PENDENTE |
-| `typecheck` | `typescript`, Type check | uma função que devolve o tipo errado | comando real, conjunto reduzido de arquivos | `demo/ci-fails-typecheck` | PENDENTE |
-| `unit-tests` | `typescript`, Unit tests | um teste que falha | comando real | `demo/ci-fails-unit-tests` | PENDENTE |
-| `quiz-validate` | `typescript`, Quiz content validation | uma questão com 4 alternativas | comando real, conteúdo de fixture | `demo/ci-fails-quiz-validate` | PENDENTE |
-| `docs-index` | `typescript`, Documentation index | uma página gerada editada à mão | comando real, conteúdo de fixture | `demo/ci-fails-docs-index` | PENDENTE |
-| `format-python` | `formatters`, python | Python sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-python` | PENDENTE |
-| `format-go` | `formatters`, go | Go sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-go` | PENDENTE |
-| `format-rust` | `formatters`, rust | Rust sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-rust` | PENDENTE |
-| `format-cpp` | `formatters`, cpp | C++ sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-cpp` | PENDENTE |
-| `format-elixir` | `formatters`, elixir | Elixir sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-elixir` | PENDENTE |
-| `quiz-e2e` | `quiz`, Unit and end-to-end tests | um teste de navegador que não tem como passar | reduzida: mesma imagem e configuração, página de exemplo | `demo/ci-fails-quiz-e2e` | PENDENTE |
-| `dashboards` | `quiz`, Static dashboards open from disk | um dashboard que precisa de uma CDN | reduzida: mesmo script e imagem, página de exemplo | `demo/ci-fails-dashboards` | PENDENTE |
-| `mini-project` | `mini-projects`, script de setup | um mini-projeto de exemplo quebrado | reduzida: mesmas linhas de shell, mini-projeto de exemplo | `demo/ci-fails-mini-project` | PENDENTE |
+| `biome` | `typescript`, Format and lint | TypeScript sem formatação | comando real, conjunto reduzido de arquivos | `demo/ci-fails-biome` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048113228) |
+| `markdownlint` | `typescript`, Markdown lint | um bloco de código sem linguagem | comando real, conjunto reduzido de arquivos | `demo/ci-fails-markdownlint` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048120941) |
+| `typecheck` | `typescript`, Type check | uma função que devolve o tipo errado | comando real, conjunto reduzido de arquivos | `demo/ci-fails-typecheck` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048128388) |
+| `unit-tests` | `typescript`, Unit tests | um teste que falha | comando real | `demo/ci-fails-unit-tests` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048136281) |
+| `quiz-validate` | `typescript`, Quiz content validation | uma questão com 4 alternativas | comando real, conteúdo de fixture | `demo/ci-fails-quiz-validate` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048144569) |
+| `docs-index` | `typescript`, Documentation index | uma página gerada editada à mão | comando real, conteúdo de fixture | `demo/ci-fails-docs-index` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048153531) |
+| `format-python` | `formatters`, python | Python sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-python` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048162838) |
+| `format-go` | `formatters`, go | Go sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-go` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048171156) |
+| `format-rust` | `formatters`, rust | Rust sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-rust` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048178682) |
+| `format-cpp` | `formatters`, cpp | C++ sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-cpp` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048185484) |
+| `format-elixir` | `formatters`, elixir | Elixir sem formatação | comando e imagem reais, arquivos de exemplo | `demo/ci-fails-format-elixir` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048192938) |
+| `quiz-e2e` | `quiz`, Unit and end-to-end tests | um teste de navegador que não tem como passar | reduzida: mesma imagem e configuração, página de exemplo | `demo/ci-fails-quiz-e2e` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048201135) |
+| `dashboards` | `quiz`, Static dashboards open from disk | um dashboard que precisa de uma CDN | reduzida: mesmo script e imagem, página de exemplo | `demo/ci-fails-dashboards` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048210540) |
+| `mini-project` | `mini-projects`, script de setup | um mini-projeto de exemplo quebrado | reduzida: mesmas linhas de shell, mini-projeto de exemplo | `demo/ci-fails-mini-project` | [execução com falha](https://github.com/AlexGalhardo/computer-science-fundamentals/actions/runs/38048219496) |
 
-**PENDENTE**: os branches ainda não foram enviados, então não há execuções para apontar. A coluna é preenchida depois de `./demo-branches.sh --push` (veja abaixo).
+Os links foram preenchidos em 2026-10-10, depois de `./demo-branches.sh --push`. Cada execução fica vermelha exatamente no job da sua linha.
 
 ## Demo
 
@@ -143,7 +143,6 @@ O script trabalha em um clone temporário e só lê a árvore de trabalho de ond
 
 ## Limites
 
-- **MP-CI-1.2 está cumprido pela metade.** As 14 mudanças e o script existem e foram experimentados localmente. Os branches não foram enviados, então a coluna "Execução que falhou" ainda não tem links.
 - `quiz-e2e`, `dashboards` e `mini-project` rodam em um fixture reduzido. Os portões reais sobem Docker (docker-compose, um contêiner por checagem, o script de setup de cada mini-projeto), e um contêiner desta demo não tem Docker dentro. Os fixtures ficam em `fixture/`: um site de uma página, um dashboard de exemplo e um mini-projeto de exemplo que só precisa de um shell. A imagem do Playwright, a configuração dele, o script dos dashboards e as linhas de shell do passo são os reais.
 - Os seis portões do `typescript` rodam os comandos reais em uma cópia de `quiz/`, `tools/` e `benchmarks/`, sem `projects/`, e com o conteúdo pequeno dos testes do quiz no lugar das questões reais. Então "a cópia limpa passa" não prova que o repositório inteiro está limpo: quem prova isso é o job `typescript` de verdade.
 - Os portões de formatação conferem os arquivos de exemplo em `fixture/formatters/`, não todos os arquivos do repositório.
