@@ -6,17 +6,17 @@ Electronics and Software engineering are theory only and have no mini-project. E
 
 Every mini-project contains:
 
-- Two READMEs explaining what it teaches: `README.md` in English and `README.pt-BR.md` in Portuguese.
+- Three READMEs explaining what it teaches: `README.md` in English, `README.pt-BR.md` in Portuguese and `README.es.md` in Spanish, each linking to the other two on the line under the title.
 - A benchmark or a demo, through a CLI or a simple, didactic web dashboard. The dashboard is a static page (HTML + Tailwind CSS v4 reading the results JSON). Next.js only where the concept needs a server.
 - Setup scripts named `setup-unix-<project>.sh` and `setup-windows-<project>.ps1`. Everything runs in Docker with pinned images, so the scripts require only Docker.
 - Automated tests.
 - Optionally, a short video (up to 30 seconds) showing the main concept.
 
-It is also documented in both `docs/pt/` and `docs/en/`, under its area and sub-area, and its checklist in `PLAN.md` is ticked only when the acceptance criteria were actually verified.
+It is also documented in `docs/en/`, `docs/pt/` and `docs/es/`, under its area and sub-area, and its checklist in `PLAN.md` is ticked only when the acceptance criteria were actually verified.
 
 ## Stack
 
-Bun, Node.js/npm, Next.js, ElysiaJS, Prisma, Drizzle, PostgreSQL, SQLite, MongoDB, Redis, Caddy, NGINX, GraphQL, Kafka, BullMQ, RabbitMQ, Docker and docker-compose, shell scripts, PM2, Serverless Framework, LocalStack (SQS, S3, SNS, DynamoDB), k6, Playwright, and Tailwind CSS v4 for web interfaces. Added in Phase 2: hyperfine for benchmarks, and OpenTelemetry, Prometheus, Grafana, Loki and Tempo for observability.
+Bun, Node.js/npm, Next.js, ElysiaJS, Prisma, Drizzle, PostgreSQL, SQLite, MongoDB, Redis, Caddy, NGINX, GraphQL, Kafka, BullMQ, RabbitMQ, Docker and docker-compose, shell scripts, PM2, Serverless Framework, LocalStack (SQS, S3, SNS, DynamoDB), k6, Playwright, and Tailwind CSS v4 for web interfaces, with Base UI (`@base-ui/react`, unstyled) for the interactive components of React interfaces. Added in Phase 2: hyperfine for benchmarks, and OpenTelemetry, Prometheus, Grafana, Loki and Tempo for observability.
 
 ## Dependencies
 
@@ -39,4 +39,3 @@ Bun, Node.js/npm, Next.js, ElysiaJS, Prisma, Drizzle, PostgreSQL, SQLite, MongoD
 - **Containers that write into the mounted project folder run as the host user**: `user: "${HOST_UID:-1000}:${HOST_GID:-1000}"` in docker-compose, with `HOST_UID="$(id -u)"` and `HOST_GID="$(id -g)"` exported by the Unix setup script. On Linux the mount belongs to the host user, and an image user with another uid gets `EACCES`. Docker Desktop hides this, CI does not.
 - **Health checks must test what the client uses.** PostgreSQL: `pg_isready -h 127.0.0.1 -U <user> -d <db>`, over TCP, because during initialisation the server answers on the Unix socket only and then restarts. RabbitMQ: `nc -z 127.0.0.1 5672`, not `rabbitmq-diagnostics`, which runs as root and can create the Erlang cookie before the broker does, making the broker exit.
 - A mini-project is verified on Linux by CI, not only on the Windows machine where it was written.
-

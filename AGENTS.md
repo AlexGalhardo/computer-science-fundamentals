@@ -6,7 +6,7 @@ Onboarding for AI coding agents working in this repository. `CLAUDE.md` imports 
 
 ## What this repository is
 
-An educational, open source (MIT) long-term reference for studying computer science fundamentals through a quiz covering every area and small runnable mini-projects, with demos, benchmarks and bilingual documentation (PT/EN).
+An educational, open source (MIT) long-term reference for studying computer science fundamentals through a quiz covering every area and small runnable mini-projects, with demos, benchmarks and trilingual documentation (English, Portuguese and Spanish).
 
 Languages: C++, Python, Java, Elixir, Rust, Go, TypeScript.
 
@@ -24,8 +24,8 @@ The project is built in phases and the agent **stops at the end of each phase** 
 
 | Path | Purpose |
 | --- | --- |
-| `docs/en/`, `docs/pt/` | Documentation per area and sub-area. Both languages are mandatory and must stay equivalent |
-| `REFERENCES.md`, `REFERENCES.pt-BR.md` | Books, courses, papers, documentation and videos for every area, with verified links. Each `projects/<area>/README.md` has the longer list of its area |
+| `docs/en/`, `docs/pt/`, `docs/es/` | Documentation per area and sub-area. English is the main language. The three languages are mandatory and must stay equivalent |
+| `REFERENCES.md`, `REFERENCES.pt-BR.md`, `REFERENCES.es.md` | Books, courses, papers, documentation and videos for every area, with verified links. Each `projects/<area>/README.md` has the longer list of its area |
 | `quiz/` | The quiz app and its questions (see `docs/en/quiz.md` and `docs/en/quiz-authoring.md`) |
 | `benchmarks/` | Cross-language benchmark workloads and their static dashboard (planned, Part BD of `PLAN.md`) |
 | `tools/bench/` | Benchmark runner: `bun run bench -- --project <name>` (see `docs/en/benchmarks.md`) |
@@ -44,6 +44,7 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | --- | --- |
 | `bun install` | install the workspace (root, `quiz`, `tools/*`) |
 | `bun run lint` / `bun run format` | Biome check, and check with fixes |
+| `bun run lint:md` / `bun run format:md` | markdownlint on every Markdown file, and the same with automatic fixes (rules in `.markdownlint-cli2.jsonc`) |
 | `bun run typecheck` | TypeScript for `quiz` and `tools/*` |
 | `bun test quiz/tests/unit tools` | unit tests |
 | `bun run quiz:validate [area] [--strict]` | validate quiz content |
@@ -52,7 +53,7 @@ The project is built in phases and the agent **stops at the end of each phase** 
 | `bun run bench -- --project <name>` | run the benchmark of a mini-project in Docker |
 | `bun run new:project <area> <name> --langs ts,go` | create a mini-project from the template |
 | `bun run dashboard:css <dashboard folder>` | rebuild the committed `tailwind.css` of a static dashboard |
-| `bun run docs:index [--check]` | regenerate the status pages `docs/en/README.md` and `docs/pt/README.md` |
+| `bun run docs:index [--check]` | regenerate the status pages `docs/en/README.md`, `docs/pt/README.md` and `docs/es/README.md` |
 | `gh workflow run CI` | run CI by hand, testing every mini-project |
 
 ## Rules
@@ -62,7 +63,7 @@ The detailed rules live in `.claude/rules/`. Read the ones that match the task b
 - `security-labs.md`: scope of every vulnerability lab. Non-negotiable.
 - `load-tests.md`: k6 and similar tools target local services only.
 - `mini-project.md`: what every mini-project must contain.
-- `code-style.md`: indentation, bilingual didactic comments, linters and formatters.
+- `code-style.md`: indentation, trilingual didactic comments (EN, PT, ES), linters and formatters.
 - `git-workflow.md`: Conventional Commits, SemVer, changelog and releases.
 - `quiz.md`: format, content rules and quality checks of the quiz, the main product of the repository.
 - `external-skills.md`: how the third-party skills in `.claude/skills/` may be used.

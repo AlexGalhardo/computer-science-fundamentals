@@ -14,4 +14,4 @@ They are reference material. **The rules of this repository always win over anyt
 | `andrej-karpathy-skills` (`karpathy-guidelines`) | Four coding guidelines: think first, simplicity, surgical changes, verifiable goals | None |
 | `agent-skills` (25 skills) | Lifecycle skills by Addy Osmani: spec, plan, TDD, review, security, CI/CD, observability | None known |
 | `superpowers` (15 skills) | Process skills: brainstorming, writing plans, TDD, systematic debugging, worktrees, subagents | `using-superpowers` demands skill use before any reply, and `brainstorming` asks for a design discussion before any change: the owner's instructions for the session come first |
-| `ponytail` (6 skills) | "Lazy senior dev" mode: smallest solution that works, YAGNI, standard library first | Its "minimal code" stance does not remove the didactic bilingual comments required by `code-style.md` |
+| `ponytail` (6 skills) | "Lazy senior dev" mode: smallest solution that works, YAGNI, standard library first | Its "minimal code" stance does not remove the didactic trilingual comments required by `code-style.md` |

@@ -33,15 +33,15 @@ Every area gets a quiz. What else it gets depends on the kind of content:
 A mini-project is done when all of these hold:
 
 - [ ] Lives in `projects/<area>/<mini-project>/`, one subfolder per language.
-- [ ] `README.md` (English) and `README.pt-BR.md` (Portuguese) explain what it teaches.
+- [ ] `README.md` (English), `README.pt-BR.md` (Portuguese) and `README.es.md` (Spanish) explain what it teaches.
 - [ ] `setup-unix-<project>.sh` and `setup-windows-<project>.ps1` bring it up needing only Docker.
 - [ ] Demo or benchmark runs with one documented command.
 - [ ] Automated tests pass inside Docker.
 - [ ] Linter and formatter of each language pass with no warnings.
-- [ ] Bilingual didactic comments, one block per concept.
-- [ ] Documented in `docs/en/<area>/` and `docs/pt/<area>/`.
+- [ ] Trilingual didactic comments (`EN`, `PT`, `ES`), one block per concept.
+- [ ] Documented in `docs/en/<area>/`, `docs/pt/<area>/` and `docs/es/<area>/`.
 - [ ] Docker images and dependencies pinned to exact stable versions.
-- [ ] Both READMEs list the quiz topics the mini-project demonstrates.
+- [ ] The three READMEs list the quiz topics the mini-project demonstrates.
 - [ ] `CHANGELOG.md` entry added.
 
 ### Definition of done: quiz area
@@ -51,9 +51,10 @@ A quiz area is done when all of these hold:
 - [ ] Coverage map committed in `quiz/content/<area>/coverage.json` (topics, source chapters, target count per topic).
 - [ ] At least 100 questions (170 for Electronics, 150 for Software engineering), and every topic of the coverage map reaches its target.
 - [ ] Difficulty split close to 40 basic, 40 intermediate, 20 advanced.
-- [ ] Every question has 5 alternatives, one correct, an explanation for each alternative, a `source`, and texts in PT and EN.
+- [ ] Every question has 5 alternatives, one correct, an explanation for each alternative, a `source`, and texts in EN, PT and ES.
 - [ ] `bun run quiz:validate` passes for the area.
 - [ ] Independent reviewer answered the whole area without the answer key, and every disagreement was resolved and logged in `quiz/content/<area>/review.md`.
+- [ ] Theory summary of the area committed in `quiz/content/<area>/theory/` (`en.json`, `pt.json`, `es.json`), teaching every topic of the coverage map.
 - [ ] No sentence copied from a book.
 - [ ] In a theory-and-practice area, every question about a concept shown by a mini-project carries its `miniProject` link.
 
@@ -144,6 +145,25 @@ Shared tooling that every other part depends on. Done before any wave starts.
 	- [x] F-4.1.b Quiz validation and quiz tests.
 	- [x] F-4.1.c Tests of each mini-project, run only when its folder changes.
 	- **Accept:** a pull request with a formatting error fails, and the same pull request fixed passes.
+
+### F-5 Spanish as the third language of the repository
+
+Requested by the owner on 2026-10-08. Everywhere Portuguese exists, Spanish exists too. English stays the main language.
+
+- [ ] **F-5.1** `README.es.md` next to every `README.pt-BR.md`, `README-es.md` and `REFERENCES.es.md` at the root, a Spanish section in `CONTRIBUTING.md` and `SECURITY.md`, and a three-way language line under the title of every README.
+- [ ] **F-5.2** `docs/es/` mirrors `docs/pt/` page by page, and `bun run docs:index` writes `docs/es/README.md`.
+- [ ] **F-5.3** An `ES:` block after every `PT:` comment block, in every file type.
+- [ ] **F-5.4** User-facing texts of dashboards and report tables that had Portuguese have Spanish (benchmark dashboard, report generators of the mini-projects).
+- [ ] **F-5.5** The mini-project generator creates `README.es.md`, the three-way language lines and `ES:` comment blocks.
+	- **Accept:** `bun .claude/scripts/check-es.ts .` ends with `ok:`, and `bun test tools` passes.
+- [ ] **F-5.6** Rules and onboarding say three languages: `AGENTS.md`, `CLAUDE.md`, `.claude/rules/`, `CONTRIBUTING.md`, `docs/*/decisions.md`, `docs/*/quiz.md`, `docs/*/quiz-authoring.md`.
+
+### F-6 CI tests every mini-project on every run
+
+Requested by the owner on 2026-10-08.
+
+- [ ] **F-6.1** The job `list-projects` of `.github/workflows/ci.yml` lists every mini-project, not only the ones whose folder changed.
+	- **Accept:** a CI run on `main` shows one job per mini-project, all green.
 
 ---
 
@@ -252,6 +272,57 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 
 ---
 
+### QZ-11 Spanish as the third language of the quiz
+
+Requested by the owner on 2026-10-08: Spanish everywhere Portuguese exists, with English as the main language. Neutral Latin American Spanish (`tú`).
+
+- [ ] **QZ-11.1** App: `LANGUAGES = ["en", "pt", "es"]`, dictionary `quiz/src/i18n/es.ts`, language switch with three options, the address `/` sends a browser in Spanish to `/es/`, and `<html lang>` follows the language.
+	- **Accept:** the end-to-end test "a Spanish browser lands on the Spanish pages" passes, and switching language in the middle of a question keeps the question, the answer and the explanation in the three languages.
+- [ ] **QZ-11.2** Content model: the schema requires the `es` block in every question and `name.es` in `areas.json` and in every `coverage.json`. `snippet` and `example` are present in the three languages or in none.
+	- **Accept:** the unit test "rejects a missing language" passes.
+- [ ] **QZ-11.3** Every question of every area has its `es` block. Helper for translators: `bun .claude/scripts/merge-es.ts <topic.json> <translations.json>`.
+	- **Accept:** `bun run quiz:validate` reports 0 errors over all areas.
+
+### QZ-12 Theory summary on the area page
+
+Requested by the owner on 2026-10-10: on each area page (for example `/en/parallelism/`), under the form that starts the quiz, a complete theory summary to study before answering. It teaches the concepts and principles as if the reader were 10 years old, starts with an introduction, then a table of contents with links (`#section`), and uses tables, lists, headings, diagrams, charts, tooltips and links to videos where they help. Sources: the docs already written, the quiz questions, `REFERENCES.md` and, when needed, the web.
+
+Implementation notes:
+
+- Content is data, not HTML: `quiz/content/<area>/theory/en.json`, `pt.json`, `es.json`, each with `area`, `intro` (paragraphs) and `sections` (`id`, `title`, `blocks`). Block types: `paragraph`, `heading`, `list`, `table`, `code`, `diagram`, `callout` (`analogy`, `tip`, `warning`, `remember`), `chart` (bars) and `video` (an https link, not an embedded player, so the page stays static and sends nothing to another site before a click).
+- Inline marks, parsed by `quiz/src/lib/inline.ts`, and nothing else (HTML stays as text): `**bold**`, `` `code` ``, `[text](https://...)`, `[[term|meaning]]` for a tooltip.
+- The schema is `theorySchema` in `quiz/src/content/schema.ts`. `checkContent` loads the three files, and the three languages must share one skeleton (same section ids in the same order, same block types), compared against English.
+- `quiz/src/components/Theory.tsx` is a server component: the summary is HTML at build time.
+- Images: no image block for now. Pictures are text diagrams and bar charts, which follow the theme and need no licence.
+
+- [ ] **QZ-12.1** Content model and validation: schema, skeleton check, `getTheory(area, language)`.
+	- **Accept:** the unit tests of "theory summary" pass: the fixture is accepted in three languages; fewer than 3 sections, a duplicate section, a ragged table and a non-https video are refused; a language with other sections fails; a missing file is a warning, and an error with `--strict`.
+- [ ] **QZ-12.2** Rendering under the start form: introduction, linked table of contents, every block type, tooltips that open with mouse, keyboard and touch, in the three languages and both themes.
+	- **Accept:** the end-to-end tests of "theory summary of an area" pass, including the accessibility check in the light and dark themes.
+- [ ] **QZ-12.3** Authoring guide: section "Theory summary" in `docs/en/quiz-authoring.md`, `docs/pt/quiz-authoring.md` and `docs/es/quiz-authoring.md`.
+- [ ] **QZ-12.4** Summaries written for the 33 areas, in the three languages.
+	- **Accept:** `bun run quiz:validate --strict` reports no `theory summary is missing`, and no skeleton error.
+
+### QZ-13 Look and components
+
+Requested by the owner on 2026-10-10.
+
+- [ ] **QZ-13.1** Dark theme in black and white: pure black background, white text, borders and accent. Colour stays only for right and wrong answers and for code highlighting.
+	- **Accept:** the contrast checks of the end-to-end tests pass in the dark theme.
+- [ ] **QZ-13.2** Interactive components built with Base UI (`@base-ui/react`, pinned), styled with Tailwind CSS v4 and the theme tokens: language switch, theme toggle, selects, buttons, progress bars and the tooltips of the theory summary.
+	- **Accept:** `./quiz/setup-unix-quiz.sh test` passes (unit and end-to-end tests in Docker).
+
+### QZ-14 Publication
+
+Requested by the owner on 2026-10-08.
+
+- [ ] **QZ-14.1** "Source Code" link with the GitHub icon in the header, left of the language switch, label translated, icon only on narrow screens.
+	- **Accept:** the end-to-end test "the Source Code link opens the main repository in a new tab" passes.
+- [ ] **QZ-14.2** Deploy on Vercel: project `computer-science-fundamentals-quiz`, static build (`quiz/vercel.json`, root directory `quiz`, output `out/`).
+	- **Accept:** the production address serves `/en/`, `/pt/` and `/es/` built from the current `main`.
+
+---
+
 ## Part BD: Language benchmark dashboard
 
 Requested by the owner on 2026-10-07: a web dashboard, separate from the quiz, focused only on benchmarking the seven languages: parallelism, concurrency, requests per second, memory use, how each one handles threads, CPU use. It lives in `benchmarks/`: one folder per workload with one implementation per language, and a static dashboard in `benchmarks/dashboard/`. Every workload follows the benchmark contract of F-2 and the rules in `.claude/rules/load-tests.md` (local targets only, machine and versions recorded, spread reported).
@@ -327,7 +398,7 @@ Sources: USP Algorithm Analysis lectures (`references/summaries/usp/algorithm-an
 | Complexity of common data structure operations | 10 |
 
 - [x] QC-BIGO.1 Coverage map committed
-- [x] QC-BIGO.2 100 questions written (PT and EN)
+- [x] QC-BIGO.2 100 questions written (EN, PT and ES)
 - [x] QC-BIGO.3 Validation passing
 - [x] QC-BIGO.4 Blind review resolved
 
@@ -351,7 +422,7 @@ Sources: USP Data Structures I and II lectures, Caelum and Laureano e-books.
 | Graphs: representations, BFS and DFS | 10 |
 
 - [x] QC-DS.1 Coverage map committed
-- [x] QC-DS.2 100 questions written (PT and EN)
+- [x] QC-DS.2 100 questions written (EN, PT and ES)
 - [x] QC-DS.3 Validation passing
 - [x] QC-DS.4 Blind review resolved
 
@@ -374,7 +445,7 @@ Sources: Tanenbaum, Modern Operating Systems (4th edition) and the MINIX book.
 | Security (9) | 2 |
 
 - [x] QC-OS.1 Coverage map committed
-- [x] QC-OS.2 100 questions written (PT and EN)
+- [x] QC-OS.2 100 questions written (EN, PT and ES)
 - [x] QC-OS.3 Validation passing
 - [x] QC-OS.4 Blind review resolved
 
@@ -394,7 +465,7 @@ Source: Tanenbaum, Computer Networks (5th edition).
 | Network security (8) | 6 |
 
 - [x] QC-NET.1 Coverage map committed
-- [x] QC-NET.2 100 questions written (PT and EN)
+- [x] QC-NET.2 100 questions written (EN, PT and ES)
 - [x] QC-NET.3 Validation passing
 - [x] QC-NET.4 Blind review resolved
 
@@ -416,7 +487,7 @@ Source: C. J. Date, An Introduction to Database Systems. The summary of this boo
 | Query optimisation and indexes | 6 |
 
 - [x] QC-DB.1 Coverage map committed
-- [x] QC-DB.2 100 questions written (PT and EN)
+- [x] QC-DB.2 100 questions written (EN, PT and ES)
 - [x] QC-DB.3 Validation passing
 - [x] QC-DB.4 Blind review resolved
 
@@ -442,7 +513,7 @@ Sources: USP Sorting Algorithms and Algorithm Analysis lectures, Deitel.
 | Graph algorithms: shortest path, spanning tree, topological sort | 8 |
 
 - [x] QC-ALG.1 Coverage map committed
-- [x] QC-ALG.2 100 questions written (PT and EN)
+- [x] QC-ALG.2 100 questions written (EN, PT and ES)
 - [x] QC-ALG.3 Validation passing
 - [x] QC-ALG.4 Blind review resolved
 
@@ -465,7 +536,7 @@ Sources: Tanenbaum (processes, threads, IPC), USP OOP lectures on threads, Deite
 | Thread pools and backpressure | 6 |
 
 - [x] QC-CONC.1 Coverage map committed
-- [x] QC-CONC.2 100 questions written (PT and EN)
+- [x] QC-CONC.2 100 questions written (EN, PT and ES)
 - [x] QC-CONC.3 Validation passing
 - [x] QC-CONC.4 Blind review resolved
 
@@ -488,7 +559,7 @@ Sources: Tanenbaum (multiple processor systems), Dragon Book (parallelism and lo
 | Determinism and reproducibility | 8 |
 
 - [x] QC-PAR.1 Coverage map committed
-- [x] QC-PAR.2 100 questions written (PT and EN)
+- [x] QC-PAR.2 100 questions written (EN, PT and ES)
 - [x] QC-PAR.3 Validation passing
 - [x] QC-PAR.4 Blind review resolved
 
@@ -510,7 +581,7 @@ Sources: C. J. Date (transactions, recovery, concurrency), notes in references/n
 | CAP theorem and consistency models | 8 |
 
 - [x] QC-TX.1 Coverage map committed
-- [x] QC-TX.2 100 questions written (PT and EN)
+- [x] QC-TX.2 100 questions written (EN, PT and ES)
 - [x] QC-TX.3 Validation passing
 - [x] QC-TX.4 Blind review resolved
 
@@ -534,7 +605,7 @@ Sources: OWASP Top 10, Tanenbaum (security chapters), notes in references/notes/
 | Secrets, dependencies and supply chain | 4 |
 
 - [x] QC-SEC.1 Coverage map committed
-- [x] QC-SEC.2 100 questions written (PT and EN)
+- [x] QC-SEC.2 100 questions written (EN, PT and ES)
 - [x] QC-SEC.3 Validation passing
 - [x] QC-SEC.4 Blind review resolved
 
@@ -558,7 +629,7 @@ Sources: Aho et al., Compilers: Principles, Techniques and Tools (2nd edition).
 | Interpreters, virtual machines and JIT | 6 |
 
 - [x] QC-COMP.1 Coverage map committed
-- [x] QC-COMP.2 100 questions written (PT and EN)
+- [x] QC-COMP.2 100 questions written (EN, PT and ES)
 - [x] QC-COMP.3 Validation passing
 - [x] QC-COMP.4 Blind review resolved
 
@@ -580,7 +651,7 @@ Sources: Dragon Book (automata), Sommerville (state models), USP Digital Logic (
 | Turing machines and computability | 10 |
 
 - [x] QC-FSM.1 Coverage map committed
-- [x] QC-FSM.2 100 questions written (PT and EN)
+- [x] QC-FSM.2 100 questions written (EN, PT and ES)
 - [x] QC-FSM.3 Validation passing
 - [x] QC-FSM.4 Blind review resolved
 
@@ -602,7 +673,7 @@ Sources: USP Data Structures II (compression), Tanenbaum Networks (error control
 | Limits of compression | 6 |
 
 - [x] QC-INFO.1 Coverage map committed
-- [x] QC-INFO.2 100 questions written (PT and EN)
+- [x] QC-INFO.2 100 questions written (EN, PT and ES)
 - [x] QC-INFO.3 Validation passing
 - [x] QC-INFO.4 Blind review resolved
 
@@ -624,7 +695,7 @@ Sources: USP Digital Logic lectures.
 | Analogue to digital conversion | 4 |
 
 - [x] QC-DL.1 Coverage map committed
-- [x] QC-DL.2 100 questions written (PT and EN)
+- [x] QC-DL.2 100 questions written (EN, PT and ES)
 - [x] QC-DL.3 Validation passing
 - [x] QC-DL.4 Blind review resolved
 
@@ -648,7 +719,7 @@ Sources: Gabriel Torres, Eletrônica (2nd edition), 34 chapters, 5 questions per
 | Power supplies, voltage multipliers, filters, waveform generators (31 to 34) | 20 |
 
 - [x] QC-ELEC.1 Coverage map committed
-- [x] QC-ELEC.2 170 questions written (PT and EN)
+- [x] QC-ELEC.2 170 questions written (EN, PT and ES)
 - [x] QC-ELEC.3 Validation passing
 - [x] QC-ELEC.4 Blind review resolved
 
@@ -673,7 +744,7 @@ Sources: USP OOP lectures, Deitel, Aniche (OO and SOLID).
 | OOP across languages: traits, interfaces, protocols | 6 |
 
 - [x] QC-OOP.1 Coverage map committed
-- [x] QC-OOP.2 100 questions written (PT and EN)
+- [x] QC-OOP.2 100 questions written (EN, PT and ES)
 - [x] QC-OOP.3 Validation passing
 - [x] QC-OOP.4 Blind review resolved
 
@@ -696,7 +767,7 @@ Sources: Deitel (lambdas and streams), language documentation of Elixir and Type
 | Functional style in Elixir and TypeScript | 6 |
 
 - [x] QC-FP.1 Coverage map committed
-- [x] QC-FP.2 100 questions written (PT and EN)
+- [x] QC-FP.2 100 questions written (EN, PT and ES)
 - [x] QC-FP.3 Validation passing
 - [x] QC-FP.4 Blind review resolved
 
@@ -718,7 +789,7 @@ Sources: Aniche (OO and SOLID), Clean Code, notes in references/notes/solid-prin
 | Anti-patterns and when not to use a pattern | 8 |
 
 - [x] QC-PAT.1 Coverage map committed
-- [x] QC-PAT.2 100 questions written (PT and EN)
+- [x] QC-PAT.2 100 questions written (EN, PT and ES)
 - [x] QC-PAT.3 Validation passing
 - [x] QC-PAT.4 Blind review resolved
 
@@ -740,7 +811,7 @@ Sources: Otávio Lemos, Arquitetura Limpa na Prática, Sommerville (architectura
 | Trade-offs and architecture decision records | 8 |
 
 - [x] QC-ARCH.1 Coverage map committed
-- [x] QC-ARCH.2 100 questions written (PT and EN)
+- [x] QC-ARCH.2 100 questions written (EN, PT and ES)
 - [x] QC-ARCH.3 Validation passing
 - [x] QC-ARCH.4 Blind review resolved
 
@@ -764,7 +835,7 @@ Sources: Kent Beck (TDD), Sommerville (testing), notes in references/notes/tests
 | Tests in CI and test strategy | 4 |
 
 - [x] QC-TEST.1 Coverage map committed
-- [x] QC-TEST.2 100 questions written (PT and EN)
+- [x] QC-TEST.2 100 questions written (EN, PT and ES)
 - [x] QC-TEST.3 Validation passing
 - [x] QC-TEST.4 Blind review resolved
 
@@ -787,7 +858,7 @@ Sources: Tanenbaum Networks (application layer), RFCs of HTTP, the GraphQL and J
 | WebSocket and server-sent events | 10 |
 
 - [x] QC-PROTO.1 Coverage map committed
-- [x] QC-PROTO.2 100 questions written (PT and EN)
+- [x] QC-PROTO.2 100 questions written (EN, PT and ES)
 - [x] QC-PROTO.3 Validation passing
 - [x] QC-PROTO.4 Blind review resolved
 
@@ -810,7 +881,7 @@ Sources: The Optimal RabbitMQ Guide, legacy project message-queues-pubsub, Kafka
 | Outbox, saga and event sourcing | 4 |
 
 - [x] QC-MSG.1 Coverage map committed
-- [x] QC-MSG.2 100 questions written (PT and EN)
+- [x] QC-MSG.2 100 questions written (EN, PT and ES)
 - [x] QC-MSG.3 Validation passing
 - [x] QC-MSG.4 Blind review resolved
 
@@ -833,7 +904,7 @@ Sources: Legacy project load-stress-tests, NGINX and Caddy documentation, system
 | High availability and single points of failure | 6 |
 
 - [x] QC-LB.1 Coverage map committed
-- [x] QC-LB.2 100 questions written (PT and EN)
+- [x] QC-LB.2 100 questions written (EN, PT and ES)
 - [x] QC-LB.3 Validation passing
 - [x] QC-LB.4 Blind review resolved
 
@@ -854,7 +925,7 @@ Sources: Legacy project load-stress-tests, k6 documentation, Dragon Book (locali
 | Capacity planning and queueing | 8 |
 
 - [x] QC-PERF.1 Coverage map committed
-- [x] QC-PERF.2 100 questions written (PT and EN)
+- [x] QC-PERF.2 100 questions written (EN, PT and ES)
 - [x] QC-PERF.3 Validation passing
 - [x] QC-PERF.4 Blind review resolved
 
@@ -874,7 +945,7 @@ Sources: Redis documentation, HTTP caching RFC, system design notes.
 | Consistency trade-offs | 10 |
 
 - [x] QC-CACHE.1 Coverage map committed
-- [x] QC-CACHE.2 100 questions written (PT and EN)
+- [x] QC-CACHE.2 100 questions written (EN, PT and ES)
 - [x] QC-CACHE.3 Validation passing
 - [x] QC-CACHE.4 Blind review resolved
 
@@ -896,7 +967,7 @@ Sources: Tanenbaum Networks (leaky and token bucket), Redis documentation.
 | Quotas, throttling and load shedding | 14 |
 
 - [x] QC-RL.1 Coverage map committed
-- [x] QC-RL.2 100 questions written (PT and EN)
+- [x] QC-RL.2 100 questions written (EN, PT and ES)
 - [x] QC-RL.3 Validation passing
 - [x] QC-RL.4 Blind review resolved
 
@@ -918,7 +989,7 @@ Sources: Tanenbaum (file systems), USP Data Structures II (files, indexes, B-tre
 | Compression and space reclamation | 8 |
 
 - [x] QC-FS.1 Coverage map committed
-- [x] QC-FS.2 100 questions written (PT and EN)
+- [x] QC-FS.2 100 questions written (EN, PT and ES)
 - [x] QC-FS.3 Validation passing
 - [x] QC-FS.4 Blind review resolved
 
@@ -941,7 +1012,7 @@ Sources: Majors et al., Observability Engineering, OpenTelemetry documentation.
 | Prometheus, Grafana, Loki and Tempo basics | 4 |
 
 - [ ] QC-OBS.1 Coverage map committed
-- [ ] QC-OBS.2 100 questions written (PT and EN)
+- [ ] QC-OBS.2 100 questions written (EN, PT and ES)
 - [ ] QC-OBS.3 Validation passing
 - [ ] QC-OBS.4 Blind review resolved
 
@@ -962,7 +1033,7 @@ Sources: Nakamoto, Bitcoin: A Peer-to-Peer Electronic Cash System.
 | Limits and alternatives: proof of stake, scalability | 8 |
 
 - [x] QC-CHAIN.1 Coverage map committed
-- [x] QC-CHAIN.2 100 questions written (PT and EN)
+- [x] QC-CHAIN.2 100 questions written (EN, PT and ES)
 - [x] QC-CHAIN.3 Validation passing
 - [x] QC-CHAIN.4 Blind review resolved
 
@@ -984,7 +1055,7 @@ Sources: GitHub Actions course material in references/courses/github-actions.
 | Supply-chain security in CI | 4 |
 
 - [ ] QC-CI.1 Coverage map committed
-- [ ] QC-CI.2 100 questions written (PT and EN)
+- [ ] QC-CI.2 100 questions written (EN, PT and ES)
 - [ ] QC-CI.3 Validation passing
 - [ ] QC-CI.4 Blind review resolved
 
@@ -1010,7 +1081,7 @@ Sources: Sommerville (9th edition), Brooks, Clean Code, Code Simplicity, The Lea
 | Simplicity and technical debt | 10 |
 
 - [ ] QC-SE.1 Coverage map committed
-- [ ] QC-SE.2 150 questions written (PT and EN)
+- [ ] QC-SE.2 150 questions written (EN, PT and ES)
 - [ ] QC-SE.3 Validation passing
 - [ ] QC-SE.4 Blind review resolved
 
@@ -1042,7 +1113,7 @@ Sources: found by a web search of primary and well-known material (papers such a
 | Computer vision: images as tensors, convolution and pooling, CNN architectures, augmentation, transfer learning, detection and segmentation | 14 |
 
 - [x] QC-AI.1 Coverage map committed
-- [x] QC-AI.2 164 questions written (PT and EN)
+- [x] QC-AI.2 164 questions written (EN, PT and ES)
 - [x] QC-AI.3 Validation passing
 - [x] QC-AI.4 Blind review resolved
 

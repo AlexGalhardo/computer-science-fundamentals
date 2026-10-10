@@ -27,6 +27,7 @@ Spanish was added on 2026-10-08 (owner's decision). Every place that has Portugu
 | C++ | clang-format |
 | Elixir | mix format |
 | Java | spotless with google-java-format |
+| Markdown | markdownlint (`markdownlint-cli2`, rules in `.markdownlint-cli2.jsonc`): `bun run lint:md`, `bun run format:md` |
 
 ## TypeScript
 
