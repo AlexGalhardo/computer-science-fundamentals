@@ -52,6 +52,29 @@
 				"language": "rust",
 				"content": "let handles: Vec<_> = chunks\n    .into_iter()\n    .map(|c| thread::spawn(move || count_primes(c)))\n    .collect();\n\nlet total: u64 = handles.into_iter().map(|h| h.join().unwrap()).sum();"
 			}
+		},
+		"es": {
+			"statement": "¿Qué es una reducción paralela?",
+			"alternatives": [
+				"Aplicar una función a cada elemento, produciendo una salida del mismo tamaño que la entrada",
+				"Combinar muchos valores en uno, mezclando el resultado parcial de cada worker",
+				"Disminuir el número de threads en uso a medida que la entrada restante se hace menor",
+				"Conservar solo los elementos que cumplen un predicado y descartar los demás",
+				"Calcular todos los totales acumulados de la entrada, con una salida por cada posición"
+			],
+			"explanations": [
+				"Incorrecto: eso es un map. Transforma cada elemento de forma independiente y no mezcla nada en un único valor.",
+				"Correcto: una reducción usa un operador binario para llegar a un único resultado. En paralelo, cada worker produce un resultado parcial para su bloque, y los parciales se combinan con el mismo operador.",
+				"Incorrecto: esto lee la palabra reducción literalmente. Lo que se reduce son los datos a un valor, no el número de threads.",
+				"Incorrecto: eso es un filter. La salida sigue siendo una colección, no un único valor.",
+				"Incorrecto: eso es un scan (suma de prefijos), que devuelve n resultados. Una reducción devuelve solo el último de ellos."
+			],
+			"concept": "Reducir significa combinar una colección en un único valor con un operador binario, como sumar, contar o tomar el máximo. En la versión paralela, la entrada se divide en bloques, cada worker reduce el suyo en una variable local, y los resultados parciales se combinan al final. Como cada worker escribe solo en su propio parcial, no hay contención durante el cálculo.",
+			"example": {
+				"kind": "code",
+				"language": "rust",
+				"content": "let handles: Vec<_> = chunks\n    .into_iter()\n    .map(|c| thread::spawn(move || count_primes(c)))\n    .collect();\n\nlet total: u64 = handles.into_iter().map(|h| h.join().unwrap()).sum();"
+			}
 		}
 	},
 	{
@@ -97,6 +120,24 @@
 				"Wrong: having an inverse allows an operation to be undone, which a reduction never does. Maximum has no inverse and can be reduced in parallel."
 			],
 			"concept": "Reducing in chunks amounts to regrouping the expression without changing the order of the operands. That is why associativity is enough when the partials are combined in chunk order. If the combination happens in any order, for example the order in which the threads finish, the operator must also be commutative. Integer addition and counting have both properties."
+		},
+		"es": {
+			"statement": "En una reducción paralela, cada worker reduce un bloque contiguo de la entrada y los resultados parciales se combinan en el orden de los bloques. ¿Qué propiedad del operador garantiza el mismo resultado que la reducción secuencial de izquierda a derecha?",
+			"alternatives": [
+				"Conmutatividad: a op b = b op a",
+				"Idempotencia: a op a = a",
+				"Distributividad: a op (b + c) = (a op b) + (a op c)",
+				"Asociatividad: (a op b) op c = a op (b op c)",
+				"Existencia de inverso: a op inv(a) = identidad"
+			],
+			"explanations": [
+				"Incorrecto: aquí no se intercambian operandos, ya que se mantiene el orden. La conmutatividad se vuelve necesaria, además de la asociatividad, solo cuando los parciales se combinan en un orden arbitrario.",
+				"Incorrecto: la idempotencia trata de repetir el mismo valor. La suma no es idempotente y es el ejemplo clásico de una reducción paralela correcta.",
+				"Incorrecto: la distributividad relaciona dos operadores distintos. Una reducción usa uno solo.",
+				"Correcto: dividir en bloques solo mueve los paréntesis, por ejemplo (a op b) op (c op d) en lugar de ((a op b) op c) op d. La asociatividad garantiza que ambos den el mismo valor.",
+				"Incorrecto: tener inverso permite deshacer una operación, lo que una reducción nunca hace. El máximo no tiene inverso y se puede reducir en paralelo."
+			],
+			"concept": "Reducir en bloques equivale a reagrupar la expresión sin cambiar el orden de los operandos. Por eso la asociatividad basta cuando los parciales se combinan en el orden de los bloques. Si la combinación ocurre en cualquier orden, por ejemplo el orden en que terminan los threads, el operador también debe ser conmutativo. La suma de enteros y el conteo tienen ambas propiedades."
 		}
 	},
 	{
@@ -141,6 +182,24 @@
 				"Right: sorting the left half neither reads nor writes anything in the right half, so the two recursive calls can run at the same time."
 			],
 			"concept": "Divide-and-conquer algorithms parallelise well when the subproblems share no data. In merge sort, the array is cut in the middle by position, and each half is sorted without touching the other, so the two recursive calls can be parallel tasks. The dependency appears only in the merge, which needs both halves finished."
+		},
+		"es": {
+			"statement": "¿Por qué se considera que el merge sort es naturalmente paralelizable?",
+			"alternatives": [
+				"Porque mezclar dos mitades ordenadas no necesita comparaciones",
+				"Porque ordena dentro del propio arreglo, sin memoria auxiliar",
+				"Porque su costo O(n log n) es el menor entre los algoritmos de ordenación",
+				"Porque cada elemento se compara con un pivote fijo, conocido de antemano",
+				"Porque las dos mitades son subproblemas independientes, que no comparten datos"
+			],
+			"explanations": [
+				"Incorrecto: la mezcla compara los elementos del frente de las dos mitades en cada paso. Es justamente la parte más difícil de paralelizar.",
+				"Incorrecto: el merge sort clásico usa un arreglo auxiliar de tamaño n. Y ahorrar memoria no es lo que hace paralelizable a un algoritmo.",
+				"Incorrecto: esto confunde eficiencia secuencial con paralelismo. El heap sort también es O(n log n) y es difícil de paralelizar.",
+				"Incorrecto: comparar con un pivote es el paso de partición del quicksort. El merge sort divide por posición, sin pivote.",
+				"Correcto: ordenar la mitad izquierda no lee ni escribe nada en la mitad derecha, así que las dos llamadas recursivas pueden ejecutarse al mismo tiempo."
+			],
+			"concept": "Los algoritmos de divide y vencerás se paralelizan bien cuando los subproblemas no comparten datos. En el merge sort, el arreglo se corta por la mitad según la posición, y cada mitad se ordena sin tocar la otra, por lo que las dos llamadas recursivas pueden ser tareas paralelas. La dependencia aparece solo en la mezcla, que necesita ambas mitades terminadas."
 		}
 	},
 	{
@@ -185,6 +244,24 @@
 				"Wrong: 1000 is one step per element, as in a sequential loop. The tree uses parallelism to do many pairs at once."
 			],
 			"concept": "In a tree reduction, each level combines the values in pairs, and the number of values halves at every step. The depth is ceil(log2 n), while the total number of operations is still n - 1, the same as in the sequential version. For n = 1000: 10 steps and 999 operations."
+		},
+		"es": {
+			"statement": "Una reducción en árbol combina 1000 valores con un operador asociativo. En cada paso, cada procesador combina dos valores en uno, y hay procesadores ilimitados. ¿Cuántos pasos se necesitan, como mínimo?",
+			"alternatives": [
+				"10",
+				"9",
+				"999",
+				"500",
+				"1000"
+			],
+			"explanations": [
+				"Correcto: cada paso reduce los valores a la mitad, redondeando hacia arriba: 1000, 500, 250, 125, 63, 32, 16, 8, 4, 2, 1, que son 10 pasos. Comprobando con la fórmula: 2^9 = 512 < 1000 <= 1024 = 2^10, así que ceil(log2 1000) = 10.",
+				"Incorrecto: 9 es log2 1000 redondeado hacia abajo. Nueve pasos pueden combinar como máximo 2^9 = 512 valores.",
+				"Incorrecto: 999 es el número total de operaciones (el trabajo), que es n - 1. La pregunta es sobre pasos, y muchas operaciones ocurren en el mismo paso.",
+				"Incorrecto: 500 es el número de operaciones hechas solo en el primer paso, no el número de pasos.",
+				"Incorrecto: 1000 es un paso por elemento, como en un bucle secuencial. El árbol usa paralelismo para hacer muchos pares a la vez."
+			],
+			"concept": "En una reducción en árbol, cada nivel combina los valores en pares, y el número de valores se reduce a la mitad en cada paso. La profundidad es ceil(log2 n), mientras que el número total de operaciones sigue siendo n - 1, igual que en la versión secuencial. Para n = 1000: 10 pasos y 999 operaciones."
 		}
 	},
 	{
@@ -229,6 +306,24 @@
 				"Wrong: running the recursive calls in parallel creates no new operations. The work stays Θ(n log n), the same as the sequential version."
 			],
 			"concept": "The maximum speed-up of a parallel algorithm is the ratio between the work (total operations) and the span (critical path). In merge sort with a sequential merge, the critical path includes one merge per level: n + n/2 + n/4 + ..., which is less than 2n. For n = 1024, the work is about 1024 × 10 = 10 240 and the span about 2047, a ratio close to 5, of the order of log2 n = 10. Going further requires parallelising the merge itself."
+		},
+		"es": {
+			"statement": "Un merge sort paralelo ordena las dos mitades en paralelo, pero realiza cada mezcla de forma secuencial. Llamando span al tiempo con procesadores ilimitados, ¿cuál es la consecuencia para un arreglo de n elementos?",
+			"alternatives": [
+				"El span es Θ(log n), igual a la profundidad de la recursión",
+				"El speed-up es lineal, porque las dos mitades son independientes",
+				"El span es Θ(n), y el speed-up no puede superar O(log n)",
+				"El span es Θ(n log n), y no hay ningún speed-up",
+				"El trabajo sube a Θ(n²), porque las mezclas se repiten"
+			],
+			"explanations": [
+				"Incorrecto: esto cuenta solo los niveles de la recursión y olvida el costo dentro de cada nivel. Solo la última mezcla recorre los n elementos en un único procesador.",
+				"Incorrecto: esto ignora la parte serial. Las mitades son independientes, pero unirlas es secuencial, y eso limita la ganancia sin importar cuántos procesadores existan.",
+				"Correcto: el span sigue T(n) = T(n/2) + Θ(n) = n + n/2 + n/4 + ... < 2n. Con trabajo Θ(n log n), el speed-up máximo es trabajo/span = Θ(log n).",
+				"Incorrecto: esto confunde span con trabajo. Θ(n log n) es la suma de todas las operaciones. Solo una mezcla por nivel está en el camino crítico.",
+				"Incorrecto: ejecutar las llamadas recursivas en paralelo no crea operaciones nuevas. El trabajo sigue siendo Θ(n log n), igual que en la versión secuencial."
+			],
+			"concept": "El speed-up máximo de un algoritmo paralelo es la razón entre el trabajo (operaciones totales) y el span (camino crítico). En el merge sort con mezcla secuencial, el camino crítico incluye una mezcla por nivel: n + n/2 + n/4 + ..., que es menos de 2n. Para n = 1024, el trabajo es cerca de 1024 × 10 = 10,240 y el span cerca de 2047, una razón cercana a 5, del orden de log2 n = 10. Ir más allá exige paralelizar la propia mezcla."
 		}
 	},
 	{
@@ -282,6 +377,28 @@
 				"kind": "diagram",
 				"content": "sequential:  ((8 - 4) - 2) - 1  =  (4 - 2) - 1  =  2 - 1  =  1\n\nin chunks:   [8, 4] -> 8 - 4 = 4\n             [2, 1] -> 2 - 1 = 1\n             combine:  4 - 1 = 3     (different from 1)"
 			}
+		},
+		"es": {
+			"statement": "Los valores [8, 4, 2, 1] se reducen en dos bloques, [8, 4] y [2, 1], y los dos resultados parciales se combinan con el mismo operador, en el orden de los bloques. ¿Con qué operador el resultado es DISTINTO de la reducción secuencial de izquierda a derecha?",
+			"alternatives": [
+				"Suma (+)",
+				"Máximo (max)",
+				"Mínimo (min)",
+				"O exclusivo bit a bit (xor)",
+				"Resta (-)"
+			],
+			"explanations": [
+				"Incorrecto: la suma es asociativa. Secuencial: ((8 + 4) + 2) + 1 = 15. En bloques: (8 + 4) + (2 + 1) = 12 + 3 = 15.",
+				"Incorrecto: el máximo es asociativo. Secuencial: 8. En bloques: max(max(8, 4), max(2, 1)) = max(8, 2) = 8.",
+				"Incorrecto: el mínimo es asociativo. Secuencial: 1. En bloques: min(min(8, 4), min(2, 1)) = min(4, 1) = 1.",
+				"Incorrecto: xor es asociativo. Secuencial: ((8 xor 4) xor 2) xor 1 = 15. En bloques: (8 xor 4) xor (2 xor 1) = 12 xor 3 = 15.",
+				"Correcto: la resta no es asociativa. Secuencial: ((8 - 4) - 2) - 1 = 1. En bloques: (8 - 4) - (2 - 1) = 4 - 1 = 3. Reagrupar cambió el resultado."
+			],
+			"concept": "Una reducción por bloques calcula (a op b) op (c op d) en lugar de ((a op b) op c) op d. Los dos valores coinciden para toda entrada solo si el operador es asociativo. La suma de enteros, el máximo, el mínimo y el xor son asociativos; la resta no, ya que (8 - 4) - (2 - 1) = 3, mientras que ((8 - 4) - 2) - 1 = 1. Verifica el operador antes de paralelizar una reducción.",
+			"example": {
+				"kind": "diagram",
+				"content": "secuencial:  ((8 - 4) - 2) - 1  =  (4 - 2) - 1  =  2 - 1  =  1\n\nen bloques:  [8, 4] -> 8 - 4 = 4\n             [2, 1] -> 2 - 1 = 1\n             combinar: 4 - 1 = 3     (distinto de 1)"
+			}
 		}
 	},
 	{
@@ -326,6 +443,24 @@
 				"Wrong: it is cheap, but in a nearly sorted input the first elements are the smallest ones, and the last bucket receives almost everything."
 			],
 			"concept": "In parallel quicksort and sample sort, the balance of the partitions decides the speed-up: the parallel time is that of the largest bucket, so a bucket with almost all the elements cancels the gain. Sample sort solves this by sampling: it draws a sample, sorts it and uses its quantiles as splitters. Then each worker sorts its bucket, and the concatenation of the buckets is already sorted."
+		},
+		"es": {
+			"statement": "En un sample sort paralelo con p workers, p - 1 separadores dividen la entrada en p cubetas, una por worker. Separadores malos dejan una cubeta enorme y los demás workers ociosos. ¿Cómo elige el sample sort los separadores para que las cubetas queden equilibradas?",
+			"alternatives": [
+				"Divide el rango entre el menor y el mayor valor en p franjas de igual ancho",
+				"Ordena una muestra aleatoria de la entrada y toma de ella p - 1 elementos igualmente espaciados",
+				"Usa la mediana del primer, del central y del último elemento de la entrada",
+				"Reparte los elementos en round-robin, de modo que cada cubeta reciba n/p elementos",
+				"Toma los primeros p - 1 elementos de la entrada, que se obtienen en tiempo constante"
+			],
+			"explanations": [
+				"Incorrecto: franjas de igual ancho equilibran solo datos uniformes. Si los valores se agrupan en una región, casi todo cae en la misma cubeta.",
+				"Correcto: la muestra imita la distribución real de los datos, así que sus cuantiles están cerca de los cuantiles de la entrada, y cada cubeta recibe cerca de n/p elementos sea cual sea la distribución.",
+				"Incorrecto: la mediana de tres da un único pivote, y se necesitan p - 1. Además, tres elementos dicen muy poco sobre la distribución.",
+				"Incorrecto: el round-robin iguala los tamaños pero destruye la propiedad esencial: todo elemento de una cubeta debe ser menor que los de la cubeta siguiente.",
+				"Incorrecto: es barato, pero en una entrada casi ordenada los primeros elementos son los menores, y la última cubeta recibe casi todo."
+			],
+			"concept": "En el quicksort paralelo y el sample sort, el equilibrio de las particiones decide el speed-up: el tiempo paralelo es el de la cubeta mayor, así que una cubeta con casi todos los elementos anula la ganancia. El sample sort lo resuelve con muestreo: sortea una muestra, la ordena y usa sus cuantiles como separadores. Luego cada worker ordena su cubeta, y la concatenación de las cubetas ya está ordenada."
 		}
 	},
 	{
@@ -377,6 +512,28 @@
 			"example": {
 				"kind": "diagram",
 				"content": "input:        3   1   4   1   5   9   2   6\n\nup-sweep (block sums):\nlevel 1:        4       5      14       8\nlevel 2:            9              22\nlevel 3:                   31\n\nresult:       3   4   8   9  14  23  25  31"
+			}
+		},
+		"es": {
+			"statement": "La suma de prefijos (scan) de n valores produce, en cada posición i, la combinación de los elementos 0 a i con un operador asociativo. ¿Qué afirmación sobre su versión paralela, con procesadores suficientes, es verdadera?",
+			"alternatives": [
+				"Es inherentemente secuencial, porque cada salida depende de la salida anterior",
+				"Alcanza profundidad O(log n), pero solo con trabajo O(n log n)",
+				"Alcanza profundidad O(1), porque cada salida se calcula de forma independiente",
+				"Alcanza profundidad O(log n) con trabajo O(n), usando dos pasadas sobre un árbol",
+				"Exige un operador conmutativo, porque las pasadas cambian el orden de los operandos"
+			],
+			"explanations": [
+				"Incorrecto: la dependencia en cadena pertenece al bucle secuencial, no al problema. Con asociatividad, las sumas se pueden reagrupar como un árbol.",
+				"Incorrecto: O(n log n) es el trabajo de la versión ingenua, que recombina todos los elementos en cada nivel. La versión de dos pasadas hace cerca de 2n operaciones.",
+				"Incorrecto: calcular cada salida por separado exige igualmente combinar hasta n valores, lo que cuesta profundidad O(log n) por salida y trabajo O(n^2) en total.",
+				"Correcto: la subida (up-sweep) calcula las sumas de bloques, como en una reducción en árbol, y la bajada (down-sweep) distribuye los prefijos. Cada pasada tiene log2 n niveles y cerca de n operaciones.",
+				"Incorrecto: las dos pasadas solo reagrupan los operandos, siempre en el orden original. La asociatividad basta, y no se necesita conmutatividad."
+			],
+			"concept": "La suma de prefijos parece secuencial porque el bucle habitual calcula cada salida a partir de la anterior. Con un operador asociativo, se resuelve en dos pasadas sobre un árbol: la subida guarda la suma de cada bloque y la bajada entrega a cada posición la suma de todo lo que está a su izquierda. El trabajo es O(n) y la profundidad O(log n). Para n = 8 hay 3 niveles en cada pasada.",
+			"example": {
+				"kind": "diagram",
+				"content": "entrada:      3   1   4   1   5   9   2   6\n\nsubida (sumas de bloques):\nnivel 1:        4       5      14       8\nnivel 2:            9              22\nnivel 3:                   31\n\nresultado:    3   4   8   9  14  23  25  31"
 			}
 		}
 	}

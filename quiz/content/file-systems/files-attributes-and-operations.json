@@ -41,6 +41,24 @@
 				"It assumes the system knows the structure of the records. Opening does not interpret the contents: the program receives bytes and gives them a meaning."
 			],
 			"concept": "The physical file is the collection of bytes kept on the device and managed by the operating system. The logical file is the name by which the program refers to it, such as a FILE * in C. The open operation ties the two together, and the same program can be tied to different physical files without changing the rest of the code."
+		},
+		"es": {
+			"statement": "Un programa en C ejecuta fp = fopen(\"clientes.dat\", \"r\"). En el vocabulario del procesamiento de archivos, ¿qué establece esta llamada?",
+			"alternatives": [
+				"Un vínculo entre el archivo lógico fp, usado por el programa, y un archivo físico guardado en el dispositivo de almacenamiento",
+				"Una copia completa del archivo físico en la memoria principal, de modo que las lecturas siguientes ya no lleguen al dispositivo",
+				"Una segunda entrada de directorio para el archivo físico, que el programa usa con el nombre fp hasta que lo cierra",
+				"Una reserva, en el dispositivo, de los bloques que el programa va a llenar con los registros que escriba más adelante",
+				"Una conversión de los bytes del archivo físico a los tipos de registro que el programa declaró en su código"
+			],
+			"explanations": [
+				"El archivo físico es lo que existe en el disco, conocido por el sistema operativo con el nombre clientes.dat. El archivo lógico es la visión del programa, la variable fp. Abrir el archivo asocia uno con el otro.",
+				"Confunde abrir con cargar. Abrir solo prepara el acceso: los datos permanecen en el dispositivo y se traen por partes, en cada lectura.",
+				"Confunde un archivo lógico con un enlace. fp es una variable del programa, no un nombre en el directorio, y no se escribe nada en el directorio cuando un archivo se abre para lectura.",
+				"Confunde abrir con preasignar. Los bloques se asignan cuando el archivo crece durante una escritura, y aquí el archivo se abrió solo para lectura.",
+				"Supone que el sistema conoce la estructura de los registros. Abrir no interpreta el contenido: el programa recibe bytes y les da un significado."
+			],
+			"concept": "El archivo físico es la colección de bytes guardada en el dispositivo y administrada por el sistema operativo. El archivo lógico es el nombre con el que el programa se refiere a él, como un FILE * en C. La operación de apertura une ambos, y el mismo programa puede vincularse a distintos archivos físicos sin cambiar el resto del código."
 		}
 	},
 	{
@@ -85,6 +103,24 @@
 				"It confuses lseek with truncate. The size of the file does not change on a seek, not even when the position goes past the end: it changes only on a write."
 			],
 			"concept": "Random access is possible because every open file has a current offset, and lseek merely changes it. That is why the call is cheap and does no input or output. The real cost shows up in the next operation, when the file system translates the offset into a block and fetches it from disk, unless it is already cached."
+		},
+		"es": {
+			"statement": "Un proceso UNIX tiene abierto para lectura un archivo regular de 5 MB y llama a lseek(fd, 1000000, SEEK_SET). ¿Qué hace el kernel durante esta llamada?",
+			"alternatives": [
+				"Mueve el brazo del disco al cilindro que contiene ese byte, dejando el cabezal listo para la siguiente lectura",
+				"Solo guarda la nueva posición en la entrada de archivo abierto que mantiene el kernel, sin ningún acceso a disco",
+				"Lee el bloque que contiene ese byte al buffer cache y regresa solo cuando está en memoria",
+				"Recorre los punteros del i-node hasta encontrar la dirección de ese bloque y la guarda en el descriptor",
+				"Cambia el tamaño registrado en el i-node a 1,000,000, de modo que la siguiente lectura comience desde el final"
+			],
+			"explanations": [
+				"Confunde la búsqueda (seek) lógica con la búsqueda física del disco. lseek no envía ningún comando al dispositivo: el brazo se mueve solo cuando una lectura o una escritura necesita un bloque.",
+				"lseek cambia un único número: el desplazamiento actual, guardado en la entrada de la tabla de archivos abiertos. Localizar y leer el bloque queda para la lectura o escritura siguiente.",
+				"Supone que posicionar ya trae los datos. La lectura anticipada (read-ahead) puede ocurrir después, a criterio del kernel, pero lseek en sí no lee ningún bloque.",
+				"Supone que la dirección del bloque se resuelve al posicionar. La traducción de desplazamiento a bloque se hace en cada lectura o escritura, no en lseek.",
+				"Confunde lseek con truncate. El tamaño del archivo no cambia con un seek, ni siquiera cuando la posición pasa del final: cambia solo con una escritura."
+			],
+			"concept": "El acceso aleatorio es posible porque todo archivo abierto tiene un desplazamiento actual, y lseek solo lo cambia. Por eso la llamada es barata y no hace entrada ni salida. El costo real aparece en la operación siguiente, cuando el sistema de archivos traduce el desplazamiento a un bloque y lo trae del disco, a menos que ya esté en caché."
 		}
 	},
 	{
@@ -136,6 +172,28 @@
 			"example": {
 				"kind": "diagram",
 				"content": "operation    atime  mtime  ctime\nread           x\nwrite                 x      x\nchmod/chown                  x"
+			}
+		},
+		"es": {
+			"statement": "Un archivo regular en un sistema POSIX tiene las tres marcas de tiempo habituales: atime, mtime y ctime. El dueño ejecuta chmod 600 sobre el archivo, sin leerlo ni cambiar su contenido. ¿Qué marcas de tiempo se actualizan?",
+			"alternatives": [
+				"Solo atime",
+				"Solo mtime",
+				"mtime y ctime",
+				"Solo ctime",
+				"atime, mtime y ctime"
+			],
+			"explanations": [
+				"atime registra el último acceso al contenido, como en una lectura. chmod no lee el contenido del archivo, así que atime queda como estaba.",
+				"Confunde cambiar el archivo con cambiar el contenido. mtime avanza solo cuando se alteran los datos, y chmod toca únicamente los permisos.",
+				"Eso es lo que ocurre en una escritura, que cambia los datos (mtime) y, con ellos, el i-node (ctime). Aquí no se tocaron los datos.",
+				"Los permisos viven en el i-node, y ctime registra el último cambio del i-node. Como el contenido no se leyó ni se modificó, atime y mtime no cambian.",
+				"Supone que cualquier operación refresca todas las marcas de tiempo. Cada una sigue un tipo de evento: acceso al contenido, cambio del contenido y cambio de los metadatos."
+			],
+			"concept": "Los atributos de un archivo incluyen tres tiempos. atime es el último acceso al contenido, mtime es la última modificación del contenido y ctime es el último cambio del i-node, es decir, de los metadatos (permisos, dueño, contador de enlaces, tamaño). Una escritura actualiza mtime y ctime, mientras que chmod, chown y ln actualizan solo ctime. ctime no es la fecha de creación.",
+			"example": {
+				"kind": "diagram",
+				"content": "operación    atime  mtime  ctime\nread           x\nwrite                 x      x\nchmod/chown                  x"
 			}
 		}
 	},
@@ -191,6 +249,29 @@
 				"content": "FILE *fp = fopen(\"f\", \"a\");\nfseek(fp, 0, SEEK_SET);\nfputs(\"xy\", fp);\nfclose(fp);"
 			},
 			"concept": "The opening mode defines what happens to the existing contents and where writes land. \"r\" and \"r+\" require the file to exist and do not truncate it, \"w\" and \"w+\" create the file or truncate it to zero bytes, and \"a\" and \"a+\" keep the contents and force every write to the end. In append mode, repositioning affects only the reads (in \"a+\")."
+		},
+		"es": {
+			"statement": "El archivo f contiene exactamente los 6 bytes ABCDEF. Después de ejecutar sin errores el fragmento en C de abajo, ¿qué contiene f?",
+			"alternatives": [
+				"xyCDEF",
+				"xy",
+				"xyABCDEF",
+				"ABCDEFxy",
+				"ABCDEF"
+			],
+			"explanations": [
+				"Ese sería el resultado en modo \"r+\", en el que una escritura ocurre en la posición actual. En modo append, fseek no aleja las escrituras del final del archivo.",
+				"Confunde \"a\" con \"w\". Es el modo \"w\" el que trunca el archivo a cero bytes al abrirlo. El modo \"a\" conserva el contenido existente.",
+				"Supone que escribir al inicio inserta y empuja el resto hacia adelante. Los archivos no tienen inserción en el medio: una escritura sobrescribe o añade al final.",
+				"En modo \"a\" toda escritura va al final del archivo, sea cual sea la posición fijada por fseek. El contenido anterior queda intacto y xy se añade después.",
+				"Supone que la escritura falla tras un fseek en modo append. No falla: los bytes se escriben, solo que al final del archivo."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "c",
+				"content": "FILE *fp = fopen(\"f\", \"a\");\nfseek(fp, 0, SEEK_SET);\nfputs(\"xy\", fp);\nfclose(fp);"
+			},
+			"concept": "El modo de apertura define qué pasa con el contenido existente y dónde caen las escrituras. \"r\" y \"r+\" exigen que el archivo exista y no lo truncan, \"w\" y \"w+\" crean el archivo o lo truncan a cero bytes, y \"a\" y \"a+\" conservan el contenido y fuerzan que toda escritura vaya al final. En modo append, reposicionar afecta solo a las lecturas (en \"a+\")."
 		}
 	},
 	{
@@ -253,6 +334,33 @@
 				"kind": "diagram",
 				"content": "fd1 --+\n      +--> entry A (position 3 -> 4) --+\nfd2 --+                                +--> i-node of f\nfd3 -----> entry B (position 0 -> 1) --+"
 			}
+		},
+		"es": {
+			"statement": "En un sistema UNIX, el archivo f contiene los 8 bytes ABCDEFGH. El fragmento de abajo se ejecuta sin errores. ¿Cuáles son los valores de x y de y al final?",
+			"alternatives": [
+				"x es 'A' e y es 'A', porque cada uno de los tres descriptores guarda una posición propia",
+				"x es 'D' e y es 'D', porque la posición se guarda en el i-node, que los tres comparten",
+				"x es 'D' e y es 'A', porque dup comparte la entrada de archivo abierto y el segundo open crea otra",
+				"x es 'A' e y es 'D', porque el segundo open reutiliza la entrada de fd1 y dup inicia una nueva desde cero",
+				"x es 'D' e y queda indefinido, porque el segundo open de un archivo que ya está abierto falla"
+			],
+			"explanations": [
+				"Supone que la posición pertenece al descriptor. Pertenece a la entrada de la tabla de archivos abiertos, y fd1 y fd2 apuntan a la misma entrada.",
+				"Supone que la posición pertenece al archivo. Si viviera en el i-node, dos programas que leen el mismo archivo se estorbarían. El i-node guarda atributos y bloques, no la posición de lectura.",
+				"dup crea un segundo descriptor para la misma entrada de archivo abierto, así que fd2 ve la posición 3 dejada por la lectura en fd1 y lee 'D'. El segundo open crea una entrada nueva, con posición 0, y fd3 lee 'A'.",
+				"Invierte los papeles de las dos llamadas. Es dup el que comparte la entrada existente, y es open el que siempre crea una nueva.",
+				"Supone que un archivo solo puede abrirse una vez. El mismo archivo puede abrirse varias veces, por el mismo proceso o por otros, y cada apertura es independiente."
+			],
+			"snippet": {
+				"kind": "code",
+				"language": "c",
+				"content": "int fd1 = open(\"f\", O_RDONLY);\nint fd2 = dup(fd1);\nint fd3 = open(\"f\", O_RDONLY);\nchar buf[3], x, y;\n\nread(fd1, buf, 3);\nread(fd2, &x, 1);\nread(fd3, &y, 1);"
+			},
+			"concept": "Hay tres niveles: el descriptor (un índice en la tabla del proceso), la entrada de archivo abierto (con la posición actual y el modo de apertura) y el i-node (atributos y bloques). Cada open crea una entrada nueva, mientras que dup y fork copian el descriptor, que sigue apuntando a la misma entrada. Por eso un padre y un hijo, tras un fork, escriben uno después del otro en el mismo archivo de salida en lugar de sobrescribirse.",
+			"example": {
+				"kind": "diagram",
+				"content": "fd1 --+\n      +--> entrada A (posición 3 -> 4) --+\nfd2 --+                                  +--> i-node de f\nfd3 -----> entrada B (posición 0 -> 1) --+"
+			}
 		}
 	},
 	{
@@ -302,6 +410,29 @@
 				"The permission is required, but it does not say what is inside the file. Without a format check, a text file with the permission set would be run as if it were code."
 			],
 			"concept": "The system recognises few file types: regular, directory, and the character and block special files, which stand for devices. Among regular files, the only format the kernel has to know is that of the executable, and it identifies it by the magic number of the header. Extensions, in UNIX, are conventions that programs may adopt or ignore.",
+			"example": {
+				"kind": "code",
+				"language": "sh",
+				"content": "$ head -c 4 /bin/ls | od -c\n0000000 177   E   L   F"
+			}
+		},
+		"es": {
+			"statement": "En un sistema UNIX, un archivo regular tiene el permiso de ejecución activado. ¿Qué examina el kernel para decidir si el contenido es un binario en un formato que sabe cargar?",
+			"alternatives": [
+				"La extensión del nombre, como .out o .bin, que se guarda en la entrada de directorio del archivo",
+				"El campo de tipo del i-node, que tiene un valor reservado para marcar los archivos ejecutables",
+				"Un registro de programas instalados, mantenido por el sistema, en el que se busca el nombre del archivo",
+				"Un número mágico en los primeros bytes del archivo, que identifica el formato del ejecutable",
+				"Nada además del permiso: con él activado, los bytes del archivo se cargan como código de máquina"
+			],
+			"explanations": [
+				"En UNIX la extensión es solo una convención para las personas y para algunos programas, como el compilador. El kernel no la mira, y un ejecutable puede tener cualquier nombre.",
+				"Confunde el tipo de un archivo con el formato de su contenido. El tipo en el i-node distingue un archivo regular de un directorio y de los archivos especiales de caracteres y de bloques. Un ejecutable es un archivo regular como cualquier otro.",
+				"Supone un registro central de programas. El kernel decide mirando solo el propio archivo que recibió en la llamada exec.",
+				"El ejecutable comienza con un encabezado cuyo primer campo es un número mágico (por ejemplo, los bytes 0x7F 'E' 'L' 'F'). El kernel lo verifica antes de construir el proceso, lo que evita ejecutar un archivo arbitrario por error.",
+				"El permiso es necesario, pero no dice qué hay dentro del archivo. Sin una verificación de formato, un archivo de texto con el permiso activado se ejecutaría como si fuera código."
+			],
+			"concept": "El sistema reconoce pocos tipos de archivo: regular, directorio, y los archivos especiales de caracteres y de bloques, que representan dispositivos. Entre los archivos regulares, el único formato que el kernel necesita conocer es el del ejecutable, y lo identifica por el número mágico del encabezado. Las extensiones, en UNIX, son convenciones que los programas pueden adoptar o ignorar.",
 			"example": {
 				"kind": "code",
 				"language": "sh",
@@ -359,6 +490,28 @@
 				"kind": "diagram",
 				"content": "fwrite -> library buffer (process) --fflush/write--> kernel cache --fsync--> disk"
 			}
+		},
+		"es": {
+			"statement": "Un programa en C abre un archivo regular con fopen, escribe 10 bytes con fwrite y, antes de llamar a fflush o fclose, es terminado por un SIGKILL. La máquina sigue funcionando con normalidad, pero el archivo queda vacío. ¿Dónde estaban los 10 bytes cuando murió el proceso?",
+			"alternatives": [
+				"En el buffer cache del kernel, desde donde irían al disco en el siguiente vaciado periódico",
+				"En el disco, en un bloque que ya se había escrito pero aún no se había enlazado al i-node del archivo",
+				"En el buffer de la biblioteca de C, dentro de la propia memoria del proceso, sin haber llegado al kernel",
+				"En la caché de escritura del controlador de disco, que descarta su contenido cuando el proceso termina",
+				"En la entrada de archivo abierto del kernel, que se borra cuando se cierra el descriptor del proceso"
+			],
+			"explanations": [
+				"Supone que fwrite es una llamada al sistema. Si los bytes hubieran llegado a la caché del kernel, la muerte del proceso no los perdería: el kernel los escribiría igual, pues la máquina no se detuvo.",
+				"Supone que los datos van directo al disco y solo falta la actualización de metadatos. Con tan pocos bytes, la biblioteca ni siquiera hizo la llamada write.",
+				"fwrite copia los bytes a un buffer de la biblioteca, en el espacio de direcciones del proceso, y llama a write solo cuando el buffer se llena o en fflush y fclose. SIGKILL destruye el proceso sin ejecutar ese vaciado, y el buffer se va con él.",
+				"La caché del controlador pierde datos solo ante un corte de energía, y no sabe nada de procesos. Además, los bytes nunca se enviaron al dispositivo.",
+				"Confunde la entrada de archivo abierto, que guarda la posición actual y el modo, con un área de datos. No almacena el contenido escrito."
+			],
+			"concept": "Hay dos niveles de buffering entre el programa y el disco. El de la biblioteca de C vive en la memoria del proceso y evita una llamada al sistema por cada fwrite: se vacía con fflush, y se pierde si el proceso muere antes. La caché del kernel recibe los datos en write y sobrevive a la muerte del proceso: se vacía con fsync, y se pierde solo si la máquina cae antes.",
+			"example": {
+				"kind": "diagram",
+				"content": "fwrite -> buffer de la biblioteca (proceso) --fflush/write--> caché del kernel --fsync--> disco"
+			}
 		}
 	},
 	{
@@ -413,6 +566,29 @@
 				"language": "c",
 				"content": "int fd = open(\"sparse\", O_CREAT | O_WRONLY, 0644);\nlseek(fd, 1048576, SEEK_SET);\nwrite(fd, \"x\", 1);\nclose(fd);\n/* ls -l sparse -> 1048577 bytes; du -k sparse -> 4 */"
 			}
+		},
+		"es": {
+			"statement": "En un sistema de archivos UNIX que admite huecos, con bloques de 4 KB (1 KB = 1024 bytes), un programa crea un archivo vacío, llama a lseek(fd, 1048576, SEEK_SET) y luego a write(fd, \"x\", 1). Contando solo bloques de datos (no los bloques indirectos), ¿cuál es el tamaño que muestra ls -l y cuántos bloques se asignaron?",
+			"alternatives": [
+				"Un tamaño de 1 byte y 1 bloque de datos, ya que la región saltada nunca se escribió",
+				"Un tamaño de 1,048,577 bytes y 257 bloques de datos, ya que se asigna cada bloque hasta el final",
+				"Un tamaño de 1,048,576 bytes y 1 bloque de datos, ya que el tamaño es la posición dada a lseek",
+				"Un tamaño de 1,048,577 bytes y 256 bloques de datos, ya que 1,048,576 / 4,096 = 256",
+				"Un tamaño de 1,048,577 bytes y 1 bloque de datos, ya que los bloques del hueco no se asignan"
+			],
+			"explanations": [
+				"Confunde el tamaño lógico con los bytes escritos. El tamaño es la posición del último byte más uno, y el byte x está en el desplazamiento 1,048,576.",
+				"Acierta el tamaño, pero supone que el hueco se rellena con bloques de ceros. Eso es lo que ocurriría en un sistema sin soporte para huecos: techo de 1,048,577 / 4,096 = 257 bloques.",
+				"Olvida el byte que se escribió. El desplazamiento 1,048,576 es donde se escribió x, así que el archivo termina un byte después: 1,048,576 + 1 = 1,048,577.",
+				"Mezcla dos errores: asigna el hueco y además olvida que el byte x cae en un bloque más allá de los 256 que cubren los desplazamientos 0 a 1,048,575.",
+				"El tamaño lógico es 1,048,576 + 1 = 1,048,577 bytes. El byte x cae en el bloque lógico 1,048,576 / 4,096 = 256, el único que recibe un bloque de disco. Los bloques lógicos 0 a 255 conservan un puntero nulo y se leen como ceros."
+			],
+			"concept": "Posicionarse más allá del final y escribir crea un archivo disperso (sparse). El tamaño lógico, guardado en el i-node, crece hasta el último byte escrito, pero solo los bloques realmente escritos reciben espacio en disco. Una lectura dentro del hueco devuelve ceros sin tocar el disco. Por eso ls -l (tamaño lógico) y du (bloques asignados) pueden discrepar mucho, y por eso copiar un archivo disperso byte a byte puede llenar el disco de destino.",
+			"example": {
+				"kind": "code",
+				"language": "c",
+				"content": "int fd = open(\"sparse\", O_CREAT | O_WRONLY, 0644);\nlseek(fd, 1048576, SEEK_SET);\nwrite(fd, \"x\", 1);\nclose(fd);\n/* ls -l sparse -> 1048577 bytes; du -k sparse -> 4 */"
+			}
 		}
 	},
 	{
@@ -457,6 +633,24 @@
 				"The directory entry associates the name with the file and, in some systems, holds attributes. The description of the fields is not an attribute kept by the system."
 			],
 			"concept": "An operating system can see a file as a sequence of bytes, as a sequence of records or as a tree of keyed records. The byte-sequence model won because it is the most flexible: the system neither knows nor cares what is in the file, and any structure is built by the programs on top of the bytes. The organisation in fields and records, studied in the next topics, is therefore a decision of the application."
+		},
+		"es": {
+			"statement": "UNIX y Windows tratan un archivo regular como una secuencia de bytes sin estructura. En este modelo, ¿quién da significado a los bytes (campos, registros, líneas)?",
+			"alternatives": [
+				"El sistema de archivos, que guarda el formato de los registros en el i-node, junto a las direcciones de bloques",
+				"El kernel, que mira la extensión del nombre y aplica a cada lectura el formato de registro correspondiente",
+				"Los programas que leen y escriben el archivo, cada uno interpretando los bytes según su propio formato",
+				"El controlador de dispositivo, que entrega los bytes ya divididos en registros de longitud fija, uno por sector",
+				"El directorio, cuya entrada lleva la descripción de los campos de cada archivo listado, junto al nombre"
+			],
+			"explanations": [
+				"Supone el modelo de secuencia de registros, usado en antiguos sistemas mainframe. En UNIX y Windows el i-node (o su equivalente) no describe el contenido.",
+				"Supone que la extensión gobierna al sistema operativo. El kernel entrega los mismos bytes sea cual sea el nombre, y no conoce formatos de registro.",
+				"El sistema operativo solo almacena y devuelve bytes. Le toca a cada programa imponer una estructura: un editor ve líneas, una base de datos ve páginas y registros, un compilador ve un archivo objeto.",
+				"Confunde el sector, la unidad de transferencia del disco, con el registro, la unidad lógica de la aplicación. Un registro puede ocupar parte de un sector o varios.",
+				"La entrada de directorio asocia el nombre con el archivo y, en algunos sistemas, guarda atributos. La descripción de los campos no es un atributo que guarde el sistema."
+			],
+			"concept": "Un sistema operativo puede ver un archivo como una secuencia de bytes, como una secuencia de registros o como un árbol de registros con clave. El modelo de secuencia de bytes ganó por ser el más flexible: el sistema ni sabe ni le importa qué hay en el archivo, y cualquier estructura la construyen los programas sobre los bytes. La organización en campos y registros, estudiada en los siguientes temas, es por tanto una decisión de la aplicación."
 		}
 	},
 	{
@@ -501,6 +695,24 @@
 				"Mapping does not imply mutual exclusion. Several processes can map the same file at the same time, and this is a common way of sharing memory."
 			],
 			"concept": "A memory-mapped file joins the file system and virtual memory: a range of addresses of the process corresponds to the bytes of the file, and demand paging does the input and output. This removes the copy between the kernel cache and a buffer of the program and makes random access simpler. The program loses, however, explicit control over when the data reaches the disk, unless it asks for synchronisation (msync)."
+		},
+		"es": {
+			"statement": "En lugar de usar read y write, un proceso puede mapear un archivo en memoria (mmap en UNIX). ¿Qué ocurre cuando un archivo se mapea de esta forma?",
+			"alternatives": [
+				"Todo el archivo se copia a la memoria física en el momento de la llamada, y la copia en disco deja de usarse",
+				"El archivo se mueve al área de intercambio (swap), desde donde el kernel lo trae de vuelta cuando el proceso termina",
+				"Cada acceso a la región se convierte en una llamada read o write, emitida automáticamente por la biblioteca de C",
+				"El archivo aparece como una región del espacio de direcciones, y sus páginas se traen bajo demanda",
+				"El archivo se bloquea frente a los demás procesos, que solo pueden abrirlo cuando el mapeo haya terminado"
+			],
+			"explanations": [
+				"Supone una carga anticipada. El mapeo solo crea la correspondencia entre direcciones y archivo: no se lee ninguna página hasta que se toca, lo que permite mapear archivos mayores que la memoria física.",
+				"Confunde un archivo mapeado con el área de swap. El propio archivo es el almacenamiento de respaldo de sus páginas, y no se mueve en el disco.",
+				"Supone que el mapeo es una capa de la biblioteca. Los accesos son instrucciones de memoria ordinarias, sin llamada al sistema: el kernel interviene solo ante un fallo de página.",
+				"El archivo se lee y se modifica entonces como un arreglo en memoria. La primera referencia a cada página provoca un fallo de página, y el kernel la carga desde el archivo. Las páginas modificadas se escriben de vuelta más tarde.",
+				"Mapear no implica exclusión mutua. Varios procesos pueden mapear el mismo archivo al mismo tiempo, y esta es una forma común de compartir memoria."
+			],
+			"concept": "Un archivo mapeado en memoria une el sistema de archivos y la memoria virtual: un rango de direcciones del proceso corresponde a los bytes del archivo, y la paginación bajo demanda hace la entrada y salida. Esto elimina la copia entre la caché del kernel y un buffer del programa y simplifica el acceso aleatorio. El programa pierde, sin embargo, el control explícito sobre cuándo los datos llegan al disco, a menos que pida sincronización (msync)."
 		}
 	}
 ]

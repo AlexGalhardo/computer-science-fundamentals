@@ -41,6 +41,24 @@
 				"That is a dirty read, an isolation anomaly that involves no lock waiting."
 			],
 			"concept": "A deadlock happens when each transaction of a group holds a lock and requests another one owned by a different transaction of the same group, forming a cycle. Since nobody releases what it holds before getting what it lacks, the wait never ends by itself. The database must detect the cycle and abort one of the transactions, or prevent the cycle from forming."
+		},
+		"es": {
+			"statement": "¿Qué caracteriza a un deadlock entre transacciones en una base de datos?",
+			"alternatives": [
+				"Dos o más transacciones esperan, en ciclo, locks que las otras mantienen",
+				"Una transacción espera mucho tiempo un lock que pronto será liberado",
+				"Dos transacciones escriben la misma fila y una de las escrituras se pierde",
+				"Una transacción nunca consigue el lock porque otras siempre pasan primero",
+				"Una transacción lee datos que otra aún no ha confirmado con COMMIT"
+			],
+			"explanations": [
+				"Correcto: la espera es circular, así que ninguna de las transacciones puede avanzar sin que la base de datos intervenga.",
+				"Eso es una simple espera de lock (contención): termina sola cuando la otra transacción acaba.",
+				"Esa es la anomalía de lost update, un problema de aislamiento, no una espera mutua.",
+				"Eso es starvation: a la transacción se la pasa por alto, pero no hay un ciclo de esperas.",
+				"Eso es una dirty read, una anomalía de aislamiento que no implica espera de locks."
+			],
+			"concept": "Un deadlock ocurre cuando cada transacción de un grupo mantiene un lock y solicita otro que pertenece a una transacción distinta del mismo grupo, formando un ciclo. Como nadie libera lo que tiene antes de obtener lo que le falta, la espera nunca termina sola. La base de datos debe detectar el ciclo y abortar una de las transacciones, o impedir que el ciclo se forme."
 		}
 	},
 	{
@@ -85,6 +103,24 @@
 				"The database never commits a transaction on its own: that would persist incomplete work."
 			],
 			"concept": "PostgreSQL does not prevent deadlocks, it detects them. When a lock wait exceeds `deadlock_timeout` (1 second by default), the server looks for a cycle of waits and, if it finds one, aborts one of the transactions with error 40P01. The rollback of that victim releases its locks and the other transactions continue."
+		},
+		"es": {
+			"statement": "En PostgreSQL, ¿qué ocurre cuando el detector encuentra un deadlock entre dos transacciones?",
+			"alternatives": [
+				"Ambas transacciones se abortan y el cliente debe rehacerlas",
+				"El servidor se reinicia para liberar todos los locks atascados",
+				"Ambas quedan bloqueadas hasta que un administrador termine una sesión",
+				"Una de las transacciones se aborta con un error y la otra continúa",
+				"La transacción más antigua se confirma a la fuerza para liberar sus locks"
+			],
+			"explanations": [
+				"Abortar ambas es innecesario: eliminar una transacción basta para romper el ciclo.",
+				"Un deadlock se resuelve dentro del gestor de locks, sin reiniciar el servidor.",
+				"PostgreSQL detecta los deadlocks por sí mismo; esperar para siempre solo ocurriría en un sistema sin detección.",
+				"Correcto: una transacción recibe el error `deadlock detected` (SQLSTATE 40P01), sus locks se liberan y la otra sigue adelante.",
+				"La base de datos nunca confirma una transacción por su cuenta: eso persistiría trabajo incompleto."
+			],
+			"concept": "PostgreSQL no previene los deadlocks, los detecta. Cuando una espera de lock excede `deadlock_timeout` (1 segundo por defecto), el servidor busca un ciclo de esperas y, si lo encuentra, aborta una de las transacciones con el error 40P01. El rollback de esa víctima libera sus locks y las demás transacciones continúan."
 		}
 	},
 	{
@@ -137,6 +173,28 @@
 				"kind": "diagram",
 				"content": "No deadlock (queue):      T1 → T2 → T3\nDeadlock (cycle):         T1 → T2 → T3 → T1"
 			}
+		},
+		"es": {
+			"statement": "En un grafo de espera (wait-for graph), cada nodo es una transacción y cada arista T1 → T2 indica que T1 espera un lock que mantiene T2. ¿Qué indica un deadlock en este grafo?",
+			"example": {
+				"kind": "diagram",
+				"content": "Sin deadlock (cola):      T1 → T2 → T3\nCon deadlock (ciclo):     T1 → T2 → T3 → T1"
+			},
+			"alternatives": [
+				"Un nodo con muchas aristas llegando a él",
+				"Un nodo sin ninguna arista saliendo de él",
+				"Dos nodos sin ninguna arista entre ellos",
+				"Un camino largo que pasa por varios nodos",
+				"Un ciclo formado por aristas del grafo"
+			],
+			"explanations": [
+				"Muchas aristas entrantes muestran un lock muy disputado, pero la cola avanza cuando el dueño lo libera.",
+				"Un nodo sin arista saliente no espera a nadie: puede terminar y desbloquear a los demás.",
+				"Los nodos sin arista entre ellos son transacciones independientes que no se esperan.",
+				"Un camino largo sin ciclo es solo una cola: la transacción del final termina y las demás la siguen en orden.",
+				"Correcto: en un ciclo cada transacción espera a la siguiente y la última espera a la primera, así que ninguna avanza."
+			],
+			"concept": "El grafo de espera es la herramienta clásica para la detección de deadlocks. Mientras el grafo no tenga ciclo, siempre hay una transacción que no espera a nadie y puede terminar. Un ciclo significa una espera circular, y la solución es elegir una víctima dentro del ciclo y abortarla."
 		}
 	},
 	{
@@ -191,6 +249,29 @@
 				"language": "sql",
 				"content": "-- T1 and T2 request the locks in the same order (ascending id)\nBEGIN;\nSELECT id FROM accounts WHERE id IN (1, 2) ORDER BY id FOR UPDATE;\nUPDATE accounts SET balance = balance - 50 WHERE id = 2;\nUPDATE accounts SET balance = balance + 50 WHERE id = 1;\nCOMMIT;"
 			}
+		},
+		"es": {
+			"statement": "Dos transferencias se ejecutan al mismo tiempo: una debita la cuenta 1 y acredita la cuenta 2, la otra debita la cuenta 2 y acredita la cuenta 1. Entran en deadlock con frecuencia. ¿Qué cambio en la aplicación elimina este deadlock manteniendo atómica cada transferencia?",
+			"example": {
+				"kind": "code",
+				"language": "sql",
+				"content": "-- T1 y T2 piden los locks en el mismo orden (id ascendente)\nBEGIN;\nSELECT id FROM accounts WHERE id IN (1, 2) ORDER BY id FOR UPDATE;\nUPDATE accounts SET balance = balance - 50 WHERE id = 2;\nUPDATE accounts SET balance = balance + 50 WHERE id = 1;\nCOMMIT;"
+			},
+			"alternatives": [
+				"Bloquear siempre las cuentas en el mismo orden, por ejemplo por id ascendente",
+				"Aumentar el tiempo máximo de espera de locks antes de que la transacción desista",
+				"Ejecutar cada UPDATE en una transacción separada, con un COMMIT entre ellos",
+				"Cambiar el nivel de aislamiento de ambas transacciones a SERIALIZABLE",
+				"Leer los saldos con un SELECT simple antes de ejecutar los dos UPDATE"
+			],
+			"explanations": [
+				"Correcto: con un orden global, quien toma primero la cuenta 1 hace que la otra espere antes de bloquear nada, y no se forma ningún ciclo.",
+				"Esperar más no deshace una espera circular; solo retrasa el error.",
+				"Eso evita el ciclo pero renuncia a la atomicidad: una falla entre los commits deja el débito sin el crédito.",
+				"El nivel de aislamiento no cambia el orden en que se piden los locks de fila, así que el ciclo sigue siendo posible.",
+				"Leer primero no reserva nada: los UPDATE siguen emitiéndose en órdenes opuestos."
+			],
+			"concept": "Un ciclo de esperas solo se forma cuando las transacciones piden los mismos locks en órdenes diferentes. Si todas siguen un orden global (por ejemplo, siempre el id menor primero), la segunda transacción se detiene en el primer recurso y no retiene nada que la primera necesite. Es la forma más simple de prevenir deadlocks en la aplicación."
 		}
 	},
 	{
@@ -235,6 +316,24 @@
 				"`deadlock_timeout` only sets when detection runs; the victim transaction has been aborted anyway."
 			],
 			"concept": "The victim of a deadlock is aborted as a whole, not only the statement that was waiting. Error 40P01 is transient: the same transaction usually succeeds on the next attempt, because the other one has finished. So the standard pattern is to catch the error, ROLLBACK and rerun the transaction from BEGIN, with a bounded number of attempts."
+		},
+		"es": {
+			"statement": "Una aplicación recibe el error 40P01 de PostgreSQL (`deadlock detected`) en la tercera sentencia de una transacción. ¿Cuál es el tratamiento correcto?",
+			"alternatives": [
+				"Repetir solo la tercera sentencia dentro de la misma transacción",
+				"Ejecutar COMMIT para guardar las dos primeras sentencias",
+				"Ignorar el error y continuar con la cuarta sentencia",
+				"Ejecutar ROLLBACK y repetir toda la transacción desde el inicio",
+				"Aumentar `deadlock_timeout` y luego reenviar la misma sentencia"
+			],
+			"explanations": [
+				"Tras un error, una transacción de PostgreSQL queda en estado abortado y rechaza nuevas sentencias hasta el ROLLBACK.",
+				"Un COMMIT en una transacción abortada se convierte en ROLLBACK: no se guarda nada de las primeras sentencias.",
+				"Todas las sentencias siguientes fallan con `current transaction is aborted`, así que no hay forma de continuar.",
+				"Correcto: la víctima perdió todo su trabajo, así que la aplicación hace rollback y reintenta la transacción completa, con un límite de intentos.",
+				"`deadlock_timeout` solo define cuándo se ejecuta la detección; la transacción víctima ya fue abortada de todos modos."
+			],
+			"concept": "La víctima de un deadlock se aborta por completo, no solo la sentencia que estaba esperando. El error 40P01 es transitorio: la misma transacción suele tener éxito en el siguiente intento, porque la otra ya terminó. Por eso el patrón estándar es capturar el error, hacer ROLLBACK y volver a ejecutar la transacción desde BEGIN, con un número limitado de intentos."
 		}
 	},
 	{
@@ -279,6 +378,24 @@
 				"It confuses who dies and also changes the timestamp, which would remove the growing priority that avoids starvation."
 			],
 			"concept": "Wait-die and wound-wait avoid cycles by allowing waits in only one direction of the age order. In wait-die, the older waits and the younger dies; in wound-wait, the older aborts the younger and the younger waits. Since waits only go one way along the timestamp order, a cycle is impossible, and keeping the original timestamp on restart guarantees the transaction eventually becomes the oldest."
+		},
+		"es": {
+			"statement": "En el esquema de prevención de deadlocks wait-die, cada transacción recibe un timestamp al iniciar. La transacción T1 (más antigua) solicita un lock que mantiene T2 (más joven). ¿Qué ocurre?",
+			"alternatives": [
+				"T1 se aborta y reinicia con el mismo timestamp",
+				"T1 espera hasta que T2 libere el lock",
+				"T2 se aborta para que T1 obtenga el lock",
+				"T1 y T2 se abortan y reinician en orden",
+				"T1 se aborta y reinicia con un nuevo timestamp"
+			],
+			"explanations": [
+				"Ese es el destino de la transacción más joven cuando solicita un lock a una más antigua, lo inverso del caso del enunciado.",
+				"Correcto: en wait-die la más antigua puede esperar a la más joven; solo una más joven que solicita a una más antigua se aborta (muere).",
+				"Eso describe el esquema wound-wait, donde la más antigua \"hiere\" a la más joven y toma el lock.",
+				"Ningún esquema aborta a ambas: basta con prohibir la espera en una de las dos direcciones.",
+				"Confunde quién muere y además cambia el timestamp, lo que eliminaría la prioridad creciente que evita la starvation."
+			],
+			"concept": "Wait-die y wound-wait evitan ciclos permitiendo esperas en un solo sentido del orden de edad. En wait-die, la más antigua espera y la más joven muere; en wound-wait, la más antigua aborta a la más joven y la más joven espera. Como las esperas solo van en un sentido a lo largo del orden de timestamps, un ciclo es imposible, y conservar el timestamp original al reiniciar garantiza que la transacción termine siendo la más antigua."
 		}
 	}
 ]

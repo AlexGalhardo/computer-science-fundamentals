@@ -42,6 +42,24 @@
 				"A disabled test does not run, so it has no varying result. Disabling is usually the reaction to a flaky test, not its definition."
 			],
 			"concept": "A test is flaky when its result does not depend only on the code under test and on the test itself. Something out of control enters the picture: the clock, the execution order, shared state, the network, concurrency or random numbers. The typical sign is the failure that disappears on a re-run, with no change at all."
+		},
+		"es": {
+			"statement": "¿Qué es una prueba flaky (inestable)?",
+			"alternatives": [
+				"Una prueba que pasa o falla de una ejecución a otra, sin ningún cambio en el código",
+				"Una prueba que falla en cada ejecución desde que un defecto entró en el código",
+				"Una prueba que pasa en cada ejecución, incluso cuando el código bajo prueba está equivocado",
+				"Una prueba demasiado lenta para ejecutarse en cada commit en el servidor de integración",
+				"Una prueba desactivada con `skip` mientras espera una corrección"
+			],
+			"explanations": [
+				"El resultado varía entre ejecuciones del mismo código y de la misma prueba. La variación proviene de algo que la prueba no controla, como el tiempo, el orden, la red o un sorteo aleatorio.",
+				"Una prueba que siempre falla es determinista y está haciendo su trabajo: señala un defecto de forma reproducible.",
+				"Eso describe una prueba débil, con aserciones que no verifican lo que importa. Es determinista, solo que inútil.",
+				"La lentitud es un problema de costo, no de determinismo. Una prueba lenta puede dar el mismo resultado cada vez.",
+				"Una prueba desactivada no se ejecuta, así que no tiene resultado variable. Desactivar suele ser la reacción a una prueba flaky, no su definición."
+			],
+			"concept": "Una prueba es flaky cuando su resultado no depende solo del código bajo prueba y de la prueba misma. Entra en juego algo fuera de control: el reloj, el orden de ejecución, el estado compartido, la red, la concurrencia o los números aleatorios. El síntoma típico es la falla que desaparece al volver a ejecutar, sin ningún cambio."
 		}
 	},
 	{
@@ -87,6 +105,24 @@
 				"The result of one test does not contaminate the others by itself. That only happens with shared state, which is a cause of flakiness, not its main harm."
 			],
 			"concept": "The value of a suite lies in trust: red means a defect, green means it is safe to go on. Flaky tests break that reading in both directions, because they raise false alarms and teach the team to re-run instead of investigating. After that, a real defect can go unnoticed."
+		},
+		"es": {
+			"statement": "¿Cuál es el principal daño de convivir con pruebas flaky en una suite?",
+			"alternatives": [
+				"La cobertura de líneas baja, ya que las ejecuciones que fallan dejan de contarse en la medición",
+				"El equipo empieza a ignorar las fallas, y las fallas reales se pierden en el ruido",
+				"El código de producción se vuelve más lento, ya que las pruebas inestables se empaquetan con él",
+				"El compilador rechaza el build siempre que el resultado de una prueba varía",
+				"Las demás pruebas también empiezan a fallar, ya que el runner propaga el resultado inestable"
+			],
+			"explanations": [
+				"La cobertura mide las líneas ejecutadas, y una prueba que falla también ejecuta código. El daño no está en esa métrica.",
+				"Cuando \"rojo\" deja de significar \"hay un defecto\", la gente vuelve a ejecutar hasta que pasa. Una falla real acaba tratada como una inestabilidad más.",
+				"Las pruebas no forman parte del artefacto de producción, y su inestabilidad no afecta el rendimiento del sistema.",
+				"El compilador no sabe nada de los resultados de las pruebas. Quien reacciona a ellos es el pipeline de CI.",
+				"El resultado de una prueba no contamina a las demás por sí solo. Eso solo ocurre con estado compartido, que es una causa de inestabilidad, no su principal daño."
+			],
+			"concept": "El valor de una suite está en la confianza: rojo significa un defecto, verde significa que es seguro continuar. Las pruebas flaky rompen esa lectura en ambos sentidos, porque generan falsas alarmas y enseñan al equipo a volver a ejecutar en lugar de investigar. Después de eso, un defecto real puede pasar desapercibido."
 		}
 	},
 	{
@@ -142,6 +178,29 @@
 				"content": "import { expect, test } from \"bun:test\";\n\ntest(\"report is dated today\", () => {\n\tconst report = buildReport(); // report.date: \"YYYY-MM-DD\", local time\n\tconst today = new Date().toISOString().slice(0, 10);\n\texpect(report.date).toBe(today);\n});"
 			},
 			"concept": "Calendar dates depend on the time zone in which an instant is read. A test that mixes local time with UTC, or that reads the real clock, passes during the day and fails in a window near midnight. The fix is to inject a fake clock with a fixed instant and compare the dates in the same zone, which includes deliberately testing an instant inside that window."
+		},
+		"es": {
+			"statement": "La máquina de CI usa la zona horaria de São Paulo, fija en UTC-3. `buildReport()` sella la fecha del día en hora local, y la prueba calcula la fecha esperada con `toISOString()`, que usa UTC. Ignorando el instante entre las dos lecturas del reloj, ¿en qué horas locales falla la prueba?",
+			"snippet": {
+				"kind": "code",
+				"language": "ts",
+				"content": "import { expect, test } from \"bun:test\";\n\ntest(\"report is dated today\", () => {\n\tconst report = buildReport(); // report.date: \"YYYY-MM-DD\", local time\n\tconst today = new Date().toISOString().slice(0, 10);\n\texpect(report.date).toBe(today);\n});"
+			},
+			"alternatives": [
+				"En ninguna: ambas fechas provienen del mismo reloj",
+				"En todas: una fecha UTC nunca coincide con la local",
+				"Solo en el instante exacto de la medianoche local",
+				"Entre las 00:00 y las 02:59, hora local",
+				"Entre las 21:00 y las 23:59, hora local"
+			],
+			"explanations": [
+				"El reloj es el mismo, pero la fecha del calendario depende de la zona horaria en que se lee el instante. Cerca del cambio de día, las dos zonas discrepan.",
+				"Durante la mayor parte del día las dos fechas coinciden. De 00:00 a 20:59 locales, UTC marca de 03:00 a 23:59 del mismo día.",
+				"La divergencia no dura un instante: dura las tres horas de diferencia entre las zonas.",
+				"El sentido está invertido. A las 00:00 locales son las 03:00 UTC del mismo día. Esa ventana valdría para una zona adelantada respecto a UTC, como UTC+3.",
+				"UTC va 3 horas adelantado: las 21:00 locales ya son las 00:00 UTC del día siguiente. Hasta las 23:59 locales (02:59 UTC), la fecha que la prueba espera es la de mañana."
+			],
+			"concept": "Las fechas del calendario dependen de la zona horaria en que se lee un instante. Una prueba que mezcla hora local con UTC, o que lee el reloj real, pasa durante el día y falla en una ventana cercana a la medianoche. La solución es inyectar un reloj falso con un instante fijo y comparar las fechas en la misma zona, lo que incluye probar deliberadamente un instante dentro de esa ventana."
 		}
 	},
 	{
@@ -197,6 +256,29 @@
 				"language": "ts",
 				"content": "// Flaky: a guess about the duration\nstartJob(queue);\nawait Bun.sleep(200);\nexpect(queue.done).toBe(true);\n\n// Deterministic: wait for the event itself\nawait startJob(queue).finished;\nexpect(queue.done).toBe(true);"
 			}
+		},
+		"es": {
+			"statement": "Una prueba inicia un trabajo asíncrono, duerme 200 ms y luego verifica el resultado. En la máquina de CI más lenta falla de vez en cuando porque el trabajo todavía no terminó. ¿Qué corrección elimina la causa de la inestabilidad?",
+			"alternatives": [
+				"Esperar a que el propio trabajo termine, con un timeout, en lugar de dormir un intervalo fijo",
+				"Subir el `sleep` a 2 segundos, que cubre con holgura la lentitud de la máquina de CI",
+				"Configurar el runner para repetir la prueba hasta tres veces cuando falle",
+				"Mover la prueba al final de la suite, cuando la máquina de CI ya está menos cargada",
+				"Fijar la semilla del generador aleatorio, para que el trabajo siempre tarde lo mismo"
+			],
+			"explanations": [
+				"Ahora la prueba depende del evento que importa (el trabajo terminó), no de una suposición sobre la duración. El timeout solo existe para fallar si el trabajo nunca termina.",
+				"La condición de carrera sigue existiendo, solo que con un margen mayor. La prueba se vuelve diez veces más lenta en cada ejecución y aun así falla un día en que la máquina esté muy cargada.",
+				"Repetir reduce la frecuencia con que el build queda en rojo sin tocar la carrera entre el `sleep` y el trabajo. La causa permanece.",
+				"La carga de la máquina no se controla con la posición de la prueba. La carrera entre el `sleep` y el trabajo sigue igual.",
+				"La duración del trabajo depende de la carga de la máquina, no de números aleatorios. La semilla no tiene efecto sobre ella."
+			],
+			"concept": "Un `sleep` fijo es una apuesta sobre cuánto tardará algo: demasiado corto y la prueba falla en máquinas lentas, demasiado largo y la suite siempre es lenta. La alternativa determinista es esperar la condición, ya sea haciendo await de la promesa del trabajo o consultando el estado periódicamente (polling) hasta que cambie, con un timeout. Esa es la idea detrás del auto-waiting de herramientas como Playwright.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "// Flaky: a guess about the duration\nstartJob(queue);\nawait Bun.sleep(200);\nexpect(queue.done).toBe(true);\n\n// Deterministic: wait for the event itself\nawait startJob(queue).finished;\nexpect(queue.done).toBe(true);"
+			}
 		}
 	},
 	{
@@ -242,6 +324,24 @@
 				"The value 98% is 1 − 0.02, the chance that a single test passes, not that the suite has some failure."
 			],
 			"concept": "With n independent tests that fail with probability p, the chance that the whole suite passes is (1 − p)^n, and the chance of at least one failure is 1 − (1 − p)^n. For p = 0.02 and n = 50: 0.98^50 ≈ 0.364, so 1 − 0.364 ≈ 0.636. A rate that looks small per test turns the suite red in almost two out of every three runs."
+		},
+		"es": {
+			"statement": "Una suite tiene 50 pruebas flaky. Cada una falla en el 2% de las ejecuciones, sin ningún defecto en el código y de forma independiente de las demás. ¿Cuál es la probabilidad de que una ejecución de la suite tenga al menos una falla? Usa 0.98^50 ≈ 0.364 y redondea al entero más cercano.",
+			"alternatives": [
+				"2%",
+				"36%",
+				"64%",
+				"100%",
+				"98%"
+			],
+			"explanations": [
+				"La probabilidad de 2% vale para una prueba. Con 50 oportunidades independientes de fallar, la probabilidad de al menos una falla es mucho mayor.",
+				"El valor 0.98^50 ≈ 0.364 es la probabilidad de que las 50 pruebas pasen. La pregunta pide el complemento.",
+				"P(todas pasan) = 0.98^50. Como 0.98^10 ≈ 0.817, resulta 0.98^50 ≈ 0.817^5 ≈ 0.364. Entonces P(al menos una falla) = 1 − 0.364 = 0.636, o 64%.",
+				"Ese valor es 50 × 2%. Las probabilidades de eventos que pueden ocurrir juntos no se suman así. Con 60 pruebas esa suma daría 120%, lo cual es imposible.",
+				"El valor 98% es 1 − 0.02, la probabilidad de que una sola prueba pase, no de que la suite tenga alguna falla."
+			],
+			"concept": "Con n pruebas independientes que fallan con probabilidad p, la probabilidad de que toda la suite pase es (1 − p)^n, y la probabilidad de al menos una falla es 1 − (1 − p)^n. Para p = 0.02 y n = 50: 0.98^50 ≈ 0.364, así que 1 − 0.364 ≈ 0.636. Una tasa que parece pequeña por prueba pone la suite en rojo en casi dos de cada tres ejecuciones."
 		}
 	},
 	{
@@ -292,6 +392,29 @@
 				"The problem is execution order, not time. The tests run one after the other, so waiting inside B does not make A run."
 			],
 			"concept": "Order dependence appears when a test uses state that another one left behind. Shuffling the order and recording the seed is a way to discover and reproduce that coupling, not to solve it. The fix is isolation: each test creates its own fixture and restores what it changed, so that it passes alone and in any position.",
+			"example": {
+				"kind": "code",
+				"language": "ts",
+				"content": "import { beforeEach, expect, test } from \"bun:test\";\n\nbeforeEach(() => {\n\tcache.clear();\n});\n\ntest(\"B reads a rate it stored itself\", () => {\n\tcache.set(\"USD\", 5);\n\texpect(convert(10, \"USD\")).toBe(50);\n});"
+			}
+		},
+		"es": {
+			"statement": "Una suite se ejecuta en orden aleatorio e imprime la semilla (seed) que usó. La prueba B falla en algunas ejecuciones, y volver a ejecutar con la misma semilla reproduce la falla. La investigación muestra que B lee una caché de módulo que solo la prueba A llena, así que B falla siempre que se ejecuta antes que A. ¿Qué cambio hace que B pase sola y en cualquier orden?",
+			"alternatives": [
+				"Desactivar el orden aleatorio y mantener para siempre el orden de los archivos, en el que A va antes que B",
+				"Activar el reintento automático, ya que en el segundo intento A ya habrá llenado la caché",
+				"Hacer que cada prueba construya y limpie la caché que necesita, sin heredar la de otra prueba",
+				"Fijar la semilla en un valor para el cual el orden aleatorio ponga A antes que B",
+				"Insertar un `sleep` al inicio de B, dándole tiempo a A para llenar la caché"
+			],
+			"explanations": [
+				"Un orden fijo esconde la dependencia en lugar de eliminarla. B sigue fallando cuando se ejecuta sola, con un filtro, o cuando alguien mueve las pruebas.",
+				"El reintento puede incluso poner el build en verde, pero B sigue sin poder ejecutarse sola, y el resultado ahora depende de que A se haya ejecutado entre los intentos.",
+				"Con el fixture creado en la propia prueba (o en un `beforeEach`) y limpiado al final, B deja de depender de A. La causa, el estado mutable compartido, desaparece.",
+				"La semilla sirve para reproducir un orden que falló, no para corregirlo. Elegir una semilla favorable es fijar el orden por otra vía.",
+				"El problema es el orden de ejecución, no el tiempo. Las pruebas corren una tras otra, así que esperar dentro de B no hace que A se ejecute."
+			],
+			"concept": "La dependencia del orden aparece cuando una prueba usa un estado que otra dejó atrás. Aleatorizar el orden y registrar la semilla es una manera de descubrir y reproducir ese acoplamiento, no de resolverlo. La solución es el aislamiento: cada prueba crea su propio fixture y restaura lo que cambió, de modo que pase sola y en cualquier posición.",
 			"example": {
 				"kind": "code",
 				"language": "ts",

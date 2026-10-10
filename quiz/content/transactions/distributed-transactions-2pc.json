@@ -41,6 +41,24 @@
 				"That is primary-secondary replication, which copies data and does not decide the commit jointly."
 			],
 			"concept": "Two-phase commit is an atomic commit protocol among several participants, driven by a coordinator. In the first phase each participant prepares and votes yes or no. In the second, the coordinator tells everyone to commit if all voted yes, or everyone to abort otherwise."
+		},
+		"es": {
+			"statement": "¿Cuáles son, en orden, las dos fases del protocolo de commit en dos fases (2PC)?",
+			"alternatives": [
+				"Adquirir todos los locks, luego liberar todos los locks",
+				"Escribir en el log de cada nodo, luego escribir en las páginas de datos",
+				"Preparar (los participantes votan), luego confirmar o abortar",
+				"Confirmar en cada participante, luego compensar a los que fallaron",
+				"Ejecutar en el nodo primario, luego replicar a los nodos secundarios"
+			],
+			"explanations": [
+				"Eso es el bloqueo en dos fases (2PL), un protocolo de control de concurrencia con un nombre parecido.",
+				"Eso describe el write-ahead logging dentro de un nodo, no un acuerdo entre nodos.",
+				"Correcto: el coordinador pregunta si todos pueden confirmar y, con los votos en mano, envía la decisión única.",
+				"Confirmar y luego compensar es el modelo saga; en 2PC nadie confirma antes de la decisión global.",
+				"Eso es replicación primario-secundario, que copia datos y no decide el commit de forma conjunta."
+			],
+			"concept": "El commit en dos fases es un protocolo de commit atómico entre varios participantes, dirigido por un coordinador. En la primera fase cada participante se prepara y vota sí o no. En la segunda, el coordinador ordena a todos confirmar si todos votaron sí, o a todos abortar en caso contrario."
 		}
 	},
 	{
@@ -85,6 +103,24 @@
 				"Committing on some before all are prepared would leave the system inconsistent if the third fails again."
 			],
 			"concept": "The 2PC decision is unanimous. Each participant has a veto, because only it knows whether it can commit its part (a constraint may have failed, for example). A \"no\" vote, or no answer within the timeout, makes the coordinator abort everywhere."
+		},
+		"es": {
+			"statement": "En un commit en dos fases con tres participantes, dos votan \"sí\" y uno vota \"no\" en la fase de preparación. ¿Qué decide el coordinador?",
+			"alternatives": [
+				"Confirmar en los dos que votaron sí y abortar en el tercero",
+				"Confirmar en todos, porque la mayoría votó sí",
+				"Repetir la votación hasta que los tres voten sí",
+				"Abortar la transacción en todos los participantes",
+				"Confirmar en los dos y reenviar la transacción al tercero"
+			],
+			"explanations": [
+				"Un resultado mixto es exactamente lo que el protocolo existe para evitar: rompería la atomicidad.",
+				"2PC exige unanimidad; la votación por mayoría aparece en protocolos de consenso y de quórum, con otro objetivo.",
+				"El voto \"no\" es definitivo: el participante puede haber hecho ya rollback local de su parte.",
+				"Correcto: un solo \"no\" basta para que la decisión global sea abortar, y todos deshacen su trabajo.",
+				"Confirmar en algunos antes de que todos estén preparados dejaría el sistema inconsistente si el tercero vuelve a fallar."
+			],
+			"concept": "La decisión de 2PC es unánime. Cada participante tiene un veto, porque solo él sabe si puede confirmar su parte (por ejemplo, puede haber fallado una restricción). Un voto \"no\", o la falta de respuesta dentro del timeout, hace que el coordinador aborte en todas partes."
 		}
 	},
 	{
@@ -129,6 +165,24 @@
 				"2PC does not handle locks between transactions; distributed deadlocks are still possible."
 			],
 			"concept": "Inside one database, atomicity comes from the local log. When a transaction reaches several databases, each could commit or fail on its own. Two-phase commit coordinates those local commits so that the outcome is single: all commit or all abort."
+		},
+		"es": {
+			"statement": "¿Qué garantía da el commit en dos fases a una transacción que modifica datos en dos bases de datos distintas?",
+			"alternatives": [
+				"Ambas bases de datos procesan la transacción en paralelo, con menor latencia",
+				"Ambas bases de datos siguen disponibles aunque falle la red entre ellas",
+				"Ambas bases de datos confirman la transacción, o ninguna la confirma",
+				"Ambas bases de datos terminan con copias idénticas de todas las tablas",
+				"Ambas bases de datos nunca entran en deadlock entre sí"
+			],
+			"explanations": [
+				"2PC añade rondas de mensajes y escrituras en el log, así que aumenta la latencia en lugar de reducirla.",
+				"Con la red particionada 2PC puede bloquearse: favorece la consistencia, no la disponibilidad.",
+				"Correcto: el protocolo extiende la atomicidad (todo o nada) a varios gestores de recursos.",
+				"Mantener copias iguales es replicación; en 2PC cada base de datos guarda datos distintos.",
+				"2PC no maneja los locks entre transacciones; los deadlocks distribuidos siguen siendo posibles."
+			],
+			"concept": "Dentro de una base de datos, la atomicidad viene del log local. Cuando una transacción alcanza varias bases de datos, cada una podría confirmar o fallar por su cuenta. El commit en dos fases coordina esos commits locales para que el resultado sea único: todos confirman o todos abortan."
 		}
 	},
 	{
@@ -173,6 +227,24 @@
 				"The coordinator may already have decided to commit; aborting alone could contradict the decision too."
 			],
 			"concept": "Before voting, a participant may abort whenever it wants. After voting \"yes\", it has promised to commit if so decided, so it can no longer commit or abort unilaterally. This window of uncertainty, with locks held, is the main cost of the protocol."
+		},
+		"es": {
+			"statement": "En el commit en dos fases, un participante ya respondió \"sí\" a la solicitud de preparación. ¿Qué puede hacer mientras no llega la decisión del coordinador?",
+			"alternatives": [
+				"Confirmar por su cuenta, ya que votó a favor del commit",
+				"Solo esperar, manteniendo los locks y el estado preparado",
+				"Liberar los locks y conservar solo el log para confirmar más tarde",
+				"Cambiar su voto a \"no\" mientras no reciba la decisión",
+				"Abortar por su cuenta si la espera supera un timeout"
+			],
+			"explanations": [
+				"Otro participante puede haber votado \"no\"; confirmar solo podría contradecir la decisión global.",
+				"Correcto: tras votar sí el participante está \"en duda\" y pierde el derecho a decidir solo.",
+				"Sin los locks, otra transacción podría leer o modificar datos cuyo destino aún es incierto.",
+				"El voto \"sí\" es una promesa irrevocable: el coordinador puede haberlo usado ya para decidir.",
+				"El coordinador puede haber decidido ya confirmar; abortar solo también podría contradecir la decisión."
+			],
+			"concept": "Antes de votar, un participante puede abortar cuando quiera. Después de votar \"sí\", ha prometido confirmar si así se decide, por lo que ya no puede confirmar ni abortar unilateralmente. Esta ventana de incertidumbre, con los locks retenidos, es el principal costo del protocolo."
 		}
 	},
 	{
@@ -225,6 +297,28 @@
 				"kind": "diagram",
 				"content": "Coordinator          Participant A       Participant B\n  PREPARE  ------------>  yes\n  PREPARE  -------------------------------->  yes\n  (crash)                 in doubt             in doubt\n                          locks held           locks held"
 			}
+		},
+		"es": {
+			"statement": "En un commit en dos fases, todos los participantes votaron \"sí\" y el coordinador se cae antes de enviar la decisión. ¿Cuál es la situación de los participantes?",
+			"example": {
+				"kind": "diagram",
+				"content": "Coordinador          Participante A      Participante B\n  PREPARE  ------------>  sí\n  PREPARE  -------------------------------->  sí\n  (caída)                 en duda              en duda\n                          locks retenidos      locks retenidos"
+			},
+			"alternatives": [
+				"Abortan la transacción en cuanto notan la caída del coordinador",
+				"Confirman la transacción, ya que saben que todos los votos fueron \"sí\"",
+				"Quedan bloqueados, con sus locks retenidos, hasta que el coordinador regrese",
+				"Eligen entre ellos un nuevo coordinador, que toma la decisión",
+				"Retiran el voto y vuelven al estado anterior a la fase de preparación"
+			],
+			"explanations": [
+				"El coordinador puede haber registrado la decisión de confirmar antes de caerse; abortar podría contradecirla.",
+				"Un participante solo conoce su propio voto; no sabe cómo votaron los demás.",
+				"Correcto: este es el problema de bloqueo de 2PC; en duda, ningún participante puede decidir solo.",
+				"El 2PC básico no tiene elección; eso requiere protocolos de consenso o variantes como el commit en tres fases.",
+				"El voto \"sí\" se escribió en disco y no puede retirarse."
+			],
+			"concept": "2PC es un protocolo bloqueante. Si el coordinador falla después del voto y antes de que todos reciban la decisión, los participantes preparados están en duda y deben esperar a que el coordinador se recupere y lea la decisión de su propio log. Mientras tanto, los datos involucrados permanecen bloqueados."
 		}
 	},
 	{
@@ -279,6 +373,29 @@
 				"language": "sql",
 				"content": "BEGIN;\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nPREPARE TRANSACTION 'tx42';   -- phase 1: \"yes\" vote, state on disk\n\n-- later, from any session:\nCOMMIT PREPARED 'tx42';       -- phase 2 (or ROLLBACK PREPARED 'tx42')"
 			}
+		},
+		"es": {
+			"statement": "En PostgreSQL, ¿cuál es el efecto de `PREPARE TRANSACTION 'tx42'` ejecutado al final de una transacción?",
+			"example": {
+				"kind": "code",
+				"language": "sql",
+				"content": "BEGIN;\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nPREPARE TRANSACTION 'tx42';   -- fase 1: voto \"sí\", estado en disco\n\n-- después, desde cualquier sesión:\nCOMMIT PREPARED 'tx42';       -- fase 2 (o ROLLBACK PREPARED 'tx42')"
+			},
+			"alternatives": [
+				"Crea una prepared statement con un plan en caché, como los comandos `PREPARE` y `EXECUTE`",
+				"Confirma la transacción y registra el nombre `tx42` para una auditoría posterior",
+				"Escribe la transacción en disco, desvinculada de la sesión, a la espera de `COMMIT PREPARED`",
+				"Crea un savepoint llamado `tx42`, al cual la transacción puede hacer rollback",
+				"Abre una transacción llamada `tx42` en todas las bases de datos del mismo servidor"
+			],
+			"explanations": [
+				"`PREPARE name AS ...` prepara una sentencia SQL; `PREPARE TRANSACTION` es otro comando, pese al nombre parecido.",
+				"Nada se vuelve visible para otras sesiones hasta `COMMIT PREPARED`; preparar no es confirmar.",
+				"Correcto: es la fase 1 de 2PC; la transacción sobrevive a las caídas y se termina más tarde con `COMMIT PREPARED` o `ROLLBACK PREPARED`.",
+				"Los savepoints se crean con `SAVEPOINT` y viven dentro de la transacción; no la hacen durable.",
+				"El comando actúa solo sobre la base de datos de la sesión actual; coordinar varias bases de datos es tarea de un gestor externo."
+			],
+			"concept": "PostgreSQL ofrece los bloques de construcción del commit en dos fases para un coordinador externo. `PREPARE TRANSACTION` deja la transacción lista para confirmar y la hace durable, y la sesión queda libre otra vez. Más tarde, desde cualquier sesión, `COMMIT PREPARED` o `ROLLBACK PREPARED` aplica la decisión. La función requiere `max_prepared_transactions` mayor que cero."
 		}
 	},
 	{
@@ -323,6 +440,24 @@
 				"If the state were only in memory, a crash would erase the transaction and the participant could not honour its \"yes\"."
 			],
 			"concept": "Voting \"yes\" is a promise: \"I can commit, whatever happens\". To keep it after a restart, the participant force-writes the transaction's changes and the prepare record to its log before answering. Coming back from a crash, it finds the prepared transaction and asks the coordinator for the decision."
+		},
+		"es": {
+			"statement": "En el commit en dos fases, ¿qué debe hacer un participante antes de responder \"sí\" al coordinador, para que el protocolo siga siendo correcto aunque ese participante se caiga justo después?",
+			"alternatives": [
+				"Confirmar la transacción localmente y guardar un script para deshacerla",
+				"Escribir en disco los cambios y un registro de que está preparado",
+				"Liberar los locks de la transacción para no bloquear a otras mientras espera",
+				"Preguntar a los demás participantes cómo piensan votar",
+				"Mantener la transacción solo en memoria hasta que llegue la decisión final"
+			],
+			"explanations": [
+				"Confirmar antes de la decisión expone datos que quizá deban abortarse; eso es el modelo saga, no 2PC.",
+				"Correcto: el voto \"sí\" promete que el commit es posible tras cualquier caída, y solo el estado en almacenamiento estable respalda esa promesa.",
+				"Sin los locks, otra transacción podría modificar los mismos datos y hacer imposible cumplir el voto.",
+				"En el 2PC básico los participantes no se consultan entre sí; cada uno vota basándose solo en su estado local.",
+				"Si el estado estuviera solo en memoria, una caída borraría la transacción y el participante no podría cumplir su \"sí\"."
+			],
+			"concept": "Votar \"sí\" es una promesa: \"puedo confirmar, pase lo que pase\". Para mantenerla tras un reinicio, el participante fuerza la escritura de los cambios de la transacción y del registro de preparación en su log antes de responder. Al volver de una caída, encuentra la transacción preparada y pregunta al coordinador por la decisión."
 		}
 	},
 	{
@@ -367,6 +502,24 @@
 				"Correct: it holds locks and the cleanup horizon indefinitely, until a manual `COMMIT PREPARED` or `ROLLBACK PREPARED`."
 			],
 			"concept": "An orphaned prepared transaction is the blocking problem of 2PC seen in practice. It keeps holding row locks and, since it is still \"in progress\", stops VACUUM from cleaning old row versions, which causes table bloat. That is why `max_prepared_transactions` defaults to zero, and whoever uses the feature must monitor `pg_prepared_xacts`."
+		},
+		"es": {
+			"statement": "En PostgreSQL, un coordinador externo ejecuta `PREPARE TRANSACTION` y nunca vuelve para terminar la transacción. ¿Cuál es el efecto sobre la base de datos mientras nadie la resuelve?",
+			"alternatives": [
+				"El servidor le hace rollback por sí mismo cuando termina la sesión que la creó",
+				"El servidor la confirma por sí mismo en el siguiente checkpoint, pues está en disco",
+				"Se descarta en el siguiente reinicio del servidor, como todas las demás transacciones",
+				"Expira tras `idle_in_transaction_session_timeout` y se le hace rollback",
+				"Mantiene sus locks e impide que VACUUM elimine filas muertas"
+			],
+			"explanations": [
+				"Una transacción preparada ya no pertenece a ninguna sesión; desconectarse no la afecta.",
+				"PostgreSQL nunca decide el resultado de una transacción preparada: confirmar podría contradecir al coordinador.",
+				"Es durable precisamente para sobrevivir a los reinicios, a diferencia de las transacciones normales.",
+				"Ese timeout se aplica a sesiones inactivas dentro de una transacción, y una transacción preparada no tiene sesión.",
+				"Correcto: retiene locks y el horizonte de limpieza indefinidamente, hasta un `COMMIT PREPARED` o `ROLLBACK PREPARED` manual."
+			],
+			"concept": "Una transacción preparada huérfana es el problema de bloqueo de 2PC visto en la práctica. Sigue reteniendo locks de fila y, como todavía está \"en curso\", impide que VACUUM limpie versiones antiguas de las filas, lo que causa bloat en las tablas. Por eso `max_prepared_transactions` vale cero por defecto, y quien use la función debe monitorear `pg_prepared_xacts`."
 		}
 	}
 ]

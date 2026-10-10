@@ -41,6 +41,24 @@
 				"Wrong: joining the outputs comes after reduce, and does not always exist. It is not what map does."
 			],
 			"concept": "The map phase applies the same function to each record of the input and emits zero or more key-value pairs. Since one record does not depend on another, records can be processed in any order and on as many machines as there are. This independence is what makes the phase easy to parallelise."
+		},
+		"es": {
+			"statement": "En el patrón MapReduce, ¿qué hace la fase map?",
+			"alternatives": [
+				"Agrupa todos los valores de la misma clave y los combina en un único resultado",
+				"Aplica una función a cada registro de entrada y emite pares clave-valor",
+				"Ordena los pares intermedios por clave y envía cada clave a un nodo destino",
+				"Divide el archivo de entrada en bloques y replica cada bloque en varios nodos",
+				"Une los archivos de salida de todos los nodos en un único archivo final ordenado"
+			],
+			"explanations": [
+				"Incorrecto: esa es la fase reduce. Map mira un registro a la vez y no ve los demás valores de la misma clave.",
+				"Correcto: map transforma cada registro por sí solo, sin depender de los demás, por eso puede ejecutarse en paralelo sobre cualquier división de la entrada.",
+				"Incorrecto: ese es el paso shuffle, que está entre map y reduce y lo hace la infraestructura, no la función del usuario.",
+				"Incorrecto: dividir y replicar bloques es tarea del sistema de archivos distribuido, antes de que empiece cualquier map.",
+				"Incorrecto: unir las salidas viene después de reduce, y no siempre existe. No es lo que hace map."
+			],
+			"concept": "La fase map aplica la misma función a cada registro de la entrada y emite cero o más pares clave-valor. Como un registro no depende de otro, los registros pueden procesarse en cualquier orden y en tantas máquinas como haya. Esta independencia es lo que hace que la fase sea fácil de paralelizar."
 		}
 	},
 	{
@@ -85,6 +103,24 @@
 				"Right: each call handles one key and the list of its values, and produces the result of that key, such as the sum of the counts of a word."
 			],
 			"concept": "Reduce is called once per key, with all the values the map tasks emitted for it. Since each key is handled in isolation, different keys can be reduced in parallel on different nodes. In a word count, reduce receives a word and a list of ones, and returns the total."
+		},
+		"es": {
+			"statement": "En el patrón MapReduce, ¿qué recibe la función reduce en cada llamada?",
+			"alternatives": [
+				"Un registro de entrada a la vez, para emitir cero o más pares",
+				"Todos los pares de una tarea map, sin importar sus claves",
+				"Todo el conjunto de datos intermedio de una sola vez, en un único nodo",
+				"Dos claves a la vez, para decidir cuál va primero en la salida",
+				"Una clave junto con todos los valores emitidos para esa clave"
+			],
+			"explanations": [
+				"Incorrecto: esa es la firma de la función map, que trabaja registro por registro.",
+				"Incorrecto: el agrupamiento es por clave, no por tarea de origen. Los valores de la misma clave que vienen de distintas tareas map llegan juntos.",
+				"Incorrecto: si reduce recibiera todo de una vez no habría paralelismo. Las claves distintas se reducen de forma independiente, en varios nodos.",
+				"Incorrecto: esto confunde reduce con la función de comparación usada para ordenar las claves.",
+				"Correcto: cada llamada maneja una clave y la lista de sus valores, y produce el resultado de esa clave, como la suma de los conteos de una palabra."
+			],
+			"concept": "Reduce se llama una vez por clave, con todos los valores que las tareas map emitieron para ella. Como cada clave se maneja de forma aislada, claves distintas pueden reducirse en paralelo en nodos distintos. En un conteo de palabras, reduce recibe una palabra y una lista de unos, y devuelve el total."
 		}
 	},
 	{
@@ -137,6 +173,28 @@
 				"kind": "diagram",
 				"content": "map 1: (a,1) (b,1)            reducer 1: a -> [1, 1]\nmap 2: (a,1) (c,1)   shuffle  reducer 2: b -> [1, 1]\nmap 3: (b,1) (c,1)   ------>             c -> [1, 1]"
 			}
+		},
+		"es": {
+			"statement": "¿Cuál es la función del paso shuffle, entre las fases map y reduce?",
+			"alternatives": [
+				"Agrupar los pares intermedios por clave y entregar cada clave a un reducer",
+				"Aleatorizar el orden de los registros para equilibrar la carga entre las tareas map",
+				"Aplicar la función del usuario a cada registro y emitir los pares clave-valor",
+				"Reejecutar en otros nodos las tareas de los workers que fallaron",
+				"Combinar los valores de cada clave para producir el resultado final"
+			],
+			"explanations": [
+				"Correcto: shuffle particiona los pares por clave (normalmente por hash) y los agrupa, de modo que todos los valores de una clave lleguen al mismo reducer.",
+				"Incorrecto: esto lee el nombre literalmente. Shuffle no sortea nada al azar: organiza los pares por clave, de forma determinista.",
+				"Incorrecto: esa es la fase map. Shuffle no ejecuta código del usuario sobre los registros, solo mueve y agrupa pares.",
+				"Incorrecto: reejecutar tareas es el mecanismo de tolerancia a fallas del sistema, independiente del shuffle.",
+				"Incorrecto: esa es la fase reduce. Shuffle solo prepara su entrada."
+			],
+			"concept": "Reduce necesita ver todos los valores de una clave juntos, pero fueron emitidos por tareas map repartidas en varias máquinas. Shuffle lo resuelve: elige el reducer de cada clave con una función de partición, luego transfiere y agrupa los pares. Suele ser el paso que más usa la red en un job.",
+			"example": {
+				"kind": "diagram",
+				"content": "map 1: (a,1) (b,1)            reducer 1: a -> [1, 1]\nmap 2: (a,1) (c,1)   shuffle  reducer 2: b -> [1, 1]\nmap 3: (b,1) (c,1)   ------>             c -> [1, 1]"
+			}
 		}
 	},
 	{
@@ -181,6 +239,24 @@
 				"Wrong: this confuses capacity (how many items fit) with rate (items per second). A larger queue only delays the moment the bottleneck shows."
 			],
 			"concept": "In a pipeline the stages work at the same time on different items, but each item goes through all of them. The throughput is that of the slowest stage, the bottleneck: the queue before it fills up and the earlier stages are held back. To raise the throughput, speed up or replicate the bottleneck, not the other stages."
+		},
+		"es": {
+			"statement": "En el patrón pipeline, las etapas se ejecutan en threads distintos, conectadas por colas, y cada ítem pasa por todas ellas. En régimen estable, ¿qué limita el throughput (ítems por segundo) del pipeline?",
+			"alternatives": [
+				"La etapa más rápida, porque tira de los ítems a través de las demás",
+				"La suma de los throughputs de las etapas, porque trabajan en paralelo",
+				"La primera etapa, siempre, porque decide cuántos ítems entran",
+				"La etapa más lenta, porque los ítems se acumulan en la cola anterior a ella",
+				"La capacidad de las colas, porque fija cuántos ítems pasan por segundo"
+			],
+			"explanations": [
+				"Incorrecto: una etapa rápida no acelera a las demás. Solo queda ociosa esperando ítems o bloqueada en una cola de salida llena.",
+				"Incorrecto: las etapas se ejecutan al mismo tiempo, pero cada ítem pasa por todas en secuencia. Los throughputs no se suman: cuenta el menor.",
+				"Incorrecto: la primera etapa limita el throughput solo cuando es la más lenta. Si es rápida, manda el cuello de botella más adelante.",
+				"Correcto: ningún ítem sale más rápido de lo que la etapa cuello de botella puede procesar. Las etapas anteriores terminan esperándola y las posteriores tienen holgura.",
+				"Incorrecto: esto confunde capacidad (cuántos ítems caben) con tasa (ítems por segundo). Una cola mayor solo retrasa el momento en que aparece el cuello de botella."
+			],
+			"concept": "En un pipeline las etapas trabajan al mismo tiempo sobre ítems distintos, pero cada ítem pasa por todas. El throughput es el de la etapa más lenta, el cuello de botella: la cola anterior a ella se llena y las etapas anteriores se frenan. Para subir el throughput, se acelera o se replica el cuello de botella, no las demás etapas."
 		}
 	},
 	{
@@ -225,6 +301,24 @@
 				"Wrong: re-execution exists precisely because the local disk of a failed node may be unreachable."
 			],
 			"concept": "Re-execution is the simplest form of fault tolerance, but it is valid only for idempotent tasks. In MapReduce the input is immutable and the map function is pure, so the second run produces exactly the same output as the first. If map wrote to an external database or depended on the clock, repeating the task could duplicate or change results."
+		},
+		"es": {
+			"statement": "En un cluster MapReduce, un worker falla en medio de una tarea map. El master simplemente ejecuta la misma tarea otra vez en otro nodo. ¿Por qué esto es seguro?",
+			"alternatives": [
+				"Porque la tarea escribe un checkpoint en cada registro, y el nuevo nodo continúa desde él",
+				"Porque los reducers guardan una copia de todo y reconstruyen la salida de la tarea",
+				"Porque map es una función determinista y sin efectos secundarios sobre una entrada inmutable",
+				"Porque la tarea mantiene un lock distribuido, que se transfiere al nuevo nodo",
+				"Porque la salida parcial en el disco del worker que falló siempre sigue siendo legible"
+			],
+			"explanations": [
+				"Incorrecto: no hay checkpoint por registro. La tarea se rehace desde el inicio, y eso funciona solo porque rehacerla da el mismo resultado.",
+				"Incorrecto: los reducers consumen la salida de map, no la producen. No pueden recrear lo que aún no han recibido.",
+				"Correcto: el bloque de entrada no cambia y la función no altera ningún estado externo, así que ejecutarla de nuevo produce los mismos pares. La salida incompleta simplemente se descarta.",
+				"Incorrecto: no se necesita ningún lock, ya que las tareas map no comparten estado mutable. Un lock retenido por un nodo muerto sería un problema más.",
+				"Incorrecto: la reejecución existe justamente porque el disco local de un nodo que falló puede ser inalcanzable."
+			],
+			"concept": "La reejecución es la forma más simple de tolerancia a fallas, pero solo es válida para tareas idempotentes. En MapReduce la entrada es inmutable y la función map es pura, así que la segunda ejecución produce exactamente la misma salida que la primera. Si map escribiera en una base de datos externa o dependiera del reloj, repetir la tarea podría duplicar o cambiar resultados."
 		}
 	},
 	{
@@ -269,6 +363,24 @@
 				"Wrong: 20 is 1000 / 50, the average count of each word in one task. That is the value inside the records, not how many there are."
 			],
 			"concept": "The combiner is a local reduce, applied to the output of each map task before the shuffle, to send less data over the network. It is valid only when the operation is associative and commutative, like a sum: adding partial sums and then adding those gives the same total. An average, for example, cannot be combined this way without carrying the count as well."
+		},
+		"es": {
+			"statement": "Un conteo de palabras se ejecuta en 3 tareas map. Cada tarea emite 1000 pares (palabra, 1), con 50 palabras distintas en cada una. Reduce suma los conteos, y la misma suma se usa como combiner dentro de cada tarea map. ¿Cuántos registros salen de las tareas map hacia el shuffle?",
+			"alternatives": [
+				"3000",
+				"50",
+				"150",
+				"1000",
+				"20"
+			],
+			"explanations": [
+				"Incorrecto: 3000 es el total sin combiner (3 × 1000). El combiner existe justamente para sumar localmente los pares de la misma palabra antes de enviar.",
+				"Incorrecto: 50 supone que el combiner une palabras iguales de tareas distintas. Solo ve la salida de su propia tarea. Unir entre tareas es trabajo de reduce.",
+				"Correcto: cada tarea envía un par por palabra distinta, 3 × 50 = 150. Comprobación: cada tarea reduce 1000 pares a 50, un factor de 20, y 3000 / 20 = 150.",
+				"Incorrecto: 1000 es la salida de una sola tarea sin combiner. No aplica la suma local ni cuenta las 3 tareas.",
+				"Incorrecto: 20 es 1000 / 50, el conteo promedio de cada palabra en una tarea. Ese es el valor dentro de los registros, no cuántos hay."
+			],
+			"concept": "El combiner es un reduce local, aplicado a la salida de cada tarea map antes del shuffle, para enviar menos datos por la red. Solo es válido cuando la operación es asociativa y conmutativa, como una suma: sumar sumas parciales y luego sumarlas da el mismo total. Un promedio, por ejemplo, no se puede combinar así sin llevar también el conteo."
 		}
 	},
 	{
@@ -323,6 +435,29 @@
 				"language": "c",
 				"content": "// flawed: reads and writes the same array\nfor (i = 1; i < n - 1; i++)\n\ta[i] = (a[i - 1] + a[i + 1]) / 2;\n\n// fixed: read old, write new, then swap\nfor (i = 1; i < n - 1; i++)\n\tnext[i] = (cur[i - 1] + cur[i + 1]) / 2;\ntmp = cur; cur = next; next = tmp;"
 			}
+		},
+		"es": {
+			"statement": "En un paso de stencil, cada celda debe recibir el promedio de los valores que sus dos vecinas tenían en el paso anterior. El bucle que calcula a[i] = (a[i - 1] + a[i + 1]) / 2 escribe en el mismo arreglo que lee y se divide entre threads por rangos de índices. ¿Cuál es el problema y la solución?",
+			"alternatives": [
+				"Las celdas leen vecinas ya actualizadas en este paso; leer un arreglo y escribir en otro",
+				"No hay problema, ya que cada thread escribe en celdas distintas de las de los otros threads",
+				"La división no es asociativa y el resultado varía; cambiar a aritmética entera",
+				"Los rangos tienen cargas distintas; usar una división dinámica para equilibrar los threads",
+				"Dos threads escriben la misma celda; proteger cada celda con un lock propio"
+			],
+			"explanations": [
+				"Correcto: cuando se calcula a[i], a[i - 1] ya fue sobrescrita, y en los bordes de los rangos un thread lee lo que otro está escribiendo. Con dos arreglos, toda lectura viene del paso anterior.",
+				"Incorrecto: las escrituras disjuntas no bastan. Cada celda también lee a sus vecinas, que se escriben en el mismo paso, por el mismo thread o por otro.",
+				"Incorrecto: el error no es de redondeo. Incluso con enteros, el valor leído de una vecina sería el nuevo en lugar del antiguo.",
+				"Incorrecto: el balanceo es un asunto de rendimiento. Aquí el resultado es incorrecto, y todas las celdas cuestan lo mismo.",
+				"Incorrecto: cada celda se escribe una vez, por un thread. El conflicto es entre la escritura de una celda y su lectura por la vecina."
+			],
+			"concept": "En el patrón stencil, el nuevo valor de cada celda depende de los valores antiguos de su vecindad. Para que el paso sea paralelo y determinista, las lecturas y las escrituras deben mantenerse separadas: leer del arreglo antiguo, escribir en el nuevo e intercambiar los dos al final del paso (double buffering). Así ninguna celda depende del orden en que se calcularon las demás.",
+			"example": {
+				"kind": "code",
+				"language": "c",
+				"content": "// flawed: reads and writes the same array\nfor (i = 1; i < n - 1; i++)\n\ta[i] = (a[i - 1] + a[i + 1]) / 2;\n\n// fixed: read old, write new, then swap\nfor (i = 1; i < n - 1; i++)\n\tnext[i] = (cur[i - 1] + cur[i + 1]) / 2;\ntmp = cur; cur = next; next = tmp;"
+			}
 		}
 	},
 	{
@@ -367,6 +502,24 @@
 				"Wrong: the effect is right, but the cause is not. Reduce time depends on the load of the most loaded reducer, not on the number of map tasks."
 			],
 			"concept": "Since reduce needs all the values of a key together, a very frequent key (a hot key) overloads a single reducer, and the phase ends when that one ends. Adding reducers only redistributes the other keys. The ways out are reducing the volume before the shuffle with a combiner or splitting the hot key into subkeys, aggregating in two steps."
+		},
+		"es": {
+			"statement": "Un job MapReduce tiene 100 millones de pares intermedios, particionados por un hash de la clave entre 10 reducers. Una sola clave concentra 55 millones de pares, y el resto se reparte de forma uniforme. ¿Qué pasa con el tiempo de la fase reduce si el número de reducers se duplica a 20?",
+			"alternatives": [
+				"Baja a cerca de la mitad, ya que cada reducer recibe ahora la mitad de los pares",
+				"Baja mucho, ya que los pares de la clave caliente se reparten entre dos reducers",
+				"Se duplica, ya que cada par se copia ahora a dos reducers distintos",
+				"Casi no cambia, ya que un reducer sigue recibiendo los 55 millones de la clave caliente",
+				"Casi no cambia, ya que el tiempo de reduce depende solo del número de tareas map"
+			],
+			"explanations": [
+				"Incorrecto: esto supone una distribución uniforme. Solo los 45 millones restantes se reparten más. La clave caliente no se divide.",
+				"Incorrecto: todos los valores de una clave van al mismo reducer, por definición. Más reducers no dividen una clave.",
+				"Incorrecto: esto confunde particionamiento con replicación. Cada par va a exactamente un reducer, haya 10 o 20.",
+				"Correcto: el reducer de la clave caliente tenía 55 + 45/10 = 59.5 millones de pares y ahora tiene 55 + 45/20 = 57.25 millones. Solo pierde 2.25 millones, menos de 4%, y fija el tiempo de la fase.",
+				"Incorrecto: el efecto es correcto, pero la causa no. El tiempo de reduce depende de la carga del reducer más cargado, no del número de tareas map."
+			],
+			"concept": "Como reduce necesita todos los valores de una clave juntos, una clave muy frecuente (una hot key) sobrecarga a un solo reducer, y la fase termina cuando termina ese. Agregar reducers solo redistribuye las otras claves. Las salidas son reducir el volumen antes del shuffle con un combiner o dividir la clave caliente en subclaves, agregando en dos pasos."
 		}
 	},
 	{
@@ -411,6 +564,24 @@
 				"Right: it is scatter and gather. Since all are waited for, the maximum counts: max(20, 200) + 5 = 205 ms. On the timeline: sent at 0, last reply at 200, merge from 200 to 205."
 			],
 			"concept": "In scatter-gather, a coordinator sends the same request to several independent executors, gathers the replies and combines them. The split is flat and fixed, with no recursion and no chained stages. Since the gather waits for everyone, the latency is that of the slowest executor, which is why a single late executor (tail latency) dominates the response time."
+		},
+		"es": {
+			"statement": "Un servicio de búsqueda envía la misma consulta, al mismo tiempo, a 20 particiones independientes del índice, espera todas las respuestas y las mezcla en 5 ms. Diecinueve particiones responden en 20 ms y una responde en 200 ms. ¿Qué descripción corresponde a este diseño y a su tiempo de respuesta?",
+			"alternatives": [
+				"Pipeline: 205 ms, porque la etapa más lenta marca el ritmo de todas las demás",
+				"Scatter-gather: 585 ms, la suma de los tiempos de las particiones más la mezcla",
+				"Scatter-gather: 34 ms, el promedio de los tiempos de las particiones más la mezcla",
+				"Divide y vencerás: 25 ms, el tiempo de una hoja típica más la mezcla",
+				"Scatter-gather: 205 ms, el tiempo de la partición más lenta más la mezcla"
+			],
+			"explanations": [
+				"Incorrecto: en un pipeline cada ítem pasa por etapas distintas en secuencia. Aquí todas las particiones hacen el mismo trabajo sobre la misma consulta, lado a lado. Además, la etapa más lenta de un pipeline limita el throughput, no la latencia de un ítem.",
+				"Incorrecto: el patrón es correcto, pero sumar (19 × 20 + 200 + 5) vale para llamadas hechas una tras otra. Las 20 llamadas son simultáneas.",
+				"Incorrecto: el promedio (19 × 20 + 200) / 20 = 29 ms no se aplica, ya que la respuesta sale solo cuando todas las particiones han respondido, incluida la lenta.",
+				"Incorrecto: no hay recursión: la división se hace una vez, en particiones fijas. Y el tiempo de una hoja típica ignora la partición de 200 ms, que también se espera.",
+				"Correcto: es scatter y gather. Como se espera a todas, cuenta el máximo: max(20, 200) + 5 = 205 ms. En la línea de tiempo: envío en 0, última respuesta en 200, mezcla de 200 a 205."
+			],
+			"concept": "En scatter-gather, un coordinador envía la misma solicitud a varios ejecutores independientes, reúne las respuestas y las combina. La división es plana y fija, sin recursión ni etapas encadenadas. Como el gather espera a todos, la latencia es la del ejecutor más lento, por eso un solo ejecutor tardío (tail latency) domina el tiempo de respuesta."
 		}
 	},
 	{
@@ -463,6 +634,28 @@
 			"example": {
 				"kind": "diagram",
 				"content": "index order:      (a + b) + (c + d) = ab + cd = abcd   always\nfinishing order:  ab + cd = abcd   or   cd + ab = cdab   depends on the schedule"
+			}
+		},
+		"es": {
+			"statement": "Un programa mapea cuatro ítems independientes a las cadenas a, b, c y d y debe unirlas en abcd. Un worker reduce los dos primeros en ab y otro reduce los dos últimos en cd, cada uno en un acumulador local. El thread principal concatena los resultados parciales en el orden en que terminan los workers, y algunas ejecuciones imprimen cdab. ¿Dónde está la falla?",
+			"alternatives": [
+				"Los workers comparten el acumulador sin sincronización, lo que es una data race",
+				"La concatenación no es conmutativa, así que los resultados parciales deben combinarse en orden de índice",
+				"La concatenación no es asociativa, así que los ítems no pueden reducirse en bloques separados",
+				"El map no es una función pura, así que cada ejecución produce cadenas distintas",
+				"Los bloques tienen dos ítems cada uno, y una reducción paralela necesita bloques de un ítem"
+			],
+			"explanations": [
+				"Incorrecto: cada worker tiene su propio acumulador local, y los resultados parciales se leen solo cuando los workers terminan. Ninguna posición de memoria es escrita por dos threads.",
+				"Correcto: (ab)(cd) es abcd pero (cd)(ab) es cdab. El operador permite reagrupar, no reordenar, así que la combinación debe seguir la posición de los bloques, no el orden de finalización.",
+				"Incorrecto: la concatenación es asociativa: (a + b) + (c + d) es igual a ((a + b) + c) + d. Reducir bloques por separado es válido, y los resultados parciales ab y cd son correctos.",
+				"Incorrecto: las cuatro cadenas son las mismas en cada ejecución. Solo cambia el orden en que se unen los dos resultados parciales.",
+				"Incorrecto: el tamaño del bloque no importa para un operador asociativo. Bloques de un ítem combinados en orden de finalización quedarían igualmente desordenados."
+			],
+			"concept": "Una reducción paralela por bloques necesita un operador asociativo, que permite reagrupar los ítems. Combinar los resultados parciales en el orden en que terminan los workers exige más: el operador también debe ser conmutativo. La suma, el máximo y el conteo son ambas cosas; la concatenación, el append de listas y el producto de matrices son solo asociativos, por lo que sus resultados parciales deben combinarse en orden de índice.",
+			"example": {
+				"kind": "diagram",
+				"content": "orden de índices:        (a + b) + (c + d) = ab + cd = abcd   siempre\norden de finalización:   ab + cd = abcd   o   cd + ab = cdab   depende de la planificación"
 			}
 		}
 	}

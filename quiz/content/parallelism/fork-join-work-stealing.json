@@ -42,6 +42,24 @@
 				"Wrong: this confuses it with the divide and merge steps of merge sort. Fork and join say nothing about how data is split or ordered."
 			],
 			"concept": "Fork-join is a structured model of parallelism: a task creates (fork) subtasks that may run in parallel and then waits (join) for all of them before going on. Since every fork has its join, the program becomes sequential again at well-defined points, which makes the result easier to reason about."
+		},
+		"es": {
+			"statement": "En el modelo fork-join, ¿qué significan las operaciones fork y join?",
+			"alternatives": [
+				"Fork copia todo el proceso, y join une los dos espacios de memoria",
+				"Fork adquiere un lock sobre los datos compartidos, y join lo libera",
+				"Fork pone una tarea en una cola, y join la quita de esa misma cola",
+				"Fork inicia una tarea que puede ejecutarse en paralelo, y join espera su fin",
+				"Fork divide la entrada en dos mitades, y join ordena los resultados parciales"
+			],
+			"explanations": [
+				"Incorrecto: esto lo confunde con la llamada fork() de Unix, que duplica un proceso. En el modelo fork-join las tareas comparten memoria y nada se une.",
+				"Incorrecto: esto confunde fork y join con lock y unlock. Fork y join controlan el inicio y el fin de las tareas, no el acceso a los datos.",
+				"Incorrecto: esto lo confunde con enqueue y dequeue. Una implementación puede usar una cola, pero join significa esperar la finalización, no quitar la tarea.",
+				"Correcto: fork crea una rama de ejecución que puede avanzar al mismo tiempo que su creador, y join es el punto donde el creador espera que esa rama termine.",
+				"Incorrecto: esto lo confunde con los pasos de dividir y mezclar del merge sort. Fork y join no dicen nada sobre cómo se dividen u ordenan los datos."
+			],
+			"concept": "Fork-join es un modelo estructurado de paralelismo: una tarea crea (fork) subtareas que pueden ejecutarse en paralelo y luego espera (join) a todas antes de continuar. Como cada fork tiene su join, el programa vuelve a ser secuencial en puntos bien definidos, lo que facilita razonar sobre el resultado."
 		}
 	},
 	{
@@ -86,6 +104,24 @@
 				"Wrong: the thief interrupts nobody. It only takes tasks that already exist and are still pending in the victim's queue."
 			],
 			"concept": "In work stealing each worker has its own task queue (a deque) and works on it while there is something to do. When the queue is empty, it steals a pending task from another worker. Load balancing happens on demand, only when someone becomes idle."
+		},
+		"es": {
+			"statement": "En un scheduler con work stealing, ¿qué hace un worker cuando su propia cola se queda sin tareas?",
+			"alternatives": [
+				"Toma una tarea pendiente de la cola de otro worker y la ejecuta",
+				"Duerme hasta que un despachador central le entregue una nueva tarea",
+				"Termina, y el pool crea otro thread cuando aparece más trabajo",
+				"Vuelve a ejecutar una tarea que otro worker ya está ejecutando",
+				"Pide a un worker ocupado que divida su tarea en ejecución por la mitad"
+			],
+			"explanations": [
+				"Correcto: el worker ocioso se convierte en ladrón: elige una víctima, toma de su cola una tarea que aún no empezó y la ejecuta.",
+				"Incorrecto: esto describe un despachador central. El work stealing no tiene distribuidor: el propio worker ocioso toma la iniciativa.",
+				"Incorrecto: esto lo confunde con un thread por tarea. El pool mantiene un número fijo de workers, que no mueren cuando se quedan sin trabajo.",
+				"Incorrecto: esto lo confunde con la ejecución especulativa. El robo toma una tarea que aún espera en una cola, no duplica una en ejecución.",
+				"Incorrecto: el ladrón no interrumpe a nadie. Solo toma tareas que ya existen y siguen pendientes en la cola de la víctima."
+			],
+			"concept": "En el work stealing cada worker tiene su propia cola de tareas (un deque) y trabaja en ella mientras haya algo que hacer. Cuando la cola está vacía, roba una tarea pendiente de otro worker. El balanceo de carga ocurre bajo demanda, solo cuando alguien queda ocioso."
 		}
 	},
 	{
@@ -138,6 +174,28 @@
 				"kind": "diagram",
 				"content": "deque of worker A (tasks of a recursive sum)\n\n  thief steals here               owner pushes/pops here\n        |                                   |\n        v                                   v\n  [ sum(0..500) | sum(500..750) | sum(750..875) ]\n    oldest, largest                 newest, smallest"
 			}
+		},
+		"es": {
+			"statement": "En un deque de work stealing, el dueño empuja y saca tareas por un extremo (LIFO). ¿Por qué el ladrón roba por el extremo opuesto, donde está la tarea más antigua?",
+			"alternatives": [
+				"Porque la tarea más antigua es siempre la más rápida, así el ladrón queda libre pronto",
+				"Porque los resultados deben salir en orden FIFO para que el programa sea correcto",
+				"Porque la tarea más antigua tiende a ser la mayor y está lejos del extremo del dueño",
+				"Porque la tarea más nueva está en la cache del dueño y otro núcleo no puede leerla",
+				"Porque ambos extremos usan el mismo lock, y el extremo antiguo está libre con más frecuencia"
+			],
+			"explanations": [
+				"Incorrecto: es lo contrario. En divide y vencerás la tarea más antigua se creó más cerca de la raíz y suele representar la mayor porción de trabajo.",
+				"Incorrecto: el orden en que se ejecutan las tareas no define el resultado. Los joins garantizan el orden, no el extremo por el que roba un ladrón.",
+				"Correcto: un solo robo mueve una gran porción de trabajo, lo que reduce el número de robos, y ladrón y dueño casi nunca compiten por el mismo extremo.",
+				"Incorrecto: cualquier núcleo puede leer cualquier dirección de memoria. La localidad de cache favorece al dueño en el extremo nuevo, pero no prohíbe el acceso.",
+				"Incorrecto: la idea es la contraria: los dos extremos se mantienen separados para que dueño y ladrón no compitan por la misma estructura de sincronización."
+			],
+			"concept": "El dueño trabaja en orden LIFO en su extremo: la tarea más reciente es pequeña y sus datos aún están calientes en la cache. El ladrón toma la tarea más antigua del otro extremo, que en una recursión de divide y vencerás suele ser la mayor. Así un robo trae mucho trabajo, y los dos lados rara vez se encuentran.",
+			"example": {
+				"kind": "diagram",
+				"content": "deque del worker A (tareas de una suma recursiva)\n\n  el ladrón roba aquí             el dueño empuja/saca aquí\n        |                                   |\n        v                                   v\n  [ suma(0..500) | suma(500..750) | suma(750..875) ]\n    la más antigua, mayor           la más nueva, menor"
+			}
 		}
 	},
 	{
@@ -183,6 +241,24 @@
 				"Right: without the join, the main thread could read a count that is still incomplete, or read while the worker writes, which is a data race."
 			],
 			"concept": "Join is a synchronisation point: when it returns, everything the other thread did has already happened and is visible. Reading the result before that gives a partial value or a data race. That is why the pattern is fork, join and only then combine the partial results."
+		},
+		"es": {
+			"statement": "Un programa crea 4 threads, cada uno acumulando un conteo parcial, y luego suma los conteos. ¿Por qué el thread principal debe hacer join de cada worker antes de leer su conteo?",
+			"alternatives": [
+				"Porque join copia la variable local del worker en la memoria del thread principal",
+				"Porque join libera el lock que protege el conteo parcial de cada worker",
+				"Porque join es la operación que hace que cada worker empiece a ejecutar su parte",
+				"Porque join reordena los workers para que los conteos salgan en orden de creación",
+				"Porque solo después del join se tiene la certeza de que el worker terminó su conteo"
+			],
+			"explanations": [
+				"Incorrecto: los threads comparten un espacio de direcciones. Join no mueve memoria. Lo que da es la garantía de finalización.",
+				"Incorrecto: esto confunde join con unlock. No interviene ningún lock: cada worker escribe en una variable propia.",
+				"Incorrecto: esto confunde join con iniciar el thread. El worker empieza a ejecutarse cuando se crea. Join solo espera el final.",
+				"Incorrecto: join no cambia el orden de ejecución. El orden de la suma lo decide el thread principal al recorrer los resultados.",
+				"Correcto: sin el join, el thread principal podría leer un conteo todavía incompleto, o leer mientras el worker escribe, lo que es una data race."
+			],
+			"concept": "Join es un punto de sincronización: cuando retorna, todo lo que hizo el otro thread ya ocurrió y es visible. Leer el resultado antes de eso da un valor parcial o una data race. Por eso el patrón es fork, join y solo entonces combinar los resultados parciales."
 		}
 	},
 	{
@@ -227,6 +303,24 @@
 				"Wrong: time is exactly what changes most. The cutoff is tuned by measuring the running time."
 			],
 			"concept": "The cutoff (grain size) balances two costs. Every task has a fixed cost of creation and scheduling, so leaves that are too small spend more on management than on computing. Leaves that are too large produce few tasks, and the scheduler cannot spread the work over the cores. A good grain costs much more than the overhead of one task and still yields many more tasks than cores."
+		},
+		"es": {
+			"statement": "Una suma recursiva paralela de un arreglo divide el rango a la mitad y crea tareas hasta que el tamaño cae por debajo de un límite (cutoff), momento en que suma secuencialmente. ¿Qué pasa con un cutoff demasiado pequeño y con uno demasiado grande?",
+			"alternatives": [
+				"Demasiado pequeño deja núcleos ociosos; demasiado grande hace que el costo de las tareas domine",
+				"Demasiado pequeño hace que el costo de las tareas domine; demasiado grande deja núcleos ociosos",
+				"Demasiado pequeño cambia el valor de la suma; demasiado grande solo hace el programa más lento",
+				"Demasiado pequeño aumenta el span; demasiado grande aumenta el trabajo total",
+				"Ambos extremos solo cambian el uso de memoria; el tiempo de ejecución sigue igual"
+			],
+			"explanations": [
+				"Incorrecto: los efectos están intercambiados. Las tareas diminutas son muchas y costosas de gestionar, y las tareas enormes son muy pocas para mantener ocupados a todos los núcleos.",
+				"Correcto: con cutoff 1, cada elemento se convierte en una tarea, y crearla y planificarla cuesta más que sumar. Con un cutoff cercano a n, quedan una o dos tareas y los demás núcleos no tienen nada que hacer.",
+				"Incorrecto: el cutoff cambia el rendimiento, no el resultado. La suma de enteros es la misma con cualquier granularidad.",
+				"Incorrecto: está intercambiado. Un cutoff pequeño aumenta el trabajo total (más sobrecarga), y un cutoff grande aumenta el span (hojas secuenciales largas).",
+				"Incorrecto: el tiempo es justamente lo que más cambia. El cutoff se ajusta midiendo el tiempo de ejecución."
+			],
+			"concept": "El cutoff (grain size) equilibra dos costos. Cada tarea tiene un costo fijo de creación y planificación, así que las hojas demasiado pequeñas gastan más en gestión que en cálculo. Las hojas demasiado grandes producen pocas tareas, y el scheduler no puede repartir el trabajo entre los núcleos. Un buen grano cuesta mucho más que la sobrecarga de una tarea y aun así produce muchas más tareas que núcleos."
 		}
 	},
 	{
@@ -280,6 +374,28 @@
 				"kind": "diagram",
 				"content": "static                                time\n  A: [0][1][2][3]                      8 ms\n  B: [   4   ][   5   ][   6   ][   7   ]  40 ms   <- last\n\ndynamic\n  A: [0][2][   4   ][   6   ]          24 ms\n  B: [1][3][   5   ][   7   ]          24 ms"
 			}
+		},
+		"es": {
+			"statement": "Una imagen del conjunto de Mandelbrot tiene 8 filas: las filas 0 a 3 cuestan 2 ms cada una y las filas 4 a 7 cuestan 10 ms cada una. Dos workers la calculan de dos maneras: división estática (el worker A toma las filas 0 a 3, el worker B toma las filas 4 a 7) y división dinámica (cada worker libre toma la siguiente fila de un contador atómico). Ignorando la sobrecarga, ¿cuánto tarda hasta que termina el último worker en cada caso?",
+			"alternatives": [
+				"Estática 24 ms, dinámica 24 ms",
+				"Estática 48 ms, dinámica 24 ms",
+				"Estática 40 ms, dinámica 40 ms",
+				"Estática 8 ms, dinámica 24 ms",
+				"Estática 40 ms, dinámica 24 ms"
+			],
+			"explanations": [
+				"Incorrecto: esto supone que el mismo número de filas implica el mismo tiempo. En la división estática el worker B recibe 4 × 10 = 40 ms, y A solo 8 ms.",
+				"Incorrecto: 48 ms es la suma de los dos workers (8 + 40), que es el trabajo total. Como corren al mismo tiempo, cuenta el mayor tiempo, no la suma.",
+				"Incorrecto: esto supone que la división dinámica repite la estática. Cuando el worker A termina las filas baratas, empieza a tomar también filas caras.",
+				"Incorrecto: 8 ms es cuando termina el primer worker. La imagen está lista solo cuando termina el último, a los 40 ms.",
+				"Correcto: estática = max(4 × 2, 4 × 10) = max(8, 40) = 40 ms. Dinámica: las filas 0 a 3 terminan a los 4 ms (dos por worker), luego cada worker hace dos filas de 10 ms, 4 + 20 = 24 ms. Comprobación: el trabajo total es 48 ms y 48 / 2 = 24 ms es el mínimo posible."
+			],
+			"concept": "El tiempo de una ejecución paralela es el tiempo del worker que termina último. Con una división estática en franjas contiguas, una carga irregular deja a un worker con casi todo el trabajo. En una división dinámica, quien termina antes toma la siguiente pieza, y la carga se equilibra sola, al costo de un acceso al contador compartido por pieza.",
+			"example": {
+				"kind": "diagram",
+				"content": "estática                              tiempo\n  A: [0][1][2][3]                      8 ms\n  B: [   4   ][   5   ][   6   ][   7   ]  40 ms   <- último\n\ndinámica\n  A: [0][2][   4   ][   6   ]          24 ms\n  B: [1][3][   5   ][   7   ]          24 ms"
+			}
 		}
 	},
 	{
@@ -324,6 +440,24 @@
 				"Wrong: 6 s is the span, the time with unlimited processors. With only 8, the T1/P term still weighs 30 s."
 			],
 			"concept": "Work (T1) is the sum of all operations, and span (Tinf) is the longest path of dependencies. No scheduler does better than max(T1/P, Tinf), and a greedy scheduler never exceeds T1/P + Tinf. When P is much smaller than the parallelism T1/Tinf, the T1/P term dominates and the speed-up stays close to linear."
+		},
+		"es": {
+			"statement": "Una computación fork-join tiene trabajo T1 = 240 s (tiempo en un procesador) y span Tinf = 6 s (camino crítico). Un scheduler greedy garantiza Tp <= T1/P + Tinf. ¿Cuál es esta cota superior para P = 8 procesadores?",
+			"alternatives": [
+				"30 s",
+				"30.75 s",
+				"36 s",
+				"40 s",
+				"6 s"
+			],
+			"explanations": [
+				"Incorrecto: 30 s es solo T1/P = 240/8. Falta el span, que es la parte que ningún procesador adicional puede acortar.",
+				"Incorrecto: 30.75 s es (T1 + Tinf)/P = 246/8. El span no se divide entre P: es una cadena de dependencias, ejecutada en secuencia.",
+				"Correcto: T1/P + Tinf = 240/8 + 6 = 30 + 6 = 36 s. Comprobando de otra forma: (T1 + P × Tinf)/P = (240 + 48)/8 = 288/8 = 36 s.",
+				"Incorrecto: 40 es T1/Tinf = 240/6, el paralelismo de la computación. Es un número de procesadores útiles, no un tiempo.",
+				"Incorrecto: 6 s es el span, el tiempo con procesadores ilimitados. Con solo 8, el término T1/P todavía pesa 30 s."
+			],
+			"concept": "El trabajo (T1) es la suma de todas las operaciones, y el span (Tinf) es el camino más largo de dependencias. Ningún scheduler lo hace mejor que max(T1/P, Tinf), y un scheduler greedy nunca excede T1/P + Tinf. Cuando P es mucho menor que el paralelismo T1/Tinf, el término T1/P domina y el speed-up se mantiene cerca de lo lineal."
 		}
 	},
 	{
@@ -368,6 +502,24 @@
 				"Wrong: the program creates the same tasks under any scheduler. What changes is where they are kept and who competes for them."
 			],
 			"concept": "With a central queue, every task creation and every removal goes through the same point, and workers get in each other's way more as cores are added. In work stealing the common path is local: the owner handles its own deque. Synchronisation between threads appears only in a steal, which happens few times when tasks are well divided."
+		},
+		"es": {
+			"statement": "En comparación con un pool donde todos los workers toman tareas de una única cola central, ¿por qué el work stealing tiene menos contención?",
+			"alternatives": [
+				"Cada worker usa su propio deque y toca otro solo cuando está ocioso",
+				"Cada deque está protegido por un lock global, mantenido por muy poco tiempo",
+				"Las tareas nunca se mueven entre workers, así que no se comparte ninguna estructura",
+				"El ladrón toma del mismo extremo que usa el dueño, lo que reutiliza la cache",
+				"El número de tareas creadas es menor, así que se accede menos a las colas"
+			],
+			"explanations": [
+				"Correcto: empujar y sacar en su propio deque es el caso común y casi no involucra a otros threads. El acceso cruzado, el robo, es raro cuando hay trabajo para todos.",
+				"Incorrecto: un lock global sería justamente el cuello de botella de la cola central. En el work stealing la sincronización es por deque, y el dueño casi no la paga.",
+				"Incorrecto: las tareas se mueven entre workers en cada robo. La contención es baja porque los robos son raros, no porque no existan.",
+				"Incorrecto: el ladrón usa el extremo opuesto al del dueño. Robar del mismo extremo aumentaría la competencia entre los dos.",
+				"Incorrecto: el programa crea las mismas tareas con cualquier scheduler. Lo que cambia es dónde se guardan y quién compite por ellas."
+			],
+			"concept": "Con una cola central, cada creación y cada extracción de tareas pasa por el mismo punto, y los workers se estorban más a medida que se agregan núcleos. En el work stealing el camino común es local: el dueño maneja su propio deque. La sincronización entre threads aparece solo en un robo, que ocurre pocas veces cuando las tareas están bien divididas."
 		}
 	},
 	{
@@ -412,6 +564,24 @@
 				"Wrong: that is the opposite problem. With too many context switches the CPU usage would be high, not near 0%."
 			],
 			"concept": "A fork-join pool has as many threads as cores because it assumes tasks that only use CPU and never sleep. A blocking call (I/O, lock, sleep) holds the thread without doing work, and the pool loses capacity. The usual ways out are moving blocking I/O to a separate pool, using asynchronous I/O, or telling the pool about the block so that it creates a compensation thread."
+		},
+		"es": {
+			"statement": "Un pool fork-join tiene 4 threads, uno por núcleo. Cuatro tareas realizan cada una una lectura de red bloqueante de 2 s, mientras 100 tareas cortas de CPU esperan en los deques. Durante esos 2 s el uso de CPU se mantiene cerca de 0%. ¿Cuál es la falla?",
+			"alternatives": [
+				"El work stealing se desactiva mientras una tarea se bloquea, así que los deques no se equilibran",
+				"Las tareas bloqueadas retienen los 4 threads, y no queda ninguno para ejecutar las listas",
+				"Las 100 tareas cortas están por debajo del cutoff, así que el pool se niega a ejecutarlas en paralelo",
+				"La lectura bloqueante causa una data race en los deques, y el pool se pausa para recuperarse",
+				"El pool tiene demasiados threads para 4 núcleos, y los context switches consumen el tiempo"
+			],
+			"explanations": [
+				"Incorrecto: nada se desactiva. El robo necesita un thread libre que robe, y eso es lo que falta: los 4 están atascados en la lectura.",
+				"Correcto: un thread bloqueado sigue ocupando su lugar en el pool sin usar CPU. Con los 4 atascados, las tareas listas quedan en los deques sin nadie que las ejecute (thread starvation).",
+				"Incorrecto: el cutoff es una decisión del código de usuario sobre cuándo dejar de dividir. El pool ejecuta cualquier tarea que esté en un deque.",
+				"Incorrecto: bloquearse en I/O no corrompe los deques. No hay un error de sincronización, solo threads esperando la red.",
+				"Incorrecto: ese es el problema opuesto. Con demasiados context switches el uso de CPU sería alto, no cercano a 0%."
+			],
+			"concept": "Un pool fork-join tiene tantos threads como núcleos porque supone tareas que solo usan CPU y nunca duermen. Una llamada bloqueante (I/O, lock, sleep) retiene el thread sin hacer trabajo, y el pool pierde capacidad. Las salidas habituales son mover el I/O bloqueante a un pool separado, usar I/O asíncrono, o avisar al pool del bloqueo para que cree un thread de compensación."
 		}
 	},
 	{
@@ -463,6 +633,28 @@
 			"example": {
 				"kind": "diagram",
 				"content": "lower bounds on the time:   T1 / P = 1000 / 1000 = 1 s     Tinf = 10 s\ntime >= max(1, 10) = 10 s\nspeed-up <= T1 / 10 = 100 = T1 / Tinf   (the parallelism)"
+			}
+		},
+		"es": {
+			"statement": "Una computación fork-join tiene trabajo T1 = 1,000 s (tiempo en un procesador) y span Tinf = 10 s (tiempo con procesadores ilimitados). ¿Cuál es el mayor speed-up que puede alcanzar en una máquina con 1,000 procesadores?",
+			"alternatives": [
+				"1,000, porque hay un procesador por cada segundo de trabajo",
+				"10, porque el span es el mayor speed-up que permite la computación",
+				"990, porque el span se resta del trabajo total",
+				"100, porque el tiempo de ejecución no puede caer por debajo del span",
+				"Cerca de 91, porque T1/P + Tinf es el menor tiempo posible"
+			],
+			"explanations": [
+				"Incorrecto: el speed-up lineal ignora las dependencias entre tareas. La cadena más larga de trabajo dependiente toma 10 s sin importar cuántos procesadores existan.",
+				"Incorrecto: esto confunde el span, que es un tiempo, con un speed-up. El span es el denominador del límite, no el límite en sí.",
+				"Incorrecto: 990 es T1 - Tinf, una diferencia en segundos. Un speed-up es una razón entre dos tiempos.",
+				"Correcto: el tiempo es al menos max(T1/P, Tinf) = max(1, 10) = 10 s, así que el speed-up es como máximo 1000/10 = 100. Es el paralelismo T1/Tinf, que se alcanza o no según el scheduler.",
+				"Incorrecto: T1/P + Tinf = 1 + 10 = 11 s es una cota superior del tiempo de un scheduler greedy, que garantiza un speed-up de al menos 1000/11 ≈ 91. Es una garantía, no el mejor caso."
+			],
+			"concept": "La razón T1/Tinf se llama paralelismo de una computación: la cantidad promedio de trabajo disponible por paso de su camino crítico. Limita el speed-up para cualquier número de procesadores, así que los procesadores más allá de T1/Tinf no tienen nada útil que hacer. Aquí 100 procesadores ya bastan para acercarse al límite, y los otros 900 se desperdician.",
+			"example": {
+				"kind": "diagram",
+				"content": "cotas inferiores del tiempo:   T1 / P = 1000 / 1000 = 1 s     Tinf = 10 s\ntiempo >= max(1, 10) = 10 s\nspeed-up <= T1 / 10 = 100 = T1 / Tinf   (el paralelismo)"
 			}
 		}
 	}

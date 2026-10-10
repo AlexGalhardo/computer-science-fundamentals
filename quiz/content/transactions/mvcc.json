@@ -41,6 +41,24 @@
 				"A single queue is serial execution, which MVCC tries to avoid without losing isolation."
 			],
 			"concept": "In MVCC, a write does not destroy the previous value: it adds a new version of the row. Each transaction sees the version suited to its point in time, so readers and writers work on the same data without disturbing each other."
+		},
+		"es": {
+			"statement": "¿Cuál es la idea central del control de concurrencia multiversión (MVCC)?",
+			"alternatives": [
+				"Mantener una copia completa de la base de datos para cada sesión conectada",
+				"Bloquear toda la tabla siempre que se modifique cualquiera de sus filas",
+				"Crear una nueva versión de la fila en cada escritura, en lugar de sobrescribirla",
+				"Escribir cada cambio en varios discos para sobrevivir a una falla",
+				"Ejecutar las transacciones de una en una, en una única cola de entrada"
+			],
+			"explanations": [
+				"Las versiones son por fila modificada: copiar toda la base de datos por sesión sería inviable e innecesario.",
+				"MVCC existe precisamente para reducir el bloqueo, no para ampliarlo a la tabla.",
+				"La versión antigua sigue disponible para las transacciones que aún necesitan verla, mientras las nuevas ven la versión nueva.",
+				"Escribir en varios discos es redundancia de almacenamiento, ligada a la durabilidad y no a la concurrencia.",
+				"Una única cola es ejecución serial, que MVCC intenta evitar sin perder aislamiento."
+			],
+			"concept": "En MVCC, una escritura no destruye el valor anterior: añade una nueva versión de la fila. Cada transacción ve la versión adecuada a su momento en el tiempo, de modo que lectores y escritores trabajan sobre los mismos datos sin molestarse."
 		}
 	},
 	{
@@ -85,6 +103,24 @@
 				"MVCC alone leads to snapshot isolation, which still admits anomalies such as write skew."
 			],
 			"concept": "With pure locking, a long read holds back writes and a write holds back reads. MVCC removes that coupling: reads are served by versions already committed. The conflict between two writes on the same row still exists."
+		},
+		"es": {
+			"statement": "¿Cuál es la principal ventaja de MVCC sobre un control de concurrencia basado solo en locks de lectura y locks de escritura?",
+			"alternatives": [
+				"Los deadlocks dejan de existir, porque ninguna transacción pide locks",
+				"Dos escritores pueden modificar la misma fila sin que uno espere al otro",
+				"La base de datos ocupa menos espacio en disco, pues almacena solo el valor actual",
+				"Los lectores no bloquean a los escritores y los escritores no bloquean a los lectores",
+				"Toda ejecución se vuelve serializable, sin ningún costo adicional"
+			],
+			"explanations": [
+				"Los escritores siguen bloqueando filas y pueden formar ciclos de espera entre sí.",
+				"Las escrituras concurrentes sobre la misma fila siguen en conflicto: una espera o se aborta.",
+				"Es lo contrario: conservar versiones antiguas ocupa más espacio, que luego hay que recuperar.",
+				"Como el lector usa una versión antigua confirmada, no necesita esperar al escritor, y el escritor no espera al lector.",
+				"MVCC por sí solo conduce a snapshot isolation, que aún admite anomalías como el write skew."
+			],
+			"concept": "Con bloqueo puro, una lectura larga retrasa las escrituras y una escritura retrasa las lecturas. MVCC elimina ese acoplamiento: las lecturas se atienden con versiones ya confirmadas. El conflicto entre dos escrituras sobre la misma fila sigue existiendo."
 		}
 	},
 	{
@@ -130,6 +166,24 @@
 				"The snapshot is a visibility concept in memory and has nothing to do with backup copies."
 			],
 			"concept": "A snapshot defines which transactions count as already committed for whoever is reading. For each row, the transaction receives the newest version created by one of those transactions. No physical copy is made: the snapshot is only a visibility rule."
+		},
+		"es": {
+			"statement": "En una base de datos con MVCC, ¿qué ve una transacción cuando lee mediante un snapshot?",
+			"alternatives": [
+				"Todas las versiones de cada fila, incluidas las que aún no se han confirmado",
+				"Los datos confirmados hasta el instante del snapshot, más sus propias escrituras",
+				"Siempre la versión más reciente de cada fila en el momento exacto de la lectura",
+				"Solo las filas que la propia transacción insertó o modificó hasta ahora",
+				"Los datos tal como estaban en el último respaldo completo de la base de datos"
+			],
+			"explanations": [
+				"El snapshot selecciona una sola versión por fila y nunca muestra versiones de transacciones sin confirmar.",
+				"El snapshot es una fotografía lógica: lo confirmado después queda invisible, y la transacción siempre ve lo que escribió ella misma.",
+				"Ver siempre lo más reciente es leer sin snapshot, lo que permitiría lecturas no repetibles.",
+				"La transacción también ve los datos confirmados por otras antes del snapshot, no solo los suyos.",
+				"El snapshot es un concepto de visibilidad en memoria y no tiene nada que ver con copias de respaldo."
+			],
+			"concept": "Un snapshot define qué transacciones cuentan como ya confirmadas para quien lee. Para cada fila, la transacción recibe la versión más nueva creada por una de esas transacciones. No se hace ninguna copia física: el snapshot es solo una regla de visibilidad."
 		}
 	},
 	{
@@ -184,6 +238,29 @@
 				"The new version gets another ctid and the xmin of the writing transaction, and the old one stays in the table with xmax filled in."
 			],
 			"concept": "PostgreSQL keeps the versions in the table itself. Each version records in `xmin` the transaction that created it and in `xmax` the one that expired it. An UPDATE amounts to expiring the current version and inserting another, which is why `ctid`, the physical position, changes."
+		},
+		"es": {
+			"statement": "En PostgreSQL, el ejemplo muestra las columnas de sistema de una fila antes y después de un UPDATE. ¿Qué hace físicamente el UPDATE con la fila?",
+			"snippet": {
+				"kind": "code",
+				"language": "sql",
+				"content": "SELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,1) |  740 |    10\n\nUPDATE products SET stock = 9 WHERE id = 1;\n\nSELECT ctid, xmin, stock FROM products WHERE id = 1;\n--  ctid  | xmin | stock\n--  (0,2) |  752 |     9"
+			},
+			"alternatives": [
+				"Cambia el valor en el sitio y guarda el valor antiguo en un undo log",
+				"Cambia el valor en el sitio y descarta de inmediato el valor antiguo",
+				"Copia toda la tabla a un archivo nuevo con el valor ya cambiado",
+				"Escribe una nueva versión de la fila y elimina físicamente la antigua en el momento del COMMIT",
+				"Escribe una nueva versión de la fila y marca la antigua como expirada mediante xmax"
+			],
+			"explanations": [
+				"Cambiar en el sitio con un undo log es el diseño de Oracle e InnoDB, no el de PostgreSQL.",
+				"Descartar el valor antiguo dejaría sin respuesta a los snapshots que aún lo necesitan.",
+				"Solo la fila modificada recibe una nueva versión: el resto de la tabla no se toca.",
+				"El COMMIT no elimina nada: la versión antigua solo se elimina más tarde, por VACUUM.",
+				"La nueva versión obtiene otro ctid y el xmin de la transacción que escribe, y la antigua permanece en la tabla con xmax rellenado."
+			],
+			"concept": "PostgreSQL guarda las versiones en la propia tabla. Cada versión registra en `xmin` la transacción que la creó y en `xmax` la que la expiró. Un UPDATE equivale a expirar la versión actual e insertar otra, por eso cambia `ctid`, la posición física."
 		}
 	},
 	{
@@ -228,6 +305,24 @@
 				"No process commits transactions of others: that would change the outcome decided by the application."
 			],
 			"concept": "Since PostgreSQL keeps old versions in the table itself, each UPDATE or DELETE leaves a dead version behind. VACUUM, normally triggered by autovacuum, identifies the versions that no active snapshot can see and frees the space for new rows."
+		},
+		"es": {
+			"statement": "En PostgreSQL, ¿cuál es la función de VACUUM respecto de las versiones de fila creadas por MVCC?",
+			"alternatives": [
+				"Deshacer los cambios de las transacciones que terminaron en ROLLBACK",
+				"Escribir en disco las versiones que aún se mantenían solo en memoria",
+				"Liberar el espacio de las versiones muertas que ninguna transacción puede ya ver",
+				"Reordenar físicamente las filas de la tabla según la clave primaria",
+				"Confirmar las transacciones que permanecieron abiertas un tiempo excesivo"
+			],
+			"explanations": [
+				"En PostgreSQL un ROLLBACK no necesita deshacer nada en el momento: las versiones simplemente se vuelven invisibles, y retirar la basura es una consecuencia, no la función de deshacer.",
+				"Llevar páginas de memoria a disco es tarea del checkpoint y del background writer.",
+				"Las versiones expiradas e invisibles para todo snapshot activo son basura, y VACUUM hace reutilizable su espacio.",
+				"Reordenar la tabla es lo que hace el comando CLUSTER, no VACUUM.",
+				"Ningún proceso confirma transacciones ajenas: eso cambiaría el resultado decidido por la aplicación."
+			],
+			"concept": "Como PostgreSQL guarda las versiones antiguas en la propia tabla, cada UPDATE o DELETE deja atrás una versión muerta. VACUUM, normalmente disparado por autovacuum, identifica las versiones que ningún snapshot activo puede ver y libera el espacio para nuevas filas."
 		}
 	},
 	{
@@ -272,6 +367,24 @@
 				"Durability comes from the log and does not depend on which snapshots are open."
 			],
 			"concept": "MVCC can only discard an old version when no active snapshot needs it. A long transaction pins that horizon in the past, and every version generated since then is retained. The cost shows up as bigger tables and indexes and slower queries."
+		},
+		"es": {
+			"statement": "En PostgreSQL, una sesión abrió una transacción con REPEATABLE READ, hizo una lectura y permaneció inactiva durante horas sin terminar, mientras otras sesiones actualizan intensamente las tablas. ¿Cuál es el efecto esperado sobre la base de datos?",
+			"alternatives": [
+				"Las otras sesiones quedan bloqueadas en cada escritura hasta que la transacción termine",
+				"La base de datos termina la transacción por sí misma en cuanto el snapshot queda obsoleto",
+				"Las lecturas de las otras sesiones empiezan a devolver los datos del snapshot antiguo",
+				"Las tablas se hinchan (bloat), porque VACUUM no puede eliminar versiones que aún pueden verse",
+				"Los commits de las otras sesiones dejan de ser durables mientras ella exista"
+			],
+			"explanations": [
+				"Una lectura no bloquea escrituras en MVCC: las otras sesiones siguen escribiendo con normalidad.",
+				"PostgreSQL no termina transacciones por la antigüedad del snapshot, salvo que se configure un timeout.",
+				"Cada sesión usa su propio snapshot: el snapshot antiguo afecta solo a su dueña.",
+				"El snapshot antiguo mantiene vivas todas las versiones expiradas después de él, y se acumulan como espacio muerto.",
+				"La durabilidad viene del log y no depende de qué snapshots estén abiertos."
+			],
+			"concept": "MVCC solo puede descartar una versión antigua cuando ningún snapshot activo la necesita. Una transacción larga ancla ese horizonte en el pasado, y se retiene toda versión generada desde entonces. El costo se manifiesta en tablas e índices más grandes y consultas más lentas."
 		}
 	},
 	{
@@ -316,6 +429,24 @@
 				"No transaction is aborted just because another one arrived: T1 keeps the lock until it ends."
 			],
 			"concept": "MVCC solves the conflict between reading and writing, not the conflict between two writes. When two transactions want to change the same row, the second waits for the first to finish. Then, depending on the isolation level, it proceeds on the new version or is aborted."
+		},
+		"es": {
+			"statement": "En PostgreSQL con READ COMMITTED, la transacción T1 emitió un UPDATE sobre una fila y aún no ha terminado. La transacción T2 intenta hacer UPDATE de la misma fila. ¿Qué hace MVCC en este caso?",
+			"alternatives": [
+				"T2 espera a que T1 termine, porque las escrituras sobre la misma fila siguen bloqueando",
+				"T2 escribe otra versión de inmediato, y las dos versiones coexisten hasta el COMMIT",
+				"T2 falla de inmediato con un error, porque la fila tiene una escritura pendiente",
+				"T2 escribe de inmediato sobre la versión antigua y T1 pierde su propia escritura",
+				"T2 fuerza el ROLLBACK de T1, porque la más nueva tiene prioridad"
+			],
+			"explanations": [
+				"MVCC elimina la espera entre lectores y escritores, pero dos escritores de la misma fila siguen haciendo cola en el lock de fila.",
+				"Dos nuevas versiones concurrentes de la misma fila no pueden coexistir: solo hay un sucesor por versión.",
+				"Esperar es el comportamiento por defecto: un error inmediato ocurre solo con NOWAIT o un timeout configurado.",
+				"Escribir sin esperar causaría una actualización perdida, que el lock de fila existe para evitar.",
+				"Ninguna transacción se aborta solo porque llegó otra: T1 conserva el lock hasta que termina."
+			],
+			"concept": "MVCC resuelve el conflicto entre lectura y escritura, no el conflicto entre dos escrituras. Cuando dos transacciones quieren modificar la misma fila, la segunda espera a que la primera termine. Después, según el nivel de aislamiento, continúa sobre la nueva versión o se aborta."
 		}
 	},
 	{
@@ -368,6 +499,28 @@
 				"Being older and committed is exactly what makes the creation by transaction 100 visible."
 			],
 			"concept": "A version is visible to a snapshot when the transaction in `xmin` is committed for it and the transaction in `xmax` is not. An `xmax` of a transaction in progress or aborted does not take the version out of sight. That is how a pending DELETE or UPDATE stays invisible to other sessions."
+		},
+		"es": {
+			"statement": "En PostgreSQL, una versión de fila tiene los campos del diagrama: fue creada por la transacción 100, ya confirmada, y marcada para eliminación por la transacción 105, que sigue en curso. Una tercera transacción, con READ COMMITTED, ejecuta un SELECT ahora. ¿Ve esta versión?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "versión de la fila:   xmin = 100   xmax = 105   stock = 10\n\ntransacción 100: COMMITTED\ntransacción 105: IN PROGRESS (UPDATE aún sin confirmar)\ntransacción 110: READ COMMITTED, ejecuta SELECT ahora"
+			},
+			"alternatives": [
+				"No, porque cualquier versión con xmax rellenado ya está muerta",
+				"Sí, porque un SELECT ve todas las versiones físicas de la fila",
+				"No, porque el SELECT espera a que termine la transacción 105 para decidir",
+				"Sí, porque la transacción que la expiró aún no se ha confirmado",
+				"No, porque la transacción 100 es más antigua que el snapshot del SELECT"
+			],
+			"explanations": [
+				"Un xmax rellenado solo mata la versión para quienes ven la transacción 105 como confirmada.",
+				"Un SELECT recibe como máximo una versión por fila, elegida por las reglas de visibilidad.",
+				"Las lecturas no esperan: la visibilidad se decide en el momento, con el estado actual de las transacciones.",
+				"La eliminación hecha por 105 aún no vale para los demás: para este snapshot la versión sigue siendo la actual.",
+				"Ser más antigua y estar confirmada es exactamente lo que hace visible la creación por la transacción 100."
+			],
+			"concept": "Una versión es visible para un snapshot cuando la transacción de `xmin` está confirmada para él y la transacción de `xmax` no lo está. Un `xmax` de una transacción en curso o abortada no saca la versión de la vista. Así es como un DELETE o UPDATE pendiente permanece invisible para otras sesiones."
 		}
 	},
 	{
@@ -421,6 +574,28 @@
 				"Reads never cause this error at REPEATABLE READ: it only appears when T1 tries to write to a changed row."
 			],
 			"concept": "A snapshot records which transactions were in progress when it was taken. They are treated as uncommitted forever, even if they commit an instant later, and the same goes for those that start afterwards. The order that matters is that of the commits relative to the snapshot."
+		},
+		"es": {
+			"statement": "En PostgreSQL, la transacción T1 se ejecuta con REPEATABLE READ y sigue la línea de tiempo del diagrama. T3 comenzó antes del snapshot de T1, pero se confirmó solo después de él. ¿Qué ve T1 en el SELECT del instante 5?",
+			"snippet": {
+				"kind": "diagram",
+				"content": "tiempo  evento\n1      T3: BEGIN; UPDATE products SET stock = 5 WHERE id = 1\n2      T1: BEGIN (REPEATABLE READ); SELECT ...   <- snapshot de T1\n3      T3: COMMIT\n4      T2: BEGIN; INSERT INTO products ...; COMMIT\n5      T1: SELECT * FROM products                <- ?"
+			},
+			"alternatives": [
+				"Ninguna de las dos, porque ambas se confirmaron después del snapshot",
+				"Las escrituras de T2 y T3, porque ambas ya están confirmadas en el instante 5",
+				"La escritura de T3, porque T3 comenzó antes de que T1 tomara su propio snapshot",
+				"La escritura de T2, porque un INSERT nunca queda oculto por un snapshot",
+				"Un error de serialización, porque los datos leídos cambiaron después del snapshot"
+			],
+			"explanations": [
+				"En el instante 2, T3 estaba en curso y T2 ni siquiera existía, así que ambas son invisibles para T1 hasta el final.",
+				"Ver todo lo confirmado en el instante del comando es el comportamiento de READ COMMITTED.",
+				"Lo que cuenta es si la transacción estaba confirmada cuando se tomó el snapshot, no cuándo comenzó.",
+				"Las filas insertadas siguen la misma regla de visibilidad que las modificadas: su xmin no está en el snapshot.",
+				"Las lecturas nunca causan este error en REPEATABLE READ: solo aparece cuando T1 intenta escribir en una fila modificada."
+			],
+			"concept": "Un snapshot registra qué transacciones estaban en curso cuando se tomó. Se tratan como no confirmadas para siempre, aunque se confirmen un instante después, y lo mismo vale para las que comienzan después. El orden que importa es el de los commits respecto del snapshot."
 		}
 	},
 	{
@@ -466,6 +641,24 @@
 				"It is inverted: what is compared is the writes, and the reads are what is left out."
 			],
 			"concept": "Snapshot isolation applies the rule that, among concurrent transactions that write the same row, only one may commit. It does not know what each transaction read in order to decide. Detecting write skew requires tracking reads as well, and that is what the SERIALIZABLE level of PostgreSQL adds."
+		},
+		"es": {
+			"statement": "El nivel REPEATABLE READ de PostgreSQL (snapshot isolation) previene la actualización perdida pero admite write skew. ¿Qué característica del mecanismo explica esta diferencia?",
+			"alternatives": [
+				"Bloquea las filas que se leyeron, pero libera los locks antes del COMMIT",
+				"Solo detecta conflictos entre escrituras sobre la misma fila, y no rastrea lecturas",
+				"Solo verifica conflictos cuando las transacciones comparten la misma conexión",
+				"Renueva el snapshot en cada comando, y por eso se le escapan algunas lecturas",
+				"Compara los conjuntos de lectura de las transacciones, pero ignora sus conjuntos de escritura"
+			],
+			"explanations": [
+				"Snapshot isolation nunca bloquea lecturas en ningún momento: se atienden con versiones antiguas.",
+				"En la actualización perdida ambas escriben la misma fila y el conflicto aparece, pero en el write skew las filas escritas difieren y solo se solapan las lecturas.",
+				"El conflicto se detecta entre cualesquiera transacciones concurrentes, sin importar las conexiones.",
+				"Renovar el snapshot por comando es READ COMMITTED: en REPEATABLE READ es único.",
+				"Está invertido: lo que se compara son las escrituras, y las lecturas son lo que queda fuera."
+			],
+			"concept": "Snapshot isolation aplica la regla de que, entre transacciones concurrentes que escriben la misma fila, solo una puede confirmarse. No sabe qué leyó cada transacción para decidir. Detectar el write skew exige rastrear también las lecturas, y eso es lo que añade el nivel SERIALIZABLE de PostgreSQL."
 		}
 	}
 ]

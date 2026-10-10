@@ -42,6 +42,24 @@
 				"Wrong. It confuses immutable data with the actor's state: the values exchanged do not change, but the actor moves from one state to another with each message handled."
 			],
 			"concept": "An actor is a unit of concurrency that keeps a state of its own and communicates only through asynchronous messages. The messages arrive in its mailbox and are handled one at a time. Since no other actor can see that state, there is no shared memory to protect with locks."
+		},
+		"es": {
+			"statement": "En el modelo de actores, ¿de qué está formado un actor?",
+			"alternatives": [
+				"De un estado compartido, protegido por un lock que cada llamador adquiere",
+				"De un grupo de threads que ejecutan callbacks tomados de una cola común",
+				"De un canal sin estado propio, usado solo para transportar valores",
+				"De un estado privado y un buzón de mensajes, atendidos uno a la vez",
+				"De un estado inmutable, que nunca vuelve a modificarse una vez creado"
+			],
+			"explanations": [
+				"Incorrecta. Confunde actor con monitor: en el monitor varios llamadores entran al mismo objeto bajo un lock, mientras que el estado de un actor no es accesible desde fuera.",
+				"Incorrecta. Confunde actor con thread pool: el pool ejecuta tareas independientes en paralelo y no guarda un estado propio detrás de un buzón de mensajes.",
+				"Incorrecta. Confunde actor con canal: el canal es solo el medio de comunicación, y el actor es quien posee el estado y reacciona a los mensajes.",
+				"Correcta. Solo el propio actor lee y modifica su estado, y saca del buzón un mensaje a la vez, por lo que no hay acceso simultáneo.",
+				"Incorrecta. Confunde datos inmutables con el estado del actor: los valores intercambiados no cambian, pero el actor pasa de un estado a otro con cada mensaje atendido."
+			],
+			"concept": "Un actor es una unidad de concurrencia que guarda un estado propio y se comunica únicamente mediante mensajes asíncronos. Los mensajes llegan a su buzón (mailbox) y se atienden uno a la vez. Como ningún otro actor ve ese estado, no hay memoria compartida que proteger con locks."
 		}
 	},
 	{
@@ -96,6 +114,29 @@
 				"language": "elixir",
 				"content": "parent = self()\n\n# The new process sends and exits, without waiting for the read.\nspawn(fn -> send(parent, {:hello, 42}) end)\n\nreceive do\n  {:hello, n} -> IO.puts(n) # 42\nend"
 			}
+		},
+		"es": {
+			"statement": "En Elixir, ¿qué hace la llamada send(pid, msg)?",
+			"alternatives": [
+				"Llama a una función en el proceso pid y espera el valor de retorno",
+				"Escribe msg en una variable compartida con el proceso pid",
+				"Pone msg en el buzón de pid y retorna sin esperar",
+				"Se queda bloqueada hasta que pid haga coincidir msg en un bloque receive",
+				"Crea un nuevo proceso que ejecuta msg como si fuera código"
+			],
+			"explanations": [
+				"Incorrecta. Confunde send con una llamada síncrona, como GenServer.call: send no espera respuesta, y esta solo existe si el otro proceso envía otro mensaje.",
+				"Incorrecta. Confunde el paso de mensajes con memoria compartida: los procesos de la BEAM no tienen variables en común, y el mensaje se copia al receptor.",
+				"Correcta. send es asíncrono: el mensaje entra al buzón del receptor y el emisor sigue de inmediato.",
+				"Incorrecta. Confunde el buzón con un rendezvous, como el de un canal sin búfer en Go: el emisor no espera a que el mensaje sea leído.",
+				"Incorrecta. Confunde send con spawn: spawn es lo que crea procesos, y el mensaje es un dato, no código para ejecutar."
+			],
+			"concept": "En la BEAM, cada proceso tiene un buzón. send deposita el mensaje en el buzón del receptor y retorna de inmediato, sin saber cuándo será atendido. El receptor usa receive para tomar del buzón el primer mensaje que coincida con alguno de sus patrones.",
+			"example": {
+				"kind": "code",
+				"language": "elixir",
+				"content": "parent = self()\n\n# El nuevo proceso envía y termina, sin esperar la lectura.\nspawn(fn -> send(parent, {:hello, 42}) end)\n\nreceive do\n  {:hello, n} -> IO.puts(n) # 42\nend"
+			}
 		}
 	},
 	{
@@ -141,6 +182,24 @@
 				"Correct. The virtual machine creates and schedules these processes; each starts small and has its own heap and garbage collection, which makes it cheap to keep many of them."
 			],
 			"concept": "BEAM processes are created and scheduled by the virtual machine itself, not by the kernel. Each one has its own stack, heap and garbage collector, starts with little memory and shares no data with the others. That is why a system can keep hundreds of thousands of them, for example one per open connection."
+		},
+		"es": {
+			"statement": "¿Qué es un proceso en la BEAM, la máquina virtual de Erlang y Elixir?",
+			"alternatives": [
+				"Un proceso del sistema operativo, con un espacio de direcciones propio",
+				"Un thread del sistema operativo, que comparte el heap con los demás",
+				"Una corrutina, que cede la CPU solo cuando ella misma llama a yield",
+				"Un callback, encolado en un event loop que tiene un único thread",
+				"Una unidad liviana, planificada por la VM y con un heap propio"
+			],
+			"explanations": [
+				"Incorrecta. Es la confusión causada por el nombre: un proceso de la BEAM no es un proceso del sistema operativo, y miles de ellos viven dentro de un único proceso del SO.",
+				"Incorrecta. Confunde un proceso de la BEAM con un thread del SO: no lo crea el kernel y no comparte heap con los demás, pues cada uno tiene el suyo.",
+				"Incorrecta. Confunde planificación cooperativa con apropiativa: la BEAM interrumpe un proceso tras una cuota de trabajo, sin depender de que él ceda el paso.",
+				"Incorrecta. Confunde la BEAM con el modelo de Node.js: usa varios schedulers, normalmente uno por núcleo, y cada proceso tiene su propia pila y estado.",
+				"Correcta. La máquina virtual crea y planifica estos procesos; cada uno empieza pequeño y tiene su propio heap y recolección de basura, lo que hace barato mantener muchos de ellos."
+			],
+			"concept": "Los procesos de la BEAM los crea y planifica la propia máquina virtual, no el kernel. Cada uno tiene su propia pila, heap y recolector de basura, empieza con poca memoria y no comparte datos con los demás. Por eso un sistema puede mantener cientos de miles de ellos, por ejemplo uno por conexión abierta."
 		}
 	},
 	{
@@ -185,6 +244,24 @@
 				"Wrong. It confuses synchrony with parallelism: the server is a single process and handles one message at a time, whether it comes from call or from cast."
 			],
 			"concept": "A GenServer is a process that keeps a state and handles one message at a time. With call, the caller stays blocked until it gets the reply, which naturally limits the pace of whoever is asking. With cast, the message is only put in the server's mailbox, and the sender never learns when, or whether, it was handled."
+		},
+		"es": {
+			"statement": "En un GenServer de Elixir, ¿cuál es la diferencia entre GenServer.call y GenServer.cast?",
+			"alternatives": [
+				"call retorna de inmediato, sin respuesta; cast espera la respuesta del servidor",
+				"call espera la respuesta del servidor; cast retorna de inmediato, sin respuesta",
+				"call se ejecuta en el proceso del llamador; cast se ejecuta en el proceso del servidor",
+				"call es para procesos locales; cast es para procesos en otros nodos",
+				"call atiende mensajes en paralelo; cast atiende un mensaje a la vez"
+			],
+			"explanations": [
+				"Incorrecta. Intercambia los dos nombres: call es el que espera la respuesta, y cast es el que solo dispara el mensaje.",
+				"Correcta. call es síncrono: bloquea al llamador hasta que el servidor responde o vence el timeout. cast es asíncrono: solo envía el mensaje.",
+				"Incorrecta. Confunde dónde se ejecuta el código: en ambos casos la atención (handle_call o handle_cast) se ejecuta dentro del proceso del servidor.",
+				"Incorrecta. Confunde el modo de espera con la ubicación: call y cast funcionan tanto para procesos locales como para procesos en otros nodos.",
+				"Incorrecta. Confunde sincronía con paralelismo: el servidor es un único proceso y atiende un mensaje a la vez, venga de call o de cast."
+			],
+			"concept": "Un GenServer es un proceso que guarda un estado y atiende un mensaje a la vez. Con call, el llamador queda bloqueado hasta recibir la respuesta, lo que limita de forma natural el ritmo de quien pide. Con cast, el mensaje solo se pone en el buzón del servidor, y el emisor nunca sabe cuándo, ni si, fue atendido."
 		}
 	},
 	{
@@ -229,6 +306,24 @@
 				"Wrong. It confuses the BEAM with runtimes that create OS threads for blocking tasks: the loop stays on the same schedulers and is simply interrupted periodically."
 			],
 			"concept": "The BEAM does preemptive scheduling without clock interrupts: it counts the work of each process in reductions. When a process uses up its budget, it goes back to the queue and another one takes the scheduler. A process that only computes therefore cannot monopolise a core, and the latency of the others stays low."
+		},
+		"es": {
+			"statement": "En la BEAM, un proceso entra en un bucle de cómputo largo escrito en Elixir puro, sin ningún receive. Miles de otros procesos están listos para ejecutarse. ¿Qué les pasa mientras el bucle corre?",
+			"alternatives": [
+				"Esperan a que termine el bucle, ya que un proceso cede la CPU solo al llegar a un receive",
+				"Esperan, a menos que el bucle llame de vez en cuando a una función yield",
+				"Siguen ejecutándose, ya que el scheduler interrumpe el bucle cuando se agota su presupuesto de reducciones",
+				"Siguen ejecutándose, pero solo si la máquina tiene un núcleo por cada proceso",
+				"Siguen ejecutándose, ya que la máquina virtual crea un thread del SO solo para el bucle"
+			],
+			"explanations": [
+				"Incorrecta. Confunde la BEAM con un event loop cooperativo: allí, el cambio de procesos no depende de que el código llegue a un punto de espera.",
+				"Incorrecta. Confunde los procesos de la BEAM con corrutinas: no hace falta ceder a mano, porque la apropiación la hace la máquina virtual.",
+				"Correcta. Cada proceso recibe un presupuesto de reducciones (aproximadamente, llamadas a funciones); cuando se agota, el scheduler lo suspende y ejecuta otro proceso.",
+				"Incorrecta. Confunde concurrencia con paralelismo: los schedulers, normalmente uno por núcleo, se turnan para ejecutar muchos procesos en pocos núcleos.",
+				"Incorrecta. Confunde la BEAM con runtimes que crean threads del SO para tareas bloqueantes: el bucle permanece en los mismos schedulers y simplemente se interrumpe periódicamente."
+			],
+			"concept": "La BEAM hace planificación apropiativa sin interrupciones de reloj: cuenta el trabajo de cada proceso en reducciones. Cuando un proceso agota su presupuesto, vuelve a la cola y otro toma el scheduler. Por lo tanto, un proceso que solo calcula no puede monopolizar un núcleo, y la latencia de los demás se mantiene baja."
 		}
 	},
 	{
@@ -284,6 +379,29 @@
 				"language": "elixir",
 				"content": "{:ok, counter} = Agent.start_link(fn -> 0 end)\n\n1..8\n|> Enum.map(fn _ ->\n  Task.async(fn ->\n    for _ <- 1..1000, do: Agent.update(counter, &(&1 + 1))\n  end)\nend)\n|> Task.await_many()\n\nIO.puts(Agent.get(counter, & &1)) # 8000"
 			}
+		},
+		"es": {
+			"statement": "En Elixir, un Agent guarda el entero 0. Ocho tareas concurrentes llaman cada una 1,000 veces a Agent.update(counter, &(&1 + 1)), y el programa espera a que todas terminen. ¿Qué devuelve a continuación Agent.get(counter, & &1)?",
+			"alternatives": [
+				"8,000, ya que el proceso Agent aplica una actualización a la vez",
+				"Menos de 8,000, ya que ocho tareas leen y escriben el estado al mismo tiempo",
+				"1,000, ya que cada tarea actualiza su propia copia del estado",
+				"0, ya que los datos en Elixir son inmutables y el estado no puede cambiar",
+				"8, ya que las actualizaciones repetidas de una misma tarea se fusionan en una"
+			],
+			"explanations": [
+				"Correcta. Hay 8 × 1,000 = 8,000 mensajes de actualización; el Agent atiende uno a la vez, cada función recibe el estado actual y no se pierde ningún incremento.",
+				"Incorrecta. Aplica el razonamiento de un contador en memoria compartida al Agent: las tareas no leen ni escriben el estado, solo le piden al Agent que aplique la función.",
+				"Incorrecta. Confunde la copia de mensajes con una copia del estado: hay un único estado, dentro del proceso Agent, y todas las tareas hablan con el mismo pid.",
+				"Incorrecta. Confunde un valor inmutable con el estado de un proceso: cada entero nunca cambia, pero el Agent reemplaza el valor que guarda por uno nuevo en cada actualización.",
+				"Incorrecta. Supone que el buzón elimina los mensajes repetidos: cada llamada se convierte en un mensaje distinto, y todos son atendidos."
+			],
+			"concept": "Un Agent es un proceso que posee un estado. Agent.update le envía una función; el Agent la ejecuta sobre el estado actual y guarda el resultado, un mensaje a la vez. Como la lectura, el cálculo y la escritura ocurren dentro de un único proceso, un incremento no puede intercalarse con otro.",
+			"example": {
+				"kind": "code",
+				"language": "elixir",
+				"content": "{:ok, counter} = Agent.start_link(fn -> 0 end)\n\n1..8\n|> Enum.map(fn _ ->\n  Task.async(fn ->\n    for _ <- 1..1000, do: Agent.update(counter, &(&1 + 1))\n  end)\nend)\n|> Task.await_many()\n\nIO.puts(Agent.get(counter, & &1)) # 8000"
+			}
 		}
 	},
 	{
@@ -328,6 +446,24 @@
 				"Correct. The supervisor is linked to the child, receives the exit signal and creates a new process from the initial state, without affecting the siblings."
 			],
 			"concept": "On the BEAM, a failing process dies alone, because it shares no memory with the others. Links and monitors notify the interested processes, and a supervisor uses that notification to restart the child according to its strategy. The idea of \"let it crash\" is to separate the code that does the work from the code that handles failures, and always return to a trusted initial state."
+		},
+		"es": {
+			"statement": "En Elixir, un proceso worker bajo un supervisor con la estrategia one_for_one termina con un error al recibir un mensaje inesperado. Siguiendo la filosofía \"let it crash\", ¿qué se espera que ocurra?",
+			"alternatives": [
+				"El worker captura por sí mismo todos los errores y continúa con su estado actual",
+				"Toda la máquina virtual se detiene, y el sistema operativo reinicia la aplicación",
+				"El supervisor reinicia a todos sus hijos, para que vuelvan a estar de acuerdo entre sí",
+				"El error se ignora, y el buzón del worker se entrega a un hermano",
+				"El supervisor es notificado de la salida e inicia un nuevo worker en un estado conocido"
+			],
+			"explanations": [
+				"Incorrecta. Esa es la programación defensiva que la filosofía evita: prever todos los errores dentro del worker tiende a mantenerlo vivo con un estado posiblemente corrupto.",
+				"Incorrecta. Confunde la falla de un proceso con la falla del sistema: los procesos están aislados, y un crash no derriba la máquina virtual.",
+				"Incorrecta. Mezcla las estrategias: reiniciar a todos los hijos es one_for_all; con one_for_one solo se reinicia el hijo que falló.",
+				"Incorrecta. Supone que el buzón sobrevive al proceso: cuando este termina, los mensajes pendientes se pierden junto con su estado.",
+				"Correcta. El supervisor está vinculado (link) al hijo, recibe la señal de salida y crea un nuevo proceso desde el estado inicial, sin afectar a los hermanos."
+			],
+			"concept": "En la BEAM, un proceso que falla muere solo, porque no comparte memoria con los demás. Los links y monitors notifican a los procesos interesados, y un supervisor usa esa notificación para reiniciar al hijo según su estrategia. La idea de \"let it crash\" es separar el código que hace el trabajo del código que maneja las fallas, y volver siempre a un estado inicial confiable."
 		}
 	},
 	{
@@ -372,6 +508,24 @@
 				"Wrong. It confuses a single process with a pool: the virtual machine does not replicate a GenServer, and spreading the load over several processes is the programmer's decision."
 			],
 			"concept": "An actor handles one message at a time, so its maximum throughput is 1 divided by the handling time: with 1 ms, 1,000 messages per second. Asynchronous sends apply no backpressure, and, if arrivals exceed the throughput, the difference piles up in the mailbox, consuming memory and raising latency. The ways out are using call to slow the producers down, spreading the work over several processes, or shedding load."
+		},
+		"es": {
+			"statement": "En una máquina de 8 núcleos, un único GenServer de Elixir tarda 1 ms en atender cada mensaje. Mil procesos productores le envían, con GenServer.cast, un total constante de 5,000 mensajes por segundo. ¿Qué ocurre con el tiempo?",
+			"alternatives": [
+				"Los productores bajan a 1,000 mensajes por segundo, ya que cast espera al servidor",
+				"El buzón crece unos 4,000 mensajes por segundo, sin límite",
+				"El servidor atiende los 5,000 por segundo, usando los otros siete núcleos",
+				"El buzón descarta los mensajes más antiguos al alcanzar su tamaño máximo",
+				"La máquina virtual crea copias del servidor para repartir el buzón"
+			],
+			"explanations": [
+				"Incorrecta. Le da a cast el comportamiento de call: cast no espera nada, así que los productores no notan que el servidor se está quedando atrás.",
+				"Correcta. A 1 ms por mensaje, el servidor atiende 1,000 por segundo; llegan 5,000, así que sobran 5,000 − 1,000 = 4,000 por segundo que se acumulan (40,000 en 10 s).",
+				"Incorrecta. Supone que un actor se paraleliza solo: un proceso atiende un mensaje a la vez y usa como máximo un núcleo, sin importar cuántos núcleos existan.",
+				"Incorrecta. Confunde el buzón con un búfer acotado: el buzón de un proceso de la BEAM no tiene tamaño máximo por defecto y simplemente consume memoria.",
+				"Incorrecta. Confunde un único proceso con un pool: la máquina virtual no replica un GenServer, y repartir la carga entre varios procesos es decisión del programador."
+			],
+			"concept": "Un actor atiende un mensaje a la vez, por lo que su throughput máximo es 1 dividido entre el tiempo de atención: con 1 ms, 1,000 mensajes por segundo. Los envíos asíncronos no aplican backpressure y, si las llegadas superan el throughput, la diferencia se acumula en el buzón, consumiendo memoria y aumentando la latencia. Las salidas son usar call para frenar a los productores, repartir el trabajo entre varios procesos o descartar carga (load shedding)."
 		}
 	}
 ]

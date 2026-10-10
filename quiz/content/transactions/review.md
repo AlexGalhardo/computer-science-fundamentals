@@ -41,4 +41,3 @@ Two changes were made after the area was merged, so the whole area was blind-rev
 - **Statements that depended on `example`.** The reviewer flagged 15 statements that referred to code or a diagram stored in `example`, which the quiz shows only after the answer. Resolution: **question rewritten** for `acid-properties-07`, `-08`, `-09`, `idempotency-08`, `isolation-levels-anomalies-09`, `-12`, `-13`, `-15`, `locking-06`, `-10`, `-11`, `mvcc-04`, `-08`, `-09` and `saga-outbox-05`: the material moved to `snippet`, shown with the statement.
 
 Result: the reviewer agreed with the answer key on all 100 questions, before and after the snippets were added, and confirmed that no snippet gives the answer away. **Key kept** everywhere.
-

@@ -41,6 +41,24 @@
 				"Right: the variables are independent, but the cache works with whole lines, so each write invalidates the line in the other cores."
 			],
 			"concept": "The cache does not store variables, it stores fixed-size lines. When a core writes to a line, the copies of that line in the other cores are invalidated. If variables of different threads fall in the same line, the cores end up fighting over the line without sharing any real data."
+		},
+		"es": {
+			"statement": "¿Qué es el false sharing en un programa con varios threads?",
+			"alternatives": [
+				"Dos threads escriben la misma variable sin sincronización y el resultado es incorrecto",
+				"Dos threads esperan para siempre, cada uno el lock que el otro mantiene",
+				"Un thread lee un valor antiguo porque la cache de su núcleo no se actualizó",
+				"Dos procesos mapean la misma página física en sus espacios de direcciones",
+				"Threads escriben variables distintas que están en la misma línea de cache"
+			],
+			"explanations": [
+				"Incorrecto: eso es una race condition, en la que los datos sí se comparten realmente. En el false sharing cada thread tiene su propia variable.",
+				"Incorrecto: eso es un deadlock, un problema del orden de adquisición de locks. El false sharing ocurre incluso en código sin ningún lock.",
+				"Incorrecto: el protocolo de coherencia impide que un núcleo lea una línea obsoleta. El false sharing es el costo de esa garantía, no una falla de ella.",
+				"Incorrecto: eso es memoria compartida entre procesos, una función del sistema operativo. El false sharing ocurre con la granularidad de la línea de cache.",
+				"Correcto: las variables son independientes, pero la cache trabaja con líneas completas, así que cada escritura invalida la línea en los otros núcleos."
+			],
+			"concept": "La cache no almacena variables, almacena líneas de tamaño fijo. Cuando un núcleo escribe en una línea, las copias de esa línea en los otros núcleos se invalidan. Si variables de threads distintos caen en la misma línea, los núcleos terminan peleando por la línea sin compartir ningún dato real."
 		}
 	},
 	{
@@ -85,6 +103,24 @@
 				"Wrong: this confuses the capacity of a level with its unit. A 32 KiB L1 holds 512 lines of 64 bytes."
 			],
 			"concept": "The cache line is the unit of transfer between memory and the cache: touching one byte makes the processor load the whole block that contains it. This rewards access to neighbouring data and explains why variables that are close in memory interfere with each other."
+		},
+		"es": {
+			"statement": "¿Qué es una línea de cache?",
+			"alternatives": [
+				"La cola de solicitudes de memoria que esperan ser atendidas por la cache",
+				"Un solo byte, la menor unidad que la cache puede cargar",
+				"El bloque de tamaño fijo que la cache carga completo, normalmente de 64 bytes",
+				"El bloque de 4 KiB que el sistema operativo mapea en un solo paso",
+				"Todo el contenido de un nivel de cache, como los 32 KiB de L1"
+			],
+			"explanations": [
+				"Incorrecto: esto lee la palabra línea como una cola. Una línea es una unidad de almacenamiento, no una estructura de espera.",
+				"Incorrecto: la cache no trabaja byte a byte. Leer un byte trae consigo a todos sus vecinos del mismo bloque.",
+				"Correcto: la cache mueve e invalida bloques completos de tamaño fijo. 64 bytes es el tamaño más común en los procesadores actuales.",
+				"Incorrecto: 4 KiB es el tamaño típico de una página de memoria virtual. Una página contiene muchas líneas de cache.",
+				"Incorrecto: esto confunde la capacidad de un nivel con su unidad. Una L1 de 32 KiB contiene 512 líneas de 64 bytes."
+			],
+			"concept": "La línea de cache es la unidad de transferencia entre la memoria y la cache: tocar un byte hace que el procesador cargue todo el bloque que lo contiene. Esto premia el acceso a datos vecinos y explica por qué las variables cercanas en memoria interfieren entre sí."
 		}
 	},
 	{
@@ -129,6 +165,24 @@
 				"Wrong: false sharing is typical of threads of one process, which share the same array or the same struct."
 			],
 			"concept": "In true sharing, two threads use the same data and need synchronisation to stay correct. In false sharing the data is logically independent and only the cache line is common. That is why it does not show up in correctness tests: it is purely a performance problem."
+		},
+		"es": {
+			"statement": "¿En qué se diferencia el false sharing del true sharing de datos entre threads?",
+			"alternatives": [
+				"En el false sharing el resultado puede ser incorrecto, y en el true sharing siempre es correcto",
+				"En el false sharing las variables son distintas: el resultado es correcto, solo sufre el tiempo",
+				"El false sharing ocurre solo con lecturas, y el true sharing solo con escrituras",
+				"El false sharing desaparece cuando cada variable se protege con su propio mutex",
+				"El false sharing ocurre solo entre procesos, y el true sharing solo entre threads"
+			],
+			"explanations": [
+				"Incorrecto: esto está invertido. Lo que puede corromper el resultado son los datos realmente compartidos sin sincronización.",
+				"Correcto: ningún thread toca la variable de otro, así que no hay race. El costo es solo la línea de cache yendo y viniendo entre núcleos.",
+				"Incorrecto: las lecturas solas no invalidan nada. El false sharing necesita al menos un thread que escriba en la línea.",
+				"Incorrecto: un mutex no cambia dónde vive la variable en memoria. Las escrituras siguen invalidando la misma línea.",
+				"Incorrecto: el false sharing es típico de threads de un mismo proceso, que comparten el mismo arreglo o la misma struct."
+			],
+			"concept": "En el true sharing, dos threads usan los mismos datos y necesitan sincronización para ser correctos. En el false sharing los datos son lógicamente independientes y solo la línea de cache es común. Por eso no aparece en las pruebas de corrección: es un problema puramente de rendimiento."
 		}
 	},
 	{
@@ -184,6 +238,29 @@
 				"language": "rust",
 				"content": "let handles: Vec<_> = (0..workers)\n    .map(|w| {\n        thread::spawn(move || {\n            let mut local = 0u64;\n            for n in chunk(w) {\n                if is_prime(n) {\n                    local += 1;\n                }\n            }\n            local\n        })\n    })\n    .collect();\nlet total: u64 = handles.into_iter().map(|h| h.join().unwrap()).sum();"
 			}
+		},
+		"es": {
+			"statement": "En un contador paralelo de primos, cada worker suma en una variable local y entrega su total solo cuando termina su bucle. ¿Por qué esto evita el false sharing?",
+			"alternatives": [
+				"El bucle no escribe en ninguna línea de cache usada por otro worker",
+				"La variable local está protegida por un lock implícito del lenguaje",
+				"Las variables locales quedan fuera de la cache y van directo a la memoria",
+				"El compilador convierte la variable local en un contador atómico",
+				"La única escritura al final se vuelve atómica y no puede ser interrumpida"
+			],
+			"explanations": [
+				"Correcto: la variable local vive en un registro o en el stack propio del thread, así que el bucle caliente no invalida líneas de los otros núcleos.",
+				"Incorrecto: las variables locales no tienen ningún lock. No necesitan sincronización porque ningún otro thread puede verlas.",
+				"Incorrecto: las variables locales usan la cache como de costumbre. La diferencia es que la línea en que están pertenece a un solo thread.",
+				"Incorrecto: no interviene ninguna operación atómica. Un atómico compartido, de hecho, traería de vuelta la pelea por la línea.",
+				"Incorrecto: la ganancia no viene de la atomicidad. Viene de reemplazar millones de escrituras en memoria vecina por una sola entrega."
+			],
+			"concept": "El false sharing depende de la frecuencia con que se escribe una línea disputada. Acumular en una variable local saca esas escrituras del bucle caliente: la línea que el worker modifica es suya. La combinación de los resultados parciales ocurre una vez por worker, después del join, y ese costo es despreciable.",
+			"example": {
+				"kind": "code",
+				"language": "rust",
+				"content": "let handles: Vec<_> = (0..workers)\n    .map(|w| {\n        thread::spawn(move || {\n            let mut local = 0u64;\n            for n in chunk(w) {\n                if is_prime(n) {\n                    local += 1;\n                }\n            }\n            local\n        })\n    })\n    .collect();\nlet total: u64 = handles.into_iter().map(|h| h.join().unwrap()).sum();"
+			}
 		}
 	},
 	{
@@ -228,6 +305,24 @@
 				"Wrong: this assumes the whole 128-byte array fits in one line. It takes two, and counters 8 to 15 are in the second one."
 			],
 			"concept": "To find who interferes with whom, divide the byte offset by the line size: counter i sits in line number floor(8 i / 64). Counters 0 to 7 fall in line 0 and counters 8 to 15 in line 1. Each thread fights over its line with the other 7 of its group, and the two groups do not interfere with each other."
+		},
+		"es": {
+			"statement": "Un arreglo de 16 contadores de 8 bytes empieza exactamente al inicio de una línea de cache de 64 bytes. Hay 16 threads en núcleos distintos, y el thread i incrementa solo el contador i. ¿Con cuántos OTROS threads comparte el thread 3 la línea de cache de su contador?",
+			"alternatives": [
+				"0",
+				"2",
+				"8",
+				"7",
+				"15"
+			],
+			"explanations": [
+				"Incorrecto: esto supone que variables distintas nunca interfieren. La cache trabaja por línea de 64 bytes, no por contador de 8 bytes.",
+				"Incorrecto: esto cuenta solo a los vecinos inmediatos (contadores 2 y 4). Toda la línea está disputada, no solo las posiciones adyacentes.",
+				"Incorrecto: 8 es el total de contadores en la línea, incluido el del propio thread 3. La pregunta pide los demás.",
+				"Correcto: 64 / 8 = 8 contadores caben en una línea, los de índice 0 a 7. Sin contar al propio thread 3, quedan 7. Comprobando con bytes: el contador 3 ocupa los bytes 24 a 31, dentro de la línea 0 a 63.",
+				"Incorrecto: esto supone que todo el arreglo de 128 bytes cabe en una línea. Ocupa dos, y los contadores 8 a 15 están en la segunda."
+			],
+			"concept": "Para saber quién interfiere con quién, divide el desplazamiento en bytes entre el tamaño de la línea: el contador i está en la línea número floor(8 i / 64). Los contadores 0 a 7 caen en la línea 0 y los contadores 8 a 15 en la línea 1. Cada thread pelea por su línea con los otros 7 de su grupo, y los dos grupos no interfieren entre sí."
 		}
 	},
 	{
@@ -272,6 +367,24 @@
 				"Wrong: 4096 is the size of a page. The requested alignment is that of the cache line, not of the page."
 			],
 			"concept": "Aligning each counter to 64 bytes guarantees that two counters never share a cache line, which removes false sharing. The price is memory: the size of a type is always a multiple of its alignment, so 8 useful bytes now take 64. Here the array grows from 64 to 512 bytes, eight times more."
+		},
+		"es": {
+			"statement": "En C++, cada contador de 8 bytes se coloca solo en una struct declarada con alignas(64), en una máquina con líneas de cache de 64 bytes. ¿Cuántos bytes ocupa un arreglo de 8 de estas structs?",
+			"alternatives": [
+				"64",
+				"512",
+				"576",
+				"72",
+				"4096"
+			],
+			"explanations": [
+				"Incorrecto: 64 es el tamaño sin padding (8 × 8). Supone que alignas alinea solo el inicio del arreglo, no cada elemento.",
+				"Correcto: el tamaño de la struct se redondea hacia arriba hasta la alineación, 64 bytes, y 8 × 64 = 512. Comprobando con el padding: 8 × (8 de datos + 56 sin usar) = 512.",
+				"Incorrecto: 576 es 8 × 72, que suma 64 bytes de padding a los 8 de datos. El tamaño se redondea hasta 64, no aumenta en 64.",
+				"Incorrecto: 72 es 64 + 8, como si un solo bloque de padding sirviera a todo el arreglo. Cada elemento recibe el suyo.",
+				"Incorrecto: 4096 es el tamaño de una página. La alineación pedida es la de la línea de cache, no la de la página."
+			],
+			"concept": "Alinear cada contador a 64 bytes garantiza que dos contadores nunca compartan una línea de cache, lo que elimina el false sharing. El precio es la memoria: el tamaño de un tipo es siempre múltiplo de su alineación, así que 8 bytes útiles pasan a ocupar 64. Aquí el arreglo crece de 64 a 512 bytes, ocho veces más."
 		}
 	},
 	{
@@ -326,6 +439,29 @@
 				"language": "c",
 				"content": "int m[1024][1024];\nlong sum = 0;\n\n/* row by row: consecutive addresses */\nfor (int i = 0; i < 1024; i++)\n    for (int j = 0; j < 1024; j++)\n        sum += m[i][j];\n\n/* column by column: jumps of 4096 bytes */\nfor (int j = 0; j < 1024; j++)\n    for (int i = 0; i < 1024; i++)\n        sum += m[i][j];"
 			}
+		},
+		"es": {
+			"statement": "Una matriz de 1024 × 1024 enteros de 4 bytes se almacena por filas (row-major) y empieza al inicio de una línea de cache de 64 bytes. Con la cache vacía y sin prefetching, ¿cuántos cache misses ocurren al sumar todos los elementos recorriendo la matriz fila por fila?",
+			"alternatives": [
+				"1,048,576",
+				"16,384",
+				"1,024",
+				"65,536",
+				"262,144"
+			],
+			"explanations": [
+				"Incorrecto: un miss por elemento es lo que ocurre al recorrer por columnas con una cache pequeña. Por filas, los vecinos ya llegaron junto con el elemento.",
+				"Incorrecto: 16,384 divide los elementos entre 64, tratando el tamaño de la línea en bytes como si fuera en elementos.",
+				"Incorrecto: 1,024 es un miss por fila de la matriz. Una fila de la matriz tiene 4096 bytes y ocupa 64 líneas de cache, no una.",
+				"Correcto: 64 / 4 = 16 enteros caben en una línea de cache, así que 1,048,576 / 16 = 65,536. Comprobando con bytes: 4,194,304 / 64 = 65,536.",
+				"Incorrecto: 262,144 divide los elementos entre 4, usando el tamaño del elemento en lugar del número de elementos por línea de cache."
+			],
+			"concept": "Localidad espacial: un miss trae 64 bytes, es decir, 16 enteros vecinos. Recorrer en el orden en que se almacena la matriz aprovecha los 16, y solo 1 acceso de cada 16 falla. Recorrer por columnas salta 4096 bytes en cada acceso: si la cache no puede contener las 1024 líneas tocadas en una columna, cada acceso es un miss, 16 veces más.",
+			"example": {
+				"kind": "code",
+				"language": "c",
+				"content": "int m[1024][1024];\nlong sum = 0;\n\n/* row by row: consecutive addresses */\nfor (int i = 0; i < 1024; i++)\n    for (int j = 0; j < 1024; j++)\n        sum += m[i][j];\n\n/* column by column: jumps of 4096 bytes */\nfor (int j = 0; j < 1024; j++)\n    for (int i = 0; i < 1024; i++)\n        sum += m[i][j];"
+			}
 		}
 	},
 	{
@@ -371,6 +507,24 @@
 				"Right: to write, a core has to be the only owner of the line. With eight cores writing, the line migrates on every increment (ping-pong)."
 			],
 			"concept": "A shared atomic counter is correct, but all the writes compete for the same cache line. In a MESI-style protocol, writing requires invalidating the line in the other cores, so the increments end up happening one at a time. The fix is the same as for false sharing: accumulate locally and merge the partial results once at the end."
+		},
+		"es": {
+			"statement": "Ocho workers incrementan un único contador atómico compartido (fetch_add) por cada primo encontrado, sin ningún lock. El resultado es correcto, pero el programa escala mal. ¿Cuál es la causa?",
+			"alternatives": [
+				"Cada operación atómica toma un mutex del sistema operativo, y los threads duermen en una cola",
+				"fetch_add pierde incrementos bajo contención, y los workers tienen que repetir el bucle",
+				"Es false sharing, porque cada worker tiene su propia copia del contador",
+				"El contador atómico obliga a los ocho workers a ejecutarse en el mismo núcleo, uno a la vez",
+				"Cada incremento necesita la línea en modo exclusivo, y esta no deja de saltar entre los núcleos"
+			],
+			"explanations": [
+				"Incorrecto: fetch_add sobre un entero es una instrucción del procesador, sin mutex ni llamada al sistema. Lock-free no significa libre de costo.",
+				"Incorrecto: fetch_add nunca pierde incrementos, esa es la garantía de la operación atómica. El problema es el tiempo, no la corrección.",
+				"Incorrecto: aquí hay un único contador, usado por todos. Es true sharing, y separar variables en memoria no lo arreglaría.",
+				"Incorrecto: los threads se mantienen en núcleos distintos y todos están ocupados. Lo que se serializa es el acceso a la línea, no la ejecución.",
+				"Correcto: para escribir, un núcleo tiene que ser el único dueño de la línea. Con ocho núcleos escribiendo, la línea migra en cada incremento (ping-pong)."
+			],
+			"concept": "Un contador atómico compartido es correcto, pero todas las escrituras compiten por la misma línea de cache. En un protocolo del tipo MESI, escribir exige invalidar la línea en los otros núcleos, por lo que los incrementos terminan ocurriendo uno a la vez. La solución es la misma que para el false sharing: acumular localmente y combinar los resultados parciales una vez al final."
 		}
 	},
 	{
@@ -423,6 +577,28 @@
 				"kind": "diagram",
 				"content": "adjacent:  | c0 c1 c2 c3 ........ |              1 line, 4 threads writing\napart:     | c0 ... | c1 ... | c2 ... | c3 ... |   1 line per thread\n\n           1 thread   4 threads   speed-up\nadjacent    2.0 s      3.1 s       0.65\napart       2.0 s      0.52 s      3.85"
 			}
+		},
+		"es": {
+			"statement": "Un programa sin ningún lock usa 4 threads, y cada uno incrementa su propio contador de 8 bytes dentro del bucle (líneas de cache de 64 bytes). Con los contadores uno al lado del otro en memoria, el tiempo pasa de 2.0 s con 1 thread a 3.1 s con 4 threads. Al separar los contadores 64 bytes, pasa de 2.0 s a 0.52 s. En ambas variantes los cuatro núcleos están 100% ocupados. ¿Qué diagnóstico explica estas mediciones?",
+			"alternatives": [
+				"False sharing: los contadores vecinos están en la misma línea de cache",
+				"Ley de Amdahl: una gran fracción serial limita la ganancia de los cuatro threads",
+				"Contención de locks: los threads hacen cola para entrar en una sección crítica",
+				"Race condition: los threads se sobrescriben los contadores unos a otros",
+				"Ancho de banda de memoria saturado: los cuatro threads agotan el bus de memoria"
+			],
+			"explanations": [
+				"Correcto: 4 contadores de 8 bytes caben en una línea de 64 bytes. Separarlos es el único cambio, y lleva el speed-up de 0.65 a 2.0 / 0.52 = 3.85.",
+				"Incorrecto: una fracción serial limita la ganancia, pero nunca hace el programa más lento que con 1 thread, ni desaparece al cambiar la disposición de los datos.",
+				"Incorrecto: el programa no tiene locks, y los threads en cola dejarían núcleos ociosos. Aquí todos están 100% ocupados.",
+				"Incorrecto: cada thread escribe solo su propio contador, así que no hay race. Y una race cambia el resultado, no el tiempo.",
+				"Incorrecto: los contadores suman 32 bytes, muy lejos de saturar la memoria. Además, la variante que usa más memoria es la más rápida."
+			],
+			"concept": "La firma del false sharing es: código sin locks, todos los núcleos ocupados, tiempo paralelo igual o peor que el secuencial, y una mejora drástica al cambiar solo dónde están los datos. Los núcleos trabajan, pero gastan el tiempo esperando que la línea de cache vuelva. Medir ambas variantes de disposición es la prueba que separa esta causa de las demás.",
+			"example": {
+				"kind": "diagram",
+				"content": "adyacentes: | c0 c1 c2 c3 ........ |              1 línea, 4 threads escribiendo\nseparados:  | c0 ... | c1 ... | c2 ... | c3 ... |   1 línea por thread\n\n            1 thread   4 threads   speed-up\nadyacentes   2.0 s      3.1 s       0.65\nseparados    2.0 s      0.52 s      3.85"
+			}
 		}
 	},
 	{
@@ -467,6 +643,24 @@
 				"Wrong: each thread reads only its own chunk, once. The misses also exist with 1 thread and do not explain why the gain stops."
 			],
 			"concept": "A CPU-bound loop scales with the cores, because each core brings its own computing capacity. A memory-bound loop depends on the throughput of the memory channels, a single resource shared by all cores. Once that throughput saturates, more threads just split the same bandwidth, and the speed-up levels off far below the number of cores."
+		},
+		"es": {
+			"statement": "En una máquina de un solo socket con 8 núcleos, un bucle que cuenta primos, usando casi nada de memoria, se vuelve 7.6 veces más rápido con 8 threads. Un bucle que suma un arreglo de 16 GiB, dividido en bloques disjuntos y con acumuladores locales, alcanza 2.9 veces con 4 threads y no mejora con 8. ¿Qué explica mejor el segundo caso?",
+			"alternatives": [
+				"False sharing: los acumuladores de los threads terminan en la misma línea de cache",
+				"Ley de Amdahl: la suma tiene una sección de código serial mayor que el conteo",
+				"Ancho de banda de memoria saturado: los núcleos esperan datos, no tiempo de cómputo",
+				"Scheduler: el sistema restringe a pocos núcleos los threads que usan mucha memoria",
+				"Cache misses: cada thread tiene que recargar todo el arreglo en su propia cache"
+			],
+			"explanations": [
+				"Incorrecto: los acumuladores son locales, en registros o en stacks separados, y los bloques son disjuntos. Ninguna línea está disputada.",
+				"Incorrecto: ambos bucles tienen la misma estructura, sin una sección serial relevante. El límite viene de un recurso de hardware compartido, no de código serial.",
+				"Correcto: sumar es barato, el costo es traer 16 GiB desde la memoria. Los canales de memoria son compartidos por todos los núcleos y ya se saturan con cerca de 4 threads.",
+				"Incorrecto: el scheduler no limita núcleos por uso de memoria. Los 8 threads sí se ejecutan, pero se detienen esperando que lleguen los datos.",
+				"Incorrecto: cada thread lee solo su propio bloque, una vez. Los misses existen también con 1 thread y no explican por qué se detiene la ganancia."
+			],
+			"concept": "Un bucle limitado por CPU escala con los núcleos, porque cada núcleo aporta su propia capacidad de cómputo. Un bucle limitado por memoria depende del throughput de los canales de memoria, un único recurso compartido por todos los núcleos. Cuando ese throughput se satura, más threads solo se reparten el mismo ancho de banda, y el speed-up se estanca muy por debajo del número de núcleos."
 		}
 	}
 ]
