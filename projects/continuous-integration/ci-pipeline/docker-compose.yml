@@ -1,0 +1,153 @@
+# EN: One service per image the pipeline uses. Each one runs demo/run-gates.sh for the gates that
+#     need that image. The images are the pinned ones of the repository (docker/*.Dockerfile and
+#     quiz/e2e.Dockerfile), the same files the workflow builds, so a version is changed in one
+#     place only.
+#     Safety: the repository is mounted read-only (`:ro`), so no container can change it and no
+#     container needs to run as the host user. Each gate works on a copy inside its container.
+#     Only `ts` has network access, because `bun install` downloads the dependencies, as the
+#     first step of the workflow does. The others get no network, or an internal one.
+# PT: Um serviço por imagem que o pipeline usa. Cada um roda demo/run-gates.sh para os portões
+#     que precisam daquela imagem. As imagens são as fixadas do repositório (docker/*.Dockerfile
+#     e quiz/e2e.Dockerfile), os mesmos arquivos que o workflow constrói, então uma versão é
+#     trocada em um lugar só.
+#     Segurança: o repositório é montado somente leitura (`:ro`), então nenhum contêiner pode
+#     alterá-lo e nenhum precisa rodar como o usuário do host. Cada portão trabalha em uma cópia
+#     dentro do seu contêiner. Só `ts` tem acesso à rede, porque o `bun install` baixa as
+#     dependências, como faz o primeiro passo do workflow. Os outros ficam sem rede, ou com uma
+#     rede interna.
+# ES: Un servicio por imagen que usa el pipeline. Cada uno ejecuta demo/run-gates.sh para las
+#     puertas que necesitan esa imagen. Las imágenes son las fijadas del repositorio
+#     (docker/*.Dockerfile y quiz/e2e.Dockerfile), los mismos archivos que construye el workflow,
+#     así que una versión se cambia en un solo lugar.
+#     Seguridad: el repositorio se monta de solo lectura (`:ro`), así que ningún contenedor puede
+#     cambiarlo y ninguno necesita correr como el usuario del host. Cada puerta trabaja sobre una
+#     copia dentro de su contenedor. Solo `ts` tiene acceso a la red, porque `bun install`
+#     descarga las dependencias, como hace el primer paso del workflow. Los demás no tienen red,
+#     o tienen una interna.
+name: continuous-integration-ci-pipeline
+
+x-gate: &gate
+  volumes:
+    - ../../..:/src:ro
+  entrypoint: ["sh", "/src/projects/continuous-integration/ci-pipeline/demo/run-gates.sh"]
+
+# EN: The formatter images come from docker/<language>.Dockerfile, exactly as in the
+#     `formatters` job. The build context is that folder.
+# PT: As imagens dos formatadores vêm de docker/<linguagem>.Dockerfile, exatamente como no job
+#     `formatters`. O contexto de build é aquela pasta.
+# ES: Las imágenes de los formateadores vienen de docker/<lenguaje>.Dockerfile, igual que en el
+#     job `formatters`. El contexto de build es esa carpeta.
+x-offline: &offline
+  <<: *gate
+  network_mode: "none"
+
+# EN: The browser image is the one of the quiz end-to-end tests. Its build context is the
+#     repository root, because the lockfile lives there.
+# PT: A imagem do navegador é a dos testes de ponta a ponta do quiz. O contexto de build é a raiz
+#     do repositório, porque o lockfile fica lá.
+# ES: La imagen del navegador es la de las pruebas de punta a punta del quiz. Su contexto de
+#     build es la raíz del repositorio, porque el lockfile está allí.
+x-browser: &browser
+  build:
+    context: ../../..
+    dockerfile: quiz/e2e.Dockerfile
+  image: sef-ci-pipeline-browser:local
+
+services:
+  ts:
+    <<: *gate
+    build:
+      context: ../../../docker
+      dockerfile: ts.Dockerfile
+    image: sef-ci-pipeline-ts:local
+    command: ["workflow-sync", "biome", "markdownlint", "typecheck", "unit-tests", "quiz-validate", "docs-index", "mini-project", "isolation"]
+
+  python:
+    <<: *offline
+    build:
+      context: ../../../docker
+      dockerfile: python.Dockerfile
+    image: sef-ci-pipeline-python:local
+    command: ["format-python"]
+
+  go:
+    <<: *offline
+    build:
+      context: ../../../docker
+      dockerfile: go.Dockerfile
+    image: sef-ci-pipeline-go:local
+    command: ["format-go"]
+
+  rust:
+    <<: *offline
+    build:
+      context: ../../../docker
+      dockerfile: rust.Dockerfile
+    image: sef-ci-pipeline-rust:local
+    command: ["format-rust"]
+
+  cpp:
+    <<: *offline
+    build:
+      context: ../../../docker
+      dockerfile: cpp.Dockerfile
+    image: sef-ci-pipeline-cpp:local
+    command: ["format-cpp"]
+
+  elixir:
+    <<: *offline
+    build:
+      context: ../../../docker
+      dockerfile: elixir.Dockerfile
+    image: sef-ci-pipeline-elixir:local
+    command: ["format-elixir"]
+
+  # EN: The static page the end-to-end demo tests. It has no published port: only the `e2e`
+  #     container reaches it, over an internal network. The health check asks for the page over
+  #     HTTP, which is what the browser will do.
+  # PT: A página estática que a demo de ponta a ponta testa. Não tem porta publicada: só o
+  #     contêiner `e2e` a alcança, por uma rede interna. O health check pede a página por HTTP,
+  #     que é o que o navegador vai fazer.
+  # ES: La página estática que prueba la demo de punta a punta. No tiene puerto publicado: solo
+  #     el contenedor `e2e` la alcanza, por una red interna. El health check pide la página por
+  #     HTTP, que es lo que hará el navegador.
+  site:
+    image: caddy:2.11.7-alpine
+    command: ["caddy", "file-server", "--root", "/srv", "--listen", ":8080"]
+    volumes:
+      - ./fixture/site:/srv:ro
+    networks:
+      - e2e
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  e2e:
+    <<: [*gate, *browser]
+    depends_on:
+      site:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://site:8080
+    networks:
+      - e2e
+    # Chromium needs more shared memory than the 64 MB Docker gives by default.
+    shm_size: 1gb
+    command: ["quiz-e2e"]
+
+  # EN: Same image, and no network at all, as in the workflow step (`--network none`): that is
+  #     what proves a dashboard works from disk.
+  # PT: Mesma imagem, e nenhuma rede, como no passo do workflow (`--network none`): é isso que
+  #     prova que um dashboard funciona aberto do disco.
+  # ES: Misma imagen, y sin ninguna red, como en el paso del workflow (`--network none`): eso es
+  #     lo que prueba que un dashboard funciona abierto desde el disco.
+  dashboards:
+    <<: [*offline, *browser]
+    shm_size: 1gb
+    command: ["dashboards"]
+
+networks:
+  e2e:
+    internal: true

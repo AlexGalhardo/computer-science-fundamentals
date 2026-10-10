@@ -1,6 +1,6 @@
 # Integração contínua
 
-> English version: [README.md](README.md)
+> English version: [README.md](README.md) · Versión en español: [README.es.md](README.es.md)
 
 Integração contínua significa integrar mudanças pequenas com frequência e deixar um pipeline automatizado compilar, analisar e testar cada uma, para que os problemas sejam achados minutos depois de introduzidos. Em torno dessa ideia ficam as práticas que este próprio repositório usa: workflows no GitHub Actions, cache e artefatos, segredos e permissões, barreiras de qualidade, estratégias de implantação, versionamento semântico e um changelog.
 
@@ -8,7 +8,7 @@ Integração contínua significa integrar mudanças pequenas com frequência e d
 
 | Miniprojeto | O que ensina | Situação |
 | --- | --- | --- |
-| Pipeline de CI como lição (`ci-pipeline`) | O que o pipeline deste repositório faz e por quê | planejado |
+| [Pipeline de CI como lição (`ci-pipeline`)](ci-pipeline/README.pt-BR.md) | O que o pipeline deste repositório faz e por quê: cada job do `ci.yml` explicado, e cada um dos seus 14 portões de qualidade quebrado de propósito no Docker | pronto ([documentação](../../docs/pt/continuous-integration/ci-pipeline.md)) |
 
 ## Quiz e documentação
 

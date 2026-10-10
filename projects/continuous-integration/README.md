@@ -1,6 +1,6 @@
 # Continuous integration
 
-> Versão em português: [README.pt-BR.md](README.pt-BR.md)
+> Versão em português: [README.pt-BR.md](README.pt-BR.md) · Versión en español: [README.es.md](README.es.md)
 
 Continuous integration means merging small changes often and letting an automated pipeline build, lint and test each one, so that problems are found minutes after they are introduced. Around that idea sit the practices this repository itself uses: workflows on GitHub Actions, caching and artifacts, secrets and permissions, quality gates, deployment strategies, semantic versioning and a changelog.
 
@@ -8,7 +8,7 @@ Continuous integration means merging small changes often and letting an automate
 
 | Mini-project | What it teaches | Status |
 | --- | --- | --- |
-| CI pipeline as a lesson (`ci-pipeline`) | What the pipeline of this repository does and why | planned |
+| [CI pipeline as a lesson (`ci-pipeline`)](ci-pipeline/README.md) | What the pipeline of this repository does and why: every job of `ci.yml` explained, and each of its 14 quality gates broken on purpose in Docker | done ([documentation](../../docs/en/continuous-integration/ci-pipeline.md)) |
 
 ## Quiz and documentation
 
