@@ -2,6 +2,8 @@
 //     dictionaries. None of them needs a browser.
 // PT: Testes unitários da lógica pura do quiz: embaralhamento, rodadas, pontuação, progresso e
 //     os dicionários. Nenhum deles precisa de navegador.
+// ES: Pruebas unitarias de la lógica pura del quiz: mezcla, rondas, puntuación, progreso y
+//     los diccionarios. Ninguna necesita navegador.
 
 import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -11,6 +13,7 @@ import { es } from "../../src/i18n/es";
 import { format } from "../../src/i18n/index";
 import { pt } from "../../src/i18n/pt";
 import { highlight } from "../../src/lib/highlight";
+import { parseInline } from "../../src/lib/inline";
 import { type KeyValueStorage, loadProgress, recordAnswer, resetArea, summarise } from "../../src/lib/progress";
 import { answer, createRun, isLast, next, type RunQuestion, score, selectQuestions } from "../../src/lib/run";
 import { clearRun, loadRun, saveRun } from "../../src/lib/run-storage";
@@ -59,6 +62,7 @@ describe("run", () => {
 		expect(run.items.map((item) => item.id).sort()).toEqual(["a-1", "a-2", "a-3", "a-4"]);
 		// EN: The seed really shuffled something, otherwise this test would prove nothing.
 		// PT: A semente realmente embaralhou algo, senão este teste não provaria nada.
+		// ES: La semilla realmente mezcló algo, de lo contrario esta prueba no demostraría nada.
 		expect(run.items.some((item) => item.order.join() !== "0,1,2,3,4")).toBe(true);
 
 		let current = run;
@@ -66,6 +70,7 @@ describe("run", () => {
 			expect([...item.order].sort()).toEqual([0, 1, 2, 3, 4]);
 			// EN: Click the screen position where the right alternative ended up.
 			// PT: Clica na posição da tela onde a alternativa certa foi parar.
+			// ES: Hace clic en la posición de la pantalla donde terminó la alternativa correcta.
 			const position = item.order.indexOf(key.get(item.id) ?? -1);
 			current = next(answer(current, position));
 		}
@@ -206,6 +211,8 @@ describe("dictionaries", () => {
 		//     The file is created next to the real dictionaries to resolve the same imports.
 		// PT: O build roda o verificador de tipos, então "não compila" significa "o build falha".
 		//     O arquivo é criado ao lado dos dicionários reais para resolver os mesmos imports.
+		// ES: El build ejecuta el verificador de tipos, así que "no compila" significa "el build falla".
+		//     El archivo se crea junto a los diccionarios reales para resolver los mismos imports.
 		const root = resolve(import.meta.dir, "..", "..");
 		const dir = mkdtempSync(join(root, "src", "i18n", "tmp-"));
 		try {
@@ -231,4 +238,32 @@ describe("dictionaries", () => {
 			rmSync(dir, { recursive: true, force: true });
 		}
 	}, 60000);
+});
+
+// EN: The summaries are written by hand, so the inline marks must be predictable: four marks are
+//     understood, and everything else, including HTML, stays as plain text.
+// PT: Os resumos são escritos à mão, então as marcas no texto precisam ser previsíveis: quatro
+//     marcas são entendidas, e todo o resto, inclusive HTML, continua como texto simples.
+// ES: Los resúmenes se escriben a mano, así que las marcas en el texto deben ser predecibles:
+//     cuatro marcas se entienden, y todo lo demás, incluso HTML, queda como texto simple.
+describe("inline marks of the theory summary", () => {
+	test("reads bold, code, link and tooltip, keeping the text around them", () => {
+		expect(parseInline("A **big** `O(n)` [[term|its meaning]] and a [source](https://example.test/a).")).toEqual([
+			{ kind: "text", text: "A " },
+			{ kind: "bold", text: "big" },
+			{ kind: "text", text: " " },
+			{ kind: "code", text: "O(n)" },
+			{ kind: "text", text: " " },
+			{ kind: "tooltip", text: "term", meaning: "its meaning" },
+			{ kind: "text", text: " and a " },
+			{ kind: "link", text: "source", url: "https://example.test/a" },
+			{ kind: "text", text: "." },
+		]);
+	});
+
+	test("leaves HTML, unclosed marks and non-https links as plain text", () => {
+		for (const source of ["<b>x</b>", "2 ** 3 and `open", "[a](javascript:alert(1))", "[a](http://example.test)"]) {
+			expect(parseInline(source)).toEqual([{ kind: "text", text: source }]);
+		}
+	});
 });

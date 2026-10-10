@@ -4,6 +4,8 @@ import { defineConfig, devices } from "@playwright/test";
 //     it: inside docker-compose it is the `quiz-fixture` service.
 // PT: Os testes rodam contra um build estático servido por um servidor de arquivos simples.
 //     BASE_URL aponta para ele: dentro do docker-compose é o serviço `quiz-fixture`.
+// ES: Las pruebas corren contra un build estático servido por un servidor de archivos simple.
+//     BASE_URL apunta a él: dentro de docker-compose es el servicio `quiz-fixture`.
 export default defineConfig({
 	testDir: "tests/e2e",
 	fullyParallel: true,

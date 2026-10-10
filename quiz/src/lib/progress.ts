@@ -4,6 +4,9 @@
 // PT: O progresso vive só no navegador. Não há conta nem servidor, então o `localStorage` é o
 //     banco de dados: um pequeno objeto JSON com, por área, quais questões foram acertadas e
 //     quais foram erradas da última vez.
+// ES: El progreso vive solo en el navegador. No hay cuenta ni servidor, así que `localStorage` es la
+//     base de datos: un pequeño objeto JSON con, por área, qué preguntas se acertaron y
+//     cuáles se fallaron la última vez.
 
 import { z } from "zod";
 
@@ -21,6 +24,10 @@ export type Progress = z.infer<typeof progressSchema>;
 //     em testes unitários com um storage falso. Tudo que está salvo pode estar velho ou ter sido
 //     editado à mão, então é validado na entrada, e dado ilegível vale como "sem progresso" em
 //     vez de derrubar a página.
+// ES: El storage se recibe como parámetro en lugar de leerse de `window`, así que el mismo código corre
+//     en pruebas unitarias con un storage falso. Todo lo guardado puede estar viejo o haber sido
+//     editado a mano, por eso se valida al entrar, y un dato ilegible cuenta como "sin progreso" en
+//     lugar de tumbar la página.
 export type KeyValueStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 export function loadProgress(storage: KeyValueStorage): Progress {
@@ -55,6 +62,8 @@ export interface AreaSummary {
 //     leave a ghost in the totals.
 // PT: Só são contados ids que ainda existem. Uma questão removida do conteúdo não pode deixar
 //     um fantasma nos totais.
+// ES: Solo se cuentan los ids que aún existen. Una pregunta eliminada del contenido no puede dejar
+//     un fantasma en los totales.
 export function summarise(progress: Progress, area: string, validIds: Iterable<string>): AreaSummary {
 	const outcomes = progress[area] ?? {};
 	const summary: AreaSummary = { right: 0, wrong: 0, wrongIds: new Set() };

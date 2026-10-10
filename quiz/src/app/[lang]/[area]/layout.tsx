@@ -7,6 +7,8 @@ export const dynamicParams = false;
 //     (area, questions, result) are all generated for every area and every language.
 // PT: Uma pasta por área, pré-renderizada. Declarado no layout para que as três páginas abaixo
 //     dele (área, questões, resultado) sejam geradas para toda área e todo idioma.
+// ES: Una carpeta por área, pre-renderizada. Declarado en el layout para que las tres páginas debajo
+//     de él (área, preguntas, resultado) se generen para toda área y todo idioma.
 export function generateStaticParams(): { area: string }[] {
 	return getAreas().map((area) => ({ area: area.slug }));
 }

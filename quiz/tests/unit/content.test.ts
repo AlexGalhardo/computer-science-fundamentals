@@ -2,14 +2,16 @@
 //     damaging one thing, so a failing test points at exactly one rule.
 // PT: Testes do modelo de conteúdo. Cada caso quebrado é feito copiando uma questão válida e
 //     estragando uma única coisa, para que um teste que falha aponte exatamente uma regra.
+// ES: Pruebas del modelo de contenido. Cada caso roto se construye copiando una pregunta válida y
+//     dañando una sola cosa, para que una prueba que falla apunte exactamente a una regla.
 
 import { describe, expect, test } from "bun:test";
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkContent } from "../../src/content/check";
 import { compareAnswers, KEEP_MARKER, keepHandWritten, renderReview, toBlind } from "../../src/content/review";
-import { type Question, validateCoverage, validateQuestion } from "../../src/content/schema";
+import { type Question, validateCoverage, validateQuestion, validateTheory } from "../../src/content/schema";
 
 const fixtures = resolve(import.meta.dir, "..", "fixtures", "content");
 const repoRoot = resolve(import.meta.dir, "..", "..", "..");
@@ -26,6 +28,7 @@ function errorsOf(value: unknown): string[] {
 
 // EN: Copies the valid fixture to a temporary folder and lets the test damage the copy.
 // PT: Copia o fixture válido para uma pasta temporária e deixa o teste estragar a cópia.
+// ES: Copia el fixture válido a una carpeta temporal y deja que la prueba dañe la copia.
 function brokenContent(damage: (questions: Record<string, unknown>[]) => void): string {
 	const dir = mkdtempSync(join(tmpdir(), "quiz-content-"));
 	cpSync(fixtures, dir, { recursive: true });
@@ -118,6 +121,7 @@ describe("content check", () => {
 		const dir = brokenContent((questions) => {
 			// EN: 21 copies with new ids and the same answer: enough questions for the warning.
 			// PT: 21 cópias com ids novos e a mesma resposta: questões suficientes para o aviso.
+			// ES: 21 copias con ids nuevos y la misma respuesta: suficientes preguntas para el aviso.
 			const copies = Array.from({ length: 21 }, (_, index) => ({
 				...structuredClone(questions[1]),
 				id: `big-o-searching-${index + 10}`,
@@ -193,6 +197,8 @@ describe("blind review", () => {
 		//     corrupted, so the comparison must report that question and nothing else.
 		// PT: O revisor acerta todas as questões. O gabarito da questão 2 é então corrompido,
 		//     e a comparação precisa apontar essa questão e nenhuma outra.
+		// ES: El revisor acierta todas las preguntas. La clave de la pregunta 2 se corrompe entonces,
+		//     y la comparación debe señalar esa pregunta y ninguna otra.
 		const answers = Object.fromEntries(sample.map((question) => [question.id, question.answer]));
 		const wrongKey = structuredClone(sample);
 		(wrongKey[1] as Question).answer = 0;
@@ -212,11 +218,99 @@ describe("blind review", () => {
 		expect(second).toContain("key kept, because of X");
 		// EN: A file written before the marker existed keeps its "Reviewer notes" section.
 		// PT: Um arquivo escrito antes de o marcador existir mantém a seção "Reviewer notes".
+		// ES: Un archivo escrito antes de que existiera el marcador mantiene su sección "Reviewer notes".
 		const legacy = ["# old", "", "## Reviewer notes", "", "question rewritten"].join(String.fromCharCode(10));
 		expect(keepHandWritten("# new", legacy)).toContain("question rewritten");
 	});
 
 	test("an unanswered question counts as a disagreement", () => {
 		expect(compareAnswers(sample, {}, "en")).toHaveLength(sample.length);
+	});
+});
+
+// EN: The theory summary is content too: a broken summary must stop the build, and the three
+//     languages must keep the same sections, or a link to `#section` would work in one language
+//     and fail in another.
+// PT: O resumo teórico também é conteúdo: um resumo quebrado precisa parar o build, e os três
+//     idiomas precisam manter as mesmas seções, senão um link para `#seção` funcionaria em um
+//     idioma e falharia em outro.
+// ES: El resumen teórico también es contenido: un resumen roto debe detener el build, y los tres
+//     idiomas deben mantener las mismas secciones, o un enlace a `#sección` funcionaría en un
+//     idioma y fallaría en otro.
+describe("theory summary", () => {
+	type Draft = { sections: { id: string; blocks: { type: string; rows?: string[][]; url?: string }[] }[] };
+	const theoryPath = (dir: string, language: string): string => join(dir, "big-o", "theory", `${language}.json`);
+	const readTheory = (language: string): Draft =>
+		JSON.parse(readFileSync(theoryPath(fixtures, language), "utf8")) as Draft;
+	const messages = (value: unknown): string => {
+		const result = validateTheory(value);
+		return result.ok ? "" : result.errors.join("\n");
+	};
+
+	function brokenTheory(language: string, damage: (theory: Draft) => void): string {
+		const dir = mkdtempSync(join(tmpdir(), "quiz-theory-"));
+		cpSync(fixtures, dir, { recursive: true });
+		const theory = readTheory(language);
+		damage(theory);
+		writeFileSync(theoryPath(dir, language), JSON.stringify(theory));
+		return dir;
+	}
+
+	test("accepts the fixture in the three languages and hands it to the area report", () => {
+		for (const language of ["en", "pt", "es"]) {
+			expect(messages(readTheory(language))).toBe("");
+		}
+		const result = checkContent({ contentDir: fixtures, repoRoot, requireTargets: true });
+		expect(result.errors).toEqual([]);
+		expect(result.areas[0]?.theory?.es.sections.map((section) => section.id)).toEqual([
+			"linear-search",
+			"binary-search",
+			"which-one",
+		]);
+	});
+
+	test("rejects fewer than 3 sections, a duplicate section, a ragged table and a non-https video", () => {
+		const few = readTheory("en");
+		few.sections.pop();
+		expect(messages(few)).toContain("must have at least 3 sections");
+
+		const twice = readTheory("en");
+		(twice.sections[1] as { id: string }).id = "linear-search";
+		expect(messages(twice)).toContain('duplicate section "linear-search"');
+
+		const ragged = readTheory("en");
+		ragged.sections[1]?.blocks.find((block) => block.type === "table")?.rows?.[0]?.pop();
+		expect(messages(ragged)).toContain("every row must have one cell per header");
+
+		const insecure = readTheory("en");
+		const video = insecure.sections[2]?.blocks.find((block) => block.type === "video");
+		expect(video).toBeDefined();
+		(video as { url: string }).url = "http://example.test/video";
+		expect(messages(insecure)).toContain("must be an https:// URL");
+	});
+
+	test("fails when a language has other sections or other block types than English", () => {
+		const renamed = brokenTheory("pt", (theory) => {
+			(theory.sections[0] as { id: string }).id = "busca-linear";
+		});
+		expect(checkContent({ contentDir: renamed, repoRoot }).errors.join("\n")).toContain(
+			"big-o/theory/pt.json: sections and block types must match theory/en.json",
+		);
+		const shorter = brokenTheory("es", (theory) => {
+			theory.sections[0]?.blocks.pop();
+		});
+		expect(checkContent({ contentDir: shorter, repoRoot }).errors.join("\n")).toContain("big-o/theory/es.json");
+	});
+
+	test("a missing summary is a warning, and an error with requireTargets", () => {
+		const dir = mkdtempSync(join(tmpdir(), "quiz-theory-"));
+		cpSync(fixtures, dir, { recursive: true });
+		rmSync(theoryPath(dir, "es"));
+		const relaxed = checkContent({ contentDir: dir, repoRoot });
+		expect(relaxed.errors).toEqual([]);
+		expect(relaxed.warnings.join("\n")).toContain("big-o/theory/es.json: theory summary is missing");
+		expect(relaxed.areas[0]?.theory).toBeUndefined();
+		const strict = checkContent({ contentDir: dir, repoRoot, requireTargets: true });
+		expect(strict.errors.join("\n")).toContain("big-o/theory/es.json: theory summary is missing");
 	});
 });

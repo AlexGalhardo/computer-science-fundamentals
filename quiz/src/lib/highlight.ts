@@ -5,6 +5,10 @@
 //     código em comentários, strings, números, palavras-chave e o resto, o que basta para deixar
 //     legível um exemplo de dez linhas. Um destacador completo traria uma dependência grande
 //     para pouco ganho.
+// ES: Un resaltador de sintaxis muy pequeño. No entiende ningún lenguaje: solo divide el
+//     código en comentarios, strings, números, palabras clave y el resto, lo que basta para dejar
+//     legible un ejemplo de diez líneas. Un resaltador completo traería una dependencia grande
+//     para poca ganancia.
 
 export type TokenKind = "comment" | "string" | "number" | "keyword" | "plain";
 
@@ -32,6 +36,9 @@ const KEYWORDS = new Set(
 // PT: Uma expressão regular com alternativas, testadas em ordem a cada posição: comentários
 //     primeiro (para que uma aspa dentro de comentário não vire string), depois strings,
 //     números e palavras.
+// ES: Una expresión regular con alternativas, probadas en orden en cada posición: primero los
+//     comentarios (para que una comilla dentro de un comentario no se vuelva string), luego strings,
+//     números y palabras.
 const PATTERN =
 	/(\/\/[^\n]*|\/\*[\s\S]*?\*\/|--[^\n]*|#[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)/g;
 

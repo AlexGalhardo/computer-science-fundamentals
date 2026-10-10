@@ -6,6 +6,10 @@
 //     Mostra, por área e por tópico, a meta contra o número real de questões, e termina com
 //     código diferente de zero quando alguma regra é quebrada. `--strict` também falha quando uma
 //     área ou tópico está abaixo da meta, que é o portão usado antes de dar uma área como pronta.
+// ES: `bun run quiz:validate [area] [--strict] [--content <dir>]`
+//     Muestra, por área y por tema, la meta frente al número real de preguntas, y termina con
+//     código distinto de cero cuando se rompe alguna regla. `--strict` también falla cuando un
+//     área o tema está por debajo de la meta, que es la puerta usada antes de dar un área por lista.
 
 import { join, resolve } from "node:path";
 import { checkContent } from "../src/content/check";

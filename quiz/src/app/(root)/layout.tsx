@@ -7,6 +7,8 @@ export const metadata: Metadata = { title: "Computer Science Fundamentals" };
 //     with the `lang` attribute, lives under `/[lang]`.
 // PT: O endereço `/` ainda não tem idioma, então tem um layout mínimo próprio. O layout de
 //     verdade, com o atributo `lang`, fica em `/[lang]`.
+// ES: La dirección `/` aún no tiene idioma, así que tiene un layout mínimo propio. El layout de
+//     verdad, con el atributo `lang`, está en `/[lang]`.
 export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en">

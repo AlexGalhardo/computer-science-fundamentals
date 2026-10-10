@@ -2,6 +2,8 @@
 #     Pass "test" to run the unit and end-to-end tests instead.
 # PT: Constrói o quiz como site estático e o serve em localhost. O único requisito é o Docker.
 #     Passe "test" para rodar os testes unitários e de ponta a ponta.
+# ES: Construye el quiz como sitio estático y lo sirve en localhost. El único requisito es Docker.
+#     Pasa "test" para ejecutar las pruebas unitarias y de extremo a extremo.
 param([string]$Mode = "")
 
 $ErrorActionPreference = "Stop"

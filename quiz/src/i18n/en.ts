@@ -4,6 +4,9 @@
 // PT: O dicionário em inglês é a referência. O formato dele vira o tipo `Dictionary`, e todo
 //     outro idioma precisa satisfazer esse tipo, então uma chave faltando é erro de compilação e
 //     o build falha em vez de publicar uma tela sem tradução.
+// ES: El diccionario en inglés es la referencia. Su forma se convierte en el tipo `Dictionary`, y
+//     todo otro idioma debe satisfacer ese tipo, así que una clave faltante es un error de compilación
+//     y el build falla en lugar de publicar una pantalla sin traducir.
 
 export const en = {
 	appName: "Computer Science Fundamentals",
@@ -12,7 +15,7 @@ export const en = {
 	home: "Home",
 	language: "Language",
 	sourceCode: { label: "Source Code", title: "Source code on GitHub (opens in a new tab)" },
-	theme: { toLight: "Switch to light theme", toDark: "Switch to dark theme", light: "Light", dark: "Dark" },
+	theme: { label: "Dark theme", dark: "Dark" },
 	loading: "Loading...",
 	homePage: {
 		title: "Areas",
@@ -36,6 +39,14 @@ export const en = {
 		matching: "questions match this filter",
 		empty: "This area has no questions yet.",
 		topics: "Topics",
+	},
+	theory: {
+		title: "Theory summary",
+		contents: "Contents",
+		backToContents: "Back to the contents",
+		watch: "Watch the video",
+		closeTerm: "Close",
+		tones: { analogy: "Think of it like this", tip: "Tip", warning: "Watch out", remember: "Remember" },
 	},
 	difficulty: { all: "All levels", basic: "Basic", intermediate: "Intermediate", advanced: "Advanced" },
 	question: {
@@ -75,6 +86,8 @@ export const en = {
 //     `string` values. This helper type rewrites every leaf as `string`.
 // PT: `as const` guarda os textos literais, mas os outros idiomas precisam das chaves com
 //     valores `string` comuns. Este tipo auxiliar reescreve toda folha como `string`.
+// ES: `as const` guarda los textos literales, pero los otros idiomas necesitan las claves con
+//     valores `string` comunes. Este tipo auxiliar reescribe cada hoja como `string`.
 type Widen<T> = { readonly [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };
 
 export type Dictionary = Widen<typeof en>;

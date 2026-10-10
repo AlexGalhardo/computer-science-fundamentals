@@ -2,6 +2,8 @@
 #     `@playwright/test` package. Bun is copied in to install the workspace dependencies.
 # PT: Imagem do Playwright com os navegadores já instalados, fixada na mesma versão do pacote
 #     `@playwright/test`. O Bun é copiado para instalar as dependências do workspace.
+# ES: Imagen de Playwright con los navegadores ya instalados, fijada en la misma versión del paquete
+#     `@playwright/test`. Se copia Bun para instalar las dependencias del workspace.
 FROM mcr.microsoft.com/playwright:v1.63.0-noble
 COPY --from=oven/bun:1.4.2 /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /repo

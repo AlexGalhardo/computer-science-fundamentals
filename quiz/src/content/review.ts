@@ -4,6 +4,9 @@
 // PT: Revisão cega. Um segundo leitor responde às questões sem o gabarito e sem as explicações.
 //     Onde o leitor e o gabarito discordam, ou o gabarito está errado ou a questão é ambígua, e
 //     os dois são defeitos que vale achar antes que um estudante ache.
+// ES: Revisión ciega. Un segundo lector responde las preguntas sin la clave de respuestas y sin las
+//     explicaciones. Donde el lector y la clave discrepan, o la clave está mal o la pregunta es
+//     ambigua, y ambos son defectos que vale la pena encontrar antes de que lo haga un estudiante.
 
 import type { Language, Question } from "./schema";
 
@@ -34,6 +37,8 @@ const LETTERS = ["A", "B", "C", "D", "E"];
 //     `concept` would all give the key away.
 // PT: Só o enunciado e as alternativas saem desta função. `answer`, `explanations` e `concept`
 //     entregariam o gabarito.
+// ES: Solo el enunciado y las alternativas salen de esta función. `answer`, `explanations` y `concept`
+//     entregarían la clave de respuestas.
 export function toBlind(questions: Question[], language: Language): BlindQuestion[] {
 	return questions.map((question) => ({
 		id: question.id,
@@ -52,6 +57,7 @@ export function compareAnswers(questions: Question[], answers: ReviewerAnswers, 
 		const note = typeof given === "object" ? given.note : undefined;
 		// EN: A question the reviewer skipped counts as a disagreement: unanswered is unreviewed.
 		// PT: Uma questão que o revisor pulou conta como discordância: sem resposta é sem revisão.
+		// ES: Una pregunta que el revisor saltó cuenta como discrepancia: sin respuesta es sin revisión.
 		if (reviewer !== question.answer) {
 			disagreements.push({
 				id: question.id,
@@ -105,6 +111,9 @@ export const KEEP_MARKER = "<!-- quiz:compare keeps everything below this line -
 // PT: Rodar a comparação de novo não pode apagar as resoluções escritas à mão. Tudo que está
 //     abaixo do marcador no arquivo antigo é levado para o novo. Arquivos antigos não têm o
 //     marcador, então a seção "Reviewer notes" deles é mantida no lugar.
+// ES: Ejecutar la comparación de nuevo no puede borrar las resoluciones escritas a mano. Todo lo que está
+//     debajo del marcador en el archivo antiguo se lleva al nuevo. Los archivos antiguos no tienen el
+//     marcador, así que su sección "Reviewer notes" se mantiene en su lugar.
 export function keepHandWritten(fresh: string, previous: string | undefined): string {
 	const marker = previous?.indexOf(KEEP_MARKER) ?? -1;
 	const notes = previous?.search(/^## (Reviewer notes|Second round|Third round)/m) ?? -1;

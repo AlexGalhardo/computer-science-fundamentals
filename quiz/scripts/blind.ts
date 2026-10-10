@@ -2,6 +2,8 @@
 //     the questions of the area with the answer key and the explanations removed.
 // PT: `bun run quiz:blind <area> [--lang en|pt|es]` escreve `quiz/.review/<area>.blind.json`:
 //     as questões da área sem o gabarito e sem as explicações.
+// ES: `bun run quiz:blind <area> [--lang en|pt|es]` escribe `quiz/.review/<area>.blind.json`:
+//     las preguntas del área sin la clave de respuestas y sin las explicaciones.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -14,6 +16,7 @@ const langFlag = args.indexOf("--lang");
 const language = (langFlag >= 0 ? args[langFlag + 1] : "en") as Language;
 // EN: The value that follows `--lang` is not the area. Without the flag, no position is skipped.
 // PT: O valor que vem depois de `--lang` não é a área. Sem a flag, nenhuma posição é pulada.
+// ES: El valor que sigue a `--lang` no es el área. Sin la bandera, no se salta ninguna posición.
 const area = args.find((arg, index) => !arg.startsWith("--") && (langFlag < 0 || index !== langFlag + 1));
 
 if (area === undefined || !LANGUAGES.includes(language)) {

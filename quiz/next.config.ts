@@ -6,6 +6,9 @@ import type { NextConfig } from "next";
 // PT: `output: "export"` transforma o app em arquivos HTML, CSS e JS puros em `out/`. Não há
 //     servidor em tempo de execução, então qualquer hospedagem de arquivos estáticos serve o
 //     quiz. `trailingSlash` faz de cada rota uma pasta com `index.html`, que é o que elas esperam.
+// ES: `output: "export"` convierte la app en archivos HTML, CSS y JS puros en `out/`. No hay
+//     servidor en tiempo de ejecución, así que cualquier hosting de archivos estáticos sirve el
+//     quiz. `trailingSlash` hace de cada ruta una carpeta con `index.html`, que es lo que esperan.
 const config: NextConfig = {
 	output: "export",
 	trailingSlash: true,

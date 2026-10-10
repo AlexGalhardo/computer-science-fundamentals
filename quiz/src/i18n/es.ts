@@ -10,7 +10,7 @@ export const es: Dictionary = {
 	home: "Inicio",
 	language: "Idioma",
 	sourceCode: { label: "Código fuente", title: "Código fuente en GitHub (se abre en una pestaña nueva)" },
-	theme: { toLight: "Cambiar al tema claro", toDark: "Cambiar al tema oscuro", light: "Claro", dark: "Oscuro" },
+	theme: { label: "Tema oscuro", dark: "Oscuro" },
 	loading: "Cargando...",
 	homePage: {
 		title: "Áreas",
@@ -34,6 +34,14 @@ export const es: Dictionary = {
 		matching: "preguntas en este filtro",
 		empty: "Esta área todavía no tiene preguntas.",
 		topics: "Temas",
+	},
+	theory: {
+		title: "Resumen teórico",
+		contents: "Índice",
+		backToContents: "Volver al índice",
+		watch: "Mira el video",
+		closeTerm: "Cerrar",
+		tones: { analogy: "Piénsalo así", tip: "Consejo", warning: "Cuidado", remember: "Recuerda" },
 	},
 	difficulty: { all: "Todos los niveles", basic: "Básico", intermediate: "Intermedio", advanced: "Avanzado" },
 	question: {

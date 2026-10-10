@@ -4,6 +4,9 @@
 // PT: Embaralhamento com semente. `Math.random` não pode ser repetido, então um teste nunca
 //     conseguiria provar que o gabarito sobrevive ao embaralhamento. Um pequeno gerador com
 //     semente dá a mesma ordem para a mesma semente, o que torna a tentativa reproduzível e testável.
+// ES: Mezcla con semilla. `Math.random` no se puede repetir, así que una prueba nunca
+//     podría demostrar que la clave de respuestas sobrevive a la mezcla. Un pequeño generador con
+//     semilla da el mismo orden para la misma semilla, lo que hace el intento reproducible y probable.
 
 export type Random = () => number;
 
@@ -11,6 +14,8 @@ export type Random = () => number;
 //     to be used for anything related to security.
 // PT: mulberry32, um gerador minúsculo de 32 bits. Bom o bastante para embaralhar questões,
 //     e nunca deve ser usado para nada ligado a segurança.
+// ES: mulberry32, un generador diminuto de 32 bits. Suficientemente bueno para mezclar preguntas,
+//     y nunca debe usarse para nada relacionado con seguridad.
 export function createRandom(seed: number): Random {
 	let state = seed >>> 0;
 	return () => {
@@ -26,6 +31,8 @@ export function createRandom(seed: number): Random {
 //     it. Every permutation is equally likely, and the input list is not modified.
 // PT: Fisher-Yates: percorre do fim para o início e troca cada posição com uma aleatória igual
 //     ou anterior a ela. Toda permutação é igualmente provável, e a lista original não é alterada.
+// ES: Fisher-Yates: recorre desde el final hacia el inicio e intercambia cada posición con una aleatoria igual
+//     o anterior a ella. Toda permutación es igualmente probable, y la lista original no se modifica.
 export function shuffle<T>(items: readonly T[], random: Random): T[] {
 	const result = [...items];
 	for (let i = result.length - 1; i > 0; i--) {

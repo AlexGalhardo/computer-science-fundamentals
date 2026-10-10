@@ -4,6 +4,9 @@
 // PT: Verificações no nível do repositório. `schema.ts` valida uma questão isolada. Este módulo
 //     valida a pasta `quiz/content/` inteira, onde os erros são de relacionamento: um id
 //     duplicado, um tópico fora do mapa de cobertura, um mini-projeto que não existe.
+// ES: Verificaciones a nivel de repositorio. `schema.ts` valida una pregunta aislada. Este módulo
+//     valida toda la carpeta `quiz/content/`, donde los errores son de relación: un id
+//     duplicado, un tema fuera del mapa de cobertura, un mini-proyecto que no existe.
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -13,13 +16,18 @@ import {
 	type Coverage,
 	DIFFICULTIES,
 	type Difficulty,
+	LANGUAGES,
+	type Language,
 	type MiniProject,
 	type Question,
 	type Result,
+	type Theory,
+	theoryShape,
 	validateAreas,
 	validateCoverage,
 	validateMiniProjects,
 	validateQuestion,
+	validateTheory,
 } from "./schema";
 
 const GIVEAWAY_LIMIT = 0.3;
@@ -39,6 +47,8 @@ export interface AreaReport {
 	topics: TopicReport[];
 	difficulty: Record<Difficulty, number>;
 	questions: Question[];
+	/** Theory summary of the area, present only when the three languages are valid. */
+	theory?: Record<Language, Theory>;
 }
 
 export interface CheckResult {
@@ -71,6 +81,7 @@ function readJson(path: string, errors: string[]): unknown {
 
 // EN: The two catalogs are JSON too, so they pass through the same gate as the questions.
 // PT: Os dois catálogos também são JSON, então passam pela mesma porta que as questões.
+// ES: Los dos catálogos también son JSON, así que pasan por la misma puerta que las preguntas.
 function loadCatalog<T>(path: string, validate: (value: unknown) => Result<T>): T {
 	const parsed = validate(JSON.parse(readFileSync(path, "utf8")));
 	if (!parsed.ok) {
@@ -100,6 +111,8 @@ export function checkContent(options: CheckOptions): CheckResult {
 	//     stores the progress by id.
 	// PT: Os ids precisam ser únicos no quiz inteiro, não só dentro de um arquivo, porque o
 	//     navegador guarda o progresso por id.
+	// ES: Los ids deben ser únicos en todo el quiz, no solo dentro de un archivo, porque el
+	//     navegador guarda el progreso por id.
 	const seenIds = new Map<string, string>();
 
 	const folders = readdirSync(contentDir).filter((name) => statSync(join(contentDir, name)).isDirectory());
@@ -182,6 +195,9 @@ export function checkContent(options: CheckOptions): CheckResult {
 					// PT: O link de mini-projeto é aceito em dois casos: a pasta existe no disco, ou o
 					//     catálogo ainda o marca como planejado. O quiz é escrito antes da maioria dos
 					//     mini-projetos, e o app só mostra o link quando o status é "done".
+					// ES: El enlace de mini-proyecto se acepta en dos casos: la carpeta existe en disco, o el
+					//     catálogo aún lo marca como planeado. El quiz se escribe antes que la mayoría de los
+					//     mini-proyectos, y la app solo muestra el enlace cuando el estado es "done".
 					const planned = miniProjects.get(question.miniProject);
 					const onDisk = !checkDisk || existsSync(join(repoRoot, question.miniProject));
 					if (planned === undefined && (!checkDisk || !onDisk)) {
@@ -221,6 +237,9 @@ export function checkContent(options: CheckOptions): CheckResult {
 		// PT: Duas pistas que um estudante aprende sem saber a matéria: a alternativa correta ser
 		//     a mais longa, e a posição correta ser previsível. Por acaso cada uma acontece em
 		//     cerca de 20% das vezes, então uma fatia muito maior vira aviso.
+		// ES: Dos pistas que un estudiante aprende sin saber la materia: que la alternativa correcta sea
+		//     la más larga, y que la posición correcta sea predecible. Por azar cada una ocurre en
+		//     cerca del 20% de los casos, así que una proporción mucho mayor se vuelve aviso.
 		const share = (count: number): number => (questions.length < GIVEAWAY_SAMPLE ? 0 : count / questions.length);
 		const longest = questions.filter((question) => {
 			const lengths = question.en.alternatives.map((alternative) => alternative.length);
@@ -240,7 +259,50 @@ export function checkContent(options: CheckOptions): CheckResult {
 				);
 			}
 		}
-		reports.push({ area: folder, target: area.target, actual: questions.length, topics, difficulty, questions });
+		// EN: The theory summary is optional while it is being written: a missing file is a warning
+		//     (an error with `requireTargets`), a broken one is always an error. The three languages
+		//     must share one skeleton, compared against English, the main language.
+		// PT: O resumo teórico é opcional enquanto está sendo escrito: arquivo ausente é aviso (erro
+		//     com `requireTargets`), arquivo quebrado é sempre erro. Os três idiomas precisam ter o
+		//     mesmo esqueleto, comparado com o inglês, o idioma principal.
+		// ES: El resumen teórico es opcional mientras se escribe: un archivo ausente es un aviso (un
+		//     error con `requireTargets`), uno roto siempre es un error. Los tres idiomas deben tener
+		//     el mismo esqueleto, comparado con el inglés, el idioma principal.
+		const loaded = new Map<Language, Theory>();
+		for (const language of LANGUAGES) {
+			const where = `${folder}/theory/${language}.json`;
+			const theoryPath = join(areaDir, "theory", `${language}.json`);
+			if (!existsSync(theoryPath)) {
+				(requireTargets ? errors : warnings).push(`${where}: theory summary is missing`);
+				continue;
+			}
+			const parsed = validateTheory(readJson(theoryPath, errors));
+			if (!parsed.ok) {
+				errors.push(...parsed.errors.map((message) => `${where}: ${message}`));
+			} else if (parsed.value.area !== folder) {
+				errors.push(`${where}: area is "${parsed.value.area}", expected "${folder}"`);
+			} else {
+				loaded.set(language, parsed.value);
+			}
+		}
+		const english = loaded.get("en");
+		for (const [language, theory] of loaded) {
+			if (english !== undefined && theoryShape(theory) !== theoryShape(english)) {
+				errors.push(`${folder}/theory/${language}.json: sections and block types must match theory/en.json`);
+			}
+		}
+		const [en, pt, es] = LANGUAGES.map((language) => loaded.get(language));
+		const theory = en !== undefined && pt !== undefined && es !== undefined ? { en, pt, es } : undefined;
+
+		reports.push({
+			area: folder,
+			target: area.target,
+			actual: questions.length,
+			topics,
+			difficulty,
+			questions,
+			theory,
+		});
 	}
 
 	return { errors, warnings, areas: reports };

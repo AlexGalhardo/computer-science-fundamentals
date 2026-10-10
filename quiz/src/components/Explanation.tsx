@@ -17,6 +17,8 @@ const tokenClass: Record<TokenKind, string> = {
 //     would push the whole page sideways on a phone.
 // PT: Uma linha longa de código precisa rolar dentro da própria caixa (`overflow-x-auto`). Sem
 //     isso ela empurraria a página inteira para o lado no celular.
+// ES: Una línea larga de código debe desplazarse dentro de su propia caja (`overflow-x-auto`). Sin
+//     eso empujaría toda la página hacia un lado en el celular.
 export function ExampleBlock({ example, testId = "example" }: { example: Example; testId?: string }) {
 	return (
 		<pre
@@ -47,6 +49,10 @@ export function ExampleBlock({ example, testId = "example" }: { example: Example
 //     conceito com o motivo de a alternativa certa estar certa, uma linha por alternativa
 //     errada, um exemplo opcional e os links. `order` mapeia posições na tela para índices
 //     originais, então as letras aqui são as mesmas que o estudante viu.
+// ES: La explicación tiene hasta cuatro partes, cada una renderizada solo cuando tiene contenido: el
+//     concepto con el motivo de por qué la alternativa correcta es correcta, una línea por alternativa
+//     incorrecta, un ejemplo opcional y los enlaces. `order` mapea posiciones en pantalla a índices
+//     originales, así que las letras de aquí son las mismas que vio el estudiante.
 export function Explanation({
 	question,
 	order,

@@ -4,6 +4,9 @@
 // PT: A rodada atual fica no `sessionStorage`: sobrevive a um recarregamento e a uma troca de
 //     idioma na mesma aba, e some quando a aba é fechada. O progresso de longo prazo vai para o
 //     `localStorage` (veja progress.ts).
+// ES: La ronda actual se guarda en `sessionStorage`: sobrevive a una recarga y a un cambio de
+//     idioma en la misma pestaña, y desaparece cuando se cierra la pestaña. El progreso a largo plazo va a
+//     `localStorage` (mira progress.ts).
 
 import type { KeyValueStorage } from "./progress";
 import { type Run, runSchema } from "./run";

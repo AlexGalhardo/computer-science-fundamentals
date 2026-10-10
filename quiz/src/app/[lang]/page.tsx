@@ -11,6 +11,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 	const dictionary = getDictionary(lang);
 	// EN: Only what the browser needs travels in the page: the name and the ids of each area.
 	// PT: Só o que o navegador precisa viaja na página: o nome e os ids de cada área.
+	// ES: Solo lo que el navegador necesita viaja en la página: el nombre y los ids de cada área.
 	const areas = getAreas().map((area) => ({
 		slug: area.slug,
 		name: area.name[lang],

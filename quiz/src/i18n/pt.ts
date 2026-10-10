@@ -2,6 +2,7 @@ import type { Dictionary } from "./en";
 
 // EN: Typed as `Dictionary`: removing or misspelling a key here stops the build.
 // PT: Tipado como `Dictionary`: remover ou errar o nome de uma chave aqui interrompe o build.
+// ES: Tipado como `Dictionary`: quitar o escribir mal el nombre de una clave aquí interrumpe el build.
 export const pt: Dictionary = {
 	appName: "Computer Science Fundamentals",
 	tagline: "Estude os fundamentos da computação uma questão de cada vez.",
@@ -9,7 +10,7 @@ export const pt: Dictionary = {
 	home: "Início",
 	language: "Idioma",
 	sourceCode: { label: "Código-fonte", title: "Código-fonte no GitHub (abre em uma nova aba)" },
-	theme: { toLight: "Mudar para o tema claro", toDark: "Mudar para o tema escuro", light: "Claro", dark: "Escuro" },
+	theme: { label: "Tema escuro", dark: "Escuro" },
 	loading: "Carregando...",
 	homePage: {
 		title: "Áreas",
@@ -33,6 +34,14 @@ export const pt: Dictionary = {
 		matching: "questões neste filtro",
 		empty: "Esta área ainda não tem questões.",
 		topics: "Tópicos",
+	},
+	theory: {
+		title: "Resumo teórico",
+		contents: "Sumário",
+		backToContents: "Voltar ao sumário",
+		watch: "Assista ao vídeo",
+		closeTerm: "Fechar",
+		tones: { analogy: "Pense assim", tip: "Dica", warning: "Cuidado", remember: "Lembre-se" },
 	},
 	difficulty: { all: "Todos os níveis", basic: "Básico", intermediate: "Intermediário", advanced: "Avançado" },
 	question: {

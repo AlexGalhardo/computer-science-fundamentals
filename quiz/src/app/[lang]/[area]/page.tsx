@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPanel } from "@/components/AreaPanel";
+import { TheorySummary } from "@/components/Theory";
 import { getDictionary, isLanguage } from "@/i18n";
-import { getArea, getQuestions } from "@/lib/content";
+import { getArea, getQuestions, getTheory } from "@/lib/content";
 
 export default async function AreaPage({ params }: { params: Promise<{ lang: string; area: string }> }) {
 	const { lang, area: slug } = await params;
@@ -13,6 +14,8 @@ export default async function AreaPage({ params }: { params: Promise<{ lang: str
 	const dictionary = getDictionary(lang);
 	// EN: The area page needs no question text, only what a run is built from.
 	// PT: A página da área não precisa do texto das questões, só do que forma uma rodada.
+	// ES: La página del área no necesita el texto de las preguntas, solo lo que forma una ronda.
+	const theory = getTheory(slug, lang);
 	const questions = getQuestions(slug, lang).map(({ id, difficulty, answer }) => ({ id, difficulty, answer }));
 	return (
 		<div className="flex flex-col gap-5">
@@ -26,6 +29,7 @@ export default async function AreaPage({ params }: { params: Promise<{ lang: str
 				</p>
 			</div>
 			<AreaPanel area={slug} questions={questions} language={lang} dictionary={dictionary} />
+			{theory === undefined ? null : <TheorySummary theory={theory} dictionary={dictionary} />}
 		</div>
 	);
 }

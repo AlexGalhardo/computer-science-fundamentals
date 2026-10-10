@@ -4,6 +4,9 @@
 // PT: `bun run quiz:compare <area> <answers.json> [--content <dir>] [--out <file>]`
 //     Lê as respostas do revisor (`{ "<id>": 2 }` ou `{ "<id>": { "answer": 2, "note": "..." } }`)
 //     e escreve `review.md` com toda questão em que revisor e gabarito discordam.
+// ES: `bun run quiz:compare <area> <answers.json> [--content <dir>] [--out <file>]`
+//     Lee las respuestas del revisor (`{ "<id>": 2 }` o `{ "<id>": { "answer": 2, "note": "..." } }`)
+//     y escribe `review.md` con toda pregunta en la que revisor y clave de respuestas discrepan.
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";

@@ -4,6 +4,9 @@
 # PT: Três estágios. `deps` instala as dependências fixadas, `build` pré-renderiza todas as
 #     páginas em arquivos estáticos, e o estágio final é só um servidor de arquivos com eles.
 #     O contexto de build é a raiz do repositório, porque o lockfile do Bun fica lá.
+# ES: Tres etapas. `deps` instala las dependencias fijadas, `build` pre-renderiza todas las
+#     páginas en archivos estáticos, y la etapa final es solo un servidor de archivos con ellos.
+#     El contexto de build es la raíz del repositorio, porque el lockfile de Bun está allí.
 FROM oven/bun:1.4.2 AS deps
 WORKDIR /repo
 COPY package.json bun.lock ./
@@ -15,6 +18,7 @@ RUN bun install --frozen-lockfile
 FROM deps AS build
 # EN: QUIZ_CONTENT_DIR chooses the questions. The tests build with a small fixture.
 # PT: QUIZ_CONTENT_DIR escolhe as questões. Os testes fazem o build com um fixture pequeno.
+# ES: QUIZ_CONTENT_DIR elige las preguntas. Las pruebas hacen el build con un fixture pequeño.
 ARG QUIZ_CONTENT_DIR=content
 ENV QUIZ_CONTENT_DIR=${QUIZ_CONTENT_DIR} NEXT_TELEMETRY_DISABLED=1
 COPY biome.json ./
@@ -24,6 +28,7 @@ RUN bun run typecheck && bun --bun run build
 
 # EN: Unit tests run on the same sources as the build.
 # PT: Os testes unitários rodam sobre as mesmas fontes do build.
+# ES: Las pruebas unitarias corren sobre las mismas fuentes del build.
 FROM build AS unit
 CMD ["bun", "test", "tests/unit"]
 

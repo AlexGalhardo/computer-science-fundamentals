@@ -4,6 +4,9 @@
 // PT: Uma "run" é uma tentativa em uma lista de questões. Ela é dado puro, sem texto: só ids,
 //     ordens e respostas escolhidas. É por isso que o idioma pode mudar no meio de uma questão
 //     sem perder nada: o outro idioma renderiza a mesma run.
+// ES: Una "run" es un intento sobre una lista de preguntas. Es dato puro, sin texto: solo ids,
+//     órdenes y respuestas elegidas. Por eso el idioma puede cambiar en medio de una pregunta
+//     sin perder nada: el otro idioma renderiza la misma run.
 
 import { z } from "zod";
 import { ALTERNATIVE_COUNT, DIFFICULTIES, type Difficulty } from "../content/schema";
@@ -71,6 +74,9 @@ export function selectQuestions<T extends RunQuestion>(questions: readonly T[], 
 // PT: Tanto as questões quanto as alternativas de cada questão são embaralhadas. O gabarito
 //     continua correto porque `order` guarda o índice original de cada alternativa, e o gabarito
 //     é sempre comparado com índices originais, nunca com posições na tela.
+// ES: Tanto las preguntas como las alternativas de cada pregunta se mezclan. La clave de respuestas
+//     sigue siendo correcta porque `order` guarda el índice original de cada alternativa, y la clave
+//     siempre se compara con índices originales, nunca con posiciones en pantalla.
 export function createRun(questions: readonly RunQuestion[], options: RunOptions): Run {
 	const random = createRandom(options.seed);
 	const selected = shuffle(selectQuestions(questions, options), random).slice(0, options.size);

@@ -13,6 +13,8 @@ export default async function QuizPage({ params }: { params: Promise<{ lang: str
 	//     time. The browser never asks a server for them.
 	// PT: As questões desta área, só neste idioma, são embutidas na página no build. O navegador
 	//     nunca pede nada a um servidor.
+	// ES: Las preguntas de esta área, solo en este idioma, se incrustan en la página durante el build.
+	//     El navegador nunca pide nada a un servidor.
 	return (
 		<QuizRunner
 			area={slug}

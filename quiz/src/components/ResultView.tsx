@@ -7,6 +7,7 @@ import { type Dictionary, format } from "@/i18n";
 import type { ClientQuestion } from "@/lib/content";
 import { type Run, score } from "@/lib/run";
 import { loadRun } from "@/lib/run-storage";
+import { primaryLink } from "./ui";
 
 export function ResultView({
 	area,
@@ -31,11 +32,7 @@ export function ResultView({
 		return <p className="text-muted">{dictionary.loading}</p>;
 	}
 	const back = (
-		<Link
-			href={`/${language}/${area}/`}
-			data-testid="back-to-area"
-			className="inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-on-accent"
-		>
+		<Link href={`/${language}/${area}/`} data-testid="back-to-area" className={primaryLink}>
 			{dictionary.result.again}
 		</Link>
 	);
@@ -52,6 +49,8 @@ export function ResultView({
 	//     number. One source of truth: the answers given.
 	// PT: A pontuação é calculada a partir da rodada salva e do gabarito, nunca guardada como
 	//     número. Uma única fonte de verdade: as respostas dadas.
+	// ES: La puntuación se calcula a partir de la ronda guardada y de la clave de respuestas, nunca se guarda como
+	//     número. Una única fuente de verdad: las respuestas dadas.
 	const byId = new Map(questions.map((question) => [question.id, question]));
 	const result = score(run, new Map(questions.map((question) => [question.id, question.answer])));
 

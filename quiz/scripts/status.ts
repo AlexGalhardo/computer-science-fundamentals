@@ -112,6 +112,7 @@ function render(language: Language): string {
 				const name = basename(item.path);
 				// EN: A finished mini-project links to its documentation page, when there is one.
 				// PT: Um mini-projeto pronto aponta para sua página de documentação, quando existe.
+				// ES: Un mini-proyecto listo apunta a su página de documentación, cuando existe.
 				const page = join(repoRoot, "docs", language, area.slug, `${name}.md`);
 				if (item.status !== "done") {
 					return `${name} (${text.planned})`;

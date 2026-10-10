@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@base-ui/react/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -10,6 +11,7 @@ import { recordAnswer } from "@/lib/progress";
 import { answer, createRun, isLast, next, type Run } from "@/lib/run";
 import { loadRun, newSeed, saveRun } from "@/lib/run-storage";
 import { ExampleBlock, Explanation, LETTERS } from "./Explanation";
+import { primaryButton } from "./ui";
 
 const DEFAULT_SIZE = 10;
 
@@ -37,6 +39,9 @@ export function QuizRunner({
 	// PT: A rodada vem do storage do navegador, que não existe enquanto a página é
 	//     pré-renderizada. Então a primeira renderização mostra "carregando", e a rodada é lida
 	//     logo depois. Abrir esta página sem rodada salva começa uma rodada padrão.
+	// ES: La ronda viene del storage del navegador, que no existe mientras la página se
+	//     pre-renderiza. Entonces el primer render muestra "cargando", y la ronda se lee justo
+	//     después. Abrir esta página sin ronda guardada empieza una ronda por defecto.
 	useEffect(() => {
 		let current = loadRun(sessionStorage, area);
 		if (current === undefined) {
@@ -89,11 +94,14 @@ export function QuizRunner({
 	}, [run, answered, router, language, area]);
 
 	// EN: Keyboard shortcuts for the whole page: 1 to 5 or A to E choose an alternative, and
-	//     Enter moves on. Enter is left alone on links, selects and the header buttons, so they
-	//     keep their normal behaviour.
+	//     Enter moves on. Enter is left alone on links and on the header controls, so they keep
+	//     their normal behaviour.
 	// PT: Atalhos de teclado para a página inteira: 1 a 5 ou A a E escolhem uma alternativa, e
-	//     Enter avança. O Enter é deixado em paz em links, selects e nos botões do cabeçalho,
-	//     para que eles mantenham o comportamento normal.
+	//     Enter avança. O Enter é deixado em paz em links e nos controles do cabeçalho, para que
+	//     eles mantenham o comportamento normal.
+	// ES: Atajos de teclado para toda la página: 1 a 5 o A a E eligen una alternativa, y
+	//     Enter avanza. Enter se deja en paz en enlaces y en los controles del encabezado, para
+	//     que mantengan su comportamiento normal.
 	useEffect(() => {
 		function onKey(event: KeyboardEvent): void {
 			if (event.ctrlKey || event.metaKey || event.altKey) {
@@ -101,7 +109,7 @@ export function QuizRunner({
 			}
 			const target = event.target instanceof Element ? event.target : null;
 			if (event.key === "Enter") {
-				if (target?.closest("a, select, [data-keep-enter]")) {
+				if (target?.closest("a, [data-keep-enter]")) {
 					return;
 				}
 				event.preventDefault();
@@ -110,7 +118,7 @@ export function QuizRunner({
 			}
 			const key = event.key.toUpperCase();
 			const position = /^[1-5]$/.test(key) ? Number(key) - 1 : LETTERS.indexOf(key as (typeof LETTERS)[number]);
-			if (position >= 0 && !target?.closest("input, textarea, select")) {
+			if (position >= 0 && !target?.closest("input, textarea")) {
 				choose(position);
 			}
 		}
@@ -122,6 +130,8 @@ export function QuizRunner({
 	//     the page scrolls to it. On wide screens it is already visible beside the question.
 	// PT: No celular a explicação fica abaixo das alternativas, fora da tela. Depois da resposta
 	//     a página rola até ela. Em telas largas ela já está visível ao lado da questão.
+	// ES: En el celular la explicación queda debajo de las alternativas, fuera de la pantalla. Tras
+	//     la respuesta la página se desplaza hasta ella. En pantallas anchas ya está visible junto a la pregunta.
 	useEffect(() => {
 		if (answered && window.matchMedia("(max-width: 767px)").matches) {
 			explanationRef.current?.scrollIntoView({ block: "start" });
@@ -150,6 +160,7 @@ export function QuizRunner({
 	return (
 		// EN: Mobile first: one column. From 768 px (`md`) up, two columns side by side.
 		// PT: Mobile first: uma coluna. A partir de 768 px (`md`), duas colunas lado a lado.
+		// ES: Mobile first: una columna. Desde 768 px (`md`), dos columnas lado a lado.
 		<div className="grid gap-6 md:grid-cols-2" data-testid="question-screen" data-question-id={question.id}>
 			<section aria-labelledby="statement" className="flex min-w-0 flex-col gap-4">
 				<p className="text-sm text-muted">
@@ -167,7 +178,8 @@ export function QuizRunner({
 					{question.text.statement}
 				</h1>
 				{/* EN: A snippet is part of the question, so it is shown before the answer.
-				    PT: Um snippet faz parte da questão, então aparece antes da resposta. */}
+				    PT: Um snippet faz parte da questão, então aparece antes da resposta.
+					    ES: Un snippet es parte de la pregunta, así que aparece antes de la respuesta. */}
 				{question.text.snippet !== undefined && (
 					<ExampleBlock example={question.text.snippet} testId="snippet" />
 				)}
@@ -179,6 +191,8 @@ export function QuizRunner({
 						//     a symbol and a written label, for colour-blind readers and screen readers.
 						// PT: A cor nunca é o único sinal: uma alternativa certa ou errada também ganha
 						//     um símbolo e um rótulo escrito, para daltônicos e leitores de tela.
+						// ES: El color nunca es la única señal: una alternativa correcta o incorrecta también recibe
+						//     un símbolo y una etiqueta escrita, para daltónicos y lectores de pantalla.
 						const state = !answered ? "idle" : isAnswer ? "right" : isChosen ? "wrong" : "idle";
 						const style =
 							state === "right"
@@ -188,15 +202,29 @@ export function QuizRunner({
 									: "border-border bg-surface";
 						return (
 							<li key={original}>
-								<button
-									type="button"
+								{/* EN: One click answers. After the answer the button is disabled, but
+								        `focusableWhenDisabled` keeps it in the Tab order: Base UI uses
+								        `aria-disabled` instead of the `disabled` attribute, so a keyboard or
+								        screen reader user can still walk through the marked alternatives.
+								    PT: Um clique responde. Depois da resposta o botão fica desabilitado, mas
+								        `focusableWhenDisabled` o mantém na ordem do Tab: o Base UI usa
+								        `aria-disabled` em vez do atributo `disabled`, então quem usa teclado ou
+								        leitor de tela ainda consegue passar pelas alternativas marcadas.
+								    ES: Un clic responde. Tras la respuesta el botón queda deshabilitado, pero
+								        `focusableWhenDisabled` lo mantiene en el orden del Tab: Base UI usa
+								        `aria-disabled` en lugar del atributo `disabled`, así que quien usa
+								        teclado o lector de pantalla aún puede recorrer las alternativas marcadas. */}
+								<Button
 									data-testid="alternative"
 									data-alt={original}
 									data-state={state}
-									aria-disabled={answered}
+									disabled={answered}
+									focusableWhenDisabled
 									onClick={() => choose(position)}
 									className={`flex min-h-11 w-full items-start gap-3 rounded-md border-2 px-3 py-2 text-left ${style} ${
-										answered ? "cursor-default" : "cursor-pointer"
+										answered
+											? "cursor-default"
+											: "cursor-pointer hover:border-accent hover:bg-code-bg"
 									}`}
 								>
 									<span className="font-bold">{LETTERS[position]}</span>
@@ -209,22 +237,21 @@ export function QuizRunner({
 												: dictionary.question.yourAnswer}
 										</span>
 									)}
-								</button>
+								</Button>
 							</li>
 						);
 					})}
 				</ol>
 				<p className="hidden text-sm text-muted md:block">{dictionary.question.keyboardHint}</p>
 				<div className="flex justify-end">
-					<button
-						type="button"
+					<Button
 						data-testid="next"
 						disabled={!answered}
 						onClick={advance}
-						className="min-h-11 rounded-md bg-accent px-5 text-base font-semibold text-on-accent disabled:cursor-not-allowed disabled:opacity-60"
+						className={`${primaryButton} px-5`}
 					>
 						{isLast(run) ? dictionary.question.finish : dictionary.question.next}
-					</button>
+					</Button>
 				</div>
 			</section>
 
