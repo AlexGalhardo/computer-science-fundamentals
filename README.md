@@ -26,6 +26,7 @@ beginners.
 - [What you will learn](#what-you-will-learn)
 - [Roadmap for beginners](#roadmap-for-beginners)
 - [Quick start](#quick-start)
+  - [Quiz demo](#quiz-demo)
 - [Tech stack](#tech-stack)
 - [Docs](#docs)
 - [Repository layout](#repository-layout)
@@ -157,6 +158,20 @@ Run the quiz:
 ```
 
 Then open <http://localhost:3000>.
+
+### Quiz demo
+
+Light and dark theme:
+
+![Quiz home screen switching from the light to the dark theme and back](./docs/media/quiz-home-light-dark.gif)
+
+Reading the theory summary of an area:
+
+![Scrolling through the theory summary of the Big O area](./docs/media/quiz-theory.gif)
+
+Answering questions, with the explanation next to each one:
+
+![Answering quiz questions and reading the correct or incorrect feedback](./docs/media/quiz-answering.gif)
 
 Run a mini-project (each one brings its own setup scripts, which build pinned
 images and run the tests):
