@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `quiz`: search box opened with Ctrl K (Cmd K on a Mac) or the header field. It finds areas and theory sections in the current language and jumps to them. The index is built at build time, with no fetch.
 - `quiz`: on phones the header shows the title "Quiz", a search button and a hamburger button. Language, theme and source code links live in a drawer.
+- `quiz`: `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt` are generated at every `next build` from the validated content (`quiz/src/app/sitemap.ts`, `robots.ts`, `llms.txt/route.ts`, `llms-full.txt/route.ts`, builders in `quiz/src/lib/seo.ts`). A new area or question count reaches them with no edit. The base URL is `https://csf.vukem.dev`, overridable with `QUIZ_SITE_URL`, which is validated as a URL.
 
 ### Changed
 
 - `quiz`: the theme control is now a pair of round sun and moon icon buttons, and the header is sticky.
 - `quiz`: every font size is 25% bigger (Tailwind font scale and the body size). Spacing and touch targets are unchanged.
+- `quiz`: `next` 16.4.0 → 16.4.3 (exact pin), fixing the security advisory reported by `next upgrade --agent=security`.
 
 ## [1.0.2] - 2026-10-10
 

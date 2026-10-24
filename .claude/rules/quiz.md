@@ -24,3 +24,4 @@ The quiz is the main product of the repository. Full design: `docs/en/quiz.md`.
 - **State the convention** whenever the answer depends on one: who counts the first round-trip, whether the root is black, SQL standard against a product.
 - **Blind review**: `bun run quiz:blind <area>`, a reviewer that reads only `quiz/.review/<area>.blind.json`, `bun run quiz:compare <area> <answers>`, and every disagreement and reviewer note resolved in `review.md`. A reviewer note with no disagreement still gets a resolution.
 - After content changes run `bun run docs:index`, which CI checks.
+- **SEO files are generated, never hand-edited.** `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt` come from `quiz/src/app/` at every `next build`, using the validated areas (builders in `quiz/src/lib/seo.ts`, tests in `quiz/tests/unit/seo.test.ts`). Do not add files under `quiz/public/` for them.
