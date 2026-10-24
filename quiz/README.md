@@ -32,7 +32,8 @@ The quiz is then at <http://localhost:3000> (set `QUIZ_PORT` to change the port)
 
 - **Three languages.** English, Portuguese and Spanish for the interface and for every question, under `/en/`, `/pt/` and `/es/`. The first visit follows the browser language and the choice is remembered. Switching language in the middle of a question keeps the question, the chosen answer and the explanation.
 - **Light and dark theme.** The first visit follows the system preference. The theme is applied before the first paint, so a reload never flashes the other theme.
-- **Mobile friendly.** One column below 768 px, with the explanation under the alternatives, and two columns from there up. Usable from 320 px wide, with touch targets of at least 44 by 44 px.
+- **Search.** Ctrl K (Cmd K on a Mac) or the field in the header finds an area or a theory section and jumps to it.
+- **Mobile friendly.** One column below 768 px, with the explanation under the alternatives, and two columns from there up. Usable from 320 px wide, with touch targets of at least 44 by 44 px. On a phone the title is just "Quiz" and the header controls move into a hamburger menu. Fonts are 25% bigger than the Tailwind default.
 - **Progress** per area, with a reset button.
 - **Review only the ones I got wrong.** A question leaves that list when it is answered correctly.
 - **Difficulty filter**: basic, intermediate, advanced.

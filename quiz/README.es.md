@@ -32,7 +32,8 @@ El quiz queda en <http://localhost:3000> (define `QUIZ_PORT` para cambiar el pue
 
 - **Tres idiomas.** Inglés, portugués y español en la interfaz y en todas las preguntas, en `/en/`, `/pt/` y `/es/`. La primera visita sigue el idioma del navegador y la elección se recuerda. Cambiar de idioma en medio de una pregunta mantiene la pregunta, la respuesta elegida y la explicación.
 - **Tema claro y oscuro.** La primera visita sigue la preferencia del sistema. El tema se aplica antes del primer pintado, así que recargar nunca parpadea con el otro tema.
-- **Pensado para celular.** Una columna por debajo de 768 px, con la explicación debajo de las alternativas, y dos columnas a partir de ahí. Usable desde 320 px de ancho, con áreas táctiles de al menos 44 por 44 px.
+- **Búsqueda.** Ctrl K (Cmd K en Mac) o el campo del encabezado encuentra un área o una sección de la teoría y salta a ella.
+- **Pensado para celular.** Una columna por debajo de 768 px, con la explicación debajo de las alternativas, y dos columnas a partir de ahí. Usable desde 320 px de ancho, con áreas táctiles de al menos 44 por 44 px. En el celular el título es solo "Quiz" y los controles del encabezado pasan a un menú hamburguesa. Las fuentes son 25% mayores que el valor predeterminado de Tailwind.
 - **Progreso** por área, con un botón para reiniciarlo.
 - **Repasar solo las que fallé.** Una pregunta sale de esa lista cuando se responde correctamente.
 - **Filtro de dificultad**: básico, intermedio, avanzado.

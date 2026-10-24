@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import "../globals.css";
 import { Header } from "@/components/Header";
+import type { SearchEntry } from "@/components/SearchDialog";
 import { LANGUAGES } from "@/content/schema";
 import { getDictionary, HTML_LANG, isLanguage, THEME_KEY } from "@/i18n";
+import { getAreas, getTheory } from "@/lib/content";
 
 // EN: Static site generation: Next.js calls this at build time and writes one HTML file per
 //     language. `dynamicParams = false` makes any other value a 404 instead of a server render.
@@ -47,6 +49,15 @@ export default async function LanguageLayout({
 		notFound();
 	}
 	const dictionary = getDictionary(lang);
+	const searchEntries: SearchEntry[] = getAreas().flatMap((area) => [
+		{ title: area.name[lang], href: `/${lang}/${area.slug}/`, kind: "area" as const },
+		...(getTheory(area.slug, lang)?.sections ?? []).map((section) => ({
+			title: section.title,
+			parent: area.name[lang],
+			href: `/${lang}/${area.slug}/#${section.id}`,
+			kind: "theory" as const,
+		})),
+	]);
 	return (
 		// EN: `suppressHydrationWarning`: the script above adds `data-theme` before React runs,
 		//     so the server HTML and the browser HTML differ on purpose in that one attribute.
@@ -80,7 +91,7 @@ export default async function LanguageLayout({
 					>
 						{dictionary.skipToContent}
 					</a>
-					<Header language={lang} dictionary={dictionary} />
+					<Header language={lang} dictionary={dictionary} searchEntries={searchEntries} />
 					<main id="content" className="mx-auto max-w-6xl px-4 py-6">
 						{children}
 					</main>

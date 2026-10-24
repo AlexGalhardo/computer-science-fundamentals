@@ -465,7 +465,7 @@ test.describe("theme (QZ-7)", () => {
 		await page.goto("/en/");
 		await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 		const toggle = page.getByRole("button", { name: "Dark theme" });
-		await expect(toggle).toHaveAttribute("data-testid", "theme-toggle");
+		await expect(toggle).toHaveAttribute("data-testid", "theme-dark");
 		await expect(toggle).toHaveAttribute("aria-pressed", "false");
 		await toggle.click();
 		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -482,7 +482,7 @@ test.describe("theme (QZ-7)", () => {
 		// EN: The keyboard takes it back to the light theme.
 		// PT: O teclado o leva de volta ao tema claro.
 		// ES: El teclado lo lleva de vuelta al tema claro.
-		await toggle.focus();
+		await page.getByTestId("theme-light").focus();
 		await page.keyboard.press("Space");
 		await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 		await expect(toggle).toHaveAttribute("aria-pressed", "false");
@@ -506,6 +506,30 @@ test.describe("theme (QZ-7)", () => {
 	}
 });
 
+test.describe("header", () => {
+	test("Ctrl K opens the search and Enter goes to the first result", async ({ page }) => {
+		await page.goto("/en/");
+		await page.keyboard.press("Control+k");
+		await expect(page.getByTestId("search-dialog")).toBeVisible();
+		await page.getByTestId("search-input").fill("big");
+		await expect(page.getByTestId("search-result").first()).toBeVisible();
+		await page.keyboard.press("Enter");
+		await expect(page).toHaveURL(/\/en\/big-o\//);
+		await expect(page.getByTestId("search-dialog")).toHaveCount(0);
+	});
+
+	test("on a phone the title is only Quiz and the controls are in the hamburger menu", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 740 });
+		await page.goto("/en/");
+		await expect(page.locator("header").getByText("Quiz", { exact: true })).toBeVisible();
+		await expect(page.locator("header").getByText("Computer Science Fundamentals")).toBeHidden();
+		await expect(page.getByTestId("lang-pt")).toBeHidden();
+		await page.getByTestId("menu-open").click();
+		await page.getByRole("dialog").getByTestId("lang-pt").click();
+		await expect(page).toHaveURL(/\/pt\/$/);
+	});
+});
+
 test.describe("mobile (QZ-8)", () => {
 	for (const width of [320, 390, 768, 1280]) {
 		test(`the full flow has no horizontal overflow at ${width} px`, async ({ page }) => {
@@ -518,17 +542,35 @@ test.describe("mobile (QZ-8)", () => {
 			// EN: Touch targets: alternatives, toggles and navigation are at least 44 by 44 px.
 			// PT: Alvos de toque: alternativas, alternadores e navegação têm ao menos 44 por 44 px.
 			// ES: Áreas táctiles: las alternativas, los interruptores y la navegación miden al menos 44 por 44 px.
-			const targets = [
-				page.getByTestId("alternative").first(),
-				page.getByTestId("next"),
-				page.getByTestId("theme-toggle"),
-				page.getByTestId("lang-pt"),
-				page.getByTestId("source-code"),
-			];
+			// EN: Below 768 px the controls of the header live in the drawer of the hamburger button.
+			// PT: Abaixo de 768 px os controles do cabeçalho ficam na gaveta do botão hambúrguer.
+			// ES: Debajo de 768 px los controles del encabezado viven en el cajón del botón hamburguesa.
+			const targets = [page.getByTestId("alternative").first(), page.getByTestId("next")];
+			const menu = page.getByRole("dialog");
+			if (width < 768) {
+				const trigger = page.getByTestId("menu-open");
+				targets.push(trigger);
+				await trigger.click();
+				targets.push(
+					menu.getByTestId("theme-dark"),
+					menu.getByTestId("lang-pt"),
+					menu.getByTestId("source-code"),
+				);
+			} else {
+				targets.push(
+					page.getByTestId("theme-dark"),
+					page.getByTestId("lang-pt"),
+					page.getByTestId("source-code"),
+				);
+			}
 			for (const target of targets) {
 				const box = await target.boundingBox();
 				expect(box?.width).toBeGreaterThanOrEqual(44);
 				expect(box?.height).toBeGreaterThanOrEqual(44);
+			}
+			if (width < 768) {
+				await page.getByTestId("menu-close").click();
+				await expect(menu).toHaveCount(0);
 			}
 
 			await answerCurrent(page, true);

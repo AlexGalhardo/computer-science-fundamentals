@@ -43,7 +43,8 @@ Una pregunta por pantalla, en una cuadrícula de dos columnas. En un teléfono l
 
 - **i18n**: toda la app, interfaz y preguntas, en inglés, portugués y español, con un selector de idioma.
 - **Tema claro y oscuro**, con un interruptor. La primera visita sigue la preferencia del sistema.
-- **Apto para móviles**: usable desde 320 px de ancho, con controles de tamaño táctil.
+- **Búsqueda** con Ctrl K (Cmd K en Mac) sobre áreas y secciones de la teoría.
+- **Apto para móviles**: usable desde 320 px de ancho, con controles de tamaño táctil. En el celular el título es "Quiz" y los controles están en un menú hamburguesa. Las fuentes son 25% mayores que el valor predeterminado de Tailwind.
 
 ## Otras funciones de la primera versión
 

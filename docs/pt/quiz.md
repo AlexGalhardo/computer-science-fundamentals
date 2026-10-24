@@ -43,7 +43,8 @@ Uma pergunta por tela, em um grid de duas colunas. No celular as colunas empilha
 
 - **i18n**: o app inteiro, interface e perguntas, em inglês, português e espanhol, com seletor de língua.
 - **Tema claro e escuro**, com um botão de alternância. A primeira visita segue a preferência do sistema.
-- **Mobile friendly**: utilizável a partir de 320 px de largura, com controles no tamanho de toque.
+- **Busca** com Ctrl K (Cmd K no Mac) sobre áreas e seções da teoria.
+- **Mobile friendly**: utilizável a partir de 320 px de largura, com controles no tamanho de toque. No celular o título é "Quiz" e os controles ficam em um menu hambúrguer. As fontes são 25% maiores que o padrão do Tailwind.
 
 ## Outros recursos da primeira versão
 

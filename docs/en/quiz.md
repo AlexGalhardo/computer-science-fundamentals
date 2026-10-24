@@ -43,7 +43,8 @@ One question per screen, in a two-column grid. On a phone the columns stack.
 
 - **i18n**: the whole app, interface and questions, in English, Portuguese and Spanish, with a language selector.
 - **Light and dark theme**, with a toggle. The first visit follows the system preference.
-- **Mobile friendly**: usable from 320 px wide, with touch-sized controls.
+- **Search** with Ctrl K (Cmd K on a Mac) over areas and theory sections.
+- **Mobile friendly**: usable from 320 px wide, with touch-sized controls. On a phone the title is "Quiz" and the controls are in a hamburger menu. Fonts are 25% bigger than the Tailwind default.
 
 ## Other features of the first version
 
