@@ -1,9 +1,7 @@
-"use client";
-
 import { Dialog } from "@base-ui/react/dialog";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { Dictionary } from "@/i18n";
+import { navigate } from "@/lib/navigate";
 
 export interface SearchEntry {
 	/** Text that is searched and shown. */
@@ -36,7 +34,6 @@ const MAX_RESULTS = 30;
 //     build y llega como prop, así que no se descarga nada. Toda palabra escrita debe aparecer
 //     en la entrada; los títulos que empiezan con la primera palabra van primero.
 export function SearchDialog({ dictionary, entries }: { dictionary: Dictionary; entries: SearchEntry[] }) {
-	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const [active, setActive] = useState(0);
@@ -44,14 +41,29 @@ export function SearchDialog({ dictionary, entries }: { dictionary: Dictionary; 
 
 	useEffect(() => {
 		setIsMac(/mac|iphone|ipad/i.test(navigator.platform));
-		function onKey(event: KeyboardEvent): void {
-			if (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
-				event.preventDefault();
-				setOpen((value) => !value);
-			}
+		// EN: The key itself is handled by an inline script (see the language layout), so a press
+		//     that arrives before this island hydrates is remembered and applied here.
+		// PT: A tecla em si é tratada por um script inline (veja o layout do idioma), então um
+		//     aperto que chega antes desta ilha hidratar fica guardado e é aplicado aqui.
+		// ES: La tecla en sí la maneja un script inline (mira el layout del idioma), así que una
+		//     pulsación que llega antes de que esta isla se hidrate queda guardada y se aplica aquí.
+		function onShortcut(): void {
+			// EN: Read the flag before clearing it. The state updater runs later, so it would
+			//     otherwise see the flag already false and could only open, never close.
+			// PT: Lê a flag antes de limpá-la. O atualizador do estado roda depois, então veria
+			//     a flag já falsa e só conseguiria abrir, nunca fechar.
+			// ES: Lee la bandera antes de limpiarla. El actualizador del estado corre después, así
+			//     que vería la bandera ya en falso y solo podría abrir, nunca cerrar.
+			const pending = window.__quizSearch === true;
+			window.__quizSearch = false;
+			setOpen((value) => (pending ? !value : true));
 		}
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
+		window.addEventListener("quiz-search", onShortcut);
+		if (window.__quizSearch) {
+			window.__quizSearch = false;
+			setOpen(true);
+		}
+		return () => window.removeEventListener("quiz-search", onShortcut);
 	}, []);
 
 	const indexed = useMemo(
@@ -91,7 +103,7 @@ export function SearchDialog({ dictionary, entries }: { dictionary: Dictionary; 
 			return;
 		}
 		change(false);
-		router.push(entry.href);
+		navigate(entry.href);
 	}
 
 	function onInputKey(event: React.KeyboardEvent<HTMLInputElement>): void {

@@ -1,11 +1,9 @@
-"use client";
-
 import { Meter } from "@base-ui/react/meter";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Language } from "@/content/schema";
 import type { Dictionary } from "@/i18n";
 import { loadProgress, type Progress } from "@/lib/progress";
+import { Link } from "./Link";
 
 export interface AreaCard {
 	slug: string;

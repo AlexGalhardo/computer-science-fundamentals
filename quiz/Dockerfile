@@ -20,7 +20,7 @@ FROM deps AS build
 # PT: QUIZ_CONTENT_DIR escolhe as questões. Os testes fazem o build com um fixture pequeno.
 # ES: QUIZ_CONTENT_DIR elige las preguntas. Las pruebas hacen el build con un fixture pequeño.
 ARG QUIZ_CONTENT_DIR=content
-ENV QUIZ_CONTENT_DIR=${QUIZ_CONTENT_DIR} NEXT_TELEMETRY_DISABLED=1
+ENV QUIZ_CONTENT_DIR=${QUIZ_CONTENT_DIR} ASTRO_TELEMETRY_DISABLED=1
 COPY biome.json ./
 COPY quiz quiz
 WORKDIR /repo/quiz

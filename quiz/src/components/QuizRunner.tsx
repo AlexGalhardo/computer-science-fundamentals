@@ -1,16 +1,14 @@
-"use client";
-
 import { Button } from "@base-ui/react/button";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Language } from "@/content/schema";
 import type { Dictionary } from "@/i18n";
 import type { ClientQuestion } from "@/lib/content";
+import { navigate } from "@/lib/navigate";
 import { recordAnswer } from "@/lib/progress";
 import { answer, createRun, isLast, next, type Run } from "@/lib/run";
 import { loadRun, newSeed, saveRun } from "@/lib/run-storage";
 import { ExampleBlock, Explanation, LETTERS } from "./Explanation";
+import { Link } from "./Link";
 import { primaryButton } from "./ui";
 
 const DEFAULT_SIZE = 10;
@@ -28,7 +26,6 @@ export function QuizRunner({
 	language: Language;
 	dictionary: Dictionary;
 }) {
-	const router = useRouter();
 	const [run, setRun] = useState<Run | undefined>(undefined);
 	const [ready, setReady] = useState(false);
 	const explanationRef = useRef<HTMLElement>(null);
@@ -84,14 +81,14 @@ export function QuizRunner({
 			return;
 		}
 		if (isLast(run)) {
-			router.push(`/${language}/${area}/result/`);
+			navigate(`/${language}/${area}/result/`);
 			return;
 		}
 		const updated = next(run);
 		saveRun(sessionStorage, updated);
 		setRun(updated);
 		window.scrollTo({ top: 0 });
-	}, [run, answered, router, language, area]);
+	}, [run, answered, language, area]);
 
 	// EN: Keyboard shortcuts for the whole page: 1 to 5 or A to E choose an alternative, and
 	//     Enter moves on. Enter is left alone on links and on the header controls, so they keep

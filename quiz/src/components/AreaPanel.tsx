@@ -1,12 +1,10 @@
-"use client";
-
 import { Button } from "@base-ui/react/button";
 import { Field } from "@base-ui/react/field";
 import { Select } from "@base-ui/react/select";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DIFFICULTIES, type Language } from "@/content/schema";
 import type { Dictionary } from "@/i18n";
+import { navigate } from "@/lib/navigate";
 import { loadProgress, type Progress, resetArea, summarise } from "@/lib/progress";
 import { createRun, type DifficultyFilter, type RunMode, type RunQuestion, selectQuestions } from "@/lib/run";
 import { clearRun, newSeed, saveRun } from "@/lib/run-storage";
@@ -47,12 +45,14 @@ function Picker<Value extends string>({
 	value,
 	options,
 	onChange,
+	disabled,
 }: {
 	label: string;
 	testId: string;
 	value: Value;
 	options: Option<Value>[];
 	onChange: (value: Value) => void;
+	disabled: boolean;
 }) {
 	return (
 		<Field.Root className="flex flex-col gap-1">
@@ -62,6 +62,7 @@ function Picker<Value extends string>({
 			<Select.Root<Value>
 				items={options}
 				value={value}
+				disabled={disabled}
 				onValueChange={(next) => {
 					if (next !== null) {
 						onChange(next);
@@ -121,14 +122,21 @@ export function AreaPanel({
 	language: Language;
 	dictionary: Dictionary;
 }) {
-	const router = useRouter();
 	const [progress, setProgress] = useState<Progress>({});
 	const [difficulty, setDifficulty] = useState<DifficultyFilter>("all");
 	const [size, setSize] = useState<Size>("10");
 	const [message, setMessage] = useState("");
+	// EN: The select and the buttons are inert until this effect runs. A click in that gap would
+	//     hit the static HTML and do nothing, because the handlers do not exist yet.
+	// PT: O select e os botões ficam inertes até este efeito rodar. Um clique nesse intervalo
+	//     acertaria o HTML estático e não faria nada, porque os handlers ainda não existem.
+	// ES: El select y los botones quedan inertes hasta que corre este efecto. Un clic en ese
+	//     intervalo caería en el HTML estático y no haría nada, porque los handlers aún no existen.
+	const [ready, setReady] = useState(false);
 
 	useEffect(() => {
 		setProgress(loadProgress(localStorage));
+		setReady(true);
 	}, []);
 
 	const summary = useMemo(
@@ -165,7 +173,7 @@ export function AreaPanel({
 			wrongIds: summary.wrongIds,
 		});
 		saveRun(sessionStorage, run);
-		router.push(`/${language}/${area}/quiz/`);
+		navigate(`/${language}/${area}/quiz/`);
 	}
 
 	function reset(): void {
@@ -211,6 +219,7 @@ export function AreaPanel({
 					value={difficulty}
 					options={difficultyOptions}
 					onChange={setDifficulty}
+					disabled={!ready}
 				/>
 				<Picker<Size>
 					label={dictionary.areaPage.size}
@@ -218,6 +227,7 @@ export function AreaPanel({
 					value={size}
 					options={sizeOptions}
 					onChange={setSize}
+					disabled={!ready}
 				/>
 			</div>
 
@@ -228,7 +238,7 @@ export function AreaPanel({
 			<div className="flex flex-wrap gap-3">
 				<Button
 					data-testid="start"
-					disabled={matching === 0}
+					disabled={!ready || matching === 0}
 					onClick={() => start("all")}
 					className={primaryButton}
 				>
@@ -236,7 +246,7 @@ export function AreaPanel({
 				</Button>
 				<Button
 					data-testid="review-wrong"
-					disabled={wrongMatching === 0}
+					disabled={!ready || wrongMatching === 0}
 					onClick={() => start("wrong")}
 					className={secondaryButton}
 				>
@@ -244,7 +254,7 @@ export function AreaPanel({
 						{dictionary.areaPage.reviewWrong} (<span data-testid="wrong-matching">{wrongMatching}</span>)
 					</span>
 				</Button>
-				<Button data-testid="reset" onClick={reset} className={secondaryButton}>
+				<Button data-testid="reset" disabled={!ready} onClick={reset} className={secondaryButton}>
 					{dictionary.areaPage.reset}
 				</Button>
 			</div>

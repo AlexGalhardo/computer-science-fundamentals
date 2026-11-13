@@ -55,8 +55,8 @@ One question per screen, in a two-column grid. On a phone the columns stack.
 
 ## Technology
 
-- Next.js with static site generation (SSG, every page pre-rendered at build time), no back end.
-- Base UI (`@base-ui/react`) for the interactive components: buttons, the language and theme toggles, the selects, the progress meter of an area and the popup of a term in the theory summary. Base UI is unstyled, so Tailwind CSS v4 is the styling layer, with the theme tokens of `quiz/src/app/globals.css` as the only source of colours.
+- Astro 7.4, fully static (every page pre-rendered at build time into `out/`), no back end. Interactive screens are React islands.
+- Base UI (`@base-ui/react`) for the interactive components: buttons, the language and theme toggles, the selects, the progress meter of an area and the popup of a term in the theory summary. Base UI is unstyled, so Tailwind CSS v4 is the styling layer, with the theme tokens of `quiz/src/styles/globals.css` as the only source of colours.
 - The app lives in `quiz/`, at the repository root.
 - Questions live in JSON files, in `quiz/content/<area>/<topic>.json`, validated by a schema.
 

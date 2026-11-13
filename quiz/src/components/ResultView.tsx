@@ -1,12 +1,10 @@
-"use client";
-
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Language } from "@/content/schema";
 import { type Dictionary, format } from "@/i18n";
 import type { ClientQuestion } from "@/lib/content";
 import { type Run, score } from "@/lib/run";
 import { loadRun } from "@/lib/run-storage";
+import { Link } from "./Link";
 import { primaryLink } from "./ui";
 
 export function ResultView({

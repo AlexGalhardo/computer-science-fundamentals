@@ -1,0 +1,49 @@
+# EN: Publishes the static quiz to GitHub Pages. The custom domain is csf.vukem.dev (CNAME in
+#     quiz/public). DNS for that name must point at this repository before the certificate is issued.
+# PT: Publica o quiz estático no GitHub Pages. O domínio é csf.vukem.dev (CNAME em quiz/public).
+#     O DNS desse nome precisa apontar para este repositório antes do certificado sair.
+# ES: Publica el quiz estático en GitHub Pages. El dominio es csf.vukem.dev (CNAME en quiz/public).
+#     El DNS de ese nombre tiene que apuntar a este repositorio antes de que salga el certificado.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Static site
+        working-directory: quiz
+        env:
+          QUIZ_SITE_URL: https://csf.vukem.dev
+        run: bun --bun run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: quiz/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

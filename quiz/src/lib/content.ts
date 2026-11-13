@@ -1,11 +1,11 @@
-// EN: Build-time content loader. This file runs only while Next.js pre-renders the pages: it
+// EN: Build-time content loader. This file runs only while Astro pre-renders the pages: it
 //     reads the JSON files from disk, validates them and hands each page the questions of one
 //     area in one language. Nothing here reaches the browser as code, only its result as HTML.
-// PT: Carregador de conteúdo em tempo de build. Este arquivo roda só enquanto o Next.js
+// PT: Carregador de conteúdo em tempo de build. Este arquivo roda só enquanto o Astro
 //     pré-renderiza as páginas: lê os arquivos JSON do disco, valida e entrega a cada página as
 //     questões de uma área em um idioma. Nada daqui chega ao navegador como código, só o
 //     resultado em HTML.
-// ES: Cargador de contenido en tiempo de build. Este archivo corre solo mientras Next.js
+// ES: Cargador de contenido en tiempo de build. Este archivo corre solo mientras Astro
 //     pre-renderiza las páginas: lee los archivos JSON del disco, los valida y entrega a cada página las
 //     preguntas de un área en un idioma. Nada de aquí llega al navegador como código, solo el
 //     resultado en HTML.
@@ -25,11 +25,11 @@ import {
 
 const REPOSITORY_URL = "https://github.com/AlexGalhardo/computer-science-fundamentals/tree/main";
 
-// EN: `next build` runs inside `quiz/`. Tests point QUIZ_CONTENT_DIR at a small fixture, so
+// EN: `astro build` runs inside `quiz/`. Tests point QUIZ_CONTENT_DIR at a small fixture, so
 //     the end-to-end tests do not depend on the real questions.
-// PT: O `next build` roda dentro de `quiz/`. Os testes apontam QUIZ_CONTENT_DIR para um fixture
+// PT: O `astro build` roda dentro de `quiz/`. Os testes apontam QUIZ_CONTENT_DIR para um fixture
 //     pequeno, então os testes de ponta a ponta não dependem das questões reais.
-// ES: `next build` corre dentro de `quiz/`. Las pruebas apuntan QUIZ_CONTENT_DIR a un fixture
+// ES: `astro build` corre dentro de `quiz/`. Las pruebas apuntan QUIZ_CONTENT_DIR a un fixture
 //     pequeño, así que las pruebas de extremo a extremo no dependen de las preguntas reales.
 const contentDir = resolve(process.env.QUIZ_CONTENT_DIR ?? join(process.cwd(), "content"));
 

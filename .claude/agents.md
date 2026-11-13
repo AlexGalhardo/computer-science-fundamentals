@@ -4,6 +4,8 @@ Notes that carry over between sessions. Rules live in `.claude/rules/`. This fil
 
 ## Decisions
 
+- **Quiz host** (2026-11-13): the app is Astro 7.4, static files in `quiz/out`, no server adapter. React islands keep Base UI. GitHub Pages workflow is `.github/workflows/pages.yml`, custom domain `csf.vukem.dev` (`quiz/public/CNAME`). The DNS A records were still Vercel's when the workflow was added, so the domain does not answer from Pages until those records point at GitHub.
+
 - **Remote**: since 2026-10-08 `origin` is `https://github.com/AlexGalhardo/computer-science-fundamentals.git` (the owner's git config rewrites it to SSH). The project moved there from `AlexGalhardo/Software-Engineer-Fundamentals` with a forced push of `main`; the previous history of that repository is kept in its branch `legacy-before-2026-10`. Releases v0.1.0 to v0.80.0 were recreated there. `.claude/scripts/release.py` creates releases on `origin`.
 - **Line endings**: `.gitattributes` forces LF in the repository, CRLF only for `*.ps1`.
 - **Imported content**: lives in `references/`, lowercase kebab-case paths. See `references/README.md` for the mapping and for what was deliberately left out.

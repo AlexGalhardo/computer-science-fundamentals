@@ -1,0 +1,78 @@
+---
+import { Header } from "@/components/Header";
+import type { SearchEntry } from "@/components/SearchDialog";
+import { getDictionary, HTML_LANG, isLanguage, THEME_KEY } from "@/i18n";
+import { getAreas, getTheory } from "@/lib/content";
+import "../styles/globals.css";
+
+// EN: Runs before the first paint, while the browser is still reading <head>. It puts the saved
+//     theme (or the system preference on a first visit) on <html>, so a reload in dark mode never
+//     flashes the light theme. It must be inline: an external file would arrive late.
+// PT: Roda antes da primeira pintura, enquanto o navegador ainda lê o <head>. Coloca no <html> o
+//     tema salvo (ou a preferência do sistema na primeira visita), então recarregar no modo escuro
+//     nunca pisca o tema claro. Precisa ser inline: um arquivo externo chegaria tarde.
+// ES: Corre antes del primer pintado, mientras el navegador aún lee el <head>. Coloca en el <html>
+//     el tema guardado (o la preferencia del sistema en la primera visita), así que recargar en modo
+//     oscuro nunca parpadea con el tema claro. Debe ser inline: un archivo externo llegaría tarde.
+const themeScript = `(function(){var t;try{t=localStorage.getItem(${JSON.stringify(THEME_KEY)})}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t})()`;
+
+// EN: Runs before the React island hydrates. A Ctrl K pressed in that gap is stored and the
+//     search island applies it when it starts, instead of losing the keypress.
+// PT: Roda antes de a ilha React hidratar. Um Ctrl K nesse intervalo fica guardado e a ilha de
+//     busca aplica quando começa, em vez de perder o aperto de tecla.
+// ES: Corre antes de que la isla de React se hidrate. Un Ctrl K en ese intervalo queda guardado
+//     y la isla de búsqueda lo aplica cuando arranca, en lugar de perder la pulsación.
+const searchScript = `(function(){window.addEventListener("keydown",function(event){if(event.key.toLowerCase()==="k"&&(event.metaKey||event.ctrlKey)){event.preventDefault();window.__quizSearch=true;window.dispatchEvent(new Event("quiz-search"))}})})()`;
+
+const lang = Astro.params.lang;
+if (typeof lang !== "string" || !isLanguage(lang)) {
+	throw new Error("Language layout used without a language");
+}
+const dictionary = getDictionary(lang);
+const searchEntries: SearchEntry[] = getAreas().flatMap((area) => [
+	{ title: area.name[lang], href: `/${lang}/${area.slug}/`, kind: "area" as const },
+	...(getTheory(area.slug, lang)?.sections ?? []).map((section) => ({
+		title: section.title,
+		parent: area.name[lang],
+		href: `/${lang}/${area.slug}/#${section.id}`,
+		kind: "theory" as const,
+	})),
+]);
+---
+
+<!doctype html>
+<html lang={HTML_LANG[lang]}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{dictionary.appName}</title>
+		<meta name="description" content={dictionary.tagline} />
+		<script is:inline set:html={themeScript} />
+		<script is:inline set:html={searchScript} />
+	</head>
+	<body class="min-h-screen antialiased">
+		<!--
+			EN: Base UI renders its popups in a portal at the end of <body>, outside this <div>.
+			    `isolate` makes the <div> its own stacking context, so no z-index inside the page
+			    can be drawn above a popup.
+			PT: O Base UI renderiza os popups num portal no fim do <body>, fora deste <div>.
+			    `isolate` faz do <div> um contexto de empilhamento próprio, então nenhum z-index
+			    dentro da página fica acima de um popup.
+			ES: Base UI renderiza sus popups en un portal al final de <body>, fuera de este <div>.
+			    `isolate` hace del <div> su propio contexto de apilamiento, así que ningún z-index
+			    dentro de la página queda encima de un popup.
+		-->
+		<div class="isolate min-h-screen">
+			<a
+				href="#content"
+				class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:rounded focus:bg-accent focus:px-3 focus:py-2 focus:text-on-accent"
+			>
+				{dictionary.skipToContent}
+			</a>
+			<Header client:load language={lang} dictionary={dictionary} searchEntries={searchEntries} />
+			<main id="content" class="mx-auto max-w-6xl px-4 py-6">
+				<slot />
+			</main>
+		</div>
+	</body>
+</html>

@@ -1,13 +1,11 @@
-"use client";
-
 import { Dialog } from "@base-ui/react/dialog";
 import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 import { LANGUAGES, type Language } from "@/content/schema";
 import { type Dictionary, LANGUAGE_KEY, LANGUAGE_NAMES, REPOSITORY_URL, THEME_KEY } from "@/i18n";
+import { navigate, pathWithoutBase } from "@/lib/navigate";
+import { Link } from "./Link";
 import { SearchDialog, type SearchEntry } from "./SearchDialog";
 import { headerControl } from "./ui";
 
@@ -130,10 +128,6 @@ function ThemeToggle({ dictionary }: { dictionary: Dictionary }) {
 //     presionada. También da el comportamiento de teclado de un grupo: Tab entra al grupo una
 //     vez, y las flechas se mueven entre los idiomas.
 function LanguageSwitch({ language, dictionary }: { language: Language; dictionary: Dictionary }) {
-	const pathname = usePathname();
-	const router = useRouter();
-	const rest = pathname.replace(/^\/(en|pt|es)(?=\/|$)/, "");
-
 	function change(pressed: Language[]): void {
 		// EN: Clicking the language that is already pressed would leave none pressed. A page
 		//     always has a language, so that click is ignored.
@@ -152,7 +146,8 @@ function LanguageSwitch({ language, dictionary }: { language: Language; dictiona
 			// PT: Sem storage, a escolha simplesmente vale só nesta visita.
 			// ES: Sin storage, la elección simplemente vale solo en esta visita.
 		}
-		router.push(`/${option}${rest === "" ? "/" : rest}`);
+		const rest = pathWithoutBase().replace(/^\/(en|pt|es)(?=\/|$)/, "");
+		navigate(`/${option}${rest === "" ? "/" : rest}`);
 	}
 
 	return (

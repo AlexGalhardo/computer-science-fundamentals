@@ -2,8 +2,8 @@
 
 The quiz is the main product of the repository. Full design: `docs/en/quiz.md`.
 
-- App in `quiz/`: Next.js with static site generation (SSG), Base UI (`@base-ui/react`) for the interactive components and Tailwind CSS v4 for the styling, no back end. Progress is stored in the browser.
-- Interactive controls (buttons, toggles, selects, meters, popups) are Base UI components styled with Tailwind classes built from the theme tokens of `quiz/src/app/globals.css`, never a raw colour and never a hand-rolled widget (owner's decision, 2026-10-10). Links stay links, and static markup is not wrapped in Base UI.
+- App in `quiz/`: Astro 7.4 with a fully static build (`output: "static"`, files in `out/`), React islands only for the interactive screens, Base UI (`@base-ui/react`) for those controls and Tailwind CSS v4 for the styling, no back end and no server adapter. Progress is stored in the browser.
+- Interactive controls (buttons, toggles, selects, meters, popups) are Base UI components styled with Tailwind classes built from the theme tokens of `quiz/src/styles/globals.css`, never a raw colour and never a hand-rolled widget (owner's decision, 2026-10-10). Links stay links, and static markup is not wrapped in Base UI.
 - Three features are mandatory: i18n in English, Portuguese and Spanish, a light and dark theme toggle, and a mobile-friendly layout (usable from 320 px wide).
 - Theory-only areas (Electronics, Software engineering) have no mini-project: their quiz is the whole deliverable and follows the source book chapter by chapter. Every other area has runnable mini-projects too, and quiz and mini-project link to each other.
 - Questions in `quiz/content/<area>/<topic>.json`, validated by a schema.
@@ -24,4 +24,4 @@ The quiz is the main product of the repository. Full design: `docs/en/quiz.md`.
 - **State the convention** whenever the answer depends on one: who counts the first round-trip, whether the root is black, SQL standard against a product.
 - **Blind review**: `bun run quiz:blind <area>`, a reviewer that reads only `quiz/.review/<area>.blind.json`, `bun run quiz:compare <area> <answers>`, and every disagreement and reviewer note resolved in `review.md`. A reviewer note with no disagreement still gets a resolution.
 - After content changes run `bun run docs:index`, which CI checks.
-- **SEO files are generated, never hand-edited.** `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt` come from `quiz/src/app/` at every `next build`, using the validated areas (builders in `quiz/src/lib/seo.ts`, tests in `quiz/tests/unit/seo.test.ts`). Do not add files under `quiz/public/` for them.
+- **SEO files are generated, never hand-edited.** `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt` come from `quiz/src/pages/` at every `astro build`, using the validated areas (builders in `quiz/src/lib/seo.ts`, tests in `quiz/tests/unit/seo.test.ts`). Do not add files under `quiz/public/` for them. `quiz/public/` only holds the GitHub Pages `CNAME` and `.nojekyll`.

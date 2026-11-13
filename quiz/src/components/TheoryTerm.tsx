@@ -1,5 +1,3 @@
-"use client";
-
 import { Popover } from "@base-ui/react/popover";
 import { type ReactNode, useId, useRef, useState } from "react";
 

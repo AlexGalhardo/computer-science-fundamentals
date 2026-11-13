@@ -177,7 +177,7 @@ The main product. Design in [docs/en/quiz.md](docs/en/quiz.md).
 
 ### QZ-1 Scaffold
 
-- [x] **QZ-1.1** Next.js app in `quiz/` using static site generation (SSG, `output: "export"`) and Tailwind CSS v4, versions pinned.
+- [x] **QZ-1.1** Quiz app in `quiz/` using static generation and Tailwind CSS v4, versions pinned. Since 2026-11-13 the framework is Astro 7.4 (`output: "static"`, files in `out/`), with React islands for the interactive screens. It replaced Next.js `output: "export"`.
 	- [x] QZ-1.1.a Every route is pre-rendered at build time, including one page per area and per language.
 	- [x] QZ-1.1.b No server code, no API route, no runtime data fetching from a back end.
 	- **Accept:** `bun run build` in `quiz/` produces `out/` with one HTML file per route, and serving that folder with a plain static file server shows every page.

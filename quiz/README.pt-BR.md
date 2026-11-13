@@ -21,7 +21,7 @@ O quiz fica em <http://localhost:3000> (defina `QUIZ_PORT` para mudar a porta). 
 
 | Parte | Escolha | Motivo |
 | --- | --- | --- |
-| Framework | Next.js com geração estática (`output: "export"`) | toda página é pré-renderizada no build em arquivos simples em `out/` |
+| Framework | Astro 7.4, totalmente estático (`output: "static"`) | toda página é pré-renderizada no build em arquivos simples em `out/`. As telas interativas são ilhas React |
 | Componentes | Base UI (`@base-ui/react`), sem estilos | os controles interativos (botões, alternadores, selects, o medidor de progresso e o popup de um termo) ganham uso por teclado, controle de foco e ARIA da biblioteca, em vez de código escrito à mão |
 | Estilos | Tailwind CSS v4, tokens de cor por tema | o Base UI não tem estilos: o Tailwind dá a aparência, só com tokens, então os temas claro e escuro usam os mesmos componentes |
 | Servidor | nenhum. Um servidor de arquivos estáticos (Caddy) serve `out/` | sem back end, sem rota de API, sem dado buscado em tempo de execução |
@@ -46,7 +46,8 @@ O quiz fica em <http://localhost:3000> (defina `QUIZ_PORT` para mudar a porta). 
 quiz/
   content/            questões, mapas de cobertura e os dois catálogos
   scripts/            validate, blind e compare (pipeline de conteúdo)
-  src/app/            rotas: /[lang], /[lang]/[area], .../quiz, .../result
+  src/pages/          rotas: /[lang], /[lang]/[area], .../quiz, .../result
+  src/layouts/        casca do idioma (script do tema, cabeçalho, main)
   src/components/     cabeçalho, lista e painel de áreas, tela da questão, explicação, resultado
   src/content/        schemas Zod, verificações do repositório, revisão cega
   src/i18n/           um dicionário tipado por idioma

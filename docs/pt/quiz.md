@@ -55,8 +55,8 @@ Uma pergunta por tela, em um grid de duas colunas. No celular as colunas empilha
 
 ## Tecnologia
 
-- Next.js com geração estática (SSG, toda página pré-renderizada no build), sem backend.
-- Base UI (`@base-ui/react`) para os componentes interativos: botões, os alternadores de idioma e de tema, os selects, o medidor de progresso de uma área e o popup de um termo no resumo teórico. O Base UI não tem estilos, então o Tailwind CSS v4 é a camada de estilo, com os tokens de tema de `quiz/src/app/globals.css` como única fonte de cores.
+- Astro 7.4, totalmente estático (toda página pré-renderizada no build em `out/`), sem backend. As telas interativas são ilhas React.
+- Base UI (`@base-ui/react`) para os componentes interativos: botões, os alternadores de idioma e de tema, os selects, o medidor de progresso de uma área e o popup de um termo no resumo teórico. O Base UI não tem estilos, então o Tailwind CSS v4 é a camada de estilo, com os tokens de tema de `quiz/src/styles/globals.css` como única fonte de cores.
 - O app fica em `quiz/`, na raiz do repositório.
 - As perguntas ficam em arquivos JSON, em `quiz/content/<área>/<tópico>.json`, validados por um schema.
 

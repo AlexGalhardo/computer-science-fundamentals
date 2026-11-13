@@ -21,7 +21,7 @@ The quiz is then at <http://localhost:3000> (set `QUIZ_PORT` to change the port)
 
 | Part | Choice | Why |
 | --- | --- | --- |
-| Framework | Next.js with static site generation (`output: "export"`) | every page is pre-rendered at build time into plain files in `out/` |
+| Framework | Astro 7.4, fully static (`output: "static"`) | every page is pre-rendered at build time into plain files in `out/`. Interactive screens are React islands |
 | Components | Base UI (`@base-ui/react`), unstyled | the interactive controls (buttons, toggles, selects, the progress meter and the popup of a term) get keyboard use, focus handling and ARIA from the library instead of hand-written code |
 | Styles | Tailwind CSS v4, colour tokens per theme | Base UI has no styles: Tailwind gives the look, through tokens only, so light and dark themes share the same components |
 | Server | none. A plain static file server (Caddy) serves `out/` | no back end, no API route, no data fetched at run time |
@@ -46,7 +46,8 @@ The quiz is then at <http://localhost:3000> (set `QUIZ_PORT` to change the port)
 quiz/
   content/            questions, coverage maps and the two catalogs
   scripts/            validate, blind and compare (content pipeline)
-  src/app/            routes: /[lang], /[lang]/[area], .../quiz, .../result
+  src/pages/          routes: /[lang], /[lang]/[area], .../quiz, .../result
+  src/layouts/        language shell (theme script, header, main)
   src/components/     header, area list and panel, question screen, explanation, result
   src/content/        Zod schemas, repository checks, blind review
   src/i18n/           one typed dictionary per language
